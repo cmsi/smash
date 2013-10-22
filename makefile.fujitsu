@@ -1,0 +1,27 @@
+F90 = mpifrtpx -DMPI
+LIB = -SSL2BLAMP
+OPT = -Kfast,openmp
+
+SRC =   basis.F90 geom.F90 guess.F90 input.F90 int1.F90 machine.F90 main.F90 math.F90 \
+	memory.F90 parallel.F90 scf.F90 scflib.F90 int2a.F90 int2ssss.F90 int2psss.F90 int2ppss.F90 \
+	int2psps.F90 int2ppps.F90 int2pppp.F90 int2dsss.F90 int2dpss.F90 int2dsps.F90 int2ddss.F90 \
+	int2dpps.F90 int2dsds.F90 int2dspp.F90 int2ddps.F90 int2dpds.F90 int2dppp.F90 int2ddds.F90 \
+	int2ddpp.F90 int2dpdp.F90 int2dddp.F90 int2dddd.F90 gradrhf.F90  \
+	rysquad.F90 int2rys.F90 dft.F90 dftfunc.F90 lebedev.F90 mp2.F90 grad1.F90 grad2.F90
+MOD = module.F90 modulefmt.F90 modulerys.F90
+OBJ = $(SRC:.F90=.o)
+OBJM= $(MOD:.F90=.o)
+OBJS= $(OBJM) $(OBJ)
+.SUFFIXES:
+.SUFFIXES: .F90 .o
+
+a.out : $(OBJS)
+	$(F90) $(OPT) $(OBJS) $(LIB)
+
+.F90.o:
+	$(F90) $(OPT) -c $<
+
+$(OBJ): $(MOD)
+
+clean :
+	rm -f *.mod *.o a.out

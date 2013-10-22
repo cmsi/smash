@@ -1,0 +1,1986 @@
+!-----------------------------------
+  subroutine oneei(hmat,smat,tmat)
+!-----------------------------------
+!
+! Driver of one-electron and overlap integrals
+!
+! Out : hmat (one electron Hamiltonian)
+!       smat (overlap integral)
+!       tmat (kinetic energy)
+!
+      use procpar
+      use basis, only : nao, nshell, mtype
+      use ecp, only : flagecp
+      use molecule, only : natom
+      implicit none
+      integer :: ish, jsh, num, maxfunc(0:6), maxdim
+      real(8),intent(out) :: hmat((nao*(nao+1))/2), smat((nao*(nao+1))/2), tmat((nao*(nao+1))/2)
+      real(8) :: dum
+!ishimura
+      integer k,l,kmax,lmax
+      data maxfunc/1,3,6,10,15,21,28/
+!
+      maxdim=maxfunc(maxval(mtype(1:nshell)))
+!
+      num=(nao*(nao+1))/2
+      call zeroclr(hmat,num)
+      call zeroclr(smat,num)
+      call zeroclr(tmat,num)
+!
+! ECP setting
+!
+!     if(flagecp) then
+!       maxpangdim= maxfunc(maxval(maxangecp(1:natom)))
+!       maxecpdim= max(maxdim,maxpangdim)
+!       if(maxecpdim >= 5) then
+!         write(iout,'(" This program supports up to SPDFG core potentials.")')
+!         call iabort
+!       endif
+!       allocate()
+!       call setecp()
+!     endif
+!
+
+!
+!$OMP parallel
+      do ish= nshell-myrank,1,-nproc
+!     do ish= 1,nshell
+!$OMP do
+        do jsh= 1,ish
+          call intst(hmat,smat,tmat,ish,jsh)
+          call int1c(hmat,ish,jsh,maxdim)
+!         if(flagecp) call intecp(hmat,ish,jsh,maxdim)
+        enddo
+!$OMP enddo
+      enddo
+!$OMP end parallel
+!
+      call para_allreduce(hmat,dum,num,"D",MPI_SUM,MPI_COMM_WORLD,1)
+      call para_allreduce(smat,dum,num,"D",MPI_SUM,MPI_COMM_WORLD,1)
+      call para_allreduce(tmat,dum,num,"D",MPI_SUM,MPI_COMM_WORLD,1)
+!kazuya
+!      write(*,*)"Smatrix"
+!      kmax=nao/5
+!      if(mod(nao,5).ne.0)kmax=kmax+1
+!      do k=1,kmax
+!        do ish=(k-1)*5+1,nao
+!          lmax=(k)*5
+!          if(lmax.gt.ish)lmax=ish
+!          write(*,'(i3,1x,5f11.6)')ish,(smat(ish*(ish-1)/2+l),l=(k-1)*5+1,lmax)
+!        enddo
+!        write(*,*)
+!      enddo
+!      write(*,*)"Tmatrix"
+!      kmax=nao/5
+!      if(mod(nao,5).ne.0)kmax=kmax+1
+!      do k=1,kmax
+!        do ish=(k-1)*5+1,nao
+!          lmax=(k)*5
+!          if(lmax.gt.ish)lmax=ish
+!          write(*,'(i3,1x,5f11.6)')ish,(tmat(ish*(ish-1)/2+l),l=(k-1)*5+1,lmax)
+!        enddo
+!        write(*,*)
+!      enddo
+!      write(*,*)"Hmatrix"
+!      do k=1,kmax
+!        write(*,*)
+!        write(*,*)
+!        write(*,*)
+!        do ish=(k-1)*5+1,nao
+!          lmax=(k)*5
+!          if(lmax.gt.ish)lmax=ish
+!          write(*,'(i3,1x,5f11.6)')ish,(hmat(ish*(ish-1)/2+l),l=(k-1)*5+1,lmax)
+!        enddo
+!      enddo
+      return
+end
+
+
+!--------------------------------------------
+  subroutine intst(hmat,smat,tmat,ish,jsh)
+!--------------------------------------------
+!
+! Calculate overlap and kinetic integrals
+!
+! In  : ish, jsh (shell indices)
+! Out : hmat (one electron Hamiltonian)
+!       smat (overlap integral)
+!       tmat (kinetic energy)
+!
+      use param, only : mxprsh
+      use thresh, only : threshex
+      use molecule, only : coord
+      use basis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
+      use hermite, only : ix, iy, iz
+      use iofile, only : iout
+      implicit none
+      integer,intent(in) :: ish, jsh
+      integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, nprimi, nprimj, nangi, nangj
+      integer :: nbfi, nbfj, iprim, jprim, nsumi, nsumj, i, j, iang, jang, ii, ij, maxj
+      integer :: isx, jsx, isy, jsy, isz, jsz
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, half=0.5D+00
+      real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt5=2.236067977499790D+00
+      real(8),parameter :: sqrt15=3.872983346207417D+00, sqrt3h=8.660254037844386D-01
+      real(8),intent(out) :: hmat((nao*(nao+1))/2), smat((nao*(nao+1))/2), tmat((nao*(nao+1))/2)
+      real(8) :: xyzij(3), rij, rij2, fac, exi, exi2, exj, ci, cj
+      real(8) :: ex1, ex2, ex3, xyzpij(3,2), cij, sxyz, sxyz1, sxyz2, sxyz3
+      real(8) :: xyzint(3), sx(0:6,0:8,2), sy(0:6,0:8,2), sz(0:6,0:8,2)
+      real(8) :: sint(28,28), tint(28,28) !sx,sy,sz,sint,tint support up to i function
+      logical :: iandj
+!
+! Set parameters
+!
+      iandj=(ish == jsh)
+      iatom = locatom(ish)
+      iloc  = locprim(ish)
+      ilocbf= locbf(ish)
+      nprimi= mprim(ish)
+      nangi = mtype(ish)
+      nbfi  = mbf(ish)
+      jatom = locatom(jsh)
+      jloc  = locprim(jsh)
+      jlocbf= locbf(jsh)
+      nprimj= mprim(jsh)
+      nangj = mtype(jsh)
+      nbfj  = mbf(jsh)
+!
+      do i= 1,3
+        xyzij(i)= coord(i,iatom)-coord(i,jatom)
+      enddo
+      rij= xyzij(1)*xyzij(1)+xyzij(2)*xyzij(2)+xyzij(3)*xyzij(3)
+      select case(nangi)
+        case (0)
+          nsumi= 1
+        case (1)
+          nsumi= 3
+        case (2)
+          nsumi= 6
+        case (3)
+          nsumi= 10
+        case (4)
+          nsumi= 15
+        case default
+          write(iout,'(" Error! This program supports up to g function in intst")')
+          call iabort
+      end select
+      select case(nangj)
+        case (0)
+          nsumj= 1
+        case (1)
+          nsumj= 3
+        case (2)
+          nsumj= 6
+        case (3)
+          nsumj= 10
+        case (4)
+          nsumj= 15
+        case default
+          write(iout,'(" Error! This program supports up to g function in intst")')
+          call iabort
+      end select
+
+      do i= 1,nsumi
+        do j= 1,nsumj
+          sint(j,i)= zero
+          tint(j,i)= zero
+        enddo
+      enddo
+!
+! Calculate overlap and kinetic integrals for each primitive
+! 
+      do iprim= 1,nprimi
+        exi= ex(iloc+iprim)
+        ci = coeff(iloc+iprim)
+        exi2=-two*exi*exi
+        do jprim= 1,nprimj
+          exj= ex(jloc+jprim)
+          ex1= exi+exj
+          ex2= one/ex1
+          rij2=rij*exi*exj*ex2
+          if(rij2 > threshex) cycle
+          ex3= sqrt(ex2)
+          fac= exp(-rij2)   !*ex2*ex3
+          do i= 1,3
+            xyzpij(i,1)=-exj*xyzij(i)*ex2
+            xyzpij(i,2)= exi*xyzij(i)*ex2
+          enddo
+          cj = coeff(jloc+jprim)*fac
+!
+          do iang= 0,nangi+2
+            do jang= 0,nangj
+              call ghquad(xyzint,ex3,xyzpij,iang,jang)
+              sx(jang,iang,1)= xyzint(1)*ex3
+              sy(jang,iang,1)= xyzint(2)*ex3
+              sz(jang,iang,1)= xyzint(3)*ex3
+            enddo
+          enddo
+          do iang= 0,nangi
+            do jang= 0,nangj
+              sx(jang,iang,2)= sx(jang,iang+2,1)*exi2
+              sy(jang,iang,2)= sy(jang,iang+2,1)*exi2
+              sz(jang,iang,2)= sz(jang,iang+2,1)*exi2
+              if(iang >= 2) then
+                sx(jang,iang,2)=sx(jang,iang,2)-sx(jang,iang-2,1)*half*iang*(iang-1)
+                sy(jang,iang,2)=sy(jang,iang,2)-sy(jang,iang-2,1)*half*iang*(iang-1)
+                sz(jang,iang,2)=sz(jang,iang,2)-sz(jang,iang-2,1)*half*iang*(iang-1)
+              endif
+            enddo
+          enddo
+          cij= ci*cj
+          do i= 1,nsumi
+            isx= ix(i,nangi)
+            isy= iy(i,nangi)
+            isz= iz(i,nangi)
+            do j= 1,nsumj
+              jsx= ix(j,nangj)
+              jsy= iy(j,nangj)
+              jsz= iz(j,nangj)
+              sxyz = sx(jsx,isx,1)*sy(jsy,isy,1)*sz(jsz,isz,1)
+              sxyz1= sx(jsx,isx,2)*sy(jsy,isy,1)*sz(jsz,isz,1)
+              sxyz2= sy(jsy,isy,2)*sx(jsx,isx,1)*sz(jsz,isz,1)
+              sxyz3= sz(jsz,isz,2)*sx(jsx,isx,1)*sy(jsy,isy,1)
+              sint(j,i)= sint(j,i)+cij*sxyz
+              tint(j,i)= tint(j,i)+cij*(sxyz1+sxyz2+sxyz3+sxyz*exi*(2*(isx+isy+isz)+3))
+            enddo
+          enddo
+        enddo
+      enddo
+!
+      if((nbfi >= 5).or.(nbfj >= 5)) then
+        call nrmlz1(sint,nbfi,nbfj,nsumi)
+        call nrmlz1(tint,nbfi,nbfj,nsumi)
+      endif
+!
+      maxj= nbfj
+      do i= 1,nbfi
+        ii= ilocbf+i
+        ij= ii*(ii-1)/2+jlocbf
+        if(iandj) maxj= i
+        do j= 1,maxj
+          hmat(ij+j)= tint(j,i)
+          smat(ij+j)= sint(j,i)
+          tmat(ij+j)= tint(j,i)
+        enddo
+      enddo
+      return
+end
+
+
+!------------------------------------------
+  subroutine nrmlz1(onei,nbfi,nbfj,nsumi)
+!------------------------------------------
+!
+! Normalize one-electron and overlap integrals
+!
+      implicit none
+      integer,intent(in) :: nbfi, nbfj, nsumi
+      integer :: i, j
+      real(8),parameter :: half=0.5D+00, two=2.0D+00, three=3.0D+00, four=4.0D+00
+      real(8),parameter :: six=6.0D+00, eight=8.0D+00, p24=24.0D+00
+      real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
+      real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
+      real(8),parameter :: sqrt7=2.645751311064590D+00, sqrt35=5.916079783099616D+00
+      real(8),parameter :: sqrt35third=3.415650255319866D+00
+      real(8),parameter :: facf1=0.36969351199675831D+00 ! 1/sqrt(10-6/sqrt(5))
+      real(8),parameter :: facf2=0.86602540378443865D+00 ! 1/sqrt(4/3)
+      real(8),parameter :: facf3=0.28116020334310144D+00 ! 1/sqrt(46/3-6/sqrt(5))
+      real(8),parameter :: facf4=0.24065403274177409D+00 ! 1/sqrt(28-24/sqrt(5))
+      real(8),parameter :: facg1=0.19440164201192295D+00 ! 1/sqrt(1336/35-8sqrt(15/7))
+      real(8),parameter :: facg2=0.36969351199675831D+00 ! 1/sqrt(10-6/sqrt(5)
+      real(8),parameter :: facg3=0.15721262982485929D+00 ! 1/sqrt(1774/35-8sqrt(15/7)-8sqrt(3/35))
+      real(8),parameter :: facg4=0.24313189758394717D+00 ! 1/sqrt(98/5-6/sqrt(5))
+      real(8),parameter :: facg5=3.20603188768051639D-02
+!                                                 ! 1/sqrt(51512/35-984sqrt(5/21)-102/sqrt(105))
+      real(8),parameter :: facg6=0.18742611911532351D+00 ! 1/sqrt(196/5-24/sqrt(5))
+      real(8),parameter :: facg7=1.11803398874989484D+00 ! 1/sqrt(4/5)
+      real(8),intent(inout) :: onei(28,28)
+      real(8) :: work(28)
+!
+! Bra part
+!
+      select case(nbfj)
+! D function
+        case(5)
+          do i= 1,nsumi
+            do j= 1,6
+              work(j)= onei(j,i)
+            enddo
+            onei(1,i)=(work(3)*two-work(1)-work(2))*half
+            onei(2,i)= work(5)*sqrt3
+            onei(3,i)= work(6)*sqrt3
+            onei(4,i)=(work(1)-work(2))*sqrt3h
+            onei(5,i)= work(4)*sqrt3
+          enddo
+        case(6)
+          do i= 1,nsumi
+            do j= 4,6
+              onei(j,i)= onei(j,i)*sqrt3
+            enddo
+          enddo
+! F function
+        case(7)
+          do i= 1,nsumi
+            do j= 1,3
+              work(j)= onei(j,i)
+            enddo
+            do j= 4,9
+              work(j)= onei(j,i)*sqrt5
+            enddo
+            work(10)= onei(10,i)*sqrt15
+            onei(1,i)=( work(1)-work(6)*three                  )*facf1
+            onei(2,i)=( work(5)-work(7)                        )*facf2
+            onei(3,i)=(-work(1)-work(6)+work(8)*four           )*facf3
+            onei(4,i)=( work(3)*two-work(5)*three-work(7)*three)*facf4
+            onei(5,i)=(-work(2)-work(4)+work(9)*four           )*facf3
+            onei(6,i)=  work(10)
+            onei(7,i)=(-work(2)+work(4)*three                  )*facf1
+          enddo
+        case(10)
+          do i= 1,nsumi
+            do j= 4,9
+              onei(j,i)= onei(j,i)*sqrt5
+            enddo
+            onei(10,i)= onei(10,i)*sqrt15
+          enddo
+! G function
+        case(9)
+          do i= 1,nsumi
+            do j= 1,3
+              work(j)= onei(j,i)
+            enddo
+            do j= 4,9
+              work(j)= onei(j,i)*sqrt7
+            enddo
+            do j= 10,12
+              work(j)= onei(j,i)*sqrt35third
+            enddo
+            do j= 13,15
+              work(j)= onei(j,i)*sqrt35
+            enddo
+            onei(1,i)=(work(1)+work(2)-work(10)*six)*facg1
+            onei(2,i)=(work(5)-work(14)*three)*facg2
+            onei(3,i)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+            onei(4,i)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+            onei(5,i)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+&                      -work(11)*p24-work(12)*p24)*facg5
+            onei(6,i)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+            onei(7,i)=(-work(4)-work(6)+work(15)*six)*facg6
+            onei(8,i)=(work(7)-work(13)*three)*facg2
+            onei(9,i)=(work(4)-work(6))*facg7
+          enddo
+        case(15)
+          do i= 1,nsumi
+            do j= 4,9
+              onei(j,i)= onei(j,i)*sqrt7
+            enddo
+            do j= 10,12
+              onei(j,i)= onei(j,i)*sqrt35third
+            enddo
+            do j= 13,15
+              onei(j,i)= onei(j,i)*sqrt35
+            enddo
+          enddo
+      end select
+!
+! Ket part
+!
+      select case(nbfi)
+! D function
+        case(5)
+          do j= 1,nbfj
+            do i= 1,6
+              work(i)= onei(j,i)
+            enddo
+            onei(j,1)=(work(3)*two-work(1)-work(2))*half
+            onei(j,2)= work(5)*sqrt3
+            onei(j,3)= work(6)*sqrt3
+            onei(j,4)=(work(1)-work(2))*sqrt3h
+            onei(j,5)= work(4)*sqrt3
+          enddo
+        case(6)
+          do j= 1,nbfj
+            do i= 4,6
+              onei(j,i)= onei(j,i)*sqrt3
+            enddo
+          enddo
+! F function
+        case(7)
+          do j= 1,nbfj
+            do i= 1,3
+              work(i)= onei(j,i)
+            enddo
+            do i= 4,9
+              work(i)= onei(j,i)*sqrt5
+            enddo
+            work(10)= onei(j,10)*sqrt15
+            onei(j,1)=( work(1)-three*work(6)                  )*facf1
+            onei(j,2)=( work(5)-work(7)                        )*facf2
+            onei(j,3)=(-work(1)-work(6)+four*work(8)           )*facf3
+            onei(j,4)=( two*work(3)-three*work(5)-three*work(7))*facf4
+            onei(j,5)=(-work(2)-work(4)+four*work(9)           )*facf3
+            onei(j,6)=  work(10)
+            onei(j,7)=(-work(2)+three*work(4)                  )*facf1
+          enddo
+        case(10)
+          do j= 1,nbfj
+            do i= 4,9
+              onei(j,i)= onei(j,i)*sqrt5
+            enddo
+            onei(j,10)= onei(j,10)*sqrt15
+          enddo
+! G function
+        case(9)
+          do j= 1,nbfj
+            do i= 1,3
+              work(i)= onei(j,i)
+            enddo
+            do i= 4,9
+              work(i)= onei(j,i)*sqrt7
+            enddo
+            do i= 10,12
+              work(i)= onei(j,i)*sqrt35third
+            enddo
+            do i= 13,15
+              work(i)= onei(j,i)*sqrt35
+            enddo
+            onei(j,1)=(work(1)+work(2)-work(10)*six)*facg1
+            onei(j,2)=(work(5)-work(14)*three)*facg2
+            onei(j,3)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+            onei(j,4)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+            onei(j,5)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+&                      -work(11)*p24-work(12)*p24)*facg5
+            onei(j,6)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+            onei(j,7)=(-work(4)-work(6)+work(15)*six)*facg6
+            onei(j,8)=(work(7)-work(13)*three)*facg2
+            onei(j,9)=(work(4)-work(6))*facg7
+          enddo
+        case(15)
+          do j= 1,nbfj
+            do i= 4,9
+              onei(j,i)= onei(j,i)*sqrt7
+            enddo
+            do i= 10,12
+              onei(j,i)= onei(j,i)*sqrt35third
+            enddo
+            do i= 13,15
+              onei(j,i)= onei(j,i)*sqrt35
+            enddo
+          enddo
+      end select
+      return
+end
+
+
+!-----------------------------------------------
+  subroutine nrmlz2(onei,nbfi,nbfj,nsumi,len1)
+!-----------------------------------------------
+!
+! Normalize one-electron and overlap integrals
+!
+      implicit none
+      integer,intent(in) :: nbfi, nbfj, nsumi, len1
+      integer :: i, j
+      real(8),parameter :: half=0.5D+00, two=2.0D+00, three=3.0D+00, four=4.0D+00
+      real(8),parameter :: six=6.0D+00, eight=8.0D+00, p24=24.0D+00
+      real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
+      real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
+      real(8),parameter :: sqrt7=2.645751311064590D+00, sqrt35=5.916079783099616D+00
+      real(8),parameter :: sqrt35third=3.415650255319866D+00
+      real(8),parameter :: facf1=0.36969351199675831D+00  ! 1/sqrt(10-6/sqrt(5))
+      real(8),parameter :: facf2=0.86602540378443865D+00  ! 1/sqrt(4/3)
+      real(8),parameter :: facf3=0.28116020334310144D+00  ! 1/sqrt(46/3-6/sqrt(5))
+      real(8),parameter :: facf4=0.24065403274177409D+00  ! 1/sqrt(28-24/sqrt(5))
+      real(8),parameter :: facg1=0.19440164201192295D+00 ! 1/sqrt(1336/35-8sqrt(15/7))
+      real(8),parameter :: facg2=0.36969351199675831D+00 ! 1/sqrt(10-6/sqrt(5)
+      real(8),parameter :: facg3=0.15721262982485929D+00 ! 1/sqrt(1774/35-8sqrt(15/7)-8sqrt(3/35))
+      real(8),parameter :: facg4=0.24313189758394717D+00 ! 1/sqrt(98/5-6/sqrt(5))
+      real(8),parameter :: facg5=3.20603188768051639D-02
+!                                                 ! 1/sqrt(51512/35-984sqrt(5/21)-102/sqrt(105))
+      real(8),parameter :: facg6=0.18742611911532351D+00 ! 1/sqrt(196/5-24/sqrt(5))
+      real(8),parameter :: facg7=1.11803398874989484D+00 ! 1/sqrt(4/5)
+      real(8),intent(inout) :: onei(len1,len1)
+      real(8) :: work(len1)
+!
+! Bra part
+!
+      select case(nbfj)
+! D function
+        case(5)
+          do i= 1,nsumi
+            do j= 1,6
+              work(j)= onei(j,i)
+            enddo
+            onei(1,i)=(work(3)*two-work(1)-work(2))*half
+            onei(2,i)= work(5)*sqrt3
+            onei(3,i)= work(6)*sqrt3
+            onei(4,i)=(work(1)-work(2))*sqrt3h
+            onei(5,i)= work(4)*sqrt3
+          enddo
+        case(6)
+          do i= 1,nsumi
+            do j= 4,6
+              onei(j,i)= onei(j,i)*sqrt3
+            enddo
+          enddo
+! F function
+        case(7)
+          do i= 1,nsumi
+            do j= 1,3
+              work(j)= onei(j,i)
+            enddo
+            do j= 4,9
+              work(j)= onei(j,i)*sqrt5
+            enddo
+            work(10)= onei(10,i)*sqrt15
+            onei(1,i)=( work(1)-three*work(6)                  )*facf1
+            onei(2,i)=( work(5)-work(7)                        )*facf2
+            onei(3,i)=(-work(1)-work(6)+four*work(8)           )*facf3
+            onei(4,i)=( two*work(3)-three*work(5)-three*work(7))*facf4
+            onei(5,i)=(-work(2)-work(4)+four*work(9)           )*facf3
+            onei(6,i)=  work(10)
+            onei(7,i)=(-work(2)+three*work(4)                  )*facf1
+          enddo
+        case(10)
+          do i= 1,nsumi
+            do j= 4,9
+              onei(j,i)= onei(j,i)*sqrt5
+            enddo
+            onei(10,i)= onei(10,i)*sqrt15
+          enddo
+! G function
+        case(9)
+          do i= 1,nsumi
+            do j= 1,3
+              work(j)= onei(j,i)
+            enddo
+            do j= 4,9
+              work(j)= onei(j,i)*sqrt7
+            enddo
+            do j= 10,12
+              work(j)= onei(j,i)*sqrt35third
+            enddo
+            do j= 13,15
+              work(j)= onei(j,i)*sqrt35
+            enddo
+            onei(1,i)=(work(1)+work(2)-work(10)*six)*facg1
+            onei(2,i)=(work(5)-work(14)*three)*facg2
+            onei(3,i)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+            onei(4,i)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+            onei(5,i)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+&                      -work(11)*p24-work(12)*p24)*facg5
+            onei(6,i)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+            onei(7,i)=(-work(4)-work(6)+work(15)*six)*facg6
+            onei(8,i)=(work(7)-work(13)*three)*facg2
+            onei(9,i)=(work(4)-work(6))*facg7
+          enddo
+        case(15)
+          do i= 1,nsumi
+            do j= 4,9
+              onei(j,i)= onei(j,i)*sqrt7
+            enddo
+            do j= 10,12
+              onei(j,i)= onei(j,i)*sqrt35third
+            enddo
+            do j= 13,15
+              onei(j,i)= onei(j,i)*sqrt35
+            enddo
+          enddo
+      end select
+!
+! Ket part
+!
+      select case(nbfi)
+! D function
+        case(5)
+          do j= 1,nbfj
+            do i= 1,6
+              work(i)= onei(j,i)
+            enddo
+            onei(j,1)=(work(3)*two-work(1)-work(2))*half
+            onei(j,2)= work(5)*sqrt3
+            onei(j,3)= work(6)*sqrt3
+            onei(j,4)=(work(1)-work(2))*sqrt3h
+            onei(j,5)= work(4)*sqrt3
+          enddo
+        case(6)
+          do j= 1,nbfj
+            do i= 4,6
+              onei(j,i)= onei(j,i)*sqrt3
+            enddo
+          enddo
+! F function
+        case(7)
+          do j= 1,nbfj
+            do i= 1,3
+              work(i)= onei(j,i)
+            enddo
+            do i= 4,9
+              work(i)= onei(j,i)*sqrt5
+            enddo
+            work(10)= onei(j,10)*sqrt15
+            onei(j,1)=( work(1)-three*work(6)                  )*facf1
+            onei(j,2)=( work(5)-work(7)                        )*facf2
+            onei(j,3)=(-work(1)-work(6)+four*work(8)           )*facf3
+            onei(j,4)=( two*work(3)-three*work(5)-three*work(7))*facf4
+            onei(j,5)=(-work(2)-work(4)+four*work(9)           )*facf3
+            onei(j,6)=  work(10)
+            onei(j,7)=(-work(2)+three*work(4)                  )*facf1
+          enddo
+        case(10)
+          do j= 1,nbfj
+            do i= 4,9
+              onei(j,i)= onei(j,i)*sqrt5
+            enddo
+            onei(j,10)= onei(j,10)*sqrt15
+          enddo
+! G function
+        case(9)
+          do j= 1,nbfj
+            do i= 1,3
+              work(i)= onei(j,i)
+            enddo
+            do i= 4,9
+              work(i)= onei(j,i)*sqrt7
+            enddo
+            do i= 10,12
+              work(i)= onei(j,i)*sqrt35third
+            enddo
+            do i= 13,15
+              work(i)= onei(j,i)*sqrt35
+            enddo
+            onei(j,1)=(work(1)+work(2)-work(10)*six)*facg1
+            onei(j,2)=(work(5)-work(14)*three)*facg2
+            onei(j,3)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+            onei(j,4)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+            onei(j,5)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+&                      -work(11)*p24-work(12)*p24)*facg5
+            onei(j,6)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+            onei(j,7)=(-work(4)-work(6)+work(15)*six)*facg6
+            onei(j,8)=(work(7)-work(13)*three)*facg2
+            onei(j,9)=(work(4)-work(6))*facg7
+          enddo
+        case(15)
+          do j= 1,nbfj
+            do i= 4,9
+              onei(j,i)= onei(j,i)*sqrt7
+            enddo
+            do i= 10,12
+              onei(j,i)= onei(j,i)*sqrt35third
+            enddo
+            do i= 13,15
+              onei(j,i)= onei(j,i)*sqrt35
+            enddo
+          enddo
+      end select
+      return
+end
+
+
+!--------------------------------------
+  subroutine int1c(hmat,ish,jsh,len1)
+!--------------------------------------
+!
+! Driver of 1-electron Coulomb integrals
+!   (j|Z/r|i)
+!
+      use param, only : mxprsh
+      use molecule, only : natom, coord, charge
+      use basis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
+      use thresh, only : threshex
+      use iofile, only : iout
+      implicit none
+      integer,intent(in) :: ish, jsh, len1
+      integer :: nangij(2), nprimij(2), nbfij(2), nsumi, nsum(0:6), iatom, jatom
+      integer :: iloc, jloc, ilocbf, jlocbf, iprim, jprim, i, j, ii, ij, maxj
+      real(8),intent(inout) :: hmat((nao*(nao+1))/2)
+      real(8) :: exij(mxprsh,2), cij(mxprsh,2), coordij(3,2), cint(len1,len1)
+      logical :: iandj
+      data nsum /1,3,6,10,15,21,28/
+!
+      iandj=(ish == jsh)
+      nangij(1)= mtype(ish)
+      nangij(2)= mtype(jsh)
+      nprimij(1)= mprim(ish)
+      nprimij(2)= mprim(jsh)
+      nbfij(1)  = mbf(ish)
+      nbfij(2)  = mbf(jsh)
+      iatom = locatom(ish)
+      iloc  = locprim(ish)
+      ilocbf= locbf(ish)
+      jatom = locatom(jsh)
+      jloc  = locprim(jsh)
+      jlocbf= locbf(jsh)
+      do i= 1,3
+        coordij(i,1)= coord(i,iatom)
+        coordij(i,2)= coord(i,jatom)
+      enddo
+      do iprim= 1,nprimij(1)
+        exij(iprim,1)= ex(iloc+iprim)
+        cij(iprim,1) = coeff(iloc+iprim)
+      enddo
+      do jprim= 1,nprimij(2)
+        exij(jprim,2)= ex(jloc+jprim)
+        cij(jprim,2) = coeff(jloc+jprim)
+      enddo
+!
+      if((nangij(1) <= 2).and.(nangij(2) <= 2)) then
+        call int1cmd(cint,exij,cij,coordij,coord,charge,natom, &
+&                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
+      else
+        if((nangij(1) > 4).or.(nangij(2) > 4))then
+          write(iout,'(" Error! This program supports up to g function in int1c")')
+          call iabort
+        endif
+!
+        call int1rys(cint,exij,cij,coordij,coord,charge,natom, &
+&                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
+!
+        if((nbfij(1) >= 5).or.(nbfij(2) >= 5)) then
+          nsumi= nsum(nangij(1))
+          call nrmlz2(cint,nbfij(1),nbfij(2),nsumi,len1)
+        endif
+      endif
+!
+      maxj= nbfij(2)
+      do i= 1,nbfij(1)
+        if(iandj) maxj= i
+        ii= ilocbf+i
+        ij= ii*(ii-1)/2+jlocbf
+        do j= 1,maxj
+          hmat(ij+j)= hmat(ij+j)+cint(j,i)
+        enddo
+      enddo
+!
+      return
+end
+
+
+!-----------------------------------------------------------------
+  subroutine int1cmd(cint,exij,cij,coordij,coord,charge,natom, &
+&                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
+!-----------------------------------------------------------------
+!
+! Driver of 1-electron Coulomb integrals (j|Z/r|i) using McMurchie-Davidson method
+!
+! In : exij     (exponents of basis functions)
+!      coij     (coefficients of basis functions)
+!      coordij  (x,y,z coordinates of basis functions)
+!      coord    (x,y,z coordinates of atoms)
+!      charge   (charges of atoms)
+!      natom    (number of atoms)
+!      nprimij  (numbers of primitive functions)
+!      nangij   (degrees of angular momentum)
+!      nbfij    (numbers of basis functions)
+!      len1     (dimension of one-electron integral array)
+!      mxprsh   (size of primitive fuction array)
+!      threshex (threshold of exponential calculation)
+! Out: cint     (one-electron Coulomb integrals)
+!
+      implicit none
+      integer,intent(in) :: nprimij(2), nangij(2), nbfij(2), len1, natom, mxprsh
+      integer,parameter :: mxprsh2=40
+      integer :: inttyp, nij, iprim, jprim, i, j, ii, jj, nbfij2(2)
+      real(8),parameter :: one=1.0D+00, pi2=6.283185307179586D+00
+      real(8),intent(in) :: exij(mxprsh,2), cij(mxprsh,2), coordij(3,2)
+      real(8),intent(in) :: coord(3,natom), charge(natom), threshex
+      real(8),intent(out) :: cint(len1,len1)
+      real(8) :: xyz(3), rij, exi, exj, ci, cj, ex12, ex21, ex2i, ex2j, rij2, pixyz(3)
+      real(8) :: exfac(5,mxprsh2*mxprsh2), pijxyz(3,mxprsh2*mxprsh2), cint1(6,6)
+!
+      if(mxprsh > mxprsh2) then
+        write(*,'(" Error! Parameter mxprsh2 in int1cmd is small!")')
+        call abort
+      endif
+!
+      inttyp=nangij(2)*3+nangij(1)+1
+      if(nangij(2).ge.nangij(1)) then
+        ii= 1
+        jj= 2
+        nbfij2(1)= nbfij(1)
+        nbfij2(2)= nbfij(2)
+      else
+        ii= 2
+        jj= 1
+        nbfij2(1)= nbfij(2)
+        nbfij2(2)= nbfij(1)
+      endif
+! 
+      do i= 1,3
+        xyz(i)= coordij(i,ii)-coordij(i,jj)
+      enddo
+      rij= xyz(1)*xyz(1)+xyz(2)*xyz(2)+xyz(3)*xyz(3)
+      nij= 0
+      do iprim= 1,nprimij(ii)
+        exi = exij(iprim,ii)
+        ci  = cij(iprim,ii)*pi2
+        do i= 1,3
+          pixyz(i)= exi*coordij(i,ii)
+        enddo
+        do jprim= 1,nprimij(jj)
+          exj = exij(jprim,jj)
+          ex12= exi+exj
+          ex21= one/ex12
+          ex2i= ex21*exi
+          ex2j= ex21*exj
+          rij2= rij*ex2i*exj
+          if(rij2 > threshex) cycle
+          nij= nij+1
+          cj = cij(jprim,jj)
+          exfac(1,nij)= ex12
+          exfac(2,nij)= ex21
+          exfac(3,nij)= ex2i
+          exfac(4,nij)= ex2j
+          exfac(5,nij)= exp(-rij2)*ex21*ci*cj
+          do i= 1,3
+            pijxyz(i,nij)=(pixyz(i)+exj*coordij(i,jj))*ex21
+          enddo
+        enddo
+      enddo
+!
+      select case(inttyp)
+        case (1)
+          call int1css(cint1,exfac,pijxyz,nij,coord,charge,natom,mxprsh)
+        case (2,4)
+          call int1cps(cint1,exfac,pijxyz,xyz,nij,coord,charge,natom,mxprsh)
+        case (5)
+          call int1cpp(cint1,exfac,pijxyz,xyz,nij,coord,charge,natom,mxprsh)
+        case (3,7)
+          call int1cds(cint1,exfac,pijxyz,xyz,nij,coord,charge,natom,mxprsh,nbfij2)
+        case (6,8)
+          call int1cdp(cint1,exfac,pijxyz,xyz,nij,coord,charge,natom,mxprsh,nbfij2)
+        case (9)
+          call int1cdd(cint1,exfac,pijxyz,xyz,nij,coord,charge,natom,mxprsh,nbfij2)
+      end select
+!
+      if(ii == 1) then
+        do i= 1,nbfij(1)
+          do j= 1,nbfij(2)
+            cint(j,i)= cint1(j,i)
+          enddo
+        enddo
+      else
+        do i= 1,nbfij(2)
+          do j= 1,nbfij(1)
+            cint(i,j)= cint1(j,i)
+          enddo
+        enddo
+      endif
+!
+      return
+end
+
+
+!----------------------------------------------------------------------
+  subroutine int1rys(cint,exij,cij,coordij,coord,charge,natom, &
+&                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
+!----------------------------------------------------------------------
+!
+! Calculate 1-electron Coulomb integrals of (j|Z/r|i) using Rys quadratures
+!
+      use hermite, only : ix, iy, iz
+      implicit none
+      integer,intent(in) :: nprimij(2), nangij(2), nbfij(2), len1, natom, mxprsh
+      integer :: nroots, nsum(0:6), nsumi, nsumj, i, j, iprim, jprim, iatom, iroot
+      integer :: iang, jang, icx, icy, icz, jcx, jcy, jcz
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00
+      real(8),parameter :: sqrtpi2=1.128379167095513D+00 !2.0/sqrt(pi)
+      real(8),intent(in) :: exij(mxprsh,2), cij(mxprsh,2), coordij(3,2)
+      real(8),intent(in) :: coord(3,natom), charge(natom), threshex
+      real(8),intent(out) :: cint(len1,len1)
+      real(8) :: xyz(3), rij, rij2, exi, exj, ci, cj, ex1, ex2, ex3, ex4, fac, rc, tval
+      real(8) :: pixyz(3), pijxyz(3), pcxyz(3), xyzpij(3,2), trys(13), wrys(13)
+      real(8) :: cx(0:6,0:6,7), cy(0:6,0:6,7), cz(0:6,0:6,7), ww, xyzint(3)
+      data nsum /1,3,6,10,15,21,28/
+!
+      nroots=(nangij(1)+nangij(2))/2+1
+      nsumi= nsum(nangij(1))
+      nsumj= nsum(nangij(2))
+!
+      do i= 1,nsumi
+        do j= 1,nsumj
+          cint(j,i)= zero
+        enddo
+      enddo
+!
+      do i= 1,3
+        xyz(i)= coordij(i,1)-coordij(i,2)
+      enddo
+      rij= xyz(1)*xyz(1)+xyz(2)*xyz(2)+xyz(3)*xyz(3)
+!
+      do iprim= 1,nprimij(1)
+        exi= exij(iprim,1)
+        ci = cij(iprim,1)*sqrtpi2
+        do i= 1,3
+          pixyz(i)= exi*coordij(i,1)
+        enddo
+        do jprim= 1,nprimij(2)
+          exj= exij(jprim,2)
+          ex1= exi+exj
+          ex2= one/ex1
+          ex3= exi*exj
+          rij2=rij*ex2*ex3
+          if(rij2 > threshex) cycle
+          cj = cij(jprim,2)
+          fac=exp(-rij2)*ex2*ci*cj
+!
+          do i= 1,3
+            pijxyz(i)=(pixyz(i)+exj*coordij(i,2))*ex2
+          enddo
+          do iatom= 1,natom
+            do i= 1,3
+              pcxyz(i)= pijxyz(i)-coord(i,iatom)
+            enddo
+            rc= pcxyz(1)*pcxyz(1)+pcxyz(2)*pcxyz(2)+pcxyz(3)*pcxyz(3)
+            tval= ex1*rc
+            call rysquad(tval,trys,wrys,nroots)
+            do iroot= 1,nroots
+              ww=-wrys(iroot)*charge(iatom)
+              ex4= sqrt(ex2*(one-trys(iroot)))
+              do i= 1,3
+                xyzpij(i,1)=(one-trys(iroot))*pijxyz(i)+trys(iroot)*coord(i,iatom)-coordij(i,1)
+                xyzpij(i,2)=(one-trys(iroot))*pijxyz(i)+trys(iroot)*coord(i,iatom)-coordij(i,2)
+              enddo
+              do iang= 0,nangij(1)
+                do jang= 0,nangij(2)
+                  call ghquad(xyzint,ex4,xyzpij,iang,jang)
+                  cx(jang,iang,iroot)= xyzint(1)
+                  cy(jang,iang,iroot)= xyzint(2)
+                  cz(jang,iang,iroot)= xyzint(3)*ww
+                enddo
+              enddo
+            enddo
+            do i= 1,nsumi
+              icx= ix(i,nangij(1))
+              icy= iy(i,nangij(1))
+              icz= iz(i,nangij(1))
+              do j= 1,nsumj
+                jcx= ix(j,nangij(2))
+                jcy= iy(j,nangij(2))
+                jcz= iz(j,nangij(2))
+                do iroot= 1,nroots
+                  cint(j,i)=cint(j,i)+fac*cx(jcx,icx,iroot)*cy(jcy,icy,iroot)*cz(jcz,icz,iroot)
+                enddo
+              enddo
+            enddo
+          enddo
+        enddo
+      enddo
+!
+      return
+end
+
+
+!-----------------------------------------------------------------------
+  subroutine int1css(cint1,exfac,pijxyz,nij,coord,charge,natom,mxprsh)
+!-----------------------------------------------------------------------
+!
+! Calculate 1-electron Coulomb integrals of (s|Z/r|s)
+!
+      use fmtgrid, only : fgrid, threshtval
+      implicit none
+      integer,intent(in) :: nij, natom, mxprsh
+      integer :: ijprim, i, iatom, igrid
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00
+      real(8),parameter :: pi=3.141592653589793D+00
+      real(8),intent(in) :: exfac(5,mxprsh*mxprsh), pijxyz(3,mxprsh*mxprsh)
+      real(8),intent(in) :: coord(3,natom), charge(natom)
+      real(8),intent(out) :: cint1(6,6)
+      real(8) :: rc, ex12, ex21, ex2i, ex2j, c12, pcxyz(3)
+      real(8) :: tval, tval1, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
+      real(8) :: ft0, fpc
+!
+      cint1(1,1)= zero
+!
+      do ijprim= 1,nij
+        ex12= exfac(1,ijprim)
+        ex21= exfac(2,ijprim)
+        ex2i= exfac(3,ijprim)
+        ex2j= exfac(4,ijprim)
+        c12 = exfac(5,ijprim)
+        fpc= zero
+        do iatom= 1,natom
+          do i= 1,3
+            pcxyz(i)= pijxyz(i,ijprim)-coord(i,iatom)
+          enddo
+          rc= pcxyz(1)*pcxyz(1)+pcxyz(2)*pcxyz(2)+pcxyz(3)*pcxyz(3)
+          tval= ex12*rc
+          if(tval >= threshtval) then
+            fpc= fpc+half*sqrt(pi/tval)*charge(iatom)
+          else
+            igrid= int(tval)
+            tval2= tval *tval
+            tval3= tval2*tval
+            tval4= tval2*tval2
+            tval5= tval2*tval3
+            tval6= tval3*tval3
+            tval7= tval4*tval3
+            tval8= tval4*tval4
+            tval9= tval4*tval5
+            tval10=tval5*tval5
+            ft0= fgrid(0,0,igrid)      +fgrid( 1,0,igrid)*tval  +fgrid( 2,0,igrid)*tval2 &
+&               +fgrid(3,0,igrid)*tval3+fgrid( 4,0,igrid)*tval4 +fgrid( 5,0,igrid)*tval5 &
+&               +fgrid(6,0,igrid)*tval6+fgrid( 7,0,igrid)*tval7 +fgrid( 8,0,igrid)*tval8 &
+&               +fgrid(9,0,igrid)*tval9+fgrid(10,0,igrid)*tval10
+            fpc= fpc+ft0*charge(iatom)
+          endif
+        enddo
+        cint1(1,1)= cint1(1,1)-c12*fpc
+      enddo
+!
+      return
+end
+
+
+!---------------------------------------------------------------------------
+  subroutine int1cps(cint1,exfac,pijxyz,xyz,nij,coord,charge,natom,mxprsh)
+!---------------------------------------------------------------------------
+!
+! Calculate 1-electron Coulomb integrals of (p|Z/r|s)
+!
+      use fmtgrid, only : fgrid, threshtval
+      implicit none
+      integer,intent(in) :: nij, natom, mxprsh
+      integer :: ijprim, i, iatom, igrid
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00, two=2.0D+00
+      real(8),parameter :: pi=3.141592653589793D+00
+      real(8),intent(in) :: exfac(5,mxprsh*mxprsh), pijxyz(3,mxprsh*mxprsh), xyz(3)
+      real(8),intent(in) :: coord(3,natom), charge(natom)
+      real(8),intent(out) :: cint1(6,6)
+      real(8) :: rc, ex12, ex21, ex2i, ex2j, c12, pcxyz(3)
+      real(8) :: tval, tval1, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
+      real(8) :: ft(0:1), fpc0, fpc1(3), expt, tinv
+      real(8) :: r0, r1(3)
+!
+      r0= zero
+      do i= 1,3
+        r1(i) = zero
+      enddo
+!
+      do ijprim= 1,nij
+        ex12= exfac(1,ijprim)
+        ex21= exfac(2,ijprim)
+        ex2i= exfac(3,ijprim)
+        ex2j= exfac(4,ijprim)
+        c12 = exfac(5,ijprim)
+        fpc0= zero
+        do i=1,3
+          fpc1(i)= zero
+        enddo
+        do iatom= 1,natom
+          do i= 1,3
+            pcxyz(i)= pijxyz(i,ijprim)-coord(i,iatom)
+          enddo
+          rc= pcxyz(1)*pcxyz(1)+pcxyz(2)*pcxyz(2)+pcxyz(3)*pcxyz(3)
+          tval= ex12*rc
+          if(tval >= threshtval) then
+            tinv = one/tval
+            ft(0)= half*sqrt(pi*tinv)
+            ft(1)= ft(0)*half*tinv
+          else
+            igrid= int(tval)
+            tval2= tval *tval
+            tval3= tval2*tval
+            tval4= tval2*tval2
+            tval5= tval2*tval3
+            tval6= tval3*tval3
+            tval7= tval4*tval3
+            tval8= tval4*tval4
+            tval9= tval4*tval5
+            tval10=tval5*tval5
+            ft(0)= fgrid(0,0,igrid)      +fgrid( 1,0,igrid)*tval  +fgrid( 2,0,igrid)*tval2 &
+&                 +fgrid(3,0,igrid)*tval3+fgrid( 4,0,igrid)*tval4 +fgrid( 5,0,igrid)*tval5 &
+&                 +fgrid(6,0,igrid)*tval6+fgrid( 7,0,igrid)*tval7 +fgrid( 8,0,igrid)*tval8 &
+&                 +fgrid(9,0,igrid)*tval9+fgrid(10,0,igrid)*tval10
+            ft(1)= fgrid(0,1,igrid)      +fgrid( 1,1,igrid)*tval  +fgrid( 2,1,igrid)*tval2 &
+&                 +fgrid(3,1,igrid)*tval3+fgrid( 4,1,igrid)*tval4 +fgrid( 5,1,igrid)*tval5 &
+&                 +fgrid(6,1,igrid)*tval6+fgrid( 7,1,igrid)*tval7 +fgrid( 8,1,igrid)*tval8 &
+&                 +fgrid(9,1,igrid)*tval9+fgrid(10,1,igrid)*tval10
+          endif
+          ft(0)= ft(0)*charge(iatom)
+          ft(1)= ft(1)*charge(iatom)
+          fpc0= fpc0+ft(0)
+          do i= 1,3
+            fpc1(i)= fpc1(i)-ft(1)*pcxyz(i)
+          enddo
+        enddo
+        r0= r0+c12*fpc0*ex2i
+        do i= 1,3
+          r1(i)= r1(i)+c12*fpc1(i)
+        enddo
+      enddo
+      do i= 1,3
+        cint1(i,1)=-(r1(i)+r0*xyz(i))
+      enddo
+!
+      return
+end
+
+
+!----------------------------------------------------------------------------
+  subroutine int1cpp(cint1,exfac,pijxyz,xyz,nij,coord,charge,natom,mxprsh)
+!----------------------------------------------------------------------------
+!
+! Calculate 1-electron Coulomb integrals of (p|Z/r|p)
+!
+      use fmtgrid, only : fgrid, threshtval
+      implicit none
+      integer,intent(in) :: nij, natom, mxprsh
+      integer :: ijprim, i, iatom, igrid, ii
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00, two=2.0D+00
+      real(8),parameter :: three=3.0D+00, p15=1.5D+00
+      real(8),parameter :: pi=3.141592653589793D+00
+      real(8),intent(in) :: exfac(5,mxprsh*mxprsh), pijxyz(3,mxprsh*mxprsh), xyz(3)
+      real(8),intent(in) :: coord(3,natom), charge(natom)
+      real(8),intent(out) :: cint1(6,6)
+      real(8) :: rc, ex12, ex21, ex2i, ex2j, c12, pcxyz(3)
+      real(8) :: tval, tval1, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
+      real(8) :: ft(0:2), fpc0, fpc1(4), fpc2(6)
+      real(8) :: expt, tinv, r0(2), r1(7), r2(6)
+!
+      do i= 1,2
+        r0(i) = zero
+      enddo
+      do i= 1,7
+        r1(i) = zero
+      enddo
+      do i= 1,6
+        r2(i) = zero
+      enddo
+!
+      do ijprim= 1,nij
+        ex12= exfac(1,ijprim)
+        ex21= exfac(2,ijprim)
+        ex2i= exfac(3,ijprim)
+        ex2j= exfac(4,ijprim)
+        c12 = exfac(5,ijprim)
+        fpc0= zero
+        do i= 1,4
+          fpc1(i)= zero
+        enddo
+        do i= 1,6
+          fpc2(i)= zero
+        enddo
+        do iatom= 1,natom
+          do i= 1,3
+            pcxyz(i)= pijxyz(i,ijprim)-coord(i,iatom)
+          enddo
+          rc= pcxyz(1)*pcxyz(1)+pcxyz(2)*pcxyz(2)+pcxyz(3)*pcxyz(3)
+          tval= ex12*rc
+          if(tval >= threshtval) then
+            tinv = one/tval
+            ft(0)= half*sqrt(pi*tinv)
+            ft(1)= half*tinv*ft(0)
+            ft(2)= p15 *tinv*ft(1)
+          else
+            igrid= int(tval)
+            tval2= tval *tval
+            tval3= tval2*tval
+            tval4= tval2*tval2
+            tval5= tval2*tval3
+            tval6= tval3*tval3
+            tval7= tval4*tval3
+            tval8= tval4*tval4
+            tval9= tval4*tval5
+            tval10=tval5*tval5
+            do ii= 0,2
+              ft(ii)= fgrid(0,ii,igrid)      +fgrid( 1,ii,igrid)*tval  +fgrid( 2,ii,igrid)*tval2 &
+&                    +fgrid(3,ii,igrid)*tval3+fgrid( 4,ii,igrid)*tval4 +fgrid( 5,ii,igrid)*tval5 &
+&                    +fgrid(6,ii,igrid)*tval6+fgrid( 7,ii,igrid)*tval7 +fgrid( 8,ii,igrid)*tval8 &
+&                    +fgrid(9,ii,igrid)*tval9+fgrid(10,ii,igrid)*tval10
+            enddo
+          endif
+          do i= 0,2
+            ft(i)= ft(i)*charge(iatom) 
+          enddo
+          fpc0= fpc0+ft(0)
+          do i= 1,3
+            fpc1(i)= fpc1(i)+ft(1)*pcxyz(i) 
+          enddo
+          fpc1(4)= fpc1(4)+ft(1)
+          fpc2(1)= fpc2(1)+ft(2)*pcxyz(1)*pcxyz(1)
+          fpc2(2)= fpc2(2)+ft(2)*pcxyz(2)*pcxyz(2)
+          fpc2(3)= fpc2(3)+ft(2)*pcxyz(3)*pcxyz(3)
+          fpc2(4)= fpc2(4)+ft(2)*pcxyz(1)*pcxyz(2)
+          fpc2(5)= fpc2(5)+ft(2)*pcxyz(1)*pcxyz(3)
+          fpc2(6)= fpc2(6)+ft(2)*pcxyz(2)*pcxyz(3)
+        enddo
+        fpc0= fpc0*c12
+        r0(1)= r0(1)-ex2i*ex2j*fpc0
+        r0(2)= r0(2)+half*ex21*fpc0
+        do i= 1,3
+          r1(i)  = r1(i)  +c12*ex2j*fpc1(i)
+          r1(i+3)= r1(i+3)-c12*ex2i*fpc1(i)
+        enddo
+        r1(7)= r1(7)-half*c12*ex21*fpc1(4)
+        do i= 1,6
+          r2(i)= r2(i)+c12*fpc2(i)
+        enddo
+      enddo
+!
+      cint1(1,1)=-(r2(1)+r1(1)*xyz(1)+r1(4)*xyz(1)+r1(7)+r0(1)*xyz(1)*xyz(1)+r0(2))
+      cint1(2,1)=-(r2(4)+r1(2)*xyz(1)+r1(4)*xyz(2)      +r0(1)*xyz(1)*xyz(2)      )
+      cint1(3,1)=-(r2(5)+r1(3)*xyz(1)+r1(4)*xyz(3)      +r0(1)*xyz(1)*xyz(3)      )
+      cint1(1,2)=-(r2(4)+r1(1)*xyz(2)+r1(5)*xyz(1)      +r0(1)*xyz(1)*xyz(2)      )
+      cint1(2,2)=-(r2(2)+r1(2)*xyz(2)+r1(5)*xyz(2)+r1(7)+r0(1)*xyz(2)*xyz(2)+r0(2))
+      cint1(3,2)=-(r2(6)+r1(3)*xyz(2)+r1(5)*xyz(3)      +r0(1)*xyz(2)*xyz(3)      )
+      cint1(1,3)=-(r2(5)+r1(1)*xyz(3)+r1(6)*xyz(1)      +r0(1)*xyz(1)*xyz(3)      )
+      cint1(2,3)=-(r2(6)+r1(2)*xyz(3)+r1(6)*xyz(2)      +r0(1)*xyz(2)*xyz(3)      )
+      cint1(3,3)=-(r2(3)+r1(3)*xyz(3)+r1(6)*xyz(3)+r1(7)+r0(1)*xyz(3)*xyz(3)+r0(2))
+!
+      return
+end
+
+
+!---------------------------------------------------------------------------------
+  subroutine int1cds(cint1,exfac,pijxyz,xyz,nij,coord,charge,natom,mxprsh,nbfij)
+!---------------------------------------------------------------------------------
+!
+! Calculate 1-electron Coulomb integrals of (d|Z/r|s)
+!
+      use fmtgrid, only : fgrid, threshtval
+      implicit none
+      integer,intent(in) :: nij, natom, mxprsh, nbfij(2)
+      integer :: ijprim, i, iatom, igrid, ii
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00, two=2.0D+00
+      real(8),parameter :: three=3.0D+00, p15=1.5D+00, pi=3.141592653589793D+00
+      real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
+      real(8),intent(in) :: exfac(5,mxprsh*mxprsh), pijxyz(3,mxprsh*mxprsh), xyz(3)
+      real(8),intent(in) :: coord(3,natom), charge(natom)
+      real(8),intent(out) :: cint1(6,6)
+      real(8) :: rc, ex12, ex21, ex2i, ex2j, c12, pcxyz(3)
+      real(8) :: tval, tval1, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
+      real(8) :: ft(0:2), fpc0, fpc1(4), fpc2(6)
+      real(8) :: expt, tinv, r0(2), r1(4), r2(6), ctmp(6)
+!
+      do i= 1,2
+        r0(i) = zero
+      enddo
+      do i= 1,4
+        r1(i) = zero
+      enddo
+      do i= 1,6
+        r2(i) = zero
+      enddo
+!
+      do ijprim= 1,nij
+        ex12= exfac(1,ijprim)
+        ex21= exfac(2,ijprim)
+        ex2i= exfac(3,ijprim)
+        ex2j= exfac(4,ijprim)
+        c12 = exfac(5,ijprim)
+        fpc0= zero
+        do i= 1,4
+          fpc1(i)= zero
+        enddo
+        do i= 1,6
+          fpc2(i)= zero
+        enddo
+        do iatom= 1,natom
+          do i= 1,3
+            pcxyz(i)= pijxyz(i,ijprim)-coord(i,iatom)
+          enddo
+          rc= pcxyz(1)*pcxyz(1)+pcxyz(2)*pcxyz(2)+pcxyz(3)*pcxyz(3)
+          tval= ex12*rc
+          if(tval >= threshtval) then
+            tinv = one/tval
+            ft(0)= half*sqrt(pi*tinv)
+            ft(1)= half*tinv*ft(0)
+            ft(2)= p15 *tinv*ft(1)
+          else
+            igrid= int(tval)
+            tval2= tval *tval
+            tval3= tval2*tval
+            tval4= tval2*tval2
+            tval5= tval2*tval3
+            tval6= tval3*tval3
+            tval7= tval4*tval3
+            tval8= tval4*tval4
+            tval9= tval4*tval5
+            tval10=tval5*tval5
+            do ii= 0,2
+              ft(ii)= fgrid(0,ii,igrid)      +fgrid( 1,ii,igrid)*tval  +fgrid( 2,ii,igrid)*tval2 &
+&                    +fgrid(3,ii,igrid)*tval3+fgrid( 4,ii,igrid)*tval4 +fgrid( 5,ii,igrid)*tval5 &
+&                    +fgrid(6,ii,igrid)*tval6+fgrid( 7,ii,igrid)*tval7 +fgrid( 8,ii,igrid)*tval8 &
+&                    +fgrid(9,ii,igrid)*tval9+fgrid(10,ii,igrid)*tval10
+            enddo
+          endif
+          do i= 0,2
+            ft(i)= ft(i)*charge(iatom) 
+          enddo
+          fpc0= fpc0+ft(0)
+          do i= 1,3
+            fpc1(i)= fpc1(i)+ft(1)*pcxyz(i) 
+          enddo
+          fpc1(4)= fpc1(4)+ft(1)
+          fpc2(1)= fpc2(1)+ft(2)*pcxyz(1)*pcxyz(1)
+          fpc2(2)= fpc2(2)+ft(2)*pcxyz(2)*pcxyz(2)
+          fpc2(3)= fpc2(3)+ft(2)*pcxyz(3)*pcxyz(3)
+          fpc2(4)= fpc2(4)+ft(2)*pcxyz(1)*pcxyz(2)
+          fpc2(5)= fpc2(5)+ft(2)*pcxyz(1)*pcxyz(3)
+          fpc2(6)= fpc2(6)+ft(2)*pcxyz(2)*pcxyz(3)
+        enddo
+        fpc0= fpc0*c12
+        r0(1)= r0(1)+ex2i*ex2i*fpc0
+        r0(2)= r0(2)+half*ex21*fpc0
+        do i= 1,3
+          r1(i)= r1(i)-c12*ex2i*fpc1(i)
+        enddo
+        r1(4)= r1(4)-half*c12*ex21*fpc1(4)
+        do i= 1,6
+          r2(i)= r2(i)+c12*fpc2(i)
+        enddo
+      enddo
+!
+      ctmp(1)=-(r2(1)+r1(1)*xyz(1)*two+r1(4)   +r0(1)*xyz(1)*xyz(1)+r0(2))
+      ctmp(2)=-(r2(2)+r1(2)*xyz(2)*two+r1(4)   +r0(1)*xyz(2)*xyz(2)+r0(2))
+      ctmp(3)=-(r2(3)+r1(3)*xyz(3)*two+r1(4)   +r0(1)*xyz(3)*xyz(3)+r0(2))
+      ctmp(4)=-(r2(4)+r1(1)*xyz(2)+r1(2)*xyz(1)+r0(1)*xyz(1)*xyz(2)      )
+      ctmp(5)=-(r2(5)+r1(1)*xyz(3)+r1(3)*xyz(1)+r0(1)*xyz(1)*xyz(3)      )
+      ctmp(6)=-(r2(6)+r1(2)*xyz(3)+r1(3)*xyz(2)+r0(1)*xyz(2)*xyz(3)      )
+!
+      if(nbfij(2) == 6) then
+        cint1(1,1)= ctmp(1)
+        cint1(2,1)= ctmp(2)
+        cint1(3,1)= ctmp(3)
+        cint1(4,1)= ctmp(4)*sqrt3
+        cint1(5,1)= ctmp(5)*sqrt3
+        cint1(6,1)= ctmp(6)*sqrt3
+      else
+        cint1(1,1)= ctmp(3)-(ctmp(1)+ctmp(2))*half
+        cint1(2,1)= ctmp(5)*sqrt3
+        cint1(3,1)= ctmp(6)*sqrt3
+        cint1(4,1)=(ctmp(1)-ctmp(2))*sqrt3h
+        cint1(5,1)= ctmp(4)*sqrt3
+      endif
+!
+      return
+end
+
+
+!---------------------------------------------------------------------------------
+  subroutine int1cdp(cint1,exfac,pijxyz,xyz,nij,coord,charge,natom,mxprsh,nbfij)
+!---------------------------------------------------------------------------------
+!
+! Calculate 1-electron Coulomb integrals of (d|Z/r|p)
+!
+      use fmtgrid, only : fgrid, threshtval
+      implicit none
+      integer,intent(in) :: nij, natom, mxprsh, nbfij(2)
+      integer :: ijprim, i, iatom, igrid, ii
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00, two=2.0D+00
+      real(8),parameter :: three=3.0D+00, five=5.0D+00, p15=1.5D+00, p25=2.5D+00
+      real(8),parameter :: pi=3.141592653589793D+00, sqrt3h=8.660254037844386D-01
+      real(8),parameter :: sqrt3=1.732050807568877D+00
+      real(8),intent(in) :: exfac(5,mxprsh*mxprsh), pijxyz(3,mxprsh*mxprsh), xyz(3)
+      real(8),intent(in) :: coord(3,natom), charge(natom)
+      real(8),intent(out) :: cint1(6,6)
+      real(8) :: rc, ex12, ex21, ex2i, ex2j, c12, pcxyz(3)
+      real(8) :: tval, tval1, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
+      real(8) :: ft(0:3), fpc0, fpc1(4), fpc2(9)
+      real(8) :: fpc3(10), pxx, pyy, pzz, pxy, pxz, pyz
+      real(8) :: expt, tinv, r0(3), r1(11), r2(15), r3(10), xx, yy, zz, xy, xz, yz, ctmp(6,3)
+!
+      do i= 1,3
+        r0(i) = zero
+      enddo
+      do i= 1,11
+        r1(i) = zero
+      enddo
+      do i= 1,15
+        r2(i) = zero
+      enddo
+      do i= 1,10
+        r3(i) = zero
+      enddo
+      xx= xyz(1)*xyz(1)
+      yy= xyz(2)*xyz(2)
+      zz= xyz(3)*xyz(3)
+      xy= xyz(1)*xyz(2)
+      xz= xyz(1)*xyz(3)
+      yz= xyz(2)*xyz(3)
+!
+      do ijprim= 1,nij
+        ex12= exfac(1,ijprim)
+        ex21= exfac(2,ijprim)
+        ex2i= exfac(3,ijprim)
+        ex2j= exfac(4,ijprim)
+        c12 = exfac(5,ijprim)
+        fpc0= zero
+        do i= 1,4
+          fpc1(i)= zero
+        enddo
+        do i= 1,9
+          fpc2(i)= zero
+        enddo
+        do i= 1,10
+          fpc3(i)= zero
+        enddo
+!
+        do iatom= 1,natom
+          do i= 1,3
+            pcxyz(i)= pijxyz(i,ijprim)-coord(i,iatom)
+          enddo
+          pxx= pcxyz(1)*pcxyz(1)
+          pyy= pcxyz(2)*pcxyz(2)
+          pzz= pcxyz(3)*pcxyz(3)
+          pxy= pcxyz(1)*pcxyz(2)
+          pxz= pcxyz(1)*pcxyz(3)
+          pyz= pcxyz(2)*pcxyz(3)
+          rc= pxx+pyy+pzz
+          tval= ex12*rc
+          if(tval >= threshtval) then
+            tinv = one/tval
+            ft(0)= half*sqrt(pi*tinv)
+            ft(1)= half*tinv*ft(0)
+            ft(2)= p15 *tinv*ft(1)
+            ft(3)= p25 *tinv*ft(2)
+          else
+            igrid= int(tval)
+            tval2= tval *tval
+            tval3= tval2*tval
+            tval4= tval2*tval2
+            tval5= tval2*tval3
+            tval6= tval3*tval3
+            tval7= tval4*tval3
+            tval8= tval4*tval4
+            tval9= tval4*tval5
+            tval10=tval5*tval5
+            do ii= 0,3
+              ft(ii)= fgrid(0,ii,igrid)      +fgrid( 1,ii,igrid)*tval  +fgrid( 2,ii,igrid)*tval2 &
+&                    +fgrid(3,ii,igrid)*tval3+fgrid( 4,ii,igrid)*tval4 +fgrid( 5,ii,igrid)*tval5 &
+&                    +fgrid(6,ii,igrid)*tval6+fgrid( 7,ii,igrid)*tval7 +fgrid( 8,ii,igrid)*tval8 &
+&                    +fgrid(9,ii,igrid)*tval9+fgrid(10,ii,igrid)*tval10
+            enddo
+          endif
+          do i= 0,3
+            ft(i)= ft(i)*charge(iatom) 
+          enddo
+          fpc0= fpc0+ft(0)
+          do i= 1,3
+            fpc1(i)= fpc1(i)+ft(1)*pcxyz(i) 
+          enddo
+          fpc1(4)= fpc1(4)+ft(1)
+          fpc2(1)= fpc2(1)+ft(2)*pxx
+          fpc2(2)= fpc2(2)+ft(2)*pyy
+          fpc2(3)= fpc2(3)+ft(2)*pzz
+          fpc2(4)= fpc2(4)+ft(2)*pxy
+          fpc2(5)= fpc2(5)+ft(2)*pxz
+          fpc2(6)= fpc2(6)+ft(2)*pyz
+          fpc2(7)= fpc2(7)+ft(2)*pcxyz(1)
+          fpc2(8)= fpc2(8)+ft(2)*pcxyz(2)
+          fpc2(9)= fpc2(9)+ft(2)*pcxyz(3)
+          fpc3(1) = fpc3(1) +ft(3)*pxx*pcxyz(1)
+          fpc3(2) = fpc3(2) +ft(3)*pyy*pcxyz(2)
+          fpc3(3) = fpc3(3) +ft(3)*pzz*pcxyz(3)
+          fpc3(4) = fpc3(4) +ft(3)*pxx*pcxyz(2)
+          fpc3(5) = fpc3(5) +ft(3)*pxx*pcxyz(3)
+          fpc3(6) = fpc3(6) +ft(3)*pxy*pcxyz(2)
+          fpc3(7) = fpc3(7) +ft(3)*pyy*pcxyz(3)
+          fpc3(8) = fpc3(8) +ft(3)*pxz*pcxyz(3)
+          fpc3(9) = fpc3(9) +ft(3)*pyz*pcxyz(3)
+          fpc3(10)= fpc3(10)+ft(3)*pxy*pcxyz(3)
+        enddo
+!
+        fpc0= fpc0*c12
+        r0(1)= r0(1)-ex2i*ex2i*ex2j*fpc0
+        r0(2)= r0(2)-half*ex2j*ex21*fpc0
+        r0(3)= r0(3)+half*ex2i*ex21*fpc0
+        do i= 1,3
+          r1(i)  = r1(i)  +c12*ex2i*ex2j*fpc1(i)
+          r1(i+3)= r1(i+3)-c12*ex2i*ex2i*fpc1(i)
+          r1(i+6)= r1(i+6)-half*c12*ex21*fpc1(i)
+        enddo
+        r1(10)= r1(10)+half*c12*ex2j*ex21*fpc1(4)
+        r1(11)= r1(11)-half*c12*ex2i*ex21*fpc1(4)
+        do i= 1,6
+          r2(i)=   r2(i)  -c12*ex2j*fpc2(i)
+          r2(i+6)= r2(i+6)+c12*ex2i*fpc2(i)
+        enddo
+        do i= 1,3
+          r2(i+12)= r2(i+12)+half*c12*ex21*fpc2(i+6)
+        enddo
+        do i= 1,10
+          r3(i)= r3(i)-c12*fpc3(i)
+        enddo
+      enddo
+!
+      ctmp(1,1)=-(r3(1)+r2(1)*xyz(1)+r2(7)*xyz(1)*two+r2(13)*three+r1(1)*xx*two+r1(4)*xx &
+&                +r1(7)*three+r1(10)*xyz(1)+r1(11)*xyz(1)*two+r0(1)*xyz(1)*xx &
+&                +r0(2)*xyz(1)+r0(3)*xyz(1)*two)
+      ctmp(2,1)=-(r3(6)+r2(2)*xyz(1)+r2(10)*xyz(2)*two+r2(13)+r1(2)*xy*two+r1(4)*yy &
+&                +r1(7)+r1(10)*xyz(1)+r0(1)*xyz(1)*yy+r0(2)*xyz(1))
+      ctmp(3,1)=-(r3(8)+r2(3)*xyz(1)+r2(11)*xyz(3)*two+r2(13)+r1(3)*xz*two+r1(4)*zz &
+&                +r1(7)+r1(10)*xyz(1)+r0(1)*xyz(1)*zz+r0(2)*xyz(1))
+      ctmp(4,1)=-(r3(4)+r2(4)*xyz(1)+r2(7)*xyz(2)+r2(10)*xyz(1)+r2(14)+r1(1)*xy+r1(2)*xx &
+&                +r1(4)*xy+r1(8)+r1(11)*xyz(2)+r0(1)*xyz(1)*xy+r0(3)*xyz(2))
+      ctmp(5,1)=-(r3(5)+r2(5)*xyz(1)+r2(7)*xyz(3)+r2(11)*xyz(1)+r2(15)+r1(1)*xz+r1(3)*xx &
+&                +r1(4)*xz+r1(9)+r1(11)*xyz(3)+r0(1)*xyz(1)*xz+r0(3)*xyz(3))
+      ctmp(6,1)=-(r3(10)+r2(6)*xyz(1)+r2(10)*xyz(3)+r2(11)*xyz(2)+r1(2)*xz+r1(3)*xy &
+&                +r1(4)*yz+r0(1)*xyz(1)*yz)
+      ctmp(1,2)=-(r3(4)+r2(1)*xyz(2)+r2(10)*xyz(1)*two+r2(14)+r1(1)*xy*two+r1(5)*xx &
+&                +r1(8)+r1(10)*xyz(2)+r0(1)*xyz(2)*xx+r0(2)*xyz(2))
+      ctmp(2,2)=-(r3(2)+r2(2)*xyz(2)+r2(8)*xyz(2)*two+r2(14)*three+r1(2)*yy*two+r1(5)*yy &
+&                +r1(8)*three+r1(10)*xyz(2)+r1(11)*xyz(2)*two+r0(1)*xyz(2)*yy &
+&                +r0(2)*xyz(2)+r0(3)*xyz(2)*two)
+      ctmp(3,2)=-(r3(9)+r2(3)*xyz(2)+r2(12)*xyz(3)*two+r2(14)+r1(3)*yz*two+r1(5)*zz &
+&                +r1(8)+r1(10)*xyz(2)+r0(1)*xyz(2)*zz+r0(2)*xyz(2))
+      ctmp(4,2)=-(r3(6)+r2(4)*xyz(2)+r2(8)*xyz(1)+r2(10)*xyz(2)+r2(13)+r1(1)*yy+r1(2)*xy &
+&                +r1(5)*xy+r1(7)+r1(11)*xyz(1)+r0(1)*xyz(2)*xy+r0(3)*xyz(1))
+      ctmp(5,2)=-(r3(10)+r2(5)*xyz(2)+r2(10)*xyz(3)+r2(12)*xyz(1)+r1(1)*yz+r1(3)*xy &
+&                +r1(5)*xz+r0(1)*xyz(2)*xz)
+      ctmp(6,2)=-(r3(7)+r2(6)*xyz(2)+r2(8)*xyz(3)+r2(12)*xyz(2)+r2(15)+r1(2)*yz+r1(3)*yy &
+&                +r1(5)*yz+r1(9)+r1(11)*xyz(3)+r0(1)*xyz(2)*yz+r0(3)*xyz(3))
+      ctmp(1,3)=-(r3(5)+r2(1)*xyz(3)+r2(11)*xyz(1)*two+r2(15)+r1(1)*xz*two+r1(6)*xx &
+&                +r1(9)+r1(10)*xyz(3)+r0(1)*xyz(3)*xx+r0(2)*xyz(3))
+      ctmp(2,3)=-(r3(7)+r2(2)*xyz(3)+r2(12)*xyz(2)*two+r2(15)+r1(2)*yz*two+r1(6)*yy &
+&                +r1(9)+r1(10)*xyz(3)+r0(1)*xyz(3)*yy+r0(2)*xyz(3))
+      ctmp(3,3)=-(r3(3)+r2(3)*xyz(3)+r2(9)*xyz(3)*two+r2(15)*three+r1(3)*zz*two+r1(6)*zz &
+&                +r1(9)*three+r1(10)*xyz(3)+r1(11)*xyz(3)*two+r0(1)*xyz(3)*zz &
+&                +r0(2)*xyz(3)+r0(3)*xyz(3)*two)
+      ctmp(4,3)=-(r3(10)+r2(4)*xyz(3)+r2(11)*xyz(2)+r2(12)*xyz(1)+r1(1)*yz+r1(2)*xz &
+&                +r1(6)*xy+r0(1)*xyz(3)*xy)
+      ctmp(5,3)=-(r3(8)+r2(5)*xyz(3)+r2(9)*xyz(1)+r2(11)*xyz(3)+r2(13)+r1(1)*zz+r1(3)*xz &
+&                +r1(6)*xz+r1(7)+r1(11)*xyz(1)+r0(1)*xyz(3)*xz+r0(3)*xyz(1))
+      ctmp(6,3)=-(r3(9)+r2(6)*xyz(3)+r2(9)*xyz(2)+r2(12)*xyz(3)+r2(14)+r1(2)*zz+r1(3)*yz &
+&                +r1(6)*yz+r1(8)+r1(11)*xyz(2)+r0(1)*xyz(3)*yz+r0(3)*xyz(2))
+!
+      if(nbfij(2) == 6) then
+        do i= 1,3
+          cint1(1,i)= ctmp(1,i)
+          cint1(2,i)= ctmp(2,i)
+          cint1(3,i)= ctmp(3,i)
+          cint1(4,i)= ctmp(4,i)*sqrt3
+          cint1(5,i)= ctmp(5,i)*sqrt3
+          cint1(6,i)= ctmp(6,i)*sqrt3
+        enddo
+      else
+        do i= 1,3
+          cint1(1,i)= ctmp(3,i)-(ctmp(1,i)+ctmp(2,i))*half
+          cint1(2,i)= ctmp(5,i)*sqrt3
+          cint1(3,i)= ctmp(6,i)*sqrt3
+          cint1(4,i)=(ctmp(1,i)-ctmp(2,i))*sqrt3h
+          cint1(5,i)= ctmp(4,i)*sqrt3
+        enddo
+      endif
+!
+      return
+end
+
+
+!---------------------------------------------------------------------------------
+  subroutine int1cdd(cint1,exfac,pijxyz,xyz,nij,coord,charge,natom,mxprsh,nbfij)
+!---------------------------------------------------------------------------------
+!
+! Calculate 1-electron Coulomb integrals of (d|Z/r|d)
+!
+      use fmtgrid, only : fgrid, threshtval
+      implicit none
+      integer,intent(in) :: nij, natom, mxprsh, nbfij(2)
+      integer :: ijprim, i, j, iatom, igrid, ii
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00, two=2.0D+00
+      real(8),parameter :: three=3.0D+00, four=4.0D+00, five=5.0D+00, six=6.0D+00
+      real(8),parameter :: seven=7.0D+00, p15=1.5D+00, p25=2.5D+00, p35=3.5D+00
+      real(8),parameter :: pi=3.141592653589793D+00, sqrt3h=8.660254037844386D-01
+      real(8),parameter :: sqrt3=1.732050807568877D+00
+      real(8),intent(in) :: exfac(5,mxprsh*mxprsh), pijxyz(3,mxprsh*mxprsh), xyz(3)
+      real(8),intent(in) :: coord(3,natom), charge(natom)
+      real(8),intent(out) :: cint1(6,6)
+      real(8) :: rc, ex12, ex21, ex2i, ex2j, c12, pcxyz(3)
+      real(8) :: tval, tval1, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
+      real(8) :: ft(0:4), fpc0, fpc1(4), fpc2(10)
+      real(8) :: fpc3(16), fpc4(15), pxx, pyy, pzz, pxy, pxz, pyz
+      real(8) :: expt, tinv, r0(5), r1(16), r2(31), r3(26), r4(15), xx, yy, zz, xy, xz, yz
+      real(8) :: ctmp(6,6), ctmp2(6,6)
+!
+      do i= 1,5
+        r0(i) = zero
+      enddo
+      do i= 1,16
+        r1(i) = zero
+      enddo
+      do i= 1,31
+        r2(i) = zero
+      enddo
+      do i= 1,26
+        r3(i) = zero
+      enddo
+      do i= 1,15
+        r4(i) = zero
+      enddo
+      xx= xyz(1)*xyz(1)
+      yy= xyz(2)*xyz(2)
+      zz= xyz(3)*xyz(3)
+      xy= xyz(1)*xyz(2)
+      xz= xyz(1)*xyz(3)
+      yz= xyz(2)*xyz(3)
+!
+      do ijprim= 1,nij
+        ex12= exfac(1,ijprim)
+        ex21= exfac(2,ijprim)
+        ex2i= exfac(3,ijprim)
+        ex2j= exfac(4,ijprim)
+        c12 = exfac(5,ijprim)
+        fpc0= zero
+        do i= 1,4
+          fpc1(i)= zero
+        enddo
+        do i= 1,10
+          fpc2(i)= zero
+        enddo
+        do i= 1,16
+          fpc3(i)= zero
+        enddo
+        do i= 1,15
+          fpc4(i)= zero
+        enddo
+!
+        do iatom= 1,natom
+          do i= 1,3
+            pcxyz(i)= pijxyz(i,ijprim)-coord(i,iatom)
+          enddo
+          pxx= pcxyz(1)*pcxyz(1)
+          pyy= pcxyz(2)*pcxyz(2)
+          pzz= pcxyz(3)*pcxyz(3)
+          pxy= pcxyz(1)*pcxyz(2)
+          pxz= pcxyz(1)*pcxyz(3)
+          pyz= pcxyz(2)*pcxyz(3)
+          rc= pxx+pyy+pzz
+          tval= ex12*rc
+          if(tval >= threshtval) then
+            tinv = one/tval
+            ft(0)= half*sqrt(pi*tinv)
+            ft(1)= half*tinv*ft(0)
+            ft(2)= p15 *tinv*ft(1)
+            ft(3)= p25 *tinv*ft(2)
+            ft(4)= p35 *tinv*ft(3)
+          else
+            igrid= int(tval)
+            tval2= tval *tval
+            tval3= tval2*tval
+            tval4= tval2*tval2
+            tval5= tval2*tval3
+            tval6= tval3*tval3
+            tval7= tval4*tval3
+            tval8= tval4*tval4
+            tval9= tval4*tval5
+            tval10=tval5*tval5
+            do ii= 0,4
+              ft(ii)= fgrid(0,ii,igrid)      +fgrid( 1,ii,igrid)*tval  +fgrid( 2,ii,igrid)*tval2 &
+&                    +fgrid(3,ii,igrid)*tval3+fgrid( 4,ii,igrid)*tval4 +fgrid( 5,ii,igrid)*tval5 &
+&                    +fgrid(6,ii,igrid)*tval6+fgrid( 7,ii,igrid)*tval7 +fgrid( 8,ii,igrid)*tval8 &
+&                    +fgrid(9,ii,igrid)*tval9+fgrid(10,ii,igrid)*tval10
+            enddo
+          endif
+          do i= 0,4
+            ft(i)= ft(i)*charge(iatom) 
+          enddo
+          fpc0= fpc0+ft(0)
+          do i= 1,3
+            fpc1(i)= fpc1(i)+ft(1)*pcxyz(i) 
+          enddo
+          fpc1(4)= fpc1(4)+ft(1)
+          fpc2(1) = fpc2(1) +ft(2)*pxx
+          fpc2(2) = fpc2(2) +ft(2)*pyy
+          fpc2(3) = fpc2(3) +ft(2)*pzz
+          fpc2(4) = fpc2(4) +ft(2)*pxy
+          fpc2(5) = fpc2(5) +ft(2)*pxz
+          fpc2(6) = fpc2(6) +ft(2)*pyz
+          fpc2(7) = fpc2(7) +ft(2)*pcxyz(1)
+          fpc2(8) = fpc2(8) +ft(2)*pcxyz(2)
+          fpc2(9) = fpc2(9) +ft(2)*pcxyz(3)
+          fpc2(10)= fpc2(10)+ft(2)
+          fpc3(1) = fpc3(1) +ft(3)*pxx*pcxyz(1)
+          fpc3(2) = fpc3(2) +ft(3)*pyy*pcxyz(2)
+          fpc3(3) = fpc3(3) +ft(3)*pzz*pcxyz(3)
+          fpc3(4) = fpc3(4) +ft(3)*pxx*pcxyz(2)
+          fpc3(5) = fpc3(5) +ft(3)*pxx*pcxyz(3)
+          fpc3(6) = fpc3(6) +ft(3)*pxy*pcxyz(2)
+          fpc3(7) = fpc3(7) +ft(3)*pyy*pcxyz(3)
+          fpc3(8) = fpc3(8) +ft(3)*pxz*pcxyz(3)
+          fpc3(9) = fpc3(9) +ft(3)*pyz*pcxyz(3)
+          fpc3(10)= fpc3(10)+ft(3)*pxy*pcxyz(3)
+          fpc3(11)= fpc3(11)+ft(3)*pxx
+          fpc3(12)= fpc3(12)+ft(3)*pyy
+          fpc3(13)= fpc3(13)+ft(3)*pzz
+          fpc3(14)= fpc3(14)+ft(3)*pxy
+          fpc3(15)= fpc3(15)+ft(3)*pxz
+          fpc3(16)= fpc3(16)+ft(3)*pyz
+          fpc4(1) = fpc4(1) +ft(4)*pxx*pxx
+          fpc4(2) = fpc4(2) +ft(4)*pyy*pyy
+          fpc4(3) = fpc4(3) +ft(4)*pzz*pzz
+          fpc4(4) = fpc4(4) +ft(4)*pxx*pxy
+          fpc4(5) = fpc4(5) +ft(4)*pxx*pxz
+          fpc4(6) = fpc4(6) +ft(4)*pxy*pyy
+          fpc4(7) = fpc4(7) +ft(4)*pyy*pyz
+          fpc4(8) = fpc4(8) +ft(4)*pxz*pzz
+          fpc4(9) = fpc4(9) +ft(4)*pyz*pzz
+          fpc4(10)= fpc4(10)+ft(4)*pxx*pyy
+          fpc4(11)= fpc4(11)+ft(4)*pxx*pzz
+          fpc4(12)= fpc4(12)+ft(4)*pyy*pzz
+          fpc4(13)= fpc4(13)+ft(4)*pxx*pyz
+          fpc4(14)= fpc4(14)+ft(4)*pxy*pyz
+          fpc4(15)= fpc4(15)+ft(4)*pxy*pzz
+        enddo
+!
+        fpc0= fpc0*c12
+        r0(1)= r0(1)+ex2i*ex2i*ex2j*ex2j*fpc0
+        r0(2)= r0(2)+half*ex2j*ex2j*ex21*fpc0
+        r0(3)= r0(3)-half*ex2i*ex2j*ex21*fpc0
+        r0(4)= r0(4)+half*ex2i*ex2i*ex21*fpc0
+        r0(5)= r0(5)+half*half*ex21*ex21*fpc0
+        do i= 1,4
+          fpc1(i)= fpc1(i)*c12
+        enddo
+        do i= 1,3
+          r1(i  )= r1(i  )-ex2i*ex2j*ex2j*fpc1(i)
+          r1(i+3)= r1(i+3)+ex2i*ex2i*ex2j*fpc1(i)
+          r1(i+6)= r1(i+6)+half*ex2j*ex21*fpc1(i)
+          r1(i+9)= r1(i+9)-half*ex2i*ex21*fpc1(i)
+        enddo
+        r1(13)= r1(13)-half*ex2j*ex2j*ex21*fpc1(4)
+        r1(14)= r1(14)+half*ex2i*ex2j*ex21*fpc1(4)
+        r1(15)= r1(15)-half*ex2i*ex2i*ex21*fpc1(4)
+        r1(16)= r1(16)-half*half*ex21*ex21*fpc1(4)
+        do i= 1,10
+          fpc2(i)= fpc2(i)*c12
+        enddo
+        do i= 1,6
+          r2(i   )= r2(i   )+ex2j*ex2j*fpc2(i)
+          r2(i+ 6)= r2(i+ 6)-ex2i*ex2j*fpc2(i)
+          r2(i+12)= r2(i+12)+ex2i*ex2i*fpc2(i)
+          r2(i+18)= r2(i+18)+half*ex21*fpc2(i)
+        enddo
+        do i= 1,3
+          r2(i+24)= r2(i+24)-half*ex2j*ex21*fpc2(i+6)
+          r2(i+27)= r2(i+27)+half*ex2i*ex21*fpc2(i+6)
+        enddo
+        r2(31)= r2(31)+half*half*ex21*ex21*fpc2(10)
+        do i= 1,16
+          fpc3(i)= fpc3(i)*c12
+        enddo
+        do i= 1,10
+          r3(i   )= r3(i   )+ex2j*fpc3(i)
+          r3(i+10)= r3(i+10)-ex2i*fpc3(i)
+        enddo
+        do i= 1,6
+          r3(i+20)= r3(i+20)-half*ex21*fpc3(i+10)
+        enddo
+        do i= 1,15
+          r4(i)= r4(i)+fpc4(i)*c12
+        enddo
+      enddo
+!
+      ctmp(1,1)=-(r4(1)+r3(1)*xyz(1)*two+r3(11)*xyz(1)*two+r3(21)*six+r2(1)*xx &
+&                +r2(7)*xx*four+r2(13)*xx+r2(19)*six+r2(25)*xyz(1)*six+r2(28)*xyz(1)*six &
+&                +r2(31)*three+r1(1)*xx*xyz(1)*two+r1(4)*xx*xyz(1)*two+r1(7)*xyz(1)*six &
+&                +r1(10)*xyz(1)*six+r1(13)*xx+r1(14)*xx*four+r1(15)*xx+r1(16)*six &
+&                +r0(1)*xx*xx+r0(2)*xx+r0(3)*xx*four+r0(4)*xx+r0(5)*three)
+      ctmp(2,1)=-(r4(10)+r3(6)*xyz(1)*two+r3(14)*xyz(2)*two+r3(21)+r3(22)+r2(2)*xx &
+&                +r2(10)*xy*four+r2(13)*yy+r2(19)+r2(20)+r2(25)*xyz(1)*two &
+&                +r2(29)*xyz(2)*two+r2(31)+r1(2)*xx*xyz(2)*two+r1(4)*yy*xyz(1)*two &
+&                +r1(7)*xyz(1)*two+r1(11)*xyz(2)*two+r1(13)*xx+r1(15)*yy+r1(16)*two &
+&                +r0(1)*xx*yy+r0(2)*xx+r0(4)*yy+r0(5))
+      ctmp(3,1)=-(r4(11)+r3(8)*xyz(1)*two+r3(15)*xyz(3)*two+r3(21)+r3(23)+r2(3)*xx &
+&                +r2(11)*xz*four+r2(13)*zz+r2(19)+r2(21)+r2(25)*xyz(1)*two &
+&                +r2(30)*xyz(3)*two+r2(31)+r1(3)*xx*xyz(3)*two+r1(4)*zz*xyz(1)*two &
+&                +r1(7)*xyz(1)*two+r1(12)*xyz(3)*two+r1(13)*xx+r1(15)*zz+r1(16)*two &
+&                +r0(1)*xx*zz+r0(2)*xx+r0(4)*zz+r0(5))
+      ctmp(4,1)=-(r4(4)+r3(4)*xyz(1)*two+r3(11)*xyz(2)+r3(14)*xyz(1)+r3(24)*three &
+&                +r2(4)*xx+r2(7)*xy*two+r2(10)*xx*two+r2(13)*xy+r2(22)*three &
+&                +r2(26)*xyz(1)*two+r2(28)*xyz(2)*three+r2(29)*xyz(1)+r1(1)*xx*xyz(2) &
+&                +r1(2)*xx*xyz(1)+r1(4)*xy*xyz(1)*two+r1(8)*xyz(1)*two+r1(10)*xyz(2)*three &
+&                +r1(11)*xyz(1)+r1(14)*xy*two+r1(15)*xy+r0(1)*xx*xy+r0(3)*xy*two+r0(4)*xy)
+      ctmp(5,1)=-(r4(5)+r3(5)*xyz(1)*two+r3(11)*xyz(3)+r3(15)*xyz(1)+r3(25)*three+r2(5)*xx &
+&                +r2(7)*xz*two+r2(11)*xx*two+r2(13)*xz+r2(23)*three+r2(27)*xyz(1)*two &
+&                +r2(28)*xyz(3)*three+r2(30)*xyz(1)+r1(1)*xx*xyz(3)+r1(3)*xx*xyz(1) &
+&                +r1(4)*xz*xyz(1)*two+r1(9)*xyz(1)*two+r1(10)*xyz(3)*three+r1(12)*xyz(1) &
+&                +r1(14)*xz*two+r1(15)*xz+r0(1)*xx*xz+r0(3)*xz*two+r0(4)*xz)
+      ctmp(6,1)=-(r4(13)+r3(10)*xyz(1)*two+r3(14)*xyz(3)+r3(15)*xyz(2)+r3(26)+r2(6)*xx &
+&                +r2(10)*xz*two+r2(11)*xy*two+r2(13)*yz+r2(24)+r2(29)*xyz(3)+r2(30)*xyz(2) &
+&                +r1(2)*xx*xyz(3)+r1(3)*xx*xyz(2)+r1(4)*yz*xyz(1)*two+r1(11)*xyz(3) &
+&                +r1(12)*xyz(2)+r1(15)*yz+r0(1)*xx*yz+r0(4)*yz)
+      ctmp(1,2)=-(r4(10)+r3(4)*xyz(2)*two+r3(16)*xyz(1)*two+r3(21)+r3(22)+r2(1)*yy &
+&                +r2(10)*xy*four+r2(14)*xx+r2(19)+r2(20)+r2(26)*xyz(2)*two &
+&                +r2(28)*xyz(1)*two+r2(31)+r1(1)*yy*xyz(1)*two+r1(5)*xx*xyz(2)*two &
+&                +r1(8)*xyz(2)*two+r1(10)*xyz(1)*two+r1(13)*yy+r1(15)*xx+r1(16)*two &
+&                +r0(1)*yy*xx+r0(2)*yy+r0(4)*xx+r0(5))
+      ctmp(2,2)=-(r4(2)+r3(2)*xyz(2)*two+r3(12)*xyz(2)*two+r3(22)*six+r2(2)*yy &
+&                +r2(8)*yy*four+r2(14)*yy+r2(20)*six+r2(26)*xyz(2)*six+r2(29)*xyz(2)*six &
+&                +r2(31)*three+r1(2)*yy*xyz(2)*two+r1(5)*yy*xyz(2)*two+r1(8)*xyz(2)*six &
+&                +r1(11)*xyz(2)*six+r1(13)*yy+r1(14)*yy*four+r1(15)*yy+r1(16)*six &
+&                +r0(1)*yy*yy+r0(2)*yy+r0(3)*yy*four+r0(4)*yy+r0(5)*three)
+      ctmp(3,2)=-(r4(12)+r3(9)*xyz(2)*two+r3(17)*xyz(3)*two+r3(22)+r3(23)+r2(3)*yy &
+&                +r2(12)*yz*four+r2(14)*zz+r2(20)+r2(21)+r2(26)*xyz(2)*two &
+&                +r2(30)*xyz(3)*two+r2(31)+r1(3)*yy*xyz(3)*two+r1(5)*zz*xyz(2)*two &
+&                +r1(8)*xyz(2)*two+r1(12)*xyz(3)*two+r1(13)*yy+r1(15)*zz+r1(16)*two &
+&                +r0(1)*yy*zz+r0(2)*yy+r0(4)*zz+r0(5))
+      ctmp(4,2)=-(r4(6)+r3(6)*xyz(2)*two+r3(12)*xyz(1)+r3(16)*xyz(2)+r3(24)*three+r2(4)*yy &
+&                +r2(8)*xy*two+r2(10)*yy*two+r2(14)*xy+r2(22)*three+r2(25)*xyz(2)*two &
+&                +r2(28)*xyz(2)+r2(29)*xyz(1)*three+r1(1)*yy*xyz(2)+r1(2)*yy*xyz(1) &
+&                +r1(5)*xy*xyz(2)*two+r1(7)*xyz(2)*two+r1(10)*xyz(2)+r1(11)*xyz(1)*three &
+&                +r1(14)*xy*two+r1(15)*xy+r0(1)*yy*xy+r0(3)*xy*two+r0(4)*xy)
+      ctmp(5,2)=-(r4(14)+r3(10)*xyz(2)*two+r3(16)*xyz(3)+r3(17)*xyz(1)+r3(25)+r2(5)*yy &
+&                +r2(10)*yz*two+r2(12)*xy*two+r2(14)*xz+r2(23)+r2(28)*xyz(3)+r2(30)*xyz(1) &
+&                +r1(1)*yy*xyz(3)+r1(3)*yy*xyz(1)+r1(5)*xz*xyz(2)*two+r1(10)*xyz(3) &
+&                +r1(12)*xyz(1)+r1(15)*xz+r0(1)*yy*xz+r0(4)*xz)
+      ctmp(6,2)=-(r4(7)+r3(7)*xyz(2)*two+r3(12)*xyz(3)+r3(17)*xyz(2)+r3(26)*three+r2(6)*yy &
+&                +r2(8)*yz*two+r2(12)*yy*two+r2(14)*yz+r2(24)*three+r2(27)*xyz(2)*two &
+&                +r2(29)*xyz(3)*three+r2(30)*xyz(2)+r1(2)*yy*xyz(3)+r1(3)*yy*xyz(2) &
+&                +r1(5)*yz*xyz(2)*two+r1(9)*xyz(2)*two+r1(11)*xyz(3)*three+r1(12)*xyz(2) &
+&                +r1(14)*yz*two+r1(15)*yz+r0(1)*yy*yz+r0(3)*yz*two+r0(4)*yz)
+      ctmp(1,3)=-(r4(11)+r3(5)*xyz(3)*two+r3(18)*xyz(1)*two+r3(21)+r3(23)+r2(1)*zz &
+&                +r2(11)*xz*four+r2(15)*xx+r2(19)+r2(21)+r2(27)*xyz(3)*two &
+&                +r2(28)*xyz(1)*two+r2(31)+r1(1)*zz*xyz(1)*two+r1(6)*xx*xyz(3)*two &
+&                +r1(9)*xyz(3)*two+r1(10)*xyz(1)*two+r1(13)*zz+r1(15)*xx+r1(16)*two &
+&                +r0(1)*zz*xx+r0(2)*zz+r0(4)*xx+r0(5))
+      ctmp(2,3)=-(r4(12)+r3(7)*xyz(3)*two+r3(19)*xyz(2)*two+r3(22)+r3(23)+r2(2)*zz &
+&                +r2(12)*yz*four+r2(15)*yy+r2(20)+r2(21)+r2(27)*xyz(3)*two &
+&                +r2(29)*xyz(2)*two+r2(31)+r1(2)*zz*xyz(2)*two+r1(6)*yy*xyz(3)*two &
+&                +r1(9)*xyz(3)*two+r1(11)*xyz(2)*two+r1(13)*zz+r1(15)*yy+r1(16)*two &
+&                +r0(1)*zz*yy+r0(2)*zz+r0(4)*yy+r0(5))
+      ctmp(3,3)=-(r4(3)+r3(3)*xyz(3)*two+r3(13)*xyz(3)*two+r3(23)*six+r2(3)*zz &
+&                +r2(9)*zz*four+r2(15)*zz+r2(21)*six+r2(27)*xyz(3)*six+r2(30)*xyz(3)*six &
+&                +r2(31)*three+r1(3)*zz*xyz(3)*two+r1(6)*zz*xyz(3)*two+r1(9)*xyz(3)*six &
+&                +r1(12)*xyz(3)*six+r1(13)*zz+r1(14)*zz*four+r1(15)*zz+r1(16)*six &
+&                +r0(1)*zz*zz+r0(2)*zz+r0(3)*zz*four+r0(4)*zz+r0(5)*three)
+      ctmp(4,3)=-(r4(15)+r3(10)*xyz(3)*two+r3(18)*xyz(2)+r3(19)*xyz(1)+r3(24)+r2(4)*zz &
+&                +r2(11)*yz*two+r2(12)*xz*two+r2(15)*xy+r2(22)+r2(28)*xyz(2) &
+&                +r2(29)*xyz(1)+r1(1)*zz*xyz(2)+r1(2)*zz*xyz(1)+r1(6)*xy*xyz(3)*two &
+&                +r1(10)*xyz(2)+r1(11)*xyz(1)+r1(15)*xy+r0(1)*zz*xy+r0(4)*xy)
+      ctmp(5,3)=-(r4(8)+r3(8)*xyz(3)*two+r3(13)*xyz(1)+r3(18)*xyz(3)+r3(25)*three+r2(5)*zz &
+&                +r2(9)*xz*two+r2(11)*zz*two+r2(15)*xz+r2(23)*three+r2(25)*xyz(3)*two &
+&                +r2(28)*xyz(3)+r2(30)*xyz(1)*three+r1(1)*zz*xyz(3)+r1(3)*zz*xyz(1) &
+&                +r1(6)*xz*xyz(3)*two+r1(7)*xyz(3)*two+r1(10)*xyz(3)+r1(12)*xyz(1)*three &
+&                +r1(14)*xz*two+r1(15)*xz+r0(1)*zz*xz+r0(3)*xz*two+r0(4)*xz)
+      ctmp(6,3)=-(r4(9)+r3(9)*xyz(3)*two+r3(13)*xyz(2)+r3(19)*xyz(3)+r3(26)*three+r2(6)*zz &
+&                +r2(9)*yz*two+r2(12)*zz*two+r2(15)*yz+r2(24)*three+r2(26)*xyz(3)*two &
+&                +r2(29)*xyz(3)+r2(30)*xyz(2)*three+r1(2)*zz*xyz(3)+r1(3)*zz*xyz(2) &
+&                +r1(6)*yz*xyz(3)*two+r1(8)*xyz(3)*two+r1(11)*xyz(3)+r1(12)*xyz(2)*three &
+&                +r1(14)*yz*two+r1(15)*yz+r0(1)*zz*yz+r0(3)*yz*two+r0(4)*yz)
+      ctmp(1,4)=-(r4(4)+r3(1)*xyz(2)+r3(4)*xyz(1)+r3(14)*xyz(1)*two+r3(24)*three+r2(1)*xy &
+&                +r2(7)*xy*two+r2(10)*xx*two+r2(16)*xx+r2(22)*three+r2(25)*xyz(2)*three &
+&                +r2(26)*xyz(1)+r2(29)*xyz(1)*two+r1(1)*xy*xyz(1)*two+r1(4)*xx*xyz(2) &
+&                +r1(5)*xx*xyz(1)+r1(7)*xyz(2)*three+r1(8)*xyz(1)+r1(11)*xyz(1)*two &
+&                +r1(13)*xy+r1(14)*xy*two+r0(1)*xy*xx+r0(2)*xy+r0(3)*xy*two)
+      ctmp(2,4)=-(r4(6)+r3(2)*xyz(1)+r3(6)*xyz(2)+r3(16)*xyz(2)*two+r3(24)*three+r2(2)*xy &
+&                +r2(8)*xy*two+r2(10)*yy*two+r2(16)*yy+r2(22)*three+r2(25)*xyz(2) &
+&                +r2(26)*xyz(1)*three+r2(28)*xyz(2)*two+r1(2)*xy*xyz(2)*two+r1(4)*yy*xyz(2) &
+&                +r1(5)*yy*xyz(1)+r1(7)*xyz(2)+r1(8)*xyz(1)*three+r1(10)*xyz(2)*two &
+&                +r1(13)*xy+r1(14)*xy*two+r0(1)*xy*yy+r0(2)*xy+r0(3)*xy*two)
+      ctmp(3,4)=-(r4(15)+r3(8)*xyz(2)+r3(9)*xyz(1)+r3(20)*xyz(3)*two+r3(24)+r2(3)*xy &
+&                +r2(11)*yz*two+r2(12)*xz*two+r2(16)*zz+r2(22)+r2(25)*xyz(2)+r2(26)*xyz(1) &
+&                +r1(3)*xy*xyz(3)*two+r1(4)*zz*xyz(2)+r1(5)*zz*xyz(1)+r1(7)*xyz(2) &
+&                +r1(8)*xyz(1)+r1(13)*xy+r0(1)*xy*zz+r0(2)*xy)
+      ctmp(4,4)=-(r4(10)+r3(4)*xyz(2)+r3(6)*xyz(1)+r3(14)*xyz(2)+r3(16)*xyz(1)+r3(21) &
+&                +r3(22)+r2(4)*xy+r2(7)*yy+r2(8)*xx+r2(10)*xy+r2(10)*xy+r2(16)*xy+r2(19) &
+&                +r2(20)+r2(25)*xyz(1)+r2(26)*xyz(2)+r2(28)*xyz(1)+r2(29)*xyz(2)+r2(31) &
+&                +r1(1)*xy*xyz(2)+r1(2)*xy*xyz(1)+r1(4)*xy*xyz(2)+r1(5)*xy*xyz(1) &
+&                +r1(7)*xyz(1)+r1(8)*xyz(2)+r1(10)*xyz(1)+r1(11)*xyz(2)+r1(14)*xx+r1(14)*yy &
+&               +r1(16)*two+r0(1)*xy*xy+r0(3)*xx+r0(3)*yy+r0(5))
+      ctmp(5,4)=-(r4(13)+r3(5)*xyz(2)+r3(10)*xyz(1)+r3(14)*xyz(3)+r3(20)*xyz(1)+r3(26) &
+&                +r2(5)*xy+r2(7)*yz+r2(10)*xz+r2(11)*xy+r2(12)*xx+r2(16)*xz+r2(24) &
+&                +r2(27)*xyz(2)+r2(29)*xyz(3)+r1(1)*xy*xyz(3)+r1(3)*xy*xyz(1) &
+&                +r1(4)*xz*xyz(2)+r1(5)*xz*xyz(1)+r1(9)*xyz(2)+r1(11)*xyz(3)+r1(14)*yz &
+&                +r0(1)*xy*xz+r0(3)*yz)
+      ctmp(6,4)=-(r4(14)+r3(7)*xyz(1)+r3(10)*xyz(2)+r3(16)*xyz(3)+r3(20)*xyz(2)+r3(25) &
+&                +r2(6)*xy+r2(8)*xz+r2(10)*yz+r2(11)*yy+r2(12)*xy+r2(16)*yz+r2(23) &
+&                +r2(27)*xyz(1)+r2(28)*xyz(3)+r1(2)*xy*xyz(3)+r1(3)*xy*xyz(2) &
+&                +r1(4)*yz*xyz(2)+r1(5)*yz*xyz(1)+r1(9)*xyz(1)+r1(10)*xyz(3)+r1(14)*xz &
+&                +r0(1)*xy*yz+r0(3)*xz)
+      ctmp(1,5)=-(r4(5)+r3(1)*xyz(3)+r3(5)*xyz(1)+r3(15)*xyz(1)*two+r3(25)*three+r2(1)*xz &
+&                +r2(7)*xz*two+r2(11)*xx*two+r2(17)*xx+r2(23)*three+r2(25)*xyz(3)*three &
+&                +r2(27)*xyz(1)+r2(30)*xyz(1)*two+r1(1)*xz*xyz(1)*two+r1(4)*xx*xyz(3) &
+&                +r1(6)*xx*xyz(1)+r1(7)*xyz(3)*three+r1(9)*xyz(1)+r1(12)*xyz(1)*two &
+&                +r1(13)*xz+r1(14)*xz*two+r0(1)*xz*xx+r0(2)*xz+r0(3)*xz*two)
+      ctmp(2,5)=-(r4(14)+r3(6)*xyz(3)+r3(7)*xyz(1)+r3(20)*xyz(2)*two+r3(25)+r2(2)*xz &
+&                +r2(10)*yz*two+r2(12)*xy*two+r2(17)*yy+r2(23)+r2(25)*xyz(3)+r2(27)*xyz(1) &
+&                +r1(2)*xz*xyz(2)*two+r1(4)*yy*xyz(3)+r1(6)*yy*xyz(1)+r1(7)*xyz(3) &
+&                +r1(9)*xyz(1)+r1(13)*xz+r0(1)*xz*yy+r0(2)*xz)
+      ctmp(3,5)=-(r4(8)+r3(3)*xyz(1)+r3(8)*xyz(3)+r3(18)*xyz(3)*two+r3(25)*three+r2(3)*xz &
+&                +r2(9)*xz*two+r2(11)*zz*two+r2(17)*zz+r2(23)*three+r2(25)*xyz(3) &
+&                +r2(27)*xyz(1)*three+r2(28)*xyz(3)*two+r1(3)*xz*xyz(3)*two+r1(4)*zz*xyz(3) &
+&                +r1(6)*zz*xyz(1)+r1(7)*xyz(3)+r1(9)*xyz(1)*three+r1(10)*xyz(3)*two &
+&                +r1(13)*xz+r1(14)*xz*two+r0(1)*xz*zz+r0(2)*xz+r0(3)*xz*two)
+      ctmp(4,5)=-(r4(13)+r3(4)*xyz(3)+r3(10)*xyz(1)+r3(15)*xyz(2)+r3(20)*xyz(1)+r3(26) &
+&                +r2(4)*xz+r2(7)*yz+r2(10)*xz+r2(11)*xy+r2(12)*xx+r2(17)*xy+r2(24) &
+&                +r2(26)*xyz(3)+r2(30)*xyz(2)+r1(1)*xz*xyz(2)+r1(2)*xz*xyz(1) &
+&                +r1(4)*xy*xyz(3)+r1(6)*xy*xyz(1)+r1(8)*xyz(3)+r1(12)*xyz(2)+r1(14)*yz &
+&                +r0(1)*xz*xy+r0(3)*yz)
+      ctmp(5,5)=-(r4(11)+r3(5)*xyz(3)+r3(8)*xyz(1)+r3(15)*xyz(3)+r3(18)*xyz(1)+r3(21) &
+&                +r3(23)+r2(5)*xz+r2(7)*zz+r2(9)*xx+r2(11)*xz+r2(11)*xz+r2(17)*xz+r2(19) &
+&                +r2(21)+r2(25)*xyz(1)+r2(27)*xyz(3)+r2(28)*xyz(1)+r2(30)*xyz(3)+r2(31) &
+&                +r1(1)*xz*xyz(3)+r1(3)*xz*xyz(1)+r1(4)*xz*xyz(3)+r1(6)*xz*xyz(1) &
+&                +r1(7)*xyz(1)+r1(9)*xyz(3)+r1(10)*xyz(1)+r1(12)*xyz(3)+r1(14)*xx+r1(14)*zz &
+&                +r1(16)*two+r0(1)*xz*xz+r0(3)*xx+r0(3)*zz+r0(5))
+      ctmp(6,5)=-(r4(15)+r3(9)*xyz(1)+r3(10)*xyz(3)+r3(18)*xyz(2)+r3(20)*xyz(3)+r3(24) &
+&                +r2(6)*xz+r2(9)*xy+r2(10)*zz+r2(11)*yz+r2(12)*xz+r2(17)*yz+r2(22) &
+&                +r2(26)*xyz(1)+r2(28)*xyz(2)+r1(2)*xz*xyz(3)+r1(3)*xz*xyz(2)+r1(4)*yz*xyz(3) &
+&                +r1(6)*yz*xyz(1)+r1(8)*xyz(1)+r1(10)*xyz(2)+r1(14)*xy+r0(1)*xz*yz+r0(3)*xy)
+      ctmp(1,6)=-(r4(13)+r3(4)*xyz(3)+r3(5)*xyz(2)+r3(20)*xyz(1)*two+r3(26)+r2(1)*yz &
+&                +r2(10)*xz*two+r2(11)*xy*two+r2(18)*xx+r2(24)+r2(26)*xyz(3)+r2(27)*xyz(2) &
+&                +r1(1)*yz*xyz(1)*two+r1(5)*xx*xyz(3)+r1(6)*xx*xyz(2)+r1(8)*xyz(3) &
+&                +r1(9)*xyz(2)+r1(13)*yz+r0(1)*yz*xx+r0(2)*yz)
+      ctmp(2,6)=-(r4(7)+r3(2)*xyz(3)+r3(7)*xyz(2)+r3(17)*xyz(2)*two+r3(26)*three+r2(2)*yz &
+&               +r2(8)*yz*two+r2(12)*yy*two+r2(18)*yy+r2(24)*three+r2(26)*xyz(3)*three &
+&               +r2(27)*xyz(2)+r2(30)*xyz(2)*two+r1(2)*yz*xyz(2)*two+r1(5)*yy*xyz(3) &
+&               +r1(6)*yy*xyz(2)+r1(8)*xyz(3)*three+r1(9)*xyz(2)+r1(12)*xyz(2)*two &
+&               +r1(13)*yz+r1(14)*yz*two+r0(1)*yz*yy+r0(2)*yz+r0(3)*yz*two)
+      ctmp(3,6)=-(r4(9)+r3(3)*xyz(2)+r3(9)*xyz(3)+r3(19)*xyz(3)*two+r3(26)*three+r2(3)*yz &
+&                +r2(9)*yz*two+r2(12)*zz*two+r2(18)*zz+r2(24)*three+r2(26)*xyz(3) &
+&                +r2(27)*xyz(2)*three+r2(29)*xyz(3)*two+r1(3)*yz*xyz(3)*two+r1(5)*zz*xyz(3) &
+&                +r1(6)*zz*xyz(2)+r1(8)*xyz(3)+r1(9)*xyz(2)*three+r1(11)*xyz(3)*two &
+&                +r1(13)*yz+r1(14)*yz*two+r0(1)*yz*zz+r0(2)*yz+r0(3)*yz*two)
+      ctmp(4,6)=-(r4(14)+r3(6)*xyz(3)+r3(10)*xyz(2)+r3(17)*xyz(1)+r3(20)*xyz(2)+r3(25) &
+&                +r2(4)*yz+r2(8)*xz+r2(10)*yz+r2(11)*yy+r2(12)*xy+r2(18)*xy+r2(23) &
+&                +r2(25)*xyz(3)+r2(30)*xyz(1)+r1(1)*yz*xyz(2)+r1(2)*yz*xyz(1)+r1(5)*xy*xyz(3) &
+&                +r1(6)*xy*xyz(2)+r1(7)*xyz(3)+r1(12)*xyz(1)+r1(14)*xz+r0(1)*yz*xy+r0(3)*xz)
+      ctmp(5,6)=-(r4(15)+r3(8)*xyz(2)+r3(10)*xyz(3)+r3(19)*xyz(1)+r3(20)*xyz(3)+r3(24) &
+&                +r2(5)*yz+r2(9)*xy+r2(10)*zz+r2(11)*yz+r2(12)*xz+r2(18)*xz+r2(22) &
+&                +r2(25)*xyz(2)+r2(29)*xyz(1)+r1(1)*yz*xyz(3)+r1(3)*yz*xyz(1)+r1(5)*xz*xyz(3) &
+&                +r1(6)*xz*xyz(2)+r1(7)*xyz(2)+r1(11)*xyz(1)+r1(14)*xy+r0(1)*yz*xz+r0(3)*xy)
+      ctmp(6,6)=-(r4(12)+r3(7)*xyz(3)+r3(9)*xyz(2)+r3(17)*xyz(3)+r3(19)*xyz(2)+r3(22) &
+&                +r3(23)+r2(6)*yz+r2(8)*zz+r2(9)*yy+r2(12)*yz+r2(12)*yz+r2(18)*yz+r2(20) &
+&                +r2(21)+r2(26)*xyz(2)+r2(27)*xyz(3)+r2(29)*xyz(2)+r2(30)*xyz(3)+r2(31) &
+&                +r1(2)*yz*xyz(3)+r1(3)*yz*xyz(2)+r1(5)*yz*xyz(3)+r1(6)*yz*xyz(2) &
+&                +r1(8)*xyz(2)+r1(9)*xyz(3)+r1(11)*xyz(2)+r1(12)*xyz(3)+r1(14)*yy+r1(14)*zz &
+&                +r1(16)*two+r0(1)*yz*yz+r0(3)*yy+r0(3)*zz+r0(5))
+!
+      if(nbfij(1) == 6) then
+        do j= 1,6
+          ctmp2(j,1)= ctmp(j,1)
+          ctmp2(j,2)= ctmp(j,2)
+          ctmp2(j,3)= ctmp(j,3)
+          ctmp2(j,4)= ctmp(j,4)*sqrt3
+          ctmp2(j,5)= ctmp(j,5)*sqrt3
+          ctmp2(j,6)= ctmp(j,6)*sqrt3
+        enddo
+      else
+        do j= 1,6
+          ctmp2(j,1)= ctmp(j,3)-(ctmp(j,1)+ctmp(j,2))*half
+          ctmp2(j,2)= ctmp(j,5)*sqrt3
+          ctmp2(j,3)= ctmp(j,6)*sqrt3
+          ctmp2(j,4)=(ctmp(j,1)-ctmp(j,2))*sqrt3h
+          ctmp2(j,5)= ctmp(j,4)*sqrt3
+        enddo
+      endif
+      if(nbfij(2) == 6) then
+        do i= 1,nbfij(1)
+          cint1(1,i)= ctmp2(1,i)
+          cint1(2,i)= ctmp2(2,i)
+          cint1(3,i)= ctmp2(3,i)
+          cint1(4,i)= ctmp2(4,i)*sqrt3
+          cint1(5,i)= ctmp2(5,i)*sqrt3
+          cint1(6,i)= ctmp2(6,i)*sqrt3
+        enddo
+      else
+        do i= 1,nbfij(1)
+          cint1(1,i)= ctmp2(3,i)-(ctmp2(1,i)+ctmp2(2,i))*half
+          cint1(2,i)= ctmp2(5,i)*sqrt3
+          cint1(3,i)= ctmp2(6,i)*sqrt3
+          cint1(4,i)=(ctmp2(1,i)-ctmp2(2,i))*sqrt3h
+          cint1(5,i)= ctmp2(4,i)*sqrt3
+        enddo
+      endif
+!
+      return
+end
