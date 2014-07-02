@@ -1,72 +1,63 @@
-!-----------------------------------
-  subroutine oneei(hmat,smat,tmat)
-!-----------------------------------
+!----------------------------------------------------
+  subroutine oneei(hstmat1,hstmat2,hstmat3,hstmat4)
+!----------------------------------------------------
 !
 ! Driver of one-electron and overlap integrals
 !
-! Out : hmat (one electron Hamiltonian)
-!       smat (overlap integral)
-!       tmat (kinetic energy)
+! Out : hstmat1 (One electron Hamiltonian matrix)
+!       hstmat2 (Overlap integral matrix)
+!       hstmat3 (Kinetic energy matrix)
+!       hstmat4 (Work array)
 !
-      use procpar
-      use basis, only : nao, nshell, mtype
-      use ecp, only : flagecp
-      use molecule, only : natom
+      use modparallel
+      use modbasis, only : nao, nshell, mtype
+      use modecp, only : flagecp
+      use modmolecule, only : natom
       implicit none
-      integer :: ish, jsh, num, maxfunc(0:6), maxdim
-      real(8),intent(out) :: hmat((nao*(nao+1))/2), smat((nao*(nao+1))/2), tmat((nao*(nao+1))/2)
-      real(8) :: dum
+      integer :: ish, jsh, num, maxfunc(0:6), maxbasis, maxdim
+      real(8),parameter :: zero=0.0D+00
+      real(8),intent(out) :: hstmat1((nao*(nao+1))/2), hstmat2((nao*(nao+1))/2)
+      real(8),intent(out) :: hstmat3((nao*(nao+1))/2), hstmat4((nao*(nao+1))/2)
 !ishimura
-      integer k,l,kmax,lmax
       data maxfunc/1,3,6,10,15,21,28/
 !
-      maxdim=maxfunc(maxval(mtype(1:nshell)))
+      maxbasis= maxval(mtype(1:nshell))
+      maxdim= maxfunc(maxbasis)
 !
       num=(nao*(nao+1))/2
-      call zeroclr(hmat,num)
-      call zeroclr(smat,num)
-      call zeroclr(tmat,num)
-!
-! ECP setting
-!
-!     if(flagecp) then
-!       maxpangdim= maxfunc(maxval(maxangecp(1:natom)))
-!       maxecpdim= max(maxdim,maxpangdim)
-!       if(maxecpdim >= 5) then
-!         write(iout,'(" This program supports up to SPDFG core potentials.")')
-!         call iabort
-!       endif
-!       allocate()
-!       call setecp()
-!     endif
-!
-
+      hstmat2(:)= zero
+      hstmat3(:)= zero
+      hstmat4(:)= zero
 !
 !$OMP parallel
       do ish= nshell-myrank,1,-nproc
-!     do ish= 1,nshell
 !$OMP do
         do jsh= 1,ish
-          call intst(hmat,smat,tmat,ish,jsh)
-          call int1c(hmat,ish,jsh,maxdim)
-!         if(flagecp) call intecp(hmat,ish,jsh,maxdim)
+          call calcintst(hstmat2,hstmat3,hstmat4,ish,jsh)
+          call calcint1c(hstmat2,ish,jsh,maxdim)
         enddo
 !$OMP enddo
       enddo
 !$OMP end parallel
 !
-      call para_allreduce(hmat,dum,num,"D",MPI_SUM,MPI_COMM_WORLD,1)
-      call para_allreduce(smat,dum,num,"D",MPI_SUM,MPI_COMM_WORLD,1)
-      call para_allreduce(tmat,dum,num,"D",MPI_SUM,MPI_COMM_WORLD,1)
+! Calculate ECP integrals
+!
+      if(flagecp) call oneeiecp(hstmat2)
+!
+      call para_allreduce(hstmat2,hstmat1,num,MPI_SUM,MPI_COMM_WORLD)
+      call para_allreduce(hstmat3,hstmat2,num,MPI_SUM,MPI_COMM_WORLD)
+      call para_allreduce(hstmat4,hstmat3,num,MPI_SUM,MPI_COMM_WORLD)
+!
+
 !kazuya
 !      write(*,*)"Smatrix"
 !      kmax=nao/5
 !      if(mod(nao,5).ne.0)kmax=kmax+1
 !      do k=1,kmax
 !        do ish=(k-1)*5+1,nao
-!          lmax=(k)*5
-!          if(lmax.gt.ish)lmax=ish
-!          write(*,'(i3,1x,5f11.6)')ish,(smat(ish*(ish-1)/2+l),l=(k-1)*5+1,lmax)
+!          llmax=(k)*5
+!          if(llmax.gt.ish)llmax=ish
+!          write(*,'(i3,1x,5f11.6)')ish,(smat(ish*(ish-1)/2+l),l=(k-1)*5+1,llmax)
 !        enddo
 !        write(*,*)
 !      enddo
@@ -75,9 +66,9 @@
 !      if(mod(nao,5).ne.0)kmax=kmax+1
 !      do k=1,kmax
 !        do ish=(k-1)*5+1,nao
-!          lmax=(k)*5
-!          if(lmax.gt.ish)lmax=ish
-!          write(*,'(i3,1x,5f11.6)')ish,(tmat(ish*(ish-1)/2+l),l=(k-1)*5+1,lmax)
+!          llmax=(k)*5
+!          if(llmax.gt.ish)llmax=ish
+!          write(*,'(i3,1x,5f11.6)')ish,(tmat(ish*(ish-1)/2+l),l=(k-1)*5+1,llmax)
 !        enddo
 !        write(*,*)
 !      enddo
@@ -87,9 +78,9 @@
 !        write(*,*)
 !        write(*,*)
 !        do ish=(k-1)*5+1,nao
-!          lmax=(k)*5
-!          if(lmax.gt.ish)lmax=ish
-!          write(*,'(i3,1x,5f11.6)')ish,(hmat(ish*(ish-1)/2+l),l=(k-1)*5+1,lmax)
+!          llmax=(k)*5
+!          if(llmax.gt.ish)llmax=ish
+!          write(*,'(i3,1x,5f11.6)')ish,(hmat(ish*(ish-1)/2+l),l=(k-1)*5+1,llmax)
 !        enddo
 !      enddo
       return
@@ -97,27 +88,26 @@ end
 
 
 !--------------------------------------------
-  subroutine intst(hmat,smat,tmat,ish,jsh)
+  subroutine calcintst(hmat,smat,tmat,ish,jsh)
 !--------------------------------------------
 !
 ! Calculate overlap and kinetic integrals
 !
-! In  : ish, jsh (shell indices)
-! Out : hmat (one electron Hamiltonian)
-!       smat (overlap integral)
-!       tmat (kinetic energy)
+! In  : ish, jsh (Shell indices)
+! Out : hmat (One electron Hamiltonian)
+!       smat (Overlap integral)
+!       tmat (Kinetic energy)
 !
-      use param, only : mxprsh
-      use thresh, only : threshex
-      use molecule, only : coord
-      use basis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
-      use hermite, only : ix, iy, iz
-      use iofile, only : iout
+      use modparam, only : mxprsh
+      use modthresh, only : threshex
+      use modmolecule, only : coord
+      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
+      use modhermite, only : ix, iy, iz
       implicit none
       integer,intent(in) :: ish, jsh
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, nprimi, nprimj, nangi, nangj
-      integer :: nbfi, nbfj, iprim, jprim, nsumi, nsumj, i, j, iang, jang, ii, ij, maxj
-      integer :: isx, jsx, isy, jsy, isz, jsz
+      integer :: nbfi, nbfj, iprim, jprim, ncarti, ncartj, i, j, iang, jang, ii, ij, maxj
+      integer :: isx, jsx, isy, jsy, isz, jsz, ncart(0:6)
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, half=0.5D+00
       real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt5=2.236067977499790D+00
       real(8),parameter :: sqrt15=3.872983346207417D+00, sqrt3h=8.660254037844386D-01
@@ -127,6 +117,7 @@ end
       real(8) :: xyzint(3), sx(0:6,0:8,2), sy(0:6,0:8,2), sz(0:6,0:8,2)
       real(8) :: sint(28,28), tint(28,28) !sx,sy,sz,sint,tint support up to i function
       logical :: iandj
+      data ncart /1,3,6,10,15,21,28/
 !
 ! Set parameters
 !
@@ -143,44 +134,21 @@ end
       nprimj= mprim(jsh)
       nangj = mtype(jsh)
       nbfj  = mbf(jsh)
+      ncarti= ncart(nangi)
+      ncartj= ncart(nangj)
+!
+      if((nangi > 4).or.(nangj > 4))then
+        write(*,'(" Error! This program supports up to g function in calcint1c")')
+        call iabort
+      endif
 !
       do i= 1,3
         xyzij(i)= coord(i,iatom)-coord(i,jatom)
       enddo
       rij= xyzij(1)*xyzij(1)+xyzij(2)*xyzij(2)+xyzij(3)*xyzij(3)
-      select case(nangi)
-        case (0)
-          nsumi= 1
-        case (1)
-          nsumi= 3
-        case (2)
-          nsumi= 6
-        case (3)
-          nsumi= 10
-        case (4)
-          nsumi= 15
-        case default
-          write(iout,'(" Error! This program supports up to g function in intst")')
-          call iabort
-      end select
-      select case(nangj)
-        case (0)
-          nsumj= 1
-        case (1)
-          nsumj= 3
-        case (2)
-          nsumj= 6
-        case (3)
-          nsumj= 10
-        case (4)
-          nsumj= 15
-        case default
-          write(iout,'(" Error! This program supports up to g function in intst")')
-          call iabort
-      end select
 
-      do i= 1,nsumi
-        do j= 1,nsumj
+      do i= 1,ncarti
+        do j= 1,ncartj
           sint(j,i)= zero
           tint(j,i)= zero
         enddo
@@ -227,11 +195,11 @@ end
             enddo
           enddo
           cij= ci*cj
-          do i= 1,nsumi
+          do i= 1,ncarti
             isx= ix(i,nangi)
             isy= iy(i,nangi)
             isz= iz(i,nangi)
-            do j= 1,nsumj
+            do j= 1,ncartj
               jsx= ix(j,nangj)
               jsy= iy(j,nangj)
               jsz= iz(j,nangj)
@@ -247,8 +215,8 @@ end
       enddo
 !
       if((nbfi >= 5).or.(nbfj >= 5)) then
-        call nrmlz1(sint,nbfi,nbfj,nsumi)
-        call nrmlz1(tint,nbfi,nbfj,nsumi)
+        call nrmlz1(sint,nbfi,nbfj,ncarti)
+        call nrmlz1(tint,nbfi,nbfj,ncarti)
       endif
 !
       maxj= nbfj
@@ -267,13 +235,13 @@ end
 
 
 !------------------------------------------
-  subroutine nrmlz1(onei,nbfi,nbfj,nsumi)
+  subroutine nrmlz1(onei,nbfi,nbfj,ncarti)
 !------------------------------------------
 !
 ! Normalize one-electron and overlap integrals
 !
       implicit none
-      integer,intent(in) :: nbfi, nbfj, nsumi
+      integer,intent(in) :: nbfi, nbfj, ncarti
       integer :: i, j
       real(8),parameter :: half=0.5D+00, two=2.0D+00, three=3.0D+00, four=4.0D+00
       real(8),parameter :: six=6.0D+00, eight=8.0D+00, p24=24.0D+00
@@ -301,7 +269,7 @@ end
       select case(nbfj)
 ! D function
         case(5)
-          do i= 1,nsumi
+          do i= 1,ncarti
             do j= 1,6
               work(j)= onei(j,i)
             enddo
@@ -312,14 +280,14 @@ end
             onei(5,i)= work(4)*sqrt3
           enddo
         case(6)
-          do i= 1,nsumi
+          do i= 1,ncarti
             do j= 4,6
               onei(j,i)= onei(j,i)*sqrt3
             enddo
           enddo
 ! F function
         case(7)
-          do i= 1,nsumi
+          do i= 1,ncarti
             do j= 1,3
               work(j)= onei(j,i)
             enddo
@@ -327,16 +295,16 @@ end
               work(j)= onei(j,i)*sqrt5
             enddo
             work(10)= onei(10,i)*sqrt15
-            onei(1,i)=( work(1)-work(6)*three                  )*facf1
-            onei(2,i)=( work(5)-work(7)                        )*facf2
-            onei(3,i)=(-work(1)-work(6)+work(8)*four           )*facf3
-            onei(4,i)=( work(3)*two-work(5)*three-work(7)*three)*facf4
-            onei(5,i)=(-work(2)-work(4)+work(9)*four           )*facf3
-            onei(6,i)=  work(10)
+            onei(1,i)=( work(3)*two-work(5)*three-work(7)*three)*facf4
+            onei(2,i)=(-work(1)-work(6)+work(8)*four           )*facf3
+            onei(3,i)=(-work(2)-work(4)+work(9)*four           )*facf3
+            onei(4,i)=( work(5)-work(7)                        )*facf2
+            onei(5,i)=  work(10)
+            onei(6,i)=( work(1)-work(6)*three                  )*facf1
             onei(7,i)=(-work(2)+work(4)*three                  )*facf1
           enddo
         case(10)
-          do i= 1,nsumi
+          do i= 1,ncarti
             do j= 4,9
               onei(j,i)= onei(j,i)*sqrt5
             enddo
@@ -344,7 +312,7 @@ end
           enddo
 ! G function
         case(9)
-          do i= 1,nsumi
+          do i= 1,ncarti
             do j= 1,3
               work(j)= onei(j,i)
             enddo
@@ -357,19 +325,19 @@ end
             do j= 13,15
               work(j)= onei(j,i)*sqrt35
             enddo
-            onei(1,i)=(work(1)+work(2)-work(10)*six)*facg1
-            onei(2,i)=(work(5)-work(14)*three)*facg2
-            onei(3,i)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
-            onei(4,i)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
-            onei(5,i)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+            onei(1,i)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
 &                      -work(11)*p24-work(12)*p24)*facg5
-            onei(6,i)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
-            onei(7,i)=(-work(4)-work(6)+work(15)*six)*facg6
-            onei(8,i)=(work(7)-work(13)*three)*facg2
+            onei(2,i)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+            onei(3,i)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+            onei(4,i)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+            onei(5,i)=(-work(4)-work(6)+work(15)*six)*facg6
+            onei(6,i)=(work(5)-work(14)*three)*facg2
+            onei(7,i)=(-work(7)+work(13)*three)*facg2
+            onei(8,i)=(work(1)+work(2)-work(10)*six)*facg1
             onei(9,i)=(work(4)-work(6))*facg7
           enddo
         case(15)
-          do i= 1,nsumi
+          do i= 1,ncarti
             do j= 4,9
               onei(j,i)= onei(j,i)*sqrt7
             enddo
@@ -413,12 +381,12 @@ end
               work(i)= onei(j,i)*sqrt5
             enddo
             work(10)= onei(j,10)*sqrt15
-            onei(j,1)=( work(1)-three*work(6)                  )*facf1
-            onei(j,2)=( work(5)-work(7)                        )*facf2
-            onei(j,3)=(-work(1)-work(6)+four*work(8)           )*facf3
-            onei(j,4)=( two*work(3)-three*work(5)-three*work(7))*facf4
-            onei(j,5)=(-work(2)-work(4)+four*work(9)           )*facf3
-            onei(j,6)=  work(10)
+            onei(j,1)=( two*work(3)-three*work(5)-three*work(7))*facf4
+            onei(j,2)=(-work(1)-work(6)+four*work(8)           )*facf3
+            onei(j,3)=(-work(2)-work(4)+four*work(9)           )*facf3
+            onei(j,4)=( work(5)-work(7)                        )*facf2
+            onei(j,5)=  work(10)
+            onei(j,6)=( work(1)-three*work(6)                  )*facf1
             onei(j,7)=(-work(2)+three*work(4)                  )*facf1
           enddo
         case(10)
@@ -443,15 +411,15 @@ end
             do i= 13,15
               work(i)= onei(j,i)*sqrt35
             enddo
-            onei(j,1)=(work(1)+work(2)-work(10)*six)*facg1
-            onei(j,2)=(work(5)-work(14)*three)*facg2
-            onei(j,3)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
-            onei(j,4)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
-            onei(j,5)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+            onei(j,1)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
 &                      -work(11)*p24-work(12)*p24)*facg5
-            onei(j,6)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
-            onei(j,7)=(-work(4)-work(6)+work(15)*six)*facg6
-            onei(j,8)=(work(7)-work(13)*three)*facg2
+            onei(j,2)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+            onei(j,3)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+            onei(j,4)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+            onei(j,5)=(-work(4)-work(6)+work(15)*six)*facg6
+            onei(j,6)=(work(5)-work(14)*three)*facg2
+            onei(j,7)=(-work(7)+work(13)*three)*facg2
+            onei(j,8)=(work(1)+work(2)-work(10)*six)*facg1
             onei(j,9)=(work(4)-work(6))*facg7
           enddo
         case(15)
@@ -472,13 +440,13 @@ end
 
 
 !-----------------------------------------------
-  subroutine nrmlz2(onei,nbfi,nbfj,nsumi,len1)
+  subroutine nrmlz2(onei,nbfi,nbfj,ncarti,len1)
 !-----------------------------------------------
 !
 ! Normalize one-electron and overlap integrals
 !
       implicit none
-      integer,intent(in) :: nbfi, nbfj, nsumi, len1
+      integer,intent(in) :: nbfi, nbfj, ncarti, len1
       integer :: i, j
       real(8),parameter :: half=0.5D+00, two=2.0D+00, three=3.0D+00, four=4.0D+00
       real(8),parameter :: six=6.0D+00, eight=8.0D+00, p24=24.0D+00
@@ -506,7 +474,7 @@ end
       select case(nbfj)
 ! D function
         case(5)
-          do i= 1,nsumi
+          do i= 1,ncarti
             do j= 1,6
               work(j)= onei(j,i)
             enddo
@@ -517,14 +485,14 @@ end
             onei(5,i)= work(4)*sqrt3
           enddo
         case(6)
-          do i= 1,nsumi
+          do i= 1,ncarti
             do j= 4,6
               onei(j,i)= onei(j,i)*sqrt3
             enddo
           enddo
 ! F function
         case(7)
-          do i= 1,nsumi
+          do i= 1,ncarti
             do j= 1,3
               work(j)= onei(j,i)
             enddo
@@ -532,16 +500,16 @@ end
               work(j)= onei(j,i)*sqrt5
             enddo
             work(10)= onei(10,i)*sqrt15
-            onei(1,i)=( work(1)-three*work(6)                  )*facf1
-            onei(2,i)=( work(5)-work(7)                        )*facf2
-            onei(3,i)=(-work(1)-work(6)+four*work(8)           )*facf3
-            onei(4,i)=( two*work(3)-three*work(5)-three*work(7))*facf4
-            onei(5,i)=(-work(2)-work(4)+four*work(9)           )*facf3
-            onei(6,i)=  work(10)
+            onei(1,i)=( two*work(3)-three*work(5)-three*work(7))*facf4
+            onei(2,i)=(-work(1)-work(6)+four*work(8)           )*facf3
+            onei(3,i)=(-work(2)-work(4)+four*work(9)           )*facf3
+            onei(4,i)=( work(5)-work(7)                        )*facf2
+            onei(5,i)=  work(10)
+            onei(6,i)=( work(1)-three*work(6)                  )*facf1
             onei(7,i)=(-work(2)+three*work(4)                  )*facf1
           enddo
         case(10)
-          do i= 1,nsumi
+          do i= 1,ncarti
             do j= 4,9
               onei(j,i)= onei(j,i)*sqrt5
             enddo
@@ -549,7 +517,7 @@ end
           enddo
 ! G function
         case(9)
-          do i= 1,nsumi
+          do i= 1,ncarti
             do j= 1,3
               work(j)= onei(j,i)
             enddo
@@ -562,19 +530,19 @@ end
             do j= 13,15
               work(j)= onei(j,i)*sqrt35
             enddo
-            onei(1,i)=(work(1)+work(2)-work(10)*six)*facg1
-            onei(2,i)=(work(5)-work(14)*three)*facg2
-            onei(3,i)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
-            onei(4,i)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
-            onei(5,i)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+            onei(1,i)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
 &                      -work(11)*p24-work(12)*p24)*facg5
-            onei(6,i)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
-            onei(7,i)=(-work(4)-work(6)+work(15)*six)*facg6
-            onei(8,i)=(work(7)-work(13)*three)*facg2
+            onei(2,i)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+            onei(3,i)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+            onei(4,i)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+            onei(5,i)=(-work(4)-work(6)+work(15)*six)*facg6
+            onei(6,i)=(work(5)-work(14)*three)*facg2
+            onei(7,i)=(-work(7)+work(13)*three)*facg2
+            onei(8,i)=(work(1)+work(2)-work(10)*six)*facg1
             onei(9,i)=(work(4)-work(6))*facg7
           enddo
         case(15)
-          do i= 1,nsumi
+          do i= 1,ncarti
             do j= 4,9
               onei(j,i)= onei(j,i)*sqrt7
             enddo
@@ -618,12 +586,12 @@ end
               work(i)= onei(j,i)*sqrt5
             enddo
             work(10)= onei(j,10)*sqrt15
-            onei(j,1)=( work(1)-three*work(6)                  )*facf1
-            onei(j,2)=( work(5)-work(7)                        )*facf2
-            onei(j,3)=(-work(1)-work(6)+four*work(8)           )*facf3
-            onei(j,4)=( two*work(3)-three*work(5)-three*work(7))*facf4
-            onei(j,5)=(-work(2)-work(4)+four*work(9)           )*facf3
-            onei(j,6)=  work(10)
+            onei(j,1)=( two*work(3)-three*work(5)-three*work(7))*facf4
+            onei(j,2)=(-work(1)-work(6)+four*work(8)           )*facf3
+            onei(j,3)=(-work(2)-work(4)+four*work(9)           )*facf3
+            onei(j,4)=( work(5)-work(7)                        )*facf2
+            onei(j,5)=  work(10)
+            onei(j,6)=( work(1)-three*work(6)                  )*facf1
             onei(j,7)=(-work(2)+three*work(4)                  )*facf1
           enddo
         case(10)
@@ -648,15 +616,15 @@ end
             do i= 13,15
               work(i)= onei(j,i)*sqrt35
             enddo
-            onei(j,1)=(work(1)+work(2)-work(10)*six)*facg1
-            onei(j,2)=(work(5)-work(14)*three)*facg2
-            onei(j,3)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
-            onei(j,4)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
-            onei(j,5)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+            onei(j,1)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
 &                      -work(11)*p24-work(12)*p24)*facg5
-            onei(j,6)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
-            onei(j,7)=(-work(4)-work(6)+work(15)*six)*facg6
-            onei(j,8)=(work(7)-work(13)*three)*facg2
+            onei(j,2)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+            onei(j,3)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+            onei(j,4)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+            onei(j,5)=(-work(4)-work(6)+work(15)*six)*facg6
+            onei(j,6)=(work(5)-work(14)*three)*facg2
+            onei(j,7)=(-work(7)+work(13)*three)*facg2
+            onei(j,8)=(work(1)+work(2)-work(10)*six)*facg1
             onei(j,9)=(work(4)-work(6))*facg7
           enddo
         case(15)
@@ -677,25 +645,24 @@ end
 
 
 !--------------------------------------
-  subroutine int1c(hmat,ish,jsh,len1)
+  subroutine calcint1c(hmat,ish,jsh,len1)
 !--------------------------------------
 !
 ! Driver of 1-electron Coulomb integrals
 !   (j|Z/r|i)
 !
-      use param, only : mxprsh
-      use molecule, only : natom, coord, charge
-      use basis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
-      use thresh, only : threshex
-      use iofile, only : iout
+      use modparam, only : mxprsh
+      use modmolecule, only : natom, coord, znuc
+      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
+      use modthresh, only : threshex
       implicit none
       integer,intent(in) :: ish, jsh, len1
-      integer :: nangij(2), nprimij(2), nbfij(2), nsumi, nsum(0:6), iatom, jatom
+      integer :: nangij(2), nprimij(2), nbfij(2), ncarti, ncart(0:6), iatom, jatom
       integer :: iloc, jloc, ilocbf, jlocbf, iprim, jprim, i, j, ii, ij, maxj
       real(8),intent(inout) :: hmat((nao*(nao+1))/2)
-      real(8) :: exij(mxprsh,2), cij(mxprsh,2), coordij(3,2), cint(len1,len1)
+      real(8) :: exij(mxprsh,2), coij(mxprsh,2), coordij(3,2), cint(len1,len1)
       logical :: iandj
-      data nsum /1,3,6,10,15,21,28/
+      data ncart /1,3,6,10,15,21,28/
 !
       iandj=(ish == jsh)
       nangij(1)= mtype(ish)
@@ -716,28 +683,28 @@ end
       enddo
       do iprim= 1,nprimij(1)
         exij(iprim,1)= ex(iloc+iprim)
-        cij(iprim,1) = coeff(iloc+iprim)
+        coij(iprim,1)= coeff(iloc+iprim)
       enddo
       do jprim= 1,nprimij(2)
         exij(jprim,2)= ex(jloc+jprim)
-        cij(jprim,2) = coeff(jloc+jprim)
+        coij(jprim,2)= coeff(jloc+jprim)
       enddo
 !
       if((nangij(1) <= 2).and.(nangij(2) <= 2)) then
-        call int1cmd(cint,exij,cij,coordij,coord,charge,natom, &
+        call int1cmd(cint,exij,coij,coordij,coord,znuc,natom, &
 &                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
       else
         if((nangij(1) > 4).or.(nangij(2) > 4))then
-          write(iout,'(" Error! This program supports up to g function in int1c")')
+          write(*,'(" Error! This program supports up to g function in calcint1c")')
           call iabort
         endif
 !
-        call int1rys(cint,exij,cij,coordij,coord,charge,natom, &
+        call int1rys(cint,exij,coij,coordij,coord,znuc,natom, &
 &                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
 !
         if((nbfij(1) >= 5).or.(nbfij(2) >= 5)) then
-          nsumi= nsum(nangij(1))
-          call nrmlz2(cint,nbfij(1),nbfij(2),nsumi,len1)
+          ncarti= ncart(nangij(1))
+          call nrmlz2(cint,nbfij(1),nbfij(2),ncarti,len1)
         endif
       endif
 !
@@ -756,40 +723,40 @@ end
 
 
 !-----------------------------------------------------------------
-  subroutine int1cmd(cint,exij,cij,coordij,coord,charge,natom, &
+  subroutine int1cmd(cint,exij,coij,coordij,coord,znuc,natom, &
 &                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
 !-----------------------------------------------------------------
 !
 ! Driver of 1-electron Coulomb integrals (j|Z/r|i) using McMurchie-Davidson method
 !
-! In : exij     (exponents of basis functions)
-!      coij     (coefficients of basis functions)
+! In : exij     (Exponents of basis functions)
+!      coij     (Coefficients of basis functions)
 !      coordij  (x,y,z coordinates of basis functions)
 !      coord    (x,y,z coordinates of atoms)
-!      charge   (charges of atoms)
-!      natom    (number of atoms)
-!      nprimij  (numbers of primitive functions)
-!      nangij   (degrees of angular momentum)
-!      nbfij    (numbers of basis functions)
-!      len1     (dimension of one-electron integral array)
-!      mxprsh   (size of primitive fuction array)
-!      threshex (threshold of exponential calculation)
-! Out: cint     (one-electron Coulomb integrals)
+!      znuc     (Charges of atoms)
+!      natom    (Number of atoms)
+!      nprimij  (Numbers of primitive functions)
+!      nangij   (Degrees of angular momentum)
+!      nbfij    (Numbers of basis functions)
+!      len1     (Dimension of one-electron integral array)
+!      mxprsh   (Size of primitive fuction array)
+!      threshex (Threshold of exponential calculation)
+! Out: cint     (One-electron Coulomb integrals)
 !
       implicit none
       integer,intent(in) :: nprimij(2), nangij(2), nbfij(2), len1, natom, mxprsh
       integer,parameter :: mxprsh2=40
       integer :: inttyp, nij, iprim, jprim, i, j, ii, jj, nbfij2(2)
       real(8),parameter :: one=1.0D+00, pi2=6.283185307179586D+00
-      real(8),intent(in) :: exij(mxprsh,2), cij(mxprsh,2), coordij(3,2)
-      real(8),intent(in) :: coord(3,natom), charge(natom), threshex
+      real(8),intent(in) :: exij(mxprsh,2), coij(mxprsh,2), coordij(3,2)
+      real(8),intent(in) :: coord(3,natom), znuc(natom), threshex
       real(8),intent(out) :: cint(len1,len1)
       real(8) :: xyz(3), rij, exi, exj, ci, cj, ex12, ex21, ex2i, ex2j, rij2, pixyz(3)
       real(8) :: exfac(5,mxprsh2*mxprsh2), pijxyz(3,mxprsh2*mxprsh2), cint1(6,6)
 !
       if(mxprsh > mxprsh2) then
         write(*,'(" Error! Parameter mxprsh2 in int1cmd is small!")')
-        call abort
+        call exit
       endif
 !
       inttyp=nangij(2)*3+nangij(1)+1
@@ -812,7 +779,7 @@ end
       nij= 0
       do iprim= 1,nprimij(ii)
         exi = exij(iprim,ii)
-        ci  = cij(iprim,ii)*pi2
+        ci  = coij(iprim,ii)*pi2
         do i= 1,3
           pixyz(i)= exi*coordij(i,ii)
         enddo
@@ -825,7 +792,7 @@ end
           rij2= rij*ex2i*exj
           if(rij2 > threshex) cycle
           nij= nij+1
-          cj = cij(jprim,jj)
+          cj = coij(jprim,jj)
           exfac(1,nij)= ex12
           exfac(2,nij)= ex21
           exfac(3,nij)= ex2i
@@ -839,17 +806,17 @@ end
 !
       select case(inttyp)
         case (1)
-          call int1css(cint1,exfac,pijxyz,nij,coord,charge,natom,mxprsh)
+          call int1css(cint1,exfac,pijxyz,nij,coord,znuc,natom,mxprsh)
         case (2,4)
-          call int1cps(cint1,exfac,pijxyz,xyz,nij,coord,charge,natom,mxprsh)
+          call int1cps(cint1,exfac,pijxyz,xyz,nij,coord,znuc,natom,mxprsh)
         case (5)
-          call int1cpp(cint1,exfac,pijxyz,xyz,nij,coord,charge,natom,mxprsh)
+          call int1cpp(cint1,exfac,pijxyz,xyz,nij,coord,znuc,natom,mxprsh)
         case (3,7)
-          call int1cds(cint1,exfac,pijxyz,xyz,nij,coord,charge,natom,mxprsh,nbfij2)
+          call int1cds(cint1,exfac,pijxyz,xyz,nij,coord,znuc,natom,mxprsh,nbfij2)
         case (6,8)
-          call int1cdp(cint1,exfac,pijxyz,xyz,nij,coord,charge,natom,mxprsh,nbfij2)
+          call int1cdp(cint1,exfac,pijxyz,xyz,nij,coord,znuc,natom,mxprsh,nbfij2)
         case (9)
-          call int1cdd(cint1,exfac,pijxyz,xyz,nij,coord,charge,natom,mxprsh,nbfij2)
+          call int1cdd(cint1,exfac,pijxyz,xyz,nij,coord,znuc,natom,mxprsh,nbfij2)
       end select
 !
       if(ii == 1) then
@@ -870,34 +837,34 @@ end
 end
 
 
-!----------------------------------------------------------------------
-  subroutine int1rys(cint,exij,cij,coordij,coord,charge,natom, &
+!----------------------------------------------------------------
+  subroutine int1rys(cint,exij,coij,coordij,coord,znuc,natom, &
 &                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
-!----------------------------------------------------------------------
+!----------------------------------------------------------------
 !
-! Calculate 1-electron Coulomb integrals of (j|Z/r|i) using Rys quadratures
+! Calculate 1-electron Coulomb integrals (j|Z/r|i) using Rys quadratures
 !
-      use hermite, only : ix, iy, iz
+      use modhermite, only : ix, iy, iz
       implicit none
       integer,intent(in) :: nprimij(2), nangij(2), nbfij(2), len1, natom, mxprsh
-      integer :: nroots, nsum(0:6), nsumi, nsumj, i, j, iprim, jprim, iatom, iroot
+      integer :: nroots, ncart(0:6), ncarti, ncartj, i, j, iprim, jprim, iatom, iroot
       integer :: iang, jang, icx, icy, icz, jcx, jcy, jcz
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00
       real(8),parameter :: sqrtpi2=1.128379167095513D+00 !2.0/sqrt(pi)
-      real(8),intent(in) :: exij(mxprsh,2), cij(mxprsh,2), coordij(3,2)
-      real(8),intent(in) :: coord(3,natom), charge(natom), threshex
+      real(8),intent(in) :: exij(mxprsh,2), coij(mxprsh,2), coordij(3,2)
+      real(8),intent(in) :: coord(3,natom), znuc(natom), threshex
       real(8),intent(out) :: cint(len1,len1)
       real(8) :: xyz(3), rij, rij2, exi, exj, ci, cj, ex1, ex2, ex3, ex4, fac, rc, tval
       real(8) :: pixyz(3), pijxyz(3), pcxyz(3), xyzpij(3,2), trys(13), wrys(13)
       real(8) :: cx(0:6,0:6,7), cy(0:6,0:6,7), cz(0:6,0:6,7), ww, xyzint(3)
-      data nsum /1,3,6,10,15,21,28/
+      data ncart /1,3,6,10,15,21,28/
 !
       nroots=(nangij(1)+nangij(2))/2+1
-      nsumi= nsum(nangij(1))
-      nsumj= nsum(nangij(2))
+      ncarti= ncart(nangij(1))
+      ncartj= ncart(nangij(2))
 !
-      do i= 1,nsumi
-        do j= 1,nsumj
+      do i= 1,ncarti
+        do j= 1,ncartj
           cint(j,i)= zero
         enddo
       enddo
@@ -909,7 +876,7 @@ end
 !
       do iprim= 1,nprimij(1)
         exi= exij(iprim,1)
-        ci = cij(iprim,1)*sqrtpi2
+        ci = coij(iprim,1)*sqrtpi2
         do i= 1,3
           pixyz(i)= exi*coordij(i,1)
         enddo
@@ -920,7 +887,7 @@ end
           ex3= exi*exj
           rij2=rij*ex2*ex3
           if(rij2 > threshex) cycle
-          cj = cij(jprim,2)
+          cj = coij(jprim,2)
           fac=exp(-rij2)*ex2*ci*cj
 !
           do i= 1,3
@@ -934,7 +901,7 @@ end
             tval= ex1*rc
             call rysquad(tval,trys,wrys,nroots)
             do iroot= 1,nroots
-              ww=-wrys(iroot)*charge(iatom)
+              ww=-wrys(iroot)*znuc(iatom)
               ex4= sqrt(ex2*(one-trys(iroot)))
               do i= 1,3
                 xyzpij(i,1)=(one-trys(iroot))*pijxyz(i)+trys(iroot)*coord(i,iatom)-coordij(i,1)
@@ -949,11 +916,11 @@ end
                 enddo
               enddo
             enddo
-            do i= 1,nsumi
+            do i= 1,ncarti
               icx= ix(i,nangij(1))
               icy= iy(i,nangij(1))
               icz= iz(i,nangij(1))
-              do j= 1,nsumj
+              do j= 1,ncartj
                 jcx= ix(j,nangij(2))
                 jcy= iy(j,nangij(2))
                 jcz= iz(j,nangij(2))
@@ -971,7 +938,7 @@ end
 
 
 !-----------------------------------------------------------------------
-  subroutine int1css(cint1,exfac,pijxyz,nij,coord,charge,natom,mxprsh)
+  subroutine int1css(cint1,exfac,pijxyz,nij,coord,znuc,natom,mxprsh)
 !-----------------------------------------------------------------------
 !
 ! Calculate 1-electron Coulomb integrals of (s|Z/r|s)
@@ -983,10 +950,10 @@ end
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00
       real(8),parameter :: pi=3.141592653589793D+00
       real(8),intent(in) :: exfac(5,mxprsh*mxprsh), pijxyz(3,mxprsh*mxprsh)
-      real(8),intent(in) :: coord(3,natom), charge(natom)
+      real(8),intent(in) :: coord(3,natom), znuc(natom)
       real(8),intent(out) :: cint1(6,6)
       real(8) :: rc, ex12, ex21, ex2i, ex2j, c12, pcxyz(3)
-      real(8) :: tval, tval1, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
+      real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
       real(8) :: ft0, fpc
 !
       cint1(1,1)= zero
@@ -1005,7 +972,7 @@ end
           rc= pcxyz(1)*pcxyz(1)+pcxyz(2)*pcxyz(2)+pcxyz(3)*pcxyz(3)
           tval= ex12*rc
           if(tval >= threshtval) then
-            fpc= fpc+half*sqrt(pi/tval)*charge(iatom)
+            fpc= fpc+half*sqrt(pi/tval)*znuc(iatom)
           else
             igrid= int(tval)
             tval2= tval *tval
@@ -1021,7 +988,7 @@ end
 &               +fgrid(3,0,igrid)*tval3+fgrid( 4,0,igrid)*tval4 +fgrid( 5,0,igrid)*tval5 &
 &               +fgrid(6,0,igrid)*tval6+fgrid( 7,0,igrid)*tval7 +fgrid( 8,0,igrid)*tval8 &
 &               +fgrid(9,0,igrid)*tval9+fgrid(10,0,igrid)*tval10
-            fpc= fpc+ft0*charge(iatom)
+            fpc= fpc+ft0*znuc(iatom)
           endif
         enddo
         cint1(1,1)= cint1(1,1)-c12*fpc
@@ -1032,7 +999,7 @@ end
 
 
 !---------------------------------------------------------------------------
-  subroutine int1cps(cint1,exfac,pijxyz,xyz,nij,coord,charge,natom,mxprsh)
+  subroutine int1cps(cint1,exfac,pijxyz,xyz,nij,coord,znuc,natom,mxprsh)
 !---------------------------------------------------------------------------
 !
 ! Calculate 1-electron Coulomb integrals of (p|Z/r|s)
@@ -1044,11 +1011,11 @@ end
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00, two=2.0D+00
       real(8),parameter :: pi=3.141592653589793D+00
       real(8),intent(in) :: exfac(5,mxprsh*mxprsh), pijxyz(3,mxprsh*mxprsh), xyz(3)
-      real(8),intent(in) :: coord(3,natom), charge(natom)
+      real(8),intent(in) :: coord(3,natom), znuc(natom)
       real(8),intent(out) :: cint1(6,6)
       real(8) :: rc, ex12, ex21, ex2i, ex2j, c12, pcxyz(3)
-      real(8) :: tval, tval1, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
-      real(8) :: ft(0:1), fpc0, fpc1(3), expt, tinv
+      real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
+      real(8) :: ft(0:1), fpc0, fpc1(3), tinv
       real(8) :: r0, r1(3)
 !
       r0= zero
@@ -1096,8 +1063,8 @@ end
 &                 +fgrid(6,1,igrid)*tval6+fgrid( 7,1,igrid)*tval7 +fgrid( 8,1,igrid)*tval8 &
 &                 +fgrid(9,1,igrid)*tval9+fgrid(10,1,igrid)*tval10
           endif
-          ft(0)= ft(0)*charge(iatom)
-          ft(1)= ft(1)*charge(iatom)
+          ft(0)= ft(0)*znuc(iatom)
+          ft(1)= ft(1)*znuc(iatom)
           fpc0= fpc0+ft(0)
           do i= 1,3
             fpc1(i)= fpc1(i)-ft(1)*pcxyz(i)
@@ -1117,7 +1084,7 @@ end
 
 
 !----------------------------------------------------------------------------
-  subroutine int1cpp(cint1,exfac,pijxyz,xyz,nij,coord,charge,natom,mxprsh)
+  subroutine int1cpp(cint1,exfac,pijxyz,xyz,nij,coord,znuc,natom,mxprsh)
 !----------------------------------------------------------------------------
 !
 ! Calculate 1-electron Coulomb integrals of (p|Z/r|p)
@@ -1130,12 +1097,12 @@ end
       real(8),parameter :: three=3.0D+00, p15=1.5D+00
       real(8),parameter :: pi=3.141592653589793D+00
       real(8),intent(in) :: exfac(5,mxprsh*mxprsh), pijxyz(3,mxprsh*mxprsh), xyz(3)
-      real(8),intent(in) :: coord(3,natom), charge(natom)
+      real(8),intent(in) :: coord(3,natom), znuc(natom)
       real(8),intent(out) :: cint1(6,6)
       real(8) :: rc, ex12, ex21, ex2i, ex2j, c12, pcxyz(3)
-      real(8) :: tval, tval1, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
+      real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
       real(8) :: ft(0:2), fpc0, fpc1(4), fpc2(6)
-      real(8) :: expt, tinv, r0(2), r1(7), r2(6)
+      real(8) :: tinv, r0(2), r1(7), r2(6)
 !
       do i= 1,2
         r0(i) = zero
@@ -1190,7 +1157,7 @@ end
             enddo
           endif
           do i= 0,2
-            ft(i)= ft(i)*charge(iatom) 
+            ft(i)= ft(i)*znuc(iatom) 
           enddo
           fpc0= fpc0+ft(0)
           do i= 1,3
@@ -1232,7 +1199,7 @@ end
 
 
 !---------------------------------------------------------------------------------
-  subroutine int1cds(cint1,exfac,pijxyz,xyz,nij,coord,charge,natom,mxprsh,nbfij)
+  subroutine int1cds(cint1,exfac,pijxyz,xyz,nij,coord,znuc,natom,mxprsh,nbfij)
 !---------------------------------------------------------------------------------
 !
 ! Calculate 1-electron Coulomb integrals of (d|Z/r|s)
@@ -1245,12 +1212,12 @@ end
       real(8),parameter :: three=3.0D+00, p15=1.5D+00, pi=3.141592653589793D+00
       real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
       real(8),intent(in) :: exfac(5,mxprsh*mxprsh), pijxyz(3,mxprsh*mxprsh), xyz(3)
-      real(8),intent(in) :: coord(3,natom), charge(natom)
+      real(8),intent(in) :: coord(3,natom), znuc(natom)
       real(8),intent(out) :: cint1(6,6)
       real(8) :: rc, ex12, ex21, ex2i, ex2j, c12, pcxyz(3)
-      real(8) :: tval, tval1, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
+      real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
       real(8) :: ft(0:2), fpc0, fpc1(4), fpc2(6)
-      real(8) :: expt, tinv, r0(2), r1(4), r2(6), ctmp(6)
+      real(8) :: tinv, r0(2), r1(4), r2(6), ctmp(6)
 !
       do i= 1,2
         r0(i) = zero
@@ -1305,7 +1272,7 @@ end
             enddo
           endif
           do i= 0,2
-            ft(i)= ft(i)*charge(iatom) 
+            ft(i)= ft(i)*znuc(iatom) 
           enddo
           fpc0= fpc0+ft(0)
           do i= 1,3
@@ -1358,7 +1325,7 @@ end
 
 
 !---------------------------------------------------------------------------------
-  subroutine int1cdp(cint1,exfac,pijxyz,xyz,nij,coord,charge,natom,mxprsh,nbfij)
+  subroutine int1cdp(cint1,exfac,pijxyz,xyz,nij,coord,znuc,natom,mxprsh,nbfij)
 !---------------------------------------------------------------------------------
 !
 ! Calculate 1-electron Coulomb integrals of (d|Z/r|p)
@@ -1372,13 +1339,13 @@ end
       real(8),parameter :: pi=3.141592653589793D+00, sqrt3h=8.660254037844386D-01
       real(8),parameter :: sqrt3=1.732050807568877D+00
       real(8),intent(in) :: exfac(5,mxprsh*mxprsh), pijxyz(3,mxprsh*mxprsh), xyz(3)
-      real(8),intent(in) :: coord(3,natom), charge(natom)
+      real(8),intent(in) :: coord(3,natom), znuc(natom)
       real(8),intent(out) :: cint1(6,6)
       real(8) :: rc, ex12, ex21, ex2i, ex2j, c12, pcxyz(3)
-      real(8) :: tval, tval1, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
+      real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
       real(8) :: ft(0:3), fpc0, fpc1(4), fpc2(9)
       real(8) :: fpc3(10), pxx, pyy, pzz, pxy, pxz, pyz
-      real(8) :: expt, tinv, r0(3), r1(11), r2(15), r3(10), xx, yy, zz, xy, xz, yz, ctmp(6,3)
+      real(8) :: tinv, r0(3), r1(11), r2(15), r3(10), xx, yy, zz, xy, xz, yz, ctmp(6,3)
 !
       do i= 1,3
         r0(i) = zero
@@ -1453,7 +1420,7 @@ end
             enddo
           endif
           do i= 0,3
-            ft(i)= ft(i)*charge(iatom) 
+            ft(i)= ft(i)*znuc(iatom) 
           enddo
           fpc0= fpc0+ft(0)
           do i= 1,3
@@ -1568,7 +1535,7 @@ end
 
 
 !---------------------------------------------------------------------------------
-  subroutine int1cdd(cint1,exfac,pijxyz,xyz,nij,coord,charge,natom,mxprsh,nbfij)
+  subroutine int1cdd(cint1,exfac,pijxyz,xyz,nij,coord,znuc,natom,mxprsh,nbfij)
 !---------------------------------------------------------------------------------
 !
 ! Calculate 1-electron Coulomb integrals of (d|Z/r|d)
@@ -1583,13 +1550,13 @@ end
       real(8),parameter :: pi=3.141592653589793D+00, sqrt3h=8.660254037844386D-01
       real(8),parameter :: sqrt3=1.732050807568877D+00
       real(8),intent(in) :: exfac(5,mxprsh*mxprsh), pijxyz(3,mxprsh*mxprsh), xyz(3)
-      real(8),intent(in) :: coord(3,natom), charge(natom)
+      real(8),intent(in) :: coord(3,natom), znuc(natom)
       real(8),intent(out) :: cint1(6,6)
       real(8) :: rc, ex12, ex21, ex2i, ex2j, c12, pcxyz(3)
-      real(8) :: tval, tval1, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
+      real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
       real(8) :: ft(0:4), fpc0, fpc1(4), fpc2(10)
       real(8) :: fpc3(16), fpc4(15), pxx, pyy, pzz, pxy, pxz, pyz
-      real(8) :: expt, tinv, r0(5), r1(16), r2(31), r3(26), r4(15), xx, yy, zz, xy, xz, yz
+      real(8) :: tinv, r0(5), r1(16), r2(31), r3(26), r4(15), xx, yy, zz, xy, xz, yz
       real(8) :: ctmp(6,6), ctmp2(6,6)
 !
       do i= 1,5
@@ -1672,7 +1639,7 @@ end
             enddo
           endif
           do i= 0,4
-            ft(i)= ft(i)*charge(iatom) 
+            ft(i)= ft(i)*znuc(iatom) 
           enddo
           fpc0= fpc0+ft(0)
           do i= 1,3

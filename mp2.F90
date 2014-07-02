@@ -1,24 +1,23 @@
 !------------------------------------------
-  subroutine calcrmp2(cmoa,energymo,xint)
+  subroutine calcrmp2(cmo,energymo,xint)
 !------------------------------------------
 !
 ! Driver of restricted MP2 calculation
 !
-! In  : cmoa    (MO coefficient matrix)
+! In  : cmo     (MO coefficient matrix)
 !       energymo(MO energies)
 !       xint    (Exchange integral matrix)
 !       
-      use procpar
-      use basis, only : nshell, nao, mbf
-      use molecule, only : neleca, nmo
-      use energy, only : enuc, escf, escfe, emp2
-      use iofile, only : iout
+      use modparallel
+      use modbasis, only : nshell, nao, mbf
+      use modmolecule, only : neleca, nmo
+      use modenergy, only : enuc, escf, escfe, emp2
       implicit none
       integer :: ncore, ncorecalc, maxdim, nocc, nvir, nao2, ndis, iproc, icount, icountao
       integer :: icountsh, idis(8,0:nproc-1), maxsize, ish, jsh, ishs, jshs, msize, mlsize
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: cmoa(nao,nao), energymo(nmo), xint(nshell*(nshell+1)/2)
-      real(8),allocatable :: trint2(:), cmoawrk(:), trint1a(:), trint1b(:)
+      real(8),intent(in) :: cmo(nao,nao), energymo(nmo), xint(nshell*(nshell+1)/2)
+      real(8),allocatable :: trint2(:), cmowrk(:), trint1a(:), trint1b(:)
       real(8),allocatable :: trint3(:), trint4(:)
       real(8) :: dummy
 !ishimura
@@ -32,13 +31,13 @@
       nao2= nao*nao
 !
       if(master) then
-        write(iout,'(" ----------------------------------------------")')
-        write(iout,'("   MP2 calculation ")')
-        write(iout,'("     Number of basis functions         =",i5)')nao
-        write(iout,'("     Number of basis shells            =",i5)')nshell
-        write(iout,'("     Number of correlated occupied MOs =",i5)')nocc
-        write(iout,'("     Number of virtual MOs             =",i5)')nvir
-        write(iout,'(" ----------------------------------------------",/)')
+        write(*,'(" ----------------------------------------------")')
+        write(*,'("   MP2 calculation ")')
+        write(*,'("     Number of basis functions         =",i5)')nao
+        write(*,'("     Number of basis shells            =",i5)')nshell
+        write(*,'("     Number of correlated occupied MOs =",i5)')nocc
+        write(*,'("     Number of virtual MOs             =",i5)')nvir
+        write(*,'(" ----------------------------------------------",/)')
       endif
 !
       ndis= nao2/nproc
@@ -99,7 +98,7 @@
         enddo
       enddo
 !ishimura
-   if(master)write(*,'(8i6)')idis
+!  if(master)write(*,'(8i6)')idis
 !
       ishs=0
       do iproc=0,nproc-1
@@ -107,9 +106,9 @@
       enddo
       maxsize= ishs
       call memset(maxsize*nocc*(nocc+1)/2)
-      allocate(trint2((idis(3,myrank)+idis(7,myrank))*nocc*(nocc+1)/2))
+      allocate(trint2(maxsize*nocc*(nocc+1)/2))
       call memset(nao*nocc+nocc*maxdim**3)
-      allocate(cmoawrk(nao*nocc),trint1a(nocc*maxdim**3))
+      allocate(cmowrk(nao*nocc),trint1a(nocc*maxdim**3))
 !
       call memrest(msize)
       mlsize= msize/(nocc*nao)
@@ -121,32 +120,33 @@
       call memset(mlsize*nocc*nao)
       allocate(trint1b(mlsize*nocc*nao))
 !
-      call mp2trans1(cmoa(1,ncore+1),cmoawrk,trint1a,trint1b,trint2,xint, &
+      call mp2trans1(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
 &                    mlsize,nocc,maxdim,idis)
 !
       deallocate(trint1b)
       call memunset(mlsize*nocc*nao)
-      deallocate(cmoawrk,trint1a)
+      deallocate(cmowrk,trint1a)
       call memunset(nao*nocc+nocc*maxdim**3)
 !
       call memset(2*nao2)
       allocate(trint3(nao2),trint4(nao2))
 !
-      call mp2trans2(cmoa(1,neleca+1),energymo,trint2,trint3,trint4,nocc,nvir,ncore,idis)
+      call mp2trans2(cmo(1,neleca+1),energymo,trint2,trint3,trint4,nocc,nvir,ncore,idis)
 !
       deallocate(trint3,trint4)
       call memunset(2*nao2)
       deallocate(trint2)
       call memunset(maxsize*nocc*(nocc+1)/2)
 !
-      call para_allreduce(emp2,dummy,1,'D',MPI_SUM,MPI_COMM_WORLD,1)
+      call para_allreduce(emp2,dummy,1,MPI_SUM,MPI_COMM_WORLD)
+      emp2= dummy
 !
       if(master) then
-        write(iout,'(" ---------------------------------------------")')
-        write(iout,'("   HF Energy              =",f17.9)')escf
-        write(iout,'("   MP2 Correlation Energy =",f17.9)')emp2
-        write(iout,'("   MP2 Total Energy       =",f17.9)')escf+emp2
-        write(iout,'(" ---------------------------------------------")')
+        write(*,'(" ---------------------------------------------")')
+        write(*,'("   HF Energy              =",f17.9)')escf
+        write(*,'("   MP2 Correlation Energy =",f17.9)')emp2
+        write(*,'("   MP2 Total Energy       =",f17.9)')escf+emp2
+        write(*,'(" ---------------------------------------------")')
       endif
       return
 end
@@ -158,14 +158,17 @@ end
 !
 ! Calculate the number of core MOs
 !
-      use molecule, only : natom, numatomic
+      use modmolecule, only : natom, numatomic
+      use modecp, only : izcore
       implicit none
       integer :: ncorecalc, ncore, iatom, numcore(137)
       data numcore/2*0, 8*1, 8*5, 18*9, 18*18, 32*27, 32*43, 19*59/
 !
       ncore= 0
       do iatom= 1,natom
-         ncore= ncore+numcore(numatomic(iatom))
+        if(izcore(iatom) == 0) then
+          ncore= ncore+numcore(numatomic(iatom))
+        endif
       enddo
       ncorecalc= ncore
       return
@@ -173,37 +176,37 @@ end
 
 
 !----------------------------------------------------------------------
-  subroutine mp2trans1(cmoaocc,cmoawrk,trint1a,trint1b,trint2,xint, &
+  subroutine mp2trans1(cmoocc,cmowrk,trint1a,trint1b,trint2,xint, &
 &                      mlsize,nocc,maxdim,idis)
 !----------------------------------------------------------------------
 !
 ! Driver of AO intengral generation and first and second integral transformations
 !
-! In  : cmoaocc (MO coefficient matrix)
+! In  : cmoocc  (MO coefficient matrix)
 !       xint    (Exchange integral matrix)
 !       mlsize  (Block size of first-transformed integrals)
 !       nocc    (Number of active occupied MOs)
 !       maxdim  (Maximum size of basis functions in a shell)
 !       idis    (Information for parallelization)
 ! Out : trint2  (Second-transformed integrals)
-! Work: cmoawrk (Transposed MO coefficient matrix)
+! Work: cmowrk  (Transposed MO coefficient matrix)
 !       trint1a (First-transformed integrals)
 !       trint1b (First-transformed integrals)
 !       
-      use procpar
-      use basis, only : nshell, nao, mbf, locbf
-      use thresh, only : cutint2
+      use modparallel
+      use modbasis, only : nshell, nao, mbf, locbf
+      use modthresh, only : cutint2
       implicit none
       integer,intent(in) :: maxdim, mlsize, nocc, idis(8,0:nproc-1)
       integer :: ish, ksh, mlcount, mlstart, numshell, ii
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: cmoaocc(nao,nocc), xint(nshell*(nshell+1)/2)
-      real(8),intent(out) :: cmoawrk(nocc,nao), trint1a(nocc,maxdim,maxdim**2)
+      real(8),intent(in) :: cmoocc(nao,nocc), xint(nshell*(nshell+1)/2)
+      real(8),intent(out) :: cmowrk(nocc,nao), trint1a(nocc,maxdim,maxdim**2)
       real(8),intent(out) :: trint1b(mlsize*nocc*nao), trint2((idis(3,myrank)+idis(7,myrank))*nocc*(nocc+1)/2)
 !ishimura
     real(8) :: t1,t2,t3,tr1=0.0D0,tr2=0.0D0
 !
-      cmoawrk=transpose(cmoaocc)
+      cmowrk=transpose(cmoocc)
 !
       ish= idis(1,myrank)
       ksh= idis(2,myrank)
@@ -215,12 +218,12 @@ end
 !
 ! AO intengral generation and first integral transformation
 !
-        call transmoint1(trint1a,trint1b,cmoawrk,xint,ish,ksh,maxdim,nocc,mlcount,mlsize)
+        call transmoint1(trint1a,trint1b,cmowrk,xint,ish,ksh,maxdim,nocc,mlcount,mlsize)
 !ishimura
     call cpu_time(t2)
         mlcount= mlcount+mbf(ish)*mbf(ksh)
         if(numshell == idis(4,myrank)) then
-          call transmoint2(trint2,trint1b,cmoaocc,nocc,mlcount,mlstart,mlsize,idis)
+          call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis)
             mlstart= mlstart+mlcount
             mlcount= 0
         else
@@ -241,7 +244,7 @@ end
 !
 ! Second integral transformation
 !
-            call transmoint2(trint2,trint1b,cmoaocc,nocc,mlcount,mlstart,mlsize,idis)
+            call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis)
             mlstart= mlstart+mlcount
             mlcount= 0
           endif
@@ -260,12 +263,12 @@ end
 !
 ! AO intengral generation and first integral transformation
 !
-        call transmoint1(trint1a,trint1b,cmoawrk,xint,ish,ksh,maxdim,nocc,mlcount,mlsize)
+        call transmoint1(trint1a,trint1b,cmowrk,xint,ish,ksh,maxdim,nocc,mlcount,mlsize)
 !ishimura
     call cpu_time(t2)
         mlcount= mlcount+mbf(ish)*mbf(ksh)
         if(numshell == idis(8,myrank)) then
-          call transmoint2(trint2,trint1b,cmoaocc,nocc,mlcount,mlstart,mlsize,idis)
+          call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis)
         else
           ksh= ksh+nproc
           if(ksh > nshell) then
@@ -284,7 +287,7 @@ end
 !
 ! Second integral transformation
 !
-            call transmoint2(trint2,trint1b,cmoaocc,nocc,mlcount,mlstart,mlsize,idis)
+            call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis)
             mlstart= mlstart+mlcount
             mlcount= 0
           endif
@@ -301,12 +304,12 @@ end
 
 
 !-----------------------------------------------------------------------------------
-  subroutine mp2trans2(cmoavir,energymo,trint2,trint3,trint4,nocc,nvir,ncore,idis)
+  subroutine mp2trans2(cmovir,energymo,trint2,trint3,trint4,nocc,nvir,ncore,idis)
 !-----------------------------------------------------------------------------------
 !
 ! Driver of third and fourth integral transformations and MP2 energy calculation
 !
-! In  : cmoavir (MO coefficient matrix)
+! In  : cmovir  (MO coefficient matrix)
 !       energymo(MO energies)
 !       trint2  (Second-transformed integrals)
 !       nocc    (Number of active occupied MOs)
@@ -315,14 +318,14 @@ end
 ! Work: trint3  (Third-transformed integrals)
 !       trint4  (Fourth-transformed integrals)
 !
-      use procpar
-      use basis, only : nao
-      use molecule, only : nmo
+      use modparallel
+      use modbasis, only : nao
+      use modmolecule, only : nmo
       implicit none
       integer,intent(in) :: nocc, nvir, ncore, idis(8,0:nproc-1)
       integer :: numrecv, iproc, irecv(0:nproc-1), nocc2, ncycle, icycle, myij
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
-      real(8),intent(in) :: cmoavir(nao*nvir), energymo(nmo)
+      real(8),intent(in) :: cmovir(nao*nvir), energymo(nmo)
       real(8),intent(in) :: trint2((idis(3,myrank)+idis(7,myrank)),nocc*(nocc+1)/2)
       real(8),intent(out) :: trint3(nao*nao), trint4(nao*nao)
 !
@@ -343,12 +346,12 @@ end
 ! Third integral transformation
 !   (mi|lj) trint4[l,m] -> (ai|lj) trint3[l,a]
 !
-        call dgemm('N','N',nao,nvir,nao,one,trint4,nao,cmoavir,nao,zero,trint3,nao)
+        call dgemm('N','N',nao,nvir,nao,one,trint4,nao,cmovir,nao,zero,trint3,nao)
 !
 ! Fourth integral transformation
 !   (ai|lj) trint3[l,a] -> (ai|bj) trint4[b,a]
 !
-        call dgemm('T','N',nvir,nvir,nao,one,cmoavir,nao,trint3,nao,zero,trint4,nvir)
+        call dgemm('T','N',nvir,nvir,nao,one,cmovir,nao,trint3,nao,zero,trint4,nvir)
 !
 ! MP2 energy calculation
 !
@@ -359,13 +362,13 @@ end
 
 
 !------------------------------------------------------------------------------------------
-  subroutine transmoint1(trint1a,trint1b,cmoawrk,xint,ish,ksh,maxdim,nocc,mlcount,mlsize)
+  subroutine transmoint1(trint1a,trint1b,cmowrk,xint,ish,ksh,maxdim,nocc,mlcount,mlsize)
 !------------------------------------------------------------------------------------------
 !
 ! AO intengral generation and first-quarter integral transformation
 !    (mn|ls) -> (mi|ls)
 !
-! In  : cmoawrk (Transposed MO coefficient matrix)
+! In  : cmowrk  (Transposed MO coefficient matrix)
 !       xint    (Exchange integral matrix)
 !       ish,lsh (Basis shell indices)
 !       maxdim  (Maximum size of basis functions in a shell)
@@ -375,15 +378,15 @@ end
 ! Out : trint1b (First-transformed integrals, [s,i,ml])
 ! Work: trint1a (First-transformed integrals, [i,s,ml])
 !
-      use procpar
-      use basis, only : nao, nshell, mbf, locbf
-      use thresh, only : cutint2
+      use modparallel
+      use modbasis, only : nao, nshell, mbf, locbf
+      use modthresh, only : cutint2
       implicit none
       integer,intent(in) :: ish, ksh, maxdim, nocc, mlcount, mlsize
       integer :: nbfi, nbfj, nbfk, nbfl, nbfik, locbfj, locbfl, jsh, lsh, ik, i, j, k, l
       integer :: imo, kl, ij, ii, jloc, lloc
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: cmoawrk(nocc,nao), xint(nshell*(nshell+1)/2)
+      real(8),intent(in) :: cmowrk(nocc,nao), xint(nshell*(nshell+1)/2)
       real(8),intent(out) :: trint1a(nocc,maxdim,maxdim*maxdim), trint1b(nao,nocc,mlsize)
       real(8) :: twoeri(maxdim,maxdim,maxdim,maxdim)
 !
@@ -433,7 +436,7 @@ end
                   jloc= locbfj+j
                   if(abs(twoeri(j,i,l,k)) < cutint2) cycle
                   do imo= 1,nocc
-                    trint1a(imo,l,ik)= trint1a(imo,l,ik)+twoeri(j,i,l,k)*cmoawrk(imo,jloc)
+                    trint1a(imo,l,ik)= trint1a(imo,l,ik)+twoeri(j,i,l,k)*cmowrk(imo,jloc)
                   enddo
                 enddo
               enddo
@@ -459,14 +462,14 @@ end
 
 
 !----------------------------------------------------------------------------------
-  subroutine transmoint2(trint2,trint1b,cmoaocc,nocc,mlcount,mlstart,mlsize,idis)
+  subroutine transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis)
 !----------------------------------------------------------------------------------
 !
 ! Second-quarter integral transformation
 !    (mi|ls) -> (mi|lj)
 !
 ! In  : trint1b (First-transformed integrals, [s,i,ml])
-!       cmoaocc (MO coefficient matrix)
+!       cmoocc  (MO coefficient matrix)
 !       nocc    (Number of active occupied MOs)
 !       mlcount (Number of transformed AOs)
 !       mlstart (First index of trint2)
@@ -474,18 +477,18 @@ end
 !       idis    (Information for parallelization)
 ! Out : trint2  (Second-transformed integrals, [ml,ij])
 !
-      use procpar
-      use basis, only : nao
+      use modparallel
+      use modbasis, only : nao
       implicit none
       integer,intent(in) :: nocc, mlcount, mlstart, mlsize, idis(8,0:nproc-1)
       integer :: imo, ijmo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
-      real(8),intent(in) :: trint1b(nao,nocc,mlsize), cmoaocc(nao,nocc)
+      real(8),intent(in) :: trint1b(nao,nocc,mlsize), cmoocc(nao,nocc)
       real(8),intent(inout) :: trint2((idis(3,myrank)+idis(7,myrank)),nocc*(nocc+1)/2)
 !
       do imo= 1,nocc
         ijmo=imo*(imo-1)/2+1
-        call dgemm('T','N',mlcount,imo,nao,one,trint1b(1,imo,1),nao*nocc,cmoaocc,nao,zero,&
+        call dgemm('T','N',mlcount,imo,nao,one,trint1b(1,imo,1),nao*nocc,cmoocc,nao,zero,&
 &                  trint2(mlstart,ijmo),idis(3,myrank)+idis(7,myrank))
       enddo
       return
@@ -506,8 +509,8 @@ end
 ! Out : trint4  (Second-transformed integrals, [l,m])
 ! Work: trint3  (Receiving data)
 !
-      use procpar
-      use basis, only : nao, nshell, mbf, locbf
+      use modparallel
+      use modbasis, only : nao, nshell, mbf, locbf
       implicit none
       integer,intent(in) :: icycle, irecv(0:nproc-1), nocc2, idis(8,0:nproc-1)
       integer :: iproc, jproc, ijstart, myij, ij, nsend, nrecv, ish, ksh, nbfi, nbfk
@@ -532,7 +535,7 @@ end
           ij   = 1
         endif
         if(myij > nocc2) nrecv=0
-        call para_sendrecv(trint2(1,ij),nsend,'D',iproc,myrank, &
+        call para_sendrecv(trint2(1,ij),nsend,iproc,myrank, &
 &                          trint3(irecv(jproc)),nrecv,jproc,jproc,MPI_COMM_WORLD)
       enddo
 !
@@ -547,7 +550,7 @@ end
           ij   = 1
         endif
         if(myij > nocc2) nrecv=0
-        call para_sendrecv(trint2(1,ij),nsend,'D',iproc,myrank, &
+        call para_sendrecv(trint2(1,ij),nsend,iproc,myrank, &
 &                          trint3(irecv(jproc)),nrecv,jproc,jproc,MPI_COMM_WORLD)
       enddo
 !
@@ -640,10 +643,9 @@ end
 !       nvir     (Number of virtual MOs)
 !       icycle   (Mp2trans2 cycle number)
 !
-      use procpar
-      use basis, only : nao, mbf, locbf
-      use molecule, only : neleca, nmo
-      use energy, only : emp2
+      use modparallel
+      use modmolecule, only : neleca, nmo
+      use modenergy, only : emp2
       implicit none
       integer,intent(in) :: nocc, nvir, ncore, icycle
       integer :: moi, moj, myij, ii, moa, mob
@@ -676,6 +678,7 @@ end
       enddo
 !$OMP end parallel do
 !
+
       if(moi /= moj) then
         emp2= emp2+etmp*two
       else

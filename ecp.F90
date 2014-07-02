@@ -1,38 +1,1558 @@
-!--------------------------------------------------------------------------------------
-  subroutine setecp(term0ecp,term1ecp,term2ecp,label1ecp,num1ecp,label2ecp,num2ecp, &
-&                   xyzintecp,maxecpdim,maxpangdim)
-!--------------------------------------------------------------------------------------
+!-------------------------------
+  subroutine oneeiecp(hstmat2)
+!-------------------------------
 !
-! Prepare values for ECP calculation
+! Calculate ECP integrals and add them into Hamiltonian matrix
 !
-      use ecp, only : nterm1, nterm2
+! Out  : hstmat2 (one electron Hamiltonian matrix)
+!
+      use modparallel
+      use modecp, only : nterm1, nterm2, maxangecp
+      use modbasis, only : nao, mtype, nshell
+      use modmolecule, only : natom
       implicit none
-      integer,parameter :: lenecp(0:6)=(/1,4,10,20,35,56,84/)
-      integer,intent(in) :: maxecpdim, maxpangdim
-      integer,intent(out) :: label1ecp(9*nterm1), label2ecp(6*nterm2)
-      integer,intent(out) :: num1ecp(2,56,56), num2ecp(2,maxpangdim*maxpangdim*lenecp(maxecpdim))
-      real(8),intent(out) :: term0ecp(maxpangdim*maxpangdim*lenecp(maxecpdim))
-      real(8),intent(out) :: term1ecp(nterm1), term2ecp(nterm2), xyzintecp(25*25*25)
+      integer :: maxfunc(0:6)=(/1,3,6,10,15,21,28/)
+      integer :: maxbasis, numtbasis, maxdim, llmax, maxecpdim, nsizecp1, nsizecp2, ish, jsh
+      integer,allocatable :: label1ecp(:), num1ecp(:), label2ecp(:), num2ecp(:)
+      real(8),intent(inout) :: hstmat2((nao*(nao+1))/2)
+      real(8),allocatable :: term1ecp(:), term2ecp(:), term0ecp(:), xyzintecp(:)
 !
-      call ecpzlm
-      call ecpxyz(xyzintecp,maxecpdim)
-      call ecpangint0(term0ecp,xyzintecp,maxecpdim,maxpangdim)
-      call ecpangint1(term1ecp,label1ecp,num1ecp,xyzintecp,maxecpdim)
-      call ecpangint2(term2ecp,label2ecp,num2ecp,xyzintecp,maxecpdim,maxpangdim)
+      maxbasis= maxval(mtype(1:nshell))
+      maxdim= maxfunc(maxbasis)
+      llmax= maxval(maxangecp(1:natom))
+      if(llmax >= 5) then
+        write(*,'(" This program supports up to SPDFG core potentials.")')
+        call iabort
+      endif
+      maxecpdim= max(maxbasis,llmax-1)
+      numtbasis=(maxecpdim+1)*(maxecpdim+2)*(maxecpdim+3)/6
+      nsizecp1=(numtbasis*numtbasis+numtbasis)/2+1
+      nsizecp2= llmax*llmax*numtbasis+1
+!
+      call memset(nterm1*10+nterm2*7+nsizecp1+nsizecp2*2+25*25*25)
+      allocate(term1ecp(nterm1),term2ecp(nterm2),term0ecp(nsizecp2),xyzintecp(25*25*25), &
+&              label1ecp(nterm1*9),label2ecp(nterm2*6),num1ecp(nsizecp1),num2ecp(nsizecp2))
+!
+! Prepare intermediate integrals for ECP
+!
+      call ecpinit(term1ecp,term2ecp,term0ecp,xyzintecp,label1ecp,label2ecp, &
+&                  num1ecp,num2ecp,maxecpdim,llmax,numtbasis)
+!
+!$OMP parallel
+      do ish= nshell-myrank,1,-nproc
+!$OMP do
+        do jsh= 1,ish
+          call calcintecp(hstmat2,term1ecp,term2ecp,term0ecp,xyzintecp,label1ecp,label2ecp, &
+&                         num1ecp,num2ecp,numtbasis,ish,jsh,maxdim)
+        enddo
+!$OMP enddo
+      enddo
+!$OMP end parallel
+!
+      deallocate(term1ecp,term2ecp,term0ecp,xyzintecp, &
+&                label1ecp,label2ecp,num1ecp,num2ecp)
+      call memunset(nterm1*10+nterm2*7+nsizecp1+nsizecp2*2+25*25*25)
 !
       return
 end
 
 
-!-----------------------------------
-! subroutine intecp(hmat,ish,jsh,maxdim)
-!-----------------------------------
+!---------------------------------------------------------------------------------
+  subroutine ecpinit(term1ecp,term2ecp,term0ecp,xyzintecp,label1ecp,label2ecp, &
+&                    num1ecp,num2ecp,maxecpdim,llmax,numtbasis)
+!---------------------------------------------------------------------------------
 !
+! Prepare values for ECP calculation
 !
+      use modecp, only : nterm1, nterm2
+      implicit none
+      integer,parameter :: lenecp(0:6)=(/1,4,10,20,35,56,84/)
+      integer,intent(in) :: maxecpdim, llmax, numtbasis
+      integer,intent(out) :: label1ecp(9*nterm1), label2ecp(6*nterm2)
+      integer,intent(out) :: num1ecp(*), num2ecp(*)
+      real(8),intent(out) :: term0ecp(*)
+      real(8),intent(out) :: term1ecp(nterm1), term2ecp(nterm2), xyzintecp(25*25*25)
 !
+      call ecpzlm
+      call ecpxyz(xyzintecp,maxecpdim)
+      call ecpangint0(term0ecp,xyzintecp,maxecpdim,llmax,numtbasis)
+      call ecpangint1(term1ecp,label1ecp,num1ecp,xyzintecp,maxecpdim)
+      call ecpangint2(term2ecp,label2ecp,num2ecp,xyzintecp,maxecpdim,llmax,numtbasis)
+!
+      return
+end
 
 
+!-----------------------------------------------------------------------------------------
+  subroutine calcintecp(hmat,term1ecp,term2ecp,term0ecp,xyzintecp,label1ecp,label2ecp, &
+&                       num1ecp,num2ecp,numtbasis,ish,jsh,len1)
+!-----------------------------------------------------------------------------------------
+!
+! Driver of effective core potential integrals
+!   (j|Uecp|i)
+!
+      use modparam, only : mxprsh
+      use modmolecule, only : natom, coord, znuc
+      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
+      use modecp, only : maxangecp, mtypeecp, locecp, mprimecp, execp, coeffecp, nterm1, nterm2
+      implicit none
+      integer,intent(in) :: label1ecp(nterm1*9), label2ecp(nterm2*6), num1ecp(*), num2ecp(*)
+      integer,intent(in) :: numtbasis, ish, jsh, len1
+      integer :: nangij(2), nprimij(2), nbfij(2), iatom, jatom, katom
+      integer :: iloc, jloc, ilocbf, jlocbf, iprim, jprim, i, j, ii, ij, maxj
+      integer :: ijkatom(3), nangkecp(mxprsh,6), nprimkecp(6), lmaxecp
+      real(8),parameter :: zero=0.0D+00
+      real(8),intent(in) :: term1ecp(nterm1), term2ecp(nterm2), term0ecp(*), xyzintecp(25*25*25)
+      real(8),intent(inout) :: hmat((nao*(nao+1))/2)
+      real(8) :: exij(mxprsh,2), coij(mxprsh,2), coordijk(3,3), ecpint(len1,len1)
+      real(8) :: exkecp(mxprsh,6), cokecp(mxprsh,6), ecpintsum(len1,len1)
+      logical :: iandj
+!
+      iandj=(ish == jsh)
+      nangij(1)= mtype(ish)
+      nangij(2)= mtype(jsh)
+      nprimij(1)= mprim(ish)
+      nprimij(2)= mprim(jsh)
+      nbfij(1)  = mbf(ish)
+      nbfij(2)  = mbf(jsh)
+      iatom = locatom(ish)
+      iloc  = locprim(ish)
+      ilocbf= locbf(ish)
+      jatom = locatom(jsh)
+      jloc  = locprim(jsh)
+      jlocbf= locbf(jsh)
+!
+      if((nangij(1) > 4).or.(nangij(2) > 4))then
+        write(*,'(" Error! This program supports up to g function in calcintecp")')
+        call iabort
+      endif
+!
+      do i= 1,3
+        coordijk(i,1)= coord(i,iatom)
+        coordijk(i,2)= coord(i,jatom)
+      enddo
+      do iprim= 1,nprimij(1)
+        exij(iprim,1)= ex(iloc+iprim)
+        coij(iprim,1)= coeff(iloc+iprim)
+      enddo
+      do jprim= 1,nprimij(2)
+        exij(jprim,2)= ex(jloc+jprim)
+        coij(jprim,2)= coeff(jloc+jprim)
+      enddo
+      ijkatom(1)= iatom
+      ijkatom(2)= jatom
+!
+      ecpintsum(1:nbfij(2),1:nbfij(1))= zero
+      do katom= 1,natom
+        if(maxangecp(katom) == -1) cycle
+        do i= 1,3
+          coordijk(i,3)= coord(i,katom)
+        enddo
+        ijkatom(3)= katom
+        lmaxecp= maxangecp(katom)
+        do i= 1,maxangecp(katom)+1
+          nprimkecp(i)= mprimecp(i-1,katom)
+          do j= 1,nprimkecp(i)
+            exkecp(j,i)= execp(locecp(i-1,katom)+j)
+            cokecp(j,i)= coeffecp(locecp(i-1,katom)+j)
+            nangkecp(j,i)= mtypeecp(locecp(i-1,katom)+j)
+          enddo
+        enddo
+        call intecp(ecpint,exij,coij,coordijk,nprimij,nangij,nbfij, &
+&                   exkecp,cokecp,nprimkecp,nangkecp,lmaxecp, &
+&                   term1ecp,term2ecp,term0ecp,xyzintecp,label1ecp,label2ecp, &
+&                   num1ecp,num2ecp,numtbasis,ijkatom,len1,mxprsh)
+        do i= 1,nbfij(1)
+          do j= 1,nbfij(2)
+            ecpintsum(j,i)= ecpintsum(j,i)+ecpint(j,i)
+          enddo
+        enddo
+      enddo
+!
+      maxj= nbfij(2)
+      do i= 1,nbfij(1)
+        if(iandj) maxj= i
+        ii= ilocbf+i
+        ij= ii*(ii-1)/2+jlocbf
+        do j= 1,maxj
+          hmat(ij+j)= hmat(ij+j)+ecpintsum(j,i)
+        enddo
+      enddo
+!
+      return
+end
 
+
+!--------------------------------------------------------------------------------
+  subroutine intecp(ecpint,exij,coij,coordijk,nprimij,nangij,nbfij, &
+&                   exkecp,cokecp,nprimkecp,nangkecp,lmaxecp, &
+&                   term1ecp,term2ecp,term0ecp,xyzintecp,label1ecp,label2ecp, &
+&                   num1ecp,num2ecp,numtbasis,ijkatom,len1,mxprsh)
+!---------------------------------------------------------------------------------
+!
+! Wrapper of ECP integral routine 
+!
+      implicit none
+      integer,intent(in) :: mxprsh, nprimij(2), nangij(2), nbfij(2), nprimkecp(6)
+      integer,intent(in) :: nangkecp(mxprsh,6), lmaxecp, label1ecp(*), label2ecp(*)
+      integer,intent(in) :: num1ecp(*), num2ecp(*), numtbasis, ijkatom(3), len1
+      integer :: icab
+      real(8),intent(in) :: exij(mxprsh,2), coij(mxprsh,2), coordijk(3,3)
+      real(8),intent(in) :: exkecp(mxprsh,6), cokecp(mxprsh,6), term1ecp(*), term2ecp(*)
+      real(8),intent(in) :: term0ecp(*), xyzintecp(25*25*25)
+      real(8),intent(inout) :: ecpint(len1,len1)
+!
+      if(ijkatom(1) == ijkatom(3)) then
+        if(ijkatom(2) == ijkatom(3)) then
+          call ecpaaa(ecpint,exij,coij,nprimij,nangij,nbfij, &
+&                     exkecp,cokecp,nprimkecp,nangkecp,lmaxecp, &
+&                     term0ecp,xyzintecp,numtbasis,len1,mxprsh)
+        else
+          icab= 2
+          call ecpcaa(ecpint,exij,coij,coordijk,nprimij,nangij,nbfij, &
+&                     exkecp,cokecp,nprimkecp,nangkecp,lmaxecp, &
+&                     term1ecp,term2ecp,term0ecp,label1ecp,label2ecp, &
+&                     num1ecp,num2ecp,numtbasis,len1,mxprsh,icab)
+        endif
+      else
+        if(ijkatom(2) == ijkatom(3)) then
+          icab= 3
+          call ecpcaa(ecpint,exij,coij,coordijk,nprimij,nangij,nbfij, &
+&                     exkecp,cokecp,nprimkecp,nangkecp,lmaxecp, &
+&                     term1ecp,term2ecp,term0ecp,label1ecp,label2ecp, &
+&                     num1ecp,num2ecp,numtbasis,len1,mxprsh,icab)
+        else
+          call ecpcab(ecpint,exij,coij,coordijk,nprimij,nangij,nbfij, &
+&                     exkecp,cokecp,nprimkecp,nangkecp,lmaxecp, &
+&                     term1ecp,term2ecp,label1ecp,label2ecp, &
+&                     num1ecp,num2ecp,numtbasis,len1,mxprsh)
+        endif
+      endif
+!
+      return
+end
+
+
+!----------------------------------------------------------------
+  subroutine ecpaaa(ecpint,exij,coij,nprimij,nangij,nbfij, &
+&                   exkecp,cokecp,nprimkecp,nangkecp,lmaxecp, &
+&                   term0ecp,xyzintecp,numtbasis,len1,mxprsh)
+!----------------------------------------------------------------
+!
+! Calculate  <A|A|A>-type ECP integral
+!
+      use modecp, only : nx, ny, nz
+      implicit none
+      integer :: locxyzecp(0:7)=(/0,1,4,10,20,35,56,84/)
+      integer :: ncart(0:6)=(/1,3,6,10,15,21,28/)
+      integer,intent(in) :: len1, mxprsh, nprimij(2), nangij(2), nbfij(2), nprimkecp(6)
+      integer,intent(in) :: nangkecp(mxprsh,6), lmaxecp, numtbasis
+      integer :: nang12, ncarti, ncartj, iprim, jprim, kk, iindx, jindx, ll, lambda, nlm1
+      integer :: ii, jj, i2, j2, mx, my, mz, mu, nlm
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),parameter :: half=0.5D+00, two=2.0D+00, three=3.0D+00, four=4.0D+00
+      real(8),parameter :: six=6.0D+00, eight=8.0D+00, p24=24.0D+00
+      real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
+      real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
+      real(8),parameter :: sqrt7=2.645751311064590D+00, sqrt35=5.916079783099616D+00
+      real(8),parameter :: sqrt35third=3.415650255319866D+00
+      real(8),parameter :: facf1=0.36969351199675831D+00  ! 1/sqrt(10-6/sqrt(5))
+      real(8),parameter :: facf2=0.86602540378443865D+00  ! 1/sqrt(4/3)
+      real(8),parameter :: facf3=0.28116020334310144D+00  ! 1/sqrt(46/3-6/sqrt(5))
+      real(8),parameter :: facf4=0.24065403274177409D+00  ! 1/sqrt(28-24/sqrt(5))
+      real(8),parameter :: facg1=0.19440164201192295D+00 ! 1/sqrt(1336/35-8sqrt(15/7))
+      real(8),parameter :: facg2=0.36969351199675831D+00 ! 1/sqrt(10-6/sqrt(5)
+      real(8),parameter :: facg3=0.15721262982485929D+00 ! 1/sqrt(1774/35-8sqrt(15/7)-8sqrt(3/35))
+      real(8),parameter :: facg4=0.24313189758394717D+00 ! 1/sqrt(98/5-6/sqrt(5))
+      real(8),parameter :: facg5=3.20603188768051639D-02
+!                                                 ! 1/sqrt(51512/35-984sqrt(5/21)-102/sqrt(105))
+      real(8),parameter :: facg6=0.18742611911532351D+00 ! 1/sqrt(196/5-24/sqrt(5))
+      real(8),parameter :: facg7=1.11803398874989484D+00 ! 1/sqrt(4/5)
+      real(8),intent(in) :: exij(mxprsh,2), coij(mxprsh,2),exkecp(mxprsh,6)
+      real(8),intent(in) :: cokecp(mxprsh,6), term0ecp(*), xyzintecp(0:24,0:24,0:24)
+      real(8),intent(out) :: ecpint(len1,len1)
+      real(8) :: ecptmp(28,28), work(28), rad1, ex12, co12, tmp1, rad2, tmp2, type1da0, ang2
+!
+      nang12= nangij(1)+nangij(2)
+      if(mod(nang12,2) == 1) then
+        ecpint(1:nbfij(2),1:nbfij(1))= zero
+        return
+      endif
+!
+      ncarti= ncart(nangij(1))
+      ncartj= ncart(nangij(2))
+      ecptmp(1:ncartj,1:ncarti)= zero
+!
+! Calculate radial integral of type1
+!
+      rad1= zero
+      do iprim= 1,nprimij(1)
+        do jprim=1,nprimij(2)
+          ex12= exij(iprim,1)+exij(jprim,2)
+          co12= coij(iprim,1)*coij(jprim,2)
+          tmp1= zero
+          do kk=1,nprimkecp(1)
+            tmp1= tmp1+type1da0(nang12+nangkecp(kk,1),ex12+exkecp(kk,1))*cokecp(kk,1)
+          enddo
+          rad1= rad1+tmp1*co12
+        enddo
+      enddo
+!
+! Calculate type1 term
+!
+      iindx= locxyzecp(nangij(1))
+      jindx= locxyzecp(nangij(2))
+      do ii= 1,ncarti
+        do jj= 1,ncartj
+          mx= nx(iindx+ii)+nx(jindx+jj)
+          my= ny(iindx+ii)+ny(jindx+jj)
+          mz= nz(iindx+ii)+nz(jindx+jj)
+          ecptmp(jj,ii)= ecptmp(jj,ii)+rad1*xyzintecp(mz,my,mx)
+        enddo
+      enddo
+!
+      do ll= 2,lmaxecp+1
+        lambda= ll-2
+        nlm1=(lambda*(lambda+1))
+!
+! Calculate radial integral of type2
+!
+        rad2= zero
+        do iprim= 1,nprimij(1)
+          do jprim= 1,nprimij(2)
+            ex12= exij(iprim,1)+exij(jprim,2)
+            co12= coij(iprim,1)*coij(jprim,2)
+            tmp2= zero
+            do kk= 1,nprimkecp(ll)
+             tmp2= tmp2+type1da0(nang12+nangkecp(kk,ll),ex12+exkecp(kk,ll))*cokecp(kk,ll)
+            enddo
+            rad2 = rad2+tmp2*co12
+          enddo
+        enddo
+!
+! Calculate type2 term
+!
+        do ii= 1,ncarti
+          i2= iindx+ii
+          do jj= 1,ncartj
+            j2= jindx+jj
+            ang2= zero
+            do mu=-lambda,lambda
+              nlm=(nlm1-mu)*numtbasis
+              ang2= ang2+term0ecp(nlm+i2)*term0ecp(nlm+j2)
+            enddo
+            ecptmp(jj,ii)= ecptmp(jj,ii)+rad2*ang2
+          enddo
+        enddo
+      enddo
+!
+! Normalize ECP integrals
+!
+! Bra part
+!
+      select case(nbfij(2))
+! D function
+        case(5)
+          do ii= 1,ncarti
+            do jj= 1,6
+              work(jj)= ecptmp(jj,ii)
+            enddo
+            ecptmp(1,ii)=(work(3)*two-work(1)-work(2))*half
+            ecptmp(2,ii)= work(5)*sqrt3
+            ecptmp(3,ii)= work(6)*sqrt3
+            ecptmp(4,ii)=(work(1)-work(2))*sqrt3h
+            ecptmp(5,ii)= work(4)*sqrt3
+          enddo
+        case(6)
+          do ii= 1,ncarti
+            do jj= 4,6
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt3
+            enddo
+          enddo
+! F function
+        case(7)
+          do ii= 1,ncarti
+            do jj= 1,3
+              work(jj)= ecptmp(jj,ii)
+            enddo
+            do jj= 4,9
+              work(jj)= ecptmp(jj,ii)*sqrt5
+            enddo
+            work(10)= ecptmp(10,ii)*sqrt15
+            ecptmp(1,ii)=( two*work(3)-three*work(5)-three*work(7))*facf4
+            ecptmp(2,ii)=(-work(1)-work(6)+four*work(8)           )*facf3
+            ecptmp(3,ii)=(-work(2)-work(4)+four*work(9)           )*facf3
+            ecptmp(4,ii)=( work(5)-work(7)                        )*facf2
+            ecptmp(5,ii)=  work(10)
+            ecptmp(6,ii)=( work(1)-three*work(6)                  )*facf1
+            ecptmp(7,ii)=(-work(2)+three*work(4)                  )*facf1
+          enddo
+        case(10)
+          do ii= 1,ncarti
+            do jj= 4,9
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt5
+            enddo
+            ecptmp(10,ii)= ecptmp(10,ii)*sqrt15
+          enddo
+! G function
+        case(9)
+          do ii= 1,ncarti
+            do jj= 1,3
+              work(jj)= ecptmp(jj,ii)
+            enddo
+            do jj= 4,9
+              work(jj)= ecptmp(jj,ii)*sqrt7
+            enddo
+            do jj= 10,12
+              work(jj)= ecptmp(jj,ii)*sqrt35third
+            enddo
+            do jj= 13,15
+              work(jj)= ecptmp(jj,ii)*sqrt35
+            enddo
+            ecptmp(1,ii)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+&                        -work(11)*p24-work(12)*p24)*facg5
+            ecptmp(2,ii)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+            ecptmp(3,ii)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+            ecptmp(4,ii)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+            ecptmp(5,ii)=(-work(4)-work(6)+work(15)*six)*facg6
+            ecptmp(6,ii)=(work(5)-work(14)*three)*facg2
+            ecptmp(7,ii)=(-work(7)+work(13)*three)*facg2
+            ecptmp(8,ii)=(work(1)+work(2)-work(10)*six)*facg1
+            ecptmp(9,ii)=(work(4)-work(6))*facg7
+          enddo
+        case(15)
+          do ii= 1,ncarti
+            do jj= 4,9
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt7
+            enddo
+            do jj= 10,12
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35third
+            enddo
+            do jj= 13,15
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35
+            enddo
+          enddo
+      end select
+!
+! Ket part
+!
+      select case(nbfij(1))
+! D function
+        case(5)
+          do jj= 1,nbfij(2)
+            do ii= 1,6
+              work(ii)= ecptmp(jj,ii)
+            enddo
+            ecptmp(jj,1)=(work(3)*two-work(1)-work(2))*half
+            ecptmp(jj,2)= work(5)*sqrt3
+            ecptmp(jj,3)= work(6)*sqrt3
+            ecptmp(jj,4)=(work(1)-work(2))*sqrt3h
+            ecptmp(jj,5)= work(4)*sqrt3
+          enddo
+        case(6)
+          do jj= 1,nbfij(2)
+            do ii= 4,6
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt3
+            enddo
+          enddo
+! F function
+        case(7)
+          do jj= 1,nbfij(2)
+            do ii= 1,3
+              work(ii)= ecptmp(jj,ii)
+            enddo
+            do ii= 4,9
+              work(ii)= ecptmp(jj,ii)*sqrt5
+            enddo
+            work(10)= ecptmp(jj,10)*sqrt15
+            ecptmp(jj,1)=( two*work(3)-three*work(5)-three*work(7))*facf4
+            ecptmp(jj,2)=(-work(1)-work(6)+four*work(8)           )*facf3
+            ecptmp(jj,3)=(-work(2)-work(4)+four*work(9)           )*facf3
+            ecptmp(jj,4)=( work(5)-work(7)                        )*facf2
+            ecptmp(jj,5)=  work(10)
+            ecptmp(jj,6)=( work(1)-three*work(6)                  )*facf1
+            ecptmp(jj,7)=(-work(2)+three*work(4)                  )*facf1
+          enddo
+        case(10)
+          do jj= 1,nbfij(2)
+            do ii= 4,9
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt5
+            enddo
+            ecptmp(jj,10)= ecptmp(jj,10)*sqrt15
+          enddo
+! G function
+        case(9)
+          do jj= 1,nbfij(2)
+            do ii= 1,3
+              work(ii)= ecptmp(jj,ii)
+            enddo
+            do ii= 4,9
+              work(ii)= ecptmp(jj,ii)*sqrt7
+            enddo
+            do ii= 10,12
+              work(ii)= ecptmp(jj,ii)*sqrt35third
+            enddo
+            do ii= 13,15
+              work(ii)= ecptmp(jj,ii)*sqrt35
+            enddo
+            ecptmp(jj,1)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+&                       -work(11)*p24-work(12)*p24)*facg5
+            ecptmp(jj,2)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+            ecptmp(jj,3)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+            ecptmp(jj,4)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+            ecptmp(jj,5)=(-work(4)-work(6)+work(15)*six)*facg6
+            ecptmp(jj,6)=(work(5)-work(14)*three)*facg2
+            ecptmp(jj,7)=(-work(7)+work(13)*three)*facg2
+            ecptmp(jj,8)=(work(1)+work(2)-work(10)*six)*facg1
+            ecptmp(jj,9)=(work(4)-work(6))*facg7
+          enddo
+        case(15)
+          do jj= 1,nbfij(2)
+            do ii= 4,9
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt7
+            enddo
+            do ii= 10,12
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35third
+            enddo
+            do ii= 13,15
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35
+            enddo
+          enddo
+      end select
+!
+      do ii= 1,nbfij(1)
+        do jj= 1,nbfij(2)
+          ecpint(jj,ii)= ecptmp(jj,ii)
+        enddo
+      enddo
+!
+      return
+end
+
+
+!----------------------------------------------------------------------
+  subroutine ecpcaa(ecpint,exij,coij,coordijk,nprimij,nangij,nbfij, &
+&                   exkecp,cokecp,nprimkecp,nangkecp,lmaxecp, &
+&                   term1ecp,term2ecp,term0ecp,label1ecp,label2ecp, &
+&                   num1ecp,num2ecp,numtbasis,len1,mxprsh,icab)
+!----------------------------------------------------------------------
+!
+! Calculate  <C|A|A> or <A|A|B>-type ECP integral
+!
+      use modecp, only : nx, ny, nz
+      implicit none
+      integer,intent(in) :: len1, mxprsh, nprimij(2), nangij(2), nbfij(2), nprimkecp(6)
+      integer,intent(in) :: nangkecp(mxprsh,6), lmaxecp, numtbasis
+      integer,intent(in) :: label1ecp(9,*), label2ecp(6,*), num1ecp(*), num2ecp(*), icab
+      integer :: ncart(0:6)=(/1,3,6,10,15,21,28/), locxyzecp(0:7)=(/0,1,4,10,20,35,56,84/)
+      integer :: nangbasis, ncarti, ncartj, ii, jj, nangbasis2, iprim, jprim, nangk, nn
+      integer :: iindex, jindex, i1, j1, indx, label1f, label1l, lambda, ijang, nxyz
+      integer :: kk, mm, icount, ka, la, mu, kx, ky, kz, kxp, kyp, kzp, lmindx, ll, ll2
+      integer :: ksum, nangll, mx, my, mz, nlm, label2f, label2l
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, pi4=1.256637061435917D+01
+      real(8),parameter :: half=0.5D+00, two=2.0D+00, three=3.0D+00, four=4.0D+00
+      real(8),parameter :: six=6.0D+00, eight=8.0D+00, p24=24.0D+00
+      real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
+      real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
+      real(8),parameter :: sqrt7=2.645751311064590D+00, sqrt35=5.916079783099616D+00
+      real(8),parameter :: sqrt35third=3.415650255319866D+00
+      real(8),parameter :: facf1=0.36969351199675831D+00  ! 1/sqrt(10-6/sqrt(5))
+      real(8),parameter :: facf2=0.86602540378443865D+00  ! 1/sqrt(4/3)
+      real(8),parameter :: facf3=0.28116020334310144D+00  ! 1/sqrt(46/3-6/sqrt(5))
+      real(8),parameter :: facf4=0.24065403274177409D+00  ! 1/sqrt(28-24/sqrt(5))
+      real(8),parameter :: facg1=0.19440164201192295D+00 ! 1/sqrt(1336/35-8sqrt(15/7))
+      real(8),parameter :: facg2=0.36969351199675831D+00 ! 1/sqrt(10-6/sqrt(5)
+      real(8),parameter :: facg3=0.15721262982485929D+00 ! 1/sqrt(1774/35-8sqrt(15/7)-8sqrt(3/35))
+      real(8),parameter :: facg4=0.24313189758394717D+00 ! 1/sqrt(98/5-6/sqrt(5))
+      real(8),parameter :: facg5=3.20603188768051639D-02
+!                                                 ! 1/sqrt(51512/35-984sqrt(5/21)-102/sqrt(105))
+      real(8),parameter :: facg6=0.18742611911532351D+00 ! 1/sqrt(196/5-24/sqrt(5))
+      real(8),parameter :: facg7=1.11803398874989484D+00 ! 1/sqrt(4/5)
+      real(8),intent(in) :: exij(mxprsh,2), coij(mxprsh,2), exkecp(mxprsh,6)
+      real(8),intent(in) :: cokecp(mxprsh,6), term0ecp(*), term1ecp(*), term2ecp(*)
+      real(8),intent(in) :: coordijk(3,3)
+      real(8),intent(out) :: ecpint(len1,len1)
+      real(8) :: ecptmp(28,28), work(28), unitvec(3), bax, bay, baz, ba, cax, cay, caz, ca
+      real(8) :: abx(0:6), aby(0:6), abz(0:6), acx(0:6), acy(0:6), acz(0:6)
+      real(8) :: type12rad(78), ex01, ex02, ex12, co12, dazeta, da2zeta, besselarginv
+      real(8) :: xp0, sqrtinvzeta, alpha, xp1, co123, radint(78), zzlm(121)
+      real(8) :: type12ang(11,11), type1xyz, type1sum, xyz0, type2xyz, type2sum
+!
+      nangbasis= nangij(1)+nangij(2)
+      ncarti= ncart(nangij(1))
+      ncartj= ncart(nangij(2))
+      ecptmp(1:ncartj,1:ncarti)= zero
+!
+      if(icab == 2) then
+        bax= coordijk(1,2)-coordijk(1,3)
+        bay= coordijk(2,2)-coordijk(2,3)
+        baz= coordijk(3,2)-coordijk(3,3)
+        ba = sqrt(bax*bax+bay*bay+baz*baz)
+        unitvec(1)= bax/ba
+        unitvec(2)= bay/ba
+        unitvec(3)= baz/ba
+        abx(0)= one
+        aby(0)= one
+        abz(0)= one
+        do jj= 1,nangij(2)
+          abx(jj)=-bax*abx(jj-1)
+          aby(jj)=-bay*aby(jj-1)
+          abz(jj)=-baz*abz(jj-1)
+        enddo
+      else
+        cax= coordijk(1,1)-coordijk(1,3)
+        cay= coordijk(2,1)-coordijk(2,3)
+        caz= coordijk(3,1)-coordijk(3,3)
+        ca = sqrt(cax*cax+cay*cay+caz*caz)
+        unitvec(1)= cax/ca
+        unitvec(2)= cay/ca
+        unitvec(3)= caz/ca
+        acx(0)= one
+        acy(0)= one
+        acz(0)= one
+        do ii= 1,nangij(1)
+          acx(ii)=-cax*acx(ii-1)
+          acy(ii)=-cay*acy(ii-1)
+          acz(ii)=-caz*acz(ii-1)
+        enddo
+      endif
+!
+! Type 1
+!
+      nangbasis2=((nangbasis+1)*(nangbasis+2))/2
+      type12rad(1:nangbasis2)= zero
+!
+! Radial integral of Type 1
+!
+      do iprim= 1,nprimij(1)
+        ex01= exij(iprim,1)
+        do jprim= 1,nprimij(2)
+          ex02= exij(jprim,2)
+          ex12= ex01+ex02
+          co12= coij(iprim,1)*coij(jprim,2)
+          if(icab == 2) then
+            dazeta= ex02*ba
+            da2zeta= dazeta*ba
+          elseif(icab == 3) then
+            dazeta= ex01*ca
+            da2zeta= dazeta*ca
+          endif
+          besselarginv= one/(dazeta+dazeta)
+          xp0 = exp(-da2zeta)
+!
+          do kk= 1,nprimkecp(1)
+            sqrtinvzeta = one/sqrt(ex12+exkecp(kk,1))
+            alpha= dazeta*sqrtinvzeta
+            xp1= exp(-da2zeta+alpha*alpha)
+            nangk= nangkecp(kk,1)
+            co123= cokecp(kk,1)*co12
+            call calctype1rad(radint,besselarginv,alpha,sqrtinvzeta, &
+&                             xp0,xp1,nangk,nangbasis)
+            do nn= 1,nangbasis2
+              type12rad(nn)= type12rad(nn)+radint(nn)*co123
+            enddo
+          enddo
+        enddo
+      enddo
+!
+! Angular integral of Type 1
+!
+      call calczspher(zzlm,unitvec,nangbasis)
+      iindex= locxyzecp(nangij(1))
+      jindex= locxyzecp(nangij(2))
+      do i1= 1,ncarti
+        ii= iindex+i1
+        do j1= 1,ncartj
+          jj= jindex+j1
+          if(ii >= jj) then
+            indx= jj+(ii*(ii-1))/2
+          else
+            indx= ii+(jj*(jj-1))/2
+          endif
+          label1f= num1ecp(indx)
+          label1l= num1ecp(indx+1)-1
+          do lambda= 1,nangbasis+1
+            do ijang= lambda,nangbasis+1
+              type12ang(ijang,lambda)= zero
+            enddo
+          enddo
+          nxyz = nx(ii)+ny(ii)+nz(ii)+nx(jj)+ny(jj)+nz(jj)
+          kk= ii
+          mm= 3
+          if(icab == 2) then
+             kk= jj
+             mm= 6
+          endif
+          if(ii >= jj) mm= 9-mm
+          do icount= label1f,label1l
+            ka = label1ecp(1,icount)+1
+            la = label1ecp(2,icount)+1
+            mu = label1ecp(3,icount)
+            kx = label1ecp(mm+1,icount)+nx(kk)
+            ky = label1ecp(mm+2,icount)+ny(kk)
+            kz = label1ecp(mm+3,icount)+nz(kk)
+            if((kx+ky+kz) /= nxyz) cycle
+            kxp= label1ecp(4,icount)+label1ecp(7,icount)
+            kyp= label1ecp(5,icount)+label1ecp(8,icount)
+            kzp= label1ecp(6,icount)+label1ecp(9,icount)
+            lmindx = la*(la-1)-mu+1
+            if(icab == 2) then
+              type1xyz= abx(kx-kxp)*aby(ky-kyp)*abz(kz-kzp)*zzlm(lmindx)
+            else
+              type1xyz= acx(kx-kxp)*acy(ky-kyp)*acz(kz-kzp)*zzlm(lmindx)
+            endif
+            type12ang(ka,la)= type12ang(ka,la)+term1ecp(icount)*type1xyz
+          enddo
+          type1sum= zero
+          nn= 1
+          do ijang= 1,nangbasis+1
+            do lambda= 1,ijang
+              type1sum= type1sum+type12rad(nn)*type12ang(ijang,lambda)
+              nn= nn+1
+            enddo
+          enddo
+          ecptmp(j1,i1)= ecptmp(j1,i1)+pi4*type1sum
+        enddo
+      enddo
+!
+! Type 2
+!
+      do ll= 2,lmaxecp+1
+!
+! Radial integral of Type 2
+!
+        type12rad(1:nangbasis2)= zero
+        do iprim= 1,nprimij(1)
+          ex01= exij(iprim,1)
+          do jprim= 1,nprimij(2)
+            ex02= exij(jprim,2)
+            ex12= ex01+ex02
+            co12= coij(iprim,1)*coij(jprim,2)
+            if(icab == 2) then
+              dazeta= ex02*ba
+              da2zeta= dazeta*ba
+            elseif(icab == 3) then
+              dazeta= ex01*ca
+              da2zeta= dazeta*ca
+            endif
+            besselarginv= one/(dazeta*two)
+            xp0= exp(-da2zeta)
+!
+            do kk= 1,nprimkecp(ll)
+              sqrtinvzeta= one/sqrt(ex12+exkecp(kk,ll))
+              alpha= dazeta*sqrtinvzeta
+              xp1= exp(-da2zeta+alpha*alpha)
+              nangk= nangkecp(kk,ll)
+              co123= cokecp(kk,ll)*co12
+              call calctype1rad(radint,besselarginv,alpha,sqrtinvzeta, &
+&                               xp0,xp1,nangk,nangbasis)
+              do nn= 1,nangbasis2
+                type12rad(nn)= type12rad(nn)+radint(nn)*co123
+              enddo
+            enddo
+          enddo
+        enddo
+!
+! Angular integral of Type 2
+!
+        ll2=(ll-2)*(ll-1)
+        call calczspher(zzlm,unitvec,nangbasis)
+        do i1= 1,ncarti
+          ii= iindex+i1
+          do j1= 1,ncartj
+            jj= jindex+j1
+            do lambda= 1,nangbasis+1
+              do ijang= lambda,nangbasis+1
+                type12ang(ijang,lambda)= zero
+              enddo
+            enddo
+            mx= nx(ii)+nx(jj)
+            my= ny(ii)+ny(jj)
+            mz= nz(ii)+nz(jj)
+            if(icab == 2) then
+              kk= ii
+            else
+              kk= jj
+            endif
+            ksum= nx(kk)+ny(kk)+nz(kk)+1
+            nangll= ll-2
+            do mm= nangll,-nangll,-1
+              nlm=(ll2-mm)*numtbasis
+              xyz0= term0ecp(nlm+kk)
+              nlm= nlm+ii+jj
+              label2f = num2ecp(nlm-kk)
+              label2l = num2ecp(nlm-kk+1)-1
+              do icount= label2f,label2l
+                la= label2ecp(1,icount)+1
+                ka= label2ecp(2,icount)+ksum
+                mu= label2ecp(3,icount)
+                kx= label2ecp(4,icount)+nx(kk)
+                ky= label2ecp(5,icount)+ny(kk)
+                kz= label2ecp(6,icount)+nz(kk)
+                lmindx= la*(la-1)-mu+1
+                if(icab == 2) then
+                  type2xyz= xyz0*abx(mx-kx)*aby(my-ky)*abz(mz-kz)*zzlm(lmindx)
+                else
+                  type2xyz= xyz0*acx(mx-kx)*acy(my-ky)*acz(mz-kz)*zzlm(lmindx)
+                endif
+                type12ang(ka,la)= type12ang(ka,la)+term2ecp(icount)*type2xyz
+              enddo
+            enddo
+            type2sum= zero
+            nn= 1
+            do ijang= 1,nangbasis+1
+              do lambda= 1,ijang
+                type2sum= type2sum+type12rad(nn)*type12ang(ijang,lambda)
+                nn= nn+1
+              enddo
+            enddo
+            ecptmp(j1,i1)= ecptmp(j1,i1)+pi4*type2sum
+          enddo
+        enddo
+      enddo
+!
+! Normalize ECP integrals
+!
+! Bra part
+!
+      select case(nbfij(2))
+! D function
+        case(5)
+          do ii= 1,ncarti
+            do jj= 1,6
+              work(jj)= ecptmp(jj,ii)
+            enddo
+            ecptmp(1,ii)=(work(3)*two-work(1)-work(2))*half
+            ecptmp(2,ii)= work(5)*sqrt3
+            ecptmp(3,ii)= work(6)*sqrt3
+            ecptmp(4,ii)=(work(1)-work(2))*sqrt3h
+            ecptmp(5,ii)= work(4)*sqrt3
+          enddo
+        case(6)
+          do ii= 1,ncarti
+            do jj= 4,6
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt3
+            enddo
+          enddo
+! F function
+        case(7)
+          do ii= 1,ncarti
+            do jj= 1,3
+              work(jj)= ecptmp(jj,ii)
+            enddo
+            do jj= 4,9
+              work(jj)= ecptmp(jj,ii)*sqrt5
+            enddo
+            work(10)= ecptmp(10,ii)*sqrt15
+            ecptmp(1,ii)=( two*work(3)-three*work(5)-three*work(7))*facf4
+            ecptmp(2,ii)=(-work(1)-work(6)+four*work(8)           )*facf3
+            ecptmp(3,ii)=(-work(2)-work(4)+four*work(9)           )*facf3
+            ecptmp(4,ii)=( work(5)-work(7)                        )*facf2
+            ecptmp(5,ii)=  work(10)
+            ecptmp(6,ii)=( work(1)-three*work(6)                  )*facf1
+            ecptmp(7,ii)=(-work(2)+three*work(4)                  )*facf1
+          enddo
+        case(10)
+          do ii= 1,ncarti
+            do jj= 4,9
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt5
+            enddo
+            ecptmp(10,ii)= ecptmp(10,ii)*sqrt15
+          enddo
+! G function
+        case(9)
+          do ii= 1,ncarti
+            do jj= 1,3
+              work(jj)= ecptmp(jj,ii)
+            enddo
+            do jj= 4,9
+              work(jj)= ecptmp(jj,ii)*sqrt7
+            enddo
+            do jj= 10,12
+              work(jj)= ecptmp(jj,ii)*sqrt35third
+            enddo
+            do jj= 13,15
+              work(jj)= ecptmp(jj,ii)*sqrt35
+            enddo
+            ecptmp(1,ii)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+&                        -work(11)*p24-work(12)*p24)*facg5
+            ecptmp(2,ii)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+            ecptmp(3,ii)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+            ecptmp(4,ii)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+            ecptmp(5,ii)=(-work(4)-work(6)+work(15)*six)*facg6
+            ecptmp(6,ii)=(work(5)-work(14)*three)*facg2
+            ecptmp(7,ii)=(-work(7)+work(13)*three)*facg2
+            ecptmp(8,ii)=(work(1)+work(2)-work(10)*six)*facg1
+            ecptmp(9,ii)=(work(4)-work(6))*facg7
+          enddo
+        case(15)
+          do ii= 1,ncarti
+            do jj= 4,9
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt7
+            enddo
+            do jj= 10,12
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35third
+            enddo
+            do jj= 13,15
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35
+            enddo
+          enddo
+      end select
+!
+! Ket part
+!
+      select case(nbfij(1))
+! D function
+        case(5)
+          do jj= 1,nbfij(2)
+            do ii= 1,6
+              work(ii)= ecptmp(jj,ii)
+            enddo
+            ecptmp(jj,1)=(work(3)*two-work(1)-work(2))*half
+            ecptmp(jj,2)= work(5)*sqrt3
+            ecptmp(jj,3)= work(6)*sqrt3
+            ecptmp(jj,4)=(work(1)-work(2))*sqrt3h
+            ecptmp(jj,5)= work(4)*sqrt3
+          enddo
+        case(6)
+          do jj= 1,nbfij(2)
+            do ii= 4,6
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt3
+            enddo
+          enddo
+! F function
+        case(7)
+          do jj= 1,nbfij(2)
+            do ii= 1,3
+              work(ii)= ecptmp(jj,ii)
+            enddo
+            do ii= 4,9
+              work(ii)= ecptmp(jj,ii)*sqrt5
+            enddo
+            work(10)= ecptmp(jj,10)*sqrt15
+            ecptmp(jj,1)=( two*work(3)-three*work(5)-three*work(7))*facf4
+            ecptmp(jj,2)=(-work(1)-work(6)+four*work(8)           )*facf3
+            ecptmp(jj,3)=(-work(2)-work(4)+four*work(9)           )*facf3
+            ecptmp(jj,4)=( work(5)-work(7)                        )*facf2
+            ecptmp(jj,5)=  work(10)
+            ecptmp(jj,6)=( work(1)-three*work(6)                  )*facf1
+            ecptmp(jj,7)=(-work(2)+three*work(4)                  )*facf1
+          enddo
+        case(10)
+          do jj= 1,nbfij(2)
+            do ii= 4,9
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt5
+            enddo
+            ecptmp(jj,10)= ecptmp(jj,10)*sqrt15
+          enddo
+! G function
+        case(9)
+          do jj= 1,nbfij(2)
+            do ii= 1,3
+              work(ii)= ecptmp(jj,ii)
+            enddo
+            do ii= 4,9
+              work(ii)= ecptmp(jj,ii)*sqrt7
+            enddo
+            do ii= 10,12
+              work(ii)= ecptmp(jj,ii)*sqrt35third
+            enddo
+            do ii= 13,15
+              work(ii)= ecptmp(jj,ii)*sqrt35
+            enddo
+            ecptmp(jj,1)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+&                       -work(11)*p24-work(12)*p24)*facg5
+            ecptmp(jj,2)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+            ecptmp(jj,3)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+            ecptmp(jj,4)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+            ecptmp(jj,5)=(-work(4)-work(6)+work(15)*six)*facg6
+            ecptmp(jj,6)=(work(5)-work(14)*three)*facg2
+            ecptmp(jj,7)=(-work(7)+work(13)*three)*facg2
+            ecptmp(jj,8)=(work(1)+work(2)-work(10)*six)*facg1
+            ecptmp(jj,9)=(work(4)-work(6))*facg7
+          enddo
+        case(15)
+          do jj= 1,nbfij(2)
+            do ii= 4,9
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt7
+            enddo
+            do ii= 10,12
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35third
+            enddo
+            do ii= 13,15
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35
+            enddo
+          enddo
+      end select
+!
+      do ii= 1,nbfij(1)
+        do jj= 1,nbfij(2)
+          ecpint(jj,ii)= ecptmp(jj,ii)
+        enddo
+      enddo
+!
+      return
+end
+
+
+!----------------------------------------------------------------------
+  subroutine ecpcab(ecpint,exij,coij,coordijk,nprimij,nangij,nbfij, &
+&                   exkecp,cokecp,nprimkecp,nangkecp,lmaxecp, &
+&                   term1ecp,term2ecp,label1ecp,label2ecp, &
+&                   num1ecp,num2ecp,numtbasis,len1,mxprsh)
+!----------------------------------------------------------------------
+!
+! Calculate  <C|A|B>-type ECP integral
+!
+!
+      use modecp, only : nx, ny, nz
+      implicit none
+      integer,intent(in) :: len1, mxprsh, nprimij(2), nangij(2), nbfij(2), nprimkecp(6)
+      integer,intent(in) :: nangkecp(mxprsh,6), lmaxecp, numtbasis
+      integer,intent(in) :: label1ecp(9,*), label2ecp(6,*), num1ecp(*), num2ecp(*)
+      integer :: ncart(0:6)=(/1,3,6,10,15,21,28/), locxyzecp(0:7)=(/0,1,4,10,20,35,56,84/)
+      integer :: nangbasis, ncarti, ncartj, nangbasis3, iprim, jprim, kk, nangk, nlm
+      integer :: nn, iangij, ll, ll2, mu, nk, iindex, jindex, i1, j1, ii, jj, indx
+      integer :: label1f, label1l, nxc, nyc, nzc, nxb, nyb, nzb, ka, la, kx, ky, kz
+      integer :: kxp, kyp, kzp, nangll, nangmaxij, nangsum, nangca, nangba, nmax
+      integer :: ltmax, lemax, mm, m1, m2, m3, m3f, m4, nangmaxll1, label2f, label2l
+      integer :: icount, lmindx
+      real(8),parameter :: zero=0.0D+00, quarter=0.25D+00, one=1.0D+00, two=2.0D+00
+      real(8),parameter :: pi4=1.256637061435917D+01
+      real(8),parameter :: sqrtinvpi4=0.2820947917738781D+00
+      real(8),parameter :: abthresh=1.0D-01, dathresh=1.0D-07
+      real(8),parameter :: half=0.5D+00, three=3.0D+00, four=4.0D+00
+      real(8),parameter :: six=6.0D+00, eight=8.0D+00, p24=24.0D+00
+      real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
+      real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
+      real(8),parameter :: sqrt7=2.645751311064590D+00, sqrt35=5.916079783099616D+00
+      real(8),parameter :: sqrt35third=3.415650255319866D+00
+      real(8),parameter :: facf1=0.36969351199675831D+00  ! 1/sqrt(10-6/sqrt(5))
+      real(8),parameter :: facf2=0.86602540378443865D+00  ! 1/sqrt(4/3)
+      real(8),parameter :: facf3=0.28116020334310144D+00  ! 1/sqrt(46/3-6/sqrt(5))
+      real(8),parameter :: facf4=0.24065403274177409D+00  ! 1/sqrt(28-24/sqrt(5))
+      real(8),parameter :: facg1=0.19440164201192295D+00 ! 1/sqrt(1336/35-8sqrt(15/7))
+      real(8),parameter :: facg2=0.36969351199675831D+00 ! 1/sqrt(10-6/sqrt(5)
+      real(8),parameter :: facg3=0.15721262982485929D+00 ! 1/sqrt(1774/35-8sqrt(15/7)-8sqrt(3/35))
+      real(8),parameter :: facg4=0.24313189758394717D+00 ! 1/sqrt(98/5-6/sqrt(5))
+      real(8),parameter :: facg5=3.20603188768051639D-02
+!                                                 ! 1/sqrt(51512/35-984sqrt(5/21)-102/sqrt(105))
+      real(8),parameter :: facg6=0.18742611911532351D+00 ! 1/sqrt(196/5-24/sqrt(5))
+      real(8),parameter :: facg7=1.11803398874989484D+00 ! 1/sqrt(4/5)
+      real(8),intent(in) :: exij(mxprsh,2), coij(mxprsh,2), exkecp(mxprsh,6)
+      real(8),intent(in) :: cokecp(mxprsh,6), term1ecp(*), term2ecp(*), coordijk(3,3)
+      real(8),intent(out) :: ecpint(len1,len1)
+      real(8) :: ecptmp(28,28), work(28), r12, unitvec(3,3), bax, bay, baz, ba, cax, cay
+      real(8) :: caz, ca, abx(0:6), aby(0:6), abz(0:6), acx(0:6), acy(0:6), acz(0:6)
+      real(8) :: rad12int(2*11*11*11), ex01, ex02, ex12, co12, ex21, y01, y02, y12
+      real(8) :: dax, day, daz, da, dazeta, da2zeta, besselarginv, zzlm(121), xp0
+      real(8) :: sqrtinvzeta, alpha, xp1, co123, rad1int(78), radtmp, zeta, type1da0
+      real(8) :: type12ang(23,12,12), type1sum, cazeta, ca2zeta, alfbessel, bazeta, ba2zeta
+      real(8) :: betbessel, albe, beta, xka, xkb, a1, a2, xp1p, xp1m, rad2int(11,11,11)
+      real(8) :: zzlmc(121), zzlmb(121), type2angc(11,11), type2angb(11,11), type2sum, angcc
+!
+      nangbasis= nangij(1)+nangij(2)
+      ncarti= ncart(nangij(1))
+      ncartj= ncart(nangij(2))
+      ecptmp(1:ncartj,1:ncarti)= zero
+!
+      r12=(coordijk(1,1)-coordijk(1,2))**2+(coordijk(2,1)-coordijk(2,2))**2 &
+&        +(coordijk(3,1)-coordijk(3,2))**2
+      cax= coordijk(1,1)-coordijk(1,3)
+      cay= coordijk(2,1)-coordijk(2,3)
+      caz= coordijk(3,1)-coordijk(3,3)
+      ca = sqrt(cax*cax+cay*cay+caz*caz)
+      unitvec(1,2)= cax/ca
+      unitvec(2,2)= cay/ca
+      unitvec(3,2)= caz/ca
+      bax= coordijk(1,2)-coordijk(1,3)
+      bay= coordijk(2,2)-coordijk(2,3)
+      baz= coordijk(3,2)-coordijk(3,3)
+      ba = sqrt(bax*bax+bay*bay+baz*baz)
+      unitvec(1,3)= bax/ba
+      unitvec(2,3)= bay/ba
+      unitvec(3,3)= baz/ba
+!
+      acx(0)= one
+      acy(0)= one
+      acz(0)= one
+      do ii= 1,nangij(1)
+        acx(ii)=-cax*acx(ii-1)
+        acy(ii)=-cay*acy(ii-1)
+        acz(ii)=-caz*acz(ii-1)
+      enddo
+      abx(0)= one
+      aby(0)= one
+      abz(0)= one
+      do jj= 1,nangij(2)
+        abx(jj)=-bax*abx(jj-1)
+        aby(jj)=-bay*aby(jj-1)
+        abz(jj)=-baz*abz(jj-1)
+      enddo
+!
+! Type 1
+!
+      nangbasis3=((nangbasis+1)*(nangbasis+2)*(2*nangbasis+3))/6
+      rad12int(1:nangbasis3)= zero
+!
+! Radial integral of Type 1
+!
+      do iprim= 1,nprimij(1)
+        ex01= exij(iprim,1)
+        do jprim= 1,nprimij(2)
+          ex02= exij(jprim,2)
+          ex12= ex01+ex02
+          co12= coij(iprim,1)*coij(jprim,2)
+          ex21= one/ex12
+          y01= ex01*ex21
+          y02= one-y01
+          y12= y01*ex02
+          dax= coordijk(1,1)+(coordijk(1,2)-coordijk(1,1))*y02-coordijk(1,3)
+          day= coordijk(2,1)+(coordijk(2,2)-coordijk(2,1))*y02-coordijk(2,3)
+          daz= coordijk(3,1)+(coordijk(3,2)-coordijk(3,1))*y02-coordijk(3,3)
+          da = sqrt(dax*dax+day*day+daz*daz)
+          co12= co12*exp(-r12*y12)
+          if(da >= dathresh) then
+            dazeta= ex12*da
+            da2zeta= dazeta*da
+            besselarginv= one/(dazeta+dazeta)
+            unitvec(1,1)= dax/da
+            unitvec(2,1)= day/da
+            unitvec(3,1)= daz/da
+            call calczspher(zzlm,unitvec,nangbasis)
+            xp0 = exp(-da2zeta)
+            do kk= 1,nprimkecp(1)
+              sqrtinvzeta= one/sqrt(ex12+exkecp(kk,1))
+              alpha= dazeta*sqrtinvzeta
+              xp1= exp(-da2zeta+alpha*alpha)
+              nangk= nangkecp(kk,1)
+              co123= cokecp(kk,1)*co12
+              call calctype1rad(rad1int,besselarginv,alpha,sqrtinvzeta, &
+&                               xp0,xp1,nangk,nangbasis)
+              nlm= 1
+              nn= 1
+              do iangij= 1,nangbasis+1
+                do ll= 1,iangij
+                  radtmp= rad1int(nn)*co123
+                  ll2= ll*(ll-1)+1+ll
+                  do mu= 1,2*ll-1
+                    rad12int(nlm)= rad12int(nlm)+radtmp*zzlm(ll2-mu)
+                    nlm= nlm+1
+                  enddo
+                  nn= nn+1
+                enddo
+              enddo
+            enddo
+          else
+            do kk= 1,nprimkecp(1)
+              zeta= ex12+exkecp(kk,1)
+              nangk= nangkecp(kk,1)
+              co123= cokecp(kk,1)*sqrtinvpi4*co12
+              do nn= 1,nangbasis+1
+                nk=(nn*(nn-1)*(2*nn-1))/6
+                rad12int(nk)= rad12int(nk)+type1da0(nn+nangk,zeta)*co123
+              enddo
+            enddo
+          endif
+        enddo
+      enddo
+!
+! Angular integral of Type 1
+!
+      iindex= locxyzecp(nangij(1))
+      jindex= locxyzecp(nangij(2))
+      do i1= 1,ncarti
+        ii= iindex+i1
+        do j1= 1,ncartj
+          jj= jindex+j1
+          if(ii >= jj) then
+            indx= jj+(ii*(ii-1))/2
+          else
+            indx= ii+(jj*(jj-1))/2
+          endif
+          label1f= num1ecp(indx)
+          label1l= num1ecp(indx+1)-1
+          nxc= nx(ii)
+          nyc= ny(ii)
+          nzc= nz(ii)
+          nxb= nx(jj)
+          nyb= ny(jj)
+          nzb= nz(jj)
+          do ka= 1,nangbasis+2
+            do la= 1,ka
+              do mu= 1,2*la-1
+                type12ang(mu,la,ka)= zero
+              enddo
+            enddo
+          enddo
+!
+          do kk= label1f,label1l
+            ka= label1ecp(1,kk)+1
+            la= label1ecp(2,kk)+1
+            mu= label1ecp(3,kk)
+            if(ii >= jj) then
+              kx = label1ecp(4,kk)
+              ky = label1ecp(5,kk)
+              kz = label1ecp(6,kk)
+              kxp= label1ecp(7,kk)
+              kyp= label1ecp(8,kk)
+              kzp= label1ecp(9,kk)
+            else
+              kxp= label1ecp(4,kk)
+              kyp= label1ecp(5,kk)
+              kzp= label1ecp(6,kk)
+              kx = label1ecp(7,kk)
+              ky = label1ecp(8,kk)
+              kz = label1ecp(9,kk)
+            endif
+            type12ang(la+mu,la,ka)= type12ang(la+mu,la,ka)+term1ecp(kk) &
+&                                  *acx(nxc-kx) *acy(nyc-ky) *acz(nzc-kz) &
+&                                  *abx(nxb-kxp)*aby(nyb-kyp)*abz(nzb-kzp)
+          enddo
+!
+          type1sum= zero
+          nn= 1
+          do ka=1,nangbasis+1
+            do la=1,ka
+              do mu=1,2*la-1
+                type1sum= type1sum+rad12int(nn)*type12ang(mu,la,ka)
+                nn= nn+1
+              enddo
+            enddo
+          enddo
+          ecptmp(j1,i1)= ecptmp(j1,i1)+pi4*type1sum
+        enddo
+      enddo
+!
+! Type 2
+!
+      do ll= 2,lmaxecp+1
+        nangll= ll-2
+        nangmaxij  = max(nangij(1),nangij(2))+1
+        nangsum= nangmaxij+nangll
+        nangca= nangij(1)+nangll+1
+        nangba= nangij(2)+nangll+1
+        nmax = nangbasis*nangca*(nangba/2+1)+6
+        ltmax= max(nangbasis+1,nangsum)
+        lemax = max(nangll,ltmax/2)
+!
+! Radial integral of Type 2
+!
+        rad12int(1:nmax)= zero
+        do iprim= 1,nprimij(1)
+          ex01= exij(iprim,1)
+          cazeta= ex01*ca
+          ca2zeta= cazeta*ca
+          alfbessel= one/(cazeta+cazeta)
+          do jprim= 1,nprimij(2)
+            ex02= exij(jprim,2)
+            ex12= ex01+ex02
+            bazeta= ex02*ba
+            ba2zeta= bazeta*ba
+            betbessel= one/(bazeta+bazeta)
+            albe= ca2zeta+ba2zeta
+            xp0 = exp(-albe)
+            co12= coij(iprim,1)*coij(jprim,2)
+            do kk= 1,nprimkecp(ll)
+              sqrtinvzeta= one/sqrt(ex12+exkecp(kk,ll))
+              alpha= cazeta*sqrtinvzeta
+              beta= bazeta*sqrtinvzeta
+              if(alpha*beta > abthresh) then
+                xka= cazeta*two
+                xkb= bazeta*two
+                a1 = alpha+beta
+                a2 = alpha-beta
+                zeta= ex12+exkecp(kk,ll)
+                xp1p= exp(-albe+(alpha+beta)**2)
+                xp1m= exp(-albe+(alpha-beta)**2)
+              else
+                xp1p= exp(-albe+alpha*alpha)
+                xp1m= exp(-albe+beta*beta)
+              endif
+              nangk= nangkecp(kk,ll)
+              co123= cokecp(kk,ll)*co12
+              call calctype2rad(rad2int,alfbessel,betbessel,alpha,beta,sqrtinvzeta, &
+&                               xp1p,xp1m,xp0,xka,xkb,a1,a2,zeta,nangk,nangbasis+1,ltmax,lemax)
+              do mm= 1,lemax+1
+                rad12int(mm)= rad12int(mm)+rad2int(mm,mm,1)*co123
+              enddo
+              nn= 7
+              do m1= 2,nangbasis+1
+                m3f= mod(m1,2)
+                do m2= 1,nangca
+                  m3f= 1-m3f
+                  do m3= m3f+1,nangba,2
+                    rad12int(nn)= rad12int(nn)+rad2int(m3,m2,m1)*co123
+                    nn= nn+1
+                  enddo
+                enddo
+              enddo
+            enddo
+          enddo
+        enddo
+!
+! Angular integral of Type 2
+!
+        nangmaxll1= max(1,nangll+1)
+        ll2=(ll-1)*(ll-2)
+        call calczspher(zzlmc,unitvec(1,2),nangca-1)
+        call calczspher(zzlmb,unitvec(1,3),nangba-1)
+        do i1= 1,ncarti
+          ii= iindex+i1
+          do j1= 1,ncartj
+            jj= jindex+j1
+            nxc= nx(ii)
+            nyc= ny(ii)
+            nzc= nz(ii)
+            nxb= nx(jj)
+            nyb= ny(jj)
+            nzb= nz(jj)
+            type12ang(1:nangba,1:nangca,1:(2*nangmaxij-1))= zero
+            nlm=(ll2-nangll)*numtbasis
+            do mm= nangll,-nangll,-1
+              type2angc(1:nangsum,1:nangmaxij)= zero
+              type2angb(1:nangsum,1:nangmaxij)= zero
+              label2f= num2ecp(nlm+ii)
+              label2l= num2ecp(nlm+ii+1)-1
+              do icount= label2f,label2l
+                la= label2ecp(1,icount)+1
+                ka= label2ecp(2,icount)+1
+                mu= label2ecp(3,icount)
+                kx= label2ecp(4,icount)
+                ky= label2ecp(5,icount)
+                kz= label2ecp(6,icount)
+                lmindx= la*(la-1)-mu+1
+                type2angc(la,ka)= type2angc(la,ka)+term2ecp(icount)*zzlmc(lmindx) &
+&                                                 *acx(nxc-kx)*acy(nyc-ky)*acz(nzc-kz)
+              enddo
+              label2f= num2ecp(nlm+jj)
+              label2l= num2ecp(nlm+jj+1)-1
+              do icount= label2f,label2l
+                la= label2ecp(1,icount)+1
+                ka= label2ecp(2,icount)+1
+                mu= label2ecp(3,icount)
+                kx= label2ecp(4,icount)
+                ky= label2ecp(5,icount)
+                kz= label2ecp(6,icount)
+                lmindx= la*(la-1)-mu+1
+                type2angb(la,ka)= type2angb(la,ka)+term2ecp(icount)*zzlmb(lmindx) &
+&                                                 *abx(nxb-kx)*aby(nyb-ky)*abz(nzb-kz)
+              enddo
+              do m1=1,nangmaxij
+                do m2=1,nangca
+                  angcc= type2angc(m2,m1)
+                  do m3=m1,m1+nangmaxij-1
+                    do m4=1,nangba
+                      type12ang(m4,m2,m3)= type12ang(m4,m2,m3)+angcc*type2angb(m4,m3+1-m1)
+                    enddo
+                  enddo
+                enddo
+              enddo
+              nlm= nlm+numtbasis
+            enddo
+!
+            type2sum= zero
+            do mm= 1,nangmaxll1
+              type2sum= type2sum+rad12int(mm)*type12ang(mm,mm,1)
+            enddo
+            nn= 7
+            do m1=2,nangbasis+1
+              m3f= mod(m1,2)
+              do m2=1,nangca
+                m3f= 1-m3f
+                do m3= m3f+1,nangba,2
+                  type2sum= type2sum+rad12int(nn)*type12ang(m3,m2,m1)
+                  nn= nn+1
+                enddo
+              enddo
+            enddo
+            ecptmp(j1,i1)= ecptmp(j1,i1)+pi4*pi4*type2sum
+          enddo
+        enddo
+      enddo
+!
+! Normalize ECP integrals
+!
+! Bra part
+!
+      select case(nbfij(2))
+! D function
+        case(5)
+          do ii= 1,ncarti
+            do jj= 1,6
+              work(jj)= ecptmp(jj,ii)
+            enddo
+            ecptmp(1,ii)=(work(3)*two-work(1)-work(2))*half
+            ecptmp(2,ii)= work(5)*sqrt3
+            ecptmp(3,ii)= work(6)*sqrt3
+            ecptmp(4,ii)=(work(1)-work(2))*sqrt3h
+            ecptmp(5,ii)= work(4)*sqrt3
+          enddo
+        case(6)
+          do ii= 1,ncarti
+            do jj= 4,6
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt3
+            enddo
+          enddo
+! F function
+        case(7)
+          do ii= 1,ncarti
+            do jj= 1,3
+              work(jj)= ecptmp(jj,ii)
+            enddo
+            do jj= 4,9
+              work(jj)= ecptmp(jj,ii)*sqrt5
+            enddo
+            work(10)= ecptmp(10,ii)*sqrt15
+            ecptmp(1,ii)=( two*work(3)-three*work(5)-three*work(7))*facf4
+            ecptmp(2,ii)=(-work(1)-work(6)+four*work(8)           )*facf3
+            ecptmp(3,ii)=(-work(2)-work(4)+four*work(9)           )*facf3
+            ecptmp(4,ii)=( work(5)-work(7)                        )*facf2
+            ecptmp(5,ii)=  work(10)
+            ecptmp(6,ii)=( work(1)-three*work(6)                  )*facf1
+            ecptmp(7,ii)=(-work(2)+three*work(4)                  )*facf1
+          enddo
+        case(10)
+          do ii= 1,ncarti
+            do jj= 4,9
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt5
+            enddo
+            ecptmp(10,ii)= ecptmp(10,ii)*sqrt15
+          enddo
+! G function
+        case(9)
+          do ii= 1,ncarti
+            do jj= 1,3
+              work(jj)= ecptmp(jj,ii)
+            enddo
+            do jj= 4,9
+              work(jj)= ecptmp(jj,ii)*sqrt7
+            enddo
+            do jj= 10,12
+              work(jj)= ecptmp(jj,ii)*sqrt35third
+            enddo
+            do jj= 13,15
+              work(jj)= ecptmp(jj,ii)*sqrt35
+            enddo
+            ecptmp(1,ii)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+&                        -work(11)*p24-work(12)*p24)*facg5
+            ecptmp(2,ii)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+            ecptmp(3,ii)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+            ecptmp(4,ii)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+            ecptmp(5,ii)=(-work(4)-work(6)+work(15)*six)*facg6
+            ecptmp(6,ii)=(work(5)-work(14)*three)*facg2
+            ecptmp(7,ii)=(-work(7)+work(13)*three)*facg2
+            ecptmp(8,ii)=(work(1)+work(2)-work(10)*six)*facg1
+            ecptmp(9,ii)=(work(4)-work(6))*facg7
+          enddo
+        case(15)
+          do ii= 1,ncarti
+            do jj= 4,9
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt7
+            enddo
+            do jj= 10,12
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35third
+            enddo
+            do jj= 13,15
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35
+            enddo
+          enddo
+      end select
+!
+! Ket part
+!
+      select case(nbfij(1))
+! D function
+        case(5)
+          do jj= 1,nbfij(2)
+            do ii= 1,6
+              work(ii)= ecptmp(jj,ii)
+            enddo
+            ecptmp(jj,1)=(work(3)*two-work(1)-work(2))*half
+            ecptmp(jj,2)= work(5)*sqrt3
+            ecptmp(jj,3)= work(6)*sqrt3
+            ecptmp(jj,4)=(work(1)-work(2))*sqrt3h
+            ecptmp(jj,5)= work(4)*sqrt3
+          enddo
+        case(6)
+          do jj= 1,nbfij(2)
+            do ii= 4,6
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt3
+            enddo
+          enddo
+! F function
+        case(7)
+          do jj= 1,nbfij(2)
+            do ii= 1,3
+              work(ii)= ecptmp(jj,ii)
+            enddo
+            do ii= 4,9
+              work(ii)= ecptmp(jj,ii)*sqrt5
+            enddo
+            work(10)= ecptmp(jj,10)*sqrt15
+            ecptmp(jj,1)=( two*work(3)-three*work(5)-three*work(7))*facf4
+            ecptmp(jj,2)=(-work(1)-work(6)+four*work(8)           )*facf3
+            ecptmp(jj,3)=(-work(2)-work(4)+four*work(9)           )*facf3
+            ecptmp(jj,4)=( work(5)-work(7)                        )*facf2
+            ecptmp(jj,5)=  work(10)
+            ecptmp(jj,6)=( work(1)-three*work(6)                  )*facf1
+            ecptmp(jj,7)=(-work(2)+three*work(4)                  )*facf1
+          enddo
+        case(10)
+          do jj= 1,nbfij(2)
+            do ii= 4,9
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt5
+            enddo
+            ecptmp(jj,10)= ecptmp(jj,10)*sqrt15
+          enddo
+! G function
+        case(9)
+          do jj= 1,nbfij(2)
+            do ii= 1,3
+              work(ii)= ecptmp(jj,ii)
+            enddo
+            do ii= 4,9
+              work(ii)= ecptmp(jj,ii)*sqrt7
+            enddo
+            do ii= 10,12
+              work(ii)= ecptmp(jj,ii)*sqrt35third
+            enddo
+            do ii= 13,15
+              work(ii)= ecptmp(jj,ii)*sqrt35
+            enddo
+            ecptmp(jj,1)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+&                       -work(11)*p24-work(12)*p24)*facg5
+            ecptmp(jj,2)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+            ecptmp(jj,3)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+            ecptmp(jj,4)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+            ecptmp(jj,5)=(-work(4)-work(6)+work(15)*six)*facg6
+            ecptmp(jj,6)=(work(5)-work(14)*three)*facg2
+            ecptmp(jj,7)=(-work(7)+work(13)*three)*facg2
+            ecptmp(jj,8)=(work(1)+work(2)-work(10)*six)*facg1
+            ecptmp(jj,9)=(work(4)-work(6))*facg7
+          enddo
+        case(15)
+          do jj= 1,nbfij(2)
+            do ii= 4,9
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt7
+            enddo
+            do ii= 10,12
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35third
+            enddo
+            do ii= 13,15
+              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35
+            enddo
+          enddo
+      end select
+!
+      do ii= 1,nbfij(1)
+        do jj= 1,nbfij(2)
+          ecpint(jj,ii)= ecptmp(jj,ii)
+        enddo
+      enddo
+!
+      return
+end
 
 
 !--------------------
@@ -41,7 +1561,7 @@ end
 !
 ! Set up the coefficients for the real spherical harmonics
 !
-      use ecp, only : zlm
+      use modecp, only : zlm
       implicit none
       integer :: i
       real(8),parameter :: one=1.0D+00, two=2.0D+00, three=3.0D+00, four=4.0D+00
@@ -820,7 +2340,6 @@ end
 !
 ! Set up angular parts for ECP calculations
 !
-      use iofile, only : iout
       implicit none
       integer,intent(in) :: maxecpdim
       integer :: maxdim, i, j, k
@@ -832,7 +2351,7 @@ end
       maxdim= maxecpdim*4
 !
       if(maxdim > 24) then
-        write(iout,'(" Error! This program supports up to I function in Subroutine ecpxyz!")')
+        write(*,'(" Error! This program supports up to I function in Subroutine ecpxyz!")')
         call iabort
       endif
 !
@@ -841,7 +2360,7 @@ end
         factor(i)=one/denom
         denom= denom+two
       enddo
-      xyzintecp= zero
+      xyzintecp(:,:,:)= zero
       xyzintecp(0,0,0)= pi4
 
       xx=-one
@@ -868,20 +2387,19 @@ end
 end
 
 
-!--------------------------------------------------------------------------------
+!------------------------------------------------------------------------
   subroutine ecpangint1(term1ecp,label1ecp,num1ecp,xyzintecp,maxecpdim)
-!--------------------------------------------------------------------------------
+!------------------------------------------------------------------------
 !
 ! Generate angular parts of term1 for ECP calculations
 !
-      use ecp, only : nx, ny, nz, lmf, lmx, lmy, lmz, zlm, nterm1
-      use iofile, only : iout
+      use modecp, only : nx, ny, nz, lmf, lmx, lmy, lmz, zlm, nterm1
       implicit none
       integer,parameter :: itri(0:6)=(/0,1,3,6,10,15,21/), mbasis(0:7)=(/1,2,5,11,21,36,57,85/)
       integer,intent(in) :: maxecpdim
-      integer,intent(out) :: label1ecp(9,nterm1), num1ecp(2,56,56)
-      integer :: icount, i, j, ibasis, jbasis, mx1, my1, mz1, mx2, my2, mz2, lmax, lambda, mu
-      integer :: lmindex, kx, ky, kz, kxp, kyp, kzp, ksum, lm, ijx, ijy, ijz
+      integer,intent(out) :: label1ecp(9,nterm1), num1ecp(*)
+      integer :: icount, ibasis, jbasis, mx1, my1, mz1, mx2, my2, mz2, lmax, lambda, mu, lmindex
+      integer :: kx, ky, kz, kxp, kyp, kzp, ksum, lm, ijx, ijy, ijz, ii, iit, jj, ijindex
       real(8),parameter :: combi(0:27)= &
 &     (/1.0D+00, 1.0D+00,1.0D+00,  1.0D+00,2.0D+00,1.0D+00, 1.0D+00,3.0D+00,3.0D+00,1.0D+00, &
 &       1.0D+00,4.0D+00,6.0D+00,4.0D+00,1.0D+00, 1.0D+00,5.0D+00,10.0D+00,10.0D+00,5.0D+00, &
@@ -892,19 +2410,21 @@ end
       real(8) :: angint1
 !
       icount= 0
+      num1ecp(1)= 1
 !
-      do i= 0,maxecpdim
-        do ibasis= mbasis(i),mbasis(i+1)-1
+      do ii= 0,maxecpdim
+        do ibasis= mbasis(ii),mbasis(ii+1)-1
           mx1= itri(nx(ibasis))
           my1= itri(ny(ibasis))
           mz1= itri(nz(ibasis))
-          do j= 0,i
-            do jbasis= mbasis(j),mbasis(j+1)-1
-              num1ecp(1,jbasis,ibasis)=icount+1
+          iit= ibasis*(ibasis-1)/2
+          do jj= 0,ii
+            do jbasis= mbasis(jj),min(mbasis(jj+1)-1,ibasis)
               mx2= itri(nx(jbasis))
               my2= itri(ny(jbasis))
               mz2= itri(nz(jbasis))
-              lmax= i+j
+              lmax= ii+jj
+              ijindex= iit+jbasis
               do lambda= 0,lmax
                 do mu=-lambda,lambda
                   lmindex= lambda*(lambda+1)-mu+1
@@ -947,13 +2467,13 @@ end
                   enddo
                 enddo
               enddo
-              num1ecp(2,jbasis,ibasis)= icount-num1ecp(1,jbasis,ibasis)+1
+              num1ecp(ijindex+1)= icount+1
             enddo
           enddo
         enddo
       enddo
       if(icount > nterm1) then
-        write(iout,'(" Error! Icount exceeds",i8," in Subroutine ecpangint1!")')nterm1
+        write(*,'(" Error! Icount exceeds",i8," in Subroutine ecpangint1!")')nterm1
         call iabort
       endif
 !
@@ -961,19 +2481,18 @@ end
 end
 
 
-!-------------------------------------------------------------------------------------------
-  subroutine ecpangint2(term2ecp,label2ecp,num2ecp,xyzintecp,maxecpdim,maxpangdim)
-!-------------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
+  subroutine ecpangint2(term2ecp,label2ecp,num2ecp,xyzintecp,maxecpdim,llmax,numtbasis)
+!----------------------------------------------------------------------------------------
 !
 ! Generate angular parts of term2 for ECP calculations
 !
-      use ecp, only : nx, ny, nz, lmf, lmx, lmy, lmz, zlm, nterm2
-      use iofile, only : iout
+      use modecp, only : nx, ny, nz, lmf, lmx, lmy, lmz, zlm, nterm2
       implicit none
       integer,parameter :: itri(0:6)=(/0,1,3,6,10,15,21/), mbasis(0:7)=(/1,2,5,11,21,36,57,85/)
-      integer,intent(in) :: maxecpdim, maxpangdim
-      integer,intent(out) :: label2ecp(6,nterm2), num2ecp(2,*)
-      integer :: icount, numbasis, lambda, mu, lmindex1, lmlabel, i, ltotal, ibasis
+      integer,intent(in) :: maxecpdim, llmax, numtbasis
+      integer,intent(out) :: label2ecp(6,nterm2), num2ecp(*)
+      integer :: icount, lambda, mu, lmindex1, lmlabel, ii, ltotal, ibasis
       integer :: mx, my, mz, ll, mm, lmindex2, kx, ky, kz, ksum, lm1, ijx, ijy, ijz, lm2
       real(8),parameter :: combi(0:27)= &
 &     (/1.0D+00, 1.0D+00,1.0D+00,  1.0D+00,2.0D+00,1.0D+00, 1.0D+00,3.0D+00,3.0D+00,1.0D+00, &
@@ -985,19 +2504,18 @@ end
       real(8) :: angint2, tmp
 !
       icount= 0
-      numbasis= mbasis(maxecpdim)
+      num2ecp(1)= 1
 !
-      do lambda= 0,maxpangdim-1
+      do lambda= 0,llmax-1
         do mu=-lambda,lambda
-          lmindex1= lambda*(lambda+1)-mu+1
-          lmlabel=(lambda*(lambda+1)-mu)*numbasis
-          do i= 0,maxecpdim
-            ltotal= lambda+i
-            do ibasis= mbasis(i),mbasis(i+1)-1
+          lmindex1= lambda*(lambda+1)+mu+1
+          lmlabel=(lambda*(lambda+1)+mu)*numtbasis
+          do ii= 0,maxecpdim
+            ltotal= lambda+ii
+            do ibasis= mbasis(ii),mbasis(ii+1)-1
               mx= itri(nx(ibasis))
               my= itri(ny(ibasis))
               mz= itri(nz(ibasis))
-              num2ecp(1,lmlabel+ibasis)= icount+1
               do ll= 0,ltotal
                 do mm=-ll,ll
                   lmindex2= ll*(ll+1)-mm+1
@@ -1031,13 +2549,13 @@ end
                   enddo
                 enddo
               enddo
-              num2ecp(2,lmlabel+ibasis)= icount-num2ecp(1,lmlabel+ibasis)+1
+              num2ecp(lmlabel+ibasis+1)= icount+1
             enddo
           enddo
         enddo
       enddo
       if(icount > nterm2) then
-        write(iout,'(" Error! Icount exceeds",i8," in Subroutine ecpangint2!")')nterm2
+        write(*,'(" Error! Icount exceeds",i8," in Subroutine ecpangint2!")')nterm2
         call iabort
       endif
 !
@@ -1045,28 +2563,26 @@ end
 end
 
 
-!-----------------------------------------------------------------
-  subroutine ecpangint0(term0ecp,xyzintecp,maxecpdim,maxpangdim)
-!-----------------------------------------------------------------
+!----------------------------------------------------------------------
+  subroutine ecpangint0(term0ecp,xyzintecp,maxecpdim,llmax,numtbasis)
+!----------------------------------------------------------------------
 !
-! Generate angular parts of term1 for ECP calculations with same center
+! Generate angular parts of term0 for ECP calculations with same center
 !
-      use ecp, only : nx, ny, nz, lmf, lmx, lmy, lmz, zlm
+      use modecp, only : nx, ny, nz, lmf, lmx, lmy, lmz, zlm
       implicit none
       integer,parameter :: mbasis(0:7)=(/1,2,5,11,21,36,57,85/)
-      integer,intent(in) :: maxecpdim, maxpangdim
-      integer :: numbasis, lambda, mu, lmindex, lmlabel, i, ibasis, lm, ijx, ijy, ijz
+      integer,intent(in) :: maxecpdim, llmax, numtbasis
+      integer :: lambda, mu, lmindex, lmlabel, i, ibasis, lm, ijx, ijy, ijz
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: xyzintecp(0:24,0:24,0:24)
       real(8),intent(out) :: term0ecp(*)
       real(8) :: angint0
 !
-      numbasis= mbasis(maxecpdim)
-!
-      do lambda= 0,maxpangdim-1
+      do lambda= 0,llmax-1
         do mu=-lambda,lambda
-          lmindex= lambda*(lambda+1)-mu+1
-          lmlabel=(lambda*(lambda+1)-mu)*numbasis
+          lmindex= lambda*(lambda+1)+mu+1
+          lmlabel=(lambda*(lambda+1)+mu)*numtbasis
           do i= 0,maxecpdim
             do ibasis= mbasis(i),mbasis(i+1)-1
               angint0= zero
@@ -1086,9 +2602,9 @@ end
 end
 
 
-!-----------------------------------------------------------------
+!-----------------------
   function dawson(val)
-!-----------------------------------------------------------------
+!-----------------------
 !
 ! Evaluate the Dawson function
 !
@@ -1301,9 +2817,9 @@ end
 end
 
 
-!-----------------------------------------------------------------
+!-----------------------
   function dawerf(val)
-!-----------------------------------------------------------------
+!-----------------------
 !
 ! Evaluate the Dawson-Error function
 !
@@ -1515,9 +3031,793 @@ end
 end
 
 
+!---------------------------------
+  function type1da0(norder,zeta)
+!---------------------------------
+!
+! Calculate type 1 radial integral for the case of DA=zero
+!
+      implicit none
+      integer,intent(in) :: norder
+      integer :: nhalf
+      real(8),parameter :: sqrtpi=1.772453850905516D+00
+      real(8),intent(in) :: zeta
+      real(8) :: type1da0
+      real(8) :: gammao(0:8), gammae(0:8), tmp
+      data gammao/0.5D+00, 0.5D+00, 1.0D+00, 3.0D+00, 12.0D+00, 60.0D+00, &
+&                  360.0D+00, 2520.0D+00, 20160.0D+00/
+      data gammae/0.5D+00, 0.25D+00, 0.375D+00, 0.9375D+00, 3.28125D+00, 14.765625D+00, &
+&                 81.2109375D+00, 527.87109375D+00, 3959.033203125D+00/
+!
+      nhalf= norder/2
+!
+! N : odd
+!
+      if(mod(norder,2) /= 0) then
+        tmp= gammao(nhalf)
+!
+! N : even
+!
+      else
+        tmp= gammae(nhalf)*sqrtpi*sqrt(zeta)
+      endif
+      type1da0= tmp/(zeta**(nhalf+1))
+!
+      return
+end
 
 
+!-------------------------------------------
+  subroutine calczspher(zzlm,unitvec,lmax)
+!-------------------------------------------
+!
+! Calculate the real spherical harmonics given the value of the three 
+! cartesian components of a unit vector.
+!
+      use modecp, only : zlm, lmf, lmx, lmy, lmz
+      implicit none
+      integer,intent(in) :: lmax
+      integer :: lambda, mu, imn, imx, ii, id
+      real(8),parameter :: zero=0.0D+00
+      real(8),intent(in) :: unitvec(3)
+      real(8),intent(out) :: zzlm(121)
+      real(8) :: sumz, tmp
+!
+      if(lmax <= 10) then
+        do lambda= 0,lmax
+          id= lambda*(lambda+1)+lambda+1
+          do mu=-lambda,lambda
+            imn= lmf(id)
+            imx= lmf(id+1)-1
+            sumz= zero
+            do ii=imn,imx
+              tmp = zlm(ii)
+              if(lmx(ii) > 0) tmp= tmp*(unitvec(1)**lmx(ii))
+              if(lmy(ii) > 0) tmp= tmp*(unitvec(2)**lmy(ii))
+              if(lmz(ii) > 0) tmp= tmp*(unitvec(3)**lmz(ii))
+              sumz= sumz+tmp
+            enddo
+            zzlm(id)= sumz
+            id= id-1
+          enddo
+        enddo
+      else
+        write(*,'(" Error! Lmax is too big in calczspher,",i3,".")') lmax
+        call exit
+      endif
+!
+      return
+end
 
 
+!--------------------------------------------
+  function type1radint(nn,ll,alpha,xp0,xp1)
+!--------------------------------------------
+!
+! Calculate core terms for integrals with exp and modified spherical Bessel function
+!
+      implicit none
+      integer,intent(in) :: nn, ll
+      integer :: np1
+      real(8),parameter :: athresh=1.0D-01, sqrtpi=1.772453850905516D+00, half=0.5D+00
+      real(8),parameter :: one=1.0D+00, p15=1.5D+00, two=2.0D+00, p25=2.5D+00, three=3.0D+00
+      real(8),parameter :: five=5.0D+00, six=6.0D+00, p75=7.5D+00, fifteen=15.0D+00
+      real(8),intent(in) :: alpha, xp0, xp1
+      real(8) :: type1radint, radtmp, dawrad, dawson, type1radintps, alpha2, xalpha
+      real(8) :: errrad, alpha3, alpha4
+!
+      if(ll == 0)then
+        if(alpha >= athresh) then
+          np1= nn+1
+          IF(np1 == 2) then
+            radtmp= sqrtpi*xp1*erf(alpha)/alpha
+          else
+            dawrad=dawson(alpha)
+            radtmp= sqrtpi*xp1*dawrad/alpha
+          endif
+        else
+          radtmp= type1radintps(nn,0,alpha,xp0)
+        endif
+      elseif(ll == 1)then
+        if(alpha >= athresh) then
+          np1= nn+1
+          alpha2= alpha*alpha
+          xalpha= alpha2+alpha2
+          dawrad= dawson(alpha)
+          errrad= sqrtpi*xp1*erf(alpha)
+          if(np1 < 2) then
+            radtmp=(half*errrad-xp0*alpha)/alpha2
+          elseif(np1 == 2) then
+            radtmp= sqrtpi*xp1*(alpha-dawrad)/alpha2
+          else
+            radtmp=(two*xp0*alpha+(xalpha-one)*errrad)/alpha2
+          endif
+        else
+          radtmp= type1radintps(nn,1,alpha,xp0)
+        endif
+      elseif(ll == 2)then
+        if(alpha >= athresh) then
+          np1= nn+1
+          alpha2= alpha*alpha
+          alpha3= alpha*alpha2
+          xalpha= alpha2+alpha2
+          dawrad= dawson(alpha)
+          errrad= sqrtpi*xp1*erf(alpha)
+          if(np1 == 1)then
+            radtmp= half*sqrtpi*xp1*(p15*alpha-(alpha2+p15)*dawrad)/alpha3
+          elseif(np1 == 2) then
+            radtmp=(three*xp0*alpha+(alpha2-p15)*errrad)/alpha3
+          elseif(np1 == 3) then
+            radtmp= sqrtpi*xp1*(alpha*(xalpha-three)+three*dawrad)/alpha3
+          elseif(np1 == 4) then
+            radtmp=(two*xp0*alpha*(xalpha-three)+(xalpha*(xalpha-two)+three)*errrad)/alpha3
+          endif
+        else
+          radtmp= type1radintps(nn,2,alpha,xp0)
+        endif
+      elseif(ll == 3) then
+        if(alpha >= athresh) then
+          np1= nn+1
+          alpha2= alpha*alpha
+          alpha3= alpha*alpha2
+          alpha4= alpha*alpha3
+          xalpha= alpha2+alpha2
+          dawrad= dawson(alpha)
+          errrad= sqrtpi*xp1*erf(alpha)
+          if(np1 == 1) then
+            radtmp=(two*xp0*alpha*(xalpha+p75)/six+half*(alpha2-p25)*errrad)/alpha4
+          elseif(np1 == 2) then
+            radtmp= half*sqrtpi*xp1*(alpha*(xalpha-p75)+p15*(xalpha+five)*dawrad)/alpha4
+          elseif(np1 == 3) then
+            radtmp=(two*xp0*alpha*(alpha2-p75)+(xalpha*(alpha2-three)+p75)*errrad)/alpha4
+          elseif(np1 == 4) then
+            radtmp= sqrtpi*xp1*(alpha*(xalpha*(xalpha-five)+fifteen)-fifteen*dawrad)/alpha4
+          elseif(np1 == 5) then
+            radtmp=(two*xp0*alpha*(xalpha*(xalpha-one-three)+fifteen)+ &
+&                  (xalpha*(xalpha*(xalpha-three)+six+three)-fifteen)*errrad)/alpha4
+          endif
+        else
+          radtmp= type1radintps(nn,3,alpha,xp0)
+        endif
+      endif
+      type1radint= radtmp
+!
+      return
+end
 
 
+!------------------------------------------
+  function type1radintps(nn,ll,alpha,xp0)
+!------------------------------------------
+!
+! Calculate core terms for integrals with exp and modified spherical Bessel function
+! by a power series
+!
+      implicit none
+      integer,intent(in) :: nn, ll
+      integer,parameter :: maxii=10
+      integer :: nl, lambda, l2, ii
+      real(8),parameter :: one=1.0D+00, two=2.0D+00, sqrtpi=1.772453850905516D+00
+      real(8) :: fctrle(10),fctrlo(10)
+      real(8),intent(in) :: alpha, xp0
+      real(8) :: rgamma, fac, alpha2, tmp, type1radintps
+      data fctrle/1.0D+00,1.0D+00,2.0D+00,6.0D+00,24.0D+00,120.0D+00, &
+&                 720.0D+00,5040.0D+00,40320.0D+00,362880.0D+00/
+      data fctrlo/1.0D+00,1.0D+00,3.0D+00,15.0D+00,105.0D+00,945.0D+00, &
+&                 10395.0D+00,135135.0D+00,2027025.0D+00,34459425.0D+00/
+!
+      nl= nn+ll
+      lambda= nl/2
+!
+! Odd integral
+!
+      if(mod(nl,2) /= 0) then
+        rgamma  =  fctrle(lambda+1)/fctrlo(ll+2)
+        fac= two**nl
+      else
+!
+! Even integral
+!
+        rgamma  = fctrlo(lambda+1)/fctrlo(ll+2)
+        fac=(two**lambda)*sqrtpi
+      endif
+      l2= ll+ll+1
+      alpha2 = alpha*alpha
+      tmp= rgamma
+      do ii=1,maxii
+        rgamma =(rgamma*alpha2*(ii+ii+nl-1))/(ii*(ii+ii+l2))
+        tmp= tmp+rgamma
+      enddo
+      type1radintps = fac*xp0*(alpha**ll)*tmp
+!
+      return
+end
+
+
+!--------------------------------------------------------------------------------------------
+  subroutine calctype1rad(rad1int,besselarginv,alpha,sqrtinvzeta,xp0,xp1,nangecp,nangbasis)
+!--------------------------------------------------------------------------------------------
+!
+! Calculate terms for type1 integrals with exp and modified spherical Bessel function
+!
+      integer,intent(in) :: nangecp, nangbasis
+      integer :: nangtotal, nangeven, nangodd, nk1, nk2, nn, ll
+      real(8),parameter :: half=0.5D+00, two=2.0D+00, three=3.0D+00
+      real(8),intent(in) :: besselarginv, alpha, sqrtinvzeta, xp0, xp1
+      real(8),intent(out) :: rad1int(78)
+      real(8) :: sizeta2, a1, a2, radtmp(19,2), type1radint, t1, t2, tmp
+!
+      nangtotal= nangecp+nangbasis
+      if(mod(nangtotal,2) /= 0) then
+        nangeven= nangtotal+1
+        nangodd = nangtotal
+      else
+        nangeven= nangtotal
+        nangodd = nangtotal+1
+      endif
+      if(nangtotal == 0) nangodd=-1
+!
+      sizeta2= sqrtinvzeta*half
+      a1= sqrtinvzeta*alpha
+      a2= sqrtinvzeta*sizeta2
+!
+! Generate table of elements of even lattice
+!
+      if(nangeven >=0) then
+        radtmp(1,1)= type1radint(0,0,alpha,xp0,xp1)*sizeta2
+        if(nangeven >= 1) then
+          radtmp(2,2)= type1radint(1,1,alpha,xp0,xp1)*sizeta2*sizeta2
+          t1= a2
+          do nn= 2,nangeven,2
+            t2= t1-a2
+            radtmp(nn+1,1)= a1*radtmp(nn  ,2)+t1*radtmp(nn-1,1)
+            radtmp(nn+2,2)= a1*radtmp(nn+1,1)+t2*radtmp(nn  ,2)
+            t1= t1+a2*two
+          enddo
+        endif
+      endif
+!
+! Generate table of elelments of odd lattice
+!
+      if(nangodd >= 0) then
+        radtmp(1,2)= type1radint(0,1,alpha,xp0,xp1)*sizeta2
+        if(nangodd >= 1) then
+          radtmp(2,1)= type1radint(1,0,alpha,xp0,xp1)*sizeta2*sizeta2
+          t1= a2*two
+          do nn= 2,nangodd,2
+            t2= t1-a2*three
+            radtmp(nn+1,2)= a1*radtmp(nn  ,1)+t2*radtmp(nn-1,2)
+            radtmp(nn+2,1)= a1*radtmp(nn+1,2)+t1*radtmp(nn  ,1)
+            t1= t1+a2*two
+          enddo
+        endif
+      endif
+!
+! Retrieve required integrals from tables
+!
+      rad1int(1)= radtmp(nangecp+1,1)
+      rad1int(2)= radtmp(nangecp+2,1)
+      rad1int(3)= radtmp(nangecp+2,2)
+      nk1= 3
+      nk2=1
+      do nn= 3,nangbasis+1
+        rad1int(nk1+1)= radtmp(nangecp+nn,1)
+        rad1int(nk1+2)= radtmp(nangecp+nn,2)
+        tmp= besselarginv*three
+        do ll= 3,nn
+          rad1int(nk1+ll)= rad1int(nk1+ll-2)-tmp*rad1int(nk2+ll-1)
+          tmp= tmp+besselarginv*two
+        enddo
+        nk2= nk1
+        nk1= nk1+nn
+      enddo
+!
+      return
+end
+
+
+!---------------------------------------------------
+  subroutine rad2recur(rad2core,nmin,nmax,lmax,xx)
+!---------------------------------------------------
+!
+! Generate table for type2 radial integral
+!
+      implicit none
+      integer,intent(in) :: nmin, nmax, lmax
+      integer :: nn
+      real(8),parameter :: two=2.0D+00
+      real(8),intent(in) :: xx
+      real(8),intent(inout) :: rad2core(30,7)
+      real(8) :: xx2, t01, t02
+!
+      xx2= xx*two
+      t01=(nmin-two)*two
+!
+      select case(lmax)
+        case (0)
+          do nn= nmin,nmax,2
+            t02= t01+two
+            rad2core(nn+1,1)= t02*rad2core(nn-1,1)+xx2*rad2core(nn  ,2)
+            rad2core(nn+2,2)= t01*rad2core(nn  ,2)+xx2*rad2core(nn+1,1)
+            t01= t02+two
+          enddo
+        case (1)
+          do nn= nmin,nmax,2
+            t02= t01+two
+            rad2core(nn+1,1)= t02*rad2core(nn-1,1)+xx2*rad2core(nn  ,2)
+            rad2core(nn+2,2)= t01*rad2core(nn  ,2)+xx2*rad2core(nn+1,1)
+            rad2core(nn+3,3)= t01*rad2core(nn+1,3)+xx2*rad2core(nn+2,2)
+            t01= t02+two
+          enddo
+        case (2)
+          do nn= nmin,nmax,2
+            t02= t01+two
+            rad2core(nn+1,1)= t02*rad2core(nn-1,1)+xx2*rad2core(nn  ,2)
+            rad2core(nn+2,2)= t01*rad2core(nn  ,2)+xx2*rad2core(nn+1,1)
+            rad2core(nn+3,3)= t01*rad2core(nn+1,3)+xx2*rad2core(nn+2,2)
+            rad2core(nn+4,4)= t01*rad2core(nn+2,4)+xx2*rad2core(nn+3,3)
+            t01= t02+two
+          enddo
+        case (3)
+          do nn= nmin,nmax,2
+            t02= t01+two
+            rad2core(nn+1,1)= t02*rad2core(nn-1,1)+xx2*rad2core(nn  ,2)
+            rad2core(nn+2,2)= t01*rad2core(nn  ,2)+xx2*rad2core(nn+1,1)
+            rad2core(nn+3,3)= t01*rad2core(nn+1,3)+xx2*rad2core(nn+2,2)
+            rad2core(nn+4,4)= t01*rad2core(nn+2,4)+xx2*rad2core(nn+3,3)
+            rad2core(nn+5,5)= t01*rad2core(nn+3,5)+xx2*rad2core(nn+4,4)
+            t01= t02+two
+          enddo
+        case (4)
+          do nn= nmin,nmax,2
+            t02= t01+two
+            rad2core(nn+1,1)= t02*rad2core(nn-1,1)+xx2*rad2core(nn  ,2)
+            rad2core(nn+2,2)= t01*rad2core(nn  ,2)+xx2*rad2core(nn+1,1)
+            rad2core(nn+3,3)= t01*rad2core(nn+1,3)+xx2*rad2core(nn+2,2)
+            rad2core(nn+4,4)= t01*rad2core(nn+2,4)+xx2*rad2core(nn+3,3)
+            rad2core(nn+5,5)= t01*rad2core(nn+3,5)+xx2*rad2core(nn+4,4)
+            rad2core(nn+6,6)= t01*rad2core(nn+4,6)+xx2*rad2core(nn+5,5)
+            t01= t02+two
+          enddo
+        case (5)
+          do nn= nmin,nmax,2
+            t02= t01+two
+            rad2core(nn+1,1)= t02*rad2core(nn-1,1)+xx2*rad2core(nn  ,2)
+            rad2core(nn+2,2)= t01*rad2core(nn  ,2)+xx2*rad2core(nn+1,1)
+            rad2core(nn+3,3)= t01*rad2core(nn+1,3)+xx2*rad2core(nn+2,2)
+            rad2core(nn+4,4)= t01*rad2core(nn+2,4)+xx2*rad2core(nn+3,3)
+            rad2core(nn+5,5)= t01*rad2core(nn+3,5)+xx2*rad2core(nn+4,4)
+            rad2core(nn+6,6)= t01*rad2core(nn+4,6)+xx2*rad2core(nn+5,5)
+            rad2core(nn+7,7)= t01*rad2core(nn+5,7)+xx2*rad2core(nn+6,6)
+            t01= t02+two
+          enddo
+        case default
+          write(*,*)"lmax=",lmax
+          call abort
+      end select
+!
+      return
+end
+
+
+!----------------------------------------------------------------------
+  subroutine rad2table(rad2core,alpha,beta,xp1p,xp1m,xp0,lemax,lomax)
+!----------------------------------------------------------------------
+!
+! Prepare table for type2 radial integral
+!
+      implicit none
+      integer,intent(in) :: lemax, lomax
+      real(8),parameter :: zero=0.0D+00
+      real(8),intent(in) :: alpha, beta, xp1p, xp1m, xp0
+      real(8),intent(out) :: rad2core(30,7)
+      real(8) :: alf, xp1, type1radint, type1radintps
+!
+      if((alpha-beta) <= zero) then
+        alf= beta
+        xp1 = xp1m
+      else
+        alf= alpha
+        xp1 = xp1p
+      endif
+!
+! Generate even lattice
+!
+      rad2core(1,1)= type1radint(0,0,alf,xp0,xp1)
+      rad2core(2,2)= type1radint(1,1,alf,xp0,xp1)
+      if(lemax >= 2) rad2core(3,3)= type1radint(2,2,alf,xp0,xp1)
+      if(lemax >= 3) rad2core(4,4)= type1radint(3,3,alf,xp0,xp1)
+      if(lemax >= 4) rad2core(5,5)= type1radintps(4,4,alf,xp0)
+      if(lemax >= 5) rad2core(6,6)= type1radintps(5,5,alf,xp0)
+      if(lemax >= 6) rad2core(7,7)= type1radintps(6,6,alf,xp0)
+      call rad2recur(rad2core,2,22,lemax,alf)
+!
+! Generate odd lattice
+!
+      rad2core(1,2)= type1radint(0,1,alf,xp0,xp1)
+      rad2core(2,1)= type1radint(1,0,alf,xp0,xp1)
+      rad2core(3,2)= type1radint(2,1,alf,xp0,xp1)
+      if(lomax >= 2) rad2core(4,3)= type1radint(3,2,alf,xp0,xp1)
+      if(lomax >= 3) rad2core(5,4)= type1radint(4,3,alf,xp0,xp1)
+      if(lomax >= 4) rad2core(6,5)= type1radintps(4,5,alf,xp0)
+      if(lomax >= 5) rad2core(7,6)= type1radintps(5,6,alf,xp0)
+      if(lomax >= 6) rad2core(8,7)= type1radintps(6,7,alf,xp0)
+      call rad2recur(rad2core,3,21,lomax,alf)
+!
+      return
+end
+
+
+!--------------------------------------------------------------------------
+  function type2radintps(rad2core,nn,lalpha,lbeta,alpha,beta,sqrtinvzeta)
+!--------------------------------------------------------------------------
+!
+! Calculate terms for type2 radial integrals
+!
+      implicit none
+      integer,parameter :: maxii=10
+      integer,intent(in) :: nn, lalpha, lbeta
+      integer :: ll, l1, l2, l3, ii
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00
+      real(8),intent(in) :: rad2core(30,7), alpha, beta, sqrtinvzeta
+      real(8) :: type2radintps, xx, tmp, sumrad2
+      real(8) :: fctrlo(7)=(/1.0D+00,3.0D+00,15.0D+00,105.0D+00,945.0D+00,1.0395D+04,1.35135D+05/)
+!
+      if((alpha-beta) > zero) then
+        ll= lbeta+1
+        xx= beta
+      else
+        ll= lalpha+1
+        xx= alpha
+      endif
+      tmp = xx**(ll-1)/fctrlo(ll)
+      xx = xx*xx
+      l1= lalpha+lbeta+2-ll
+      l2= ll+nn
+      l3= ll+ll-1
+!
+      sumrad2 = tmp*rad2core(l2,l1)
+      do ii=1,maxii
+        tmp= tmp*xx/(2*ii*(ii+ii+l3))
+        sumrad2= sumrad2+tmp*rad2core(ii+ii+l2,l1)
+      enddo
+      type2radintps= sumrad2*(half*sqrtinvzeta)**(nn+1)
+!
+      return
+end
+
+
+!-----------------------------------------------------------------------
+  subroutine rad2hyperbolic(rho,sga,sgb,tau,sqrtinvzeta,xp0,xka,xkb, &
+&                           gamma1,gamma2,a1,a2,zeta,nmax)
+!-----------------------------------------------------------------------
+!
+! Calculate rho, sigma, sigma bar, tau for type2 radial integral
+! See J.Chem.Phys. 111, 8778-8784 (1999).
+!
+      implicit none
+      integer,intent(in) :: nmax
+      integer :: ii
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
+      real(8),parameter :: sqrtpi=1.772453850905516D+00
+      real(8),parameter :: sqrtpi2=3.544907701811032D+00
+      real(8),intent(in) :: sqrtinvzeta, xp0, xka, xkb, gamma1, gamma2, a1, a2, zeta
+      real(8),intent(out) :: rho(15), sga(15), sgb(15), tau(15)
+      real(8) :: factor, factbc(13), b1(15), b2(15), c1(15), c2(15), dawerf, dawson
+      real(8) :: zeta2, xkabp, xkabm, xp0p, xp0m, facp, denom, facm, facb, facc, facbc
+      data factbc/1.0D+00,4.0D+00,1.8D+01,9.6D+01,6.0D+02,4.32D+03, &
+&                 3.528D+04,3.2256D+05,3.26592D+06,3.6288D+07, &
+&                 4.390848D+08,5.7480192D+09,8.09512704D+10/
+!
+      factor= sqrtpi*sqrtinvzeta
+      b1(1) = factor*gamma1
+      c1(1) = factor*gamma1*erf(a1)
+      b2(1) = factor*gamma2
+      c2(1) = factor*gamma2*erf(a2)
+      b1(2) = sqrtpi2*gamma1*dawerf(a1)
+      c1(2) = sqrtpi2*gamma1*dawson(a1)
+      b2(2) = sqrtpi2*gamma2*dawerf(a2)
+      c2(2) = sqrtpi2*gamma2*dawson(a2)
+!
+      zeta2= zeta+zeta
+      xkabp= xka+xkb
+      xkabm= xka-xkb
+      xp0p= xp0
+      xp0m= xp0
+      facp= zero
+      denom= one
+      do ii= 3,nmax
+        xp0p= xp0p*xkabp
+        xp0m= xp0m*xkabm
+        facm= half-facp
+        facb= facp/factbc(ii-2)
+        facc= facm/factbc(ii-2)
+        facbc= one/denom
+        b1(ii)= xp0p*facb-(zeta2*b1(ii-2)-xkabp*c1(ii-1))*facbc
+        c1(ii)= xp0p*facc-(zeta2*c1(ii-2)-xkabp*b1(ii-1))*facbc
+        b2(ii)= xp0m*facb-(zeta2*b2(ii-2)-xkabm*c2(ii-1))*facbc
+        c2(ii)= xp0m*facc-(zeta2*c2(ii-2)-xkabm*b2(ii-1))*facbc
+        facp= facm
+        denom= denom+one
+      enddo
+!
+      do ii= 1,nmax
+        rho(ii)= b1(ii)-b2(ii)
+        sga(ii)= c1(ii)+c2(ii)
+        sgb(ii)= c1(ii)-c2(ii)
+        tau(ii)= b1(ii)+b2(ii)
+      enddo
+!
+      return
+      end
+
+
+!-----------------------------------------------------------------------------------------
+  subroutine calctype2rad(rad2int,alfbessel,betbessel,alpha,beta,sqrtinvzeta, &
+&                         xp1p,xp1m,xp0,xka,xkb,a1,a2,zeta,nangecp,nangbasis,lmax,lemax)
+!-----------------------------------------------------------------------------------------
+!
+! Calculate type2 radial integral
+!
+      implicit none
+      integer,intent(in) :: nangecp, nangbasis, lmax, lemax
+      integer :: nangtotal, nemax, nomax, lomax, ii, jj, kk, nn
+      real(8),parameter :: zero=0.0D+00, p01=0.1D+00, quarter=0.25D+00, half=0.5D+00
+      real(8),parameter :: one=1.0D+00, two=2.0D+00, three=3.0D+00, five=5.0D+00
+      real(8),parameter :: six=6.0D+00, ten=1.0D+01, p35=3.5D+00, abthresh=1.0D-01
+      real(8),intent(in) :: alfbessel, betbessel, alpha, beta, sqrtinvzeta
+      real(8),intent(in) :: xp1p, xp1m, xp0, xka, xkb, a1, a2, zeta
+      real(8),intent(out) :: rad2int(11,11,11)
+      real(8) :: rho(15), sga(15), sgb(15), tau(15), radtmp(19,2,2), rad2core(30,7)
+      real(8) :: xkakb, denomab, denomab2, gamma1, gamma2, zzalpha, zzbeta, zetainv
+      real(8) :: t1, t2, t3, xka2, xkb2, xka4, xkb4, xka6, xkb6, xkakb2
+      real(8) :: t00, t01, t02, t03, t04, t05, t06, qa2, qb2, qa4, qb4, qa6, qb6, qab
+      real(8) :: ra0, ra1, ra2, ra3, ra4, type2radintps
+!
+      nangtotal= nangecp+nangbasis-1
+      nemax= nangtotal
+      nomax= nangtotal
+      if(nangtotal == 0) nomax=-1
+      lomax= lemax
+!
+      if(alpha*beta > abthresh) then
+        xkakb = xka*xkb
+        denomab= one/xkakb
+        denomab2= denomab*denomab
+        if(lemax > 6) then
+          write(*,'(" Error! Lemax TOO BIG, lemax=",i3)')lemax
+          call abort
+        endif
+        do ii= 1,15
+          rho(ii)= zero
+          sga(ii)= zero
+          sgb(ii)= zero
+          tau(ii)= zero
+        enddo
+        gamma1= xp1p*quarter
+        gamma2= xp1m*quarter
+        call rad2hyperbolic(rho,sga,sgb,tau,sqrtinvzeta,xp0,xka,xkb, &
+&                           gamma1,gamma2,a1,a2,zeta,2*lemax+3)
+        radtmp(1,1,1)= rho(3)*denomab
+        radtmp(2,1,1)= rho(2)*denomab
+        radtmp(1,2,1)=(sgb(3)-rho(4)*denomab*xkb)*denomab
+        radtmp(2,2,1)=(sgb(2)-rho(3)*denomab*xkb)*denomab
+        radtmp(1,1,2)=(sga(3)-rho(4)*denomab*xka)*denomab
+        radtmp(2,1,2)=(sga(2)-rho(3)*denomab*xka)*denomab
+        radtmp(1,2,2)=(rho(5)-xka*sgb(4)-xkb*sga(4)+xkakb*tau(3))*denomab2
+        radtmp(2,2,2)=(rho(4)-xka*sgb(3)-xkb*sga(3)+xkakb*tau(2))*denomab2
+      else
+        call rad2table(rad2core,alpha,beta,xp1p,xp1m,xp0,lemax,lomax)
+        radtmp(1,1,1)=type2radintps(rad2core,0,0,0,alpha,beta,sqrtinvzeta)
+        radtmp(2,1,1)=type2radintps(rad2core,1,0,0,alpha,beta,sqrtinvzeta)
+        radtmp(1,2,1)=type2radintps(rad2core,0,1,0,alpha,beta,sqrtinvzeta)
+        radtmp(2,2,1)=type2radintps(rad2core,1,1,0,alpha,beta,sqrtinvzeta)
+        radtmp(1,1,2)=type2radintps(rad2core,0,0,1,alpha,beta,sqrtinvzeta)
+        radtmp(2,1,2)=type2radintps(rad2core,1,0,1,alpha,beta,sqrtinvzeta)
+        radtmp(1,2,2)=type2radintps(rad2core,0,1,1,alpha,beta,sqrtinvzeta)
+        radtmp(2,2,2)=type2radintps(rad2core,1,1,1,alpha,beta,sqrtinvzeta)
+      endif
+      zzalpha= sqrtinvzeta*alpha
+      zzbeta= sqrtinvzeta*beta
+      zetainv= sqrtinvzeta*sqrtinvzeta*half
+!
+! Generate table of elements of even lattice
+!
+      t2= zero
+      do nn= 2,nemax,2
+        t1= t2+zetainv
+        t3= t2-zetainv*three
+        radtmp(nn+1,1,1)= zzalpha*radtmp(nn  ,2,1)+zzbeta*radtmp(nn  ,1,2)+t1*radtmp(nn-1,1,1)
+        radtmp(nn+1,2,2)= zzalpha*radtmp(nn  ,1,2)+zzbeta*radtmp(nn  ,2,1)+t3*radtmp(nn-1,2,2)
+        radtmp(nn+2,2,1)= zzalpha*radtmp(nn+1,1,1)+zzbeta*radtmp(nn+1,2,2)+t2*radtmp(nn  ,2,1)
+        radtmp(nn+2,1,2)= zzalpha*radtmp(nn+1,2,2)+zzbeta*radtmp(nn+1,1,1)+t2*radtmp(nn  ,1,2)
+        t2= t2+zetainv*two
+      enddo
+!
+! Generate table of elements of odd lattice
+!
+      t2=-zetainv
+      do nn= 2,nomax,2
+        t1= t2-zetainv
+        t3= t2+zetainv*three
+        radtmp(nn+1,2,1)= zzalpha*radtmp(nn  ,1,1)+zzbeta*radtmp(nn  ,2,2)+t2*radtmp(nn-1,2,1)
+        radtmp(nn+1,1,2)= zzalpha*radtmp(nn  ,2,2)+zzbeta*radtmp(nn  ,1,1)+t2*radtmp(nn-1,1,2)
+        radtmp(nn+2,1,1)= zzalpha*radtmp(nn+1,2,1)+zzbeta*radtmp(nn+1,1,2)+t3*radtmp(nn  ,1,1)
+        radtmp(nn+2,2,2)= zzalpha*radtmp(nn+1,1,2)+zzbeta*radtmp(nn+1,2,1)+t1*radtmp(nn  ,2,2)
+        t2= t2+zetainv*two
+      enddo
+!
+! Retrieve required type2 radial integrals from tables
+!
+      if((lemax >= 2).and.(lemax <= 6)) then
+        if(alpha*beta > abthresh) then
+          if(nangecp > 2) then
+            write(*,'(" Error! Nangecp is too big,",i3,", lemax=",i3,".")')nangecp,lemax
+            call abort
+          endif
+        endif
+      elseif(lemax > 6) then
+        call abort
+      endif
+!
+      nn= nangecp
+      do ii= 1,lemax+1
+        if(ii <  3) then
+          rad2int(ii,ii,1)= radtmp(nn+1,ii,ii)
+          cycle
+        elseif(alpha*beta <= abthresh) then
+          rad2int(ii,ii,1)= type2radintps(rad2core,nn,ii-1,ii-1,alpha,beta,sqrtinvzeta)
+          cycle
+        endif
+        if(ii == 3) then
+          xka2 = xka*xka
+          xkb2 = xkb*xkb
+          xkakb2= xkakb*xkakb
+          ra4= denomab2
+          qa2= 3.0D+00*xka2
+          qb2= 3.0D+00*xkb2
+          t02= qa2+qb2
+          t00= 9.0D+00
+          ra0= t00*rho( 7-nn)+t02*rho( 5-nn)+xkakb2*rho( 3-nn)
+          ra1= t00*sga( 6-nn)+qa2*sga( 4-nn)
+          ra2= t00*sgb( 6-nn)+qb2*sgb( 4-nn)
+          ra3= t00*tau( 5-nn)
+        elseif(ii == 4) then
+          qa2= 1.5D+01*xka2
+          qb2= 1.5D+01*xkb2
+          t02= qa2+qb2
+          qab= six*xkakb2
+          t00= 2.25D+02
+          ra0= t00*rho( 9-nn)+(t02*rho( 7-nn)+rho( 5-nn)*qab)*six
+          ra1= t00*sga( 8-nn)+(t02+five* qa2)*sga( 6-nn)+sga( 4-nn)*qab
+          ra2= t00*sgb( 8-nn)+(t02+five* qb2)*sgb( 6-nn)+sgb( 4-nn)*qab
+          ra3= t00*tau( 7-nn)+ t02*tau( 5-nn)+tau( 3-nn)*xkakb2
+        elseif(ii == 5) then
+          xka4 = xka2*xka2
+          xkb4 = xkb2*xkb2
+          qa2= 4.5D+01*xka2
+          qb2= 4.5D+01*xkb2
+          t02= qa2+qb2
+          t03= 1.05D+03*(xka2+xkb2)
+          qa4= 1.05D+02*xka4
+          qb4= 1.05D+02*xkb4
+          t04= qa4+qb4
+          qab= ten*xkakb2
+          t00= 1.1025D+04
+          ra0 = t00*rho(11-nn)+1.05D+02*t02*rho( 9-nn)+t04*rho( 7-nn)+ &
+&              (2.025D+03*rho( 7-nn)+t02*rho( 5-nn)+rho( 3-nn)*xkakb2)*xkakb2
+          ra1 = t00*sga(10-nn)+(t03+3.675D+03*xka2)*sga( 8-nn)+ &
+&               qa4*sga( 6-nn)+(4.5D+01*sga( 6-nn)+xka2*sga( 4-nn))*qab
+          ra2 = t00*sgb(10-nn)+(t03+3.675D+03*xkb2)*sgb( 8-nn)+ &
+&               qb4*sgb( 6-nn)+(4.5D+01*sgb( 6-nn)+xkb2*sgb( 4-nn))*qab
+          ra3 = t00*tau( 9-nn)+t03*tau( 7-nn)+ten*tau( 5-nn)*qab
+        elseif(ii == 6) then
+          qa2= 4.2D+02*xka2
+          qb2= 4.2D+02*xkb2
+          t02= qa2+qb2
+          t03= 9.9225D+04*(xka2+xkb2)
+          qa4= 9.45D+02*xka4
+          qb4= 9.45D+02*xkb4
+          t04= qa4+qb4
+          qab= 1.5D+01*xkakb2
+          t00= 8.93025D+05
+          ra0= t00*rho(13-nn)+4.0D+00*t03*rho(11-nn)+1.5D+01*t04*rho( 9-nn)+ &
+&             (1.176D+04*rho( 9-nn)+t02*rho( 7-nn)+rho( 5-nn)*qab)*qab
+          ra1= t00*sga(12-nn)+(t03+7.0875D+02*qa2)*sga(10-nn)+ &
+&             (t04+1.4D+01*qa4)*sga( 8-nn)+(4.41D+04*sga( 8-nn)+ &
+&             (t02+2.75D+00*qa2)*sga( 6-nn)+sga( 4-nn)*qab)*xkakb2
+          ra2= t00*sgb(12-nn)+(t03+7.0875D+02*qb2)*sgb(10-nn)+ &
+              (t04+1.4D+01*qb4)*sgb( 8-nn)+(4.41D+04*sgb( 8-nn)+ &
+&             (t02+2.75D+00*qb2)*sgb( 6-nn)+sgb( 4-nn)*qab)*xkakb2
+          ra3= t00*tau(11-nn)+t03*tau( 9-nn)+t04*tau( 7-nn)+ &
+&              (1.1025D+04*tau( 7-nn)+2.5D-01*t02*tau( 5-nn)+tau( 3-nn)*xkakb2)*xkakb2
+        elseif(ii == 7) then
+          xka6 = xka4*xka2
+          xkb6 = xkb4*xkb2
+          qa2= p35*xka2
+          qb2= p35*xkb2
+          t02= qa2+qb2
+          t03= 6.496875D+01*t02
+          qa4= p35*xka4
+          qb4= p35*xkb4
+          t04= 3.75D-01*(qa4+qb4)
+          t05= 7.7D+00*t04
+          qa6= 4.8125D-02*xka6
+          qb6= 4.8125D-02*xkb6
+          t06= qa6+qb6
+          qab= p01*xkakb2/six
+          t00= 5.00259375D+02
+          ra0= t00*rho(15-nn)+t03*rho(13-nn)+t05*rho(11-nn)+t06*rho( 9-nn)+ &
+&             (6.2015625D+03*rho(11-nn)+7.875D+01*t02*rho( 9-nn)+t04*rho( 7-nn)+ &
+              (7.35D+02*rho( 7-nn)+t02*rho( 5-nn)+rho( 3-nn)*qab)*qab)*qab
+          ra1= t00*sga(14-nn)+(t03-1.66753125D+02*xkb2)*sga(12-nn)+ &
+&             (t05-2.59875D+00*qb4)*sga(10-nn)+qa6*sga( 8-nn)+ &
+&             (1.65375D+04*sga(10-nn)+2.1D+02*(t02-6.25D-01*qb2)*sga( 8-nn)+ &
+&              qa4*sga( 6-nn)+(7.35D+02*sga( 6-nn)+Qa2*sga( 4-nn))*qab)*qab*p01
+          ra2= t00*sgb(14-nn)+(t03-1.66753125D+02*xka2)*sgb(12-nn)+ &
+&             (t05-2.59875D+00*qa4)*sgb(10-nn)+qb6*sgb( 8-nn)+ &
+&             (1.65375D+04*sgb(10-nn)+2.1D+02*(t02-6.25D-01*qa2)*sgb( 8-nn)+ &
+&              qb4*sgb( 6-nn)+(7.35D+02*sgb( 6-nn)+qb2*sgb( 4-nn))*qab)*qab*p01
+          ra3= t00*tau(13-nn)+1.7325D+01*t02*tau(11-nn)+p01*t05 *tau( 9-nn)+ &
+&             (2.1D+02*tau( 9-nn)+t02*tau( 7-nn)+p35*tau( 5-nn)*qab)*qab*2.1D+00
+          ra4= ra4*2.16D+05
+         endif
+         ra4= ra4*denomab
+         rad2int(ii,ii,1)=(ra0-ra1*xkb-ra2*xka+ra3*xkakb)*ra4
+      enddo
+!
+      do ii= 2,nangbasis
+        do jj= 1,2
+          do kk= 1,2
+            rad2int(kk,jj,ii)= radtmp(nangecp+ii,jj,kk)
+          enddo
+        enddo
+        t01= alfbessel*three
+        do jj= 3,lmax
+          rad2int( 1,jj,ii)= rad2int(1,jj-2,ii)-t01*rad2int(1,jj-1,ii-1)
+          rad2int( 2,jj,ii)= rad2int(2,jj-2,ii)-t01*rad2int(2,jj-1,ii-1)
+          t01= t01+alfbessel*two
+        enddo
+        t02= betbessel*three
+        do kk= 3,lmax
+          rad2int(kk, 1,ii)= rad2int(kk-2,1,ii)-t02*rad2int(kk-1,1,ii-1)
+          rad2int(kk, 2,ii)= rad2int(kk-2,2,ii)-t02*rad2int(kk-1,2,ii-1)
+          t02= t02+betbessel*two
+        enddo
+        t01= alfbessel*three
+        do jj= 3,lmax
+          t02= betbessel*three
+          do kk= 3,jj-1
+            rad2int(kk,jj,ii)= rad2int(kk,jj-2,ii)-t01*rad2int(kk,jj-1,ii-1)
+            t02= t02+betbessel*two
+          enddo
+          do kk= jj,lmax
+            rad2int(kk,jj,ii)= rad2int(kk-2,jj,ii)-t02*rad2int(kk-1,jj,ii-1)
+            t02= t02+betbessel*two
+          enddo
+          t01= t01+alfbessel*two
+        enddo
+      enddo
+!
+      return
+end

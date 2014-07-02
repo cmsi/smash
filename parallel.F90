@@ -2,7 +2,7 @@
   subroutine para_init
 !-----------------------
 #ifdef MPI
-      use procpar
+      use modparallel
       implicit none
       integer(4) :: ierr
 !
@@ -16,7 +16,7 @@ end
   subroutine para_comm_size(np)
 !-----------------------------------
 #ifdef MPI
-      use procpar
+      use modparallel
       implicit none
       integer :: np
       integer(4) :: np4, ierr
@@ -32,7 +32,7 @@ end
 subroutine para_comm_rank(nid)
 !-------------------------------
 #ifdef MPI
-      use procpar
+      use modparallel
       implicit none
       integer :: nid
       integer(4) :: nid4, ierr
@@ -48,7 +48,7 @@ end
   subroutine para_finalize
 !---------------------------
 #ifdef MPI
-      use procpar
+      use modparallel
       implicit none
       integer(4) :: ierr
 !
@@ -62,7 +62,7 @@ end
   subroutine para_abort
 !------------------------
 #ifdef MPI
-      use procpar
+      use modparallel
       implicit none
       integer(4) :: icode, ierr
 !
@@ -73,200 +73,362 @@ end
 end
 
 
-!---------------------------------------------------
-  subroutine para_bcast(buff,num,vtype,irank,comm)
-!---------------------------------------------------
+!-----------------------------------------------
+  subroutine para_bcastd1(buff,num,irank,comm)
+!-----------------------------------------------
 #ifdef MPI
-      use procpar
-      use iofile, only : iout
+      use modparallel
       implicit none
       integer :: num, irank
       integer(4) :: num4, irank4, comm, ierr
       real(8) :: buff(*)
-      character(len=1) :: vtype
 !
       num4= num
       irank4= irank
 !
-      if(vtype.eq."D" .or. vtype.eq."d") then
-         call mpi_bcast(buff,num4,mpi_real8,irank4,comm,ierr)
-      elseif(vtype.eq."I" .or. vtype.eq."i") then
-         call mpi_bcast(buff,num4,mpi_integer8,irank4,comm,ierr)
-      elseif(vtype.eq."C" .or. vtype.eq."c") then
-         call mpi_bcast(buff,num4,mpi_character,irank4,comm,ierr)
-      else
-         if(master) write(iout,'("The 3rd argument of para_bcast is not supported.")')
-         call iabort
-      endif
+      call mpi_bcast(buff,num4,mpi_real8,irank4,comm,ierr)
 #endif
       return
 end
 
 
-!-----------------------------------------------------------------
-  subroutine para_allreduce(sbuff,rbuff,num,vtype,op,comm,itype)
-!-----------------------------------------------------------------
-      use procpar
-      use iofile, only : iout
+!-----------------------------------------------
+  subroutine para_bcastd2(buff,num,irank,comm)
+!-----------------------------------------------
+#ifdef MPI
+      use modparallel
       implicit none
-      integer,intent(in) :: num, itype
+      integer :: num, irank
+      integer(4) :: num4, irank4, comm, ierr
+      real(8) :: buff(*)
+!
+      num4= num
+      irank4= irank
+!
+      call mpi_bcast(buff,num4,mpi_real8,irank4,comm,ierr)
+#endif
+      return
+end
+
+
+!------------------------------------------------
+  subroutine para_bcasti41(buff,num,irank,comm)
+!------------------------------------------------
+#ifdef MPI
+      use modparallel
+      implicit none
+      integer :: num, irank
+      integer(4) :: num4, irank4, comm, ierr
+      integer(4) :: buff(*)
+!
+      num4= num
+      irank4= irank
+!
+      call mpi_bcast(buff,num4,mpi_integer4,irank4,comm,ierr)
+#endif
+      return
+end
+
+
+!------------------------------------------------
+  subroutine para_bcasti42(buff,num,irank,comm)
+!------------------------------------------------
+#ifdef MPI
+      use modparallel
+      implicit none
+      integer :: num, irank
+      integer(4) :: num4, irank4, comm, ierr
+      integer(4) :: buff(*)
+!
+      num4= num
+      irank4= irank
+!
+      call mpi_bcast(buff,num4,mpi_integer4,irank4,comm,ierr)
+#endif
+      return
+end
+
+!------------------------------------------------
+  subroutine para_bcasti81(buff,num,irank,comm)
+!------------------------------------------------
+#ifdef MPI
+      use modparallel
+      implicit none
+      integer :: num, irank
+      integer(4) :: num4, irank4, comm, ierr
+      integer(8) :: buff(*)
+!
+      num4= num
+      irank4= irank
+!
+      call mpi_bcast(buff,num4,mpi_integer8,irank4,comm,ierr)
+#endif
+      return
+end
+
+
+!------------------------------------------------
+  subroutine para_bcasti82(buff,num,irank,comm)
+!------------------------------------------------
+#ifdef MPI
+      use modparallel
+      implicit none
+      integer :: num, irank
+      integer(4) :: num4, irank4, comm, ierr
+      integer(8) :: buff(*)
+!
+      num4= num
+      irank4= irank
+!
+      call mpi_bcast(buff,num4,mpi_integer8,irank4,comm,ierr)
+#endif
+      return
+end
+
+
+!-----------------------------------------------
+  subroutine para_bcastc1(buff,num,irank,comm)
+!-----------------------------------------------
+#ifdef MPI
+      use modparallel
+      implicit none
+      integer :: num, irank
+      integer(4) :: num4, irank4, comm, ierr
+      character(*) :: buff(*)
+!
+      num4= num
+      irank4= irank
+!
+      call mpi_bcast(buff,num4,mpi_character,irank4,comm,ierr)
+#endif
+      return
+end
+
+
+!-----------------------------------------------
+  subroutine para_bcastc2(buff,num,irank,comm)
+!-----------------------------------------------
+#ifdef MPI
+      use modparallel
+      implicit none
+      integer :: num, irank
+      integer(4) :: num4, irank4, comm, ierr
+      character(*) :: buff(*)
+!
+      num4= num
+      irank4= irank
+!
+      call mpi_bcast(buff,num4,mpi_character,irank4,comm,ierr)
+#endif
+      return
+end
+
+
+!-----------------------------------------------
+  subroutine para_bcastl1(buff,num,irank,comm)
+!-----------------------------------------------
+#ifdef MPI
+      use modparallel
+      implicit none
+      integer :: num, irank, ii
+      integer(4) :: num4, irank4, comm, ierr
+      logical :: buff(*)
+      integer(4) :: itmp(num)
+!
+      num4= num
+      irank4= irank
+!
+      if(master) then
+        do ii= 1,num
+          if(buff(ii)) then
+            itmp(ii)= 1
+          else
+            itmp(ii)= 0
+          endif
+        enddo
+      endif
+!
+      call mpi_bcast(itmp,num4,mpi_integer4,irank4,comm,ierr)
+!
+      do ii= 1,num
+        if(itmp(ii) == 1) then
+          buff(ii)= .true.
+        else
+          buff(ii)= .false.
+        endif
+      enddo
+#endif
+      return
+end
+
+
+!-----------------------------------------------
+  subroutine para_bcastl2(buff,num,irank,comm)
+!-----------------------------------------------
+#ifdef MPI
+      use modparallel
+      implicit none
+      integer :: num, irank, ii
+      integer(4) :: num4, irank4, comm, ierr
+      logical :: buff(*)
+      integer(4) :: itmp(num)
+!
+      num4= num
+      irank4= irank
+!
+      if(master) then
+        do ii= 1,num
+          if(buff(ii)) then
+            itmp(ii)= 1
+          else
+            itmp(ii)= 0
+          endif
+        enddo
+      endif
+!
+      call mpi_bcast(itmp,num4,mpi_integer4,irank4,comm,ierr)
+!
+      do ii= 1,num
+        if(itmp(ii) == 1) then
+          buff(ii)= .true.
+        else
+          buff(ii)= .false.
+        endif
+      enddo
+#endif
+      return
+end
+
+
+!-------------------------------------------------------
+  subroutine para_allreduced1(sbuff,rbuff,num,op,comm)
+!-------------------------------------------------------
+      use modparallel
+      implicit none
+      integer,intent(in) :: num
       integer(4),intent(in) :: op, comm
-      real(8),intent(inout) :: sbuff(*)
+      real(8),intent(in) :: sbuff(*)
       real(8),intent(out) :: rbuff(*)
-      character(len=1),intent(in) :: vtype
 #ifdef MPI
-      integer(4) :: num4, mpityp, ierr
+      integer(4) :: num4, ierr
 !
-      if(op.ne.MPI_SUM) then
-        if(master) write(iout,'("The 5th argument of para_allreduce is not supported.")')
-        call iabort
-      endif
-!
-      if(itype == 1) then
-        if(vtype == "D" .or. vtype == "d") then
-           call para_allreduced(sbuff,num,op,comm)
-        elseif(vtype == "I" .or. vtype =="i") then
-           call para_allreducei(sbuff,num,op,comm)
-        else
-          if(master) write(iout,'("The 4th argument of para_allreduce is not supported.")')
-          call iabort
-        endif
-!
-      elseif(itype == 2) then
-        num4= num
-        if(vtype == "D" .or. vtype == "d") then
-          mpityp= mpi_real8
-        elseif(vtype == "I" .or. vtype =="i") then
-          mpityp= mpi_integer
-        else
-          if(master) write(iout,'("The 4th argument of para_allreduce is not supported.")')
-          call iabort
-        endif
-        call mpi_allreduce(sbuff,rbuff,num4,mpityp,op,comm,ierr)
-!
-      else
-        if(master) write(iout,'("The 7th argument of para_allreduce is not supported.")')
-        call iabort
-      endif
-!
+      num4= num
+      call mpi_allreduce(sbuff,rbuff,num4,mpi_real8,op,comm,ierr)
 #else
-      if(itype == 2) then
-        if(vtype == "D" .or. vtype == "d") then
-          call dcopy(num,sbuff,1,rbuff,1)
-        elseif(vtype == "I" .or. vtype =="i") then
-          call icopy(num,sbuff,1,rbuff,1)
-        else
-          if(master) write(iout,'("The 4th argument of para_bcast is not supported.")')
-          call iabort
-        endif
-      endif
+      call dcopy(num,sbuff,1,rbuff,1)
 #endif
       return
 end
 
 
-!------------------------------------------------
-  subroutine para_allreduced(sbuff,num,op,comm)
-!------------------------------------------------
-#ifdef MPI
-      use procpar
+!-------------------------------------------------------
+  subroutine para_allreduced2(sbuff,rbuff,num,op,comm)
+!-------------------------------------------------------
+      use modparallel
       implicit none
-      integer :: num, icycle, ncycle, nlast, istart, ncopy
-      integer(4) :: num4, op, comm, ierr
-      real(8) :: sbuff(*), buff(nbuf)
+      integer,intent(in) :: num
+      integer(4),intent(in) :: op, comm
+      real(8),intent(in) :: sbuff(*)
+      real(8),intent(out) :: rbuff(*)
+#ifdef MPI
+      integer(4) :: num4, ierr
 !
       num4= num
-      ncycle=(num-1)/nbuf+1
-      nlast=mod(num,nbuf)
+      call mpi_allreduce(sbuff,rbuff,num4,mpi_real8,op,comm,ierr)
+#else
+      call dcopy(num,sbuff,1,rbuff,1)
+#endif
+      return
+end
+
+
+!-------------------------------------------------------
+  subroutine para_allreducei1(sbuff,rbuff,num,op,comm)
+!-------------------------------------------------------
+      use modparallel
+      implicit none
+      integer,intent(in) :: num
+      integer(4),intent(in) :: op, comm
+      integer,intent(in) :: sbuff(*)
+      integer,intent(out) :: rbuff(*)
+#ifdef MPI
+      integer(4) :: num4, ierr
 !
-      do icycle=1,ncycle
-        istart=1+nbuf*(icycle-1)
-        num4=nbuf
-        if(icycle.eq.ncycle) num4=nlast
-        call mpi_allreduce(sbuff(istart),buff,num4,mpi_real8,op,comm,ierr)
-        ncopy=num4
-        call dcopy(ncopy,buff,1,sbuff(istart),1)
+      num4= num
+      call mpi_allreduce(sbuff,rbuff,num4,mpi_integer8,op,comm,ierr)
+#else
+      integer ii
+!
+      do ii= 1,num
+        rbuff(ii)= sbuff(ii)
       enddo
 #endif
       return
 end
 
 
-!------------------------------------------------
-  subroutine para_allreducei(sbuff,num,op,comm)
-!------------------------------------------------
-#ifdef MPI
-      use procpar
+!-------------------------------------------------------
+  subroutine para_allreducei2(sbuff,rbuff,num,op,comm)
+!-------------------------------------------------------
+      use modparallel
       implicit none
-      integer :: num, icycle, ncycle, nlast, istart, ncopy
-      integer(4) :: num4, op, comm, ierr
-      integer :: sbuff(*), buff(nbuf)
+      integer,intent(in) :: num
+      integer(4),intent(in) :: op, comm
+      integer,intent(in) :: sbuff(*)
+      integer,intent(out) :: rbuff(*)
+#ifdef MPI
+      integer(4) :: num4, ierr
 !
       num4= num
-      ncycle=(num-1)/nbuf+1
-      nlast=mod(num,nbuf)
+      call mpi_allreduce(sbuff,rbuff,num4,mpi_integer8,op,comm,ierr)
+#else
+      integer ii
 !
-      do icycle=1,ncycle
-        istart=1+nbuf*(icycle-1)
-        num4=nbuf
-        if(icycle.eq.ncycle) num4=nlast
-        call mpi_allreduce(sbuff(istart),buff,num4,mpi_integer,op,comm,ierr)
-        ncopy=num4
-        call icopy(ncopy,buff,1,sbuff(istart),1)
+      do ii= 1,num
+        rbuff(ii)= sbuff(ii)
       enddo
 #endif
       return
 end
 
 
-!---------------------------------------------------------------------
-  subroutine para_allgatherv(sbuff,num,vtype,rbuff,idisa,idisb,comm)
-!---------------------------------------------------------------------
-      use procpar
-!     use procpar, only : nproc, mpi_real8, master
-      use iofile, only : iout
+!---------------------------------------------------------------
+  subroutine para_allgatherv(sbuff,num,rbuff,idisa,idisb,comm)
+!---------------------------------------------------------------
+      use modparallel
       implicit none
       integer,intent(in) :: num, idisa(nproc), idisb(nproc)
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out):: rbuff(*)
-      character(len=1),intent(in) :: vtype
       integer(4),intent(in) :: comm
 #ifdef MPI
       integer :: i
       integer(4) :: num4, idisa4(nproc), idisb4(nproc), ierr
+!
+      num4= num
+      do i= 1,nproc
+        idisa4(i)= idisa(i)
+        idisb4(i)= idisb(i)
+      enddo
+      call mpi_allgatherv(sbuff,num4,mpi_real8,rbuff,idisa4,idisb4,mpi_real8,comm,ierr)
+#else
+      call dcopy(num,sbuff,1,rbuff,1)
 #endif
 !
-      if((vtype == 'D').or.(vtype == 'd'))then
-#ifdef MPI
-        num4= num
-        do i= 1,nproc
-          idisa4(i)= idisa(i)
-          idisb4(i)= idisb(i)
-        enddo
-        call mpi_allgatherv(sbuff,num4,mpi_real8,rbuff,idisa4,idisb4,mpi_real8,comm,ierr)
-#else
-        call dcopy(num,sbuff,1,rbuff,1)
-#endif
-      else
-        if(master) write(iout,'(" Error! The 3rd argument of para_allgatherv is not supported.")')
-        call iabort
-      endif
       return
 end
 
 
-!-------------------------------------------------------------------------------------
-  subroutine para_sendrecv(sbuff,nums,vtype,dest,ntags,rbuff,numr,source,ntagr,comm)
-!-------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------
+  subroutine para_sendrecvd1(sbuff,nums,dest,ntags,rbuff,numr,source,ntagr,comm)
+!---------------------------------------------------------------------------------
 #ifdef MPI
-      use procpar
-      use iofile, only : iout
+      use modparallel
       implicit none
       integer,intent(in) :: nums, dest, ntags, numr, source, ntagr
       integer(4),intent(in) :: comm
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out) :: rbuff(*)
-      character(len=1),intent(in) :: vtype
       integer(4) :: nums4, dest4, ntags4, numr4, source4, ntagr4, ierr
       integer(4) :: STATUS(MPI_STATUS_SIZE)
 !
@@ -276,13 +438,37 @@ end
       numr4= numr
       source4= source
       ntagr4 = ntagr
-      if(vtype == "D" .or. vtype == "d") then
-        call mpi_sendrecv(sbuff,nums4,MPI_DOUBLE_PRECISION,dest4,ntags4, &
-&                         rbuff,numr4,MPI_DOUBLE_PRECISION,source4,ntagr4,comm,STATUS,ierr)
-      else
-        if(master) write(iout,'(" Error! Only DOUBLE_PRECISION is supported in para_sendrecv.")')
-        call abort
-      endif
+      call mpi_sendrecv(sbuff,nums4,MPI_DOUBLE_PRECISION,dest4,ntags4, &
+&                       rbuff,numr4,MPI_DOUBLE_PRECISION,source4,ntagr4,comm,STATUS,ierr)
 #endif
       return
 end
+
+
+!---------------------------------------------------------------------------------
+  subroutine para_sendrecvd2(sbuff,nums,dest,ntags,rbuff,numr,source,ntagr,comm)
+!---------------------------------------------------------------------------------
+#ifdef MPI
+      use modparallel
+      implicit none
+      integer,intent(in) :: nums, dest, ntags, numr, source, ntagr
+      integer(4),intent(in) :: comm
+      real(8),intent(in) :: sbuff(*)
+      real(8),intent(out) :: rbuff(*)
+      integer(4) :: nums4, dest4, ntags4, numr4, source4, ntagr4, ierr
+      integer(4) :: STATUS(MPI_STATUS_SIZE)
+!
+      nums4= nums
+      dest4= dest
+      ntags4= ntags
+      numr4= numr
+      source4= source
+      ntagr4 = ntagr
+      call mpi_sendrecv(sbuff,nums4,MPI_DOUBLE_PRECISION,dest4,ntags4, &
+&                       rbuff,numr4,MPI_DOUBLE_PRECISION,source4,ntagr4,comm,STATUS,ierr)
+#endif
+      return
+end
+
+
+

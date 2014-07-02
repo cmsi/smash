@@ -2,26 +2,29 @@
   program main
 !---------------
 !
-! This is a highly parallelized quantum chemistry calculation
-! program package.
+! This is the main driver of Scalable Molecular Analysis Solver 
+! for High performance computing (SMASH).
 !
-      use procpar, only : master
-      use iofile, only : in, iout
-      use warn, only : nwarn
-      use memory, only : memusedmax
-      use control, only : runtype, method
+      use modparallel
+      use modiofile, only : in
+      use modwarn, only : nwarn
+      use modmemory, only : memusedmax
+      use modjob, only : runtype, method, scftype
+      use modecp, only : flagecp
       implicit none
+      logical :: converged
 !
 !
       call start
 !
       if(master) then
-        write(iout,&
-&           '(" ***************************************************",/,&
-&             "    Quantum chemistry calculation program package",   /,&
-&             "                   Revision 0.1",                     /,&
-&             "               written by K. ISHIMURA",               /,&
-&             " ***************************************************")')
+        write(*,&
+&           '(" ****************************************",/,&
+&             "    Scalable Molecular Analysis Solver",/,&
+&             "      for High performance computing",/,&
+&             "            SMASH Version 0.1",/,&
+&             "          written by K. ISHIMURA",/,&
+&             " ****************************************",/)')
       endif
       call tstamp(0)
       call gethostnm
@@ -32,40 +35,72 @@
       if(master) open(unit=in,file='input.dat',status='replace')
       call readinput
 !
+! Set maximum memory size
+!
+      call maxmemset
+!
 ! Set basis functions
 !
       call setbasis
 !
+! Set number of electrons
+!
+      call setelectron
+!
+! Set ECP functions
+!
+      if(flagecp) call setecp
+!
+! Adjust the numbe of DFT grids
+!
+      call dftgrid
+!
 ! Write input data
 !
+      call writecondition
       call writegeom
       call writebasis
-      call writecondition
+      if(flagecp) call writeecp
 !
-! Start energy calculation
+! Start calculations
 !
-      if(runtype == "ENERGY") then
-        call calcenergy
-      elseif(runtype == "GRADIENT") then
-        call calcgradient
-      elseif(runtype == "OPTIMIZE") then
-        if(method == "HF") then
-          call calcgeometry
+      if(scftype == 'RHF') then
+        if(runtype == 'ENERGY') then
+          call calcrenergy
+        elseif(runtype == 'GRADIENT') then
+          call calcrgradient
+        elseif(runtype == 'OPTIMIZE') then
+          call calcrgeometry(converged)
         else
-          if(master) write(iout,'(" Error! Optimization supports only HF method.")')
-          call iabort
+          if(master) then
+            write(*,'(" Error! This program does not support ",a16,".")')runtype
+            call iabort
+          endif
         endif
+      elseif(scftype == 'UHF') then
+        if(runtype == 'ENERGY') then
+          call calcuenergy
+        elseif(runtype == 'GRADIENT') then
+          call calcugradient
+        elseif(runtype == 'OPTIMIZE') then
+          call calcugeometry(converged)
+        endif
+      else
+        if(master) write(*,'(" Error! SCFtype=",a16," is not supported.")')scftype
+        call iabort
       endif
 !
-!ISHIMURA
-!     if(master) close(in,status='delete')
       if(master) close(in)
       call para_finalize
       call memcheck
       call tstamp(2)
       if(master) then
-        write(iout,'(" Used memory :",1x,i6," MB")')memusedmax/125000
-        write(iout,'(" Your calculation finished with",i3," warning(s).")')nwarn
+        write(*,'(" Used memory :",1x,i6," MB")')memusedmax/125000
+        if((runtype =='OPTIMIZE').and.(.not.converged))then
+          write(*,'(" Geometry optimization did not finish with",i3," warning(s).")')nwarn
+        else
+          write(*,'(" Your calculation finished with",i3," warning(s).")')nwarn
+        endif
       endif
 end program main
 
@@ -76,18 +111,20 @@ end program main
 !
 ! Set computational data and machine information
 !
-      use procpar, only : master, parallel, nproc, myrank
-      use warn, only : nwarn
-      use guess, only : iguess, spher_g
-      use memory, only : memmax, memused, memusedmax
-      use print, only : iprint
-      use units, only : bohr
-      use basis, only : spher
-      use scf, only : maxiter, dconv, fdiff, dodiis, maxdiis, maxsoscf
-      use thresh, only : cutint2, threshsoscf
-      use dft, only : nrad, nleb
-      use opt, only : nopt, optconv
-      use ecp, only : flagecp
+      use modparallel, only : master, parallel, nproc, myrank
+      use modwarn, only : nwarn
+      use modguess, only : iguess, spher_g, guess
+      use modmemory, only : memmax, memused, memusedmax, memory
+      use modprint, only : iprint
+      use modunit, only : bohr
+      use modbasis, only : spher, basis
+      use modscf, only : maxiter, dconv, fdiff, diis, maxdiis, maxsoscf, extrap
+      use modthresh, only : cutint2, threshsoscf
+      use moddft, only : nrad, nleb
+      use modopt, only : nopt, optconv, cartesian
+      use modecp, only : ecp, flagecp
+      use modjob, only : scftype, runtype, method
+      use modmolecule, only : multi, charge
       implicit none
 !
 ! Initialize valuables for parallelization
@@ -108,54 +145,103 @@ end program main
 !
       nwarn  = 0
       iguess = 1
-      memmax = 2000000000
+      memmax = 250000000
       memused= 0
       memusedmax= 0
+      memory = ''
       maxiter= 100
       maxdiis= 20
       maxsoscf= 20
       fdiff  =.true.
-      dodiis =.true.
-      dodiis =.false.
-      cutint2= 5.0d-11
+      diis =.true.
+      extrap =.false.
+      cutint2= 1.0d-12
       threshsoscf= 0.25d0
-!     dconv  = 1.0d-5    ! for energy calculation
+      dconv  = 5.0d-6
       nrad   = 96
       nleb   = 302
-!     nrad   = 24
-!     nleb   = 110
-      dconv  = 5.0d-6    ! for energy gradient calculation
-!ishimura
-      iprint = 2
+      iprint = 1
       bohr   =.false.
-      spher  =.false.
-!     spher  =.true.
-!     spher_g=.false.
+      spher  =.true.
       spher_g=.true.
       nopt   = 50
       optconv= 1.0D-04
+      cartesian=.false.
+      multi  = 1
+      charge = 0.0D+00
 !
       flagecp= .false.
+      scftype='RHF'
+      method='HF'
+      runtype='ENERGY'
+      basis='STO-3G'
+      guess='HUCKEL'
+      ecp=''
       return
 end
 
 
-!------------------------
-  subroutine calcenergy
-!------------------------
+!-------------------------
+  subroutine setelectron
+!-------------------------
 !
-! Driver of energy calculation
+! Set number of electrons
 !
-      use basis, only : nao, nshell
-      use energy, only : enuc
-      use iofile, only : iout
-      use procpar, only : master
-      use molecule, only : nmo, neleca
-      use control, only : method
+      use modparallel
+      use modmolecule, only : numatomic, neleca, nelecb, natom, multi, charge
+      use modjob, only : scftype
+      use modbasis, only : nao
+      use modwarn, only : nwarn
+      implicit none
+      integer :: nume, ii
+!
+! Calculate total number of electrons
+!
+      nume= -charge
+      do ii= 1,natom
+        nume= nume+numatomic(ii)
+      enddo
+!
+! Calculate numbers of alpha and beta electrons
+!
+      if((scftype == 'RHF').and.(multi /= 1)) then
+        if(master) write(*,'(" Warning! SCFtype changes from RHF to UHF.")')
+        scftype = 'UHF'
+        nwarn= nwarn+1
+      endif
+!
+      neleca=(nume+multi-1)/2
+      nelecb=(nume-multi+1)/2
+      if((neleca+nelecb)/= nume) then
+        if(master) write(*,'(" Error! Spin multiplicity is ",i2, &
+&                               ", but number of elctrons is ",i5,".")')multi, nume
+        call iabort
+      endif
+!
+!      if(neleca > nao) then
+!        if(master) write(*,'(" Error! The number of electrons is larger than the number ",&
+!&                            "of basis functions.")')
+!        call iabort
+!      endif
+      return
+end
+
+
+!-------------------------
+  subroutine calcrenergy
+!-------------------------
+!
+! Driver of closed-shell energy calculation
+!
+      use modbasis, only : nao, nshell
+      use modenergy, only : enuc
+      use modparallel, only : master
+      use modmolecule, only : nmo, neleca
+      use modjob, only : method
       implicit none
       integer :: nao2, nao3, nshell3
-      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), ortho(:)
-      real(8), allocatable :: dmtrx(:), xint(:), energymo(:)
+      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:)
+      real(8), allocatable :: xint(:), energymo(:)
       real(8), allocatable :: overinv(:), work(:)
 !
       nao2= nao*nao
@@ -164,197 +250,531 @@ end
 !
 ! Set arrays 1
 !
-      call memset(nao3*4+nao2*2+nshell3+nao)
-      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),ortho(nao2),&
-&              dmtrx(nao3),xint(nshell3),energymo(nao))
+      call memset(nao3*3+nao2*2+nshell3+nao)
+      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2),&
+&              xint(nshell3),energymo(nao))
 !
 ! Calculate nuclear repulsion energy
 !
       call nucenergy
       if(master) then
-        write(iout,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
+        write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
       endif
-!
-! Calculate overlap and 1-electron integrals
-!
-      call oneei(h1mtrx,smtrx,tmtrx)
 !
 ! Set arrays 2
 !
       call memset(nao2*2)
       allocate(overinv(nao2),work(nao2))
 !
+! Calculate overlap and 1-electron integrals
+!
+      call oneei(h1mtrx,smtrx,tmtrx,work)
+!
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
       call mtrxcanoninv(ortho,overinv,work,nao,nmo)
 !
-! Calculate initial MOs and density matrix
+! Calculate initial MOs
 !
-      call guessmo(cmoa,overinv)
-      call calcdmtrx(cmoa,dmtrx,work,nao,neleca)
+      call guessmo(cmo,overinv)
 !
 ! Unset arrays 2
 !
       deallocate(overinv,work)
       call memunset(nao2*2)
+      call tstamp(1)
 !
 ! Start SCF
 !
-      if(method == "HF") then
-        call calcrhf(h1mtrx,cmoa,ortho,smtrx,dmtrx,xint,energymo)
-      elseif(method == "B3LYP") then
-        call calcrhf(h1mtrx,cmoa,ortho,smtrx,dmtrx,xint,energymo)
+      if(method == 'HARTREE-FOCK') then
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
+        call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
-        call calcrdft(h1mtrx,cmoa,ortho,smtrx,dmtrx,xint,energymo)
+      elseif(method == 'B3LYP') then
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
         call tstamp(1)
-      elseif(method == "MP2") then
-        call calcrhf(h1mtrx,cmoa,ortho,smtrx,dmtrx,xint,energymo)
+        call calcrdft(h1mtrx,cmo,ortho,smtrx,xint,energymo)
+        call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
-        call calcrmp2(cmoa,energymo,xint)
+      elseif(method == 'MP2') then
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
+        call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
+        call calcrmp2(cmo,energymo,xint)
+        call tstamp(1)
+      else
+        if(master) then
+          write(*,'(" Error! This program does not support ",a16,".")')method
+          call iabort
+        endif
       endif
+!
+! Print MOs
+!
+      if(master) then
+        write(*,'("-----------------")')
+        write(*,'(" MO coefficients")')
+        write(*,'("-----------------")')
+      endif
+      call writeeigenvector(cmo,energymo)
 !
 ! Unset arrays 1
 !
-      deallocate(h1mtrx,smtrx,tmtrx,cmoa,ortho, &
-&                dmtrx,xint,energymo)
-      call memunset(nao3*4+nao2*2+nshell3+nao)
+      deallocate(h1mtrx,smtrx,tmtrx,cmo,ortho, &
+&                xint,energymo)
+      call memunset(nao3*3+nao2*2+nshell3+nao)
       return
 end
 
 
-!--------------------------
-  subroutine calcgradient
-!--------------------------
+!-------------------------
+  subroutine calcuenergy
+!-------------------------
+!
+! Driver of open-shell energy calculation
+!
+      use modparallel
+      use modbasis, only : nao, nshell
+      use modenergy, only : enuc
+      use modmolecule, only : nmo
+      use modjob, only : method
+      implicit none
+      integer :: nao2, nao3, nshell3
+      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
+      real(8), allocatable :: xint(:), energymoa(:), energymob(:)
+      real(8), allocatable :: overinv(:), work(:)
+!
+      nao2= nao*nao
+      nao3=(nao*(nao+1))/2
+      nshell3=(nshell*(nshell+1))/2
+!
+! Set arrays 1
+!
+      call memset(nao3*3+nao2*3+nshell3+nao*2)
+      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),cmob(nao2),ortho(nao2),&
+&              xint(nshell3),energymoa(nao),energymob(nao))
+!
+! Calculate nuclear repulsion energy
+!
+      call nucenergy
+      if(master) then
+        write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
+      endif
+!
+! Set arrays 2
+!
+      call memset(nao2*2)
+      allocate(overinv(nao2),work(nao2))
+!
+! Calculate overlap and 1-electron integrals
+!
+      call oneei(h1mtrx,smtrx,tmtrx,work)
+!
+! Calculate canonicalization and inverse overlap matrices
+!
+      call fullmtrx(smtrx,work,nao)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo)
+!
+! Calculate initial MOs
+!
+      call guessmo(cmoa,overinv)
+      cmob(:)= cmoa(:)
+!
+! Unset arrays 2
+!
+      deallocate(overinv,work)
+      call memunset(nao2*2)
+      call tstamp(1)
+!
+! Start SCF
+!
+      if(method == 'HARTREE-FOCK') then
+        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
+        call writeeigenvalue(energymoa,energymob,2)
+        call tstamp(1)
+      elseif(method == 'B3LYP') then
+        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
+        call tstamp(1)
+        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
+        call writeeigenvalue(energymoa,energymob,2)
+        call tstamp(1)
+!     elseif(method == 'MP2') then
+!       call calcuhf(h1mtrx,cmoa,ortho,smtrx,xint,energymoa)
+!       call tstamp(1)
+!       call calcump2(cmoa,energymoa,xint)
+!       call tstamp(1)
+      else
+        if(master) then
+          write(*,'(" Error! This program does not support ",a16,".")')method
+          call iabort
+        endif
+      endif
+!
+! Print MOs
+!
+      if(master) then
+        write(*,'("-----------------------")')
+        write(*,'(" Alpha MO coefficients")')
+        write(*,'("-----------------------")')
+      endif
+      call writeeigenvector(cmoa,energymoa)
+      if(master) then
+        write(*,'("-----------------------")')
+        write(*,'(" Beta MO coefficients")')
+        write(*,'("-----------------------")')
+      endif
+      call writeeigenvector(cmob,energymob)
+!
+! Unset arrays 1
+!
+      deallocate(h1mtrx,smtrx,tmtrx,cmoa,cmob,ortho, &
+&                xint,energymoa,energymob)
+      call memunset(nao3*3+nao2*3+nshell3+nao*2)
+      return
+end
+
+
+!---------------------------
+  subroutine calcrgradient
+!---------------------------
 !
 ! Driver of energy gradient calculation
 !
-      use basis, only : nao, nshell
-      use energy, only : enuc
-      use iofile, only : iout
-      use procpar, only : master
-      use molecule, only : nmo, neleca, natom
+      use modbasis, only : nao, nshell
+      use modenergy, only : enuc
+      use modparallel, only : master
+      use modmolecule, only : nmo, natom
+      use modjob, only : method
       implicit none
       integer :: nao2, nao3, nshell3
-      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), ortho(:)
-      real(8), allocatable :: dmtrx(:), xint(:), energymo(:)
+      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:)
+      real(8), allocatable :: xint(:), energymo(:)
       real(8), allocatable :: overinv(:), work(:)
-      real(8), allocatable :: egrad(:), fulldmtrx(:), ewdmtrx(:)
-!
-      nao2= nao*nao
-      nao3=(nao*(nao+1))/2
-      nshell3=(nshell*(nshell+1))/2
-!
-! Set arrays 1
-!
-      call memset(nao3*4+nao2*2+nshell3+nao)
-      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),ortho(nao2),&
-&              dmtrx(nao3),xint(nshell3),energymo(nao))
-!
-! Calculate nuclear repulsion energy
-!
-      call nucenergy
-      if(master) then
-        write(iout,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
-      endif
-!
-! Calculate overlap and 1-electron integrals
-!
-      call oneei(h1mtrx,smtrx,tmtrx)
-!
-! Set arrays 2
-!
-      call memset(nao2*2)
-      allocate(overinv(nao2),work(nao2))
-!
-! Calculate canonicalization and inverse overlap matrices
-!
-      call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo)
-!
-! Calculate initial MOs and density matrix
-!
-      call guessmo(cmoa,overinv)
-      call calcdmtrx(cmoa,dmtrx,work,nao,neleca)
-!
-! Unset arrays 2
-!
-      deallocate(overinv,work)
-      call memunset(nao2*2)
-!
-! Start SCF
-!
-      call calcrhf(h1mtrx,cmoa,ortho,smtrx,dmtrx,xint,energymo)
-      call tstamp(1)
-!
-! Set arrays 3
-!
-      call memset(natom*3+nao2+nao3)
-      allocate(egrad(natom*3),fulldmtrx(nao2),ewdmtrx(nao3))
-!
-! Calculate energy gradient
-!
-      call calcgradrhf(cmoa,energymo,xint,egrad,fulldmtrx,ewdmtrx)
-      call tstamp(1)
-!
-! Unset arrays 3
-!
-      deallocate(egrad,fulldmtrx,ewdmtrx)
-      call memunset(natom*3+nao2+nao3)
-!
-! Unset arrays 1
-!
-      deallocate(h1mtrx,smtrx,tmtrx,cmoa,ortho, &
-&                dmtrx,xint,energymo)
-      call memunset(nao3*4+nao2*2+nshell3+nao)
-      return
-end
-
-
-!--------------------------
-  subroutine calcgeometry
-!--------------------------
-!
-! Driver of geometry optimization calculation
-!
-      use basis, only : nao, nshell
-      use energy, only : enuc
-      use iofile, only : iout
-      use procpar, only : master
-      use molecule, only : nmo, neleca, natom, coord
-      use opt, only : nopt, optconv
-      use warn, only : nwarn
-      implicit none
-      integer :: nao2, nao3, nshell3, natom3, i, iopt
-      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), ortho(:)
-      real(8), allocatable :: dmtrx(:), xint(:), energymo(:)
-      real(8), allocatable :: egrad(:), egradold(:), displc(:), ehess(:), coordold(:)
-      real(8), allocatable :: overinv(:), work(:)
-      real(8), allocatable :: fulldmtrx(:), ewdmtrx(:)
-      real(8), parameter :: zero=0.0D+00, fifth=0.2D+00, third=0.3333333333333333D+00
+      real(8), allocatable :: egrad(:)
       real(8) :: egradmax, egradrms
 !
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
       nshell3=(nshell*(nshell+1))/2
-      natom3= natom*3
 !
 ! Set arrays 1
 !
-      call memset(nao3*4+nao2*2+nshell3+nao+natom3*6+natom3*(natom3+1)/2)
-      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),ortho(nao2), &
-&              dmtrx(nao3),xint(nshell3),energymo(nao),egrad(natom3),egradold(natom3), &
-&              displc(natom3*3),ehess(natom3*(natom3+1)/2),coordold(natom3))
+      call memset(nao3*3+nao2*2+nshell3+nao)
+      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2),&
+&              xint(nshell3),energymo(nao))
 !
-! Set initial hessian
+! Calculate nuclear repulsion energy
 !
-      ehess(:)= zero
-      do i= 1,natom3
-        ehess(i*(i+1)/2)= 1.5d0
-      enddo
-!ishimura
-!     call kazuya(ehess,natom,natom3)
+      call nucenergy
+      if(master) then
+        write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
+      endif
+!
+! Set arrays 2
+!
+      call memset(nao2*2)
+      allocate(overinv(nao2),work(nao2))
+!
+! Calculate overlap and 1-electron integrals
+!
+      call oneei(h1mtrx,smtrx,tmtrx,work)
+!
+! Calculate canonicalization and inverse overlap matrices
+!
+      call fullmtrx(smtrx,work,nao)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo)
+!
+! Calculate initial MOs
+!
+      call guessmo(cmo,overinv)
+!
+! Unset arrays 2
+!
+      deallocate(overinv,work)
+      call memunset(nao2*2)
+      call tstamp(1)
+!
+! Start SCF
+!
+      if(method == 'HARTREE-FOCK') then
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
+        call writeeigenvalue(energymo,energymo,1)
+        call tstamp(1)
+      elseif(method == 'B3LYP') then
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
+        call tstamp(1)
+        call calcrdft(h1mtrx,cmo,ortho,smtrx,xint,energymo)
+        call writeeigenvalue(energymo,energymo,1)
+        call tstamp(1)
+      else
+        if(master) then
+          write(*,'(" Error! This program does not support ",a16,".")')method
+          call iabort
+        endif
+      endif
+!
+! Set arrays 3
+!
+      call memset(natom*3)
+      allocate(egrad(natom*3))
+!
+! Calculate energy gradient
+!
+      if(method == 'HARTREE-FOCK') then
+        call calcgradrhf(cmo,energymo,xint,egrad)
+      elseif(method == 'B3LYP') then
+        call calcgradrdft(cmo,energymo,xint,egrad)
+      else
+        if(master) then
+          write(*,'(" Error! This program does not support ",a16,".")')method
+          call iabort
+        endif
+      endif
+!
+! Calculate maximum and root mean square gradient values
+!
+      call calcmaxgrad(egradmax,egradrms,egrad,natom*3)
+      if(master) write(*,'(" Maximum gradient =",f13.8,"  RMS gradient =",f13.8,/)') &
+&                      egradmax,egradrms
+!
+! Unset arrays 3
+!
+      deallocate(egrad)
+      call memunset(natom*3)
+!
+! Print MOs
+!
+      if(master) then
+        write(*,'("-----------------")')
+        write(*,'(" MO coefficients")')
+        write(*,'("-----------------")')
+      endif
+      call writeeigenvector(cmo,energymo)
+!
+! Unset arrays 1
+!
+      deallocate(h1mtrx,smtrx,tmtrx,cmo,ortho, &
+&                xint,energymo)
+      call memunset(nao3*3+nao2*2+nshell3+nao)
+      call tstamp(1)
+      return
+end
+
+
+!---------------------------
+  subroutine calcugradient
+!---------------------------
+!
+! Driver of open-shell energy gradient calculation
+!
+      use modbasis, only : nao, nshell
+      use modenergy, only : enuc
+      use modparallel, only : master
+      use modmolecule, only : nmo, natom
+      use modjob, only : method
+      implicit none
+      integer :: nao2, nao3, nshell3
+      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
+      real(8), allocatable :: xint(:), energymoa(:), energymob(:)
+      real(8), allocatable :: overinv(:), work(:)
+      real(8), allocatable :: egrad(:)
+      real(8) :: egradmax, egradrms
+!
+      nao2= nao*nao
+      nao3=(nao*(nao+1))/2
+      nshell3=(nshell*(nshell+1))/2
+!
+! Set arrays 1
+!
+      call memset(nao3*3+nao2*3+nshell3+nao*2)
+      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),cmob(nao2),ortho(nao2),&
+&              xint(nshell3),energymoa(nao),energymob(nao))
+!
+! Calculate nuclear repulsion energy
+!
+      call nucenergy
+      if(master) then
+        write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
+      endif
+!
+! Set arrays 2
+!
+      call memset(nao2*2)
+      allocate(overinv(nao2),work(nao2))
+!
+! Calculate overlap and 1-electron integrals
+!
+      call oneei(h1mtrx,smtrx,tmtrx,work)
+!
+! Calculate canonicalization and inverse overlap matrices
+!
+      call fullmtrx(smtrx,work,nao)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo)
+!
+! Calculate initial MOs
+!
+      call guessmo(cmoa,overinv)
+      cmob(:)= cmoa(:)
+!
+! Unset arrays 2
+!
+      deallocate(overinv,work)
+      call memunset(nao2*2)
+      call tstamp(1)
+!
+! Start SCF
+!
+      if(method == 'HARTREE-FOCK') then
+        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
+        call writeeigenvalue(energymoa,energymob,2)
+        call tstamp(1)
+      elseif(method == 'B3LYP') then
+        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
+        call tstamp(1)
+        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
+        call writeeigenvalue(energymoa,energymob,2)
+        call tstamp(1)
+!     elseif(method == 'MP2') then
+!       call calcuhf(h1mtrx,cmoa,ortho,smtrx,xint,energymoa)
+!       call tstamp(1)
+!       call calcump2(cmoa,energymoa,xint)
+!       call tstamp(1)
+      else
+        if(master) then
+          write(*,'(" Error! This program does not support ",a16,".")')method
+          call iabort
+        endif
+      endif
+!
+! Set arrays 3
+!
+      call memset(natom*3)
+      allocate(egrad(natom*3))
+!
+! Calculate energy gradient
+!
+      if(method == 'HARTREE-FOCK') then
+        call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad)
+      elseif(method == 'B3LYP') then
+          call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad)
+      else
+        if(master) then
+          write(*,'(" Error! This program does not support ",a16," in energy gradient.")') &
+&               method
+          call iabort
+        endif
+      endif
+!
+! Calculate maximum and root mean square gradient values
+!
+      call calcmaxgrad(egradmax,egradrms,egrad,natom*3)
+      if(master) write(*,'(" Maximum gradient =",f13.8,"  RMS gradient =",f13.8,/)') &
+&                      egradmax,egradrms
+!
+! Unset arrays 3
+!
+      deallocate(egrad)
+      call memunset(natom*3)
+!
+! Print MOs
+!
+      if(master) then
+        write(*,'("-----------------------")')
+        write(*,'(" Alpha MO coefficients")')
+        write(*,'("-----------------------")')
+      endif
+      call writeeigenvector(cmoa,energymoa)
+      if(master) then
+        write(*,'("-----------------------")')
+        write(*,'(" Beta MO coefficients")')
+        write(*,'("-----------------------")')
+      endif
+      call writeeigenvector(cmob,energymob)
+!
+! Unset arrays 1
+!
+      deallocate(h1mtrx,smtrx,tmtrx,cmoa,cmob,ortho, &
+&                xint,energymoa,energymob)
+      call memunset(nao3*3+nao2*3+nshell3+nao*2)
+      call tstamp(1)
+      return
+end
+
+
+
+!--------------------------------------
+  subroutine calcrgeometry(converged)
+!--------------------------------------
+!
+! Driver of geometry optimization calculation
+!
+      use modbasis, only : nao, nshell
+      use modenergy, only : enuc
+      use modparallel, only : master
+      use modmolecule, only : nmo, natom, coord, coordold
+      use modopt, only : nopt, optconv, cartesian
+      use modwarn, only : nwarn
+      use modjob, only : method
+      implicit none
+      integer,allocatable :: iredun(:)
+      integer :: nao2, nao3, nshell3, natom3, ii, iopt
+      integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
+      real(8), parameter :: third=0.3333333333333333D+00
+      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:)
+      real(8), allocatable :: xint(:), energymo(:)
+      real(8), allocatable :: egrad(:), egradold(:), ehess(:)
+      real(8), allocatable :: overinv(:), work(:,:)
+      real(8), allocatable :: workv(:), coordredun(:), egradredun(:)
+      real(8) :: egradmax, egradrms
+      logical,intent(out) :: converged
+      logical :: exceed
+!
+      nao2= nao*nao
+      nao3=(nao*(nao+1))/2
+      nshell3=(nshell*(nshell+1))/2
+      natom3= natom*3
+      converged=.false.
+!
+! Calculate redundant coordinate
+!
+      if(.not.cartesian) then
+        isizered= natom*4*10
+        call memset(isizered)
+        allocate(iredun(isizered))
+        do ii= 1,10
+          call setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed)
+          if(.not.exceed) exit
+          call memunset(isizered)
+          deallocate(iredun)
+          isizered= isizered*2
+          call memset(isizered)
+          allocate(iredun(isizered))
+          if(ii == 10) then
+            write(*,'(" Error! The array size for redundant coordinate is too large.")')
+            call iabort
+          endif
+        enddo
+        numredun= numbond+numangle+numtorsion
+        maxredun= max(numredun,natom3)
+      endif
+!
+! Set arrays for energy
+!
+      call memset(nao3*3+nao2*2+nshell3+nao)
+      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2), &
+&              xint(nshell3),energymo(nao))
+!
+! Set arrays for energy gradient and geometry optimization
+!
+      if(cartesian) then
+        call memset(natom3*2+natom3*(natom3+1)/2)
+        allocate(egrad(natom3),egradold(natom3),ehess(natom3*(natom3+1)/2))
+      else
+        call memset(natom3+numredun*4+numredun*(numredun+1)/2)
+        allocate(egrad(natom3),coordredun(numredun*2),egradredun(numredun*2), &
+&                ehess(numredun*(numredun+1)/2))
+      endif
 !
 ! Start geometry optimization cycle
 !
@@ -362,221 +782,458 @@ end
 !
 ! Print geometry
 !
-        if(iopt >= 2) call writegeom 
+        if(iopt >= 2) call writegeom
 !
 ! Calculate nuclear repulsion energy
 !
         call nucenergy
         if(master) then
-          write(iout,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
+          write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
         endif
+!
+! Set work arrays 1
+!
+        call memset(nao2*2)
+        allocate(overinv(nao2),work(nao,nao))
 !
 ! Calculate overlap and 1-electron integrals
 !
-        call oneei(h1mtrx,smtrx,tmtrx)
-!
-! Set arrays 2
-!
-        call memset(nao2*2)
-        allocate(overinv(nao2),work(nao2))
+        call oneei(h1mtrx,smtrx,tmtrx,work)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
         call fullmtrx(smtrx,work,nao)
         call mtrxcanoninv(ortho,overinv,work,nao,nmo)
 !
-! Calculate initial MOs and density matrix
+! Calculate initial MOs
 !
-        call guessmo(cmoa,overinv)
-        call calcdmtrx(cmoa,dmtrx,work,nao,neleca)
+!       call guessmo(cmo,overinv)
+        if(iopt == 1) call guessmo(cmo,overinv)
 !
-! Unset arrays 2
+! Unset work arrays 1
 !
         deallocate(overinv,work)
         call memunset(nao2*2)
-!
-! Start SCF
-!
-        call calcrhf(h1mtrx,cmoa,ortho,smtrx,dmtrx,xint,energymo)
         call tstamp(1)
 !
-! Set arrays 3
+! Calculate energy
 !
-        call memset(nao2+nao3)
-        allocate(fulldmtrx(nao2),ewdmtrx(nao3))
+        if(method == 'HARTREE-FOCK') then
+          call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
+          if(iopt == 1) call writeeigenvalue(energymo,energymo,1)
+          call tstamp(1)
+        elseif(method == 'B3LYP') then
+          if(iopt == 1) then
+            call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
+            call tstamp(1)
+          endif
+          call calcrdft(h1mtrx,cmo,ortho,smtrx,xint,energymo)
+          if(iopt == 1) call writeeigenvalue(energymo,energymo,1)
+          call tstamp(1)
+        else
+          if(master) then
+            write(*,'(" Error! This program does not support ",a16,".")')method
+            call iabort
+          endif
+        endif
 !
 ! Calculate energy gradient
 !
-        call calcgradrhf(cmoa,energymo,xint,egrad,fulldmtrx,ewdmtrx)
-        call tstamp(1)
-!
-! Unset arrays 3
-!
-        deallocate(fulldmtrx,ewdmtrx)
-        call memunset(nao2+nao3)
+        if(method == 'HARTREE-FOCK') then
+          call calcgradrhf(cmo,energymo,xint,egrad)
+          call tstamp(1)
+        elseif(method == 'B3LYP') then
+          call calcgradrdft(cmo,energymo,xint,egrad)
+          call tstamp(1)
+        else
+          if(master) then
+            write(*,'(" Error! This program does not support ",a16,".")')method
+            call iabort
+          endif
+        endif
 !
 ! Calculate maximum and root mean square gradient values
 !
         call calcmaxgrad(egradmax,egradrms,egrad,natom3)
-        if(master) write(iout,'(" Cycle ",i3,"    Maximum gradient =",f13.8, &
-&                               "  RMS gradient =",f13.8,/)')iopt,egradmax,egradrms
+        if(master) write(*,'(" Optimization Cycle",i4,4x,"Maximum gradient =",f11.6,4x, &
+&                            "RMS gradient =",f11.6,/)') iopt,egradmax,egradrms
 !
 ! Check convergence
 !
         if((egradmax <= optconv).and.(egradrms <= optconv*third)) then
-          if(master) write(iout,'(" Geometry optimization is converged.",/)')
+          if(master) write(*,'(" Geometry is converged.",/)')
+          converged=.true.
           exit
         endif
 !
-! Updata hessian matrix
+! Set work arrays 2
 !
-        if(iopt >= 2) call hessianbfgs(ehess,coord,coordold,egrad,egradold,displc,natom3)
-!ishimura
-!   call ishi(ehess,natom3)
+        if(cartesian) then
+          call memset(natom3*3)
+          allocate(workv(natom3*3))
+        else
+          call memset(maxredun*maxredun*4+maxredun*3)
+          allocate(work(maxredun*maxredun,4),workv(maxredun*3))
+        endif
 !
 ! Calculate new coordinate
 !
-        call calcnewcoord(coord,coordold,egrad,ehess,natom3)
-!ishimura
-!       call ccmethod(coord,coordold,egrad,egradold,displc,natom3,iopt)
+        if(cartesian) then
+          call calcnewcoord(coord,coordold,egrad,egradold,ehess,workv,natom3,iopt)
+        else
+          call calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
+&                              work(1,2),work(1,3),work(1,4),workv,iopt,iredun,isizered, &
+&                              maxredun,numbond,numangle,numtorsion,numredun)
+        endif
+!
+! Unset work arrays 2
+!
+        if(cartesian) then
+          deallocate(workv)
+          call memunset(natom3*3)
+        else
+          deallocate(work,workv)
+          call memunset(maxredun*maxredun*4+maxredun*3)
+        endif
 !
 ! Set guess MO calculation flag from Huckel to projection
-! Copy energy gradient values
 !
-        call setnextopt(egrad,egradold,coordold,natom)
+        call setnextopt(coordold,natom,iopt)
 !
         if((iopt == nopt).and.master) then
-          nwarn= nwarn+1
-          write(iout,'("Warning! Geometry optimization is not converged.")')
+          write(*,'("Warning! Geometry is not converged.")')
+          exit
         endif
+        call tstamp(1)
       enddo
 !
 ! End of optimization cycle 
 !
+      call writeeigenvalue(energymo,energymo,1)
 !
-! Unset arrays 1
+! Print MOs
 !
-      deallocate(h1mtrx,smtrx,tmtrx,cmoa,ortho, &
-&                dmtrx,xint,energymo,egrad,egradold, &
-&                displc,ehess,coordold)
-      call memunset(nao3*4+nao2*2+nshell3+nao+natom3*6+natom3*(natom3+1)/2)
+      if(master) then
+        write(*,'("-----------------")')
+        write(*,'(" MO coefficients")')
+        write(*,'("-----------------")')
+      endif
+      call writeeigenvector(cmo,energymo)
+!
+! Unset arrays for energy gradient and geometry optimization
+!
+      if(cartesian) then
+        deallocate(egrad,egradold,ehess)
+        call memunset(natom3*2+natom3*(natom3+1)/2)
+      else
+        deallocate(egrad,coordredun,egradredun, &
+&                  ehess)
+        call memunset(natom3+numredun*4+numredun*(numredun+1)/2)
+      endif
+!
+! Unset arrays for energy
+!
+      deallocate(h1mtrx,smtrx,tmtrx,cmo,ortho, &
+&                xint,energymo)
+      call memunset(nao3*3+nao2*2+nshell3+nao)
+!
+! Unset array for redundant coordinate
+!
+      if(.not.cartesian) then
+        deallocate(iredun)
+        call memunset(isizered)
+      endif
+!
+      call tstamp(1)
       return
 end
 
-subroutine ccmethod(coord,coordold,egrad,egradold,displc,natom3,iopt)
-real(8):: coord(natom3),coordold(natom3),egrad(natom3),egradold(natom3),displc(natom3)
-real(8) :: ddot,tmp1,tmp2
-coordold=coord
-if(iopt==1)then
-  do i=1,natom3
-     displc(i)=-egrad(i)
-     coord(i)=coord(i)+displc(i)
-  enddo
-else
-  tmp1=0.0D0
-  do i=1,natom3
-    tmp1=tmp1+egrad(i)*(egrad(i)-egradold(i))
-  enddo
-! tmp1=ddot(natom3,egrad,1,egrad,1)
-  tmp2=ddot(natom3,egradold,1,egradold,1)
-  tmp1=tmp1/tmp2
-  do i=1,natom3
-    displc(i)=-egrad(i)+tmp1*displc(i)
-    coord(i)=coord(i)+displc(i)
-  enddo
-endif
-end
 
-
-subroutine ishi(ehess,ndim)
-real(8) :: ehess(ndim*(ndim+1)/2),work(ndim,ndim),eigen(ndim)
-
-ij=0
-do i=1,ndim
-  do j=1,i
-    ij=ij+1
-    work(j,i)=ehess(ij)
-  enddo
-enddo
-      call diag('V','U',ndim,work,ndim,eigen)
-    write(*,*)"EHESS"
-    write(*,'(5f17.8)')ehess
-    write(*,*)"Eigen"
-    write(*,'(5f17.8)')eigen
-end
-
-subroutine kazuya(ehess,natom,natom3)
-      use molecule, only :  coord
-real(8) :: ehess(natom3*(natom3+1)/2)
-real(8) :: work1(natom3,natom3),eigen(natom3),work2(natom3,natom3),work3(natom3,natom3)
-real(8),parameter :: zero=0.0D0,one=1.0D0
-
-       open(unit=20,file='helfey')
-      do i=1,natom3
-       read(20,*) (work1(j,i),j=1,natom3)
-      enddo
-
-!     call diag('V','U',natom3,work1,natom3,eigen)
-! write(*,*)eigen
-!     do i= 1,natom3
-!       eigeninv= one/eigen(i)
-!      if(abs(eigen(i)).lt.3.d-3)eigeninv=0.0
-!       do j= 1,natom3
-!         work2(j,i)= work1(j,i)*eigeninv
-!       enddo
-!     enddo
-!     call dgemm('N','T',natom3,natom3,natom3,one,work1,natom3,work2,natom3,zero,work3,natom3)
-
-      ij=0
-      do i= 1,natom3
-        do j= 1,i
-          ij=ij+1
-          ehess(ij)= work1(j,i)
+!--------------------------------------
+  subroutine calcugeometry(converged)
+!--------------------------------------
+!
+! Driver of open-shell geometry optimization calculation
+!
+      use modbasis, only : nao, nshell
+      use modenergy, only : enuc
+      use modparallel, only : master
+      use modmolecule, only : nmo, natom, coord, coordold
+      use modopt, only : nopt, optconv, cartesian
+      use modwarn, only : nwarn
+      use modguess, only : iguess
+      use modjob, only : method
+      implicit none
+      integer,allocatable :: iredun(:)
+      integer :: nao2, nao3, nshell3, natom3, ii, iopt
+      integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
+      real(8), parameter :: third=0.3333333333333333D+00
+      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
+      real(8), allocatable :: xint(:), energymoa(:), energymob(:)
+      real(8), allocatable :: egrad(:), egradold(:), ehess(:)
+      real(8), allocatable :: overinv(:,:), work(:,:)
+      real(8), allocatable :: workv(:), coordredun(:), egradredun(:)
+      real(8) :: egradmax, egradrms
+      logical,intent(out) :: converged
+      logical :: exceed
+!
+      nao2= nao*nao
+      nao3=(nao*(nao+1))/2
+      nshell3=(nshell*(nshell+1))/2
+      natom3= natom*3
+      converged=.false.
+!
+! Calculate redundant coordinate
+!
+      if(.not.cartesian) then
+        isizered= natom*4*10
+        call memset(isizered)
+        allocate(iredun(isizered))
+        do ii= 1,10
+          call setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed)
+          if(.not.exceed) exit
+          call memunset(isizered)
+          deallocate(iredun)
+          isizered= isizered*2
+          call memset(isizered)
+          allocate(iredun(isizered))
+          if(ii == 10) then
+            write(*,'(" Error! The array size for redundant coordinate is too large.")')
+            call iabort
+          endif
         enddo
+        numredun= numbond+numangle+numtorsion
+        maxredun= max(numredun,natom3)
+      endif
+!
+! Set arrays for energy
+!
+      call memset(nao3*3+nao2*3+nshell3+nao*2)
+      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),cmob(nao2),ortho(nao2), &
+&              xint(nshell3),energymoa(nao),energymob(nao))
+!
+! Set arrays for energy gradient and geometry optimization
+!
+      if(cartesian) then
+        call memset(natom3*2+natom3*(natom3+1)/2)
+        allocate(egrad(natom3),egradold(natom3),ehess(natom3*(natom3+1)/2))
+      else
+        call memset(natom3+numredun*4+numredun*(numredun+1)/2)
+        allocate(egrad(natom3),coordredun(numredun*2),egradredun(numredun*2), &
+&                ehess(numredun*(numredun+1)/2))
+      endif
+!
+! Start geometry optimization cycle
+!
+      do iopt= 1,nopt
+!
+! Print geometry
+!
+        if(iopt >= 2) call writegeom
+!
+! Calculate nuclear repulsion energy
+!
+        call nucenergy
+        if(master) then
+          write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
+        endif
+!
+! Set arrays 1
+!
+        call memset(nao2*2)
+        allocate(overinv(nao,nao),work(nao,nao))
+!
+! Calculate overlap and 1-electron integrals
+!
+        call oneei(h1mtrx,smtrx,tmtrx,work)
+!
+! Calculate canonicalization and inverse overlap matrices
+!
+        call fullmtrx(smtrx,work,nao)
+        call mtrxcanoninv(ortho,overinv,work,nao,nmo)
+!
+! Calculate initial MOs
+!
+        if(iguess == 1) then
+          call guessmo(cmoa,overinv)
+          cmob(:)= cmoa(:)
+!       elseif(iguess == 2) then
+!         work(:,:)= overinv(:,:)
+!         call guessmo(cmoa,overinv)
+!         call guessmo(cmob,work)
+        endif
+!
+! Unset arrays 1
+!
+        deallocate(overinv,work)
+        call memunset(nao2*2)
+        call tstamp(1)
+!
+! Calculate energy
+!
+        if(method == 'HARTREE-FOCK') then
+          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
+          if(iopt == 1) call writeeigenvalue(energymoa,energymob,2)
+          call tstamp(1)
+        elseif(method == 'B3LYP') then
+          if(iopt == 1) then
+            call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
+            call tstamp(1)
+          endif
+          call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
+          if(iopt == 1) call writeeigenvalue(energymoa,energymob,2)
+          call tstamp(1)
+!       elseif(method == 'MP2') then
+!         call calcuhf(h1mtrx,cmoa,ortho,smtrx,xint,energymoa)
+!         call tstamp(1)
+!         call calcump2(cmoa,energymoa,xint)
+!         call tstamp(1)
+        else
+          if(master) then
+            write(*,'(" Error! This program does not support ",a16,".")')method
+            call iabort
+          endif
+        endif
+!
+! Calculate energy gradient
+!
+        if(method == 'HARTREE-FOCK') then
+          call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad)
+        elseif(method == 'B3LYP') then
+          call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad)
+        else
+          if(master) then
+            write(*,'(" Error! This program does not support ",a16," in energy gradient.")') &
+&                 method
+            call iabort
+          endif
+        endif
+        call tstamp(1)
+!
+! Calculate maximum and root mean square gradient values
+!
+        call calcmaxgrad(egradmax,egradrms,egrad,natom3)
+        if(master) write(*,'(" Optimization Cycle",i4,4x,"Maximum gradient =",f11.6,4x, &
+&                            "RMS gradient =",f11.6,/)') iopt,egradmax,egradrms
+!
+! Check convergence
+!
+        if((egradmax <= optconv).and.(egradrms <= optconv*third)) then
+          if(master) write(*,'(" Geometry is converged.",/)')
+          converged=.true.
+          exit
+        endif
+!
+! Set work arrays 2
+!
+        if(cartesian) then
+          call memset(natom3*3)
+          allocate(workv(natom3*3))
+        else
+          call memset(maxredun*maxredun*4+maxredun*3)
+          allocate(work(maxredun*maxredun,4),workv(maxredun*3))
+        endif
+!
+! Calculate new coordinate
+!
+        if(cartesian) then
+          call calcnewcoord(coord,coordold,egrad,egradold,ehess,workv,natom3,iopt)
+        else
+          call calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
+&                              work(1,2),work(1,3),work(1,4),workv,iopt,iredun,isizered, &
+&                              maxredun,numbond,numangle,numtorsion,numredun)
+        endif
+!
+! Unset work arrays 2
+!
+        if(cartesian) then
+          deallocate(workv)
+          call memunset(natom3*3)
+        else
+          deallocate(work,workv)
+          call memunset(maxredun*maxredun*4+maxredun*3)
+        endif
+!
+! Set guess MO calculation flag from Huckel to projection
+!
+        call setnextopt(coordold,natom,iopt)
+!
+        if((iopt == nopt).and.master) then
+          write(*,'("Warning! Geometry is not converged.")')
+          exit
+        endif
+        call tstamp(1)
       enddo
-      close(20)
+!
+! End of optimization cycle 
+!
+      call writeeigenvalue(energymoa,energymob,2)
+!
+! Print MOs
+!
+      if(master) then
+        write(*,'("-----------------------")')
+        write(*,'(" Alpha MO coefficients")')
+        write(*,'("-----------------------")')
+      endif
+      call writeeigenvector(cmoa,energymoa)
+      if(master) then
+        write(*,'("-----------------------")')
+        write(*,'(" Beta MO coefficients")')
+        write(*,'("-----------------------")')
+      endif
+      call writeeigenvector(cmob,energymob)
+!
+! Unset arrays for energy gradient and geometry optimization
+!
+      if(cartesian) then
+        deallocate(egrad,egradold,ehess)
+        call memunset(natom3*2+natom3*(natom3+1)/2)
+      else
+        deallocate(egrad,coordredun,egradredun, &
+&                ehess)
+        call memunset(natom3+numredun*4+numredun*(numredun+1)/2)
+      endif
+!
+! Unset arrays for energy
+!
+      deallocate(h1mtrx,smtrx,tmtrx,cmoa,cmob,ortho, &
+&                xint,energymoa,energymob)
+      call memunset(nao3*3+nao2*3+nshell3+nao*2)
+      call tstamp(1)
+!
+! Unset array for redundant coordinate
+!
+      if(.not.cartesian) then
+        deallocate(iredun)
+        call memunset(isizered)
+      endif
+!
+      return
 end
 
 
-!--------------------------------------------------------
-  subroutine setnextopt(egrad,egradold,coordold,natom)
-!--------------------------------------------------------
+!---------------------------------------------
+  subroutine setnextopt(coordold,natom,iopt)
+!---------------------------------------------
 !
 ! Set parameters for next optimization step
 !
-      use basis, only : ex, coeff, nshell, nao, nprim, locprim, locbf, &
-&                       locatom, mprim, mbf, mtype, spher
-      use guess, only : ex_g, coeff_g, nshell_g, nao_g, nprim_g, locprim_g, locbf_g, &
-&                       locatom_g, mprim_g, mbf_g, mtype_g, spher_g, coord_g, iguess
+      use modbasis, only : ex, coeff, nshell, nao, nprim, locprim, locbf, &
+&                          locatom, mprim, mbf, mtype, spher
+      use modguess, only : ex_g, coeff_g, nshell_g, nao_g, nmo_g, nprim_g, locprim_g, locbf_g, &
+&                          locatom_g, mprim_g, mbf_g, mtype_g, spher_g, coord_g, iguess
+      use modmolecule, only : nmo
       implicit none
-      integer,intent(in) :: natom
+      integer,intent(in) :: natom, iopt
       integer :: iprim, ishell, iatom
-      real(8),intent(in) :: egrad(natom*3), coordold(3,natom)
-      real(8),intent(out) :: egradold(natom*3)
+      real(8),intent(in) :: coordold(3,natom)
 !
 ! Set MO projection as initial MO calculation
 !
       iguess= 2
 !
-! Copy basis set, coordinate, sherical information
-!
-      nao_g= nao
-      nprim_g= nprim
-      nshell_g= nshell
-!
-      do iprim= 1,nprim
-        ex_g(iprim)= ex(iprim)
-        coeff_g(iprim)= coeff(iprim)
-      enddo
-!
-      do ishell= 1,nshell
-        locprim_g(ishell)= locprim(ishell)
-        locbf_g(ishell)  = locbf(ishell)
-        locatom_g(ishell)= locatom(ishell)
-        mprim_g(ishell)  = mprim(ishell)
-        mbf_g(ishell)    = mbf(ishell)
-        mtype_g(ishell)  = mtype(ishell)
-      enddo
+! Copy coordinate and energy gradient
 !
       do iatom= 1,natom
         coord_g(1,iatom)= coordold(1,iatom)
@@ -584,18 +1241,62 @@ end
         coord_g(3,iatom)= coordold(3,iatom)
       enddo
 !
-      spher_g= spher
+! Copy basis set information
 !
-! Copy energy gradient
+      nmo_g= nmo
 !
-      egradold(:)= egrad(:)
+      if(iopt == 1) then
+        nao_g= nao
+        nprim_g= nprim
+        nshell_g= nshell
+!
+        do iprim= 1,nprim
+          ex_g(iprim)= ex(iprim)
+          coeff_g(iprim)= coeff(iprim)
+        enddo
+!
+        do ishell= 1,nshell
+          locprim_g(ishell)= locprim(ishell)
+          locbf_g(ishell)  = locbf(ishell)
+          locatom_g(ishell)= locatom(ishell)
+          mprim_g(ishell)  = mprim(ishell)
+          mbf_g(ishell)    = mbf(ishell)
+          mtype_g(ishell)  = mtype(ishell)
+        enddo
+!
+        spher_g= spher
+      endif
 !
       return
 end
 
 
-
-
-
-
+!---------------------
+  subroutine dftgrid
+!---------------------
+!
+! Adjust the numbe of DFT grids when heavy elements are included
+!
+      use modparallel
+      use moddft, only : nrad, nleb
+      use modmolecule, only : natom, numatomic
+      use modjob, only : method
+      use modwarn, only : nwarn
+      implicit none
+      integer :: maxelem
+!
+      if(method =='B3LYP') then
+        maxelem= maxval(numatomic(1:natom))
+        if((maxelem >= 55).and.(nrad == 96).and.(nleb == 302)) then
+          nrad= 150
+          nleb= 590
+          nwarn= nwarn+1
+          if(master) then
+            write(*,'(" Warning! The number of DFT grids is changed.")')
+          endif
+        endif
+      endif
+!
+      return
+end
 

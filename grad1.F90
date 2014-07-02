@@ -1,23 +1,25 @@
-!------------------------------------------------
-  subroutine gradoneei(egrad,fulldmtrx,ewdmtrx)
-!------------------------------------------------
+!-------------------------------------------------------
+  subroutine gradoneei(egrad,egrad1,fulldmtrx,ewdmtrx)
+!-------------------------------------------------------
 !
 ! Driver of derivatives for one-electron and overlap integrals
 !
-      use procpar
-      use basis, only : nshell, nao
-      use molecule, only : natom
+      use modparallel
+      use modbasis, only : nshell, nao
+      use modmolecule, only : natom
+      use modecp, only : flagecp
       implicit none
       integer :: ish, jsh, len1, i
-      real(8),parameter :: zero=0.0D+00
+      real(8),parameter :: zero=0.0D+00, two=2.0D+00
       real(8),intent(in) :: fulldmtrx(nao*nao), ewdmtrx(nao*(nao+1)/2)
-      real(8),intent(out) :: egrad(3,natom)
-      real(8) :: egrad1(3,natom), cint1(28,28), cint2(28,28)
+      real(8),intent(out) :: egrad1(3*natom)
+      real(8),intent(inout) :: egrad(3*natom)
+      real(8) :: cint1(28,28), cint2(28,28)
 !
 ! temporary setting
 !
       len1= 28
-      egrad1= zero
+      egrad1(:)= zero
 !
 !$OMP parallel private(cint1,cint2) reduction(+:egrad1)
       do ish= nshell-myrank,1,-nproc
@@ -39,50 +41,121 @@
       enddo
 !$OMP end parallel
 !
-      do i= 1,natom
-        egrad(1,i)= egrad(1,i)+egrad1(1,i)
-        egrad(2,i)= egrad(2,i)+egrad1(2,i)
-        egrad(3,i)= egrad(3,i)+egrad1(3,i)
+      do i= 1,3*natom
+        egrad(i)= egrad(i)+egrad1(i)*two
       enddo
+!
+! Add ECP derivative terms
+!
+      if(flagecp) then
+        egrad1(:)= zero
+        call gradoneeiecp(egrad1,fulldmtrx)
+        do i= 1,3*natom
+          egrad(i)= egrad(i)+egrad1(i)*two
+        enddo
+      endif
+! 
       return
 end
 
 
 !--------------------------------------------------------------------
-  subroutine calcewdmtrx(cmoa,energymo,fulldmtrx,ewdmtrx,ndim,neleca)
+  subroutine calcewdmtrx(cmo,energymo,fulldmtrx,ewdmtrx,ndim,nelec)
 !--------------------------------------------------------------------
 !
 ! Calculate energy-weighted and normal density matrix
 !
-! In  : cmoa     (MO coefficient matrix)
+! In  : cmo      (MO coefficient matrix)
 !       energymo (MO energy)
-!       ndim     (dimension of basis functions)
-!       neleca   (number of alpha electrons)
-! Out : fulldmtrx(full density matrix)
-!       ewdmtrx  (upper-triangle energy-weighted density matrix)
+!       ndim     (Dimension of basis functions)
+!       nelec    (Number of electrons)
+! Out : fulldmtrx(Full density matrix)
+!       ewdmtrx  (Upper-triangle energy-weighted density matrix)
 !
       implicit none
-      integer,intent(in) :: ndim, neleca
+      integer,intent(in) :: ndim, nelec
       integer :: i, j, k, ij
-      real(8),parameter :: zero=0.0D+00, four=4.0D+00
-      real(8),intent(in) :: cmoa(ndim,ndim), energymo(ndim)
+      real(8),parameter :: zero=0.0D+00, two=2.0D+00
+      real(8),intent(in) :: cmo(ndim,ndim), energymo(ndim)
       real(8),intent(out) :: fulldmtrx(ndim,ndim), ewdmtrx(ndim*(ndim+1)/2)
 !
-      fulldmtrx= transpose(cmoa)
+      fulldmtrx= transpose(cmo)
+!$OMP parallel do schedule(guided) private(ij)
+      do i= ndim,1,-1
+        ij= i*(i-1)/2
+        do j= 1,i
+          ewdmtrx(ij+j)= zero
+          do k= 1,nelec
+            ewdmtrx(ij+j)= ewdmtrx(ij+j)-fulldmtrx(k,i)*fulldmtrx(k,j)*energymo(k)
+          enddo
+          ewdmtrx(ij+j)= ewdmtrx(ij+j)*two
+        enddo
+      enddo
+!$OMP end parallel do
+!
+      call dgemm('N','T',ndim,ndim,nelec,two,cmo,ndim,cmo,ndim,zero,fulldmtrx,ndim)
+      return
+end
+
+
+!-----------------------------------------------------------------------------------------
+  subroutine calcuewdmtrx(cmoa,cmob,energymoa,energymob,fulldmtrx1,fulldmtrx2,ewdmtrx, &
+&                         ndim,neleca,nelecb)
+!-----------------------------------------------------------------------------------------
+!
+! Calculate energy-weighted and normal density matrix for open-shell
+!
+! In  : cmoa     (Alpha MO coefficient matrix)
+!       cmob     (Beta MO coefficient matrix)
+!       energymoa(Alpha MO energy)
+!       energymob(Beta MO energy)
+!       ndim     (Dimension of basis functions)
+!       neleca   (Number of alpha electrons)
+!       nelecb   (Number of beta electrons)
+! Out : fulldmtrx1(Full alpha+beta density matrix)
+!       fulldmtrx2(Full alpha-beta density matrix)
+!       ewdmtrx   (Upper-triangle energy-weighted density matrix)
+!
+      implicit none
+      integer,intent(in) :: ndim, neleca, nelecb
+      integer :: i, j, k, ij
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(in) :: cmoa(ndim,ndim), cmob(ndim,ndim), energymoa(ndim), energymob(ndim)
+      real(8),intent(out) :: fulldmtrx1(ndim,ndim), fulldmtrx2(ndim,ndim)
+      real(8),intent(out) :: ewdmtrx(ndim*(ndim+1)/2)
+      real(8) :: dena, denb
+!
+      fulldmtrx1= transpose(cmoa)
+      fulldmtrx2= transpose(cmob)
 !$OMP parallel do schedule(guided) private(ij)
       do i= ndim,1,-1
         ij= i*(i-1)/2
         do j= 1,i
           ewdmtrx(ij+j)= zero
           do k= 1,neleca
-            ewdmtrx(ij+j)= ewdmtrx(ij+j)-fulldmtrx(k,i)*fulldmtrx(k,j)*energymo(k)
+            ewdmtrx(ij+j)= ewdmtrx(ij+j)-fulldmtrx1(k,i)*fulldmtrx1(k,j)*energymoa(k)
           enddo
-          ewdmtrx(ij+j)= ewdmtrx(ij+j)*four
+          do k= 1,nelecb
+            ewdmtrx(ij+j)= ewdmtrx(ij+j)-fulldmtrx2(k,i)*fulldmtrx2(k,j)*energymob(k)
+          enddo
         enddo
       enddo
 !$OMP end parallel do
 !
-      call dgemm('N','T',ndim,ndim,neleca,four,cmoa,ndim,cmoa,ndim,zero,fulldmtrx,ndim)
+      call dgemm('N','T',ndim,ndim,neleca,one,cmoa,ndim,cmoa,ndim,zero,fulldmtrx1,ndim)
+      call dgemm('N','T',ndim,ndim,nelecb,one,cmob,ndim,cmob,ndim,zero,fulldmtrx2,ndim)
+!
+!$OMP parallel do private(dena,denb)
+      do i= 1,ndim
+        do j= 1,ndim
+          dena= fulldmtrx1(j,i)+fulldmtrx2(j,i)
+          denb= fulldmtrx1(j,i)-fulldmtrx2(j,i)
+          fulldmtrx1(j,i)= dena
+          fulldmtrx2(j,i)= denb
+        enddo
+      enddo
+!$OMP end parallel do
+!
       return
 end
 
@@ -93,21 +166,20 @@ end
 !
 ! Driver of overlap derivative term
 !
-! In : ewdmtrx (energy-weighted density matrix)
-!    : ish, jsh (shell indices)
-! Inout : egrad (energy gradient value)
+! In : ewdmtrx  (Energy-weighted density matrix)
+!    : ish, jsh (Shell indices)
+! Inout : egrad (Energy gradient value)
 !
-      use param, only : mxprsh
-      use basis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
-      use thresh, only : threshex
-      use molecule, only : natom, coord
-      use hermite, only : ix, iy, iz
-      use iofile, only : iout
+      use modparam, only : mxprsh
+      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
+      use modthresh, only : threshex
+      use modmolecule, only : natom, coord
+      use modhermite, only : ix, iy, iz
       implicit none
       integer,intent(in) :: ish, jsh
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, nprimi, nprimj, nangi, nangj
-      integer :: nbfi, nbfj, iprim, jprim, nsumi, nsumj, i, j, iang, jang, ii, ij
-      integer :: isx, jsx, isy, jsy, isz, jsz
+      integer :: nbfi, nbfj, iprim, jprim, ncarti, ncartj, i, j, iang, jang, ii, ij
+      integer :: isx, jsx, isy, jsy, isz, jsz, ncart(0:6)
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: ewdmtrx(nao*(nao+1)/2)
       real(8),intent(inout) :: egrad(3,natom)
@@ -115,6 +187,7 @@ end
       real(8) :: ex1, ex2, ex3, xyzpij(3,2), cij
       real(8) :: xyzint(3), sx(0:7,0:6,2), sy(0:7,0:6,2), sz(0:7,0:6,2)
       real(8) :: dsint(28,28,3)
+      data ncart/1,3,6,10,15,21,28/
 !
       iatom = locatom(ish)
       jatom = locatom(jsh)
@@ -131,39 +204,20 @@ end
       nangj = mtype(jsh)
       nbfj  = mbf(jsh)
 !
+      if((nangi >= 4).or.(nangj >= 4)) then
+        write(*,'(" Error! This program supports up to f function in calcdoverlap")')
+        call iabort
+      endif
+!
       do i= 1,3
         xyzij(i)= coord(i,iatom)-coord(i,jatom)
       enddo
       rij= xyzij(1)*xyzij(1)+xyzij(2)*xyzij(2)+xyzij(3)*xyzij(3)
-      select case(nangi)
-        case (0)
-          nsumi= 1
-        case (1)
-          nsumi= 3
-        case (2)
-          nsumi= 6
-        case (3)
-          nsumi= 10
-        case default
-          write(iout,'(" Error! This program supports up to f function in calcdoverlap")')
-          call iabort
-      end select
-      select case(nangj)
-        case (0)
-          nsumj= 1
-        case (1)
-          nsumj= 3
-        case (2)
-          nsumj= 6
-        case (3)
-          nsumj= 10
-        case default
-          write(iout,'(" Error! This program supports up to f function in calcdoverlap")')
-          call iabort
-      end select
+      ncarti= ncart(nangi)
+      ncartj= ncart(nangj)
 !
-      do i= 1,nsumi
-        do j= 1,nsumj
+      do i= 1,ncarti
+        do j= 1,ncartj
           dsint(j,i,1)= zero
           dsint(j,i,2)= zero
           dsint(j,i,3)= zero
@@ -211,11 +265,11 @@ end
             enddo
           enddo
           cij= ci*cj
-          do i= 1,nsumi
+          do i= 1,ncarti
             isx= ix(i,nangi)
             isy= iy(i,nangi)
             isz= iz(i,nangi)
-            do j= 1,nsumj
+            do j= 1,ncartj
               jsx= ix(j,nangj)
               jsy= iy(j,nangj)
               jsz= iz(j,nangj)
@@ -228,9 +282,9 @@ end
       enddo
 !
       if((nbfi >= 5).or.(nbfj >= 5)) then
-        call nrmlz1(dsint(1,1,1),nbfi,nbfj,nsumi)
-        call nrmlz1(dsint(1,1,2),nbfi,nbfj,nsumi)
-        call nrmlz1(dsint(1,1,3),nbfi,nbfj,nsumi)
+        call nrmlz1(dsint(1,1,1),nbfi,nbfj,ncarti)
+        call nrmlz1(dsint(1,1,2),nbfi,nbfj,ncarti)
+        call nrmlz1(dsint(1,1,3),nbfi,nbfj,ncarti)
       endif
 !
       do i= 1,nbfi
@@ -256,21 +310,20 @@ end
 !
 ! Driver of kinetic derivative term
 !
-! In : fulldmtrx (density matrix)
-!    : ish, jsh  (shell indices)
-! Inout : egrad  (energy gradient value)
+! In : fulldmtrx (Density matrix)
+!    : ish, jsh  (Shell indices)
+! Inout : egrad  (Energy gradient value)
 !
-      use param, only : mxprsh
-      use basis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
-      use thresh, only : threshex
-      use molecule, only : natom, coord
-      use hermite, only : ix, iy, iz
-      use iofile, only : iout
+      use modparam, only : mxprsh
+      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
+      use modthresh, only : threshex
+      use modmolecule, only : natom, coord
+      use modhermite, only : ix, iy, iz
       implicit none
       integer,intent(in) :: ish, jsh
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, nprimi, nprimj, nangi, nangj
-      integer :: nbfi, nbfj, iprim, jprim, nsumi, nsumj, i, j, iang, jang, ii
-      integer :: isx, jsx, isy, jsy, isz, jsz, nsum(0:6)
+      integer :: nbfi, nbfj, iprim, jprim, ncarti, ncartj, i, j, iang, jang, ii
+      integer :: isx, jsx, isy, jsy, isz, jsz, ncart(0:6)
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, half=0.5D+00
       real(8),intent(in) :: fulldmtrx(nao,nao)
       real(8),intent(inout) :: egrad(3,natom)
@@ -278,7 +331,7 @@ end
       real(8) :: ex1, ex2, ex3, xyzpij(3,2), cij
       real(8) :: xyzint(3), sx(0:7,0:8,4), sy(0:7,0:8,4), sz(0:7,0:8,4)
       real(8) :: dtint(28,28,3)
-      data nsum/1,3,6,10,15,21,28/
+      data ncart/1,3,6,10,15,21,28/
 !
       iatom = locatom(ish)
       iloc  = locprim(ish)
@@ -293,20 +346,20 @@ end
       nangj = mtype(jsh)
       nbfj  = mbf(jsh)
 !
+      if((nangi >= 4).or.(nangj >= 4))then
+        write(*,'(" Error! This program supports up to f function in calcdkinetic.")')
+        call iabort
+      endif
+!
       do i= 1,3
         xyzij(i)= coord(i,iatom)-coord(i,jatom)
       enddo
       rij= xyzij(1)*xyzij(1)+xyzij(2)*xyzij(2)+xyzij(3)*xyzij(3)
+      ncarti= ncart(nangi)
+      ncartj= ncart(nangj)
 !
-      if((nangi >= 4).or.(nangj >= 4))then
-        write(iout,'(" Error! This program supports up to f function in calcdkinetic")')
-        call iabort
-      endif
-      nsumi= nsum(nangi)
-      nsumj= nsum(nangj)
-!
-      do i= 1,nsumi
-        do j= 1,nsumj
+      do i= 1,ncarti
+        do j= 1,ncartj
           dtint(j,i,1)= zero
           dtint(j,i,2)= zero
           dtint(j,i,3)= zero
@@ -391,11 +444,11 @@ end
           enddo
 !
           cij= ci*cj
-          do i= 1,nsumi
+          do i= 1,ncarti
             isx= ix(i,nangi)
             isy= iy(i,nangi)
             isz= iz(i,nangi)
-            do j= 1,nsumj
+            do j= 1,ncartj
               jsx= ix(j,nangj)
               jsy= iy(j,nangj)
               jsz= iz(j,nangj)
@@ -414,9 +467,9 @@ end
       enddo
 !
       if((nbfi >= 5).or.(nbfj >= 5)) then
-        call nrmlz1(dtint(1,1,1),nbfi,nbfj,nsumi)
-        call nrmlz1(dtint(1,1,2),nbfi,nbfj,nsumi)
-        call nrmlz1(dtint(1,1,3),nbfi,nbfj,nsumi)
+        call nrmlz1(dtint(1,1,1),nbfi,nbfj,ncarti)
+        call nrmlz1(dtint(1,1,2),nbfi,nbfj,ncarti)
+        call nrmlz1(dtint(1,1,3),nbfi,nbfj,ncarti)
       endif
 !
       do i= 1,nbfi
@@ -442,25 +495,31 @@ end
 !    : ish, jsh  (shell indices)
 ! Inout : egrad  (energy gradient value)
 !
-      use param, only : mxprsh
-      use basis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
-      use thresh, only : threshex
-      use molecule, only : natom, coord, charge
-      use hermite, only : ix, iy, iz
-      use iofile, only : iout
+      use modparam, only : mxprsh
+      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
+      use modthresh, only : threshex
+      use modmolecule, only : natom, coord, znuc
+      use modhermite, only : ix, iy, iz
       implicit none
       integer,intent(in) :: len1, ish, jsh
       integer :: nangij(2), nprimij(2), nbfij(2), iatom, jatom, iloc, jloc, ilocbf, jlocbf
-      integer :: iprim, jprim, nsumi, i, j, k, ii, nsum(0:6)
-      real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, half=0.5D+00
-      real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
+      integer :: iprim, jprim, ncarti, i, j, k, ii, ncart(0:6)
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, half=0.5D+00, three=3.0D+00
+      real(8),parameter :: four=4.0D+00, sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
       real(8),parameter :: sqrtthird=0.5773502691896258D+00, sqrtfifth=0.4472135954999579D+00
-      real(8),parameter :: sqrt3fifth=0.7745966692414834D+00
+      real(8),parameter :: sqrt3fifth=0.7745966692414834D+00, sqrt5=2.236067977499790D+00
+      real(8),parameter :: sqrtseventh=0.3779644730092272D+00
+      real(8),parameter :: sqrt3seventh=0.6546536707079771D+00
+      real(8),parameter :: sqrt5seventh=0.8451542547285165D+00, sqrt5third=1.290994448735805D+00
+      real(8),parameter :: facf1=0.36969351199675831D+00 ! 1/sqrt(10-6/sqrt(5))
+      real(8),parameter :: facf2=0.86602540378443865D+00 ! 1/sqrt(4/3)
+      real(8),parameter :: facf3=0.28116020334310144D+00 ! 1/sqrt(46/3-6/sqrt(5))
+      real(8),parameter :: facf4=0.24065403274177409D+00 ! 1/sqrt(28-24/sqrt(5))
       real(8),intent(in) :: fulldmtrx(nao,nao)
       real(8),intent(inout) :: egrad(3,natom), cint1(len1,len1), cint2(len1,len1)
       real(8) :: exij(mxprsh,2), cij(mxprsh,2), coordij(3,2)
       real(8) :: dcint(28,28,3), work(28)
-      data nsum/1,3,6,10,15,21,28/
+      data ncart/1,3,6,10,15,21,28/
 !
       nangij(1)= mtype(ish)
       nangij(2)= mtype(jsh)
@@ -485,51 +544,53 @@ end
       enddo
 !
       nangij(2)= nangij(2)+1
-      nbfij(2)= nsum(nangij(2))
+      nbfij(2)= ncart(nangij(2))
       do jprim= 1,nprimij(2)
         exij(jprim,2)= ex(jloc+jprim)
         cij(jprim,2) = coeff(jloc+jprim)*two*ex(jloc+jprim)
       enddo
 !
       if((nangij(1) <= 2).and.(nangij(2) <= 2)) then
-        call int1cmd(cint1,exij,cij,coordij,coord,charge,natom, &
+        call int1cmd(cint1,exij,cij,coordij,coord,znuc,natom, &
 &                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
       else
-        if((nangij(1) > 10).or.(nangij(2) > 10))then
-          write(iout,'(" Error! This program supports up to f function in int1c")')
+        if((nangij(1) > 3).or.(nangij(2) > 4))then
+          write(*,'(" Error! This program supports up to f function in int1c")')
           call iabort
         endif
-        call int1rys(cint1,exij,cij,coordij,coord,charge,natom, &
+        call int1rys(cint1,exij,cij,coordij,coord,znuc,natom, &
 &                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
         if((nbfij(1) >= 5).or.(nbfij(2) >= 5)) then
-          nsumi= nsum(nangij(1))
-          call nrmlz2(cint1,nbfij(1),nbfij(2),nsumi,len1)
+          ncarti= ncart(nangij(1))
+          call nrmlz2(cint1,nbfij(1),nbfij(2),ncarti,len1)
         endif
       endif
 !
       if(mtype(jsh) >= 1) then
         nangij(2)= mtype(jsh)-1
-        nbfij(2)= nsum(nangij(2))
+        nbfij(2)= ncart(nangij(2))
         do jprim= 1,nprimij(2)
           cij(jprim,2) = coeff(jloc+jprim)
         enddo
         if((nangij(1) <= 2).and.(nangij(2) <= 2)) then
-          call int1cmd(cint2,exij,cij,coordij,coord,charge,natom, &
+          call int1cmd(cint2,exij,cij,coordij,coord,znuc,natom, &
 &                      nprimij,nangij,nbfij,len1,mxprsh,threshex)
         else
           if((nangij(1) > 3).or.(nangij(2) > 3))then
-            write(iout,'(" Error! This program supports up to f function in int1c")')
+            write(*,'(" Error! This program supports up to f function in int1c")')
             call iabort
           endif
 !
-          call int1rys(cint2,exij,cij,coordij,coord,charge,natom, &
+          call int1rys(cint2,exij,cij,coordij,coord,znuc,natom, &
 &                      nprimij,nangij,nbfij,len1,mxprsh,threshex)
 !
           if((nbfij(1) >= 5).or.(nbfij(2) >= 5)) then
-            nsumi= nsum(nangij(1))
-            call nrmlz2(cint2,nbfij(1),nbfij(2),nsumi,len1)
+            ncarti= ncart(nangij(1))
+            call nrmlz2(cint2,nbfij(1),nbfij(2),ncarti,len1)
           endif
         endif
+      else
+        cint2(1:nbfij(2),1:nbfij(1))= zero
       endif
 !
       select case(mtype(jsh))
@@ -572,6 +633,39 @@ end
             dcint(5,i,3)= cint1( 8,i)*sqrt3fifth-cint2(1,i)*sqrt3
             dcint(6,i,3)= cint1( 9,i)*sqrt3fifth-cint2(2,i)*sqrt3
           enddo
+        case (3)
+          do i= 1,nbfij(1)
+            dcint( 1,i,1)= cint1( 1,i)             -cint2(1,i)*three
+            dcint( 2,i,1)= cint1( 6,i)*sqrtseventh
+            dcint( 3,i,1)= cint1( 8,i)*sqrtseventh
+            dcint( 4,i,1)= cint1( 4,i)*sqrt5seventh-cint2(4,i)*two*sqrt5third
+            dcint( 5,i,1)= cint1( 5,i)*sqrt5seventh-cint2(5,i)*two*sqrt5third
+            dcint( 6,i,1)= cint1(10,i)*sqrt3seventh-cint2(2,i)*sqrt5
+            dcint( 7,i,1)= cint1(14,i)*sqrtseventh
+            dcint( 8,i,1)= cint1(11,i)*sqrt3seventh-cint2(3,i)*sqrt5
+            dcint( 9,i,1)= cint1(15,i)*sqrtseventh
+            dcint(10,i,1)= cint1(13,i)*sqrt3seventh-cint2(6,i)*sqrt5
+            dcint( 1,i,2)= cint1( 4,i)*sqrtseventh
+            dcint( 2,i,2)= cint1( 2,i)             -cint2(2,i)*three
+            dcint( 3,i,2)= cint1( 9,i)*sqrtseventh
+            dcint( 4,i,2)= cint1(10,i)*sqrt3seventh-cint2(1,i)*sqrt5
+            dcint( 5,i,2)= cint1(13,i)*sqrtseventh
+            dcint( 6,i,2)= cint1( 6,i)*sqrt5seventh-cint2(4,i)*two*sqrt5third
+            dcint( 7,i,2)= cint1( 7,i)*sqrt5seventh-cint2(6,i)*two*sqrt5third
+            dcint( 8,i,2)= cint1(15,i)*sqrtseventh
+            dcint( 9,i,2)= cint1(12,i)*sqrt3seventh-cint2(3,i)*sqrt5
+            dcint(10,i,2)= cint1(14,i)*sqrt3seventh-cint2(5,i)*sqrt5
+            dcint( 1,i,3)= cint1( 5,i)*sqrtseventh
+            dcint( 2,i,3)= cint1( 7,i)*sqrtseventh
+            dcint( 3,i,3)= cint1( 3,i)             -cint2(3,i)*three
+            dcint( 4,i,3)= cint1(13,i)*sqrtseventh
+            dcint( 5,i,3)= cint1(11,i)*sqrt3seventh-cint2(1,i)*sqrt5
+            dcint( 6,i,3)= cint1(14,i)*sqrtseventh
+            dcint( 7,i,3)= cint1(12,i)*sqrt3seventh-cint2(2,i)*sqrt5
+            dcint( 8,i,3)= cint1( 8,i)*sqrt5seventh-cint2(5,i)*two*sqrt5third
+            dcint( 9,i,3)= cint1( 9,i)*sqrt5seventh-cint2(6,i)*two*sqrt5third
+            dcint(10,i,3)= cint1(15,i)*sqrt3seventh-cint2(4,i)*sqrt5
+          enddo
       end select
 !
       nbfij(2)  = mbf(jsh)
@@ -586,6 +680,21 @@ end
             dcint(3,i,k)= work(6)
             dcint(4,i,k)=(work(1)-work(2))*sqrt3h
             dcint(5,i,k)= work(4)
+          enddo
+        enddo
+      elseif(nbfij(2) == 7) then
+        do k= 1,3
+          do i= 1,nbfij(1)
+            do j= 1,10
+              work(j)= dcint(j,i,k)
+            enddo
+            dcint(1,i,k)=( work(3)*two-work(5)*three-work(7)*three)*facf4
+            dcint(2,i,k)=(-work(1)-work(6)+work(8)*four           )*facf3
+            dcint(3,i,k)=(-work(2)-work(4)+work(9)*four           )*facf3
+            dcint(4,i,k)=( work(5)-work(7)                        )*facf2
+            dcint(5,i,k)=  work(10)
+            dcint(6,i,k)=( work(1)-work(6)*three                  )*facf1
+            dcint(7,i,k)=(-work(2)+work(4)*three                  )*facf1
           enddo
         enddo
       endif
@@ -612,15 +721,14 @@ end
 !    : ish, jsh (shell indices)
 ! Inout : egrad (energy gradient value)
 !
-      use param, only : mxprsh
-      use molecule, only : natom, coord, charge
-      use basis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
-      use thresh, only : threshex
-      use iofile, only : iout
+      use modparam, only : mxprsh
+      use modmolecule, only : natom, coord, znuc
+      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
+      use modthresh, only : threshex
       implicit none
       integer,intent(in) :: ish, jsh
       integer :: nangij(2), nprimij(2), nbfij(2), locbfij(2), iatom, jatom
-      integer :: iloc, jloc, iprim, jprim, i, j, ii, ij, maxj
+      integer :: iloc, jloc, iprim, jprim, i
       real(8),intent(in) :: fulldmtrx(nao,nao)
       real(8),intent(inout) :: egrad(3,natom)
       real(8) :: exij(mxprsh,2), cij(mxprsh,2), coordij(3,2)
@@ -653,10 +761,13 @@ end
       enddo
 !
       if((nangij(1) <= 2).and.(nangij(2) <= 2)) then
-        call int1cgmd(egrad,fulldmtrx,exij,cij,coordij,coord,charge,natom,nao, &
+        call int1cgmd(egrad,fulldmtrx,exij,cij,coordij,coord,znuc,natom,nao, &
+&                     nprimij,nangij,nbfij,locbfij,mxprsh,threshex,iandj)
+      elseif((nangij(1) <= 4).and.(nangij(2) <= 4)) then
+        call int1grys(egrad,fulldmtrx,exij,cij,coordij,coord,znuc,natom,nao, &
 &                     nprimij,nangij,nbfij,locbfij,mxprsh,threshex,iandj)
       else
-        write(iout,'(" Error! This program supports up to d function in helfey")')
+        write(*,'(" Error! This program supports up to g function in helfey")')
         call iabort
       endif
 !
@@ -664,10 +775,10 @@ end
 end
 
 
-!---------------------------------------------------------------------------------
-  subroutine int1cgmd(egrad,fulldmtrx,exij,cij,coordij,coord,charge,natom,nao, &
+!-------------------------------------------------------------------------------
+  subroutine int1cgmd(egrad,fulldmtrx,exij,cij,coordij,coord,znuc,natom,nao, &
 &                     nprimij,nangij,nbfij,locbfij,mxprsh,threshex,iandj)
-!---------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 !
 ! Driver of first derivative of 1-electron Coulomb integrals (j|(Z/r)'|i) 
 ! using McMurchie-Davidson method
@@ -676,7 +787,7 @@ end
 !      coij     (coefficients of basis functions)
 !      coordij  (x,y,z coordinates of basis functions)
 !      coord    (x,y,z coordinates of atoms)
-!      charge   (charges of atoms)
+!      znuc     (charges of atoms)
 !      natom    (number of atoms)
 !      nprimij  (numbers of primitive functions)
 !      nangij   (degrees of angular momentum)
@@ -690,18 +801,18 @@ end
       implicit none
       integer,intent(in) :: nprimij(2), nangij(2), nbfij(2), locbfij(2), natom, nao, mxprsh
       integer,parameter :: mxprsh2=40
-      integer :: inttyp, nij, iprim, jprim, i, j, ii, jj, nbfij2(2), locbfij2(2)
+      integer :: inttyp, nij, iprim, jprim, i, ii, jj, nbfij2(2), locbfij2(2)
       real(8),parameter :: one=1.0D+00, pi2=6.283185307179586D+00
       real(8),intent(in) :: fulldmtrx(nao,nao), exij(mxprsh,2), cij(mxprsh,2), coordij(3,2)
-      real(8),intent(in) :: coord(3,natom), charge(natom), threshex
-      real(8),intent(out) :: egrad(3,natom)
+      real(8),intent(in) :: coord(3,natom), znuc(natom), threshex
+      real(8),intent(inout) :: egrad(3,natom)
       real(8) :: xyz(3), rij, exi, exj, ci, cj, ex12, ex21, ex2i, ex2j, rij2, pixyz(3)
       real(8) :: exfac(5,mxprsh2*mxprsh2), pijxyz(3,mxprsh2*mxprsh2)
       logical,intent(in) :: iandj
 !
       if(mxprsh > mxprsh2) then
         write(*,'(" Error! Parameter mxprsh2 in int1cgmd is small!")')
-        call abort
+        call exit
       endif
 !
       inttyp=nangij(2)*3+nangij(1)+1
@@ -755,22 +866,22 @@ end
 !
       select case(inttyp)
         case (1)
-          call int1gcss(egrad,fulldmtrx,exfac,pijxyz,nij,coord,charge, &
+          call int1gcss(egrad,fulldmtrx,exfac,pijxyz,nij,coord,znuc, &
 &                       natom,nao,mxprsh,locbfij2,iandj)
         case (2,4)
-          call int1gcps(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,charge, &
+          call int1gcps(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,znuc, &
 &                       natom,nao,mxprsh,locbfij2)
         case (5)
-          call int1gcpp(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,charge, &
+          call int1gcpp(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,znuc, &
 &                       natom,nao,mxprsh,locbfij2,iandj)
         case (3,7)
-          call int1gcds(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,charge, &
+          call int1gcds(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,znuc, &
 &                       natom,nao,mxprsh,locbfij2,nbfij2)
         case (6,8)
-          call int1gcdp(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,charge, &
+          call int1gcdp(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,znuc, &
 &                       natom,nao,mxprsh,locbfij2,nbfij2)
         case (9)
-          call int1gcdd(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,charge, &
+          call int1gcdd(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,znuc, &
 &                       natom,nao,mxprsh,locbfij2,nbfij2,iandj)
       end select
 !
@@ -779,7 +890,7 @@ end
 
 
 !-----------------------------------------------------------------------
-  subroutine int1gcss(egrad,fulldmtrx,exfac,pijxyz,nij,coord,charge, &
+  subroutine int1gcss(egrad,fulldmtrx,exfac,pijxyz,nij,coord,znuc, &
 &                     natom,nao,mxprsh,locbfij,iandj)
 !-----------------------------------------------------------------------
 !
@@ -792,11 +903,11 @@ end
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00, two=2.0D+00
       real(8),parameter :: pi=3.141592653589793D+00
       real(8),intent(in) :: fulldmtrx(nao,nao), exfac(5,mxprsh*mxprsh)
-      real(8),intent(in) :: pijxyz(3,mxprsh*mxprsh), coord(3,natom), charge(natom)
+      real(8),intent(in) :: pijxyz(3,mxprsh*mxprsh), coord(3,natom), znuc(natom)
       real(8),intent(inout) :: egrad(3,natom)
-      real(8) :: rc, ex12, c12, pcxyz(3), expt, tinv
-      real(8) :: tval, tval1, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
-      real(8) :: ft(0:1), fpc, r1(3)
+      real(8) :: rc, ex12, c12, pcxyz(3), tinv
+      real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
+      real(8) :: ft(0:1), r1(3)
       logical,intent(in) :: iandj
 !
       do iatom= 1,natom
@@ -835,7 +946,7 @@ end
 &                 +fgrid(6,1,igrid)*tval6+fgrid( 7,1,igrid)*tval7 +fgrid( 8,1,igrid)*tval8 &
 &                 +fgrid(9,1,igrid)*tval9+fgrid(10,1,igrid)*tval10
           endif
-          ft(1)=-ft(1)*two*ex12*c12*charge(iatom)
+          ft(1)=-ft(1)*two*ex12*c12*znuc(iatom)
           do i= 1,3
             r1(i)= r1(i)+ft(1)*pcxyz(i)
           enddo
@@ -856,7 +967,7 @@ end
 
 
 !---------------------------------------------------------------------------
-  subroutine int1gcps(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,charge, &
+  subroutine int1gcps(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,znuc, &
 &                     natom,nao,mxprsh,locbfij)
 !---------------------------------------------------------------------------
 !
@@ -870,11 +981,11 @@ end
       real(8),parameter :: three=3.0D+00, p15=1.5D+00
       real(8),parameter :: pi=3.141592653589793D+00
       real(8),intent(in) :: fulldmtrx(nao,nao), exfac(5,mxprsh*mxprsh), pijxyz(3,mxprsh*mxprsh)
-      real(8),intent(in) :: xyz(3), coord(3,natom), charge(natom)
+      real(8),intent(in) :: xyz(3), coord(3,natom), znuc(natom)
       real(8),intent(inout) :: egrad(3,natom)
       real(8) :: rc, ex12, ex21, ex2i, ex2j, c12, pcxyz(3), extwo
-      real(8) :: tval, tval1, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
-      real(8) :: ft(0:2), expt, tinv, r1(3), r2(6), cint1(3,3)
+      real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
+      real(8) :: ft(0:2), tinv, r1(3), r2(6), cint1(3,3)
 !
       do iatom= 1,natom
         do i= 1,3
@@ -918,7 +1029,7 @@ end
             enddo
           endif
           do i= 1,2
-            ft(i)= ft(i)*charge(iatom)*c12
+            ft(i)= ft(i)*znuc(iatom)*c12
           enddo
           extwo= ex12*two
           do i= 1,3
@@ -952,7 +1063,7 @@ end
 
 
 !---------------------------------------------------------------------------
-  subroutine int1gcpp(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,charge, &
+  subroutine int1gcpp(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,znuc, &
 &                     natom,nao,mxprsh,locbfij,iandj)
 !---------------------------------------------------------------------------
 !
@@ -966,14 +1077,13 @@ end
       real(8),parameter :: three=3.0D+00, five=5.0D+00, p15=1.5D+00, p25=2.5D+00
       real(8),parameter :: pi=3.141592653589793D+00
       real(8),intent(in) :: fulldmtrx(nao,nao), exfac(5,mxprsh*mxprsh), pijxyz(3,mxprsh*mxprsh)
-      real(8),intent(in) :: xyz(3), coord(3,natom), charge(natom)
+      real(8),intent(in) :: xyz(3), coord(3,natom), znuc(natom)
       real(8),intent(inout) :: egrad(3,natom)
       real(8) :: rc, ex12, ex21, ex2i, ex2j, c12, pcxyz(3), extwo
-      real(8) :: tval, tval1, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
+      real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
       real(8) :: ft(0:3), fttwo, fpc2(6)
       real(8) :: pxx, pyy, pzz, pxy, pxz, pyz
-      real(8) :: expt, tinv, r1(6), r2(12), r3(10), xx, yy, zz, xy, xz, yz, cint1(3,3,3)
-      real(8) :: xi, yi, zi, xj, yj, zj
+      real(8) :: tinv, r1(6), r2(12), r3(10), xx, yy, zz, xy, xz, yz, cint1(3,3,3)
       logical,intent(in) :: iandj
 !
       xx= xyz(1)*xyz(1)
@@ -1035,7 +1145,7 @@ end
           endif
 !
           do i= 1,3
-            ft(i)= ft(i)*charge(iatom)*c12
+            ft(i)= ft(i)*znuc(iatom)*c12
           enddo
           extwo= ex12*two
           fttwo= ft(2)*extwo
@@ -1117,7 +1227,7 @@ end
 
 
 !---------------------------------------------------------------------------
-  subroutine int1gcds(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,charge, &
+  subroutine int1gcds(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,znuc, &
 &                     natom,nao,mxprsh,locbfij,nbfij)
 !---------------------------------------------------------------------------
 !
@@ -1132,13 +1242,13 @@ end
       real(8),parameter :: pi=3.141592653589793D+00, sqrt3h=8.660254037844386D-01
       real(8),parameter :: sqrt3=1.732050807568877D+00
       real(8),intent(in) :: fulldmtrx(nao,nao), exfac(5,mxprsh*mxprsh), pijxyz(3,mxprsh*mxprsh)
-      real(8),intent(in) :: xyz(3), coord(3,natom), charge(natom)
+      real(8),intent(in) :: xyz(3), coord(3,natom), znuc(natom)
       real(8),intent(inout) :: egrad(3,natom)
       real(8) :: rc, ex12, ex21, ex2i, ex2j, c12, pcxyz(3), extwo
-      real(8) :: tval, tval1, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
+      real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
       real(8) :: ft(0:3), fttwo
       real(8) :: pxx, pyy, pzz, pxy, pxz, pyz
-      real(8) :: expt, tinv, r1(6), r2(6), r3(10), xx, yy, zz, xy, xz, yz, cint1(6,3), work(6)
+      real(8) :: tinv, r1(6), r2(6), r3(10), xx, yy, zz, xy, xz, yz, cint1(6,3), work(6)
 !
       xx= xyz(1)*xyz(1)
       yy= xyz(2)*xyz(2)
@@ -1199,7 +1309,7 @@ end
           endif
 !
           do i= 1,3
-            ft(i)= ft(i)*charge(iatom)*c12
+            ft(i)= ft(i)*znuc(iatom)*c12
           enddo
           extwo= ex12*two
           fttwo= ft(2)*extwo
@@ -1274,7 +1384,7 @@ end
 
 
 !---------------------------------------------------------------------------
-  subroutine int1gcdp(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,charge, &
+  subroutine int1gcdp(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,znuc, &
 &                     natom,nao,mxprsh,locbfij,nbfij)
 !---------------------------------------------------------------------------
 !
@@ -1290,13 +1400,13 @@ end
       real(8),parameter :: pi=3.141592653589793D+00, sqrt3h=8.660254037844386D-01
       real(8),parameter :: sqrt3=1.732050807568877D+00
       real(8),intent(in) :: fulldmtrx(nao,nao), exfac(5,mxprsh*mxprsh), pijxyz(3,mxprsh*mxprsh)
-      real(8),intent(in) :: xyz(3), coord(3,natom), charge(natom)
+      real(8),intent(in) :: xyz(3), coord(3,natom), znuc(natom)
       real(8),intent(inout) :: egrad(3,natom)
       real(8) :: rc, ex12, ex21, ex2i, ex2j, c12, pcxyz(3), extwo
-      real(8) :: tval, tval1, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
+      real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
       real(8) :: ft(0:4), ft2two, ft3two, ft2inv
       real(8) :: pxx, pyy, pzz, pxy, pxz, pyz
-      real(8) :: expt, tinv, r1(9), r2(18), r3(20), r4(15), xx, yy, zz, xy, xz, yz
+      real(8) :: tinv, r1(9), r2(18), r3(20), r4(15), xx, yy, zz, xy, xz, yz
       real(8) :: fpc2(6), fpc3(10), cint1(6,3,3), work(6)
 !
       xx= xyz(1)*xyz(1)
@@ -1362,7 +1472,7 @@ end
           endif
 !
           do i= 1,4
-            ft(i)= ft(i)*charge(iatom)*c12
+            ft(i)= ft(i)*znuc(iatom)*c12
           enddo
           extwo= ex12*two
           ex21 = ex21*half
@@ -1561,7 +1671,7 @@ end
 
 
 !---------------------------------------------------------------------------
-  subroutine int1gcdd(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,charge, &
+  subroutine int1gcdd(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,znuc, &
 &                     natom,nao,mxprsh,locbfij,nbfij,iandj)
 !---------------------------------------------------------------------------
 !
@@ -1578,14 +1688,14 @@ end
       real(8),parameter :: pi=3.141592653589793D+00, sqrt3h=8.660254037844386D-01
       real(8),parameter :: sqrt3=1.732050807568877D+00
       real(8),intent(in) :: fulldmtrx(nao,nao), exfac(5,mxprsh*mxprsh), pijxyz(3,mxprsh*mxprsh)
-      real(8),intent(in) :: xyz(3), coord(3,natom), charge(natom)
+      real(8),intent(in) :: xyz(3), coord(3,natom), znuc(natom)
       real(8),intent(inout) :: egrad(3,natom)
       real(8) :: rc, ex12, ex21, ex2i, ex2j, c12, pcxyz(3), extwo, ex2ii, ex2ij, ex2jj
-      real(8) :: tval, tval1, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
+      real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
       real(8) :: ft(0:5), ft2two, ft3two, ft4two
       real(8) :: ft2inv, ft3inv, pxx, pyy, pzz, pxy, pxz, pyz
       real(8) :: pxxx, pyyy, pzzz, pxxy, pxxz, pxyy, pyyz, pxzz, pyzz, pxyz
-      real(8) :: expt, tinv, r1(15), r2(24), r3(40), r4(30), r5(21), xx, yy, zz, xy, xz, yz
+      real(8) :: tinv, r1(15), r2(24), r3(40), r4(30), r5(21), xx, yy, zz, xy, xz, yz
       real(8) :: xxx, yyy, zzz, xxy, xxz, xyy, yyz, xzz, yzz, xyz2
       real(8) :: fpc2(6), fpc3(10), fpc4(15), cint1(6,6,3), work(6)
       logical,intent(in) :: iandj
@@ -1677,7 +1787,7 @@ end
           endif
 !
           do i= 1,5
-            ft(i)= ft(i)*charge(iatom)*c12
+            ft(i)= ft(i)*znuc(iatom)*c12
           enddo
           extwo = ex12*two
           ex21  = ex21*half
@@ -2237,6 +2347,400 @@ end
         endif
       enddo
 !
+      return
+end
+
+
+!--------------------------------------------------------------------------------
+  subroutine int1grys(egrad,fulldmtrx,exij,coij,coordij,coord,znuc,natom,nao, &
+&                     nprimij,nangij,nbfij,locbfij,mxprsh,threshex,iandj)
+!--------------------------------------------------------------------------------
+!
+! Calculate derivative of 1-electron Coulomb integrals (j|Z/r|i) using Rys quadratures
+!
+      use modhermite, only : ix, iy, iz
+      implicit none
+      integer,intent(in) :: nprimij(2), nangij(2), nbfij(2), locbfij(2), natom, nao, mxprsh
+      integer,parameter :: mxprsh2=40
+      integer :: nroots, ncart(0:6), ncarti, ncartj, i, j, k, iprim, jprim, iatom, iroot
+      integer :: iang, jang, icx, icy, icz, jcx, jcy, jcz
+      real(8),parameter :: sqrtpi2=1.128379167095513D+00 !2.0/sqrt(pi)
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00, two=2.0D+00, three=3.0D+00
+      real(8),parameter :: four=4.0D+00, six=6.0D+00, eight=8.0D+00, p24=24.0D+00 
+      real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
+      real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
+      real(8),parameter :: sqrt7=2.645751311064590D+00, sqrt35=5.916079783099616D+00
+      real(8),parameter :: sqrt35third=3.415650255319866D+00
+      real(8),parameter :: facf1=0.36969351199675831D+00 ! 1/sqrt(10-6/sqrt(5))
+      real(8),parameter :: facf2=0.86602540378443865D+00 ! 1/sqrt(4/3)
+      real(8),parameter :: facf3=0.28116020334310144D+00 ! 1/sqrt(46/3-6/sqrt(5))
+      real(8),parameter :: facf4=0.24065403274177409D+00 ! 1/sqrt(28-24/sqrt(5))
+      real(8),parameter :: facg1=0.19440164201192295D+00 ! 1/sqrt(1336/35-8sqrt(15/7))
+      real(8),parameter :: facg2=0.36969351199675831D+00 ! 1/sqrt(10-6/sqrt(5)
+      real(8),parameter :: facg3=0.15721262982485929D+00 ! 1/sqrt(1774/35-8sqrt(15/7)-8sqrt(3/35))
+      real(8),parameter :: facg4=0.24313189758394717D+00 ! 1/sqrt(98/5-6/sqrt(5))
+      real(8),parameter :: facg5=3.20603188768051639D-02
+!                                                 ! 1/sqrt(51512/35-984sqrt(5/21)-102/sqrt(105))
+      real(8),parameter :: facg6=0.18742611911532351D+00 ! 1/sqrt(196/5-24/sqrt(5))
+      real(8),parameter :: facg7=1.11803398874989484D+00 ! 1/sqrt(4/5)
+      real(8),intent(in) :: fulldmtrx(nao,nao), exij(mxprsh,2), coij(mxprsh,2), coordij(3,2)
+      real(8),intent(in) :: coord(3,natom), znuc(natom), threshex
+      real(8),intent(inout) :: egrad(3,natom)
+      real(8) :: xyz(3), rij, rij2, exi, exj, ci, cj, ex1, ex2, ex3, ex4, fac, rc, tval
+      real(8) :: pixyz(3), pijxyz(3), pcxyz(3), xyzpijk(3,3), trys(13), wrys(13)
+      real(8) :: cx(0:6,0:6,7,2), cy(0:6,0:6,7,2), cz(0:6,0:6,7,2), ww, xyzint(3)
+      real(8) :: dcint1(28,28,3), work(28)
+      logical,intent(in) :: iandj
+      data ncart /1,3,6,10,15,21,28/
+!
+      nroots=(nangij(1)+nangij(2)+1)/2+1
+      ncarti= ncart(nangij(1))
+      ncartj= ncart(nangij(2))
+!
+      do i= 1,3
+        xyz(i)= coordij(i,1)-coordij(i,2)
+      enddo
+      rij= xyz(1)*xyz(1)+xyz(2)*xyz(2)+xyz(3)*xyz(3)
+!
+      do iatom= 1,natom
+        dcint1(1:ncartj,1:ncarti,1:3)= zero
+        do iprim= 1,nprimij(1)
+          exi= exij(iprim,1)
+          ci = coij(iprim,1)*sqrtpi2
+          do i= 1,3
+            pixyz(i)= exi*coordij(i,1)
+          enddo
+          do jprim= 1,nprimij(2)
+            exj= exij(jprim,2)
+            ex1= exi+exj
+            ex2= one/ex1
+            ex3= exi*exj
+            rij2=rij*ex2*ex3
+            if(rij2 > threshex) cycle
+            cj = coij(jprim,2)
+            fac=exp(-rij2)*ex2*ci*cj
+!
+            do i= 1,3
+              pijxyz(i)=(pixyz(i)+exj*coordij(i,2))*ex2
+            enddo
+            do i= 1,3
+              pcxyz(i)= pijxyz(i)-coord(i,iatom)
+            enddo
+            rc= pcxyz(1)*pcxyz(1)+pcxyz(2)*pcxyz(2)+pcxyz(3)*pcxyz(3)
+            tval= ex1*rc
+            call rysquad(tval,trys,wrys,nroots)
+            do iroot= 1,nroots
+              ww=-wrys(iroot)*znuc(iatom)*two*ex1*trys(iroot)/(one-trys(iroot))
+              ex4= sqrt(ex2*(one-trys(iroot)))
+              do i= 1,3
+                xyzpijk(i,1)=(one-trys(iroot))*pijxyz(i)+trys(iroot)*coord(i,iatom)-coordij(i,1)
+                xyzpijk(i,2)=(one-trys(iroot))*pijxyz(i)+trys(iroot)*coord(i,iatom)-coordij(i,2)
+                xyzpijk(i,3)=(one-trys(iroot))*pijxyz(i)+trys(iroot)*coord(i,iatom)-coord(i,iatom)
+              enddo
+              do iang= 0,nangij(1)
+                do jang= 0,nangij(2)
+                  call ghquad(xyzint,ex4,xyzpijk,iang,jang)
+                  cx(jang,iang,iroot,1)= xyzint(1)
+                  cy(jang,iang,iroot,1)= xyzint(2)
+                  cz(jang,iang,iroot,1)= xyzint(3)*ww
+                  call dghquad(xyzint,ex4,xyzpijk,iang,jang)
+                  cx(jang,iang,iroot,2)= xyzint(1)
+                  cy(jang,iang,iroot,2)= xyzint(2)
+                  cz(jang,iang,iroot,2)= xyzint(3)*ww
+                enddo
+              enddo
+            enddo
+            do i= 1,ncarti
+              icx= ix(i,nangij(1))
+              icy= iy(i,nangij(1))
+              icz= iz(i,nangij(1))
+              do j= 1,ncartj
+                jcx= ix(j,nangij(2))
+                jcy= iy(j,nangij(2))
+                jcz= iz(j,nangij(2))
+                do iroot= 1,nroots
+                  dcint1(j,i,1)= dcint1(j,i,1) &
+&                               +fac*cx(jcx,icx,iroot,2)*cy(jcy,icy,iroot,1)*cz(jcz,icz,iroot,1)
+                  dcint1(j,i,2)= dcint1(j,i,2) &
+&                               +fac*cx(jcx,icx,iroot,1)*cy(jcy,icy,iroot,2)*cz(jcz,icz,iroot,1)
+                  dcint1(j,i,3)= dcint1(j,i,3) &
+&                               +fac*cx(jcx,icx,iroot,1)*cy(jcy,icy,iroot,1)*cz(jcz,icz,iroot,2)
+                enddo
+              enddo
+            enddo
+          enddo
+        enddo
+!
+! Ket part
+!
+        select case(nbfij(1))
+! D function
+          case(5)
+            do k= 1,3
+              do j= 1,ncartj
+                do i= 1,6
+                  work(i)= dcint1(j,i,k)
+                enddo
+                dcint1(j,1,k)=(work(3)*two-work(1)-work(2))*half
+                dcint1(j,2,k)= work(5)*sqrt3
+                dcint1(j,3,k)= work(6)*sqrt3
+                dcint1(j,4,k)=(work(1)-work(2))*sqrt3h
+                dcint1(j,5,k)= work(4)*sqrt3
+              enddo
+            enddo
+          case(6)
+            do k= 1,3
+              do j= 1,ncartj
+                dcint1(j,4,k)= dcint1(j,4,k)*sqrt3
+                dcint1(j,5,k)= dcint1(j,5,k)*sqrt3
+                dcint1(j,6,k)= dcint1(j,6,k)*sqrt3
+              enddo
+            enddo
+! F function
+          case(7)
+            do k= 1,3
+              do j= 1,ncartj
+                do i= 1,3
+                  work(i)= dcint1(j,i,k)
+                enddo
+                do i= 4,9
+                  work(i)= dcint1(j,i,k)*sqrt5
+                enddo
+                work(10)= dcint1(j,10,k)*sqrt15
+                dcint1(j,1,k)=( two*work(3)-three*work(5)-three*work(7))*facf4
+                dcint1(j,2,k)=(-work(1)-work(6)+four*work(8)           )*facf3
+                dcint1(j,3,k)=(-work(2)-work(4)+four*work(9)           )*facf3
+                dcint1(j,4,k)=( work(5)-work(7)                        )*facf2
+                dcint1(j,5,k)=  work(10)
+                dcint1(j,6,k)=( work(1)-three*work(6)                  )*facf1
+                dcint1(j,7,k)=(-work(2)+three*work(4)                  )*facf1
+              enddo
+            enddo
+          case(10)
+            do k= 1,3
+              do j= 1,ncartj
+                do i= 4,9
+                  dcint1(j,i,k)= dcint1(j,i,k)*sqrt5
+                enddo
+                dcint1(j,10,k)= dcint1(j,10,k)*sqrt15
+              enddo
+            enddo
+! G function
+        case(9)
+          do k= 1,3
+            do j= 1,ncartj
+              do i= 1,3
+                work(i)= dcint1(j,i,k)
+              enddo
+              do i= 4,9
+                work(i)= dcint1(j,i,k)*sqrt7
+              enddo
+              do i= 10,12
+                work(i)= dcint1(j,i,k)*sqrt35third
+              enddo
+              do i= 13,15
+                work(i)= dcint1(j,i,k)*sqrt35
+              enddo
+              dcint1(j,1,k)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+&                           -work(11)*p24-work(12)*p24)*facg5
+              dcint1(j,2,k)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+              dcint1(j,3,k)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+              dcint1(j,4,k)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+              dcint1(j,5,k)=(-work(4)-work(6)+work(15)*six)*facg6
+              dcint1(j,6,k)=(work(5)-work(14)*three)*facg2
+              dcint1(j,7,k)=(-work(7)+work(13)*three)*facg2
+              dcint1(j,8,k)=(work(1)+work(2)-work(10)*six)*facg1
+              dcint1(j,9,k)=(work(4)-work(6))*facg7
+            enddo
+          enddo
+        case(15)
+          do k= 1,3
+            do j= 1,ncartj
+              do i= 4,9
+                dcint1(j,i,k)= dcint1(j,i,k)*sqrt7
+              enddo
+              do i= 10,12
+                dcint1(j,i,k)= dcint1(j,i,k)*sqrt35third
+              enddo
+              do i= 13,15
+                dcint1(j,i,k)= dcint1(j,i,k)*sqrt35
+              enddo
+            enddo
+          enddo
+        end select
+!
+! Bra part
+!
+        select case(nbfij(2))
+! D function
+          case(5)
+            do k= 1,3
+              do i= 1,nbfij(1)
+                do j= 1,6
+                  work(j)= dcint1(j,i,k)
+                enddo
+                dcint1(1,i,k)=(work(3)*two-work(1)-work(2))*half
+                dcint1(2,i,k)= work(5)*sqrt3
+                dcint1(3,i,k)= work(6)*sqrt3
+                dcint1(4,i,k)=(work(1)-work(2))*sqrt3h
+                dcint1(5,i,k)= work(4)*sqrt3
+              enddo
+            enddo
+          case(6)
+            do k= 1,3
+              do i= 1,nbfij(1)
+                dcint1(4,i,k)= dcint1(4,i,k)*sqrt3
+                dcint1(5,i,k)= dcint1(5,i,k)*sqrt3
+                dcint1(6,i,k)= dcint1(6,i,k)*sqrt3
+              enddo
+            enddo
+! F function
+          case(7)
+            do k= 1,3
+              do i= 1,nbfij(1)
+                do j= 1,3
+                  work(j)= dcint1(j,i,k)
+                enddo
+                do j= 4,9
+                  work(j)= dcint1(j,i,k)*sqrt5
+                enddo
+                work(10)= dcint1(10,i,k)*sqrt15
+                dcint1(1,i,k)=( two*work(3)-three*work(5)-three*work(7))*facf4
+                dcint1(2,i,k)=(-work(1)-work(6)+four*work(8)           )*facf3
+                dcint1(3,i,k)=(-work(2)-work(4)+four*work(9)           )*facf3
+                dcint1(4,i,k)=( work(5)-work(7)                        )*facf2
+                dcint1(5,i,k)=  work(10)
+                dcint1(6,i,k)=( work(1)-three*work(6)                  )*facf1
+                dcint1(7,i,k)=(-work(2)+three*work(4)                  )*facf1
+              enddo
+            enddo
+          case(10)
+            do k= 1,3
+              do i= 1,nbfij(1)
+                do j= 4,9
+                  dcint1(j,i,k)= dcint1(j,i,k)*sqrt5
+                enddo
+                dcint1(10,i,k)= dcint1(10,i,k)*sqrt15
+              enddo
+            enddo
+! G function
+        case(9)
+          do k= 1,3
+            do i= 1,nbfij(1)
+              do j= 1,3
+                work(j)= dcint1(j,i,k)
+              enddo
+              do j= 4,9
+                work(j)= dcint1(j,i,k)*sqrt7
+              enddo
+              do j= 10,12
+                work(j)= dcint1(j,i,k)*sqrt35third
+              enddo
+              do j= 13,15
+                work(j)= dcint1(j,i,k)*sqrt35
+              enddo
+              dcint1(1,i,k)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+&                           -work(11)*p24-work(12)*p24)*facg5
+              dcint1(2,i,k)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+              dcint1(3,i,k)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+              dcint1(4,i,k)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+              dcint1(5,i,k)=(-work(4)-work(6)+work(15)*six)*facg6
+              dcint1(6,i,k)=(work(5)-work(14)*three)*facg2
+              dcint1(7,i,k)=(-work(7)+work(13)*three)*facg2
+              dcint1(8,i,k)=(work(1)+work(2)-work(10)*six)*facg1
+              dcint1(9,i,k)=(work(4)-work(6))*facg7
+            enddo
+          enddo
+        case(15)
+          do k= 1,3
+            do i= 1,nbfij(1)
+              do j= 4,9
+                dcint1(j,i,k)= dcint1(j,i,k)*sqrt7
+              enddo
+              do j= 10,12
+                dcint1(j,i,k)= dcint1(j,i,k)*sqrt35third
+              enddo
+              do j= 13,15
+                dcint1(j,i,k)= dcint1(j,i,k)*sqrt35
+              enddo
+            enddo
+          enddo
+        end select
+!
+        if(.not.iandj) then
+          do k= 1,3
+            do i= 1,nbfij(1)
+              do j= 1,nbfij(2)
+                egrad(k,iatom)= egrad(k,iatom)+fulldmtrx(locbfij(2)+j,locbfij(1)+i)*dcint1(j,i,k)
+              enddo
+            enddo
+          enddo
+        else
+          do k= 1,3
+            do i= 1,nbfij(1)
+              do j= 1,nbfij(2)
+                egrad(k,iatom)= egrad(k,iatom) &
+&                              +fulldmtrx(locbfij(2)+j,locbfij(1)+i)*dcint1(j,i,k)*half
+              enddo
+            enddo
+          enddo
+        endif
+!
+      enddo
+!
+      return
+end
+
+
+!-----------------------------------------------------
+  subroutine dghquad(xyzint,expgh,xyzpijk,iang,jang)
+!-----------------------------------------------------
+!
+! Calculate Gauss-Hermite quadrature
+!
+      use modhermite, only : hnode, hweight, minh, maxh
+      implicit none
+      integer,intent(in) :: iang, jang
+      integer :: nroot, ij, i, j
+      real(8),parameter :: zero=0.0D+00
+      real(8),intent(in) :: expgh, xyzpijk(3,3)
+      real(8),intent(out) :: xyzint(3)
+      real(8) :: ghxyz(3), exnode, pxyz(3)
+!
+      do i= 1,3
+        xyzint(i)= zero
+      enddo
+!
+      nroot=(iang+jang+1)/2+1
+      do ij= minh(nroot),maxh(nroot)
+        exnode= hnode(ij)*expgh
+        do i= 1,3
+          ghxyz(i)=(exnode+xyzpijk(i,3))*hweight(ij)
+        enddo
+        if(iang >= 1) then
+          do i= 1,3
+            pxyz(i)= exnode+xyzpijk(i,1)
+          enddo
+          do i= 1,iang
+            do j= 1,3
+              ghxyz(j)= ghxyz(j)*pxyz(j)
+            enddo
+          enddo
+        endif
+        if(jang >= 1) then
+          do i= 1,3
+            pxyz(i)= exnode+xyzpijk(i,2)
+          enddo
+          do i= 1,jang
+            do j= 1,3
+              ghxyz(j)= ghxyz(j)*pxyz(j)
+            enddo
+          enddo
+        endif
+        do i= 1,3
+        xyzint(i)= xyzint(i)+ghxyz(i)
+        enddo
+      enddo
       return
 end
 

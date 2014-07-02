@@ -1,6 +1,6 @@
-!---------------
-  module param
-!---------------
+!------------------
+  module modparam
+!------------------
 !
 ! maximum sizes for AOs (basis functions), MOs, atoms, shells
 !
@@ -15,89 +15,183 @@
 end
 
 
-!-----------------
-  module control
-!-----------------
+!----------------
+  module modjob
+!----------------
       implicit none
-      integer,parameter :: lmethod=16, lruntype=16
-      character(lmethod) :: method
-      character(lruntype) :: runtype
+      character(len=16) :: method, runtype, scftype
 end
 
 
-!---------------
-  module units
-!---------------
+!-----------------
+  module modunit
+!-----------------
       implicit none
       real(8),parameter :: toang= 0.5291772108D+00,tobohr= 1.889726125D+00
       logical :: bohr
 end
 
 
-!-----------------
-  module procpar
-!-----------------
+!---------------------
+  module modparallel
+!---------------------
 #ifdef MPI
       use mpi
 #endif
       implicit none
       integer :: nproc, myrank
-      integer,parameter :: nbuf=1000000
 #ifndef MPI
       integer :: MPI_COMM_WORLD, MPI_SUM
 #endif
       logical :: master, parallel
+!
+      interface para_bcast
+        subroutine para_bcastd1(buff,num,irank,comm)
+          integer,intent(in) :: num, irank
+          integer(4),intent(in) :: comm
+          real(8) :: buff
+        end subroutine para_bcastd1
+        subroutine para_bcastd2(buff,num,irank,comm)
+          integer,intent(in) :: num, irank
+          integer(4),intent(in) :: comm
+          real(8) :: buff(*)
+        end subroutine para_bcastd2
+        subroutine para_bcasti41(buff,num,irank,comm)
+          integer,intent(in) :: num, irank
+          integer(4),intent(in) :: comm
+          integer(4) :: buff
+        end subroutine para_bcasti41
+        subroutine para_bcasti42(buff,num,irank,comm)
+          integer,intent(in) :: num, irank
+          integer(4),intent(in) :: comm
+          integer(4) :: buff(*)
+        end subroutine para_bcasti42
+        subroutine para_bcasti81(buff,num,irank,comm)
+          integer,intent(in) :: num, irank
+          integer(4),intent(in) :: comm
+          integer(8) :: buff
+        end subroutine para_bcasti81
+        subroutine para_bcasti82(buff,num,irank,comm)
+          integer,intent(in) :: num, irank
+          integer(4),intent(in) :: comm
+          integer(8) :: buff(*)
+        end subroutine para_bcasti82
+        subroutine para_bcastc1(buff,num,irank,comm)
+          integer,intent(in) :: num, irank
+          integer(4),intent(in) :: comm
+          character(*) :: buff
+        end subroutine para_bcastc1
+        subroutine para_bcastc2(buff,num,irank,comm)
+          integer,intent(in) :: num, irank
+          integer(4),intent(in) :: comm
+          character(*) :: buff(*)
+        end subroutine para_bcastc2
+        subroutine para_bcastl1(buff,num,irank,comm)
+          integer,intent(in) :: num, irank
+          integer(4),intent(in) :: comm
+          logical :: buff
+        end subroutine para_bcastl1
+        subroutine para_bcastl2(buff,num,irank,comm)
+          integer,intent(in) :: num, irank
+          integer(4),intent(in) :: comm
+          logical :: buff(*)
+        end subroutine para_bcastl2
+      end interface para_bcast
+!
+      interface para_allreduce
+        subroutine para_allreduced1(sbuff,rbuff,num,op,comm)
+          integer,intent(in) :: num
+          integer(4),intent(in) :: op, comm
+          real(8),intent(in) :: sbuff
+          real(8),intent(out) :: rbuff
+        end subroutine para_allreduced1
+        subroutine para_allreduced2(sbuff,rbuff,num,op,comm)
+          integer,intent(in) :: num
+          integer(4),intent(in) :: op, comm
+          real(8),intent(in) :: sbuff(*)
+          real(8),intent(out) :: rbuff(*)
+        end subroutine para_allreduced2
+        subroutine para_allreducei1(sbuff,rbuff,num,op,comm)
+          integer,intent(in) :: num
+          integer(4),intent(in) :: op, comm
+          integer,intent(in) :: sbuff
+          integer,intent(out) :: rbuff
+        end subroutine para_allreducei1
+        subroutine para_allreducei2(sbuff,rbuff,num,op,comm)
+          integer,intent(in) :: num
+          integer(4),intent(in) :: op, comm
+          integer,intent(in) :: sbuff(*)
+          integer,intent(out) :: rbuff(*)
+        end subroutine para_allreducei2
+      end interface para_allreduce
+      interface para_sendrecv
+        subroutine para_sendrecvd1(sbuff,nums,dest,ntags,rbuff,numr,source,ntagr,comm)
+          integer,intent(in) :: nums, dest, ntags, numr, source, ntagr
+          integer(4),intent(in) :: comm
+          real(8),intent(in) :: sbuff
+          real(8),intent(out) :: rbuff
+        end subroutine para_sendrecvd1
+        subroutine para_sendrecvd2(sbuff,nums,dest,ntags,rbuff,numr,source,ntagr,comm)
+          integer,intent(in) :: nums, dest, ntags, numr, source, ntagr
+          integer(4),intent(in) :: comm
+          real(8),intent(in) :: sbuff(*)
+          real(8),intent(out) :: rbuff(*)
+        end subroutine para_sendrecvd2
+      end interface para_sendrecv
 end
 
 
-!----------------
-  module iofile
-!----------------
+!-------------------
+  module modiofile
+!-------------------
       implicit none
-      integer,parameter :: in=10, iout=6
+      integer,parameter :: in=10
 end
 
 
-!----------------
-  module tclock
-!----------------
+!-------------------
+  module modtclock
+!-------------------
       implicit none
       integer ::  iwall0, iwall1
       real(8) :: cpu0, cpu1
 end
 
 
-!------------------
-  module molecule
-!------------------
+!---------------------
+  module modmolecule
+!---------------------
 !
 ! natom     : number of atoms
 ! numatomic : atomic number
-! coord     : coordinate (x, y, z)
-! charge    : atomic charge
+! coord     : Cartesian coordinate 
+! znuc      : atomic charge
 ! neleca    : number of alpha electrons
 ! nelecb    : number of beta electrons
 ! nmo       : number of molecular orbitals
 ! ncore     : number of core orbitals
+! multi     : spin multiplicity
+! charge    : molecular charge
 !
-      use param, only : mxatom
+      use modparam, only : mxatom
       implicit none
-      integer :: numatomic(mxatom), natom, neleca, nelecb, nmo, ncore
-      real(8) :: coord(3,mxatom), charge(mxatom), coordold(3,mxatom)
+      integer :: numatomic(mxatom), natom, neleca, nelecb, nmo, ncore, multi
+      real(8) :: coord(3,mxatom), znuc(mxatom), coordold(3,mxatom), charge
 end
 
 
-!----------------
-  module thresh
-!----------------
+!-------------------
+  module modthresh
+!-------------------
 !
-! threshex   : threshold for overlap of two basis functions
-! threshover : threshold for linear depencency of basis functions
-! threshatm  : threshold for distance of atoms
-! cutint2    : threshold for two-electron integrals
-! threshsoscf: threshold for second-order SCF
-! threshrho  : threshold for density at a grid point
-! threshdfock: threshold for functional at a grid point
+! threshex    : threshold for overlap of two basis functions
+! threshover  : threshold for linear depencency of basis functions
+! threshatm   : threshold for distance of atoms
+! cutint2     : threshold for two-electron integrals
+! threshsoscf : threshold for second-order SCF
+! threshweight: threshold for weight at a grid point
+! threshrho   : threshold for density at a grid point
+! threshdfock : threshold for functional at a grid point
 !
       implicit none
 !ishimura
@@ -105,51 +199,63 @@ end
 !     real(8) :: threshex=28.0D+00, threshover=1.0D-06
       real(8) :: threshatm=2.0D-01, thresherr=0.6D+00
       real(8) :: cutint2, threshsoscf
-      real(8) :: threshrho=1.0D-15, threshdfock=1.0D-10
+      real(8) :: threshweight=1.0D-09, threshrho=1.0D-07, threshdfock=1.0D-06
+      real(8) :: threshdftao=1.0D-04
 end
 
 
-!----------------
-  module memory
-!----------------
+!-------------------
+  module modmemory
+!-------------------
       integer :: memmax, memused, memusedmax
+      character(len=16) :: memory, mem
 end
 
 
-!---------------
-  module basis
-!---------------
+!------------------
+  module modbasis
+!------------------
 !
-! nshell : the number of shells
-! nao    : the number of AOs (=contracted basis functions)
-! nprim  : the number of primitive basis functions
-! ex    : exponents of basis functions
-! coeff : normalized coefficients of basis functions
-! coeffinp : input coefficients of basis functions
+! nshell : Number of shells
+! nao    : Number of AOs (=contracted basis functions)
+! nprim  : Number of primitive basis functions
+! ex    : Exponents of basis functions
+! coeff : Normalized coefficients of basis functions
+! coeffinp : Input coefficients of basis functions
 !
-! locprim : starting address of primitive basis functions for a shell
-! locbf   : starting address of basis functions for a shell
-! locatom : atom center for a shell
-! mprim   : the number of basis primitive functions for a shell
-! mbf     : the number of basis functions for a shell
-! mtype   : the type of a basis shell (s=0, p=1, d=2, f=3,...)
-! func    : the name of basis functions
+! locprim : Starting address of primitive basis functions for a shell
+! locbf   : Starting address of basis functions for a shell
+! locatom : Atom center for a shell
+! mprim   : Number of basis primitive functions for a shell
+! mbf     : Number of basis functions for a shell
+! mtype   : Type of a basis shell (s=0, p=1, d=2, f=3,...)
+! basis   : Name of basis functions
+! atombasis : Type of basis set for each atom
+! exgen : Exponents of basis functions from input file
+! coeffgen: Coefficients of basis functions from input file
+! locgenprim: Starting address of primitive basis functions for a shell from input file
+! mgenprim : Number of basis primitive functions for a shell from input file
+! mgentype : Type of a basis shell (s=0, p=1, d=2, f=3,...) from input file
+! locgenshell :  Starting address of basis shells
+! ngenshell : Number of basis shells for an atom
 !
-      use param, only : mxprim, mxshell
+      use modparam, only : mxprim, mxshell
       implicit none
-      integer,parameter :: lfunc=16
-      real(8) :: ex(mxprim), coeff(mxprim), coeffinp(mxprim)
       integer :: nshell, nao, nprim
       integer :: locprim(mxshell+1), locbf(mxshell+1), locatom(mxshell)
       integer :: mprim(mxshell),  mbf(mxshell), mtype(mxshell)
-      character(lfunc) :: func
+      integer :: locgenprim(mxshell+1), mgenprim(mxshell), mgentype(mxshell)
+      integer :: locgenshell(112), ngenshell(112)
+      real(8) :: ex(mxprim), coeff(mxprim), coeffinp(mxprim)
+      real(8) :: exgen(mxprim), coeffgen(mxprim)
+      character(len=16) :: basis, atombasis(112)
       logical :: spher
 end
 
 
-!-----------------
-  module hermite
-!-----------------
+!--------------------
+  module modhermite
+!--------------------
       implicit none
       integer :: minh(12)= (/1,2,4, 7,11,16,22,29,37,46,56,67/)
       integer :: maxh(12)= (/1,3,6,10,15,21,28,36,45,55,66,78/)
@@ -227,9 +333,9 @@ end
 end
 
 
-!--------------
-  module warn
-!--------------
+!-----------------
+  module modwarn
+!-----------------
 !
 ! nwarn : number of warnings
 !
@@ -238,9 +344,9 @@ end
 end
 
 
-!---------------
-  module guess
-!---------------
+!------------------
+  module modguess
+!------------------
 !
 ! These valuables are for guess calculations.
 ! (Extended Huckel)
@@ -270,8 +376,9 @@ end
 ! mbf_g     : the number of basis funcions for a shell
 ! mtype_g   : the type of a basis shell (s=0, p=1, d=2, f=3,...)
 ! func_g    : the name of basis functions
+! guess     : type of initail guess
 !
-      use param, only : mxprim, mxshell, mxatom
+      use modparam, only : mxprim, mxshell, mxatom
       implicit none
       integer :: iguess
       integer :: nshell_v, nao_v, nprim_v, nmo_v, nshell_g, nao_g, nprim_g, nmo_g, nao_c
@@ -279,12 +386,13 @@ end
       integer :: mprim_g(mxshell), mbf_g(mxshell), mtype_g(mxshell)
       real(8) :: ex_g(mxprim), coeff_g(mxprim), coord_g(3,mxatom)
       logical :: spshell_g, spdshell_g, spher_g
+      character(len=16) :: guess
 end
 
 
-!---------------
-  module print
-!---------------
+!------------------
+  module modprint
+!------------------
 !
 ! iprint : print option
 !    = 0 : minimal output
@@ -295,40 +403,40 @@ end
 end
 
 
-!---------- -----
-  module energy
-!---------- -----
+!-------------------
+  module modenergy
+!-------------------
 !  energies 
 !
       real(8) :: enuc, eelec, escf, escfe, emp2
 end
 
 
-!-------------
-  module scf
-!-------------
+!----------------
+  module modscf
+!----------------
 !
 ! These valuables are for SCF calculations.
 !
       implicit none
       integer :: maxiter, maxdiis, maxsoscf
       real(8) :: dconv
-      logical :: fdiff, dodiis
+      logical :: fdiff, diis, extrap
 end
 
 
-!-------------
-  module dft
-!-------------
+!----------------
+  module moddft
+!----------------
       implicit none
       integer :: nrad, nleb
       real(8) :: hfexchange
 end
 
 
-!------------------
-  module atominfo
-!------------------
+!-----------------
+  module modatom
+!-----------------
       implicit none
       real(8) :: atomrad(137)
       data atomrad/1.0000D+00,0.5882D+00,3.0769D+00,2.0513D+00,1.5385D+00,1.2308D+00,&
@@ -350,29 +458,33 @@ end
 end
 
 
-!-------------
-  module opt
-!-------------
+!----------------
+  module modopt
+!----------------
       implicit none
       integer :: nopt
       real(8) :: optconv
+      logical :: cartesian
 end
 
 
-!-------------
-  module ecp
-!-------------
+!----------------
+  module modecp
+!----------------
 !
 ! izcore    : number of core electrons per atom for ECP calculation
 !
-      use param, only : mxprim, mxshell, mxatom
+      use modparam, only : mxprim, mxshell, mxatom
       implicit none
       integer,parameter :: lfunc=16, nterm1=625291, nterm2=26841
-      integer :: maxangecp(mxatom), izcore(mxatom), nangecp(mxprim)
-      integer :: kfrst(mxatom,6), klast(mxatom,6)
-      integer :: lmf(122), lmx(581), lmy(581), lmz(581), nfst(8), nx(84), ny(84), nz(84)
+      integer :: maxangecp(mxatom), izcore(mxatom)=0, mtypeecp(mxprim)
+      integer :: locecp(0:5,mxatom), mprimecp(0:5,mxatom)
+      integer :: maxgenangecp(112), izgencore(112), mgentypeecp(mxprim)
+      integer :: locgenecp(0:5,112), mgenprimecp(0:5,112)
+      integer :: lmf(122), lmx(581), lmy(581), lmz(581), nbfirst(0:7), nx(84), ny(84), nz(84)
       real(8) :: execp(mxprim), coeffecp(mxprim), zlm(581)
-      character(lfunc) :: funcecp
+      real(8) :: exgenecp(mxprim), coeffgenecp(mxprim)
+      character(lfunc) :: ecp, atomecp(112)
       logical :: flagecp
       data lmf/1, 2,3,4, 5,7,8,10,11, 12,14,16,18,20,22,23, 25,28,30,34,36,39,41,43,45,&
 &              47,50,53,57,61,64,67,70,72,76,78, 81,85,88,94,98,104,107,111,114,117,121,125,128,&
@@ -435,7 +547,7 @@ end
 &              0,0,7,7,5,5,3,3,1,1,8,8,6,6,4,4,2,2,0,0,9,7,5,3,1,10,8,6,4,2,0,9,&
 &              7,5,3,1,8,6,4,2,0,7,7,5,5,3,3,1,1,6,6,4,4,2,2,0,0,5,5,5,3,3,3,1,1,&
 &              1,4,4,4,2,2,2,0,0,0,3,3,3,3,1,1,1,1,2,2,2,2,0,0,0,0,1,1,1,1,1,0,0,0,0,0/
-      data nfst/1,2,5,11,21,36,57,85/
+      data nbfirst/1,2,5,11,21,36,57,85/
       data nx/0,1,0,0,2,0,0,1,1,0,3,0,0,2,2,1,0,1,0,1,4,0,0,3,3,1,0,&
 &             1,0,2,2,0,2,1,1, 5,0,0,4,4,1,0,1,0,3,3,2,0,2,0,3,1,1,2,2,1,&
 &             6,0,0,5,5,1,0,1,0,4,4,2,0,2,0,4,1,1,3,3,0,3,3,2,1,2,1,2/

@@ -1,30 +1,10 @@
-!----------------------------------
-  subroutine zeroclr(array,isize)
-!----------------------------------
-!
-! Zero clear of array
-!
-      implicit none
-      integer :: isize, i
-      real(8),parameter :: zero=0.0D+0
-      real(8) :: array(isize)
-!
-!$OMP parallel do
-      do i= 1,isize
-        array(i)= zero
-      enddo
-!$OMP end parallel do
-      return
-end
-
-
-!-------------------------------------------------------
-  subroutine ghquad(xyzint, expgh, xyzpij, iang, jang)
-!-------------------------------------------------------
+!---------------------------------------------------
+  subroutine ghquad(xyzint,expgh,xyzpij,iang,jang)
+!---------------------------------------------------
 !
 ! Calculate Gauss-Hermite quadrature
 !
-      use hermite, only : hnode, hweight, minh, maxh
+      use modhermite, only : hnode, hweight, minh, maxh
       implicit none
       integer,intent(in) :: iang, jang
       integer :: nroot, ij, i, j
@@ -71,13 +51,12 @@ end
 end
 
 
-!-------------------------------------------
+!------------------------------------------
  subroutine fullmtrx(trimat,fullmat,ndim)
-!-------------------------------------------
+!------------------------------------------
 !
 ! Copy triangler size matrix to full size matrix
 !
-      use guess, only : nao_g, nao_v
       implicit none
       integer,intent(in) :: ndim
       integer :: i, j, ii
@@ -96,18 +75,17 @@ end
 end
 
 
-!-------------------------------------------------------
+!--------------------------------------------------------
   subroutine mtrxcanon(ortho,overlap,eigen,ndim,newdim)
-!-------------------------------------------------------
+!--------------------------------------------------------
 !
 ! Calculate canonicalization matrix
 !
 ! The ortho matrix satisfiles (Ortho)-daggar * S * (Ortho) = I
 ! where S is the overlap matrix.
 !
-      use iofile,only : iout
-      use procpar, only : master
-      use thresh, only : threshover
+      use modparallel, only : master
+      use modthresh, only : threshover
       implicit none
       integer,intent(in) :: ndim
       integer,intent(out) :: newdim
@@ -171,9 +149,9 @@ end
 !   In : hmat(nao*nao), elements are in upper triangle.
 !   Out: hmat(nmo*nmo), matrix size is nao*nao
 !
-      use procpar
+      use modparallel
       implicit none
-      integer,intent(in) :: nao, nmo, idis(nproc,4)
+      integer,intent(in) :: nao, nmo, idis(nproc,14)
       integer :: num, istart
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: ortho(nao,nmo)
@@ -185,7 +163,7 @@ end
         call dsymm('L','U',nao,num,one,hmat,nao,ortho(1,istart),nao,zero,work,nao)
         call dgemm('T','N',nmo,num,nao,one,ortho,nao,work,nao,zero,work2,nao)
       endif
-      call para_allgatherv(work2,num*nao,'D',hmat,idis(1,3),idis(1,4),MPI_COMM_WORLD)
+      call para_allgatherv(work2,num*nao,hmat,idis(1,3),idis(1,4),MPI_COMM_WORLD)
 !     call dsymm('L','U',nao,nmo,one,hmat,nao,ortho,nao,zero,work,nao)
 !     call dgemm('T','N',nmo,nmo,nao,one,ortho,nao,work,nao,zero,hmat,nao)
       return
@@ -198,12 +176,12 @@ end
 !
 ! Gram-Schmidt orthonormalization
 !
-      use procpar
+      use modparallel
       implicit none
       integer,intent(in) :: ndim
-      integer :: i, j,k
+      integer :: i, j, k, ndest
       real(8),intent(inout) :: hmat(ndim,ndim)
-      real(8) :: dum, ddot
+      real(8) :: dum
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
 !
       do i= 1,ndim
@@ -216,88 +194,60 @@ end
           hmat(k,i)= hmat(k,i)*dum
         enddo
         if(i == ndim) cycle
-!$OMP parallel do private(dum)
+!$OMP parallel do private(dum,k)
         do j= i+1,ndim
           if(mod(j,nproc).ne.myrank)cycle
-          dum=-ddot(ndim,hmat(1,i),1,hmat(1,j),1)
-          call daxpy(ndim,dum,hmat(1,i),1,hmat(1,j),1)
+          dum= zero
+          do k= 1,ndim
+            dum= dum-hmat(k,i)*hmat(k,j)
+          enddo
+          do k= 1,ndim
+            hmat(k,j)= hmat(k,j)+dum*hmat(k,i)
+          enddo
+!         dum=-ddot(ndim,hmat(1,i),1,hmat(1,j),1)
+!         call daxpy(ndim,dum,hmat(1,i),1,hmat(1,j),1)
         enddo
-        call para_bcast(hmat(1,i+1),ndim,"D",mod(i+1,nproc),MPI_COMM_WORLD)
+        ndest= mod(i+1,nproc)
+        call para_bcast(hmat(1,i+1),ndim,ndest,MPI_COMM_WORLD)
       enddo
       return
 end
 
 
-!--------------------------------------------------------
+!---------------------------------------------------
   subroutine diag(jobz,uplo,ndim,vector,lda,eigen)
-!--------------------------------------------------------
+!---------------------------------------------------
 !
 ! Diagonalize matrix
 !
-      use iofile,only : iout
-!      use procpar, only : master
-      use iso_c_binding
-      use procpar
-      use rokko
-
+      use modparallel, only : master
       implicit none
-      character(1),intent(in) :: jobz, uplo
       integer,intent(in) :: ndim, lda
+      integer :: info
+      integer, allocatable :: iwork(:)
       real(8),intent(out) :: eigen(lda)
-!      real(8),intent(inout) :: vector(*)
-      real(8),intent(inout) :: vector(lda, lda)
-      real(8)  :: array(lda, lda)
-
-      integer :: i, j, ierr, iproc
+!ishimura
+!     real(8),intent(inout) :: vector(lda,*)
+      real(8),intent(inout) :: vector(*)
+      real(8), allocatable :: work(:)
+      character(len=1),intent(in) :: jobz, uplo
 !
-      type(distributed_matrix) :: mat, Z
-      type(grid) :: g
-      type(solver) :: solver_
+      info= 0
+!     call memset(ndim*ndim)
+!     allocate(work(ndim*ndim))
+!     call dsyev(jobz,uplo,ndim,vector,lda,eigen,work,ndim*ndim,info)
+!     deallocate(work)
+!     call memunset(ndim*ndim)
+      call memset(3*ndim*ndim+45*ndim)
+      allocate(iwork(10*ndim),work(3*ndim*ndim+35*ndim))
+      call dsyevd(jobz,uplo,ndim,vector,lda,eigen,work,3*ndim*ndim+35*ndim,iwork,10*ndim,info)
+      deallocate(iwork,work)
+      call memunset(3*ndim*ndim+45*ndim)
 !
-      do i = 1, ndim
-         do j = 1, i
-            vector(i,j) = vector(j,i)
-         end do
-      end do
-!
-      print*, "ROKKO ndim=", ndim
-      call set_solver(solver_, 'scalapack') ! scalapack') !solver_name)
-      print*, "after_solver"
-      call set_grid(g, MPI_COMM_WORLD)
-      print*, "after_grid"      
-      call set_distributed_matrix(mat, ndim, ndim, g, solver_)
-      call set_distributed_matrix(Z, ndim, ndim, g, solver_)
-      print*, "after_distributed_matrix"
-      
-      call generate_array_distributed_matrix(vector, mat, &
-     &ndim, ndim, lda)
-      print*, "after_generate"
-!      call print_distributed_matrix(mat)
-
-      call mpi_barrier(mpi_comm_world, ierr)
-      call diagonalize(solver_, mat, eigen, Z)
-      print*, "after_diagonalize"
-     call all_gather(Z, array)
-     call mpi_barrier(mpi_comm_world, ierr)
-
-!      array = matmul(transpose(vector), vector)
-!  print*, "array=", array                                                                                                                                                    
-      do iproc = 0, nproc
-          if (iproc == myrank) then
-          do i = 1, ndim
-           write(*,'(10f8.4)') (array(i, j), j=1, ndim)
-          end do
-          print*
-       endif
-     call mpi_barrier(mpi_comm_world, ierr)
-     call sleep(1)
-     end do
-
-      call del_distributed_matrix(mat)
-      call del_distributed_matrix(Z)
-      print*, "after_del_distributed"
-      call del_solver(solver_)
-
+      if(info /= 0) then
+        if(master)write(*,'(" Error! Diagonalization failed, info =",i5)')info
+        call iabort
+      endif
       return
 end
 
@@ -311,8 +261,8 @@ end
 ! The ortho matrix satisfiles (Ortho)-daggar * S * (Ortho) = I
 ! where S is the overlap matrix.
 !
-      use procpar, only : master
-      use thresh, only : threshover
+      use modparallel, only : master
+      use modthresh, only : threshover
       implicit none
       integer,intent(in) :: ndim
       integer,intent(out) :: newdim
@@ -411,44 +361,6 @@ end
 end
 
 
-!------------------------------------
-  subroutine dadd(ndim,array1,array2)
-!------------------------------------
-!
-! array1 = array1 + array2
-!
-      implicit none
-      integer,intent(in) :: ndim
-      integer :: i
-      real(8),intent(in) :: array2(ndim)
-      real(8),intent(inout) :: array1(ndim)
-!
-      do i= 1,ndim
-        array1(i)= array1(i)+array2(i)
-      enddo
-      return
-end
-
-
-!------------------------------------
-  subroutine dsub(ndim,array1,array2)
-!------------------------------------
-!
-! array1 = array1 - array2
-!
-      implicit none
-      integer,intent(in) :: ndim
-      integer :: i
-      real(8),intent(in) :: array2(ndim)
-      real(8),intent(inout) :: array1(ndim)
-!
-      do i= 1,ndim
-        array1(i)= array1(i)-array2(i)
-      enddo
-      return
-end
-
-
 !----------------------------------------
   subroutine expand(array1,array2,ndim)
 !----------------------------------------
@@ -496,45 +408,21 @@ end
 end
 
 
-!----------------------------------------
-  subroutine icopy(num,ix,incx,iy,incy)
-!----------------------------------------
-!
-! Copy integer array
-!
-      implicit none
-      integer,intent(in) :: num, ix(*), incx, incy
-      integer,intent(out) :: iy(*)
-      integer :: j
-!
-      if((incx == 1).and.(incy == 1)) then
-        do j= 1,num
-          iy(j)= ix(j)
-        enddo
-      else
-        do j= 1,num
-          iy(incy*(j-1)+1)=ix(incx*(j-1)+1)
-        enddo
-      endif
-      return
-end
-
-
-
-!----------------------------------------------------------
-  subroutine distarray(idis,nmo,nao,nao3,nocc,nvir,nproc)
-!----------------------------------------------------------
+!------------------------------------------------------------------------
+  subroutine distarray(idis,nmo,nao,nao3,nocca,nvira,noccb,nvirb,nproc)
+!------------------------------------------------------------------------
 !
 ! Distribute arrays
 !
       implicit none
-      integer,intent(in) :: nmo, nao, nao3, nocc, nvir, nproc
-      integer,intent(out) :: idis(nproc,10)
-      integer :: isize1, isize2, isize3, i, istart, iend
+      integer,intent(in) :: nmo, nao, nao3, nocca, nvira, noccb, nvirb, nproc
+      integer,intent(out) :: idis(nproc,14)
+      integer :: isize1, isize2, isize3, isize4, i, istart, iend
 !
       isize1= (nmo -1)/nproc+1
       isize2= (nao3-1)/nproc+1
-      isize3= (nvir-1)/nproc+1
+      isize3= (nvira-1)/nproc+1
+      isize4= (nvirb-1)/nproc+1
       do i=1,nproc
         istart=isize1*(i-1)
         if(istart >= nmo) then
@@ -561,18 +449,32 @@ end
           idis(i,6)= istart
         endif
         istart=isize3*(i-1)
-        if(istart >= nvir) then
+        if(istart >= nvira) then
           idis(i, 7)= 0
           idis(i, 8)= 1
           idis(i, 9)= 0
           idis(i,10)= 1
         else
           iend  =isize3*i
-          if(iend > nvir) iend=nvir
+          if(iend > nvira) iend=nvira
           idis(i, 7)= iend-istart
           idis(i, 8)= istart
-          idis(i, 9)=(iend-istart)*nocc
-          idis(i,10)= istart*nocc
+          idis(i, 9)=(iend-istart)*nocca
+          idis(i,10)= istart*nocca
+        endif
+        istart=isize4*(i-1)
+        if(istart >= nvirb) then
+          idis(i,11)= 0
+          idis(i,12)= 1
+          idis(i,13)= 0
+          idis(i,14)= 1
+        else
+          iend  =isize4*i
+          if(iend > nvirb) iend=nvirb
+          idis(i,11)= iend-istart
+          idis(i,12)= istart
+          idis(i,13)=(iend-istart)*noccb
+          idis(i,14)= istart*noccb
         endif
       enddo
 !
@@ -619,29 +521,57 @@ end
 &                                 +denom*vec(j,2)*vec(i,2)
         enddo
       enddo
-
-!      do i= 1,ndim
-!        ii= i*(i-1)/2
-!        do j= 1,i-1
-!          vec(i,3)= vec(i,3)+ehess(ii+j)*vec(j,2)
-!          vec(j,3)= vec(j,3)+ehess(ii+j)*vec(i,2)
-!        enddo
-!        vec(i,3)= vec(i,3)+ehess(ii+i)*vec(i,2)
-!      enddo
-!      factor= ddot(ndim,vec(1,2),1,vec(1,3),1)
-!      factor= denom+factor*denom*denom
-!!
-!!$OMP parallel do private(ii)
-!      do i= 1,ndim
-!        ii= i*(i-1)/2
-!        do j= 1,i
-!          ehess(ii+j)= ehess(ii+j)+factor*vec(j,1)*vec(i,1) &
-!&                                 -denom*(vec(j,1)*vec(i,3)+vec(i,1)*vec(j,3))
-!        enddo
-!      enddo
-!!$OMP end parallel do
+!
       return
 end
 
 
+!--------------------------------------------------------------------
+  subroutine hessianbfgsred(ehess,coord,coordold,egrad,egradold, &
+&                           vec,ndim,numbond,numangle,numtorsion)
+!--------------------------------------------------------------------
+!
+! Update hessian matrix using BFGS method for redundant coordinate
+!
+      implicit none
+      integer,intent(in) :: ndim, numbond, numangle, numtorsion
+      integer :: i, j, ii
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(in) :: coord(ndim), coordold(ndim), egrad(ndim), egradold(ndim)
+      real(8),intent(inout) :: ehess(ndim*(ndim+1)/2), vec(ndim,3)
+      real(8) :: denom, factor, ddot
+!
+      do i= 1,ndim
+        vec(i,1)= coord(i)-coordold(i)
+        vec(i,2)= egrad(i)-egradold(i)
+        vec(i,3)= zero
+      enddo
+      call fixdtor(vec,numbond,numangle,numtorsion)
+
+      denom= ddot(ndim,vec(1,1),1,vec(1,2),1)
+      denom= one/denom
+!
+      do i= 1,ndim
+        ii= i*(i-1)/2
+        do j= 1,i-1
+          vec(i,3)= vec(i,3)+ehess(ii+j)*vec(j,1)
+          vec(j,3)= vec(j,3)+ehess(ii+j)*vec(i,1)
+        enddo
+        vec(i,3)= vec(i,3)+ehess(ii+i)*vec(i,1)
+      enddo
+!
+      factor= ddot(ndim,vec(1,1),1,vec(1,3),1)
+      factor= one/factor
+!$OMP parallel do 
+      do i= 1,ndim
+        ii= i*(i-1)/2
+        do j= 1,i
+          ehess(ii+j)= ehess(ii+j)-factor*vec(j,3)*vec(i,3) &
+&                                 +denom*vec(j,2)*vec(i,2)
+        enddo
+      enddo
+!$OMP end parallel do 
+!
+      return
+end
 
