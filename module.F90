@@ -408,7 +408,7 @@ end
 !-------------------
 !  energies 
 !
-      real(8) :: enuc, eelec, escf, escfe, emp2
+      real(8) :: enuc, eelec, escf, escfe, emp2, escsmp2
 end
 
 

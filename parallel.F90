@@ -422,13 +422,13 @@ end
 !---------------------------------------------------------------------------------
   subroutine para_sendrecvd1(sbuff,nums,dest,ntags,rbuff,numr,source,ntagr,comm)
 !---------------------------------------------------------------------------------
-#ifdef MPI
       use modparallel
       implicit none
       integer,intent(in) :: nums, dest, ntags, numr, source, ntagr
       integer(4),intent(in) :: comm
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out) :: rbuff(*)
+#ifdef MPI
       integer(4) :: nums4, dest4, ntags4, numr4, source4, ntagr4, ierr
       integer(4) :: STATUS(MPI_STATUS_SIZE)
 !
@@ -439,7 +439,9 @@ end
       source4= source
       ntagr4 = ntagr
       call mpi_sendrecv(sbuff,nums4,MPI_DOUBLE_PRECISION,dest4,ntags4, &
-&                       rbuff,numr4,MPI_DOUBLE_PRECISION,source4,ntagr4,comm,STATUS,ierr)
+&                           rbuff,numr4,MPI_DOUBLE_PRECISION,source4,ntagr4,comm,STATUS,ierr)
+#else
+      call dcopy(nums,sbuff,1,rbuff,1)
 #endif
       return
 end
@@ -448,13 +450,13 @@ end
 !---------------------------------------------------------------------------------
   subroutine para_sendrecvd2(sbuff,nums,dest,ntags,rbuff,numr,source,ntagr,comm)
 !---------------------------------------------------------------------------------
-#ifdef MPI
       use modparallel
       implicit none
       integer,intent(in) :: nums, dest, ntags, numr, source, ntagr
       integer(4),intent(in) :: comm
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out) :: rbuff(*)
+#ifdef MPI
       integer(4) :: nums4, dest4, ntags4, numr4, source4, ntagr4, ierr
       integer(4) :: STATUS(MPI_STATUS_SIZE)
 !
@@ -466,6 +468,8 @@ end
       ntagr4 = ntagr
       call mpi_sendrecv(sbuff,nums4,MPI_DOUBLE_PRECISION,dest4,ntags4, &
 &                       rbuff,numr4,MPI_DOUBLE_PRECISION,source4,ntagr4,comm,STATUS,ierr)
+#else
+      call dcopy(nums,sbuff,1,rbuff,1)
 #endif
       return
 end

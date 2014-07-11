@@ -11,20 +11,21 @@
       use modparallel
       use modbasis, only : nshell, nao, mbf
       use modmolecule, only : neleca, nmo
-      use modenergy, only : enuc, escf, escfe, emp2
+      use modenergy, only : enuc, escf, escfe, emp2, escsmp2
       implicit none
       integer :: ncore, ncorecalc, maxdim, nocc, nvir, nao2, ndis, iproc, icount, icountao
       integer :: icountsh, idis(8,0:nproc-1), maxsize, ish, jsh, ishs, jshs, msize, mlsize
-      real(8),parameter :: zero=0.0D+00
+      real(8),parameter :: zero=0.0D+00, three=3.0D+00, p12=1.2D+00
       real(8),intent(in) :: cmo(nao,nao), energymo(nmo), xint(nshell*(nshell+1)/2)
       real(8),allocatable :: trint2(:), cmowrk(:), trint1a(:), trint1b(:)
       real(8),allocatable :: trint3(:), trint4(:)
-      real(8) :: dummy
+      real(8) :: emp2st(2), emp2stsum(2)
 !ishimura
       integer :: jproc
 !
       ncore= ncorecalc()
       emp2= zero
+      emp2st(:)= zero
       maxdim=maxval(mbf(1:nshell))
       nocc= neleca-ncore
       nvir= nmo-neleca
@@ -131,22 +132,25 @@
       call memset(2*nao2)
       allocate(trint3(nao2),trint4(nao2))
 !
-      call mp2trans2(cmo(1,neleca+1),energymo,trint2,trint3,trint4,nocc,nvir,ncore,idis)
+      call mp2trans2(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,nocc,nvir,ncore,idis)
 !
       deallocate(trint3,trint4)
       call memunset(2*nao2)
       deallocate(trint2)
       call memunset(maxsize*nocc*(nocc+1)/2)
 !
-      call para_allreduce(emp2,dummy,1,MPI_SUM,MPI_COMM_WORLD)
-      emp2= dummy
+      call para_allreduce(emp2st,emp2stsum,2,MPI_SUM,MPI_COMM_WORLD)
+      emp2= emp2stsum(1)+emp2stsum(2)
+      escsmp2= emp2stsum(1)*p12+emp2stsum(2)/three
 !
       if(master) then
-        write(*,'(" ---------------------------------------------")')
-        write(*,'("   HF Energy              =",f17.9)')escf
-        write(*,'("   MP2 Correlation Energy =",f17.9)')emp2
-        write(*,'("   MP2 Total Energy       =",f17.9)')escf+emp2
-        write(*,'(" ---------------------------------------------")')
+        write(*,'(" -------------------------------------------------")')
+        write(*,'("   HF Energy                  =",f17.9)')escf
+        write(*,'("   MP2 Correlation Energy     =",f17.9)')emp2
+        write(*,'("   HF + MP2 Energy            =",f17.9)')escf+emp2
+        write(*,'("   SCS-MP2 Correlation Energy =",f17.9)')escsmp2
+        write(*,'("   HF + SCS-MP2 Energy        =",f17.9)')escf+escsmp2
+        write(*,'(" -------------------------------------------------")')
       endif
       return
 end
@@ -303,9 +307,9 @@ end
 end
 
 
-!-----------------------------------------------------------------------------------
-  subroutine mp2trans2(cmovir,energymo,trint2,trint3,trint4,nocc,nvir,ncore,idis)
-!-----------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+  subroutine mp2trans2(cmovir,energymo,trint2,trint3,trint4,emp2st,nocc,nvir,ncore,idis)
+!-----------------------------------------------------------------------------------------
 !
 ! Driver of third and fourth integral transformations and MP2 energy calculation
 !
@@ -327,7 +331,7 @@ end
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmovir(nao*nvir), energymo(nmo)
       real(8),intent(in) :: trint2((idis(3,myrank)+idis(7,myrank)),nocc*(nocc+1)/2)
-      real(8),intent(out) :: trint3(nao*nao), trint4(nao*nao)
+      real(8),intent(out) :: trint3(nao*nao), trint4(nao*nao), emp2st(2)
 !
       numrecv= 1
       do iproc= 0,nproc-1
@@ -355,7 +359,7 @@ end
 !
 ! MP2 energy calculation
 !
-        call calcmp2energy(trint4,energymo,nocc,nvir,ncore,icycle)
+        call calcmp2energy(trint4,energymo,emp2st,nocc,nvir,ncore,icycle)
       enddo
       return
 end
@@ -559,7 +563,7 @@ end
 !
 ! Reorder of received data
 !
-      if(ij <= nocc2) then
+      if(myij <= nocc2) then
         ik= 0
         do iproc= 0,nproc-1
           ish= idis(1,iproc)
@@ -631,9 +635,9 @@ end
 end
 
 
-!-------------------------------------------------------------------
-  subroutine calcmp2energy(trint4,energymo,nocc,nvir,ncore,icycle)
-!-------------------------------------------------------------------
+!--------------------------------------------------------------------------
+  subroutine calcmp2energy(trint4,energymo,emp2st,nocc,nvir,ncore,icycle)
+!--------------------------------------------------------------------------
 !
 ! Calculate MP2 energy
 !
@@ -645,13 +649,13 @@ end
 !
       use modparallel
       use modmolecule, only : neleca, nmo
-      use modenergy, only : emp2
       implicit none
       integer,intent(in) :: nocc, nvir, ncore, icycle
       integer :: moi, moj, myij, ii, moa, mob
       real(8),parameter:: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: trint4(nvir,nvir), energymo(nmo)
-      real(8) :: eij, eija, eijab, etmp
+      real(8),intent(inout) :: emp2st(2)
+      real(8) :: eij, eija, eijab, etmp(2)
 !
 ! Calculate occupied MOs, i and j
 !
@@ -667,22 +671,24 @@ end
 ! Calculate MP2 energy
 !
       eij= energymo(moi+ncore)+energymo(moj+ncore)
-      etmp= zero
+      etmp(:)= zero
 !$OMP parallel do private(eija,eijab) reduction(+:etmp)
       do moa= 1,nvir
         eija= eij-energymo(moa+neleca)
         do mob= 1,nvir
           eijab= one/(eija-energymo(mob+neleca))
-          etmp= etmp+trint4(mob,moa)*(two*trint4(mob,moa)-trint4(moa,mob))*eijab
+          etmp(1)= etmp(1)+trint4(mob,moa)*trint4(mob,moa)*eijab
+          etmp(2)= etmp(2)+trint4(mob,moa)*(trint4(mob,moa)-trint4(moa,mob))*eijab
         enddo
       enddo
 !$OMP end parallel do
 !
-
       if(moi /= moj) then
-        emp2= emp2+etmp*two
+        emp2st(1)= emp2st(1)+etmp(1)*two
+        emp2st(2)= emp2st(2)+etmp(2)*two
       else
-        emp2= emp2+etmp
+        emp2st(1)= emp2st(1)+etmp(1)
+        emp2st(2)= emp2st(2)+etmp(2)
       endif
       return
 end
