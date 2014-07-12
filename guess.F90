@@ -687,98 +687,53 @@ end
 !
       use modparam, only : mxprsh
       use modthresh, only : threshex
-      use modbasis, only : locatom, locprim, locbf, mprim, mtype, ex, coeff
       use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
-&                       ex_g, coeff_g, nao_g, coord_g
-      use modhermite, only : ix, iy, iz
+&                          ex_g, coeff_g, nao_g, coord_g
       implicit none
       integer,intent(in) :: ish, jsh
-      integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, nprimi, nprimj, nangi, nangj 
-      integer :: nbfi, nbfj, iprim, jprim, ncarti, ncartj, i, j, iang, jang
-      integer :: isx, jsx, isy, jsy, isz, jsz, maxj
-      integer :: ncart(0:5)=(/1,3,6,10,15,21/)
-      real(8),parameter :: zero=0.0D+0, one=1.0D+0
+      integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, iprim, jprim
+      integer :: nbfij(2), nprimij(2), nangij(2), ii, jj, maxj
       real(8),intent(out) :: overlap(nao_g,nao_g)
-      real(8) :: xyzij(3), rij, rij2, fac, exi, exj, ci, cj, ex1, ex2, ex3, xyzpij(3,2)
-      real(8) :: xyzint(3), sx(0:4,0:4), sy(0:4,0:4), sz(0:4,0:4), sint(28,28)
+      real(8) :: sint(28,28), exij(mxprsh,2), coij(mxprsh,2), coordij(3,2)
       logical :: iandj
 !
 ! Set parameters
 !
       iandj =(ish == jsh)
+      nangij(1)= mtype_g(ish)
+      nangij(2)= mtype_g(jsh)
+      nprimij(1)= mprim_g(ish)
+      nprimij(2)= mprim_g(jsh)
+      nbfij(1)  = mbf_g(ish)
+      nbfij(2)  = mbf_g(jsh)
       iatom = locatom_g(ish)
       iloc  = locprim_g(ish)
       ilocbf= locbf_g(ish)
-      nprimi= mprim_g(ish)
-      nangi = mtype_g(ish)
-      nbfi  = mbf_g(ish)
-      ncarti= ncart(nangi)
       jatom = locatom_g(jsh)
       jloc  = locprim_g(jsh)
       jlocbf= locbf_g(jsh)
-      nprimj= mprim_g(jsh)
-      nangj = mtype_g(jsh)
-      nbfj  = mbf_g(jsh)
-      ncartj= ncart(nangj)
-      do i= 1,3
-        xyzij(i)= coord_g(i,iatom)-coord_g(i,jatom)
+      do ii= 1,3
+        coordij(ii,1)= coord_g(ii,iatom)
+        coordij(ii,2)= coord_g(ii,jatom)
       enddo
-      rij= xyzij(1)*xyzij(1)+xyzij(2)*xyzij(2)+xyzij(3)*xyzij(3)
-      do i= 1,ncarti
-        do j= 1,ncartj
-          sint(j,i)=zero
-        enddo
+      do iprim= 1,nprimij(1)
+        exij(iprim,1)= ex_g(iloc+iprim)
+        coij(iprim,1)= coeff_g(iloc+iprim)
+      enddo
+      do jprim= 1,nprimij(2)
+        exij(jprim,2)= ex_g(jloc+jprim)
+        coij(jprim,2)= coeff_g(jloc+jprim)
       enddo
 !
-! Calculate overlap integrals for each primitive
+! Calculate overlap integrals
 !
-      do iprim= 1,nprimi
-        exi= ex_g(iloc+iprim)
-        ci = coeff_g(iloc+iprim)
-        do jprim= 1,nprimj
-          exj= ex_g(jloc+jprim)
-          ex1= exi+exj
-          ex2= one/ex1
-          rij2=rij*exi*exj*ex2
-          if(rij2 > threshex) cycle
-          ex3= sqrt(ex2)
-          fac= exp(-rij2)   !*ex2*ex3
-          do i= 1,3
-            xyzpij(i,1)=-exj*xyzij(i)*ex2
-            xyzpij(i,2)= exi*xyzij(i)*ex2
-          enddo
-          cj = coeff_g(jloc+jprim)*fac
-          do iang= 0,nangi
-            do jang= 0,nangj
-              call ghquad(xyzint,ex3,xyzpij,iang,jang)
-              sx(jang,iang)= xyzint(1)*ex3
-              sy(jang,iang)= xyzint(2)*ex3
-              sz(jang,iang)= xyzint(3)*ex3
-            enddo
-          enddo
-          do i= 1,ncarti
-            isx= ix(i,nangi)
-            isy= iy(i,nangi)
-            isz= iz(i,nangi)
-            do j= 1,ncartj
-              jsx= ix(j,nangj)
-              jsy= iy(j,nangj)
-              jsz= iz(j,nangj)
-              sint(j,i)= sint(j,i)+ci*cj*sx(jsx,isx)*sy(jsy,isy)*sz(jsz,isz)
-            enddo
-          enddo
-        enddo
-      enddo
-
-      if((nbfi >= 5).or.(nbfj >= 5)) then
-        call nrmlz1(sint,nbfi,nbfj,ncarti)
-      endif
-
-      maxj= nbfj
-      do i= 1,nbfi
-        if(iandj) maxj= i
-        do j= 1,maxj
-          overlap(jlocbf+j,ilocbf+i)= sint(j,i)
+      call ints(sint,exij,coij,coordij,nprimij,nangij,nbfij,mxprsh,threshex)
+!
+      maxj= nbfij(2)
+      do ii= 1,nbfij(1)
+        if(iandj) maxj= ii
+        do jj= 1,maxj
+          overlap(jlocbf+jj,ilocbf+ii)= sint(jj,ii)
         enddo
       enddo
       return
@@ -800,94 +755,49 @@ end
       use modmolecule, only : coord
       use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
       use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
-&                       ex_g, coeff_g, nao_g, coord_g
-      use modhermite, only : ix, iy, iz
+&                          ex_g, coeff_g, nao_g, coord_g
       implicit none
       integer,intent(in) :: ish, jsh
-      integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, nprimi, nprimj, nangi, nangj 
-      integer :: nbfi, nbfj, iprim, jprim, ncarti, ncartj, i, j, iang, jang
-      integer :: isx, jsx, isy, jsy, isz, jsz
-      integer :: ncart(0:5)=(/1,3,6,10,15,21/)
+      integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, iprim, jprim
+      integer :: nbfij(2), nprimij(2), nangij(2), ii, jj
       real(8),parameter :: zero=0.0D+0, one=1.0D+0
       real(8),intent(out) :: overlap(nao,nao_g)
-      real(8) :: xyzij(3), rij, rij2, fac, exi, exj, ci, cj, ex1, ex2, ex3, xyzpij(3,2)
-      real(8) :: xyzint(3), sx(0:5,0:5), sy(0:5,0:5), sz(0:5,0:5),sint(28,28)
+      real(8) :: sint(28,28), exij(mxprsh,2), coij(mxprsh,2), coordij(3,2)
 !
 ! Set parameters
 !
-      iatom= locatom_g(ish)
-      iloc= locprim_g(ish)
+      nangij(1)= mtype_g(ish)
+      nangij(2)= mtype(jsh)
+      nprimij(1)= mprim_g(ish)
+      nprimij(2)= mprim(jsh)
+      nbfij(1)  = mbf_g(ish)
+      nbfij(2)  = mbf(jsh)
+      iatom = locatom_g(ish)
+      iloc  = locprim_g(ish)
       ilocbf= locbf_g(ish)
-      nprimi= mprim_g(ish)
-      nangi= mtype_g(ish)
-      nbfi= mbf_g(ish)
-      ncarti= ncart(nangi)
-      jatom= locatom(jsh)
-      jloc= locprim(jsh)
+      jatom = locatom(jsh)
+      jloc  = locprim(jsh)
       jlocbf= locbf(jsh)
-      nprimj= mprim(jsh)
-      nangj= mtype(jsh)
-      nbfj= mbf(jsh)
-      ncartj= ncart(nangj)
-      do i= 1,3
-!ishimura
-!       xyzij(i)= coord(i,iatom)-coord_g(i,jatom)
-        xyzij(i)= coord_g(i,iatom)-coord(i,jatom)
+      do ii= 1,3
+        coordij(ii,1)= coord_g(ii,iatom)
+        coordij(ii,2)= coord(ii,jatom)
       enddo
-      rij= xyzij(1)*xyzij(1)+xyzij(2)*xyzij(2)+xyzij(3)*xyzij(3)
-      do i= 1,ncarti
-        do j= 1,ncartj
-          sint(j,i)=zero
-        enddo
+      do iprim= 1,nprimij(1)
+        exij(iprim,1)= ex_g(iloc+iprim)
+        coij(iprim,1)= coeff_g(iloc+iprim)
+      enddo
+      do jprim= 1,nprimij(2)
+        exij(jprim,2)= ex(jloc+jprim)
+        coij(jprim,2)= coeff(jloc+jprim)
       enddo
 !
-! Calculate overlap integrals for each primitive
+! Calculate overlap integrals
 !
-      do iprim= 1,nprimi
-        exi= ex_g(iloc+iprim)
-        ci = coeff_g(iloc+iprim)
-        do jprim= 1,nprimj
-          exj= ex(jloc+jprim)
-          ex1= exi+exj
-          ex2= one/ex1
-          rij2=rij*exi*exj*ex2
-          if(rij2 > threshex) cycle
-          ex3= sqrt(ex2)
-          fac= exp(-rij2)   !*ex2*ex3
-          do i= 1,3
-            xyzpij(i,1)=-exj*xyzij(i)*ex2
-            xyzpij(i,2)= exi*xyzij(i)*ex2
-          enddo
-          cj = coeff(jloc+jprim)*fac
-          do iang= 0,nangi
-            do jang= 0,nangj
-              call ghquad(xyzint,ex3,xyzpij,iang,jang)
-              sx(jang,iang)= xyzint(1)*ex3
-              sy(jang,iang)= xyzint(2)*ex3
-              sz(jang,iang)= xyzint(3)*ex3
-            enddo
-          enddo
-          do i= 1,ncarti
-            isx= ix(i,nangi)
-            isy= iy(i,nangi)
-            isz= iz(i,nangi)
-            do j= 1,ncartj
-              jsx= ix(j,nangj)
-              jsy= iy(j,nangj)
-              jsz= iz(j,nangj)
-              sint(j,i)= sint(j,i)+ci*cj*sx(jsx,isx)*sy(jsy,isy)*sz(jsz,isz)
-            enddo
-          enddo
-        enddo
-      enddo
-
-      if((nbfi >= 5).or.(nbfj >= 5)) then
-        call nrmlz1(sint,nbfi,nbfj,ncarti)
-      endif
-
-      do i= 1,nbfi
-        do j= 1,nbfj
-          overlap(jlocbf+j,ilocbf+i)= sint(j,i)
+      call ints(sint,exij,coij,coordij,nprimij,nangij,nbfij,mxprsh,threshex)
+!
+      do ii= 1,nbfij(1)
+        do jj= 1,nbfij(2)
+          overlap(jlocbf+jj,ilocbf+ii)= sint(jj,ii)
         enddo
       enddo
       return
@@ -903,7 +813,7 @@ end
 ! Inout : overinv (overlap integral inverse matrix)
 !         cmo     (initial guess orbitals)
 !
-      use modguess, only : nao_g
+      use modguess, only : nao_g, nmo_g
       use modbasis, only : nao
       use modmolecule, only : neleca, nmo
       implicit none
@@ -911,8 +821,8 @@ end
       real(8),intent(inout) :: cmo(nao*nao), overinv(nao*nao)
       real(8),allocatable :: overlap(:,:), work1(:), work2(:), eigen(:)
 !
-      ndim= min(nmo,neleca+5)
-      ndim= nmo
+!     ndim= min(nmo,neleca+5)
+      ndim= nmo_g
 !
 ! Set arrays
 !

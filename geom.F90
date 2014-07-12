@@ -77,6 +77,7 @@ end
 !-----------------------------------------------------------------------------------
 !
 ! Set redundant internal coordinate
+! Covalent radii (H - Cn): P. Pyykko, M. Atsumi, Chem. Eur. J., 186 (2009) 15.
 !
       use modparallel
       use modmolecule, only : coord, natom, numatomic
@@ -88,32 +89,22 @@ end
       integer :: numredun, maxsize, ijpair(natom,maxconnect), iatom, jatom, katom, icount
       integer :: ibond, kpair, iangle, jangle, numb, iblock(natom), ib, jb, ijatom(2) 
       real(8),parameter :: zero=0.0D+00
-!     real(8) :: radii(112), rrij, thresh, rrijmin
-      real(8) :: radii(86), rrij, thresh, rrijmin
+      real(8) :: radii(112), rrij, thresh, rrijmin
       logical,intent(out) :: exceed
       data radii/ &
-&     0.30D+00,1.22D+00,1.23D+00,0.89D+00,0.88D+00,0.77D+00,0.70D+00,0.66D+00,0.58D+00,1.60D+00, &
-&     1.66D+00,1.36D+00,1.25D+00,1.17D+00,1.10D+00,1.04D+00,0.99D+00,1.91D+00,2.03D+00,1.74D+00, &
-&     1.44D+00,1.32D+00,1.22D+00,1.19D+00,1.17D+00,1.17D+00,1.16D+00,1.15D+00,1.17D+00,1.25D+00, &
-&     1.25D+00,1.22D+00,1.21D+00,1.17D+00,1.14D+00,1.98D+00,2.22D+00,1.92D+00,1.62D+00,1.45D+00, &
-&     1.34D+00,1.29D+00,1.27D+00,1.24D+00,1.25D+00,1.28D+00,1.34D+00,1.41D+00,1.50D+00,1.40D+00, &
-&     1.41D+00,1.37D+00,1.33D+00,2.09D+00,2.35D+00,1.98D+00,1.69D+00,1.65D+00,1.65D+00,1.64D+00, &
-&     1.65D+00,1.66D+00,1.65D+00,1.61D+00,1.59D+00,1.59D+00,1.58D+00,1.57D+00,1.56D+00,1.56D+00, &
-&     1.56D+00,1.44D+00,1.34D+00,1.30D+00,1.28D+00,1.26D+00,1.26D+00,1.29D+00,1.34D+00,1.44D+00, &
-&     1.55D+00,1.54D+00,1.52D+00,1.53D+00,1.50D+00,2.20D+00/
-!&     0.32D+00, 0.60D+00, 1.20D+00, 1.05D+00, 0.81D+00, 0.77D+00, 0.74D+00, 0.74D+00, 0.72D+00, &
-!&     0.72D+00, 1.50D+00, 1.40D+00, 1.30D+00, 1.17D+00, 1.10D+00, 1.04D+00, 0.99D+00, 0.99D+00, &
-!&     1.80D+00, 1.60D+00, 1.40D+00, 1.40D+00, 1.40D+00, 1.40D+00, 1.40D+00, 1.40D+00, 1.40D+00, &
-!&     1.40D+00, 1.40D+00, 1.40D+00, 1.40D+00, 1.30D+00, 1.20D+00, 1.20D+00, 1.10D+00, 1.10D+00, &
-!&     2.10D+00, 1.85D+00, 1.63D+00, 1.54D+00, 1.47D+00, 1.38D+00, 1.28D+00, 1.25D+00, 1.25D+00, &
-!&     1.20D+00, 1.28D+00, 1.36D+00, 1.42D+00, 1.40D+00, 1.40D+00, 1.36D+00, 1.33D+00, 1.31D+00, &
-!&     2.32D+00, 1.96D+00, 1.80D+00, 1.63D+00, 1.76D+00, 1.74D+00, 1.73D+00, 1.72D+00, 1.68D+00, &
-!&     1.69D+00, 1.68D+00, 1.67D+00, 1.66D+00, 1.65D+00, 1.64D+00, 1.70D+00, 1.62D+00, 1.52D+00, &
-!&     1.46D+00, 1.37D+00, 1.31D+00, 1.29D+00, 1.22D+00, 1.23D+00, 1.24D+00, 1.33D+00, 1.44D+00, &
-!&     1.44D+00, 1.51D+00, 1.45D+00, 1.47D+00, 1.42D+00, 2.23D+00, 2.01D+00, 1.86D+00, 1.75D+00, &
-!&     1.69D+00, 1.70D+00, 1.71D+00, 1.72D+00, 1.66D+00, 1.66D+00, 1.68D+00, 1.68D+00, 1.65D+00, &
-!&     1.67D+00, 1.73D+00, 1.76D+00, 1.61D+00, 1.57D+00, 1.49D+00, 1.43D+00, 1.41D+00, 1.34D+00, &
-!&     1.29D+00, 1.28D+00, 1.21D+00, 1.22D+00/
+&     0.32D+00, 0.46D+00, 1.33D+00, 1.02D+00, 0.85D+00, 0.75D+00, 0.71D+00, 0.63D+00, 0.64D+00, &
+&     0.67D+00, 1.55D+00, 1.39D+00, 1.26D+00, 1.16D+00, 1.11D+00, 1.03D+00, 0.99D+00, 0.96D+00, &
+&     1.96D+00, 1.71D+00, 1.48D+00, 1.36D+00, 1.34D+00, 1.22D+00, 1.19D+00, 1.16D+00, 1.11D+00, &
+&     1.10D+00, 1.12D+00, 1.18D+00, 1.24D+00, 1.21D+00, 1.21D+00, 1.16D+00, 1.14D+00, 1.17D+00, &
+&     2.10D+00, 1.85D+00, 1.63D+00, 1.54D+00, 1.47D+00, 1.38D+00, 1.28D+00, 1.25D+00, 1.25D+00, &
+&     1.20D+00, 1.28D+00, 1.36D+00, 1.42D+00, 1.40D+00, 1.40D+00, 1.36D+00, 1.33D+00, 1.31D+00, &
+&     2.32D+00, 1.96D+00, 1.80D+00, 1.63D+00, 1.76D+00, 1.74D+00, 1.73D+00, 1.72D+00, 1.68D+00, &
+&     1.69D+00, 1.68D+00, 1.67D+00, 1.66D+00, 1.65D+00, 1.64D+00, 1.70D+00, 1.62D+00, 1.52D+00, &
+&     1.46D+00, 1.37D+00, 1.31D+00, 1.29D+00, 1.22D+00, 1.23D+00, 1.24D+00, 1.33D+00, 1.44D+00, &
+&     1.44D+00, 1.51D+00, 1.45D+00, 1.47D+00, 1.42D+00, 2.23D+00, 2.01D+00, 1.86D+00, 1.75D+00, &
+&     1.69D+00, 1.70D+00, 1.71D+00, 1.72D+00, 1.66D+00, 1.66D+00, 1.68D+00, 1.68D+00, 1.65D+00, &
+&     1.67D+00, 1.73D+00, 1.76D+00, 1.61D+00, 1.57D+00, 1.49D+00, 1.43D+00, 1.41D+00, 1.34D+00, &
+&     1.29D+00, 1.28D+00, 1.21D+00, 1.22D+00/
 !
       ijpair(:,:)= 0
       numredun= 0
@@ -124,9 +115,9 @@ end
 !
       numbond= 0
       do iatom= 1,natom
-        if(numatomic(iatom) > 86) then
-          write(*,'(" Error! This program supports up to Rn in Subroutine setredundantcoord.")')
-          call abort
+        if(numatomic(iatom) > 112) then
+          write(*,'(" Error! This program supports up to Cn in Subroutine setredundantcoord.")')
+          call iabort
         endif
         icount= 0
         do jatom= 1,natom
@@ -138,7 +129,7 @@ end
             icount= icount+1
             if(icount > maxconnect) then
               write(*,'(" Error! There are too many atoms near Atom",i4,".")')iatom
-              call abort
+              call iabort
             endif
             ijpair(iatom,icount)= jatom
             if(jatom > iatom) then
@@ -199,7 +190,7 @@ end
             endif
             if(icount == maxconnect) then
               write(*,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(1)
-              call abort
+              call iabort
             endif
           enddo
           do icount= 1,maxconnect
@@ -209,7 +200,7 @@ end
             endif
             if(icount == maxconnect) then
               write(*,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(2)
-              call abort
+              call iabort
             endif
           enddo
           numredun= numredun+1
@@ -772,8 +763,8 @@ end
       if(master) then
         write(*,'(/," ---------------------------------------------------------")')
         write(*,'("   Redundant coordinate parameters (Angstrom and Degree)")')
-        write(*,'(" ---------------------------------------------------------")')
         write(*,'("                                  New           Old")')
+        write(*,'(" ---------------------------------------------------------")')
         do ii= 1,numbond
           write(chartmp(1:3),'(i5)')ii,iredun(1:2,ii)
           paramred= trim(trim("R"//adjustl(chartmp(1)) //"("//adjustl(chartmp(2)))//"," &
@@ -883,7 +874,7 @@ end
         enddo
         if(abs(dotj) >= one) then
           write(*,'(" Error! During calculation of bond angles in calcbmatrix.")')
-          call abort
+          call iabort
         endif
         coordredun(iangle)= acos(dotj)
 !
@@ -941,7 +932,7 @@ end
         cp3(3)= cp1(1)*cp2(2)-cp1(2)*cp2(1)
         if((abs(dotj) >= one).or.(abs(dotk) >= one)) then
           write(*,'(" Error! During calculation of torsion angles in calcbmatrix.")')
-          call abort
+          call iabort
         endif
 !
         sinj= sqrt(one-dotj*dotj)

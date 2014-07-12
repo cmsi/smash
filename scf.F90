@@ -674,6 +674,7 @@ end
       use modthresh, only : threshsoscf, cutint2, threshex, threshover, thresherr, &
 &                           threshrho, threshdfock
       use modprint, only : iprint
+      use modunit, only : tobohr
       implicit none
       integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, i, itsub, itdiis
       integer :: itextra, itsoscf, nocc, nvir, idft
@@ -741,7 +742,7 @@ end
       call calcradpt(radpt,nrad)
       call calclebpt(angpt,nleb)
       do iatom= 1,natom
-        rad(iatom)= atomrad(numatomic(iatom))
+        rad(iatom)= atomrad(numatomic(iatom))*tobohr
       enddo
       call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2)
 !
@@ -1470,6 +1471,7 @@ end
       use modthresh, only : threshsoscf, cutint2, threshex, threshover, thresherr, &
 &                           threshrho, threshdfock
       use modprint, only : iprint
+      use modunit, only : tobohr
       implicit none
       integer :: nao3, nshell3, maxdim, maxfunc(0:6), iter, i, itsub, itdiis
       integer :: itextra, itsoscf, nocca, nvira, noccb, nvirb, idft
@@ -1547,7 +1549,7 @@ end
       call calcradpt(radpt,nrad)
       call calclebpt(angpt,nleb)
       do iatom= 1,natom
-        rad(iatom)= atomrad(numatomic(iatom))
+        rad(iatom)= atomrad(numatomic(iatom))*tobohr
       enddo
       call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2)
 !

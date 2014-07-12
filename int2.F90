@@ -237,7 +237,7 @@ end
       xzkl(1)= rkl*sinph
       xzkl(2)= rkl*cosph
 !
-      nijkl= 0
+      nijkl(:)= 0
       do iprim= 1,nprimijkl(ii)
         exi= exijkl(iprim,ii)
         ci = coijkl(iprim,ii)*pi52
@@ -358,8 +358,6 @@ end
 !
       select case(intorder)
         case(1)
-!          twoeri(1:nbfijkl2(4),1:nbfijkl2(3),1:nbfijkl2(2),1:nbfijkl2(1))= &
-!&           phmdint(1:nbfijkl2(4),1:nbfijkl2(3),1:nbfijkl2(2),1:nbfijkl2(1))
           do i= 1,nbfijkl2(1)
             do j= 1,nbfijkl2(2)
               do k= 1,nbfijkl2(3)

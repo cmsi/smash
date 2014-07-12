@@ -5,23 +5,26 @@
 ! Driver of derivatives for one-electron and overlap integrals
 !
       use modparallel
-      use modbasis, only : nshell, nao
+      use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom
       use modecp, only : flagecp
       implicit none
-      integer :: ish, jsh, len1, i
+      integer :: ish, jsh, len1, i, maxfunc(0:6), maxbasis
       real(8),parameter :: zero=0.0D+00, two=2.0D+00
       real(8),intent(in) :: fulldmtrx(nao*nao), ewdmtrx(nao*(nao+1)/2)
       real(8),intent(out) :: egrad1(3*natom)
       real(8),intent(inout) :: egrad(3*natom)
-      real(8) :: cint1(28,28), cint2(28,28)
+      data maxfunc/1,3,6,10,15,21,28/
 !
-! temporary setting
-!
-      len1= 28
+      maxbasis= maxval(mtype(1:nshell))
+      if(maxbasis >= 4) then
+        write(*,'(" Error! This program supports up to f function in gradoneei")')
+        call iabort
+      endif
+      len1= maxfunc(maxbasis+1)
       egrad1(:)= zero
 !
-!$OMP parallel private(cint1,cint2) reduction(+:egrad1)
+!$OMP parallel reduction(+:egrad1)
       do ish= nshell-myrank,1,-nproc
 !$OMP do
         do jsh= 1,ish
@@ -35,7 +38,7 @@
 !$OMP do
         do jsh= 1,nshell
           call calcdkinetic(egrad1,fulldmtrx,ish,jsh)
-          call calcdcoulomb(egrad1,fulldmtrx,cint1,cint2,len1,ish,jsh)
+          call calcdcoulomb(egrad1,fulldmtrx,ish,jsh,len1)
         enddo
 !$OMP enddo
       enddo
@@ -174,9 +177,9 @@ end
       use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
       use modthresh, only : threshex
       use modmolecule, only : natom, coord
-      use modhermite, only : ix, iy, iz
       implicit none
       integer,intent(in) :: ish, jsh
+      integer :: ix(21,0:5), iy(21,0:5), iz(21,0:5)
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, nprimi, nprimj, nangi, nangj
       integer :: nbfi, nbfj, iprim, jprim, ncarti, ncartj, i, j, iang, jang, ii, ij
       integer :: isx, jsx, isy, jsy, isz, jsz, ncart(0:6)
@@ -188,6 +191,24 @@ end
       real(8) :: xyzint(3), sx(0:7,0:6,2), sy(0:7,0:6,2), sz(0:7,0:6,2)
       real(8) :: dsint(28,28,3)
       data ncart/1,3,6,10,15,21,28/
+      data ix/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             2,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             3,0,0,2,2,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0, &
+&             4,0,0,3,3,1,0,1,0,2,2,0,2,1,1,0,0,0,0,0,0, &
+&             5,0,0,4,4,1,0,1,0,3,3,3,2,1,0,2,1,0,2,2,1/
+      data iy/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,2,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,3,0,1,0,2,2,0,1,1,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,4,0,1,0,3,3,0,1,2,0,2,1,2,1,0,0,0,0,0,0, &
+&             0,5,0,1,0,4,4,0,1,2,1,0,3,3,3,0,1,2,2,1,2/
+      data iz/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,2,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,3,0,1,0,1,2,2,1,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,4,0,1,0,1,3,3,0,2,2,1,1,2,0,0,0,0,0,0, &
+&             0,0,5,0,1,0,1,4,4,0,1,2,0,1,2,3,3,3,1,2,2/
 !
       iatom = locatom(ish)
       jatom = locatom(jsh)
@@ -318,9 +339,9 @@ end
       use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
       use modthresh, only : threshex
       use modmolecule, only : natom, coord
-      use modhermite, only : ix, iy, iz
       implicit none
       integer,intent(in) :: ish, jsh
+      integer :: ix(21,0:5), iy(21,0:5), iz(21,0:5)
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, nprimi, nprimj, nangi, nangj
       integer :: nbfi, nbfj, iprim, jprim, ncarti, ncartj, i, j, iang, jang, ii
       integer :: isx, jsx, isy, jsy, isz, jsz, ncart(0:6)
@@ -332,6 +353,24 @@ end
       real(8) :: xyzint(3), sx(0:7,0:8,4), sy(0:7,0:8,4), sz(0:7,0:8,4)
       real(8) :: dtint(28,28,3)
       data ncart/1,3,6,10,15,21,28/
+      data ix/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             2,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             3,0,0,2,2,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0, &
+&             4,0,0,3,3,1,0,1,0,2,2,0,2,1,1,0,0,0,0,0,0, &
+&             5,0,0,4,4,1,0,1,0,3,3,3,2,1,0,2,1,0,2,2,1/
+      data iy/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,2,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,3,0,1,0,2,2,0,1,1,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,4,0,1,0,3,3,0,1,2,0,2,1,2,1,0,0,0,0,0,0, &
+&             0,5,0,1,0,4,4,0,1,2,1,0,3,3,3,0,1,2,2,1,2/
+      data iz/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,2,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,3,0,1,0,1,2,2,1,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,4,0,1,0,1,3,3,0,2,2,1,1,2,0,0,0,0,0,0, &
+&             0,0,5,0,1,0,1,4,4,0,1,2,0,1,2,3,3,3,1,2,2/
 !
       iatom = locatom(ish)
       iloc  = locprim(ish)
@@ -485,9 +524,9 @@ end
 end
 
 
-!--------------------------------------------------------------------
-  subroutine calcdcoulomb(egrad,fulldmtrx,cint1,cint2,len1,ish,jsh)
-!--------------------------------------------------------------------
+!--------------------------------------------------------
+  subroutine calcdcoulomb(egrad,fulldmtrx,ish,jsh,len1)
+!--------------------------------------------------------
 !
 ! Driver of Coulomb derivative term
 !
@@ -499,11 +538,10 @@ end
       use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
       use modthresh, only : threshex
       use modmolecule, only : natom, coord, znuc
-      use modhermite, only : ix, iy, iz
       implicit none
-      integer,intent(in) :: len1, ish, jsh
+      integer,intent(in) :: ish, jsh, len1
       integer :: nangij(2), nprimij(2), nbfij(2), iatom, jatom, iloc, jloc, ilocbf, jlocbf
-      integer :: iprim, jprim, ncarti, i, j, k, ii, ncart(0:6)
+      integer :: iprim, jprim, i, j, k, ii, ncart(0:6)
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, half=0.5D+00, three=3.0D+00
       real(8),parameter :: four=4.0D+00, sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
       real(8),parameter :: sqrtthird=0.5773502691896258D+00, sqrtfifth=0.4472135954999579D+00
@@ -516,9 +554,9 @@ end
       real(8),parameter :: facf3=0.28116020334310144D+00 ! 1/sqrt(46/3-6/sqrt(5))
       real(8),parameter :: facf4=0.24065403274177409D+00 ! 1/sqrt(28-24/sqrt(5))
       real(8),intent(in) :: fulldmtrx(nao,nao)
-      real(8),intent(inout) :: egrad(3,natom), cint1(len1,len1), cint2(len1,len1)
+      real(8),intent(inout) :: egrad(3,natom)
       real(8) :: exij(mxprsh,2), cij(mxprsh,2), coordij(3,2)
-      real(8) :: dcint(28,28,3), work(28)
+      real(8) :: cint1(len1,len1), cint2(len1,len1), dcint(28,28,3), work(28)
       data ncart/1,3,6,10,15,21,28/
 !
       nangij(1)= mtype(ish)
@@ -560,10 +598,6 @@ end
         endif
         call int1rys(cint1,exij,cij,coordij,coord,znuc,natom, &
 &                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
-        if((nbfij(1) >= 5).or.(nbfij(2) >= 5)) then
-          ncarti= ncart(nangij(1))
-          call nrmlz2(cint1,nbfij(1),nbfij(2),ncarti,len1)
-        endif
       endif
 !
       if(mtype(jsh) >= 1) then
@@ -584,10 +618,6 @@ end
           call int1rys(cint2,exij,cij,coordij,coord,znuc,natom, &
 &                      nprimij,nangij,nbfij,len1,mxprsh,threshex)
 !
-          if((nbfij(1) >= 5).or.(nbfij(2) >= 5)) then
-            ncarti= ncart(nangij(1))
-            call nrmlz2(cint2,nbfij(1),nbfij(2),ncarti,len1)
-          endif
         endif
       else
         cint2(1:nbfij(2),1:nbfij(1))= zero
@@ -2358,10 +2388,10 @@ end
 !
 ! Calculate derivative of 1-electron Coulomb integrals (j|Z/r|i) using Rys quadratures
 !
-      use modhermite, only : ix, iy, iz
       implicit none
       integer,intent(in) :: nprimij(2), nangij(2), nbfij(2), locbfij(2), natom, nao, mxprsh
       integer,parameter :: mxprsh2=40
+      integer :: ix(21,0:5), iy(21,0:5), iz(21,0:5)
       integer :: nroots, ncart(0:6), ncarti, ncartj, i, j, k, iprim, jprim, iatom, iroot
       integer :: iang, jang, icx, icy, icz, jcx, jcy, jcz
       real(8),parameter :: sqrtpi2=1.128379167095513D+00 !2.0/sqrt(pi)
@@ -2392,6 +2422,24 @@ end
       real(8) :: dcint1(28,28,3), work(28)
       logical,intent(in) :: iandj
       data ncart /1,3,6,10,15,21,28/
+      data ix/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             2,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             3,0,0,2,2,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0, &
+&             4,0,0,3,3,1,0,1,0,2,2,0,2,1,1,0,0,0,0,0,0, &
+&             5,0,0,4,4,1,0,1,0,3,3,3,2,1,0,2,1,0,2,2,1/
+      data iy/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,2,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,3,0,1,0,2,2,0,1,1,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,4,0,1,0,3,3,0,1,2,0,2,1,2,1,0,0,0,0,0,0, &
+&             0,5,0,1,0,4,4,0,1,2,1,0,3,3,3,0,1,2,2,1,2/
+      data iz/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,2,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,3,0,1,0,1,2,2,1,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,4,0,1,0,1,3,3,0,2,2,1,1,2,0,0,0,0,0,0, &
+&             0,0,5,0,1,0,1,4,4,0,1,2,0,1,2,3,3,3,1,2,2/
 !
       nroots=(nangij(1)+nangij(2)+1)/2+1
       ncarti= ncart(nangij(1))
@@ -2698,14 +2746,70 @@ end
 !
 ! Calculate Gauss-Hermite quadrature
 !
-      use modhermite, only : hnode, hweight, minh, maxh
       implicit none
       integer,intent(in) :: iang, jang
+      integer :: minh(12)= (/1,2,4, 7,11,16,22,29,37,46,56,67/)
+      integer :: maxh(12)= (/1,3,6,10,15,21,28,36,45,55,66,78/)
       integer :: nroot, ij, i, j
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: expgh, xyzpijk(3,3)
       real(8),intent(out) :: xyzint(3)
+      real(8) :: hnode(78), hweight(78)
       real(8) :: ghxyz(3), exnode, pxyz(3)
+      data hnode/ &
+        0.0000000000000000D+00,-0.7071067811865476D+00, 0.7071067811865476D+00, &
+&      -0.1224744871391589D+01, 0.0000000000000000D+00, 0.1224744871391589D+01, &
+&      -0.1650680123885785D+01,-0.5246476232752903D+00, 0.5246476232752903D+00, &
+&       0.1650680123885785D+01,-0.2020182870456086D+01,-0.9585724646138185D+00, &
+&       0.0000000000000000D+00, 0.9585724646138185D+00, 0.2020182870456086D+01, &
+&      -0.2350604973674492D+01,-0.1335849074013697D+01,-0.4360774119276165D+00, &
+&       0.4360774119276165D+00, 0.1335849074013697D+01, 0.2350604973674492D+01, &
+&      -0.2651961356835233D+01,-0.1673551628767471D+01,-0.8162878828589647D+00, &
+&       0.0000000000000000D+00, 0.8162878828589647D+00, 0.1673551628767471D+01, &
+&       0.2651961356835233D+01,-0.2930637420257244D+01,-0.1981656756695843D+01, &
+&      -0.1157193712446780D+01,-0.3811869902073221D+00, 0.3811869902073221D+00, &
+&       0.1157193712446780D+01, 0.1981656756695843D+01, 0.2930637420257244D+01, &
+&      -0.3190993201781528D+01,-0.2266580584531843D+01,-0.1468553289216668D+01, &
+&      -0.7235510187528376D+00, 0.0000000000000000D+00, 0.7235510187528376D+00, &
+&       0.1468553289216668D+01, 0.2266580584531843D+01, 0.3190993201781528D+01, &
+&      -0.3436159118837737D+01,-0.2532731674232790D+01,-0.1756683649299882D+01, &
+&      -0.1036610829789514D+01,-0.3429013272237046D+00, 0.3429013272237046D+00, &
+&       0.1036610829789514D+01, 0.1756683649299882D+01, 0.2532731674232790D+01, &
+&       0.3436159118837737D+01,-0.3668470846559583D+01,-0.2783290099781652D+01, &
+&      -0.2025948015825755D+01,-0.1326557084494933D+01,-0.6568095668820998D+00, &
+&       0.0000000000000000D+00, 0.6568095668820998D+00, 0.1326557084494933D+01, &
+&       0.2025948015825755D+01, 0.2783290099781652D+01, 0.3668470846559583D+01, &
+&      -0.3889724897869782D+01,-0.3020637025120890D+01,-0.2279507080501060D+01, &
+&      -0.1597682635152605D+01,-0.9477883912401637D+00,-0.3142403762543591D+00, &
+&       0.3142403762543591D+00, 0.9477883912401637D+00, 0.1597682635152605D+01, &
+&       0.2279507080501060D+01, 0.3020637025120890D+01, 0.3889724897869782D+01/
+      data hweight/ &
+&       0.1772453850905516D+01, 0.8862269254527581D+00, 0.8862269254527581D+00, &
+&       0.2954089751509194D+00, 0.1181635900603677D+01, 0.2954089751509194D+00, &
+&       0.8131283544724517D-01, 0.8049140900055128D+00, 0.8049140900055128D+00, &
+&       0.8131283544724517D-01, 0.1995324205904591D-01, 0.3936193231522412D+00, &
+&       0.9453087204829419D+00, 0.3936193231522412D+00, 0.1995324205904591D-01, &
+&       0.4530009905508846D-02, 0.1570673203228566D+00, 0.7246295952243925D+00, &
+&       0.7246295952243925D+00, 0.1570673203228566D+00, 0.4530009905508846D-02, &
+&       0.9717812450995191D-03, 0.5451558281912703D-01, 0.4256072526101278D+00, &
+&       0.8102646175568073D+00, 0.4256072526101278D+00, 0.5451558281912703D-01, &
+&       0.9717812450995191D-03, 0.1996040722113676D-03, 0.1707798300741347D-01, &
+&       0.2078023258148919D+00, 0.6611470125582413D+00, 0.6611470125582413D+00, &
+&       0.2078023258148919D+00, 0.1707798300741347D-01, 0.1996040722113676D-03, &
+&       0.3960697726326439D-04, 0.4943624275536947D-02, 0.8847452739437657D-01, &
+&       0.4326515590025558D+00, 0.7202352156060510D+00, 0.4326515590025558D+00, &
+&       0.8847452739437657D-01, 0.4943624275536947D-02, 0.3960697726326439D-04, &
+&       0.7640432855232621D-05, 0.1343645746781233D-02, 0.3387439445548106D-01, &
+&       0.2401386110823147D+00, 0.6108626337353258D+00, 0.6108626337353258D+00, &
+&       0.2401386110823147D+00, 0.3387439445548106D-01, 0.1343645746781233D-02, &
+&       0.7640432855232621D-05, 0.1439560393714258D-05, 0.3468194663233455D-03, &
+&       0.1191139544491153D-01, 0.1172278751677085D+00, 0.4293597523561250D+00, &
+&       0.6547592869145918D+00, 0.4293597523561250D+00, 0.1172278751677085D+00, &
+&       0.1191139544491153D-01, 0.3468194663233455D-03, 0.1439560393714258D-05, &
+&       0.2658551684356306D-06, 0.8573687043587876D-04, 0.3905390584629067D-02, &
+&       0.5160798561588394D-01, 0.2604923102641611D+00, 0.5701352362624796D+00, &
+&       0.5701352362624796D+00, 0.2604923102641611D+00, 0.5160798561588394D-01, &
+&       0.3905390584629067D-02, 0.8573687043587876D-04, 0.2658551684356306D-06/
 !
       do i= 1,3
         xyzint(i)= zero

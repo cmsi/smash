@@ -171,6 +171,7 @@ end
       use modmolecule, only : natom, neleca, numatomic
       use moddft, only : nrad, nleb
       use modatom, only : atomrad
+      use modunit, only : tobohr
       implicit none
       integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j, iatom, idft
       real(8),parameter :: zero=0.0D+00
@@ -233,7 +234,7 @@ end
       call calcradpt(radpt,nrad)
       call calclebpt(angpt,nleb)
       do iatom= 1,natom
-        rad(iatom)= atomrad(numatomic(iatom))
+        rad(iatom)= atomrad(numatomic(iatom))*tobohr
       enddo
       call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,dweight)
 !
@@ -285,6 +286,7 @@ end
       use modmolecule, only : natom, neleca, nelecb, numatomic
       use moddft, only : nrad, nleb
       use modatom, only : atomrad
+      use modunit, only : tobohr
       implicit none
       integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j, iatom, idft
       real(8),parameter :: zero=0.0D+00
@@ -350,7 +352,7 @@ end
       call calcradpt(radpt,nrad)
       call calclebpt(angpt,nleb)
       do iatom= 1,natom
-        rad(iatom)= atomrad(numatomic(iatom))
+        rad(iatom)= atomrad(numatomic(iatom))*tobohr
       enddo
       call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,dweight)
 !

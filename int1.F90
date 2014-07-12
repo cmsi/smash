@@ -18,7 +18,6 @@
       real(8),parameter :: zero=0.0D+00
       real(8),intent(out) :: hstmat1((nao*(nao+1))/2), hstmat2((nao*(nao+1))/2)
       real(8),intent(out) :: hstmat3((nao*(nao+1))/2), hstmat4((nao*(nao+1))/2)
-!ishimura
       data maxfunc/1,3,6,10,15,21,28/
 !
       maxbasis= maxval(mtype(1:nshell))
@@ -33,8 +32,7 @@
       do ish= nshell-myrank,1,-nproc
 !$OMP do
         do jsh= 1,ish
-          call calcintst(hstmat2,hstmat3,hstmat4,ish,jsh)
-          call calcint1c(hstmat2,ish,jsh,maxdim)
+          call calcintst1c(hstmat2,hstmat3,hstmat4,ish,jsh,maxdim)
         enddo
 !$OMP enddo
       enddo
@@ -48,142 +46,188 @@
       call para_allreduce(hstmat3,hstmat2,num,MPI_SUM,MPI_COMM_WORLD)
       call para_allreduce(hstmat4,hstmat3,num,MPI_SUM,MPI_COMM_WORLD)
 !
-
-!kazuya
-!      write(*,*)"Smatrix"
-!      kmax=nao/5
-!      if(mod(nao,5).ne.0)kmax=kmax+1
-!      do k=1,kmax
-!        do ish=(k-1)*5+1,nao
-!          llmax=(k)*5
-!          if(llmax.gt.ish)llmax=ish
-!          write(*,'(i3,1x,5f11.6)')ish,(smat(ish*(ish-1)/2+l),l=(k-1)*5+1,llmax)
-!        enddo
-!        write(*,*)
-!      enddo
-!      write(*,*)"Tmatrix"
-!      kmax=nao/5
-!      if(mod(nao,5).ne.0)kmax=kmax+1
-!      do k=1,kmax
-!        do ish=(k-1)*5+1,nao
-!          llmax=(k)*5
-!          if(llmax.gt.ish)llmax=ish
-!          write(*,'(i3,1x,5f11.6)')ish,(tmat(ish*(ish-1)/2+l),l=(k-1)*5+1,llmax)
-!        enddo
-!        write(*,*)
-!      enddo
-!      write(*,*)"Hmatrix"
-!      do k=1,kmax
-!        write(*,*)
-!        write(*,*)
-!        write(*,*)
-!        do ish=(k-1)*5+1,nao
-!          llmax=(k)*5
-!          if(llmax.gt.ish)llmax=ish
-!          write(*,'(i3,1x,5f11.6)')ish,(hmat(ish*(ish-1)/2+l),l=(k-1)*5+1,llmax)
-!        enddo
-!      enddo
       return
 end
 
 
-!--------------------------------------------
-  subroutine calcintst(hmat,smat,tmat,ish,jsh)
-!--------------------------------------------
+!------------------------------------------------------
+  subroutine calcintst1c(hmat,smat,tmat,ish,jsh,len1)
+!------------------------------------------------------
 !
-! Calculate overlap and kinetic integrals
-!
-! In  : ish, jsh (Shell indices)
-! Out : hmat (One electron Hamiltonian)
-!       smat (Overlap integral)
-!       tmat (Kinetic energy)
+! Driver of overlap, kinetic, and 1-electron Coulomb integrals (j|Z/r|i)
 !
       use modparam, only : mxprsh
-      use modthresh, only : threshex
-      use modmolecule, only : coord
+      use modmolecule, only : natom, coord, znuc
       use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
-      use modhermite, only : ix, iy, iz
+      use modthresh, only : threshex
       implicit none
-      integer,intent(in) :: ish, jsh
-      integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, nprimi, nprimj, nangi, nangj
-      integer :: nbfi, nbfj, iprim, jprim, ncarti, ncartj, i, j, iang, jang, ii, ij, maxj
-      integer :: isx, jsx, isy, jsy, isz, jsz, ncart(0:6)
-      real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, half=0.5D+00
-      real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt5=2.236067977499790D+00
-      real(8),parameter :: sqrt15=3.872983346207417D+00, sqrt3h=8.660254037844386D-01
-      real(8),intent(out) :: hmat((nao*(nao+1))/2), smat((nao*(nao+1))/2), tmat((nao*(nao+1))/2)
-      real(8) :: xyzij(3), rij, rij2, fac, exi, exi2, exj, ci, cj
-      real(8) :: ex1, ex2, ex3, xyzpij(3,2), cij, sxyz, sxyz1, sxyz2, sxyz3
-      real(8) :: xyzint(3), sx(0:6,0:8,2), sy(0:6,0:8,2), sz(0:6,0:8,2)
-      real(8) :: sint(28,28), tint(28,28) !sx,sy,sz,sint,tint support up to i function
+      integer,intent(in) :: ish, jsh, len1
+      integer :: nangij(2), nprimij(2), nbfij(2), iatom, jatom
+      integer :: iloc, jloc, ilocbf, jlocbf, iprim, jprim, i, j, ii, ij, maxj
+      real(8),intent(inout) :: hmat((nao*(nao+1))/2), smat((nao*(nao+1))/2)
+      real(8),intent(inout) :: tmat((nao*(nao+1))/2)
+      real(8) :: exij(mxprsh,2), coij(mxprsh,2), coordij(3,2)
+      real(8) :: sint(len1,len1), tint(len1,len1), cint(len1,len1)
       logical :: iandj
-      data ncart /1,3,6,10,15,21,28/
-!
-! Set parameters
 !
       iandj=(ish == jsh)
+      nangij(1)= mtype(ish)
+      nangij(2)= mtype(jsh)
+      nprimij(1)= mprim(ish)
+      nprimij(2)= mprim(jsh)
+      nbfij(1)  = mbf(ish)
+      nbfij(2)  = mbf(jsh)
       iatom = locatom(ish)
       iloc  = locprim(ish)
       ilocbf= locbf(ish)
-      nprimi= mprim(ish)
-      nangi = mtype(ish)
-      nbfi  = mbf(ish)
       jatom = locatom(jsh)
       jloc  = locprim(jsh)
       jlocbf= locbf(jsh)
-      nprimj= mprim(jsh)
-      nangj = mtype(jsh)
-      nbfj  = mbf(jsh)
-      ncarti= ncart(nangi)
-      ncartj= ncart(nangj)
+      do i= 1,3
+        coordij(i,1)= coord(i,iatom)
+        coordij(i,2)= coord(i,jatom)
+      enddo
+      do iprim= 1,nprimij(1)
+        exij(iprim,1)= ex(iloc+iprim)
+        coij(iprim,1)= coeff(iloc+iprim)
+      enddo
+      do jprim= 1,nprimij(2)
+        exij(jprim,2)= ex(jloc+jprim)
+        coij(jprim,2)= coeff(jloc+jprim)
+      enddo
 !
-      if((nangi > 4).or.(nangj > 4))then
-        write(*,'(" Error! This program supports up to g function in calcint1c")')
+      if((nangij(1) > 4).or.(nangij(2) > 4))then
+        write(*,'(" Error! This program supports up to g function in calcintst1c")')
         call iabort
       endif
 !
-      do i= 1,3
-        xyzij(i)= coord(i,iatom)-coord(i,jatom)
-      enddo
-      rij= xyzij(1)*xyzij(1)+xyzij(2)*xyzij(2)+xyzij(3)*xyzij(3)
-
-      do i= 1,ncarti
-        do j= 1,ncartj
-          sint(j,i)= zero
-          tint(j,i)= zero
+! Overlap and kinetic integrals
+!
+      call intst(sint,tint,exij,coij,coordij, &
+&                nprimij,nangij,nbfij,len1,mxprsh,threshex)
+!
+! 1-electron Coulomb integrals
+!
+      if((nangij(1) <= 2).and.(nangij(2) <= 2)) then
+        call int1cmd(cint,exij,coij,coordij,coord,znuc,natom, &
+&                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
+      else
+        call int1rys(cint,exij,coij,coordij,coord,znuc,natom, &
+&                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
+      endif
+!
+      maxj= nbfij(2)
+      do i= 1,nbfij(1)
+        if(iandj) maxj= i
+        ii= ilocbf+i
+        ij= ii*(ii-1)/2+jlocbf
+        do j= 1,maxj
+          hmat(ij+j)= tint(j,i)+cint(j,i)
+          smat(ij+j)= sint(j,i)
+          tmat(ij+j)= tint(j,i)
         enddo
       enddo
 !
+      return
+end
+
+
+!--------------------------------------------------------------
+  subroutine intst(sint,tint,exij,coij,coordij, &
+&                  nprimij,nangij,nbfij,len1,mxprsh,threshex)
+!--------------------------------------------------------------
+!
+! Calculate overlap and kinetic integrals
+!
+! In : exij     (Exponents of basis functions)
+!      coij     (Coefficients of basis functions)
+!      coordij  (x,y,z coordinates of basis functions)
+!      nprimij  (Numbers of primitive functions)
+!      nangij   (Degrees of angular momentum)
+!      nbfij    (Numbers of basis functions)
+!      len1     (Dimension of one-electron integral array)
+!      mxprsh   (Size of primitive fuction array)
+!      threshex (Threshold of exponential calculation)
+! Out: sint     (Overlap integrals)
+!      tint     (Kinetic integrals)
+!
+      implicit none
+      integer,intent(in) :: nprimij(2), nangij(2), nbfij(2), len1, mxprsh
+      integer :: ncarti, ncartj, iprim, jprim, ii, jj, iang, jang
+      integer :: isx, jsx, isy, jsy, isz, jsz, ncart(0:6)
+      integer :: ix(21,0:5), iy(21,0:5), iz(21,0:5)
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, half=0.5D+00
+      real(8),intent(in) :: exij(mxprsh,2), coij(mxprsh,2), coordij(3,2), threshex
+      real(8),intent(out) :: sint(len1,len1), tint(len1,len1)
+      real(8) :: xyzij(3), rij, rij2, fac, exi, exi2, exj, ci, cj
+      real(8) :: ex1, ex2, ex3, xyzpij(3,2), cij, sxyz, sxyz1, sxyz2, sxyz3
+      real(8) :: xyzint(3), sx(0:6,0:8,2), sy(0:6,0:8,2), sz(0:6,0:8,2)
+      real(8) :: sintmp(28,28), tintmp(28,28)
+      data ncart /1,3,6,10,15,21,28/
+      data ix/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             2,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             3,0,0,2,2,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0, &
+&             4,0,0,3,3,1,0,1,0,2,2,0,2,1,1,0,0,0,0,0,0, &
+&             5,0,0,4,4,1,0,1,0,3,3,3,2,1,0,2,1,0,2,2,1/
+      data iy/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,2,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,3,0,1,0,2,2,0,1,1,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,4,0,1,0,3,3,0,1,2,0,2,1,2,1,0,0,0,0,0,0, &
+&             0,5,0,1,0,4,4,0,1,2,1,0,3,3,3,0,1,2,2,1,2/
+      data iz/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,2,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,3,0,1,0,1,2,2,1,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,4,0,1,0,1,3,3,0,2,2,1,1,2,0,0,0,0,0,0, &
+&             0,0,5,0,1,0,1,4,4,0,1,2,0,1,2,3,3,3,1,2,2/
+!
+      ncarti= ncart(nangij(1))
+      ncartj= ncart(nangij(2))
+      sintmp(1:ncartj,1:ncarti)= zero
+      tintmp(1:ncartj,1:ncarti)= zero
+!
+      if((nangij(1) > 4).or.(nangij(2) > 4))then
+        write(*,'(" Error! This program supports up to g function in intst")')
+        call abort
+      endif
+!
+      do ii= 1,3
+        xyzij(ii)= coordij(ii,1)-coordij(ii,2)
+      enddo
+      rij= xyzij(1)*xyzij(1)+xyzij(2)*xyzij(2)+xyzij(3)*xyzij(3)
+!
 ! Calculate overlap and kinetic integrals for each primitive
-! 
-      do iprim= 1,nprimi
-        exi= ex(iloc+iprim)
-        ci = coeff(iloc+iprim)
+!
+      do iprim= 1,nprimij(1)
+        exi= exij(iprim,1)
+        ci = coij(iprim,1)
         exi2=-two*exi*exi
-        do jprim= 1,nprimj
-          exj= ex(jloc+jprim)
+        do jprim= 1,nprimij(2)
+          exj= exij(jprim,2)
           ex1= exi+exj
           ex2= one/ex1
           rij2=rij*exi*exj*ex2
           if(rij2 > threshex) cycle
           ex3= sqrt(ex2)
-          fac= exp(-rij2)   !*ex2*ex3
-          do i= 1,3
-            xyzpij(i,1)=-exj*xyzij(i)*ex2
-            xyzpij(i,2)= exi*xyzij(i)*ex2
+          fac= exp(-rij2)
+          do ii= 1,3
+            xyzpij(ii,1)=-exj*xyzij(ii)*ex2
+            xyzpij(ii,2)= exi*xyzij(ii)*ex2
           enddo
-          cj = coeff(jloc+jprim)*fac
+          cj = coij(jprim,2)*fac
 !
-          do iang= 0,nangi+2
-            do jang= 0,nangj
+          do iang= 0,nangij(1)+2
+            do jang= 0,nangij(2)
               call ghquad(xyzint,ex3,xyzpij,iang,jang)
               sx(jang,iang,1)= xyzint(1)*ex3
               sy(jang,iang,1)= xyzint(2)*ex3
               sz(jang,iang,1)= xyzint(3)*ex3
             enddo
           enddo
-          do iang= 0,nangi
-            do jang= 0,nangj
+          do iang= 0,nangij(1)
+            do jang= 0,nangij(2)
               sx(jang,iang,2)= sx(jang,iang+2,1)*exi2
               sy(jang,iang,2)= sy(jang,iang+2,1)*exi2
               sz(jang,iang,2)= sz(jang,iang+2,1)*exi2
@@ -195,39 +239,143 @@ end
             enddo
           enddo
           cij= ci*cj
-          do i= 1,ncarti
-            isx= ix(i,nangi)
-            isy= iy(i,nangi)
-            isz= iz(i,nangi)
-            do j= 1,ncartj
-              jsx= ix(j,nangj)
-              jsy= iy(j,nangj)
-              jsz= iz(j,nangj)
+          do ii= 1,ncarti
+            isx= ix(ii,nangij(1))
+            isy= iy(ii,nangij(1))
+            isz= iz(ii,nangij(1))
+            do jj= 1,ncartj
+              jsx= ix(jj,nangij(2))
+              jsy= iy(jj,nangij(2))
+              jsz= iz(jj,nangij(2))
               sxyz = sx(jsx,isx,1)*sy(jsy,isy,1)*sz(jsz,isz,1)
               sxyz1= sx(jsx,isx,2)*sy(jsy,isy,1)*sz(jsz,isz,1)
               sxyz2= sy(jsy,isy,2)*sx(jsx,isx,1)*sz(jsz,isz,1)
               sxyz3= sz(jsz,isz,2)*sx(jsx,isx,1)*sy(jsy,isy,1)
-              sint(j,i)= sint(j,i)+cij*sxyz
-              tint(j,i)= tint(j,i)+cij*(sxyz1+sxyz2+sxyz3+sxyz*exi*(2*(isx+isy+isz)+3))
+              sintmp(jj,ii)= sintmp(jj,ii)+cij*sxyz
+              tintmp(jj,ii)= tintmp(jj,ii)+cij*(sxyz1+sxyz2+sxyz3+sxyz*exi*(2*(isx+isy+isz)+3))
             enddo
           enddo
         enddo
       enddo
 !
-      if((nbfi >= 5).or.(nbfj >= 5)) then
-        call nrmlz1(sint,nbfi,nbfj,ncarti)
-        call nrmlz1(tint,nbfi,nbfj,ncarti)
+      if((nbfij(1) >= 5).or.(nbfij(2) >= 5)) then
+        call nrmlz1(sintmp,nbfij(1),nbfij(2),ncarti)
+        call nrmlz1(tintmp,nbfij(1),nbfij(2),ncarti)
       endif
+      do ii= 1,nbfij(1)
+        do jj= 1,nbfij(2)
+          sint(jj,ii)= sintmp(jj,ii)
+          tint(jj,ii)= tintmp(jj,ii)
+        enddo
+      enddo
 !
-      maxj= nbfj
-      do i= 1,nbfi
-        ii= ilocbf+i
-        ij= ii*(ii-1)/2+jlocbf
-        if(iandj) maxj= i
-        do j= 1,maxj
-          hmat(ij+j)= tint(j,i)
-          smat(ij+j)= sint(j,i)
-          tmat(ij+j)= tint(j,i)
+      return
+end
+
+
+!---------------------------------------------------
+  subroutine ghquad(xyzint,expgh,xyzpij,iang,jang)
+!---------------------------------------------------
+!
+! Calculate Gauss-Hermite quadrature
+!
+      implicit none
+      integer,intent(in) :: iang, jang
+      integer :: minh(12)= (/1,2,4, 7,11,16,22,29,37,46,56,67/)
+      integer :: maxh(12)= (/1,3,6,10,15,21,28,36,45,55,66,78/)
+      integer :: nroot, ij, i, j
+      real(8),parameter :: zero=0.0D+00
+      real(8),intent(in) :: expgh, xyzpij(3,2)
+      real(8),intent(out) :: xyzint(3)
+      real(8) :: hnode(78), hweight(78)
+      real(8) :: ghxyz(3), exnode, pxyz(3)
+      data hnode/ &
+        0.0000000000000000D+00,-0.7071067811865476D+00, 0.7071067811865476D+00, &
+&      -0.1224744871391589D+01, 0.0000000000000000D+00, 0.1224744871391589D+01, &
+&      -0.1650680123885785D+01,-0.5246476232752903D+00, 0.5246476232752903D+00, &
+&       0.1650680123885785D+01,-0.2020182870456086D+01,-0.9585724646138185D+00, &
+&       0.0000000000000000D+00, 0.9585724646138185D+00, 0.2020182870456086D+01, &
+&      -0.2350604973674492D+01,-0.1335849074013697D+01,-0.4360774119276165D+00, &
+&       0.4360774119276165D+00, 0.1335849074013697D+01, 0.2350604973674492D+01, &
+&      -0.2651961356835233D+01,-0.1673551628767471D+01,-0.8162878828589647D+00, &
+&       0.0000000000000000D+00, 0.8162878828589647D+00, 0.1673551628767471D+01, &
+&       0.2651961356835233D+01,-0.2930637420257244D+01,-0.1981656756695843D+01, &
+&      -0.1157193712446780D+01,-0.3811869902073221D+00, 0.3811869902073221D+00, &
+&       0.1157193712446780D+01, 0.1981656756695843D+01, 0.2930637420257244D+01, &
+&      -0.3190993201781528D+01,-0.2266580584531843D+01,-0.1468553289216668D+01, &
+&      -0.7235510187528376D+00, 0.0000000000000000D+00, 0.7235510187528376D+00, &
+&       0.1468553289216668D+01, 0.2266580584531843D+01, 0.3190993201781528D+01, &
+&      -0.3436159118837737D+01,-0.2532731674232790D+01,-0.1756683649299882D+01, &
+&      -0.1036610829789514D+01,-0.3429013272237046D+00, 0.3429013272237046D+00, &
+&       0.1036610829789514D+01, 0.1756683649299882D+01, 0.2532731674232790D+01, &
+&       0.3436159118837737D+01,-0.3668470846559583D+01,-0.2783290099781652D+01, &
+&      -0.2025948015825755D+01,-0.1326557084494933D+01,-0.6568095668820998D+00, &
+&       0.0000000000000000D+00, 0.6568095668820998D+00, 0.1326557084494933D+01, &
+&       0.2025948015825755D+01, 0.2783290099781652D+01, 0.3668470846559583D+01, &
+&      -0.3889724897869782D+01,-0.3020637025120890D+01,-0.2279507080501060D+01, &
+&      -0.1597682635152605D+01,-0.9477883912401637D+00,-0.3142403762543591D+00, &
+&       0.3142403762543591D+00, 0.9477883912401637D+00, 0.1597682635152605D+01, &
+&       0.2279507080501060D+01, 0.3020637025120890D+01, 0.3889724897869782D+01/
+      data hweight/ &
+&       0.1772453850905516D+01, 0.8862269254527581D+00, 0.8862269254527581D+00, &
+&       0.2954089751509194D+00, 0.1181635900603677D+01, 0.2954089751509194D+00, &
+&       0.8131283544724517D-01, 0.8049140900055128D+00, 0.8049140900055128D+00, &
+&       0.8131283544724517D-01, 0.1995324205904591D-01, 0.3936193231522412D+00, &
+&       0.9453087204829419D+00, 0.3936193231522412D+00, 0.1995324205904591D-01, &
+&       0.4530009905508846D-02, 0.1570673203228566D+00, 0.7246295952243925D+00, &
+&       0.7246295952243925D+00, 0.1570673203228566D+00, 0.4530009905508846D-02, &
+&       0.9717812450995191D-03, 0.5451558281912703D-01, 0.4256072526101278D+00, &
+&       0.8102646175568073D+00, 0.4256072526101278D+00, 0.5451558281912703D-01, &
+&       0.9717812450995191D-03, 0.1996040722113676D-03, 0.1707798300741347D-01, &
+&       0.2078023258148919D+00, 0.6611470125582413D+00, 0.6611470125582413D+00, &
+&       0.2078023258148919D+00, 0.1707798300741347D-01, 0.1996040722113676D-03, &
+&       0.3960697726326439D-04, 0.4943624275536947D-02, 0.8847452739437657D-01, &
+&       0.4326515590025558D+00, 0.7202352156060510D+00, 0.4326515590025558D+00, &
+&       0.8847452739437657D-01, 0.4943624275536947D-02, 0.3960697726326439D-04, &
+&       0.7640432855232621D-05, 0.1343645746781233D-02, 0.3387439445548106D-01, &
+&       0.2401386110823147D+00, 0.6108626337353258D+00, 0.6108626337353258D+00, &
+&       0.2401386110823147D+00, 0.3387439445548106D-01, 0.1343645746781233D-02, &
+&       0.7640432855232621D-05, 0.1439560393714258D-05, 0.3468194663233455D-03, &
+&       0.1191139544491153D-01, 0.1172278751677085D+00, 0.4293597523561250D+00, &
+&       0.6547592869145918D+00, 0.4293597523561250D+00, 0.1172278751677085D+00, &
+&       0.1191139544491153D-01, 0.3468194663233455D-03, 0.1439560393714258D-05, &
+&       0.2658551684356306D-06, 0.8573687043587876D-04, 0.3905390584629067D-02, &
+&       0.5160798561588394D-01, 0.2604923102641611D+00, 0.5701352362624796D+00, &
+&       0.5701352362624796D+00, 0.2604923102641611D+00, 0.5160798561588394D-01, &
+&       0.3905390584629067D-02, 0.8573687043587876D-04, 0.2658551684356306D-06/
+!
+      do i= 1,3
+        xyzint(i)= zero
+      enddo
+!
+      nroot=(iang+jang)/2+1
+      do ij= minh(nroot),maxh(nroot)
+        do i= 1,3
+          ghxyz(i)= hweight(ij)
+        enddo
+        exnode= hnode(ij)*expgh
+        if(iang >= 1) then
+          do i= 1,3
+            pxyz(i)= exnode+xyzpij(i,1)
+          enddo
+          do i= 1,iang
+            do j= 1,3
+              ghxyz(j)= ghxyz(j)*pxyz(j)
+            enddo
+          enddo
+        endif
+        if(jang >= 1) then
+          do i= 1,3
+            pxyz(i)= exnode+xyzpij(i,2)
+          enddo
+          do i= 1,jang
+            do j= 1,3
+              ghxyz(j)= ghxyz(j)*pxyz(j)
+            enddo
+          enddo
+        endif
+        do i= 1,3
+        xyzint(i)= xyzint(i)+ghxyz(i)
         enddo
       enddo
       return
@@ -439,214 +587,9 @@ end
 end
 
 
-!-----------------------------------------------
-  subroutine nrmlz2(onei,nbfi,nbfj,ncarti,len1)
-!-----------------------------------------------
-!
-! Normalize one-electron and overlap integrals
-!
-      implicit none
-      integer,intent(in) :: nbfi, nbfj, ncarti, len1
-      integer :: i, j
-      real(8),parameter :: half=0.5D+00, two=2.0D+00, three=3.0D+00, four=4.0D+00
-      real(8),parameter :: six=6.0D+00, eight=8.0D+00, p24=24.0D+00
-      real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
-      real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
-      real(8),parameter :: sqrt7=2.645751311064590D+00, sqrt35=5.916079783099616D+00
-      real(8),parameter :: sqrt35third=3.415650255319866D+00
-      real(8),parameter :: facf1=0.36969351199675831D+00  ! 1/sqrt(10-6/sqrt(5))
-      real(8),parameter :: facf2=0.86602540378443865D+00  ! 1/sqrt(4/3)
-      real(8),parameter :: facf3=0.28116020334310144D+00  ! 1/sqrt(46/3-6/sqrt(5))
-      real(8),parameter :: facf4=0.24065403274177409D+00  ! 1/sqrt(28-24/sqrt(5))
-      real(8),parameter :: facg1=0.19440164201192295D+00 ! 1/sqrt(1336/35-8sqrt(15/7))
-      real(8),parameter :: facg2=0.36969351199675831D+00 ! 1/sqrt(10-6/sqrt(5)
-      real(8),parameter :: facg3=0.15721262982485929D+00 ! 1/sqrt(1774/35-8sqrt(15/7)-8sqrt(3/35))
-      real(8),parameter :: facg4=0.24313189758394717D+00 ! 1/sqrt(98/5-6/sqrt(5))
-      real(8),parameter :: facg5=3.20603188768051639D-02
-!                                                 ! 1/sqrt(51512/35-984sqrt(5/21)-102/sqrt(105))
-      real(8),parameter :: facg6=0.18742611911532351D+00 ! 1/sqrt(196/5-24/sqrt(5))
-      real(8),parameter :: facg7=1.11803398874989484D+00 ! 1/sqrt(4/5)
-      real(8),intent(inout) :: onei(len1,len1)
-      real(8) :: work(len1)
-!
-! Bra part
-!
-      select case(nbfj)
-! D function
-        case(5)
-          do i= 1,ncarti
-            do j= 1,6
-              work(j)= onei(j,i)
-            enddo
-            onei(1,i)=(work(3)*two-work(1)-work(2))*half
-            onei(2,i)= work(5)*sqrt3
-            onei(3,i)= work(6)*sqrt3
-            onei(4,i)=(work(1)-work(2))*sqrt3h
-            onei(5,i)= work(4)*sqrt3
-          enddo
-        case(6)
-          do i= 1,ncarti
-            do j= 4,6
-              onei(j,i)= onei(j,i)*sqrt3
-            enddo
-          enddo
-! F function
-        case(7)
-          do i= 1,ncarti
-            do j= 1,3
-              work(j)= onei(j,i)
-            enddo
-            do j= 4,9
-              work(j)= onei(j,i)*sqrt5
-            enddo
-            work(10)= onei(10,i)*sqrt15
-            onei(1,i)=( two*work(3)-three*work(5)-three*work(7))*facf4
-            onei(2,i)=(-work(1)-work(6)+four*work(8)           )*facf3
-            onei(3,i)=(-work(2)-work(4)+four*work(9)           )*facf3
-            onei(4,i)=( work(5)-work(7)                        )*facf2
-            onei(5,i)=  work(10)
-            onei(6,i)=( work(1)-three*work(6)                  )*facf1
-            onei(7,i)=(-work(2)+three*work(4)                  )*facf1
-          enddo
-        case(10)
-          do i= 1,ncarti
-            do j= 4,9
-              onei(j,i)= onei(j,i)*sqrt5
-            enddo
-            onei(10,i)= onei(10,i)*sqrt15
-          enddo
-! G function
-        case(9)
-          do i= 1,ncarti
-            do j= 1,3
-              work(j)= onei(j,i)
-            enddo
-            do j= 4,9
-              work(j)= onei(j,i)*sqrt7
-            enddo
-            do j= 10,12
-              work(j)= onei(j,i)*sqrt35third
-            enddo
-            do j= 13,15
-              work(j)= onei(j,i)*sqrt35
-            enddo
-            onei(1,i)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
-&                      -work(11)*p24-work(12)*p24)*facg5
-            onei(2,i)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
-            onei(3,i)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
-            onei(4,i)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
-            onei(5,i)=(-work(4)-work(6)+work(15)*six)*facg6
-            onei(6,i)=(work(5)-work(14)*three)*facg2
-            onei(7,i)=(-work(7)+work(13)*three)*facg2
-            onei(8,i)=(work(1)+work(2)-work(10)*six)*facg1
-            onei(9,i)=(work(4)-work(6))*facg7
-          enddo
-        case(15)
-          do i= 1,ncarti
-            do j= 4,9
-              onei(j,i)= onei(j,i)*sqrt7
-            enddo
-            do j= 10,12
-              onei(j,i)= onei(j,i)*sqrt35third
-            enddo
-            do j= 13,15
-              onei(j,i)= onei(j,i)*sqrt35
-            enddo
-          enddo
-      end select
-!
-! Ket part
-!
-      select case(nbfi)
-! D function
-        case(5)
-          do j= 1,nbfj
-            do i= 1,6
-              work(i)= onei(j,i)
-            enddo
-            onei(j,1)=(work(3)*two-work(1)-work(2))*half
-            onei(j,2)= work(5)*sqrt3
-            onei(j,3)= work(6)*sqrt3
-            onei(j,4)=(work(1)-work(2))*sqrt3h
-            onei(j,5)= work(4)*sqrt3
-          enddo
-        case(6)
-          do j= 1,nbfj
-            do i= 4,6
-              onei(j,i)= onei(j,i)*sqrt3
-            enddo
-          enddo
-! F function
-        case(7)
-          do j= 1,nbfj
-            do i= 1,3
-              work(i)= onei(j,i)
-            enddo
-            do i= 4,9
-              work(i)= onei(j,i)*sqrt5
-            enddo
-            work(10)= onei(j,10)*sqrt15
-            onei(j,1)=( two*work(3)-three*work(5)-three*work(7))*facf4
-            onei(j,2)=(-work(1)-work(6)+four*work(8)           )*facf3
-            onei(j,3)=(-work(2)-work(4)+four*work(9)           )*facf3
-            onei(j,4)=( work(5)-work(7)                        )*facf2
-            onei(j,5)=  work(10)
-            onei(j,6)=( work(1)-three*work(6)                  )*facf1
-            onei(j,7)=(-work(2)+three*work(4)                  )*facf1
-          enddo
-        case(10)
-          do j= 1,nbfj
-            do i= 4,9
-              onei(j,i)= onei(j,i)*sqrt5
-            enddo
-            onei(j,10)= onei(j,10)*sqrt15
-          enddo
-! G function
-        case(9)
-          do j= 1,nbfj
-            do i= 1,3
-              work(i)= onei(j,i)
-            enddo
-            do i= 4,9
-              work(i)= onei(j,i)*sqrt7
-            enddo
-            do i= 10,12
-              work(i)= onei(j,i)*sqrt35third
-            enddo
-            do i= 13,15
-              work(i)= onei(j,i)*sqrt35
-            enddo
-            onei(j,1)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
-&                      -work(11)*p24-work(12)*p24)*facg5
-            onei(j,2)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
-            onei(j,3)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
-            onei(j,4)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
-            onei(j,5)=(-work(4)-work(6)+work(15)*six)*facg6
-            onei(j,6)=(work(5)-work(14)*three)*facg2
-            onei(j,7)=(-work(7)+work(13)*three)*facg2
-            onei(j,8)=(work(1)+work(2)-work(10)*six)*facg1
-            onei(j,9)=(work(4)-work(6))*facg7
-          enddo
-        case(15)
-          do j= 1,nbfj
-            do i= 4,9
-              onei(j,i)= onei(j,i)*sqrt7
-            enddo
-            do i= 10,12
-              onei(j,i)= onei(j,i)*sqrt35third
-            enddo
-            do i= 13,15
-              onei(j,i)= onei(j,i)*sqrt35
-            enddo
-          enddo
-      end select
-      return
-end
-
-
-!--------------------------------------
+!------------------------------------------
   subroutine calcint1c(hmat,ish,jsh,len1)
-!--------------------------------------
+!------------------------------------------
 !
 ! Driver of 1-electron Coulomb integrals
 !   (j|Z/r|i)
@@ -657,12 +600,11 @@ end
       use modthresh, only : threshex
       implicit none
       integer,intent(in) :: ish, jsh, len1
-      integer :: nangij(2), nprimij(2), nbfij(2), ncarti, ncart(0:6), iatom, jatom
+      integer :: nangij(2), nprimij(2), nbfij(2), iatom, jatom
       integer :: iloc, jloc, ilocbf, jlocbf, iprim, jprim, i, j, ii, ij, maxj
       real(8),intent(inout) :: hmat((nao*(nao+1))/2)
       real(8) :: exij(mxprsh,2), coij(mxprsh,2), coordij(3,2), cint(len1,len1)
       logical :: iandj
-      data ncart /1,3,6,10,15,21,28/
 !
       iandj=(ish == jsh)
       nangij(1)= mtype(ish)
@@ -702,10 +644,6 @@ end
         call int1rys(cint,exij,coij,coordij,coord,znuc,natom, &
 &                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
 !
-        if((nbfij(1) >= 5).or.(nbfij(2) >= 5)) then
-          ncarti= ncart(nangij(1))
-          call nrmlz2(cint,nbfij(1),nbfij(2),ncarti,len1)
-        endif
       endif
 !
       maxj= nbfij(2)
@@ -756,7 +694,7 @@ end
 !
       if(mxprsh > mxprsh2) then
         write(*,'(" Error! Parameter mxprsh2 in int1cmd is small!")')
-        call exit
+        call abort
       endif
 !
       inttyp=nangij(2)*3+nangij(1)+1
@@ -844,10 +782,10 @@ end
 !
 ! Calculate 1-electron Coulomb integrals (j|Z/r|i) using Rys quadratures
 !
-      use modhermite, only : ix, iy, iz
       implicit none
       integer,intent(in) :: nprimij(2), nangij(2), nbfij(2), len1, natom, mxprsh
-      integer :: nroots, ncart(0:6), ncarti, ncartj, i, j, iprim, jprim, iatom, iroot
+      integer :: ix(21,0:5), iy(21,0:5), iz(21,0:5)
+      integer :: nroots, ncart(0:6), ncarti, ncartj, ii, jj, iprim, jprim, iatom, iroot
       integer :: iang, jang, icx, icy, icz, jcx, jcy, jcz
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00
       real(8),parameter :: sqrtpi2=1.128379167095513D+00 !2.0/sqrt(pi)
@@ -857,28 +795,43 @@ end
       real(8) :: xyz(3), rij, rij2, exi, exj, ci, cj, ex1, ex2, ex3, ex4, fac, rc, tval
       real(8) :: pixyz(3), pijxyz(3), pcxyz(3), xyzpij(3,2), trys(13), wrys(13)
       real(8) :: cx(0:6,0:6,7), cy(0:6,0:6,7), cz(0:6,0:6,7), ww, xyzint(3)
+      real(8) :: cintmp(28,28)
       data ncart /1,3,6,10,15,21,28/
+      data ix/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             2,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             3,0,0,2,2,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0, &
+&             4,0,0,3,3,1,0,1,0,2,2,0,2,1,1,0,0,0,0,0,0, &
+&             5,0,0,4,4,1,0,1,0,3,3,3,2,1,0,2,1,0,2,2,1/
+      data iy/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,2,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,3,0,1,0,2,2,0,1,1,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,4,0,1,0,3,3,0,1,2,0,2,1,2,1,0,0,0,0,0,0, &
+&             0,5,0,1,0,4,4,0,1,2,1,0,3,3,3,0,1,2,2,1,2/
+      data iz/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,2,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,3,0,1,0,1,2,2,1,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,4,0,1,0,1,3,3,0,2,2,1,1,2,0,0,0,0,0,0, &
+&             0,0,5,0,1,0,1,4,4,0,1,2,0,1,2,3,3,3,1,2,2/
 !
       nroots=(nangij(1)+nangij(2))/2+1
       ncarti= ncart(nangij(1))
       ncartj= ncart(nangij(2))
 !
-      do i= 1,ncarti
-        do j= 1,ncartj
-          cint(j,i)= zero
-        enddo
-      enddo
+      cintmp(1:ncartj,1:ncarti)= zero
 !
-      do i= 1,3
-        xyz(i)= coordij(i,1)-coordij(i,2)
+      do ii= 1,3
+        xyz(ii)= coordij(ii,1)-coordij(ii,2)
       enddo
       rij= xyz(1)*xyz(1)+xyz(2)*xyz(2)+xyz(3)*xyz(3)
 !
       do iprim= 1,nprimij(1)
         exi= exij(iprim,1)
         ci = coij(iprim,1)*sqrtpi2
-        do i= 1,3
-          pixyz(i)= exi*coordij(i,1)
+        do ii= 1,3
+          pixyz(ii)= exi*coordij(ii,1)
         enddo
         do jprim= 1,nprimij(2)
           exj= exij(jprim,2)
@@ -890,12 +843,12 @@ end
           cj = coij(jprim,2)
           fac=exp(-rij2)*ex2*ci*cj
 !
-          do i= 1,3
-            pijxyz(i)=(pixyz(i)+exj*coordij(i,2))*ex2
+          do ii= 1,3
+            pijxyz(ii)=(pixyz(ii)+exj*coordij(ii,2))*ex2
           enddo
           do iatom= 1,natom
-            do i= 1,3
-              pcxyz(i)= pijxyz(i)-coord(i,iatom)
+            do ii= 1,3
+              pcxyz(ii)= pijxyz(ii)-coord(ii,iatom)
             enddo
             rc= pcxyz(1)*pcxyz(1)+pcxyz(2)*pcxyz(2)+pcxyz(3)*pcxyz(3)
             tval= ex1*rc
@@ -903,9 +856,9 @@ end
             do iroot= 1,nroots
               ww=-wrys(iroot)*znuc(iatom)
               ex4= sqrt(ex2*(one-trys(iroot)))
-              do i= 1,3
-                xyzpij(i,1)=(one-trys(iroot))*pijxyz(i)+trys(iroot)*coord(i,iatom)-coordij(i,1)
-                xyzpij(i,2)=(one-trys(iroot))*pijxyz(i)+trys(iroot)*coord(i,iatom)-coordij(i,2)
+              do ii= 1,3
+                xyzpij(ii,1)=(one-trys(iroot))*pijxyz(ii)+trys(iroot)*coord(ii,iatom)-coordij(ii,1)
+                xyzpij(ii,2)=(one-trys(iroot))*pijxyz(ii)+trys(iroot)*coord(ii,iatom)-coordij(ii,2)
               enddo
               do iang= 0,nangij(1)
                 do jang= 0,nangij(2)
@@ -916,20 +869,30 @@ end
                 enddo
               enddo
             enddo
-            do i= 1,ncarti
-              icx= ix(i,nangij(1))
-              icy= iy(i,nangij(1))
-              icz= iz(i,nangij(1))
-              do j= 1,ncartj
-                jcx= ix(j,nangij(2))
-                jcy= iy(j,nangij(2))
-                jcz= iz(j,nangij(2))
+            do ii= 1,ncarti
+              icx= ix(ii,nangij(1))
+              icy= iy(ii,nangij(1))
+              icz= iz(ii,nangij(1))
+              do jj= 1,ncartj
+                jcx= ix(jj,nangij(2))
+                jcy= iy(jj,nangij(2))
+                jcz= iz(jj,nangij(2))
                 do iroot= 1,nroots
-                  cint(j,i)=cint(j,i)+fac*cx(jcx,icx,iroot)*cy(jcy,icy,iroot)*cz(jcz,icz,iroot)
+                  cintmp(jj,ii)= cintmp(jj,ii) &
+&                               +fac*cx(jcx,icx,iroot)*cy(jcy,icy,iroot)*cz(jcz,icz,iroot)
                 enddo
               enddo
             enddo
           enddo
+        enddo
+      enddo
+!
+      if((nbfij(1) >= 5).or.(nbfij(2) >= 5)) then
+        call nrmlz1(cintmp,nbfij(1),nbfij(2),ncarti)
+      endif
+      do ii= 1,nbfij(1)
+        do jj= 1,nbfij(2)
+          cint(jj,ii)= cintmp(jj,ii)
         enddo
       enddo
 !
@@ -1951,3 +1914,116 @@ end
 !
       return
 end
+
+
+!-------------------------------------------------------------------------------
+  subroutine ints(sint,exij,coij,coordij,nprimij,nangij,nbfij,mxprsh,threshex)
+!-------------------------------------------------------------------------------
+!
+! Calculate overlap integrals
+!
+! In : exij     (Exponents of basis functions)
+!      coij     (Coefficients of basis functions)
+!      coordij  (x,y,z coordinates of basis functions)
+!      nprimij  (Numbers of primitive functions)
+!      nangij   (Degrees of angular momentum)
+!      nbfij    (Numbers of basis functions)
+!      mxprsh   (Size of primitive fuction array)
+!      threshex (Threshold of exponential calculation)
+! Out: sint(28,28) (Overlap integrals)
+!
+      implicit none
+      integer,intent(in) :: nprimij(2), nangij(2), nbfij(2), mxprsh
+      integer :: ncarti, ncartj, iprim, jprim, ii, jj, iang, jang
+      integer :: isx, jsx, isy, jsy, isz, jsz, ncart(0:6)
+      integer :: ix(21,0:5), iy(21,0:5), iz(21,0:5)
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, half=0.5D+00
+      real(8),intent(in) :: exij(mxprsh,2), coij(mxprsh,2), coordij(3,2), threshex
+      real(8),intent(out) :: sint(28,28)
+      real(8) :: xyzij(3), rij, rij2, fac, exi, exi2, exj, ci, cj
+      real(8) :: ex1, ex2, ex3, xyzpij(3,2), cij
+      real(8) :: xyzint(3), sx(0:6,0:6), sy(0:6,0:6), sz(0:6,0:6)
+      data ncart /1,3,6,10,15,21,28/
+      data ix/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             2,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             3,0,0,2,2,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0, &
+&             4,0,0,3,3,1,0,1,0,2,2,0,2,1,1,0,0,0,0,0,0, &
+&             5,0,0,4,4,1,0,1,0,3,3,3,2,1,0,2,1,0,2,2,1/
+      data iy/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,2,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,3,0,1,0,2,2,0,1,1,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,4,0,1,0,3,3,0,1,2,0,2,1,2,1,0,0,0,0,0,0, &
+&             0,5,0,1,0,4,4,0,1,2,1,0,3,3,3,0,1,2,2,1,2/
+      data iz/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,2,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,3,0,1,0,1,2,2,1,0,0,0,0,0,0,0,0,0,0,0, &
+&             0,0,4,0,1,0,1,3,3,0,2,2,1,1,2,0,0,0,0,0,0, &
+&             0,0,5,0,1,0,1,4,4,0,1,2,0,1,2,3,3,3,1,2,2/
+!
+      ncarti= ncart(nangij(1))
+      ncartj= ncart(nangij(2))
+      sint(1:ncartj,1:ncarti)= zero
+!
+      if((nangij(1) > 4).or.(nangij(2) > 4))then
+        write(*,'(" Error! This program supports up to g function in intst")')
+        call abort
+      endif
+!
+      do ii= 1,3
+        xyzij(ii)= coordij(ii,1)-coordij(ii,2)
+      enddo
+      rij= xyzij(1)*xyzij(1)+xyzij(2)*xyzij(2)+xyzij(3)*xyzij(3)
+!
+! Calculate overlap and kinetic integrals for each primitive
+!
+      do iprim= 1,nprimij(1)
+        exi= exij(iprim,1)
+        ci = coij(iprim,1)
+        exi2=-two*exi*exi
+        do jprim= 1,nprimij(2)
+          exj= exij(jprim,2)
+          ex1= exi+exj
+          ex2= one/ex1
+          rij2=rij*exi*exj*ex2
+          if(rij2 > threshex) cycle
+          ex3= sqrt(ex2)
+          fac= exp(-rij2)
+          do ii= 1,3
+            xyzpij(ii,1)=-exj*xyzij(ii)*ex2
+            xyzpij(ii,2)= exi*xyzij(ii)*ex2
+          enddo
+          cj = coij(jprim,2)*fac
+!
+          do iang= 0,nangij(1)
+            do jang= 0,nangij(2)
+              call ghquad(xyzint,ex3,xyzpij,iang,jang)
+              sx(jang,iang)= xyzint(1)*ex3
+              sy(jang,iang)= xyzint(2)*ex3
+              sz(jang,iang)= xyzint(3)*ex3
+            enddo
+          enddo
+          cij= ci*cj
+          do ii= 1,ncarti
+            isx= ix(ii,nangij(1))
+            isy= iy(ii,nangij(1))
+            isz= iz(ii,nangij(1))
+            do jj= 1,ncartj
+              jsx= ix(jj,nangij(2))
+              jsy= iy(jj,nangij(2))
+              jsz= iz(jj,nangij(2))
+              sint(jj,ii)= sint(jj,ii)+cij*sx(jsx,isx)*sy(jsy,isy)*sz(jsz,isz)
+            enddo
+          enddo
+        enddo
+      enddo
+!
+      if((nbfij(1) >= 5).or.(nbfij(2) >= 5)) then
+        call nrmlz1(sint,nbfij(1),nbfij(2),ncarti)
+      endif
+!
+      return
+end
+
