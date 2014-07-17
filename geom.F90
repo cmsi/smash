@@ -655,7 +655,7 @@ end
           suml= suml+workv(ii,1)*workv(ii,1)/(rlambda-workv(ii,3))
         enddo
         if(master) then
-          write(*,'(" Lambda iteration in RFO",i3,3x,"Lambda=",1p,d15.8,4x,"Sum=",1p,d15.8)') &
+          write(*,'(" Lambda iteration of RFO",i3,3x,"Lambda=",1p,d15.8,4x,"Sum=",1p,d15.8)') &
 &               iterrfo,rlambda,suml
         endif
         if(abs(rlambda-suml) <= convl) exit
