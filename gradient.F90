@@ -172,8 +172,9 @@ end
       use moddft, only : nrad, nleb
       use modatom, only : atomrad
       use modunit, only : tobohr
+      use moddft, only : idft, hfexchange
       implicit none
-      integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j, iatom, idft
+      integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j, iatom
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmo(nao*nao), energymo(nao), xint(nshell*(nshell+1)/2)
       real(8),intent(out) :: egrad(3,natom)
@@ -181,7 +182,6 @@ end
       real(8),allocatable :: atomvec(:), surface(:), radpt(:), angpt(:), rad(:), ptweight(:)
       real(8),allocatable :: xyzpt(:), rsqrd(:), rr(:), uvec(:), vao(:), vmo(:)
       real(8),allocatable :: dweight(:), dpa(:), pa(:), work(:)
-      real(8) :: hfexchange
       character(len=3) :: table(112)= &
 &     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
@@ -226,10 +226,7 @@ end
       call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx)
 !
 ! Calculate DFT information
-!   idft= 1 (B3LYP)
 !
-      idft= 1
-      if(idft == 1) hfexchange=0.2D+00
       call calcatomvec(atomvec,surface)
       call calcradpt(radpt,nrad)
       call calclebpt(angpt,nleb)
@@ -287,8 +284,9 @@ end
       use moddft, only : nrad, nleb
       use modatom, only : atomrad
       use modunit, only : tobohr
+      use moddft, only : idft, hfexchange
       implicit none
-      integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j, iatom, idft
+      integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j, iatom
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmoa(nao*nao), cmob(nao*nao), energymoa(nao), energymob(nao)
       real(8),intent(in) :: xint(nshell*(nshell+1)/2)
@@ -297,7 +295,6 @@ end
       real(8),allocatable :: atomvec(:), surface(:), radpt(:), angpt(:), rad(:), ptweight(:)
       real(8),allocatable :: xyzpt(:), rsqrd(:), rr(:), uvec(:), vao(:), vmoa(:)
       real(8),allocatable :: vmob(:), dweight(:), dpa(:), pa(:), work(:)
-      real(8) :: hfexchange
       character(len=3) :: table(112)= &
 &     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
@@ -344,10 +341,7 @@ end
       call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx)
 !
 ! Calculate DFT information
-!   idft= 1 (B3LYP)
 !
-      idft= 1
-      if(idft == 1) hfexchange=0.2D+00
       call calcatomvec(atomvec,surface)
       call calcradpt(radpt,nrad)
       call calclebpt(angpt,nleb)

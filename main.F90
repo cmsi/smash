@@ -51,9 +51,9 @@
 !
       if(flagecp) call setecp
 !
-! Adjust the numbe of DFT grids
+! Set functional information and adjust the number of DFT grids
 !
-      call dftgrid
+      call setdft
 !
 ! Write input data
 !
@@ -120,7 +120,7 @@ end program main
       use modbasis, only : spher, basis
       use modscf, only : maxiter, dconv, fdiff, diis, maxdiis, maxsoscf, extrap
       use modthresh, only : cutint2, threshsoscf
-      use moddft, only : nrad, nleb
+      use moddft, only : idft, nrad, nleb
       use modopt, only : nopt, optconv, cartesian
       use modecp, only : ecp, flagecp
       use modjob, only : scftype, runtype, method
@@ -158,6 +158,7 @@ end program main
       cutint2= 1.0d-12
       threshsoscf= 0.25d0
       dconv  = 5.0d-6
+      idft   = 0
       nrad   = 96
       nleb   = 302
       iprint = 1
@@ -238,6 +239,7 @@ end
       use modparallel, only : master
       use modmolecule, only : nmo, neleca
       use modjob, only : method
+      use moddft, only : idft
       implicit none
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:)
@@ -291,7 +293,7 @@ end
         call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
-      elseif(method == 'B3LYP') then
+      elseif(idft >= 1) then
         call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
         call tstamp(1)
         call calcrdft(h1mtrx,cmo,ortho,smtrx,xint,energymo)
@@ -339,6 +341,7 @@ end
       use modenergy, only : enuc
       use modmolecule, only : nmo
       use modjob, only : method
+      use moddft, only : idft
       implicit none
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
@@ -393,7 +396,7 @@ end
         call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
-      elseif(method == 'B3LYP') then
+      elseif(idft >= 1) then
         call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
         call tstamp(1)
         call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
@@ -446,6 +449,7 @@ end
       use modparallel, only : master
       use modmolecule, only : nmo, natom
       use modjob, only : method
+      use moddft, only : idft
       implicit none
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:)
@@ -501,7 +505,7 @@ end
         call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
-      elseif(method == 'B3LYP') then
+      elseif(idft >= 1) then
         call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
         call tstamp(1)
         call calcrdft(h1mtrx,cmo,ortho,smtrx,xint,energymo)
@@ -523,7 +527,7 @@ end
 !
       if(method == 'HARTREE-FOCK') then
         call calcgradrhf(cmo,energymo,xint,egrad)
-      elseif(method == 'B3LYP') then
+      elseif(idft >= 1) then
         call calcgradrdft(cmo,energymo,xint,egrad)
       else
         if(master) then
@@ -573,6 +577,7 @@ end
       use modparallel, only : master
       use modmolecule, only : nmo, natom
       use modjob, only : method
+      use moddft, only : idft
       implicit none
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
@@ -629,7 +634,7 @@ end
         call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
-      elseif(method == 'B3LYP') then
+      elseif(idft >= 1) then
         call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
         call tstamp(1)
         call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
@@ -656,7 +661,7 @@ end
 !
       if(method == 'HARTREE-FOCK') then
         call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad)
-      elseif(method == 'B3LYP') then
+      elseif(idft >= 1) then
           call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad)
       else
         if(master) then
@@ -716,6 +721,7 @@ end
       use modopt, only : nopt, optconv, cartesian
       use modwarn, only : nwarn
       use modjob, only : method
+      use moddft, only : idft
       implicit none
       integer,allocatable :: iredun(:)
       integer :: nao2, nao3, nshell3, natom3, ii, iopt
@@ -822,7 +828,7 @@ end
           call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1)
           call tstamp(1)
-        elseif(method == 'B3LYP') then
+        elseif(idft >= 1) then
           if(iopt == 1) then
             call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
             call tstamp(1)
@@ -842,7 +848,7 @@ end
         if(method == 'HARTREE-FOCK') then
           call calcgradrhf(cmo,energymo,xint,egrad)
           call tstamp(1)
-        elseif(method == 'B3LYP') then
+        elseif(idft >= 1) then
           call calcgradrdft(cmo,energymo,xint,egrad)
           call tstamp(1)
         else
@@ -963,6 +969,7 @@ end
       use modwarn, only : nwarn
       use modguess, only : iguess
       use modjob, only : method
+      use moddft, only : idft
       implicit none
       integer,allocatable :: iredun(:)
       integer :: nao2, nao3, nshell3, natom3, ii, iopt
@@ -1075,7 +1082,7 @@ end
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2)
           call tstamp(1)
-        elseif(method == 'B3LYP') then
+        elseif(idft >= 1) then
           if(iopt == 1) then
             call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
             call tstamp(1)
@@ -1099,7 +1106,7 @@ end
 !
         if(method == 'HARTREE-FOCK') then
           call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad)
-        elseif(method == 'B3LYP') then
+        elseif(idft >= 1) then
           call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad)
         else
           if(master) then
@@ -1271,21 +1278,31 @@ end
 end
 
 
-!---------------------
-  subroutine dftgrid
-!---------------------
+!--------------------
+  subroutine setdft
+!--------------------
 !
+! Set functional information
 ! Adjust the numbe of DFT grids when heavy elements are included
 !
       use modparallel
-      use moddft, only : nrad, nleb
+      use moddft, only : idft, nrad, nleb, hfexchange
       use modmolecule, only : natom, numatomic
       use modjob, only : method
       use modwarn, only : nwarn
       implicit none
       integer :: maxelem
 !
-      if(method =='B3LYP') then
+      select case(method)
+        case('B3LYP')
+          idft= 1
+          hfexchange= 0.2D+00
+        case('B3PW91')
+          idft= 2
+          hfexchange= 0.2D+00
+      endselect
+!
+      if(idft >= 1) then
         maxelem= maxval(numatomic(1:natom))
         if((maxelem >= 55).and.(nrad == 96).and.(nleb == 302)) then
           nrad= 150

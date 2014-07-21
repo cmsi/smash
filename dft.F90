@@ -116,10 +116,13 @@ end
 !
       implicit none
       integer,intent(in) :: idft, iscf
-      real(8),parameter :: zero=0.0D+00, onethird=0.3333333333333333D+00
+      real(8),parameter :: zero=0.0D+00, onethird=0.3333333333333333D+00, two=2.0D+00
+      real(8),parameter :: four=4.0D+00
       real(8),intent(in) :: rhoa, rhob, grhoa(3), grhob(3), weight
-      real(8),intent(out) :: excora(4), excorb(4), energy
-      real(8) :: rhoa13, rhob13, csdlda, cb88, cvwn, clyp
+      real(8),intent(out) :: excora(4), excorb(4)
+      real(8),intent(inout) :: energy
+      real(8) :: rhoa13, rhob13, csdlda, cb88, cvwn, clyp, cpw91lda, cpw91
+      real(8) :: dummy, vrhoa, vrhob, zk, vsigmaaa, vsigmaab, vsigmabb, gradaa, gradab, gradbb
 !ishimura
     real(8) :: ee1,ee2,ee3,eold
     common/kazuyadft/ee1,ee2,ee3
@@ -130,26 +133,71 @@ end
       rhob13= rhob**onethird
 !
 ! B3LYP
+      select case(idft)
+        case(1)
+          csdlda= 0.08D+00
+          cb88=   0.72D+00
+          cvwn=   0.19D+00
+          clyp=   0.81D+00
 !
-      if(idft == 1) then
-        csdlda= 0.08D+00
-        cb88=   0.72D+00
-        cvwn=   0.19D+00
-        clyp=   0.81D+00
-!
-!ishimura
   eold=energy
-        call funcsdlda(excora,excorb,energy,rhoa,rhob,rhoa13,rhob13,weight,csdlda,iscf)
+          call funcsdlda(excora,excorb,energy,rhoa,rhob,rhoa13,rhob13,weight,csdlda,iscf)
   ee1=ee1+energy-eold
   eold=energy
-        call funcbecke88(excora,excorb,energy,rhoa,rhob,grhoa,grhob,rhoa13,rhob13, &
+          call funcbecke88(excora,excorb,energy,rhoa,rhob,grhoa,grhob,rhoa13,rhob13, &
 &                        weight,cb88,iscf)
   ee2=ee2+energy-eold
   eold=energy
-        call funcvwn5(excora,excorb,energy,rhoa,rhob,weight,cvwn,iscf)
-        call funclyp(excora,excorb,energy,rhoa,rhob,grhoa,grhob,rhoa13,rhob13,weight,clyp,iscf)
+          call funcvwn5(excora,excorb,energy,rhoa,rhob,weight,cvwn,iscf)
+          call funclyp(excora,excorb,energy,rhoa,rhob,grhoa,grhob,rhoa13,rhob13,weight,clyp,iscf)
   ee3=ee3+energy-eold
-      endif
+! B3PW91
+        case(2)
+          csdlda  = 0.08D+00
+          cb88    = 0.72D+00
+          cpw91lda= 0.19D+00
+          cpw91   = 0.81D+00
+!
+          call funcsdlda(excora,excorb,energy,rhoa,rhob,rhoa13,rhob13,weight,csdlda,iscf)
+          call funcbecke88(excora,excorb,energy,rhoa,rhob,grhoa,grhob,rhoa13,rhob13, &
+&                        weight,cb88,iscf)
+          if(iscf == 1) then
+            call rks_c_pw92(1,1,rhoa*two,dummy,zk,vrhoa,dummy,dummy,dummy,dummy)
+            excora(1)= excora(1)+cpw91lda*vrhoa
+            energy= energy+cpw91lda*zk*weight
+!
+            gradaa=(grhoa(1)*grhoa(1)+grhoa(2)*grhoa(2)+grhoa(3)*grhoa(3))*four
+            call rks_c_pw91(1,1,rhoa*two,gradaa,zk,vrhoa,vsigmaaa,dummy,dummy,dummy)
+            excora(1)= excora(1)+cpw91*vrhoa
+            excora(2)= excora(2)+cpw91*vsigmaaa*grhoa(1)
+            excora(3)= excora(3)+cpw91*vsigmaaa*grhoa(2)
+            excora(4)= excora(4)+cpw91*vsigmaaa*grhoa(3)
+            energy= energy+cpw91*zk*weight
+          else
+            call uks_c_pw92(1,1,rhoa,rhob,dummy,dummy,dummy,zk,vrhoa,vrhob, &
+&                           dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy, &
+&                           dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy)
+            excora(1)= excora(1)+cpw91lda*vrhoa
+            excorb(1)= excorb(1)+cpw91lda*vrhob
+            energy= energy+cpw91lda*zk*weight
+!
+            gradaa= grhoa(1)*grhoa(1)+grhoa(2)*grhoa(2)+grhoa(3)*grhoa(3)
+            gradab= grhoa(1)*grhob(1)+grhoa(2)*grhob(2)+grhoa(3)*grhob(3)
+            gradbb= grhob(1)*grhob(1)+grhob(2)*grhob(2)+grhob(3)*grhob(3)
+            call uks_c_pw91(1,1,rhoa,rhob,gradaa,gradbb,gradab,zk,vrhoa,vrhob, &
+&                           vsigmaaa,vsigmabb,vsigmaab,dummy,dummy,dummy,dummy,dummy, &
+&                           dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy)
+            excora(1)= excora(1)+cpw91*vrhoa
+            excora(2)= excora(2)+cpw91*(two*vsigmaaa*grhoa(1)+vsigmaab*grhob(1))
+            excora(3)= excora(3)+cpw91*(two*vsigmaaa*grhoa(2)+vsigmaab*grhob(2))
+            excora(4)= excora(4)+cpw91*(two*vsigmaaa*grhoa(3)+vsigmaab*grhob(3))
+            excorb(1)= excorb(1)+cpw91*vrhob
+            excorb(2)= excorb(2)+cpw91*(two*vsigmabb*grhob(1)+vsigmaab*grhoa(1))
+            excorb(3)= excorb(3)+cpw91*(two*vsigmabb*grhob(2)+vsigmaab*grhoa(2))
+            excorb(4)= excorb(4)+cpw91*(two*vsigmabb*grhob(3)+vsigmaab*grhoa(3))
+            energy= energy+cpw91*zk*weight
+          endif
+      end select
       return
 end
 

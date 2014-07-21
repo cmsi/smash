@@ -665,7 +665,7 @@ end
 ! Inout : cmo   (MO coefficient matrix)
 !
       use modparallel
-      use moddft, only : nrad, nleb, hfexchange
+      use moddft, only : idft, nrad, nleb, hfexchange
       use modatom, only : atomrad
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nmo, natom, numatomic
@@ -677,7 +677,7 @@ end
       use modunit, only : tobohr
       implicit none
       integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, i, itsub, itdiis
-      integer :: itextra, itsoscf, nocc, nvir, idft
+      integer :: itextra, itsoscf, nocc, nvir
       integer :: idis(nproc,14), isize1, isize2, isize3, iatom
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
       real(8),parameter :: small=1.0D-10
@@ -734,10 +734,7 @@ end
       convsoscf=.false.
 !
 ! Calculate DFT information
-!   idft= 1 (B3LYP)
 !
-      idft= 1
-      if(idft == 1) hfexchange=0.2D+00
       call calcatomvec(atomvec,surface)
       call calcradpt(radpt,nrad)
       call calclebpt(angpt,nleb)
@@ -1462,7 +1459,7 @@ end
 !         cmob  (Beta MO coefficient matrix)
 !
       use modparallel
-      use moddft, only : nrad, nleb, hfexchange
+      use moddft, only : idft, nrad, nleb, hfexchange
       use modatom, only : atomrad
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nelecb, nmo, natom, numatomic
@@ -1474,7 +1471,7 @@ end
       use modunit, only : tobohr
       implicit none
       integer :: nao3, nshell3, maxdim, maxfunc(0:6), iter, i, itsub, itdiis
-      integer :: itextra, itsoscf, nocca, nvira, noccb, nvirb, idft
+      integer :: itextra, itsoscf, nocca, nvira, noccb, nvirb
       integer :: idis(nproc,14), isize1, isize2, isize3, iatom
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
       real(8),parameter :: small=1.0D-10
@@ -1541,10 +1538,7 @@ end
       convsoscf=.false.
 !
 ! Calculate DFT information
-!   idft= 1 (B3LYP)
 !
-      idft= 1
-      if(idft == 1) hfexchange=0.2D+00
       call calcatomvec(atomvec,surface)
       call calcradpt(radpt,nrad)
       call calclebpt(angpt,nleb)

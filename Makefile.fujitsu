@@ -7,16 +7,22 @@ SRC =   basis.F90 geom.F90 guess.F90 input.F90 int1.F90 machine.F90 main.F90 mat
 	int2spd2.F90 int2spd3.F90 int2spd4.F90 gradient.F90 rysquad.F90 int2rys.F90  \
 	dft.F90 dftfunc.F90 lebedev.F90 mp2.F90 grad1.F90 grad2.F90 ecp.F90 ecpfunc.F90 ecpder.F90
 MOD = module.F90 modulefmt.F90 modulerys.F90
+SRC2=   dftpw91.F
+MOD = module.F90 modulefmt.F90 modulerys.F90
 OBJ = $(SRC:.F90=.o)
+OBJ2= $(SRC2:.F=.o)
 OBJM= $(MOD:.F90=.o)
-OBJS= $(OBJM) $(OBJ)
+OBJS= $(OBJM) $(OBJ) $(OBJ2)
 .SUFFIXES:
-.SUFFIXES: .F90 .o
+.SUFFIXES: .F .F90 .o
 
 smash : $(OBJS)
 	$(F90) -o smash $(OPT) $(OBJS) $(LIB)
 
 .F90.o:
+	$(F90) $(OPT) -c $<
+
+.F.o:
 	$(F90) $(OPT) -c $<
 
 $(OBJ): $(MOD)

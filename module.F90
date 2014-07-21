@@ -349,7 +349,7 @@ end
   module moddft
 !----------------
       implicit none
-      integer :: nrad, nleb
+      integer :: idft, nrad, nleb
       real(8) :: hfexchange
 end
 
