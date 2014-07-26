@@ -30,6 +30,22 @@
             do iatom= 1, natom
               call bs631gd(iatom,ishell)
             enddo
+          case('6-31G(D,P)','6-31G**')
+            do iatom= 1, natom
+              call bs631gdp(iatom,ishell)
+            enddo
+          case('6-311G')
+            do iatom= 1, natom
+              call bs6311g(iatom,ishell)
+            enddo
+          case('6-311G(D)','6-311G*')
+            do iatom= 1, natom
+              call bs6311gd(iatom,ishell)
+            enddo
+          case('6-311G(D,P)','6-311G**')
+            do iatom= 1, natom
+              call bs6311gdp(iatom,ishell)
+            enddo
           case('CC-PVDZ')
             do iatom= 1, natom
               call bsccpvdz(iatom,ishell)
@@ -223,6 +239,14 @@ end
             call bs631g(iatom,ishell)
           case('6-31G(D)','6-31G*')
             call bs631gd(iatom,ishell)
+          case('6-31G(D,P)','6-31G**')
+            call bs631gdp(iatom,ishell)
+          case('6-311G')
+            call bs6311g(iatom,ishell)
+          case('6-311G(D)','6-311G*')
+            call bs6311gd(iatom,ishell)
+          case('6-311G(D,P)','6-311G**')
+            call bs6311gdp(iatom,ishell)
           case('CC-PVDZ')
             call bsccpvdz(iatom,ishell)
           case('CC-PVTZ')
@@ -1752,15 +1776,18 @@ end
 ! Set basis functions of 6-31G
 !
       use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mbf, mtype
+      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mbf, mtype, spher
       use modparam, only : mxao, mxshell, mxprim
       implicit none
       integer,intent(in) :: iatom
       integer,intent(inout) :: ishell
       integer :: j
-      integer :: is(18)= (/0,4,8,18,28,38,48,58,68,78,88,104,120,136,152,168,184,200/)
-      integer :: ip(18)= (/0,0,0,4,8,12,16,20,24,28,32,42,52,62,72,82,92,102/)
-      real(8) :: ex631g(216)= &
+      integer :: is(30)= (/0,4,8,18,28,38,48,58,68,78,88,104,120,136,152,168,184,200, &
+&                          216,238,260,282,304,326,348,370,392,414,436,458/)
+      integer :: ip(30)= (/0,0,0,4,8,12,16,20,24,28,32,42,52,62,72,82,92,102, &
+&                          112,128,144,160,176,192,208,224,240,256,272,288/)
+      integer :: id(21:30)= (/0,4,8,12,16,20,24,28,32,36/)
+      real(8) :: ex631g(480)= &
 &     (/1.873113696D+01,2.825394365D+00,6.401216923D-01,1.612777588D-01,3.842163400D+01, &
 &       5.778030000D+00,1.241774000D+00,2.979640000D-01,6.424189150D+02,9.679851530D+01, &
 &       2.209112120D+01,6.201070250D+00,1.935117680D+00,6.367357890D-01,2.324918408D+00, &
@@ -1804,8 +1831,60 @@ end
 &       2.834830000D+04,4.257620000D+03,9.698570000D+02,2.732630000D+02,8.736950000D+01, &
 &       2.968670000D+01,5.758910000D+02,1.368160000D+02,4.380980000D+01,1.620940000D+01, &
 &       6.460840000D+00,2.651140000D+00,3.860280000D+00,1.413730000D+00,5.166460000D-01, &
-&       1.738880000D-01/)
-      real(8) :: cs631g(216)= &
+&       1.738880000D-01,3.159442000D+04,4.744330000D+03,1.080419000D+03,3.042338000D+02, &
+&       9.724586000D+01,3.302495000D+01,6.227625000D+02,1.478839000D+02,4.732735000D+01, &
+&       1.751495000D+01,6.922722000D+00,2.768277000D+00,1.184802000D+01,4.079211000D+00, &
+&       1.763481000D+00,7.889270000D-01,3.503870000D-01,1.463440000D-01,7.168010000D-01, &
+&       2.337410000D-01,3.867500000D-02,1.652100000D-02,3.526486000D+04,5.295503000D+03, &
+&       1.206020000D+03,3.396839000D+02,1.086264000D+02,3.692103000D+01,7.063096000D+02, &
+&       1.678187000D+02,5.382558000D+01,2.001638000D+01,7.970279000D+00,3.212059000D+00, &
+&       1.419518000D+01,4.880828000D+00,2.160390000D+00,9.878990000D-01,4.495170000D-01, &
+&       1.873870000D-01,1.032271000D+00,3.811710000D-01,6.513100000D-02,2.601000000D-02, &
+&       3.908898000D+04,5.869792000D+03,1.336910000D+03,3.766031000D+02,1.204679000D+02, &
+&       4.098032000D+01,7.862852000D+02,1.868870000D+02,6.000935000D+01,2.225883000D+01, &
+&       8.885149000D+00,3.609211000D+00,2.984355000D+01,9.542383000D+00,4.056790000D+00, &
+&       1.704703000D+00,7.062340000D-01,2.795360000D-01,1.065609000D+00,4.259330000D-01, &
+&       7.632000000D-02,2.959400000D-02,4.315295000D+04,6.479571000D+03,1.475675000D+03, &
+&       4.156991000D+02,1.330006000D+02,4.527222000D+01,8.746826000D+02,2.079785000D+02, &
+&       6.687918000D+01,2.487347000D+01,9.968441000D+00,4.063826000D+00,3.364363000D+01, &
+&       1.087565000D+01,4.628225000D+00,1.950126000D+00,8.094520000D-01,3.204740000D-01, &
+&       1.224148000D+00,4.842630000D-01,8.409600000D-02,3.203600000D-02,4.735433000D+04, &
+&       7.110787000D+03,1.619591000D+03,4.563379000D+02,1.460606000D+02,4.975791000D+01, &
+&       9.681484000D+02,2.302821000D+02,7.414591000D+01,2.764107000D+01,1.111475000D+01, &
+&       4.543113000D+00,3.764050000D+01,1.228238000D+01,5.233366000D+00,2.208950000D+00, &
+&       9.178800000D-01,3.634120000D-01,1.392781000D+00,5.439130000D-01,9.147600000D-02, &
+&       3.431200000D-02,5.178981000D+04,7.776849000D+03,1.771385000D+03,4.991588000D+02, &
+&       1.597982000D+02,5.447021000D+01,1.064328000D+03,2.532138000D+02,8.160924000D+01, &
+&       3.048193000D+01,1.229439000D+01,5.037722000D+00,4.156291000D+01,1.367627000D+01, &
+&       5.844390000D+00,2.471609000D+00,1.028308000D+00,4.072500000D-01,1.571464000D+00, &
+&       6.055800000D-01,9.856100000D-02,3.645900000D-02,5.634714000D+04,8.460943000D+03, &
+&       1.927325000D+03,5.432343000D+02,1.739905000D+02,5.936005000D+01,1.165412000D+03, &
+&       2.773276000D+02,8.947278000D+01,3.348256000D+01,1.354037000D+01,5.557972000D+00, &
+&       4.583532000D+01,1.518777000D+01,6.500710000D+00,2.751583000D+00,1.145404000D+00, &
+&       4.536870000D-01,1.757999000D+00,6.670220000D-01,1.051290000D-01,3.841800000D-02, &
+&       6.113262000D+04,9.179342000D+03,2.090857000D+03,5.892479000D+02,1.887543000D+02, &
+&       6.444629000D+01,1.259980000D+03,2.998761000D+02,9.684917000D+01,3.631020000D+01, &
+&       1.472996000D+01,6.066075000D+00,5.043485000D+01,1.683929000D+01,7.192086000D+00, &
+&       3.053420000D+00,1.273643000D+00,5.040910000D-01,1.950316000D+00,7.367210000D-01, &
+&       1.141770000D-01,4.114800000D-02,6.614899000D+04,9.933077000D+03,2.262816000D+03, &
+&       6.379154000D+02,2.044122000D+02,6.982538000D+01,1.378841000D+03,3.282694000D+02, &
+&       1.060946000D+02,3.983275000D+01,1.618622000D+01,6.667788000D+00,5.452355000D+01, &
+&       1.829783000D+01,7.867348000D+00,3.340534000D+00,1.393756000D+00,5.513260000D-01, &
+&       2.151947000D+00,8.110630000D-01,1.210170000D-01,4.303700000D-02,7.139635000D+04, &
+&       1.072084000D+04,2.442129000D+03,6.884265000D+02,2.206153000D+02,7.539373000D+01, &
+&       1.492532000D+03,3.554013000D+02,1.149534000D+02,4.322043000D+01,1.759710000D+01, &
+&       7.257765000D+00,5.935261000D+01,2.002181000D+01,8.614561000D+00,3.660531000D+00, &
+&       1.528111000D+00,6.040570000D-01,2.379276000D+00,8.858390000D-01,1.285290000D-01, &
+&       4.519500000D-02,7.679438000D+04,1.153070000D+04,2.626575000D+03,7.404903000D+02, &
+&       2.373528000D+02,8.115818000D+01,1.610814000D+03,3.836367000D+02,1.241733000D+02, &
+&       4.674678000D+01,1.906569000D+01,7.871567000D+00,6.445732000D+01,2.185212000D+01, &
+&       9.405343000D+00,3.999168000D+00,1.670297000D+00,6.596270000D-01,2.600088000D+00, &
+&       9.630940000D-01,1.361610000D-01,4.733200000D-02,8.240094000D+04,1.237255000D+04, &
+&       2.818351000D+03,7.945717000D+02,2.547232000D+02,8.713880000D+01,1.732569000D+03, &
+&       4.127149000D+02,1.336780000D+02,5.038585000D+01,2.058358000D+01,8.505940000D+00, &
+&       6.936492000D+01,2.362082000D+01,1.018471000D+01,4.334082000D+00,1.810918000D+00, &
+&       7.148410000D-01,2.823842000D+00,1.039543000D+00,1.432640000D-01,4.929600000D-02/)
+      real(8) :: cs631g(480)= &
 &     (/ 3.349460434D-02, 2.347269535D-01, 8.137573262D-01, 1.000000000D+00, 2.376600000D-02, &
 &        1.546790000D-01, 4.696300000D-01, 1.000000000D+00, 2.142607810D-03, 1.620887150D-02, &
 &        7.731557250D-02, 2.457860520D-01, 4.701890040D-01, 3.454708450D-01,-3.509174590D-02, &
@@ -1849,8 +1928,60 @@ end
 &        1.825260000D-03, 1.396860000D-02, 6.870730000D-02, 2.362040000D-01, 4.822140000D-01, &
 &        3.420430000D-01,-2.159720000D-03,-2.907750000D-02,-1.108270000D-01, 2.769990000D-02, &
 &        5.776130000D-01, 4.886880000D-01,-2.555920000D-01, 3.780660000D-02, 1.080560000D+00, &
-&        1.000000000D+00/)
-      real(8) :: cp631g(112)= &
+&        1.000000000D+00, 1.828010000D-03, 1.399403000D-02, 6.887129000D-02, 2.369760000D-01, &
+&        4.829040000D-01, 3.404795000D-01,-2.502976000D-03,-3.315550000D-02,-1.226387000D-01, &
+&        5.353643000D-02, 6.193860000D-01, 4.345878000D-01, 1.277689000D-02, 2.098767000D-01, &
+&       -3.095274000D-03,-5.593884000D-01,-5.134760000D-01,-6.598035000D-02,-5.237772000D-02, &
+&       -2.798503000D-01, 1.141547000D+00, 1.000000000D+00, 1.813501000D-03, 1.388493000D-02, &
+&        6.836162000D-02, 2.356188000D-01, 4.820639000D-01, 3.429819000D-01, 2.448225000D-03, &
+&        3.241504000D-02, 1.226219000D-01,-4.316965000D-02,-6.126995000D-01,-4.487540000D-01, &
+&        1.084500000D-02, 2.088333000D-01, 3.150338000D-02,-5.526518000D-01,-5.437997000D-01, &
+&       -6.669342000D-02,-4.439720000D-02,-3.284563000D-01, 1.163010000D+00, 1.000000000D+00, &
+&        1.803263000D-03, 1.380769000D-02, 6.800396000D-02, 2.347099000D-01, 4.815690000D-01, &
+&        3.445652000D-01, 2.451863000D-03, 3.259579000D-02, 1.238242000D-01,-4.359890000D-02, &
+&       -6.177181000D-01,-4.432823000D-01,-2.586302000D-03, 7.188424000D-02, 2.503260000D-01, &
+&       -2.991003000D-01,-7.446818000D-01,-1.799776000D-01, 6.482978000D-02, 3.253756000D-01, &
+&       -1.170806000D+00, 1.000000000D+00, 1.791872000D-03, 1.372392000D-02, 6.762830000D-02, &
+&        2.337642000D-01, 4.810696000D-01, 3.462280000D-01, 2.431008000D-03, 3.233027000D-02, &
+&        1.242520000D-01,-3.903905000D-02,-6.171789000D-01,-4.473097000D-01,-2.940358000D-03, &
+&        7.163103000D-02, 2.528915000D-01,-2.966401000D-01,-7.432215000D-01,-1.853520000D-01, &
+&        6.351465000D-02, 3.151404000D-01,-1.162595000D+00, 1.000000000D+00, 1.784513000D-03, &
+&        1.366754000D-02, 6.736122000D-02, 2.330552000D-01, 4.806316000D-01, 3.474802000D-01, &
+&        2.410599000D-03, 3.207243000D-02, 1.245942000D-01,-3.482177000D-02,-6.167374000D-01, &
+&       -4.509844000D-01,-3.233199000D-03, 7.130744000D-02, 2.543820000D-01,-2.933887000D-01, &
+&       -7.415695000D-01,-1.909410000D-01, 6.139703000D-02, 3.061130000D-01,-1.154890000D+00, &
+&        1.000000000D+00, 1.776182000D-03, 1.360476000D-02, 6.706925000D-02, 2.323104000D-01, &
+&        4.802410000D-01, 3.487653000D-01, 2.399669000D-03, 3.194886000D-02, 1.250868000D-01, &
+&       -3.221866000D-02,-6.172284000D-01,-4.525936000D-01,-3.454216000D-03, 7.218428000D-02, &
+&        2.544820000D-01,-2.934534000D-01,-7.385455000D-01,-1.947157000D-01, 5.892219000D-02, &
+&        2.976055000D-01,-1.147506000D+00, 1.000000000D+00, 1.771580000D-03, 1.357081000D-02, &
+&        6.690605000D-02, 2.318541000D-01, 4.799046000D-01, 3.495737000D-01, 2.388751000D-03, &
+&        3.181708000D-02, 1.254670000D-01,-2.955431000D-02,-6.175160000D-01,-4.544458000D-01, &
+&       -3.665856000D-03, 7.231971000D-02, 2.544486000D-01,-2.910380000D-01,-7.359860000D-01, &
+&       -1.997617000D-01, 5.628572000D-02, 2.897491000D-01,-1.140653000D+00, 1.000000000D+00, &
+&        1.766111000D-03, 1.353038000D-02, 6.673128000D-02, 2.314823000D-01, 4.797058000D-01, &
+&        3.501976000D-01, 2.438014000D-03, 3.224048000D-02, 1.265724000D-01,-3.139902000D-02, &
+&       -6.207593000D-01,-4.502914000D-01,-3.873256000D-03, 7.196598000D-02, 2.556591000D-01, &
+&       -2.882837000D-01,-7.342822000D-01,-2.049353000D-01, 5.694869000D-02, 2.882915000D-01, &
+&       -1.138159000D+00, 1.000000000D+00, 1.759787000D-03, 1.348162000D-02, 6.649342000D-02, &
+&        2.307939000D-01, 4.792919000D-01, 3.514097000D-01, 2.376276000D-03, 3.167450000D-02, &
+&        1.262888000D-01,-2.584552000D-02,-6.183491000D-01,-4.567008000D-01,-3.993004000D-03, &
+&        7.409663000D-02, 2.542000000D-01,-2.921657000D-01,-7.318703000D-01,-2.040784000D-01, &
+&        5.379843000D-02, 2.759971000D-01,-1.129692000D+00, 1.000000000D+00, 1.753003000D-03, &
+&        1.343122000D-02, 6.627041000D-02, 2.302508000D-01, 4.790186000D-01, 3.523444000D-01, &
+&        2.370714000D-03, 3.160566000D-02, 1.266335000D-01,-2.417037000D-02,-6.187775000D-01, &
+&       -4.576770000D-01,-4.162002000D-03, 7.425111000D-02, 2.541360000D-01,-2.903477000D-01, &
+&       -7.302121000D-01,-2.076057000D-01, 5.157888000D-02, 2.707611000D-01,-1.124770000D+00, &
+&        1.000000000D+00, 1.748161000D-03, 1.339602000D-02, 6.610885000D-02, 2.298265000D-01, &
+&        4.787675000D-01, 3.530739000D-01, 2.364055000D-03, 3.153635000D-02, 1.269452000D-01, &
+&       -2.262840000D-02,-6.192080000D-01,-4.585393000D-01,-4.331075000D-03, 7.412307000D-02, &
+&        2.542108000D-01,-2.874843000D-01,-7.291436000D-01,-2.113951000D-01, 5.027577000D-02, &
+&        2.650040000D-01,-1.120155000D+00, 1.000000000D+00, 1.743329000D-03, 1.335966000D-02, &
+&        6.594365000D-02, 2.294151000D-01, 4.785453000D-01, 3.537753000D-01, 2.361459000D-03, &
+&        3.150177000D-02, 1.272774000D-01,-2.145928000D-02,-6.197652000D-01,-4.590180000D-01, &
+&       -4.440098000D-03, 7.505253000D-02, 2.533111000D-01,-2.881897000D-01,-7.267052000D-01, &
+&       -2.133439000D-01, 4.898543000D-02, 2.592793000D-01,-1.115711000D+00, 1.000000000D+00/)
+      real(8) :: cp631g(304)= &
 &     (/ 8.941508040D-03, 1.410094640D-01, 9.453636950D-01, 1.000000000D+00, 5.598019980D-02, &
 &        2.615506110D-01, 7.939723390D-01, 1.000000000D+00, 7.459757990D-02, 3.078466770D-01, &
 &        7.434568340D-01, 1.000000000D+00, 6.899906660D-02, 3.164239610D-01, 7.443082910D-01, &
@@ -1873,182 +2004,380 @@ end
 &        3.279510000D-01, 4.535270000D-01, 2.521540000D-01,-1.429930000D-02, 3.235720000D-01, &
 &        7.435070000D-01, 1.000000000D+00, 3.806650000D-03, 2.923050000D-02, 1.264670000D-01, &
 &        3.235100000D-01, 4.548960000D-01, 2.566300000D-01,-1.591970000D-02, 3.246460000D-01, &
-&        7.439900000D-01, 1.000000000D+00/)
-!
-      if(numatomic(iatom) >= 19) then
-        write(*,'(" Error! This program supports H - Ar 6-31G basis set.")')
-        call iabort
-      endif
+&        7.439900000D-01, 1.000000000D+00, 4.094637000D-03, 3.145199000D-02, 1.351558000D-01, &
+&        3.390500000D-01, 4.629455000D-01, 2.242638000D-01,-1.221377000D-02,-6.900537000D-03, &
+&        2.007466000D-01, 4.281332000D-01, 3.970156000D-01, 1.104718000D-01, 3.164300000D-02, &
+&       -4.046160000D-02, 1.012029000D+00, 1.000000000D+00, 4.020371000D-03, 3.100601000D-02, &
+&        1.337279000D-01, 3.367983000D-01, 4.631281000D-01, 2.257532000D-01,-1.289621000D-02, &
+&       -1.025198000D-02, 1.959781000D-01, 4.357933000D-01, 3.996452000D-01, 9.713636000D-02, &
+&       -4.298621000D-01, 6.935829000D-03, 9.705933000D-01, 1.000000000D+00, 4.039530000D-03, &
+&        3.122570000D-02, 1.349833000D-01, 3.424793000D-01, 4.623113000D-01, 2.177524000D-01, &
+&       -6.096652000D-03,-2.628884000D-02, 5.091001000D-02, 3.798097000D-01, 5.170883000D-01, &
+&        1.829772000D-01,-2.938440000D-01, 9.235323000D-02, 9.847930000D-01, 1.000000000D+00, &
+&        4.017679000D-03, 3.113966000D-02, 1.349077000D-01, 3.431672000D-01, 4.625760000D-01, &
+&        2.154603000D-01,-6.311620000D-03,-2.697638000D-02, 5.316847000D-02, 3.845549000D-01, &
+&        5.127662000D-01, 1.811135000D-01,-2.112070000D-01, 7.771998000D-02, 9.898214000D-01, &
+&        1.000000000D+00, 3.995005000D-03, 3.104061000D-02, 1.347747000D-01, 3.437279000D-01, &
+&        4.628759000D-01, 2.135547000D-01,-6.494056000D-03,-2.753453000D-02, 5.516284000D-02, &
+&        3.879672000D-01, 5.090258000D-01, 1.803840000D-01,-1.891265000D-01, 8.005453000D-02, &
+&        9.877399000D-01, 1.000000000D+00, 3.986997000D-03, 3.104662000D-02, 1.350518000D-01, &
+&        3.448865000D-01, 4.628571000D-01, 2.110426000D-01,-6.722497000D-03,-2.806471000D-02, &
+&        5.820028000D-02, 3.916988000D-01, 5.047823000D-01, 1.790290000D-01,-1.930100000D-01, &
+&        9.605620000D-02, 9.817609000D-01, 1.000000000D+00, 3.977318000D-03, 3.103112000D-02, &
+&        1.351894000D-01, 3.457387000D-01, 4.629205000D-01, 2.090592000D-01,-6.887578000D-03, &
+&       -2.846816000D-02, 6.031832000D-02, 3.938961000D-01, 5.013769000D-01, 1.792264000D-01, &
+&       -5.035024000D-01, 2.345011000D-01, 9.141257000D-01, 1.000000000D+00, 4.028019000D-03, &
+&        3.144647000D-02, 1.368317000D-01, 3.487236000D-01, 4.617931000D-01, 2.043058000D-01, &
+&       -7.017128000D-03,-2.877660000D-02, 6.181383000D-02, 3.954946000D-01, 4.989059000D-01, &
+&        1.791251000D-01,-4.593796000D-01, 2.852139000D-01, 9.076485000D-01, 1.000000000D+00, &
+&        3.971488000D-03, 3.108174000D-02, 1.357439000D-01, 3.476827000D-01, 4.626340000D-01, &
+&        2.051632000D-01,-7.290772000D-03,-2.926027000D-02, 6.564150000D-02, 4.000652000D-01, &
+&        4.950236000D-01, 1.758240000D-01,-2.165496000D-01, 1.240488000D-01, 9.724064000D-01, &
+&        1.000000000D+00, 3.967554000D-03, 3.109479000D-02, 1.359517000D-01, 3.485136000D-01, &
+&        4.625498000D-01, 2.035186000D-01,-7.421452000D-03,-2.953410000D-02, 6.731852000D-02, &
+&        4.016660000D-01, 4.926623000D-01, 1.756893000D-01,-1.887663000D-01, 1.015199000D-01, &
+&        9.790906000D-01, 1.000000000D+00, 3.963307000D-03, 3.110223000D-02, 1.361350000D-01, &
+&        3.492914000D-01, 4.624780000D-01, 2.020102000D-01,-7.523725000D-03,-2.975687000D-02, &
+&        6.849654000D-02, 4.027141000D-01, 4.908490000D-01, 1.759268000D-01,-1.702911000D-01, &
+&        9.310133000D-02, 9.814336000D-01, 1.000000000D+00, 3.963125000D-03, 3.113411000D-02, &
+&        1.363931000D-01, 3.501266000D-01, 4.623179000D-01, 2.004995000D-01,-7.689262000D-03, &
+&       -2.997982000D-02, 7.082411000D-02, 4.046141000D-01, 4.882325000D-01, 1.751970000D-01, &
+&       -1.586763000D-01, 8.379327000D-02, 9.840547000D-01, 1.000000000D+00/)
+      real(8) :: exd631g(40)= &
+&     (/1.114701000D+01,2.821043000D+00,8.196200000D-01,2.214680000D-01,1.369085000D+01, &
+&       3.513154000D+00,1.040434000D+00,2.869620000D-01,1.605025000D+01,4.160063000D+00, &
+&       1.243265000D+00,3.442770000D-01,1.841930000D+01,4.812661000D+00,1.446447000D+00, &
+&       4.004130000D-01,2.094355000D+01,5.510486000D+00,1.665038000D+00,4.617330000D-01, &
+&       2.314994000D+01,6.122368000D+00,1.846601000D+00,5.043610000D-01,2.559306000D+01, &
+&       6.800990000D+00,2.051647000D+00,5.556710000D-01,2.819147000D+01,7.523584000D+00, &
+&       2.271228000D+00,6.116030000D-01,3.085341000D+01,8.264985000D+00,2.495332000D+00, &
+&       6.676580000D-01,3.370764000D+01,9.061106000D+00,2.738383000D+00,7.302940000D-01/)
+      real(8) :: cd631g(40)= &
+&     (/ 8.747672000D-02, 3.795635000D-01, 7.180393000D-01, 1.000000000D+00, 8.589418000D-02, &
+&        3.784671000D-01, 7.161239000D-01, 1.000000000D+00, 8.599899000D-02, 3.802996000D-01, &
+&        7.127659000D-01, 1.000000000D+00, 8.650816000D-02, 3.826699000D-01, 7.093772000D-01, &
+&        1.000000000D+00, 8.672702000D-02, 3.841883000D-01, 7.069071000D-01, 1.000000000D+00, &
+&        8.876935000D-02, 3.896319000D-01, 7.014816000D-01, 1.000000000D+00, 9.004748000D-02, &
+&        3.931703000D-01, 6.976844000D-01, 1.000000000D+00, 9.098881000D-02, 3.958208000D-01, &
+&        6.947154000D-01, 1.000000000D+00, 9.199905000D-02, 3.985021000D-01, 6.917897000D-01, &
+&        1.000000000D+00, 9.262648000D-02, 4.002980000D-01, 6.896608000D-01, 1.000000000D+00/)
 !
 ! Set  functions for H - He
 !
-      if(numatomic(iatom) <= 2) then
-        ishell= ishell+1
-        do j= 1,3
-          ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j)
-          coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j)
-        enddo
-        mprim(ishell)= 3
-        mbf(ishell)= 1
-        mtype(ishell)= 0
-        locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-        locbf(ishell+1) = locbf(ishell)+1
-
-        ishell= ishell+1
-        ex(locprim(ishell)+1)= ex631g(is(numatomic(iatom))+4)
-        coeff(locprim(ishell)+1)= cs631g(is(numatomic(iatom))+4)
-        mprim(ishell)= 1
-        mbf(ishell)= 1
-        mtype(ishell)= 0
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+1
-        locbf(ishell+1) = locbf(ishell)+1
+      select case(numatomic(iatom))
+        case(1:2)
+! 1S
+          ishell= ishell+1
+          do j= 1,3
+            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j)
+            coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j)
+          enddo
+          mprim(ishell)= 3
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+            locprim(ishell+1)= locprim(ishell)+3
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= ex631g(is(numatomic(iatom))+4)
+          coeff(locprim(ishell)+1)= cs631g(is(numatomic(iatom))+4)
+          mprim(ishell)= 1
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+1
 !
 ! Set  functions for Li - Ne
 !
-      elseif(numatomic(iatom) <= 10) then
+        case(3:10)
 ! 1S
-        ishell= ishell+1
-        do j= 1,6
-          ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j)
-          coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j)
-        enddo
-        mprim(ishell)= 6
-        mbf(ishell)= 1
-        mtype(ishell)= 0
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+6
-        locbf(ishell+1) = locbf(ishell)+1
+          ishell= ishell+1
+          do j= 1,6
+            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j)
+            coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j)
+          enddo
+          mprim(ishell)= 6
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+6
+          locbf(ishell+1) = locbf(ishell)+1
 ! 2SP
-        ishell= ishell+1
-        do j= 1,3
-          ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
-          coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+6)
-        enddo
-        mprim(ishell)= 3
-        mbf(ishell)= 1
-        mtype(ishell)= 0
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+3
-        locbf(ishell+1) = locbf(ishell)+1
+          ishell= ishell+1
+          do j= 1,3
+            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
+            coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+6)
+          enddo
+          mprim(ishell)= 3
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+3
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          do j= 1,3
+            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
+            coeff(locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j)
+          enddo
+          mprim(ishell)= 3
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+3
+          locbf(ishell+1) = locbf(ishell)+3
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= ex631g(is(numatomic(iatom))+10)
+          coeff(locprim(ishell)+1)= cs631g(is(numatomic(iatom))+10)
+          mprim(ishell)= 1
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+1
 
-        ishell= ishell+1
-        do j= 1,3
-          ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
-          coeff(locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j)
-        enddo
-        mprim(ishell)= 3
-        mbf(ishell)= 3
-        mtype(ishell)= 1
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+3
-        locbf(ishell+1) = locbf(ishell)+3
-
-        ishell= ishell+1
-        ex(locprim(ishell)+1)= ex631g(is(numatomic(iatom))+10)
-        coeff(locprim(ishell)+1)= cs631g(is(numatomic(iatom))+10)
-        mprim(ishell)= 1
-        mbf(ishell)= 1
-        mtype(ishell)= 0
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+1
-        locbf(ishell+1) = locbf(ishell)+1
-
-        ishell= ishell+1
-        ex(locprim(ishell)+1)= ex631g(is(numatomic(iatom))+10)
-        coeff(locprim(ishell)+1)= cp631g(ip(numatomic(iatom))+4)
-        mprim(ishell)= 1
-        mbf(ishell)= 3
-        mtype(ishell)= 1
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+1
-        locbf(ishell+1) = locbf(ishell)+3
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= ex631g(is(numatomic(iatom))+10)
+          coeff(locprim(ishell)+1)= cp631g(ip(numatomic(iatom))+4)
+          mprim(ishell)= 1
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+3
 !
 ! Set  functions for Na - Ar
 !
-      elseif(numatomic(iatom) <= 18) then
+        case(11:18)
 ! 1S
-        ishell= ishell+1
-        do j= 1,6
-          ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j)
-          coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j)
-        enddo
-        mprim(ishell)= 6
-        mbf(ishell)= 1
-        mtype(ishell)= 0
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+6
-        locbf(ishell+1) = locbf(ishell)+1
+          ishell= ishell+1
+          do j= 1,6
+            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j)
+            coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j)
+          enddo
+          mprim(ishell)= 6
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+6
+          locbf(ishell+1) = locbf(ishell)+1
 ! 2SP
-        ishell= ishell+1
-        do j= 1,6
-          ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
-          coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+6)
-        enddo
-        mprim(ishell)= 6
-        mbf(ishell)= 1
-        mtype(ishell)= 0
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+6
-        locbf(ishell+1) = locbf(ishell)+1
-
-        ishell= ishell+1
-        do j= 1,6
-          ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
-          coeff(locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j)
-        enddo
-        mprim(ishell)= 6
-        mbf(ishell)= 3
-        mtype(ishell)= 1
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+6
-        locbf(ishell+1) = locbf(ishell)+3
+          ishell= ishell+1
+          do j= 1,6
+            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
+            coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+6)
+          enddo
+          mprim(ishell)= 6
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+6
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          do j= 1,6
+            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
+            coeff(locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j)
+          enddo
+          mprim(ishell)= 6
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+6
+          locbf(ishell+1) = locbf(ishell)+3
 ! 3SP
-        ishell= ishell+1
-        do j= 1,3
-          ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+12)
-          coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+12)
-        enddo
-        mprim(ishell)= 3
-        mbf(ishell)= 1
-        mtype(ishell)= 0
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+3
-        locbf(ishell+1) = locbf(ishell)+1
-
-        ishell= ishell+1
-        do j= 1,3
-          ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+12)
-          coeff(locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j+6)
-        enddo
-        mprim(ishell)= 3
-        mbf(ishell)= 3
-        mtype(ishell)= 1
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+3
-        locbf(ishell+1) = locbf(ishell)+3
-
-        ishell= ishell+1
-        ex(locprim(ishell)+1)= ex631g(is(numatomic(iatom))+16)
-        coeff(locprim(ishell)+1)= cs631g(is(numatomic(iatom))+16)
-        mprim(ishell)= 1
-        mbf(ishell)= 1
-        mtype(ishell)= 0
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+1
-        locbf(ishell+1) = locbf(ishell)+1
-
-        ishell= ishell+1
-        ex(locprim(ishell)+1)= ex631g(is(numatomic(iatom))+16)
-        coeff(locprim(ishell)+1)= cp631g(ip(numatomic(iatom))+10)
-        mprim(ishell)= 1
-        mbf(ishell)= 3
-        mtype(ishell)= 1
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+1
-        locbf(ishell+1) = locbf(ishell)+3
-      endif
+          ishell= ishell+1
+          do j= 1,3
+            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+12)
+            coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+12)
+          enddo
+          mprim(ishell)= 3
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+3
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          do j= 1,3
+            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+12)
+            coeff(locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j+6)
+          enddo
+          mprim(ishell)= 3
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+3
+          locbf(ishell+1) = locbf(ishell)+3
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= ex631g(is(numatomic(iatom))+16)
+          coeff(locprim(ishell)+1)= cs631g(is(numatomic(iatom))+16)
+          mprim(ishell)= 1
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= ex631g(is(numatomic(iatom))+16)
+          coeff(locprim(ishell)+1)= cp631g(ip(numatomic(iatom))+10)
+          mprim(ishell)= 1
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+3
+!
+! Set  functions for Na - Ar
+!
+        case(19:30)
+! 1S
+          ishell= ishell+1
+          do j= 1,6
+            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j)
+            coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j)
+          enddo
+          mprim(ishell)= 6
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+6
+          locbf(ishell+1) = locbf(ishell)+1
+! 2SP  
+          ishell= ishell+1
+          do j= 1,6
+            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
+            coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+6)
+          enddo
+          mprim(ishell)= 6
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+6
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          do j= 1,6
+            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
+            coeff(locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j)
+          enddo
+          mprim(ishell)= 6
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+6
+          locbf(ishell+1) = locbf(ishell)+3
+! 3SP
+          ishell= ishell+1
+          do j= 1,6
+            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+12)
+            coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+12)
+          enddo
+          mprim(ishell)= 6
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+6
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          do j= 1,6
+            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+12)
+            coeff(locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j+6)
+          enddo
+          mprim(ishell)= 6
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+6
+          locbf(ishell+1) = locbf(ishell)+3
+! 4SP
+          ishell= ishell+1
+          do j= 1,3
+            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+18)
+            coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+18)
+          enddo
+          mprim(ishell)= 3
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+3
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          do j= 1,3
+            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+18)
+            coeff(locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j+12)
+          enddo
+          mprim(ishell)= 3
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+3
+          locbf(ishell+1) = locbf(ishell)+3
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= ex631g(is(numatomic(iatom))+22)
+          coeff(locprim(ishell)+1)= cs631g(is(numatomic(iatom))+22)
+          mprim(ishell)= 1
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= ex631g(is(numatomic(iatom))+22)
+          coeff(locprim(ishell)+1)= cp631g(ip(numatomic(iatom))+16)
+          mprim(ishell)= 1
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+3
+! 3D
+          if(numatomic(iatom) >= 21) then
+            ishell= ishell+1
+            do j= 1,3
+              ex(locprim(ishell)+j)= exd631g(id(numatomic(iatom))+j)
+              coeff(locprim(ishell)+j)= cd631g(id(numatomic(iatom))+j)
+            enddo
+            mprim(ishell)= 3
+            mtype(ishell)= 2
+            locatom(ishell)= iatom
+            locprim(ishell+1)= locprim(ishell)+3
+            if(spher) then
+              mbf(ishell)= 5
+              locbf(ishell+1) = locbf(ishell)+5
+            else
+              mbf(ishell)= 6
+              locbf(ishell+1) = locbf(ishell)+6
+            endif
+!
+            ishell= ishell+1
+            ex(locprim(ishell)+1)= exd631g(id(numatomic(iatom))+4)
+            coeff(locprim(ishell)+1)= cd631g(id(numatomic(iatom))+4)
+            mprim(ishell)= 1
+            mtype(ishell)= 2
+            locatom(ishell)= iatom
+            locprim(ishell+1)= locprim(ishell)+1
+            if(spher) then
+              mbf(ishell)= 5
+              locbf(ishell+1) = locbf(ishell)+5
+            else
+              mbf(ishell)= 6
+              locbf(ishell+1) = locbf(ishell)+6
+            endif
+          endif
+        case default
+          write(*,'(" Error! This program supports H - Zn 6-31G basis set.")')
+          call iabort
+      end select
 !
       if(ishell > mxshell) then
         write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
@@ -2073,6 +2402,47 @@ end
 !
 ! Set basis functions of 6-31G(d)
 !
+      implicit none
+      integer,intent(in) :: iatom
+      integer,intent(inout) :: ishell
+!
+      call bs631g(iatom,ishell)
+!
+      call bs631gs(iatom,ishell)
+!
+      return
+end
+
+
+!------------------------------------
+  subroutine bs631gdp(iatom,ishell)
+!------------------------------------
+!
+! Set basis functions of 6-31G(d,p)
+!
+      use modmolecule, only : numatomic
+      implicit none
+      integer,intent(in) :: iatom
+      integer,intent(inout) :: ishell
+!
+      call bs631g(iatom,ishell)
+!
+      if(numatomic(iatom) <= 2) then
+        call bs631gss(iatom,ishell)
+      else
+        call bs631gs(iatom,ishell)
+      endif
+!
+      return
+end
+
+
+!-----------------------------------
+  subroutine bs631gs(iatom,ishell)
+!-----------------------------------
+!
+! Set basis polarization function of 6-31G(d)
+!
       use modmolecule, only : numatomic
       use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mtype, mbf, spher
       use modparam, only : mxao, mxshell, mxprim
@@ -2080,14 +2450,15 @@ end
       integer,intent(in) :: iatom
       integer,intent(inout) :: ishell
       real(8),parameter :: one=1.0D+00
-      real(8) :: ex631gs(3:18)= &
+      real(8) :: ex631gs(3:30)= &
 &     (/2.00D-01,4.00D-01,6.00D-01,8.00D-01,8.00D-01,8.00D-01,8.00D-01,8.00D-01, &
-&       1.75D-01,1.75D-01,3.25D-01,4.50D-01,5.50D-01,6.50D-01,7.50D-01,8.50D-01/)
-!
-      call bs631g(iatom,ishell)
+&       1.75D-01,1.75D-01,3.25D-01,4.50D-01,5.50D-01,6.50D-01,7.50D-01,8.50D-01, &
+&       2.00D-01,2.00D-01,8.00D-01,8.00D-01,8.00D-01,8.00D-01,8.00D-01,8.00D-01, &
+&       8.00D-01,8.00D-01,8.00D-01,8.00D-01/)
 !
       select case (numatomic(iatom))
-        case(3:18)
+        case(1:2)
+        case(3:20)
           ishell= ishell+1
           ex(locprim(ishell)+1)= ex631gs(numatomic(iatom))
           coeff(locprim(ishell)+1)= one
@@ -2097,11 +2468,950 @@ end
           locprim(ishell+1)= locprim(ishell)+1
           if(spher) then
             mbf(ishell)= 5
-            locbf(ishell+1) = locbf(ishell)+5
+            locbf(ishell+1)= locbf(ishell)+5
           else
             mbf(ishell)= 6
-            locbf(ishell+1) = locbf(ishell)+6
+            locbf(ishell+1)= locbf(ishell)+6
           endif
+        case(21:30)
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= ex631gs(numatomic(iatom))
+          coeff(locprim(ishell)+1)= one
+          mprim(ishell)= 1
+          mtype(ishell)= 3
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          if(spher) then
+            mbf(ishell)= 7
+            locbf(ishell+1)= locbf(ishell)+7
+          else
+            mbf(ishell)= 10
+            locbf(ishell+1)= locbf(ishell)+10
+          endif
+        case default
+          write(*,'(" Error! This program supports Li - Zn 6-31G* basis set.")')
+          call iabort
+      end select
+!
+      if(ishell > mxshell) then
+        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
+        call iabort
+      endif
+      if(locprim(ishell+1) > mxprim ) then
+        write(*,'(" Error! The number of primitive basis functions exceeds mxprim", &
+&             i6,".")')mxprim
+        call iabort
+      endif
+      if(locbf(ishell+1) > mxao ) then
+        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
+        call iabort
+      endif
+      return
+end
+
+
+!------------------------------------
+  subroutine bs631gss(iatom,ishell)
+!------------------------------------
+!
+! Set basis polarization function of Hydrogen 6-31G(d,p)
+!
+      use modmolecule, only : numatomic
+      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mtype, mbf, spher
+      use modparam, only : mxao, mxshell, mxprim
+      implicit none
+      integer,intent(in) :: iatom
+      integer,intent(inout) :: ishell
+      real(8),parameter :: one=1.0D+00, ex631gss=1.1D+00 
+!
+      select case (numatomic(iatom))
+        case(1:2)
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= ex631gss
+          coeff(locprim(ishell)+1)= one
+          mprim(ishell)= 1
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          mbf(ishell)= 3
+          locbf(ishell+1) = locbf(ishell)+3
+      end select
+!
+      if(ishell > mxshell) then
+        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
+        call iabort
+      endif
+      if(locprim(ishell+1) > mxprim ) then
+        write(*,'(" Error! The number of primitive basis functions exceeds mxprim", &
+&             i6,".")')mxprim
+        call iabort
+      endif
+      if(locbf(ishell+1) > mxao ) then
+        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
+        call iabort
+      endif
+      return
+end
+
+
+!-----------------------------------
+  subroutine bs6311g(iatom,ishell)
+!-----------------------------------
+!
+! Set basis functions of 6-311G
+!
+      use modmolecule, only : numatomic
+      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mbf, mtype, spher
+      use modparam, only : mxao, mxshell, mxprim
+      implicit none
+      integer,intent(in) :: iatom
+      integer,intent(inout) :: ishell
+      integer :: j, num
+      integer :: is1(2), is2(3:10), ip2(3:10), is3(11:18), ip3(11:18)
+      integer :: is4(19:36), ip4(19:36),id4(19:36)
+      data is1( 1: 2) /0,5/
+      data is2( 3:10) /0,11,22,33,44,55,66,77/
+      data ip2( 3:10) /0, 5,10,15,20,25,30,35/
+      data is3(11:18) /0,13,26,39,52,65,78,91/
+      data ip3(11:18) /0, 9,18,27,36,45,54,64/
+      data is4(19:20) /0,14/
+      data ip4(19:20) /0,11/
+      data id4(19:20) /0, 3/
+      data is4(31:36) /28,43,58,73,88,103/
+      data ip4(31:36) /22,35,48,61,74,87/
+      data id4(31:36) / 6,11,16,21,26,31/
+      real(8) :: exs1(10)= (/ &
+&       3.386500000D+01,5.094790000D+00,1.158790000D+00,3.258400000D-01,1.027410000D-01, &
+&       9.812430000D+01,1.476890000D+01,3.318830000D+00,8.740470000D-01,2.445640000D-01/)
+      real(8) :: coeffs1(10)= (/ &
+&        2.549380000D-02, 1.903730000D-01, 8.521610000D-01, 1.000000000D+00, 1.000000000D+00, &
+&        2.874520000D-02, 2.080610000D-01, 8.376350000D-01, 1.000000000D+00, 1.000000000D+00/)
+      real(8) :: exs2(88)= (/ &
+&       9.004600000D+02,1.344330000D+02,3.043650000D+01,8.626390000D+00,2.483320000D+00, &
+&       3.031790000D-01,4.868900000D+00,8.569240000D-01,2.432270000D-01,6.350700000D-02, &
+&       2.436830000D-02,1.682800000D+03,2.517150000D+02,5.741160000D+01,1.651710000D+01, &
+&       4.853640000D+00,6.268630000D-01,8.309380000D+00,1.740750000D+00,4.858160000D-01, &
+&       1.636130000D-01,5.672850000D-02,2.858890000D+03,4.281400000D+02,9.752820000D+01, &
+&       2.796930000D+01,8.215770000D+00,1.112780000D+00,1.324150000D+01,3.001660000D+00, &
+&       9.128560000D-01,3.154540000D-01,9.885630000D-02,4.563240000D+03,6.820240000D+02, &
+&       1.549730000D+02,4.445530000D+01,1.302900000D+01,1.827730000D+00,2.096420000D+01, &
+&       4.803310000D+00,1.459330000D+00,4.834560000D-01,1.455850000D-01,6.293480000D+03, &
+&       9.490440000D+02,2.187760000D+02,6.369160000D+01,1.882820000D+01,2.720230000D+00, &
+&       3.063310000D+01,7.026140000D+00,2.112050000D+00,6.840090000D-01,2.008780000D-01, &
+&       8.588500000D+03,1.297230000D+03,2.992960000D+02,8.737710000D+01,2.567890000D+01, &
+&       3.740040000D+00,4.211750000D+01,9.628370000D+00,2.853320000D+00,9.056610000D-01, &
+&       2.556110000D-01,1.142710000D+04,1.722350000D+03,3.957460000D+02,1.151390000D+02, &
+&       3.360260000D+01,4.919010000D+00,5.544410000D+01,1.263230000D+01,3.717560000D+00, &
+&       1.165450000D+00,3.218920000D-01,1.399570000D+04,2.117100000D+03,4.904250000D+02, &
+&       1.438330000D+02,4.192650000D+01,6.156840000D+00,6.912110000D+01,1.583500000D+01, &
+&       4.673260000D+00,1.457560000D+00,3.970570000D-01/)
+      real(8) :: coeffs2(88)= (/ &
+&        2.287040000D-03, 1.763500000D-02, 8.734340000D-02, 2.809770000D-01, 6.587410000D-01, &
+&        1.187120000D-01, 9.332930000D-02, 9.430450000D-01,-2.798270000D-03, 1.000000000D+00, &
+&        1.000000000D+00, 2.285740000D-03, 1.759380000D-02, 8.633150000D-02, 2.818350000D-01, &
+&        6.405940000D-01, 1.444670000D-01, 1.086210000D-01, 9.273010000D-01,-2.971690000D-03, &
+&        1.000000000D+00, 1.000000000D+00, 2.153750000D-03, 1.658230000D-02, 8.218700000D-02, &
+&        2.766180000D-01, 6.293160000D-01, 1.737700000D-01, 1.174430000D-01, 9.180020000D-01, &
+&       -2.651050000D-03, 1.000000000D+00, 1.000000000D+00, 1.966650000D-03, 1.523060000D-02, &
+&        7.612690000D-02, 2.608010000D-01, 6.164620000D-01, 2.210060000D-01, 1.146600000D-01, &
+&        9.199990000D-01,-3.030680000D-03, 1.000000000D+00, 1.000000000D+00, 1.969790000D-03, &
+&        1.496130000D-02, 7.350060000D-02, 2.489370000D-01, 6.024600000D-01, 2.562020000D-01, &
+&        1.119060000D-01, 9.216660000D-01,-2.569190000D-03, 1.000000000D+00, 1.000000000D+00, &
+&        1.895150000D-03, 1.438590000D-02, 7.073200000D-02, 2.400010000D-01, 5.947970000D-01, &
+&        2.808020000D-01, 1.138890000D-01, 9.208110000D-01,-3.274470000D-03, 1.000000000D+00, &
+&        1.000000000D+00, 1.800930000D-03, 1.374190000D-02, 6.813340000D-02, 2.333250000D-01, &
+&        5.890860000D-01, 2.995050000D-01, 1.145360000D-01, 9.205120000D-01,-3.378040000D-03, &
+&        1.000000000D+00, 1.000000000D+00, 1.832760000D-03, 1.388270000D-02, 6.806870000D-02, &
+&        2.313280000D-01, 5.858900000D-01, 3.058830000D-01, 1.191490000D-01, 9.173750000D-01, &
+&       -4.058390000D-03, 1.000000000D+00, 1.000000000D+00/)
+      real(8) :: coeffp2(40)= (/ &
+&        3.276610000D-02, 1.597920000D-01, 8.856670000D-01, 1.000000000D+00, 1.000000000D+00, &
+&        3.613440000D-02, 2.169580000D-01, 8.418390000D-01, 1.000000000D+00, 1.000000000D+00, &
+&        4.181000000D-02, 2.365750000D-01, 8.162140000D-01, 1.000000000D+00, 1.000000000D+00, &
+&        4.024870000D-02, 2.375940000D-01, 8.158540000D-01, 1.000000000D+00, 1.000000000D+00, &
+&        3.831190000D-02, 2.374030000D-01, 8.175920000D-01, 1.000000000D+00, 1.000000000D+00, &
+&        3.651140000D-02, 2.371530000D-01, 8.197020000D-01, 1.000000000D+00, 1.000000000D+00, &
+&        3.546090000D-02, 2.374510000D-01, 8.204580000D-01, 1.000000000D+00, 1.000000000D+00, &
+&        3.565740000D-02, 2.394770000D-01, 8.184610000D-01, 1.000000000D+00, 1.000000000D+00/)
+      real(8) :: exs3(104)= (/ &
+&       3.616640000D+04,5.372580000D+03,1.213210000D+03,3.396230000D+02,1.095530000D+02, &
+&       3.877730000D+01,3.877730000D+01,1.457590000D+01,5.269930000D+00,1.827770000D+00, &
+&       6.199480000D-01,5.724000000D-02,2.404800000D-02,4.386650000D+04,6.605370000D+03, &
+&       1.513260000D+03,4.323170000D+02,1.421490000D+02,5.139830000D+01,5.139830000D+01, &
+&       1.991960000D+01,8.024740000D+00,2.508170000D+00,8.715310000D-01,1.081880000D-01, &
+&       4.013000000D-02,5.486648900D+04,8.211766500D+03,1.866176100D+03,5.311293400D+02, &
+&       1.751179700D+02,6.400550000D+01,6.400550000D+01,2.529250700D+01,1.053491000D+01, &
+&       3.206711000D+00,1.152555000D+00,1.766780000D-01,6.523700000D-02,6.937923000D+04, &
+&       1.035494000D+04,2.333879600D+03,6.571429500D+02,2.143011300D+02,7.762916800D+01, &
+&       7.762916800D+01,3.063080700D+01,1.280129500D+01,3.926866000D+00,1.452343000D+00, &
+&       2.562340000D-01,9.427900000D-02,7.749240000D+04,1.160580000D+04,2.645960000D+03, &
+&       7.549760000D+02,2.487550000D+02,9.115650000D+01,9.115650000D+01,3.622570000D+01, &
+&       1.521130000D+01,4.794170000D+00,1.807930000D+00,3.568160000D-01,1.147830000D-01, &
+&       9.341340000D+04,1.396170000D+04,3.169910000D+03,9.024560000D+02,2.971580000D+02, &
+&       1.087020000D+02,1.087020000D+02,4.315530000D+01,1.810790000D+01,5.560090000D+00, &
+&       2.131830000D+00,4.204030000D-01,1.360450000D-01,1.058190000D+05,1.587200000D+04, &
+&       3.619650000D+03,1.030800000D+03,3.399080000D+02,1.245380000D+02,1.245380000D+02, &
+&       4.951350000D+01,2.080560000D+01,6.583460000D+00,2.564680000D+00,5.597630000D-01, &
+&       1.832730000D-01,1.180223800D+05,1.768354100D+04,4.027765700D+03,1.145397700D+03, &
+&       3.771637500D+02,1.381596900D+02,1.381596900D+02,5.498911700D+01,2.317066700D+01, &
+&       7.377860000D+00,2.923688000D+00,6.504050000D-01,2.328250000D-01/)
+      real(8) :: coeffs3(104)= (/ &
+&        1.032000000D-03, 8.071000000D-03, 4.212900000D-02, 1.697890000D-01, 5.146210000D-01, &
+&        3.798170000D-01, 3.747620000D-01, 5.757690000D-01, 1.129330000D-01, 1.000000000D+00, &
+&        1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 9.180000000D-04, 7.047000000D-03, &
+&        3.594100000D-02, 1.414610000D-01, 4.267640000D-01, 4.979750000D-01, 2.513550000D-01, &
+&        6.186710000D-01, 1.884170000D-01, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, &
+&        1.000000000D+00, 8.390000000D-04, 6.527000000D-03, 3.366600000D-02, 1.329020000D-01, &
+&        4.012660000D-01, 5.313380000D-01, 2.023050000D-01, 6.247900000D-01, 2.274390000D-01, &
+&        1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 7.570000000D-04, &
+&        5.932000000D-03, 3.108800000D-02, 1.249670000D-01, 3.868970000D-01, 5.548880000D-01, &
+&        1.778810000D-01, 6.277650000D-01, 2.476230000D-01, 1.000000000D+00, 1.000000000D+00, &
+&        1.000000000D+00, 1.000000000D+00, 7.810000000D-04, 6.068000000D-03, 3.116000000D-02, &
+&        1.234310000D-01, 3.782090000D-01, 5.632620000D-01, 1.602550000D-01, 6.276470000D-01, &
+&        2.638490000D-01, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, &
+&        7.430000000D-04, 5.793000000D-03, 2.995400000D-02, 1.190280000D-01, 3.684320000D-01, &
+&        5.772990000D-01, 1.431860000D-01, 6.244650000D-01, 2.833660000D-01, 1.000000000D+00, &
+&        1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 7.380000000D-04, 5.718000000D-03, &
+&        2.949500000D-02, 1.172860000D-01, 3.629490000D-01, 5.841490000D-01, 1.341770000D-01, &
+&        6.242500000D-01, 2.917560000D-01, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, &
+&        1.000000000D+00, 7.470000000D-04, 5.790000000D-03, 2.991900000D-02, 1.192060000D-01, &
+&        3.690280000D-01, 5.764590000D-01, 1.439270000D-01, 6.229380000D-01, 2.839640000D-01, &
+&        1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00/)
+      real(8) :: exp3(74)= (/ &
+&       1.446450000D+02,3.390740000D+01,1.062850000D+01,3.823890000D+00,1.444290000D+00, &
+&       5.526210000D-01,1.887200000D-01,4.650100000D-02,1.628500000D-02,1.938540000D+02, &
+&       4.544200000D+01,1.418640000D+01,5.057510000D+00,1.888610000D+00,7.226520000D-01, &
+&       2.364170000D-01,9.335800000D-02,3.480900000D-02,2.592836200D+02,6.107687000D+01, &
+&       1.930323700D+01,7.010882000D+00,2.673865000D+00,1.036596000D+00,3.168190000D-01, &
+&       1.142570000D-01,4.139700000D-02,3.354831900D+02,7.890036600D+01,2.498815000D+01, &
+&       9.219711000D+00,3.621140000D+00,1.451310000D+00,5.049770000D-01,1.863170000D-01, &
+&       6.543200000D-02,3.848430000D+02,9.055210000D+01,2.913390000D+01,1.088620000D+01, &
+&       4.352590000D+00,1.777060000D+00,6.970050000D-01,2.535320000D-01,6.849300000D-02, &
+&       4.950400000D+02,1.172210000D+02,3.777490000D+01,1.405840000D+01,5.565740000D+00, &
+&       2.262970000D+00,8.079940000D-01,2.774600000D-01,7.714100000D-02,5.897760000D+02, &
+&       1.398490000D+02,4.514130000D+01,1.687330000D+01,6.741100000D+00,6.741100000D+00, &
+&       2.771520000D+00,1.023870000D+00,3.813680000D-01,1.094370000D-01,6.630620100D+02, &
+&       1.570928100D+02,5.023110000D+01,1.863534500D+01,7.446537000D+00,7.446537000D+00, &
+&       3.095698000D+00,1.106463000D+00,4.156010000D-01,1.454490000D-01/)
+      real(8) :: coeffp3(74)= (/ &
+&        1.148500000D-02, 8.238300000D-02, 3.196580000D-01, 7.012950000D-01, 6.385060000D-01, &
+&        4.253650000D-01, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 1.018800000D-02, &
+&        7.536000000D-02, 3.074190000D-01, 7.175750000D-01, 6.673390000D-01, 3.946490000D-01, &
+&        1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 9.448000000D-03, 7.097400000D-02, &
+&        2.956360000D-01, 7.282190000D-01, 6.444670000D-01, 4.174130000D-01, 1.000000000D+00, &
+&        1.000000000D+00, 1.000000000D+00, 8.866000000D-03, 6.829900000D-02, 2.909580000D-01, &
+&        7.321170000D-01, 6.198790000D-01, 4.391480000D-01, 1.000000000D+00, 1.000000000D+00, &
+&        1.000000000D+00, 9.206000000D-03, 6.987400000D-02, 2.924700000D-01, 7.281030000D-01, &
+&        6.283490000D-01, 4.280440000D-01, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, &
+&        8.309000000D-03, 6.402400000D-02, 2.776140000D-01, 7.450760000D-01, 6.137120000D-01, &
+&        4.438180000D-01, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 2.391000000D-03, &
+&        1.850400000D-02, 8.137700000D-02, 2.215520000D-01, 7.725690000D-01,-1.572244000D+00, &
+&        9.923890000D-01, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 3.082000000D-03, &
+&        2.416500000D-02, 1.082230000D-01, 2.941920000D-01, 6.878620000D-01,-1.214482000D-01, &
+&        1.632370000D-01, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00/)
+      real(8) :: exs4(118)= (/ &
+&       1.825940000D+05,2.736900000D+04,6.229170000D+03,1.764580000D+03,5.770510000D+02, &
+&       2.102490000D+02,8.261780000D+01,3.323320000D+01,8.106490000D+00,3.334030000D+00, &
+&       8.455440000D-01,3.282160000D-01,3.640350000D-02,1.764630000D-02,2.026990000D+05, &
+&       3.038250000D+04,6.915080000D+03,1.959020000D+03,6.409360000D+02,2.339770000D+02, &
+&       9.228920000D+01,3.725450000D+01,9.131980000D+00,3.817790000D+00,1.049350000D+00, &
+&       4.286600000D-01,6.282260000D-02,2.601620000D-02,3.338000000D+05,5.010000000D+04, &
+&       1.151000000D+04,3.292000000D+03,1.089000000D+03,4.010000000D+02,4.010000000D+02, &
+&       1.593000000D+02,6.759000000D+01,2.489000000D+01,1.068000000D+01,3.386000000D+00, &
+&       1.331000000D+00,1.853000000D-01,6.621000000D-02,3.575000000D+05,5.367000000D+04, &
+&       1.230000000D+04,3.512000000D+03,1.161000000D+03,4.280000000D+02,4.280000000D+02, &
+&       1.700000000D+02,7.206000000D+01,2.669000000D+01,1.150000000D+01,3.742000000D+00, &
+&       1.499000000D+00,2.292000000D-01,8.675000000D-02,3.812000000D+05,5.724000000D+04, &
+&       1.311000000D+04,3.743000000D+03,1.238000000D+03,4.563000000D+02,4.563000000D+02, &
+&       1.814000000D+02,7.707000000D+01,2.857000000D+01,1.236000000D+01,4.117000000D+00, &
+&       1.678000000D+00,2.761000000D-01,1.105000000D-01,4.054000000D+05,6.085000000D+04, &
+&       1.391000000D+04,3.989000000D+03,1.324000000D+03,4.870000000D+02,4.870000000D+02, &
+&       1.932000000D+02,8.219000000D+01,3.052000000D+01,1.325000000D+01,4.510000000D+00, &
+&       1.867000000D+00,3.190000000D-01,1.120000000D-01,4.397000000D+05,6.603000000D+04, &
+&       1.514000000D+04,4.317000000D+03,1.414000000D+03,5.239000000D+02,5.239000000D+02, &
+&       2.077000000D+02,8.654000000D+01,3.052000000D+01,1.298000000D+01,4.412000000D+00, &
+&       1.862000000D+00,3.932000000D-01,1.400000000D-01,4.562000000D+05,6.846000000D+04, &
+&       1.565000000D+04,4.500000000D+03,1.497000000D+03,5.505000000D+02,5.505000000D+02, &
+&       2.182000000D+02,9.297000000D+01,3.459000000D+01,1.512000000D+01,5.346000000D+00, &
+&       2.273000000D+00,4.841000000D-01,1.849000000D-01/)
+      real(8) :: coeffs4(118)= (/ &
+&        2.277470000D-04, 1.766400000D-03, 9.194970000D-03, 3.745510000D-02, 1.220450000D-01, &
+&        2.989900000D-01, 4.051470000D-01, 2.925320000D-01, 1.000000000D+00, 1.000000000D+00, &
+&        1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 2.229640000D-04, &
+&        1.729320000D-03, 9.002260000D-03, 3.666990000D-02, 1.194100000D-01, 2.918250000D-01, &
+&        4.044150000D-01, 2.963130000D-01, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, &
+&        1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 8.380500000D-04, 6.246600000D-03, &
+&        3.202800000D-02, 1.270900000D-01, 3.909200000D-01, 5.464300000D-01, 1.807800000D-01, &
+&        6.223900000D-01, 2.495300000D-01, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, &
+&        1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 8.389800000D-04, 6.263500000D-03, &
+&        3.203600000D-02, 1.275100000D-01, 3.916500000D-01, 5.452800000D-01, 1.816000000D-01, &
+&        6.224800000D-01, 2.487200000D-01, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, &
+&        1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 8.332700000D-04, 6.219800000D-03, &
+&        3.203000000D-02, 1.272900000D-01, 3.913200000D-01, 5.458100000D-01, 1.809700000D-01, &
+&        6.218000000D-01, 2.498800000D-01, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, &
+&        1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 8.310000000D-04, 6.233100000D-03, &
+&        3.207100000D-02, 1.263600000D-01, 3.889900000D-01, 5.488800000D-01, 1.796300000D-01, &
+&        6.222700000D-01, 2.506700000D-01, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, &
+&        1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 8.130000000D-04, 6.285000000D-03, &
+&        3.192000000D-02, 1.288000000D-01, 3.946000000D-01, 5.413000000D-01, 1.831000000D-01, &
+&        6.176000000D-01, 2.538000000D-01, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, &
+&        1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 8.111000000D-04, 6.255200000D-03, &
+&        3.202200000D-02, 1.254600000D-01, 3.866600000D-01, 5.518800000D-01, 1.771100000D-01, &
+&        6.224800000D-01, 2.527900000D-01, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, &
+&        1.000000000D+00, 1.000000000D+00, 1.000000000D+00/)
+      real(8) :: exp4(100)= (/ &
+&       8.910540000D+02,2.110160000D+02,6.767140000D+01,2.527150000D+01,1.013900000D+01, &
+&       4.201860000D+00,1.625070000D+00,6.437700000D-01,2.461300000D-01,4.544000000D-02, &
+&       1.616000000D-02,1.019760000D+03,2.415960000D+02,7.763700000D+01,2.911540000D+01, &
+&       1.176260000D+01,4.922890000D+00,1.906450000D+00,7.369000000D-01,2.764200000D-01, &
+&       6.027000000D-02,1.791000000D-02,2.181000000D+03,5.154000000D+02,1.648000000D+02, &
+&       6.140000000D+01,2.498000000D+01,1.044000000D+01,1.044000000D+01,5.589000000D+00, &
+&       2.517000000D+00,1.053000000D+00,2.915000000D-01,1.210000000D-01,3.990000000D-02, &
+&       2.345000000D+03,5.542000000D+02,1.773000000D+02,6.613000000D+01,2.690000000D+01, &
+&       1.126000000D+01,1.126000000D+01,6.116000000D+00,2.819000000D+00,1.211000000D+00, &
+&       3.568000000D-01,1.621000000D-01,6.084000000D-02,2.528000000D+03,5.973000000D+02, &
+&       1.907000000D+02,7.096000000D+01,2.889000000D+01,1.213000000D+01,1.213000000D+01, &
+&       6.533000000D+00,3.028000000D+00,1.344000000D+00,5.823000000D-01,2.558000000D-01, &
+&       8.651000000D-02,2.706000000D+03,6.386000000D+02,2.038000000D+02,7.596000000D+01, &
+&       3.102000000D+01,1.305000000D+01,1.305000000D+01,6.986000000D+00,3.234000000D+00, &
+&       1.475000000D+00,7.275000000D-01,2.869000000D-01,9.679000000D-02,2.957000000D+03, &
+&       7.003000000D+02,2.246000000D+02,8.259000000D+01,3.319000000D+01,1.420000000D+01, &
+&       1.420000000D+01,7.438000000D+00,3.526000000D+00,1.595000000D+00,8.462000000D-01, &
+&       3.186000000D-01,1.096000000D-01,3.074000000D+03,7.257000000D+02,2.315000000D+02, &
+&       8.645000000D+01,3.555000000D+01,1.514000000D+01,1.514000000D+01,8.031000000D+00, &
+&       3.799000000D+00,1.849000000D+00,8.676000000D-01,3.329000000D-01,1.199000000D-01/)
+      real(8) :: coeffp4(100)= (/ &
+&        2.184290000D-03, 1.758910000D-02, 8.177750000D-02, 2.456560000D-01, 4.339840000D-01, &
+&        3.623770000D-01, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, &
+&        1.000000000D+00, 2.059860000D-03, 1.665010000D-02, 7.776460000D-02, 2.418060000D-01, &
+&        4.325780000D-01, 3.673250000D-01, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, &
+&        1.000000000D+00, 1.000000000D+00, 2.256500000D-02, 1.836300000D-01, 8.598400000D-01, &
+&        3.434500000D-01, 5.056100000D-01, 2.622400000D-01, 6.413000000D-02, 3.788400000D-01, &
+&        6.166900000D-01, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, &
+&        2.251400000D-02, 1.833500000D-01, 8.600300000D-01, 3.430600000D-01, 5.065200000D-01, &
+&        2.614100000D-01, 6.724600000D-02, 3.723800000D-01, 6.176300000D-01, 1.000000000D+00, &
+&        1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 2.227100000D-02, 1.819900000D-01, &
+&        8.613300000D-01, 3.433800000D-01, 5.059800000D-01, 2.612800000D-01, 6.853600000D-02, &
+&        3.828200000D-01, 6.059900000D-01, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, &
+&        1.000000000D+00, 2.214600000D-02, 1.818000000D-01, 8.615500000D-01, 3.424300000D-01, &
+&        5.054100000D-01, 2.623700000D-01, 7.016300000D-02, 3.841900000D-01, 6.036800000D-01, &
+&        1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 2.226000000D-02, &
+&        1.802000000D-01, 8.624000000D-01, 3.440000000D-01, 5.071000000D-01, 2.590000000D-01, &
+&        7.965000000D-02, 3.734000000D-01, 6.049000000D-01, 1.000000000D+00, 1.000000000D+00, &
+&        1.000000000D+00, 1.000000000D+00, 2.199800000D-02, 1.810200000D-01, 8.622300000D-01, &
+&        3.415500000D-01, 5.025500000D-01, 2.645300000D-01, 7.167000000D-02, 3.970800000D-01, &
+&        5.876200000D-01, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00, 1.000000000D+00/)
+      real(8) :: exd4(36)= (/ &
+&       1.337000000D+01,3.421000000D+00,1.063000000D+00,1.508000000D+01,3.926000000D+00, &
+&       1.233000000D+00,6.714000000D+01,1.894000000D+01,6.426000000D+00,2.190000000D+00, &
+&       6.725000000D-01,7.484000000D+01,2.123000000D+01,7.297000000D+00,2.549000000D+00, &
+&       8.165000000D-01,8.605000000D+01,2.449000000D+01,8.442000000D+00,2.981000000D+00, &
+&       9.790000000D-01,9.901000000D+01,2.841000000D+01,9.863000000D+00,3.514000000D+00, &
+&       1.171000000D+00,1.348000000D+02,3.639000000D+01,1.216000000D+01,4.341000000D+00, &
+&       1.535000000D+00,1.225000000D+02,3.537000000D+01,1.239000000D+01,4.496000000D+00, &
+&       1.546000000D+00/)
+      real(8) :: coeffd4(36)= (/ &
+&        3.160160000D-02, 1.568790000D-01, 3.905820000D-01, 3.689470000D-02, 1.778200000D-01, &
+&        4.255130000D-01, 3.095700000D-02, 1.748000000D-01, 4.434600000D-01, 5.670200000D-01, &
+&        1.000000000D+00, 3.039000000D-02, 1.731900000D-01, 4.409000000D-01, 5.653200000D-01, &
+&        1.000000000D+00, 2.798900000D-02, 1.650200000D-01, 4.373600000D-01, 5.725500000D-01, &
+&        1.000000000D+00, 2.559600000D-02, 1.545900000D-01, 4.287800000D-01, 5.862000000D-01, &
+&        1.000000000D+00, 1.831000000D-02, 1.350000000D-01, 4.261000000D-01, 6.043000000D-01, &
+&        1.000000000D+00, 2.337700000D-02, 1.461000000D-01, 4.223000000D-01, 5.945200000D-01, &
+&        1.000000000D+00/)
+!
+! Set functions for H - He
+!
+      select case(numatomic(iatom))
+        case(1:2)
+! 1S
+          ishell= ishell+1
+          do j= 1,3
+            ex(locprim(ishell)+j)= exs1(is1(numatomic(iatom))+j)
+            coeff(locprim(ishell)+j)= coeffs1(is1(numatomic(iatom))+j)
+          enddo
+          mprim(ishell)= 3
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+            locprim(ishell+1)= locprim(ishell)+3
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exs1(is1(numatomic(iatom))+4)
+          coeff(locprim(ishell)+1)= coeffs1(is1(numatomic(iatom))+4)
+          mprim(ishell)= 1
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exs1(is1(numatomic(iatom))+5)
+          coeff(locprim(ishell)+1)= coeffs1(is1(numatomic(iatom))+5)
+          mprim(ishell)= 1
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+1
+!
+! Set functions for Li - Ne
+!
+        case(3:10)
+! 1S
+          ishell= ishell+1
+          do j= 1,6
+            ex(locprim(ishell)+j)= exs2(is2(numatomic(iatom))+j)
+            coeff(locprim(ishell)+j)= coeffs2(is2(numatomic(iatom))+j)
+          enddo
+          mprim(ishell)= 6
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+6
+          locbf(ishell+1) = locbf(ishell)+1
+! 2SP
+          ishell= ishell+1
+          do j= 1,3
+            ex(locprim(ishell)+j)= exs2(is2(numatomic(iatom))+j+6)
+            coeff(locprim(ishell)+j)= coeffs2(is2(numatomic(iatom))+j+6)
+          enddo
+          mprim(ishell)= 3
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+3
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          do j= 1,3
+            ex(locprim(ishell)+j)= exs2(is2(numatomic(iatom))+j+6)
+            coeff(locprim(ishell)+j)= coeffp2(ip2(numatomic(iatom))+j)
+          enddo
+          mprim(ishell)= 3
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+3
+          locbf(ishell+1) = locbf(ishell)+3
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exs2(is2(numatomic(iatom))+10)
+          coeff(locprim(ishell)+1)= coeffs2(is2(numatomic(iatom))+10)
+          mprim(ishell)= 1
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exs2(is2(numatomic(iatom))+10)
+          coeff(locprim(ishell)+1)= coeffp2(ip2(numatomic(iatom))+4)
+          mprim(ishell)= 1
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+3
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exs2(is2(numatomic(iatom))+11)
+          coeff(locprim(ishell)+1)= coeffs2(is2(numatomic(iatom))+11)
+          mprim(ishell)= 1
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exs2(is2(numatomic(iatom))+11)
+          coeff(locprim(ishell)+1)= coeffp2(ip2(numatomic(iatom))+5)
+          mprim(ishell)= 1
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+3
+!
+! Set  functions for Na - Ar
+!
+        case(11:18)
+! S functions
+          ishell= ishell+1
+          do j= 1,6
+            ex(locprim(ishell)+j)= exs3(is3(numatomic(iatom))+j)
+            coeff(locprim(ishell)+j)= coeffs3(is3(numatomic(iatom))+j)
+          enddo
+          mprim(ishell)= 6
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+6
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          do j= 1,3
+            ex(locprim(ishell)+j)= exs3(is3(numatomic(iatom))+j+6)
+            coeff(locprim(ishell)+j)= coeffs3(is3(numatomic(iatom))+j+6)
+          enddo
+          mprim(ishell)= 3
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+3
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exs3(is3(numatomic(iatom))+10)
+          coeff(locprim(ishell)+1)= coeffs3(is3(numatomic(iatom))+10)
+          mprim(ishell)= 1
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exs3(is3(numatomic(iatom))+11)
+          coeff(locprim(ishell)+1)= coeffs3(is3(numatomic(iatom))+11)
+          mprim(ishell)= 1
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exs3(is3(numatomic(iatom))+12)
+          coeff(locprim(ishell)+1)= coeffs3(is3(numatomic(iatom))+12)
+          mprim(ishell)= 1
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exs3(is3(numatomic(iatom))+13)
+          coeff(locprim(ishell)+1)= coeffs3(is3(numatomic(iatom))+13)
+          mprim(ishell)= 1
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+1
+! P functions
+          ishell= ishell+1
+          num= 4
+          if(numatomic(iatom) >= 17) num= 5
+          do j= 1,num
+            ex(locprim(ishell)+j)= exp3(ip3(numatomic(iatom))+j)
+            coeff(locprim(ishell)+j)= coeffp3(ip3(numatomic(iatom))+j)
+          enddo
+          mprim(ishell)= num
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+num
+          locbf(ishell+1) = locbf(ishell)+3
+!
+          ishell= ishell+1
+          do j= 1,2
+            ex(locprim(ishell)+j)= exp3(ip3(numatomic(iatom))+j+num)
+            coeff(locprim(ishell)+j)= coeffp3(ip3(numatomic(iatom))+j+num)
+          enddo
+          mprim(ishell)= 2
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+2
+          locbf(ishell+1) = locbf(ishell)+3
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exp3(ip3(numatomic(iatom))+num+3)
+          coeff(locprim(ishell)+1)= coeffp3(ip3(numatomic(iatom))+num+3)
+          mprim(ishell)= 1
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+3
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exp3(ip3(numatomic(iatom))+num+4)
+          coeff(locprim(ishell)+1)= coeffp3(ip3(numatomic(iatom))+num+4)
+          mprim(ishell)= 1
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+3
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exp3(ip3(numatomic(iatom))+num+5)
+          coeff(locprim(ishell)+1)= coeffp3(ip3(numatomic(iatom))+num+5)
+          mprim(ishell)= 1
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+3
+!
+! Set  functions for K, Ca, Ga - Kr 
+!
+        case(19:20,31:36)
+! S functions
+          ishell= ishell+1
+          do j= 1,6
+            ex(locprim(ishell)+j)= exs4(is4(numatomic(iatom))+j)
+            coeff(locprim(ishell)+j)= coeffs4(is4(numatomic(iatom))+j)
+          enddo
+          mprim(ishell)= 6
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+6
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          num= 2
+          if(numatomic(iatom) >= 31) num= 3
+          do j= 1,num
+            ex(locprim(ishell)+j)= exs4(is4(numatomic(iatom))+j+6)
+            coeff(locprim(ishell)+j)= coeffs4(is4(numatomic(iatom))+j+6)
+          enddo
+          mprim(ishell)= num
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+num
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exs4(is4(numatomic(iatom))+num+7)
+          coeff(locprim(ishell)+1)= coeffs4(is4(numatomic(iatom))+num+7)
+          mprim(ishell)= 1
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exs4(is4(numatomic(iatom))+num+8)
+          coeff(locprim(ishell)+1)= coeffs4(is4(numatomic(iatom))+num+8)
+          mprim(ishell)= 1
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exs4(is4(numatomic(iatom))+num+9)
+          coeff(locprim(ishell)+1)= coeffs4(is4(numatomic(iatom))+num+9)
+          mprim(ishell)= 1
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exs4(is4(numatomic(iatom))+num+10)
+          coeff(locprim(ishell)+1)= coeffs4(is4(numatomic(iatom))+num+10)
+          mprim(ishell)= 1
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exs4(is4(numatomic(iatom))+num+11)
+          coeff(locprim(ishell)+1)= coeffs4(is4(numatomic(iatom))+num+11)
+          mprim(ishell)= 1
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+1
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exs4(is4(numatomic(iatom))+num+12)
+          coeff(locprim(ishell)+1)= coeffs4(is4(numatomic(iatom))+num+12)
+          mprim(ishell)= 1
+          mbf(ishell)= 1
+          mtype(ishell)= 0
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+1
+! P functions
+          ishell= ishell+1
+          do j= 1,3
+            ex(locprim(ishell)+j)= exp4(ip4(numatomic(iatom))+j)
+            coeff(locprim(ishell)+j)= coeffp4(ip4(numatomic(iatom))+j)
+          enddo
+          mprim(ishell)= 3
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+3
+          locbf(ishell+1) = locbf(ishell)+3
+!
+          ishell= ishell+1
+          do j= 1,3
+            ex(locprim(ishell)+j)= exp4(ip4(numatomic(iatom))+j+3)
+            coeff(locprim(ishell)+j)= coeffp4(ip4(numatomic(iatom))+j+3)
+          enddo
+          mprim(ishell)= 3
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+3
+          locbf(ishell+1) = locbf(ishell)+3
+!
+          ishell= ishell+1
+          num= 1
+          if(numatomic(iatom) >= 31) num= 3
+          do j= 1,num
+            ex(locprim(ishell)+j)= exp4(ip4(numatomic(iatom))+j+6)
+            coeff(locprim(ishell)+j)= coeffp4(ip4(numatomic(iatom))+j+6)
+          enddo
+          mprim(ishell)= num
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+num
+          locbf(ishell+1) = locbf(ishell)+3
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exp4(ip4(numatomic(iatom))+num+7)
+          coeff(locprim(ishell)+1)= coeffp4(ip4(numatomic(iatom))+num+7)
+          mprim(ishell)= 1
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+3
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exp4(ip4(numatomic(iatom))+num+8)
+          coeff(locprim(ishell)+1)= coeffp4(ip4(numatomic(iatom))+num+8)
+          mprim(ishell)= 1
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+3
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exp4(ip4(numatomic(iatom))+num+9)
+          coeff(locprim(ishell)+1)= coeffp4(ip4(numatomic(iatom))+num+9)
+          mprim(ishell)= 1
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+3
+!
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= exp4(ip4(numatomic(iatom))+num+10)
+          coeff(locprim(ishell)+1)= coeffp4(ip4(numatomic(iatom))+num+10)
+          mprim(ishell)= 1
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+3
+! D functions
+          ishell= ishell+1
+          num= 3
+          if(numatomic(iatom) >= 31) num= 4
+          do j= 1,num
+            ex(locprim(ishell)+j)= exd4(id4(numatomic(iatom))+j)
+            coeff(locprim(ishell)+j)= coeffd4(id4(numatomic(iatom))+j)
+          enddo
+          mprim(ishell)= num
+          mtype(ishell)= 2
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+num
+          if(spher) then
+            mbf(ishell)= 5
+            locbf(ishell+1)= locbf(ishell)+5
+          else
+            mbf(ishell)= 6
+            locbf(ishell+1)= locbf(ishell)+6
+          endif
+          if(numatomic(iatom) >= 31) then
+            ishell= ishell+1
+            ex(locprim(ishell)+1)= exd4(id4(numatomic(iatom))+num+1)
+            coeff(locprim(ishell)+1)= coeffd4(id4(numatomic(iatom))+num+1)
+            mprim(ishell)= 1
+            mtype(ishell)= 2
+            locatom(ishell)= iatom
+            locprim(ishell+1)= locprim(ishell)+1
+            if(spher) then
+              mbf(ishell)= 5
+              locbf(ishell+1)= locbf(ishell)+5
+            else
+              mbf(ishell)= 6
+              locbf(ishell+1)= locbf(ishell)+6
+            endif
+          endif
+        case default
+          write(*,'(" Error! This program supports H - Ca, Ga - Kr 6-311G basis set.")')
+          call iabort
+      end select
+!
+      if(ishell > mxshell) then
+        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
+        call iabort
+      endif
+      if(locprim(ishell+1) > mxprim ) then
+        write(*,'(" Error! The number of primitive basis functions exceeds mxprim", &
+&             i6,".")')mxprim
+        call iabort
+      endif
+      if(locbf(ishell+1) > mxao ) then
+        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
+        call iabort
+      endif
+!
+      return
+end
+
+
+!-----------------------------------
+  subroutine bs6311gd(iatom,ishell)
+!-----------------------------------
+!
+! Set basis functions of 6-311G(d)
+!
+      implicit none
+      integer,intent(in) :: iatom
+      integer,intent(inout) :: ishell
+!
+      call bs6311g(iatom,ishell)
+!
+      call bs6311gs(iatom,ishell)
+!
+      return
+end
+
+
+!------------------------------------
+  subroutine bs6311gdp(iatom,ishell)
+!------------------------------------
+!
+! Set basis functions of 6-311G(d,p)
+!
+      use modmolecule, only : numatomic
+      implicit none
+      integer,intent(in) :: iatom
+      integer,intent(inout) :: ishell
+!
+      call bs6311g(iatom,ishell)
+!
+      if(numatomic(iatom) <= 2) then
+        call bs6311gss(iatom,ishell)
+      else
+        call bs6311gs(iatom,ishell)
+      endif
+!
+      return
+end
+
+
+!-----------------------------------
+  subroutine bs6311gs(iatom,ishell)
+!-----------------------------------
+!
+! Set basis polarization function of 6-311G(d)
+!
+      use modmolecule, only : numatomic
+      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mtype, mbf, spher
+      use modparam, only : mxao, mxshell, mxprim
+      implicit none
+      integer,intent(in) :: iatom
+      integer,intent(inout) :: ishell
+      real(8),parameter :: one=1.0D+00
+      real(8) :: ex6311gs(3:36)
+      data ex6311gs(3:20) &
+       /2.000D-01,2.550D-01,4.010D-01,6.260D-01,9.130D-01,1.292D+00,1.750D+00,2.304D+00, &
+&       1.750D-01,1.750D-01,3.250D-01,4.500D-01,5.500D-01,6.500D-01,7.500D-01,8.500D-01, &
+&       2.290D-01,2.600D-01/
+      data ex6311gs(31:36) &
+&      /1.690D-01,2.280D-01,2.640D-01,3.050D-01,4.510D-01,3.950D-01/
+!
+      select case (numatomic(iatom))
+        case(1:2)
+        case(3:20,31:36)
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= ex6311gs(numatomic(iatom))
+          coeff(locprim(ishell)+1)= one
+          mprim(ishell)= 1
+          mtype(ishell)= 2
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          if(spher) then
+            mbf(ishell)= 5
+            locbf(ishell+1)= locbf(ishell)+5
+          else
+            mbf(ishell)= 6
+            locbf(ishell+1)= locbf(ishell)+6
+          endif
+        case default
+          write(*,'(" Error! This program supports Li - Ca, Ga - Kr 6-311G* basis set.")')
+          call iabort
+      end select
+!
+      if(ishell > mxshell) then
+        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
+        call iabort
+      endif
+      if(locprim(ishell+1) > mxprim ) then
+        write(*,'(" Error! The number of primitive basis functions exceeds mxprim", &
+&             i6,".")')mxprim
+        call iabort
+      endif
+      if(locbf(ishell+1) > mxao ) then
+        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
+        call iabort
+      endif
+      return
+end
+
+
+!------------------------------------
+  subroutine bs6311gss(iatom,ishell)
+!------------------------------------
+!
+! Set basis polarization function of Hydrogen 6-311G(d,p)
+!
+      use modmolecule, only : numatomic
+      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mtype, mbf, spher
+      use modparam, only : mxao, mxshell, mxprim
+      implicit none
+      integer,intent(in) :: iatom
+      integer,intent(inout) :: ishell
+      real(8),parameter :: one=1.0D+00, ex6311gss=0.75D+00
+!
+      select case (numatomic(iatom))
+        case(1:2)
+          ishell= ishell+1
+          ex(locprim(ishell)+1)= ex6311gss
+          coeff(locprim(ishell)+1)= one
+          mprim(ishell)= 1
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= locprim(ishell)+1
+          mbf(ishell)= 3
+          locbf(ishell+1) = locbf(ishell)+3
       end select
 !
       if(ishell > mxshell) then
