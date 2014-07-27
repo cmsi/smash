@@ -874,6 +874,8 @@ end
         enddo
         if(abs(dotj) >= one) then
           write(*,'(" Error! During calculation of bond angles in calcbmatrix.")')
+          write(*,'(" Use Cartesian coordinate. The input is")')
+          write(*,'("   opt cartesian=.true.",/)')
           call iabort
         endif
         coordredun(iangle)= acos(dotj)

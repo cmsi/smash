@@ -267,7 +267,7 @@ end
 !
           iloc= locprim(ishell)
           do iprim= 1,mprim(ishell)
-             write(*,'(3x,2f15.7)') ex(iloc+iprim), coeffinp(iloc+iprim)
+             write(*,'(3x,f16.7,1x,f15.8)') ex(iloc+iprim), coeffinp(iloc+iprim)
           enddo
         enddo
         write(*,'("  ****")')
