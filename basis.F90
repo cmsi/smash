@@ -211,7 +211,6 @@ end
 ! Driver of setting basis functions from input file
 ! This routine should be called only from master node.
 !
-      use modparallel
       use modmolecule, only : natom, numatomic
       use modbasis, only : basis, locprim, locbf, locatom, mprim, mbf, mtype, &
 &                          nshell, nao, nprim, ex, coeff, locgenprim, mgenprim, mgentype, &
