@@ -86,9 +86,9 @@ end
 end
 
 
-!------------------------------------------
-  subroutine calcdmax(dmtrx,dmax,dmaxtmp)
-!------------------------------------------
+!-------------------------------------------
+  subroutine calcrdmax(dmtrx,dmax,dmaxtmp)
+!-------------------------------------------
 !
 ! Calculate maximum density matrix element for each shell
 !
@@ -418,11 +418,11 @@ end
 end
 
 
-!------------------------------------------------------------------------------------------
-  subroutine calcdiis(fock,errdiis,fockdiis,diismtrx,work1,work2,idis,itdiis,nao,maxdiis)
-!------------------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------------------
+  subroutine calcrdiis(fock,errdiis,fockdiis,diismtrx,work1,work2,idis,itdiis,nao,maxdiis)
+!-------------------------------------------------------------------------------------------
 !
-! Direct Inversion in the Iterative Subspace (DIIS) interporation
+! Direct Inversion in the Iterative Subspace (DIIS) interporation for closed-shell
 !
 ! In    : fock    (Fock matrx)
 ! Out   : fock    (Interporated Fock matrx)
@@ -488,7 +488,7 @@ end
 &                      diismtrx,worka,workb,work2,idis,itdiis,nao,maxdiis)
 !---------------------------------------------------------------------------
 !
-! Direct Inversion in the Iterative Subspace (DIIS) interporation
+! Direct Inversion in the Iterative Subspace (DIIS) interporation for open-shell
 !
 ! In    : focka    (Alpha Fock matrx)
 !         fockb    (Beta Fock matrx)

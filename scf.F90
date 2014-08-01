@@ -110,7 +110,7 @@
 !
 ! Calculate maximum density matrix elements
 !
-        call calcdmax(dmtrx,dmax,work)
+        call calcrdmax(dmtrx,dmax,work)
 !
 ! Calculate two-electron integrals and Fock matrix
 !
@@ -140,7 +140,7 @@
           call calcdiiserr(fock,dmtrxprev,overlap,ortho,cmo,work,work2,errmax,idis,nao,nmo)
           if(((itdiis /= 0).or.(errmax <= thresherr)).and.(errmax > small))then
             itdiis= itdiis+1
-            call calcdiis(fock,errdiis,fockdiis,diismtrx,cmo,work2,idis,itdiis,nao,maxdiis)
+            call calcrdiis(fock,errdiis,fockdiis,diismtrx,cmo,work2,idis,itdiis,nao,maxdiis)
           endif
 !
 ! Extrapolate Fock matrix
@@ -787,7 +787,7 @@ end
 !
 ! Calculate maximum density matrix elements
 !
-        call calcdmax(dmtrx,dmax,work)
+        call calcrdmax(dmtrx,dmax,work)
         call cpu_time(time1)
 !
 ! Calculate exchange-correlation terms
@@ -826,7 +826,7 @@ end
           call calcdiiserr(fock,dmtrxprev,overlap,ortho,cmo,work,work2,errmax,idis,nao,nmo)
           if(((itdiis /= 0).or.(errmax <= thresherr)).and.(errmax > small))then
             itdiis= itdiis+1
-            call calcdiis(fock,errdiis,fockdiis,diismtrx,cmo,work2,idis,itdiis,nao,maxdiis)
+            call calcrdiis(fock,errdiis,fockdiis,diismtrx,cmo,work2,idis,itdiis,nao,maxdiis)
           endif
 !
 ! Extrapolate Fock matrix
