@@ -90,21 +90,21 @@
       endif
 !
       if(parallel) then
-        call para_bcast(nshell,1,0,MPI_COMM_WORLD)
-        call para_bcast(locprim,nshell+1,0,MPI_COMM_WORLD)
-        call para_bcast(locbf  ,nshell+1,0,MPI_COMM_WORLD)
-        call para_bcast(locatom,nshell+1,0,MPI_COMM_WORLD)
+        call para_bcasti(nshell,1,0,MPI_COMM_WORLD)
+        call para_bcasti(locprim,nshell+1,0,MPI_COMM_WORLD)
+        call para_bcasti(locbf  ,nshell+1,0,MPI_COMM_WORLD)
+        call para_bcasti(locatom,nshell+1,0,MPI_COMM_WORLD)
       endif
 !
       nao= locbf(nshell+1)
       nprim= locprim(nshell+1)
 !
       if(parallel) then
-        call para_bcast(ex   ,nprim,0,MPI_COMM_WORLD)
-        call para_bcast(coeff,nprim,0,MPI_COMM_WORLD)
-        call para_bcast(mprim,nshell,0,MPI_COMM_WORLD)
-        call para_bcast(mbf  ,nshell,0,MPI_COMM_WORLD)
-        call para_bcast(mtype,nshell,0,MPI_COMM_WORLD)
+        call para_bcastr(ex   ,nprim,0,MPI_COMM_WORLD)
+        call para_bcastr(coeff,nprim,0,MPI_COMM_WORLD)
+        call para_bcasti(mprim,nshell,0,MPI_COMM_WORLD)
+        call para_bcasti(mbf  ,nshell,0,MPI_COMM_WORLD)
+        call para_bcasti(mtype,nshell,0,MPI_COMM_WORLD)
       endif
 !
       do i= 1,nprim

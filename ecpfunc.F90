@@ -31,14 +31,14 @@
       endif
 !
       if(parallel) then
-        call para_bcast(iprim,1,0,MPI_COMM_WORLD)
-        call para_bcast(maxangecp,natom,0,MPI_COMM_WORLD)
-        call para_bcast(izcore,natom,0,MPI_COMM_WORLD)
-        call para_bcast(locecp(0,1),natom*6,0,MPI_COMM_WORLD)
-        call para_bcast(mprimecp(0,1),natom*6,0,MPI_COMM_WORLD)
-        call para_bcast(execp,iprim,0,MPI_COMM_WORLD)
-        call para_bcast(coeffecp,iprim,0,MPI_COMM_WORLD)
-        call para_bcast(mtypeecp,iprim,0,MPI_COMM_WORLD)
+        call para_bcasti(iprim,1,0,MPI_COMM_WORLD)
+        call para_bcasti(maxangecp,natom,0,MPI_COMM_WORLD)
+        call para_bcasti(izcore,natom,0,MPI_COMM_WORLD)
+        call para_bcasti(locecp(0,1),natom*6,0,MPI_COMM_WORLD)
+        call para_bcasti(mprimecp(0,1),natom*6,0,MPI_COMM_WORLD)
+        call para_bcastr(execp,iprim,0,MPI_COMM_WORLD)
+        call para_bcastr(coeffecp,iprim,0,MPI_COMM_WORLD)
+        call para_bcasti(mtypeecp,iprim,0,MPI_COMM_WORLD)
       endif
 ! 
       do iatom= 1,natom

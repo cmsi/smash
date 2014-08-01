@@ -155,7 +155,7 @@ end
 !         call daxpy(ndim,dum,hmat(1,i),1,hmat(1,j),1)
         enddo
         ndest= mod(i+1,nproc)
-        call para_bcast(hmat(1,i+1),ndim,ndest,MPI_COMM_WORLD)
+        call para_bcastr(hmat(1,i+1),ndim,ndest,MPI_COMM_WORLD)
       enddo
       return
 end

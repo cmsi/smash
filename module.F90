@@ -54,59 +54,6 @@ end
         end subroutine checkintsize8
       end interface checkintsize
 !
-      interface para_bcast
-        subroutine para_bcastd1(buff,num,irank,comm)
-          integer,intent(in) :: num, irank
-          integer(4),intent(in) :: comm
-          real(8) :: buff
-        end subroutine para_bcastd1
-        subroutine para_bcastd2(buff,num,irank,comm)
-          integer,intent(in) :: num, irank
-          integer(4),intent(in) :: comm
-          real(8) :: buff(*)
-        end subroutine para_bcastd2
-        subroutine para_bcasti41(buff,num,irank,comm)
-          integer,intent(in) :: num, irank
-          integer(4),intent(in) :: comm
-          integer(4) :: buff
-        end subroutine para_bcasti41
-        subroutine para_bcasti42(buff,num,irank,comm)
-          integer,intent(in) :: num, irank
-          integer(4),intent(in) :: comm
-          integer(4) :: buff(*)
-        end subroutine para_bcasti42
-        subroutine para_bcasti81(buff,num,irank,comm)
-          integer,intent(in) :: num, irank
-          integer(4),intent(in) :: comm
-          integer(8) :: buff
-        end subroutine para_bcasti81
-        subroutine para_bcasti82(buff,num,irank,comm)
-          integer,intent(in) :: num, irank
-          integer(4),intent(in) :: comm
-          integer(8) :: buff(*)
-        end subroutine para_bcasti82
-        subroutine para_bcastc1(buff,num,irank,comm)
-          integer,intent(in) :: num, irank
-          integer(4),intent(in) :: comm
-          character(*) :: buff
-        end subroutine para_bcastc1
-        subroutine para_bcastc2(buff,num,irank,comm)
-          integer,intent(in) :: num, irank
-          integer(4),intent(in) :: comm
-          character(*) :: buff(*)
-        end subroutine para_bcastc2
-        subroutine para_bcastl1(buff,num,irank,comm)
-          integer,intent(in) :: num, irank
-          integer(4),intent(in) :: comm
-          logical :: buff
-        end subroutine para_bcastl1
-        subroutine para_bcastl2(buff,num,irank,comm)
-          integer,intent(in) :: num, irank
-          integer(4),intent(in) :: comm
-          logical :: buff(*)
-        end subroutine para_bcastl2
-      end interface para_bcast
-!
       interface para_allreduce
         subroutine para_allreduced1(sbuff,rbuff,num,comm)
           integer,intent(in) :: num

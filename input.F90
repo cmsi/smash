@@ -136,16 +136,16 @@
         logarray(4)= flagecp
         logarray(5)= cartesian
 !
-        call para_bcast(chararray,16*7,0,MPI_COMM_WORLD)
-        call para_bcast(realarray,4,0,MPI_COMM_WORLD)
-        call para_bcast(intarray,9,0,MPI_COMM_WORLD)
-        call para_bcast(logarray,5,0,MPI_COMM_WORLD)
+        call para_bcastc(chararray,16*7,0,MPI_COMM_WORLD)
+        call para_bcastr(realarray,4,0,MPI_COMM_WORLD)
+        call para_bcasti(intarray,9,0,MPI_COMM_WORLD)
+        call para_bcastl(logarray,5,0,MPI_COMM_WORLD)
 !
         natom= intarray(1)
 !
-        call para_bcast(numatomic,natom,0,MPI_COMM_WORLD)
-        call para_bcast(coord(1,1),natom*3,0,MPI_COMM_WORLD)
-        call para_bcast(znuc,natom,0,MPI_COMM_WORLD)
+        call para_bcasti(numatomic,natom,0,MPI_COMM_WORLD)
+        call para_bcastr(coord(1,1),natom*3,0,MPI_COMM_WORLD)
+        call para_bcastr(znuc,natom,0,MPI_COMM_WORLD)
 !
         method  = chararray(1)
         runtype = chararray(2)
