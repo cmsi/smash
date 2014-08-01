@@ -491,7 +491,7 @@ end
       enddo
 !$OMP end parallel
 !
-      call para_allreduce(xinttmp,xint,nshell*(nshell+1)/2,MPI_COMM_WORLD)
+      call para_allreducer(xinttmp,xint,nshell*(nshell+1)/2,MPI_COMM_WORLD)
 !
       cutint2= cutsave
       threshex=threshex*half

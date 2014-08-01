@@ -42,9 +42,9 @@
 !
       if(flagecp) call oneeiecp(hstmat2)
 !
-      call para_allreduce(hstmat2,hstmat1,num,MPI_COMM_WORLD)
-      call para_allreduce(hstmat3,hstmat2,num,MPI_COMM_WORLD)
-      call para_allreduce(hstmat4,hstmat3,num,MPI_COMM_WORLD)
+      call para_allreducer(hstmat2,hstmat1,num,MPI_COMM_WORLD)
+      call para_allreducer(hstmat3,hstmat2,num,MPI_COMM_WORLD)
+      call para_allreducer(hstmat4,hstmat3,num,MPI_COMM_WORLD)
 !
       return
 end

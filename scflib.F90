@@ -133,7 +133,7 @@ end
       enddo
 !$OMP end parallel
 !
-      call para_allreduce(dmaxtmp,dmax,nshell*(nshell+1)/2,MPI_COMM_WORLD)
+      call para_allreducer(dmaxtmp,dmax,nshell*(nshell+1)/2,MPI_COMM_WORLD)
       return
 end
 
@@ -187,7 +187,7 @@ end
       enddo
 !$OMP end parallel
 !
-      call para_allreduce(dmaxtmp,dmax,nshell*(nshell+1)/2,MPI_COMM_WORLD)
+      call para_allreducer(dmaxtmp,dmax,nshell*(nshell+1)/2,MPI_COMM_WORLD)
       return
 end
 
@@ -449,7 +449,7 @@ end
           work2(i)= ddot(num*nao,errdiis(1,i),1,errdiis(1,itdiis),1)
         enddo
       endif
-      call para_allreduce(work2(1),diismtrx(itdiis*(itdiis-1)/2+1),itdiis,MPI_COMM_WORLD)
+      call para_allreducer(work2,diismtrx(itdiis*(itdiis-1)/2+1),itdiis,MPI_COMM_WORLD)
 !
       do i= 1,itdiis
         do j= 1,i
@@ -529,7 +529,7 @@ end
           work2(i)= work2(i)+ddot(num*nao,errdiisb(1,i),1,errdiisb(1,itdiis),1)
         enddo
       endif
-      call para_allreduce(work2(1),diismtrx(itdiis*(itdiis-1)/2+1),itdiis,MPI_COMM_WORLD)
+      call para_allreducer(work2,diismtrx(itdiis*(itdiis-1)/2+1),itdiis,MPI_COMM_WORLD)
 !
       do i= 1,itdiis
         do j= 1,i

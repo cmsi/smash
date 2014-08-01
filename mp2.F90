@@ -139,7 +139,7 @@
       deallocate(trint2)
       call memunset(maxsize*nocc*(nocc+1)/2)
 !
-      call para_allreduce(emp2st,emp2stsum,2,MPI_COMM_WORLD)
+      call para_allreducer(emp2st,emp2stsum,2,MPI_COMM_WORLD)
       emp2= emp2stsum(1)+emp2stsum(2)
       escsmp2= emp2stsum(1)*p12+emp2stsum(2)/three
 !

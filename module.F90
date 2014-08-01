@@ -54,32 +54,6 @@ end
         end subroutine checkintsize8
       end interface checkintsize
 !
-      interface para_allreduce
-        subroutine para_allreduced1(sbuff,rbuff,num,comm)
-          integer,intent(in) :: num
-          integer(4),intent(in) :: comm
-          real(8),intent(in) :: sbuff
-          real(8),intent(out) :: rbuff
-        end subroutine para_allreduced1
-        subroutine para_allreduced2(sbuff,rbuff,num,comm)
-          integer,intent(in) :: num
-          integer(4),intent(in) :: comm
-          real(8),intent(in) :: sbuff(*)
-          real(8),intent(out) :: rbuff(*)
-        end subroutine para_allreduced2
-        subroutine para_allreducei1(sbuff,rbuff,num,comm)
-          integer,intent(in) :: num
-          integer(4),intent(in) :: comm
-          integer,intent(in) :: sbuff
-          integer,intent(out) :: rbuff
-        end subroutine para_allreducei1
-        subroutine para_allreducei2(sbuff,rbuff,num,comm)
-          integer,intent(in) :: num
-          integer(4),intent(in) :: comm
-          integer,intent(in) :: sbuff(*)
-          integer,intent(out) :: rbuff(*)
-        end subroutine para_allreducei2
-      end interface para_allreduce
       interface para_sendrecv
         subroutine para_sendrecvd1(sbuff,nums,dest,ntags,rbuff,numr,source,ntagr,comm)
           integer,intent(in) :: nums, dest, ntags, numr, source, ntagr
