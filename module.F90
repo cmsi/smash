@@ -45,6 +45,15 @@ end
 #endif
       logical :: master, parallel
 !
+      interface checkintsize
+        subroutine checkintsize4(isize)
+          integer(4),intent(out) :: isize
+        end subroutine checkintsize4
+        subroutine checkintsize8(isize)
+          integer(8),intent(out) :: isize
+        end subroutine checkintsize8
+      end interface checkintsize
+!
       interface para_bcast
         subroutine para_bcastd1(buff,num,irank,comm)
           integer,intent(in) :: num, irank
