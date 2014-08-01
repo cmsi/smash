@@ -539,8 +539,8 @@ end
           ij   = 1
         endif
         if(myij > nocc2) nrecv=0
-        call para_sendrecv(trint2(1,ij),nsend,iproc,myrank, &
-&                          trint3(irecv(jproc)),nrecv,jproc,jproc,MPI_COMM_WORLD)
+        call para_sendrecvr(trint2(1,ij),nsend,iproc,myrank, &
+&                           trint3(irecv(jproc)),nrecv,jproc,jproc,MPI_COMM_WORLD)
       enddo
 !
       do iproc= 0, myrank-1
@@ -554,8 +554,8 @@ end
           ij   = 1
         endif
         if(myij > nocc2) nrecv=0
-        call para_sendrecv(trint2(1,ij),nsend,iproc,myrank, &
-&                          trint3(irecv(jproc)),nrecv,jproc,jproc,MPI_COMM_WORLD)
+        call para_sendrecvr(trint2(1,ij),nsend,iproc,myrank, &
+&                           trint3(irecv(jproc)),nrecv,jproc,jproc,MPI_COMM_WORLD)
       enddo
 !
       nsend= idis(3,myrank)+idis(7,myrank)

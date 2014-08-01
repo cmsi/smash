@@ -292,9 +292,9 @@ end
         fockwork(i,5)= fockwork(i,3)   -fockwork(i,2)
         fockwork(i,6)= fockwork(i,2)   -fockwork(i,1)
       enddo
-      call para_allgatherv(fockwork(1,4),num,work1,idis(1,5),idis(1,6),MPI_COMM_WORLD)
-      call para_allgatherv(fockwork(1,5),num,work2,idis(1,5),idis(1,6),MPI_COMM_WORLD)
-      call para_allgatherv(fockwork(1,6),num,work3,idis(1,5),idis(1,6),MPI_COMM_WORLD)
+      call para_allgathervr(fockwork(1,4),num,work1,idis(1,5),idis(1,6),MPI_COMM_WORLD)
+      call para_allgathervr(fockwork(1,5),num,work2,idis(1,5),idis(1,6),MPI_COMM_WORLD)
+      call para_allgathervr(fockwork(1,6),num,work3,idis(1,5),idis(1,6),MPI_COMM_WORLD)
       sp11= tridot(work1,work1,nao)
       sp12= tridot(work2,work1,nao)
       sp13= tridot(work3,work1,nao)
@@ -392,7 +392,7 @@ end
         call dsymm('L','U',nao,num,one,work1,nao,work3,nao,zero,work2,nao)
         call dgemm('T','N',nmo,num,nao,one,ortho,nao,work2,nao,zero,work3,nao)
       endif
-      call para_allgatherv(work3,idis(myrank+1,3),work1,idis(1,3),idis(1,4),MPI_COMM_WORLD)
+      call para_allgathervr(work3,idis(myrank+1,3),work1,idis(1,3),idis(1,4),MPI_COMM_WORLD)
 !
 ! Next calculation should be parallelized.
 !
@@ -477,7 +477,7 @@ end
           call daxpy(num,diiscoeff(i),fockdiis(1,i),1,work1,1)
         enddo
       endif
-      call para_allgatherv(work1,num,fock,idis(1,5),idis(1,6),MPI_COMM_WORLD)
+      call para_allgathervr(work1,num,fock,idis(1,5),idis(1,6),MPI_COMM_WORLD)
 !
       return
 end
@@ -560,7 +560,7 @@ end
           call daxpy(num,diiscoeff(i),fockdiisa(1,i),1,worka,1)
         enddo
       endif
-      call para_allgatherv(worka,num,focka,idis(1,5),idis(1,6),MPI_COMM_WORLD)
+      call para_allgathervr(worka,num,focka,idis(1,5),idis(1,6),MPI_COMM_WORLD)
 !
 ! Interporate beta Fock matrix
 !
@@ -571,7 +571,7 @@ end
           call daxpy(num,diiscoeff(i),fockdiisb(1,i),1,workb,1)
         enddo
       endif
-      call para_allgatherv(workb,num,fockb,idis(1,5),idis(1,6),MPI_COMM_WORLD)
+      call para_allgathervr(workb,num,fockb,idis(1,5),idis(1,6),MPI_COMM_WORLD)
 !
       return
 end
@@ -608,7 +608,7 @@ end
           call dgemm('T','N',nocc,num,nao,one,cmo,nao,work2,nao,zero,work,nocc)
         endif
         numwork= idis(myrank+1,9)
-        call para_allgatherv(work,numwork,sograd,idis(1,9),idis(1,10),MPI_COMM_WORLD)
+        call para_allgathervr(work,numwork,sograd,idis(1,9),idis(1,10),MPI_COMM_WORLD)
 !
 ! Beta electron gradient
 !
@@ -621,7 +621,7 @@ end
         endif
 !
         numwork= idis(myrank+1,13)
-        call para_allgatherv(work,numwork,sograd,idis(1,13),idis(1,14),MPI_COMM_WORLD)
+        call para_allgathervr(work,numwork,sograd,idis(1,13),idis(1,14),MPI_COMM_WORLD)
       endif
 !
 ! Obtain maximum sograd value
@@ -982,7 +982,7 @@ end
       istart= idis(myrank+1,2)+1
       if(num > 0) call dgemm('N','N',nao,num,nmo,one,cmo,nao,work(1,istart),nmo,zero, &
 &                            work2,nao)
-      call para_allgatherv(work2,idis(myrank+1,3),cmo,idis(1,3),idis(1,4),MPI_COMM_WORLD)
+      call para_allgathervr(work2,idis(myrank+1,3),cmo,idis(1,3),idis(1,4),MPI_COMM_WORLD)
       return
 end
 
@@ -1012,7 +1012,7 @@ end
         call dsymm('L','U',nao,num,one,work,nao,work2(1,istart),nao,zero,work3,nao)
         call dgemm('N','N',nao,num,nao,one,work2,nao,work3,nao,zero,work,nao)
       endif
-      call para_allgatherv(work,num*nao,work2,idis(1,3),idis(1,4),MPI_COMM_WORLD)
+      call para_allgathervr(work,num*nao,work2,idis(1,3),idis(1,4),MPI_COMM_WORLD)
 !
 ! Trace(Db*S*Da*S)
 !
