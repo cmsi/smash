@@ -353,7 +353,7 @@ end
       enddo
 !$OMP end parallel do
 !
-      call para_allreduce(fock,focktotal,nao*(nao+1)/2,MPI_SUM,MPI_COMM_WORLD)
+      call para_allreduce(fock,focktotal,nao*(nao+1)/2,MPI_COMM_WORLD)
       return
 end
 
@@ -536,7 +536,7 @@ end
       enddo
 !$OMP end parallel do
 !
-      call para_allreduce(fock,focktotal,nao*(nao+1)/2,MPI_SUM,MPI_COMM_WORLD)
+      call para_allreduce(fock,focktotal,nao*(nao+1)/2,MPI_COMM_WORLD)
       return
 end
 
@@ -1326,8 +1326,8 @@ end
       enddo
 !$OMP end parallel do
 !
-      call para_allreduce(fock2,fock1,nao*(nao+1)/2,MPI_SUM,MPI_COMM_WORLD)
-      call para_allreduce(fock3,fock2,nao*(nao+1)/2,MPI_SUM,MPI_COMM_WORLD)
+      call para_allreduce(fock2,fock1,nao*(nao+1)/2,MPI_COMM_WORLD)
+      call para_allreduce(fock3,fock2,nao*(nao+1)/2,MPI_COMM_WORLD)
       return
 end
 
@@ -1883,8 +1883,8 @@ end
       enddo
 !$OMP end parallel do
 !
-      call para_allreduce(fock2,fock1,nao*(nao+1)/2,MPI_SUM,MPI_COMM_WORLD)
-      call para_allreduce(fock3,fock2,nao*(nao+1)/2,MPI_SUM,MPI_COMM_WORLD)
+      call para_allreduce(fock2,fock1,nao*(nao+1)/2,MPI_COMM_WORLD)
+      call para_allreduce(fock3,fock2,nao*(nao+1)/2,MPI_COMM_WORLD)
       return
 end
 

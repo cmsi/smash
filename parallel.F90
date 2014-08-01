@@ -300,20 +300,20 @@ end
 end
 
 
-!-------------------------------------------------------
-  subroutine para_allreduced1(sbuff,rbuff,num,op,comm)
-!-------------------------------------------------------
+!----------------------------------------------------
+  subroutine para_allreduced1(sbuff,rbuff,num,comm)
+!----------------------------------------------------
       use modparallel
       implicit none
       integer,intent(in) :: num
-      integer(4),intent(in) :: op, comm
+      integer(4),intent(in) :: comm
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out) :: rbuff(*)
 #ifdef MPI
       integer(4) :: num4, ierr
 !
       num4= num
-      call mpi_allreduce(sbuff,rbuff,num4,mpi_real8,op,comm,ierr)
+      call mpi_allreduce(sbuff,rbuff,num4,mpi_real8,MPI_SUM,comm,ierr)
 #else
       call dcopy(num,sbuff,1,rbuff,1)
 #endif
@@ -321,20 +321,20 @@ end
 end
 
 
-!-------------------------------------------------------
-  subroutine para_allreduced2(sbuff,rbuff,num,op,comm)
-!-------------------------------------------------------
+!----------------------------------------------------
+  subroutine para_allreduced2(sbuff,rbuff,num,comm)
+!----------------------------------------------------
       use modparallel
       implicit none
       integer,intent(in) :: num
-      integer(4),intent(in) :: op, comm
+      integer(4),intent(in) :: comm
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out) :: rbuff(*)
 #ifdef MPI
       integer(4) :: num4, ierr
 !
       num4= num
-      call mpi_allreduce(sbuff,rbuff,num4,mpi_real8,op,comm,ierr)
+      call mpi_allreduce(sbuff,rbuff,num4,mpi_real8,MPI_SUM,comm,ierr)
 #else
       call dcopy(num,sbuff,1,rbuff,1)
 #endif
@@ -342,20 +342,20 @@ end
 end
 
 
-!-------------------------------------------------------
-  subroutine para_allreducei1(sbuff,rbuff,num,op,comm)
-!-------------------------------------------------------
+!----------------------------------------------------
+  subroutine para_allreducei1(sbuff,rbuff,num,comm)
+!----------------------------------------------------
       use modparallel
       implicit none
       integer,intent(in) :: num
-      integer(4),intent(in) :: op, comm
+      integer(4),intent(in) :: comm
       integer,intent(in) :: sbuff(*)
       integer,intent(out) :: rbuff(*)
 #ifdef MPI
       integer(4) :: num4, ierr
 !
       num4= num
-      call mpi_allreduce(sbuff,rbuff,num4,mpi_integer8,op,comm,ierr)
+      call mpi_allreduce(sbuff,rbuff,num4,mpi_integer8,MPI_SUM,comm,ierr)
 #else
       integer ii
 !
@@ -367,20 +367,20 @@ end
 end
 
 
-!-------------------------------------------------------
-  subroutine para_allreducei2(sbuff,rbuff,num,op,comm)
-!-------------------------------------------------------
+!----------------------------------------------------
+  subroutine para_allreducei2(sbuff,rbuff,num,comm)
+!----------------------------------------------------
       use modparallel
       implicit none
       integer,intent(in) :: num
-      integer(4),intent(in) :: op, comm
+      integer(4),intent(in) :: comm
       integer,intent(in) :: sbuff(*)
       integer,intent(out) :: rbuff(*)
 #ifdef MPI
       integer(4) :: num4, ierr
 !
       num4= num
-      call mpi_allreduce(sbuff,rbuff,num4,mpi_integer8,op,comm,ierr)
+      call mpi_allreduce(sbuff,rbuff,num4,mpi_integer8,MPI_SUM,comm,ierr)
 #else
       integer ii
 !

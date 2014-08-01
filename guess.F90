@@ -786,7 +786,7 @@ end
       enddo
 !$OMP end parallel
 !
-      call para_allreduce(work,overlap,nao*nao_g,MPI_SUM,MPI_COMM_WORLD)
+      call para_allreduce(work,overlap,nao*nao_g,MPI_COMM_WORLD)
       return
 end
 

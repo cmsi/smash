@@ -97,8 +97,8 @@
 !
       tmp(1,1)= energy
       tmp(2,1)= totalelec
-      call para_allreduce(fockd,fockdsum,nao*(nao+1)/2,MPI_SUM,MPI_COMM_WORLD)
-      call para_allreduce(tmp(1,1),tmp(1,2),2,MPI_SUM,MPI_COMM_WORLD)
+      call para_allreduce(fockd,fockdsum,nao*(nao+1)/2,MPI_COMM_WORLD)
+      call para_allreduce(tmp(1,1),tmp(1,2),2,MPI_COMM_WORLD)
       energy    = tmp(1,2)
       totalelec = tmp(2,2)
       return
@@ -346,9 +346,9 @@ end
 !
       tmp(1,1)= energy
       tmp(2,1)= totalelec
-      call para_allreduce(fockd2,fockd1,nao*(nao+1)/2,MPI_SUM,MPI_COMM_WORLD)
-      call para_allreduce(fockd3,fockd2,nao*(nao+1)/2,MPI_SUM,MPI_COMM_WORLD)
-      call para_allreduce(tmp(1,1),tmp(1,2),2,MPI_SUM,MPI_COMM_WORLD)
+      call para_allreduce(fockd2,fockd1,nao*(nao+1)/2,MPI_COMM_WORLD)
+      call para_allreduce(fockd3,fockd2,nao*(nao+1)/2,MPI_COMM_WORLD)
+      call para_allreduce(tmp(1,1),tmp(1,2),2,MPI_COMM_WORLD)
       energy    = tmp(1,2)
       totalelec = tmp(2,2)
       return

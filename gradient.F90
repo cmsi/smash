@@ -56,7 +56,7 @@
       maxdim=maxfunc(maxval(mtype(1:nshell))+1)
       call grad2eri(egradtmp,egrad,fulldmtrx,fulldmtrx,xint,one,maxdim,1)
 !
-      call para_allreduce(egradtmp(1),egrad(1,1),3*natom,MPI_SUM,MPI_COMM_WORLD)
+      call para_allreduce(egradtmp(1),egrad(1,1),3*natom,MPI_COMM_WORLD)
 !
       if(master) then
         write(*,'(" ----------------------------------------------------")')
@@ -138,7 +138,7 @@ end
       maxdim=maxfunc(maxval(mtype(1:nshell))+1)
       call grad2eri(egradtmp,egrad,fulldmtrx1,fulldmtrx2,xint,one,maxdim,2)
 !
-      call para_allreduce(egradtmp(1),egrad(1,1),3*natom,MPI_SUM,MPI_COMM_WORLD)
+      call para_allreduce(egradtmp(1),egrad(1,1),3*natom,MPI_COMM_WORLD)
 !
       if(master) then
         write(*,'(" ----------------------------------------------------")')
@@ -245,7 +245,7 @@ end
       call gradrexcor(egradtmp,egrad,cmo,fulldmtrx,atomvec,surface,radpt,angpt,rad,ptweight, &
 &                     xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,work,idft)
 !
-      call para_allreduce(egradtmp(1,1),egrad(1,1),3*natom,MPI_SUM,MPI_COMM_WORLD)
+      call para_allreduce(egradtmp(1,1),egrad(1,1),3*natom,MPI_COMM_WORLD)
 !
       if(master) then
         write(*,'(" ----------------------------------------------------")')
@@ -361,7 +361,7 @@ end
 &                     angpt,rad,ptweight,xyzpt,rsqrd,rr,uvec,vao,vmoa,vmob,dweight, &
 &                     dpa,pa,work,work(neleca*nao+1),idft)
 !
-      call para_allreduce(egradtmp(1,1),egrad(1,1),3*natom,MPI_SUM,MPI_COMM_WORLD)
+      call para_allreduce(egradtmp(1,1),egrad(1,1),3*natom,MPI_COMM_WORLD)
 !
       if(master) then
         write(*,'(" ----------------------------------------------------")')

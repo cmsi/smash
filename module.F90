@@ -41,7 +41,7 @@ end
       implicit none
       integer :: nproc, myrank
 #ifndef MPI
-      integer :: MPI_COMM_WORLD, MPI_SUM
+      integer :: MPI_COMM_WORLD
 #endif
       logical :: master, parallel
 !
@@ -99,27 +99,27 @@ end
       end interface para_bcast
 !
       interface para_allreduce
-        subroutine para_allreduced1(sbuff,rbuff,num,op,comm)
+        subroutine para_allreduced1(sbuff,rbuff,num,comm)
           integer,intent(in) :: num
-          integer(4),intent(in) :: op, comm
+          integer(4),intent(in) :: comm
           real(8),intent(in) :: sbuff
           real(8),intent(out) :: rbuff
         end subroutine para_allreduced1
-        subroutine para_allreduced2(sbuff,rbuff,num,op,comm)
+        subroutine para_allreduced2(sbuff,rbuff,num,comm)
           integer,intent(in) :: num
-          integer(4),intent(in) :: op, comm
+          integer(4),intent(in) :: comm
           real(8),intent(in) :: sbuff(*)
           real(8),intent(out) :: rbuff(*)
         end subroutine para_allreduced2
-        subroutine para_allreducei1(sbuff,rbuff,num,op,comm)
+        subroutine para_allreducei1(sbuff,rbuff,num,comm)
           integer,intent(in) :: num
-          integer(4),intent(in) :: op, comm
+          integer(4),intent(in) :: comm
           integer,intent(in) :: sbuff
           integer,intent(out) :: rbuff
         end subroutine para_allreducei1
-        subroutine para_allreducei2(sbuff,rbuff,num,op,comm)
+        subroutine para_allreducei2(sbuff,rbuff,num,comm)
           integer,intent(in) :: num
-          integer(4),intent(in) :: op, comm
+          integer(4),intent(in) :: comm
           integer,intent(in) :: sbuff(*)
           integer,intent(out) :: rbuff(*)
         end subroutine para_allreducei2
