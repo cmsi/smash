@@ -22,19 +22,19 @@
 end
 
 
-!--------------------------------------------------------
-  subroutine mtrxcanon(ortho,overlap,eigen,ndim,newdim)
-!--------------------------------------------------------
+!------------------------------------------------------------------------------
+  subroutine mtrxcanon(ortho,overlap,eigen,ndim,newdim,nproc,myrank,mpi_comm)
+!------------------------------------------------------------------------------
 !
 ! Calculate canonicalization matrix
 !
 ! The ortho matrix satisfiles (Ortho)-daggar * S * (Ortho) = I
 ! where S is the overlap matrix.
 !
-      use modparallel, only : master
       use modthresh, only : threshover
       implicit none
-      integer,intent(in) :: ndim
+      integer,intent(in) :: ndim, nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       integer,intent(out) :: newdim
       integer :: i, j, icount
       real(8),parameter :: one=1.0D+00
@@ -44,7 +44,7 @@ end
 !
 ! Diagonalize ortho matrix
 !
-      call diag('V','U',ndim,overlap,ndim,eigen)
+      call diag('V','U',ndim,overlap,ndim,eigen,nproc,myrank,mpi_comm)
 !
 ! Eliminate eigenvectors with small eigenvalues
 !
@@ -161,15 +161,16 @@ end
 end
 
 
-!---------------------------------------------------
-  subroutine diag(jobz,uplo,ndim,vector,lda,eigen)
-!---------------------------------------------------
+!-------------------------------------------------------------------------
+  subroutine diag(jobz,uplo,ndim,vector,lda,eigen,nproc,myrank,mpi_comm)
+!-------------------------------------------------------------------------
 !
 ! Diagonalize matrix
 !
       use modparallel, only : master
       implicit none
-      integer,intent(in) :: ndim, lda
+      integer,intent(in) :: ndim, lda, nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       integer :: info
       integer, allocatable :: iwork(:)
       real(8),intent(out) :: eigen(lda)
@@ -199,19 +200,19 @@ end
 end
 
 
-!-------------------------------------------------------------
-  subroutine mtrxcanoninv(ortho,overinv,overlap,ndim,newdim)
-!-------------------------------------------------------------
+!-----------------------------------------------------------------------------------
+  subroutine mtrxcanoninv(ortho,overinv,overlap,ndim,newdim,nproc,myrank,mpi_comm)
+!-----------------------------------------------------------------------------------
 !
 ! Calculate canonicalization matrix and inverse matrix of overlap
 !
 ! The ortho matrix satisfiles (Ortho)-daggar * S * (Ortho) = I
 ! where S is the overlap matrix.
 !
-      use modparallel, only : master
       use modthresh, only : threshover
       implicit none
-      integer,intent(in) :: ndim
+      integer,intent(in) :: ndim, nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       integer,intent(out) :: newdim
       integer :: i, j, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
@@ -226,7 +227,7 @@ end
 !
 ! Diagonalize ortho matrix
 !
-      call diag('V','U',ndim,overlap,ndim,eigen)
+      call diag('V','U',ndim,overlap,ndim,eigen,nproc,myrank,mpi_comm)
 !
 ! Eliminate eigenvectors with small eigenvalues
 !

@@ -266,7 +266,7 @@ end
 !
 ! Diagonalize canonicalized matrix
 !
-        call diag('V','U',nmo,work,nao,eigen)
+        call diag('V','U',nmo,work,nao,eigen,nproc,myrank,mpi_comm)
 !
 ! Backtransform to AO basis
 !

@@ -66,7 +66,7 @@ end
 !
 ! Calculate Extended Huckel method
 !
-      call calchuckelg(hmo,work1,work2,eigen)
+      call calchuckelg(hmo,work1,work2,eigen,nproc,myrank,MPI_COMM_WORLD)
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
@@ -74,15 +74,15 @@ end
 !
 ! Project orbitals from Huckel to SCF
 !
-      call projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen)
+      call projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,nproc,myrank,MPI_COMM_WORLD)
       deallocate(hmo,overlap,work1,work2,eigen)
       call memunset(3*nao_g2+2*nao*nao_g+nao_g)
       return
 end
 
-!-------------------------------------------------
-  subroutine calchuckelg(hmo,huckel,ortho,eigen)
-!-------------------------------------------------
+!-----------------------------------------------------------------------
+  subroutine calchuckelg(hmo,huckel,ortho,eigen,nproc,myrank,mpi_comm)
+!-----------------------------------------------------------------------
 !
 ! Driver of extended Huckel calculation for guess generation
 !
@@ -90,6 +90,8 @@ end
 !
       use modguess, only : nao_g, nmo_g
       implicit none
+      integer,intent(in) :: nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(out) :: hmo(nao_g*nao_g), huckel(nao_g*nao_g)
       real(8),intent(out) :: ortho(nao_g*nao_g), eigen(nao_g)
@@ -118,7 +120,7 @@ end
 !
 ! Diagonalize canonicalized matrix
 !
-      call diag('V','U',nmo_g,huckel,nao_g,eigen)
+      call diag('V','U',nmo_g,huckel,nao_g,eigen,nproc,myrank,mpi_comm)
 !
 ! Backtransform to AO basis
 !
@@ -129,9 +131,9 @@ end
 end
 
 
-!----------------------------------------------------------------------
-  subroutine projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen)
-!----------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
+  subroutine projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,nproc,myrank,mpi_comm)
+!----------------------------------------------------------------------------------------
 !
 ! Project orbitals from Huckel to SCF
 !    C1= S11^-1 * S12 * C2 [C2t * S12t * S11^-1 * S12 * C2]^-1/2
@@ -145,6 +147,8 @@ end
       use modbasis, only : nao
       use modmolecule, only : neleca, nmo
       implicit none
+      integer,intent(in) :: nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       integer :: i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: overinv(nao,nao)
@@ -167,7 +171,7 @@ end
 !
 ! Calculate (C2t*S12t*S11^-1*S12*C2)^-1/2
 !
-      call diag('V','U',nmo_g,work1,nao_g,eigen)
+      call diag('V','U',nmo_g,work1,nao_g,eigen,nproc,myrank,mpi_comm)
 !$OMP parallel do private(eigeninv)
       do i= 1,nmo_g
         eigeninv= one/sqrt(eigen(i))
@@ -954,7 +958,7 @@ end
 !
 ! Project orbitals from previous basis to current basis
 !
-      call projectmo2(cmo,overinv,overlap,work1,work2,eigen,ndim)
+      call projectmo2(cmo,overinv,overlap,work1,work2,eigen,ndim,nproc,myrank,MPI_COMM_WORLD)
 !
 ! Unset arrays
 !
@@ -965,9 +969,9 @@ end
 end
 
 
-!----------------------------------------------------------------------
-  subroutine projectmo2(cmo,overinv,overlap,work1,work2,eigen,ndim)
-!----------------------------------------------------------------------
+!------------------------------------------------------------------------------------------
+  subroutine projectmo2(cmo,overinv,overlap,work1,work2,eigen,ndim,nproc,myrank,mpi_comm)
+!------------------------------------------------------------------------------------------
 !
 ! Project orbitals from previous basis to current basis
 !    C1= S11^-1 * S12 * C2 [C2t * S12t * S11^-1 * S12 * C2]^-1/2
@@ -981,7 +985,8 @@ end
       use modguess, only : nao_g
       use modbasis, only : nao
       implicit none
-      integer,intent(in) :: ndim
+      integer,intent(in) :: ndim, nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       integer :: i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(inout) :: cmo(nao,nao), overinv(nao,nao), overlap(nao,nao_g)
@@ -1007,7 +1012,7 @@ end
 !
 ! Calculate (C2t*S12t*S11^-1*S12*C2)^-1/2
 !
-      call diag('V','U',ndim,work1,ndim,eigen)
+      call diag('V','U',ndim,work1,ndim,eigen,nproc,myrank,mpi_comm)
 !$OMP parallel do private(eigeninv)
       do i= 1,ndim
         eigeninv= one/sqrt(eigen(i))
