@@ -1,6 +1,6 @@
-!-----------------------------------
-  subroutine guessmo(cmo,overinv)
-!-----------------------------------
+!--------------------------------------------------------
+  subroutine guessmo(cmo,overinv,nproc,myrank,mpi_comm)
+!--------------------------------------------------------
 !
 ! Initial guess generation
 !   iguess = 1 : extended huckel MOs
@@ -9,37 +9,41 @@
 ! In  : overinv (overlap integral inverse matrix)
 ! Out : cmo     (initial guess orbitals)
 !
+      use modparallel, only : master
       use modguess, only : iguess
       use modbasis, only : nao
       implicit none
+      integer,intent(in) :: nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       real(8),intent(inout):: cmo(nao*nao), overinv(nao*nao)
 !
       if(iguess == 1) then
-        call huckelguess(cmo,overinv)
+        call huckelguess(cmo,overinv,nproc,myrank,mpi_comm)
       elseif(iguess == 2) then
-        call updatemo(cmo,overinv)
+        call updatemo(cmo,overinv,nproc,myrank,mpi_comm)
       else
-        write(*,'(" Error! This program supports only iguess= 1 or 2 in guessmo.")')
+        if(master) write(*,'(" Error! This program supports only iguess= 1 or 2 in guessmo.")')
         call iabort
       endif
       return
 end
 
 
-!---------------------------------------
-  subroutine huckelguess(cmo,overinv)
-!---------------------------------------
+!------------------------------------------------------------
+  subroutine huckelguess(cmo,overinv,nproc,myrank,mpi_comm)
+!------------------------------------------------------------
 !
 ! Initial guess calculation
 !
 ! In  : overinv (overlap integral inverse matrix)
 ! Out : cmo     (initial guess orbitals)
 !
-      use modparallel
       use modguess, only : nao_g, spher_g, coord_g, nmo_g
       use modbasis, only : nao
       use modmolecule, only : coord, natom
       implicit none
+      integer,intent(in) :: nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       integer :: i, j, nao_g2
       real(8),intent(in):: overinv(nao*nao)
       real(8),intent(out):: cmo(nao*nao)
@@ -66,15 +70,15 @@ end
 !
 ! Calculate Extended Huckel method
 !
-      call calchuckelg(hmo,work1,work2,eigen,nproc,myrank,MPI_COMM_WORLD)
+      call calchuckelg(hmo,work1,work2,eigen,nproc,myrank,mpi_comm)
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
-      call calcover2(overlap(1,1),overlap(1,2),nproc,myrank,MPI_COMM_WORLD)
+      call calcover2(overlap(1,1),overlap(1,2),nproc,myrank,mpi_comm)
 !
 ! Project orbitals from Huckel to SCF
 !
-      call projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,nproc,myrank,MPI_COMM_WORLD)
+      call projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,nproc,myrank,mpi_comm)
       deallocate(hmo,overlap,work1,work2,eigen)
       call memunset(3*nao_g2+2*nao*nao_g+nao_g)
       return
@@ -926,20 +930,21 @@ end
 end
 
 
-!------------------------------------
-  subroutine updatemo(cmo,overinv)
-!------------------------------------
+!---------------------------------------------------------
+  subroutine updatemo(cmo,overinv,nproc,myrank,mpi_comm)
+!---------------------------------------------------------
 !
 ! Read and project MOs
 !
 ! Inout : overinv (overlap integral inverse matrix)
 !         cmo     (initial guess orbitals)
 !
-      use modparallel
       use modguess, only : nao_g, nmo_g
       use modbasis, only : nao
       use modmolecule, only : neleca, nmo
       implicit none
+      integer,intent(in) :: nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       integer :: ndim
       real(8),intent(inout) :: cmo(nao*nao), overinv(nao*nao)
       real(8),allocatable :: overlap(:,:), work1(:), work2(:), eigen(:)
@@ -954,11 +959,11 @@ end
 !
 ! Calculate overlap integrals between previous and present bases
 !
-      call calcover2(overlap(1,1),overlap(1,2),nproc,myrank,MPI_COMM_WORLD)
+      call calcover2(overlap(1,1),overlap(1,2),nproc,myrank,mpi_comm)
 !
 ! Project orbitals from previous basis to current basis
 !
-      call projectmo2(cmo,overinv,overlap,work1,work2,eigen,ndim,nproc,myrank,MPI_COMM_WORLD)
+      call projectmo2(cmo,overinv,overlap,work1,work2,eigen,ndim,nproc,myrank,mpi_comm)
 !
 ! Unset arrays
 !
