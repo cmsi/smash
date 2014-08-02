@@ -544,9 +544,9 @@ end
 ! Calculate energy gradient
 !
       if(method == 'HARTREE-FOCK') then
-        call calcgradrhf(cmo,energymo,xint,egrad)
+        call calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
       elseif(idft >= 1) then
-        call calcgradrdft(cmo,energymo,xint,egrad)
+        call calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
       else
         if(master) then
           write(*,'(" Error! This program does not support ",a16,".")')method
@@ -681,9 +681,9 @@ end
 ! Calculate energy gradient
 !
       if(method == 'HARTREE-FOCK') then
-        call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad)
+        call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1)
       elseif(idft >= 1) then
-          call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad)
+        call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1)
       else
         if(master) then
           write(*,'(" Error! This program does not support ",a16," in energy gradient.")') &
@@ -870,10 +870,10 @@ end
 ! Calculate energy gradient
 !
         if(method == 'HARTREE-FOCK') then
-          call calcgradrhf(cmo,energymo,xint,egrad)
+          call calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
           call tstamp(1)
         elseif(idft >= 1) then
-          call calcgradrdft(cmo,energymo,xint,egrad)
+          call calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
           call tstamp(1)
         else
           if(master) then
@@ -1134,9 +1134,9 @@ end
 ! Calculate energy gradient
 !
         if(method == 'HARTREE-FOCK') then
-          call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad)
+          call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1)
         elseif(idft >= 1) then
-          call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad)
+          call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1)
         else
           if(master) then
             write(*,'(" Error! This program does not support ",a16," in energy gradient.")') &

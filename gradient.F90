@@ -1,13 +1,15 @@
-!--------------------------------------------------
-  subroutine calcgradrhf(cmo,energymo,xint,egrad)
-!--------------------------------------------------
+!---------------------------------------------------------------------------
+  subroutine calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
+!---------------------------------------------------------------------------
 !
 ! Driver of RHF energy gradient calculation
 !
-      use modparallel
+      use modparallel, only : master
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom, neleca, numatomic
       implicit none
+      integer,intent(in) :: nproc1, myrank1
+      integer(4),intent(in) :: mpi_comm1
       integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmo(nao*nao), energymo(nao), xint(nshell*(nshell+1)/2)
@@ -41,7 +43,7 @@
 !
 ! Calculate energy gradient of nuclear repulsion 
 !
-      call nucgradient(egradtmp,nproc,myrank)
+      call nucgradient(egradtmp,nproc1,myrank1)
 !
 ! Calculate energy-weighted and full density matrix
 !
@@ -49,15 +51,15 @@
 !
 ! Calculate derivatives of one-electron integrals
 !
-      call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx,nproc,myrank)
+      call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx,nproc1,myrank1)
 !
 ! Calculate derivatives for two-electron integrals
 !
       maxdim=maxfunc(maxval(mtype(1:nshell))+1)
       call grad2eri(egradtmp,egrad,fulldmtrx,fulldmtrx,xint,one, &
-&                   maxdim,nproc,myrank,1)
+&                   maxdim,nproc1,myrank1,1)
 !
-      call para_allreducer(egradtmp(1),egrad(1,1),3*natom,MPI_COMM_WORLD)
+      call para_allreducer(egradtmp(1),egrad(1,1),3*natom,mpi_comm1)
 !
       if(master) then
         write(*,'(" ----------------------------------------------------")')
@@ -79,16 +81,18 @@
 end
 
 
-!-------------------------------------------------------------------
-  subroutine calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad)
-!-------------------------------------------------------------------
+!--------------------------------------------------------------------------------------------
+  subroutine calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1)
+!--------------------------------------------------------------------------------------------
 !
 ! Driver of UHF energy gradient calculation
 !
-      use modparallel
+      use modparallel, only : master
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom, neleca, nelecb, numatomic
       implicit none
+      integer,intent(in) :: nproc1, myrank1
+      integer(4),intent(in) :: mpi_comm1
       integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmoa(nao*nao), cmob(nao*nao), energymoa(nao), energymob(nao)
@@ -123,7 +127,7 @@ end
 !
 ! Calculate energy gradient of nuclear repulsion 
 !
-      call nucgradient(egradtmp,nproc,myrank)
+      call nucgradient(egradtmp,nproc1,myrank1)
 !
 ! Calculate energy-weighted and full density matrix
 !
@@ -132,15 +136,15 @@ end
 !
 ! Calculate derivatives for one-electron integrals
 !
-      call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx,nproc,myrank)
+      call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx,nproc1,myrank1)
 !
 ! Calculate derivatives for two-electron integrals
 !
       maxdim=maxfunc(maxval(mtype(1:nshell))+1)
       call grad2eri(egradtmp,egrad,fulldmtrx1,fulldmtrx2,xint,one, &
-&                   maxdim,nproc,myrank,2)
+&                   maxdim,nproc1,myrank1,2)
 !
-      call para_allreducer(egradtmp(1),egrad(1,1),3*natom,MPI_COMM_WORLD)
+      call para_allreducer(egradtmp(1),egrad(1,1),3*natom,mpi_comm1)
 !
       if(master) then
         write(*,'(" ----------------------------------------------------")')
@@ -162,13 +166,13 @@ end
 end
 
 
-!--------------------------------------------------
-  subroutine calcgradrdft(cmo,energymo,xint,egrad)
-!--------------------------------------------------
+!----------------------------------------------------------------------------
+  subroutine calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
+!----------------------------------------------------------------------------
 !
 ! Driver of closed-shell DFT energy gradient calculation
 !
-      use modparallel
+      use modparallel, only : master
       use modbasis, only : nshell, nao, mtype, nprim
       use modmolecule, only : natom, neleca, numatomic
       use moddft, only : nrad, nleb
@@ -176,6 +180,8 @@ end
       use modunit, only : tobohr
       use moddft, only : idft, hfexchange
       implicit none
+      integer,intent(in) :: nproc1, myrank1
+      integer(4),intent(in) :: mpi_comm1
       integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j, iatom
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmo(nao*nao), energymo(nao), xint(nshell*(nshell+1)/2)
@@ -217,7 +223,7 @@ end
 !
 ! Calculate energy gradient of nuclear repulsion 
 !
-      call nucgradient(egradtmp,nproc,myrank)
+      call nucgradient(egradtmp,nproc1,myrank1)
 !
 ! Calculate energy-weighted and full density matrix
 !
@@ -225,7 +231,7 @@ end
 !
 ! Calculate derivatives of one-electron integrals
 !
-      call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx,nproc,myrank)
+      call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx,nproc1,myrank1)
 !
 ! Calculate DFT information
 !
@@ -235,20 +241,20 @@ end
       do iatom= 1,natom
         rad(iatom)= atomrad(numatomic(iatom))*tobohr
       enddo
-      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,dweight,nproc,myrank)
+      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,dweight,nproc1,myrank1)
 !
 ! Calculate derivatives of two-electron integrals
 !
       maxdim=maxfunc(maxval(mtype(1:nshell))+1)
       call grad2eri(egradtmp,egrad,fulldmtrx,fulldmtrx,xint,hfexchange, &
-&                   maxdim,nproc,myrank,1)
+&                   maxdim,nproc1,myrank1,1)
 !
 ! Calculate derivatives of exchange-correlation terms 
 !
       call gradrexcor(egradtmp,egrad,cmo,fulldmtrx,atomvec,surface,radpt,angpt,rad,ptweight, &
-&                     xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,work,idft,nproc,myrank)
+&                     xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,work,idft,nproc1,myrank1)
 !
-      call para_allreducer(egradtmp(1,1),egrad(1,1),3*natom,MPI_COMM_WORLD)
+      call para_allreducer(egradtmp(1,1),egrad(1,1),3*natom,mpi_comm1)
 !
       if(master) then
         write(*,'(" ----------------------------------------------------")')
@@ -275,13 +281,13 @@ end
 end
 
 
-!--------------------------------------------------------------------
-  subroutine calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad)
-!--------------------------------------------------------------------
+!---------------------------------------------------------------------------------------------
+  subroutine calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1)
+!---------------------------------------------------------------------------------------------
 !
 ! Driver of open-shell DFT energy gradient calculation
 !
-      use modparallel
+      use modparallel, only : master
       use modbasis, only : nshell, nao, mtype, nprim
       use modmolecule, only : natom, neleca, nelecb, numatomic
       use moddft, only : nrad, nleb
@@ -290,6 +296,8 @@ end
       use moddft, only : idft, hfexchange
       implicit none
       integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j, iatom
+      integer,intent(in) :: nproc1, myrank1
+      integer(4),intent(in) :: mpi_comm1
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmoa(nao*nao), cmob(nao*nao), energymoa(nao), energymob(nao)
       real(8),intent(in) :: xint(nshell*(nshell+1)/2)
@@ -332,7 +340,7 @@ end
 !
 ! Calculate energy gradient of nuclear repulsion 
 !
-      call nucgradient(egradtmp,nproc,myrank)
+      call nucgradient(egradtmp,nproc1,myrank1)
 !
 ! Calculate energy-weighted and full density matrix
 !
@@ -341,7 +349,7 @@ end
 !
 ! Calculate derivatives of one-electron integrals
 !
-      call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx,nproc,myrank)
+      call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx,nproc1,myrank1)
 !
 ! Calculate DFT information
 !
@@ -351,21 +359,21 @@ end
       do iatom= 1,natom
         rad(iatom)= atomrad(numatomic(iatom))*tobohr
       enddo
-      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,dweight,nproc,myrank)
+      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,dweight,nproc1,myrank1)
 !
 ! Calculate derivatives of two-electron integrals
 !
       maxdim=maxfunc(maxval(mtype(1:nshell))+1)
       call grad2eri(egradtmp,egrad,fulldmtrx1,fulldmtrx2,xint,hfexchange, &
-&                   maxdim,nproc,myrank,2)
+&                   maxdim,nproc1,myrank1,2)
 !
 ! Calculate derivatives of exchange-correlation terms 
 !
       call graduexcor(egradtmp,egrad,cmoa,cmob,fulldmtrx1,fulldmtrx2,atomvec,surface,radpt, &
 &                     angpt,rad,ptweight,xyzpt,rsqrd,rr,uvec,vao,vmoa,vmob,dweight, &
-&                     dpa,pa,work,work(neleca*nao+1),idft,nproc,myrank)
+&                     dpa,pa,work,work(neleca*nao+1),idft,nproc1,myrank1)
 !
-      call para_allreducer(egradtmp(1,1),egrad(1,1),3*natom,MPI_COMM_WORLD)
+      call para_allreducer(egradtmp(1,1),egrad(1,1),3*natom,mpi_comm1)
 !
       if(master) then
         write(*,'(" ----------------------------------------------------")')
