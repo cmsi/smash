@@ -33,7 +33,7 @@
 ! Read input data
 !
       if(master) open(unit=in,file='input.dat',status='replace')
-      call readinput(MPI_COMM_WORLD)
+      call readinput(mpi_comm1)
 !
 ! Set maximum memory size
 !
@@ -41,7 +41,7 @@
 !
 ! Set basis functions
 !
-      call setbasis(MPI_COMM_WORLD)
+      call setbasis(mpi_comm1)
 !
 ! Set number of electrons
 !
@@ -49,7 +49,7 @@
 !
 ! Set ECP functions
 !
-      if(flagecp) call setecp(MPI_COMM_WORLD)
+      if(flagecp) call setecp(mpi_comm1)
 !
 ! Set functional information and adjust the number of DFT grids
 !
@@ -66,11 +66,11 @@
 !
       if(scftype == 'RHF') then
         if(runtype == 'ENERGY') then
-          call calcrenergy
+          call calcrenergy(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         elseif(runtype == 'GRADIENT') then
-          call calcrgradient
+          call calcrgradient(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         elseif(runtype == 'OPTIMIZE') then
-          call calcrgeometry(converged)
+          call calcrgeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         else
           if(master) then
             write(*,'(" Error! This program does not support ",a16,".")')runtype
@@ -79,11 +79,11 @@
         endif
       elseif(scftype == 'UHF') then
         if(runtype == 'ENERGY') then
-          call calcuenergy
+          call calcuenergy(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         elseif(runtype == 'GRADIENT') then
-          call calcugradient
+          call calcugradient(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         elseif(runtype == 'OPTIMIZE') then
-          call calcugeometry(converged)
+          call calcugeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         endif
       else
         if(master) write(*,'(" Error! SCFtype=",a16," is not supported.")')scftype
@@ -235,20 +235,22 @@ end
 end
 
 
-!-------------------------
-  subroutine calcrenergy
-!-------------------------
+!----------------------------------------------------------------------------
+  subroutine calcrenergy(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+!----------------------------------------------------------------------------
 !
 ! Driver of closed-shell energy calculation
 !
     
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
-      use modparallel
+      use modparallel, only : master
       use modmolecule, only : nmo, neleca
       use modjob, only : method
       use moddft, only : idft
       implicit none
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
+      integer(4),intent(in) :: mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:)
       real(8), allocatable :: xint(:), energymo(:)
@@ -278,12 +280,12 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-      call oneei(h1mtrx,smtrx,tmtrx,work,nproc,myrank,MPI_COMM_WORLD)
+      call oneei(h1mtrx,smtrx,tmtrx,work,nproc2,myrank2,mpi_comm2)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,nproc,myrank,MPI_COMM_WORLD)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo,nproc2,myrank2,mpi_comm2)
 !
 ! Calculate initial MOs
 !
@@ -315,7 +317,7 @@ end
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
-        call calcrmp2(cmo,energymo,xint,nproc,myrank,MPI_COMM_WORLD)
+        call calcrmp2(cmo,energymo,xint,nproc1,myrank1,mpi_comm1)
         call tstamp(1)
       else
         if(master) then
@@ -342,19 +344,21 @@ end
 end
 
 
-!-------------------------
-  subroutine calcuenergy
-!-------------------------
+!----------------------------------------------------------------------------
+  subroutine calcuenergy(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+!----------------------------------------------------------------------------
 !
 ! Driver of open-shell energy calculation
 !
-      use modparallel
+      use modparallel, only : master
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo
       use modjob, only : method
       use moddft, only : idft
       implicit none
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
+      integer(4),intent(in) :: mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
       real(8), allocatable :: xint(:), energymoa(:), energymob(:)
@@ -384,12 +388,12 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-      call oneei(h1mtrx,smtrx,tmtrx,work,nproc,myrank,MPI_COMM_WORLD)
+      call oneei(h1mtrx,smtrx,tmtrx,work,nproc2,myrank2,mpi_comm2)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,nproc,myrank,MPI_COMM_WORLD)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo,nproc2,myrank2,mpi_comm2)
 !
 ! Calculate initial MOs
 !
@@ -453,19 +457,21 @@ end
 end
 
 
-!---------------------------
-  subroutine calcrgradient
-!---------------------------
+!------------------------------------------------------------------------------
+  subroutine calcrgradient(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+!------------------------------------------------------------------------------
 !
 ! Driver of energy gradient calculation
 !
+      use modparallel, only : master
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
-      use modparallel
       use modmolecule, only : nmo, natom
       use modjob, only : method
       use moddft, only : idft
       implicit none
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
+      integer(4),intent(in) :: mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:)
       real(8), allocatable :: xint(:), energymo(:)
@@ -497,12 +503,12 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-      call oneei(h1mtrx,smtrx,tmtrx,work,nproc,myrank,MPI_COMM_WORLD)
+      call oneei(h1mtrx,smtrx,tmtrx,work,nproc2,myrank2,mpi_comm2)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,nproc,myrank,MPI_COMM_WORLD)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo,nproc2,myrank2,mpi_comm2)
 !
 ! Calculate initial MOs
 !
@@ -584,19 +590,21 @@ end
 end
 
 
-!---------------------------
-  subroutine calcugradient
-!---------------------------
+!------------------------------------------------------------------------------
+  subroutine calcugradient(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+!------------------------------------------------------------------------------
 !
 ! Driver of open-shell energy gradient calculation
 !
+      use modparallel, only : master
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
-      use modparallel
       use modmolecule, only : nmo, natom
       use modjob, only : method
       use moddft, only : idft
       implicit none
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
+      integer(4),intent(in) :: mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
       real(8), allocatable :: xint(:), energymoa(:), energymob(:)
@@ -628,12 +636,12 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-      call oneei(h1mtrx,smtrx,tmtrx,work,nproc,myrank,MPI_COMM_WORLD)
+      call oneei(h1mtrx,smtrx,tmtrx,work,nproc2,myrank2,mpi_comm2)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,nproc,myrank,MPI_COMM_WORLD)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo,nproc2,myrank2,,mpi_comm2)
 !
 ! Calculate initial MOs
 !
@@ -729,21 +737,23 @@ end
 
 
 
-!--------------------------------------
-  subroutine calcrgeometry(converged)
-!--------------------------------------
+!----------------------------------------------------------------------------------------
+  subroutine calcrgeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+!----------------------------------------------------------------------------------------
 !
 ! Driver of geometry optimization calculation
 !
+      use modparallel, only : master
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
-      use modparallel
       use modmolecule, only : nmo, natom, coord, coordold
       use modopt, only : nopt, optconv, cartesian
       use modwarn, only : nwarn
       use modjob, only : method
       use moddft, only : idft
       implicit none
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
+      integer(4),intent(in) :: mpi_comm1, mpi_comm2
       integer,allocatable :: iredun(:)
       integer :: nao2, nao3, nshell3, natom3, ii, iopt
       integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
@@ -825,12 +835,12 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-        call oneei(h1mtrx,smtrx,tmtrx,work,nproc,myrank,MPI_COMM_WORLD)
+        call oneei(h1mtrx,smtrx,tmtrx,work,nproc2,myrank2,mpi_comm2)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
         call fullmtrx(smtrx,work,nao)
-        call mtrxcanoninv(ortho,overinv,work,nao,nmo,nproc,myrank,MPI_COMM_WORLD)
+        call mtrxcanoninv(ortho,overinv,work,nao,nmo,nproc2,myrank2,mpi_comm2)
 !
 ! Calculate initial MOs
 !
@@ -910,12 +920,12 @@ end
 !
         if(cartesian) then
           call calcnewcoord(coord,coordold,egrad,egradold,ehess,workv,natom3,iopt, &
-&                           nproc,myrank,MPI_COMM_WORLD)
+&                           nproc2,myrank2,mpi_comm2)
         else
           call calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
 &                              work(1,2),work(1,3),work(1,4),workv,iopt,iredun,isizered, &
 &                              maxredun,numbond,numangle,numtorsion,numredun, &
-&                              nproc,myrank,MPI_COMM_WORLD)
+&                              nproc2,myrank2,mpi_comm2)
         endif
 !
 ! Unset work arrays 2
@@ -981,15 +991,15 @@ end
 end
 
 
-!--------------------------------------
-  subroutine calcugeometry(converged)
-!--------------------------------------
+!----------------------------------------------------------------------------------------
+  subroutine calcugeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+!----------------------------------------------------------------------------------------
 !
 ! Driver of open-shell geometry optimization calculation
 !
+      use modparallel, only : master
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
-      use modparallel
       use modmolecule, only : nmo, natom, coord, coordold
       use modopt, only : nopt, optconv, cartesian
       use modwarn, only : nwarn
@@ -997,6 +1007,8 @@ end
       use modjob, only : method
       use moddft, only : idft
       implicit none
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
+      integer(4),intent(in) :: mpi_comm1, mpi_comm2
       integer,allocatable :: iredun(:)
       integer :: nao2, nao3, nshell3, natom3, ii, iopt
       integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
@@ -1078,12 +1090,12 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-        call oneei(h1mtrx,smtrx,tmtrx,work,nproc,myrank,MPI_COMM_WORLD)
+        call oneei(h1mtrx,smtrx,tmtrx,work,nproc2,myrank2,mpi_comm2)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
         call fullmtrx(smtrx,work,nao)
-        call mtrxcanoninv(ortho,overinv,work,nao,nmo,nproc,myrank,MPI_COMM_WORLD)
+        call mtrxcanoninv(ortho,overinv,work,nao,nmo,nproc2,myrank2,mpi_comm2)
 !
 ! Calculate initial MOs
 !
@@ -1174,12 +1186,12 @@ end
 !
         if(cartesian) then
           call calcnewcoord(coord,coordold,egrad,egradold,ehess,workv,natom3,iopt, &
-&                           nproc,myrank,MPI_COMM_WORLD)
+&                           nproc2,myrank2,mpi_comm2)
         else
           call calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
 &                              work(1,2),work(1,3),work(1,4),workv,iopt,iredun,isizered, &
 &                              maxredun,numbond,numangle,numtorsion,numredun, &
-&                              nproc,myrank,MPI_COMM_WORLD)
+&                              nproc2,myrank2,mpi_comm2)
         endif
 !
 ! Unset work arrays 2
