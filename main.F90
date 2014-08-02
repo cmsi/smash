@@ -111,7 +111,7 @@ end program main
 !
 ! Set computational data and machine information
 !
-      use modparallel, only : master, parallel, nproc, myrank
+      use modparallel
       use modwarn, only : nwarn
       use modguess, only : iguess, spher_g, guess
       use modmemory, only : memmax, memused, memusedmax, memory
@@ -134,9 +134,10 @@ end program main
       master = .true.
       parallel = .false.
 !
+      mpi_comm1= MPI_COMM_WORLD
       call para_init
-      call para_comm_size(nproc)
-      call para_comm_rank(myrank)
+      call para_comm_size(nproc,mpi_comm1)
+      call para_comm_rank(myrank,mpi_comm1)
 !
       if(nproc.gt.1) then
         master =(myrank == 0)

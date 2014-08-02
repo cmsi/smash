@@ -110,7 +110,7 @@ end
         call dsymm('L','U',nao,num,one,hmat,nao,ortho(1,istart),nao,zero,work,nao)
         call dgemm('T','N',nmo,num,nao,one,ortho,nao,work,nao,zero,work2,nao)
       endif
-      call para_allgathervr(work2,num*nao,hmat,idis(1,3),idis(1,4),MPI_COMM_WORLD)
+      call para_allgathervr(work2,num*nao,hmat,idis(1,3),idis(1,4),nproc,MPI_COMM_WORLD)
 !     call dsymm('L','U',nao,nmo,one,hmat,nao,ortho,nao,zero,work,nao)
 !     call dgemm('T','N',nmo,nmo,nao,one,ortho,nao,work,nao,zero,hmat,nao)
       return

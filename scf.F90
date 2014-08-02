@@ -273,7 +273,7 @@ end
       if(idis(myrank+1,1) /= 0) &
 &       call dgemm('N','N',nao,idis(myrank+1,1),nmo,one,ortho,nao, &
 &                  work(1,idis(myrank+1,2)+1),nao,zero,work2,nao)
-      call para_allgathervr(work2,idis(myrank+1,3),cmo,idis(1,3),idis(1,4),mpi_comm)
+      call para_allgathervr(work2,idis(myrank+1,3),cmo,idis(1,3),idis(1,4),nproc,mpi_comm)
 !
       return
 end

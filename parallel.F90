@@ -2,7 +2,7 @@
   subroutine para_init
 !-----------------------
 #ifdef MPI
-      use modparallel
+      use mpi
       implicit none
       integer(4) :: ierr
 !
@@ -12,33 +12,35 @@
 end
 
 
-!-----------------------------------
-  subroutine para_comm_size(np)
-!-----------------------------------
+!--------------------------------------------
+  subroutine para_comm_size(nproc,mpi_comm)
+!--------------------------------------------
 #ifdef MPI
-      use modparallel
+      use mpi
       implicit none
-      integer :: np
-      integer(4) :: np4, ierr
+      integer(4),intent(in) :: mpi_comm
+      integer,intent(out) :: nproc
+      integer(4) :: nproc4, ierr
 !
-      call mpi_comm_size(MPI_COMM_WORLD,np4,ierr)
-      np= np4
+      call mpi_comm_size(mpi_comm,nproc4,ierr)
+      nproc= nproc4
 #endif
       return
 end
 
 
-!-------------------------------
-subroutine para_comm_rank(nid)
-!-------------------------------
+!---------------------------------------------
+  subroutine para_comm_rank(myrank,mpi_comm)
+!---------------------------------------------
 #ifdef MPI
-      use modparallel
+      use mpi
       implicit none
-      integer :: nid
-      integer(4) :: nid4, ierr
+      integer(4),intent(in) :: mpi_comm
+      integer,intent(out) :: myrank
+      integer(4) :: myrank4, ierr
 !
-      call mpi_comm_rank(MPI_COMM_WORLD,nid4,ierr)
-      nid= nid4
+      call mpi_comm_rank(mpi_comm,myrank4,ierr)
+      myrank= myrank4
 #endif
       return
 end
@@ -48,7 +50,7 @@ end
   subroutine para_finalize
 !---------------------------
 #ifdef MPI
-      use modparallel
+      use mpi
       implicit none
       integer(4) :: ierr
 !
@@ -62,7 +64,7 @@ end
   subroutine para_abort
 !------------------------
 #ifdef MPI
-      use modparallel
+      use mpi
       implicit none
       integer(4) :: icode, ierr
 !
@@ -93,84 +95,89 @@ end
 end
 
 
-!----------------------------------------------
-  subroutine para_bcastr(buff,num,irank,comm)
-!----------------------------------------------
+!---------------------------------------------------
+  subroutine para_bcastr(buff,num,myrank,mpi_comm)
+!---------------------------------------------------
 #ifdef MPI
-      use modparallel
+      use mpi
       implicit none
-      integer :: num, irank
-      integer(4) :: num4, irank4, comm, ierr
-      real(8) :: buff(*)
+      integer,intent(in) :: num, myrank
+      integer(4),intent(in) :: mpi_comm
+      integer(4) :: num4, myrank4, ierr
+      real(8),intent(inout) :: buff(*)
 !
       num4= num
-      irank4= irank
+      myrank4= myrank
 !
-      call mpi_bcast(buff,num4,mpi_real8,irank4,comm,ierr)
+      call mpi_bcast(buff,num4,mpi_real8,myrank4,mpi_comm,ierr)
 #endif
       return
 end
 
 
-!----------------------------------------------
-  subroutine para_bcasti(buff,num,irank,comm)
-!----------------------------------------------
+!----------------------------------------------------
+  subroutine para_bcasti(ibuff,num,myrank,mpi_comm)
+!----------------------------------------------------
 #ifdef MPI
-      use modparallel
+      use mpi
+      use modparallel, only : checkintsize
       implicit none
-      integer :: num, irank
-      integer(4) :: num4, irank4, comm, ierr
-      integer :: buff(*)
+      integer,intent(in) :: num, myrank
+      integer(4),intent(in) :: mpi_comm
+      integer(4) :: num4, myrank4, ierr
+      integer,intent(inout) :: ibuff(*)
       integer :: isize
 !
       num4= num
-      irank4= irank
+      myrank4= myrank
 !
       call checkintsize(isize)
       if(isize == 4) then
-        call mpi_bcast(buff,num4,mpi_integer4,irank4,comm,ierr)
+        call mpi_bcast(ibuff,num4,mpi_integer4,myrank4,mpi_comm,ierr)
       elseif(isize == 8) then
-        call mpi_bcast(buff,num4,mpi_integer8,irank4,comm,ierr)
+        call mpi_bcast(ibuff,num4,mpi_integer8,myrank4,mpi_comm,ierr)
       endif
 #endif
       return
 end
 
 
-!----------------------------------------------
-  subroutine para_bcastc(buff,num,irank,comm)
-!----------------------------------------------
+!---------------------------------------------------
+  subroutine para_bcastc(buff,num,myrank,mpi_comm)
+!---------------------------------------------------
 #ifdef MPI
-      use modparallel
+      use mpi
       implicit none
-      integer :: num, irank
-      integer(4) :: num4, irank4, comm, ierr
-      character(*) :: buff(*)
+      integer,intent(in) :: num, myrank
+      integer(4),intent(in) :: mpi_comm
+      integer(4) :: num4, myrank4, ierr
+      character(*),intent(inout) :: buff(*)
 !
       num4= num
-      irank4= irank
+      myrank4= myrank
 !
-      call mpi_bcast(buff,num4,mpi_character,irank4,comm,ierr)
+      call mpi_bcast(buff,num4,mpi_character,myrank4,mpi_comm,ierr)
 #endif
       return
 end
 
 
-!----------------------------------------------
-  subroutine para_bcastl(buff,num,irank,comm)
-!----------------------------------------------
+!---------------------------------------------------
+  subroutine para_bcastl(buff,num,myrank,mpi_comm)
+!---------------------------------------------------
 #ifdef MPI
-      use modparallel
+      use mpi
       implicit none
-      integer :: num, irank, ii
-      integer(4) :: num4, irank4, comm, ierr
-      logical :: buff(*)
-      integer(4) :: itmp(num)
+      integer,intent(in) :: num, myrank
+      integer(4),intent(in) :: mpi_comm
+      integer :: ii
+      integer(4) :: num4, myrank4, ierr, itmp(num)
+      logical,intent(inout) :: buff(*)
 !
       num4= num
-      irank4= irank
+      myrank4= myrank
 !
-      if(master) then
+      if(myrank == 0) then
         do ii= 1,num
           if(buff(ii)) then
             itmp(ii)= 1
@@ -180,7 +187,7 @@ end
         enddo
       endif
 !
-      call mpi_bcast(itmp,num4,mpi_integer4,irank4,comm,ierr)
+      call mpi_bcast(itmp,num4,mpi_integer4,myrank4,mpi_comm,ierr)
 !
       do ii= 1,num
         if(itmp(ii) == 1) then
@@ -194,20 +201,22 @@ end
 end
 
 
-!---------------------------------------------------
-  subroutine para_allreducer(sbuff,rbuff,num,comm)
-!---------------------------------------------------
-      use modparallel
+!-------------------------------------------------------
+  subroutine para_allreducer(sbuff,rbuff,num,mpi_comm)
+!-------------------------------------------------------
+#ifdef MPI
+      use mpi
+#endif
       implicit none
       integer,intent(in) :: num
-      integer(4),intent(in) :: comm
+      integer(4),intent(in) :: mpi_comm
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out) :: rbuff(*)
 #ifdef MPI
       integer(4) :: num4, ierr
 !
       num4= num
-      call mpi_allreduce(sbuff,rbuff,num4,mpi_real8,MPI_SUM,comm,ierr)
+      call mpi_allreduce(sbuff,rbuff,num4,mpi_real8,MPI_SUM,mpi_comm,ierr)
 #else
       call dcopy(num,sbuff,1,rbuff,1)
 #endif
@@ -215,13 +224,16 @@ end
 end
 
 
-!---------------------------------------------------
-  subroutine para_allreducei(sbuff,rbuff,num,comm)
-!---------------------------------------------------
-      use modparallel
+!-------------------------------------------------------
+  subroutine para_allreducei(sbuff,rbuff,num,mpi_comm)
+!-------------------------------------------------------
+#ifdef MPI
+      use mpi
+      use modparallel, only : checkintsize
+#endif
       implicit none
       integer,intent(in) :: num
-      integer(4),intent(in) :: comm
+      integer(4),intent(in) :: mpi_comm
       integer,intent(in) :: sbuff(*)
       integer,intent(out) :: rbuff(*)
       integer :: isize
@@ -232,9 +244,9 @@ end
 !
       call checkintsize(isize)
       if(isize == 4) then
-        call mpi_allreduce(sbuff,rbuff,num4,mpi_integer4,MPI_SUM,comm,ierr)
+        call mpi_allreduce(sbuff,rbuff,num4,mpi_integer4,MPI_SUM,mpi_comm,ierr)
       elseif(isize == 8) then
-        call mpi_allreduce(sbuff,rbuff,num4,mpi_integer8,MPI_SUM,comm,ierr)
+        call mpi_allreduce(sbuff,rbuff,num4,mpi_integer8,MPI_SUM,mpi_comm,ierr)
       endif
 #else
       integer ii
@@ -247,15 +259,17 @@ end
 end
 
 
-!----------------------------------------------------------------
-  subroutine para_allgathervr(sbuff,num,rbuff,idisa,idisb,comm)
-!----------------------------------------------------------------
-      use modparallel
+!--------------------------------------------------------------------
+  subroutine para_allgathervr(sbuff,num,rbuff,idisa,idisb,nproc,mpi_comm)
+!--------------------------------------------------------------------
+#ifdef MPI
+      use mpi
+#endif
       implicit none
-      integer,intent(in) :: num, idisa(nproc), idisb(nproc)
+      integer,intent(in) :: num, nproc, idisa(nproc), idisb(nproc)
+      integer(4),intent(in) :: mpi_comm
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out):: rbuff(*)
-      integer(4),intent(in) :: comm
 #ifdef MPI
       integer :: i
       integer(4) :: num4, idisa4(nproc), idisb4(nproc), ierr
@@ -265,7 +279,7 @@ end
         idisa4(i)= idisa(i)
         idisb4(i)= idisb(i)
       enddo
-      call mpi_allgatherv(sbuff,num4,mpi_real8,rbuff,idisa4,idisb4,mpi_real8,comm,ierr)
+      call mpi_allgatherv(sbuff,num4,mpi_real8,rbuff,idisa4,idisb4,mpi_real8,mpi_comm,ierr)
 #else
       call dcopy(num,sbuff,1,rbuff,1)
 #endif
@@ -274,13 +288,15 @@ end
 end
 
 
-!--------------------------------------------------------------------------------
-  subroutine para_sendrecvr(sbuff,nums,dest,ntags,rbuff,numr,source,ntagr,comm)
-!--------------------------------------------------------------------------------
-      use modparallel
+!------------------------------------------------------------------------------------
+  subroutine para_sendrecvr(sbuff,nums,dest,ntags,rbuff,numr,source,ntagr,mpi_comm)
+!------------------------------------------------------------------------------------
+#ifdef MPI
+      use mpi
+#endif
       implicit none
       integer,intent(in) :: nums, dest, ntags, numr, source, ntagr
-      integer(4),intent(in) :: comm
+      integer(4),intent(in) :: mpi_comm
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out) :: rbuff(*)
 #ifdef MPI
@@ -294,7 +310,7 @@ end
       source4= source
       ntagr4 = ntagr
       call mpi_sendrecv(sbuff,nums4,MPI_DOUBLE_PRECISION,dest4,ntags4, &
-&                       rbuff,numr4,MPI_DOUBLE_PRECISION,source4,ntagr4,comm,STATUS,ierr)
+&                       rbuff,numr4,MPI_DOUBLE_PRECISION,source4,ntagr4,mpi_comm,STATUS,ierr)
 #else
       call dcopy(nums,sbuff,1,rbuff,1)
 #endif
