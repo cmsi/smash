@@ -33,7 +33,7 @@
 ! Read input data
 !
       if(master) open(unit=in,file='input.dat',status='replace')
-      call readinput
+      call readinput(MPI_COMM_WORLD)
 !
 ! Set maximum memory size
 !
@@ -188,7 +188,7 @@ end
 !
 ! Set number of electrons
 !
-      use modparallel
+      use modparallel, only : master
       use modmolecule, only : numatomic, neleca, nelecb, natom, multi, charge
       use modjob, only : scftype
       use modbasis, only : nao
@@ -1286,7 +1286,7 @@ end
 ! Set functional information
 ! Adjust the numbe of DFT grids when heavy elements are included
 !
-      use modparallel
+      use modparallel, only : master
       use moddft, only : idft, nrad, nleb, hfexchange
       use modmolecule, only : natom, numatomic
       use modjob, only : method

@@ -1,10 +1,10 @@
-!-----------------------
-  subroutine readinput
-!-----------------------
+!---------------------------------
+  subroutine readinput(mpi_comm)
+!---------------------------------
 !
 ! Read input data
 !
-      use modparallel
+      use modparallel, only : master, parallel
       use modiofile, only : in
       use modbasis, only : basis, spher
       use modmolecule, only : numatomic, natom, coord, znuc, neleca, nelecb, charge, multi
@@ -19,6 +19,7 @@
       use moddft, only : nrad, nleb
       use modecp, only : ecp, flagecp
       implicit none
+      integer(4),intent(in) :: mpi_comm
       integer :: ii, ilen, intarray(9), info
       real(8) :: realarray(4)
       character(len=254) :: line
@@ -101,8 +102,6 @@
         endif
 !
       endif
-!ishimura
-! if(func == 'GEN') call readatomfunc
       call readatom
 !
       if(runtype == 'OPT') runtype='OPTIMIZE'
@@ -136,16 +135,16 @@
         logarray(4)= flagecp
         logarray(5)= cartesian
 !
-        call para_bcastc(chararray,16*7,0,MPI_COMM_WORLD)
-        call para_bcastr(realarray,4,0,MPI_COMM_WORLD)
-        call para_bcasti(intarray,9,0,MPI_COMM_WORLD)
-        call para_bcastl(logarray,5,0,MPI_COMM_WORLD)
+        call para_bcastc(chararray,16*7,0,mpi_comm)
+        call para_bcastr(realarray,4,0,mpi_comm)
+        call para_bcasti(intarray,9,0,mpi_comm)
+        call para_bcastl(logarray,5,0,mpi_comm)
 !
         natom= intarray(1)
 !
-        call para_bcasti(numatomic,natom,0,MPI_COMM_WORLD)
-        call para_bcastr(coord(1,1),natom*3,0,MPI_COMM_WORLD)
-        call para_bcastr(znuc,natom,0,MPI_COMM_WORLD)
+        call para_bcasti(numatomic,natom,0,mpi_comm)
+        call para_bcastr(coord(1,1),natom*3,0,mpi_comm)
+        call para_bcastr(znuc,natom,0,mpi_comm)
 !
         method  = chararray(1)
         runtype = chararray(2)
@@ -183,7 +182,7 @@ end
 !
 ! Write molecular geometry
 !
-      use modparallel
+      use modparallel, only : master
       use modmolecule, only : numatomic, natom, coord
       use modunit, only : toang
       implicit none
@@ -218,7 +217,7 @@ end
 !
 ! Write basis functions
 !
-      use modparallel
+      use modparallel, only : master
       use modmolecule, only : numatomic
       use modbasis, only : nshell, nao, nprim, ex, coeffinp, locprim, locatom, mprim, mtype
       use modprint, only : iprint
@@ -282,7 +281,7 @@ end
 !
 ! Write ECP functions
 !
-      use modparallel
+      use modparallel, only : master
       use modmolecule, only : numatomic, natom
       use modecp, only : maxangecp, mtypeecp, locecp, mprimecp, execp, coeffecp, izcore
       use modprint, only : iprint
@@ -355,7 +354,7 @@ end
 !
 ! Write computational conditions
 !
-      use modparallel
+      use modparallel, only : master
       use modmolecule, only : natom, neleca, nelecb, charge, multi
       use modbasis, only : nshell, nao, nprim, basis, spher
       use modmemory, only : memmax
@@ -420,7 +419,7 @@ end
 !
 ! Read atomic data
 !
-      use modparallel
+      use modparallel, only : master
       use modiofile, only : in
       use modmolecule, only : numatomic, natom, coord, znuc
       use modunit, only : tobohr, bohr
@@ -530,7 +529,7 @@ end
 !
 ! Read basis set
 !
-      use modparallel
+      use modparallel, only : master
       use modparam, only : mxprim, mxshell
       use modiofile, only : in
       use modbasis, only : exgen, coeffgen, locgenprim, mgenprim, mgentype, locgenshell, &
@@ -677,7 +676,7 @@ end
 !
 ! Read basis set
 !
-      use modparallel
+      use modparallel, only : master
       use modparam, only : mxprim, mxshell
       use modiofile, only : in
       use modecp, only : exgenecp, coeffgenecp, maxgenangecp, izgencore, mgentypeecp, &
