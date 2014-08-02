@@ -1,6 +1,7 @@
 !---------------------------------------------------------------------------------------
   subroutine formrfockexcor(fockdsum,fockd,energy,totalelec,cmo,atomvec,radpt,angpt, &
-&                           rad,ptweight,vao,vmo,xyzpt,rsqrd,transcmo,work,idft)
+&                           rad,ptweight,vao,vmo,xyzpt,rsqrd,transcmo,work,idft, &
+&                           nproc,myrank,mpi_comm)
 !---------------------------------------------------------------------------------------
 !
 ! Driver of DFT Fock matrix formation from exchange-correlation functionals
@@ -17,13 +18,13 @@
 !       totalelec(Number of numerially integrated electrons)
 !       vao,vmo,xyzpt,work (work space)
 !
-      use modparallel
       use modmolecule, only : natom, numatomic, neleca
       use moddft, only : nrad, nleb
       use modbasis, only : nao
       use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
       implicit none
-      integer,intent(in) :: idft
+      integer,intent(in) :: idft, nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: cmo(nao,neleca), atomvec(5,natom,natom), radpt(2,nrad)
@@ -97,8 +98,8 @@
 !
       tmp(1,1)= energy
       tmp(2,1)= totalelec
-      call para_allreducer(fockd,fockdsum,nao*(nao+1)/2,MPI_COMM_WORLD)
-      call para_allreducer(tmp(1,1),tmp(1,2),2,MPI_COMM_WORLD)
+      call para_allreducer(fockd,fockdsum,nao*(nao+1)/2,mpi_comm)
+      call para_allreducer(tmp(1,1),tmp(1,2),2,mpi_comm)
       energy    = tmp(1,2)
       totalelec = tmp(2,2)
       return
@@ -242,7 +243,7 @@ end
 !---------------------------------------------------------------------------------------
   subroutine formufockexcor(fockd1,fockd2,fockd3,energy,totalelec,cmoa,cmob,atomvec, &
 &                           radpt,angpt,rad,ptweight,vao,vmoa,vmob,xyzpt,rsqrd, &
-&                           transcmoa,transcmob,work,idft)
+&                           transcmoa,transcmob,work,idft,nproc,myrank,mpi_comm)
 !---------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted DFT Fock matrix formation from exchange-correlation functionals
@@ -253,13 +254,13 @@ end
 !       fock2 (Beta Fock matrix)
 !       fock3 (Work space)
 !
-      use modparallel
       use modmolecule, only : natom, numatomic, neleca, nelecb
       use moddft, only : nrad, nleb
       use modbasis, only : nao
       use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
       implicit none
-      integer,intent(in) :: idft
+      integer,intent(in) :: idft, nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: cmoa(nao,neleca), cmob(nao,nelecb), atomvec(5,natom,natom)
@@ -346,9 +347,9 @@ end
 !
       tmp(1,1)= energy
       tmp(2,1)= totalelec
-      call para_allreducer(fockd2,fockd1,nao*(nao+1)/2,MPI_COMM_WORLD)
-      call para_allreducer(fockd3,fockd2,nao*(nao+1)/2,MPI_COMM_WORLD)
-      call para_allreducer(tmp(1,1),tmp(1,2),2,MPI_COMM_WORLD)
+      call para_allreducer(fockd2,fockd1,nao*(nao+1)/2,mpi_comm)
+      call para_allreducer(fockd3,fockd2,nao*(nao+1)/2,mpi_comm)
+      call para_allreducer(tmp(1,1),tmp(1,2),2,mpi_comm)
       energy    = tmp(1,2)
       totalelec = tmp(2,2)
       return
@@ -579,9 +580,9 @@ end
 end
 
 
-!---------------------------------------------------------------------------------
-  subroutine calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work)
-!---------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------------
+  subroutine calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work,nproc,myrank)
+!----------------------------------------------------------------------------------------------
 !
 ! Calculate weights of grid points
 !
@@ -593,10 +594,10 @@ end
 ! Out : ptweight  (weight of grid point)
 !       xyzpt, work (work space)
 !
-      use modparallel
       use moddft, only : nrad, nleb
       use modmolecule, only : natom
       implicit none
+      integer,intent(in) :: nproc, myrank
       integer :: katom, irad, ileb, iatom, jatom, i, icount, ilebstart, ngridatom
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, oneh=1.5D+00
       real(8),intent(in) :: rad(natom), radpt(2,nrad), angpt(4,nleb), atomvec(5,natom,natom)
@@ -1548,18 +1549,17 @@ end
 
 !-------------------------------------------------------------------------------------------------
   subroutine gradrexcor(egrad,edftgrad,cmo,fulldmtrx,atomvec,surface,radpt,angpt,rad,ptweight, &
-&                       xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,transcmo,idft)
+&                       xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,transcmo,idft,nproc,myrank)
 !-------------------------------------------------------------------------------------------------
 !
 ! Driver of derivatives for closed-shell exchange-correlation terms
 !
-      use modparallel
       use modbasis, only : nao
       use modmolecule, only : natom, neleca
       use moddft, only : nrad, nleb
       use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
       implicit none
-      integer,intent(in) :: idft
+      integer,intent(in) :: idft, nproc, myrank
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: cmo(nao,neleca), fulldmtrx(nao,nao)
@@ -1664,18 +1664,17 @@ end
 !------------------------------------------------------------------------------------------------
   subroutine graduexcor(egrad,edftgrad,cmoa,cmob,fulldmtrx1,fulldmtrx2,atomvec,surface,radpt, &
 &                       angpt,rad,ptweight,xyzpt,rsqrd,rr,uvec,vao,vmoa,vmob,dweight, &
-&                       dpa,pa,transcmoa,transcmob,idft)
+&                       dpa,pa,transcmoa,transcmob,idft,nproc,myrank)
 !------------------------------------------------------------------------------------------------
 !
 ! Driver of derivatives for open-shell exchange-correlation terms
 !
-      use modparallel
       use modbasis, only : nao
       use modmolecule, only : natom, neleca, nelecb
       use moddft, only : nrad, nleb
       use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
       implicit none
-      integer,intent(in) :: idft
+      integer,intent(in) :: idft, nproc, myrank
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: cmoa(nao,neleca), cmob(nao,nelecb), fulldmtrx1(nao,nao)
@@ -1801,7 +1800,7 @@ end
 !       dpa      (work space (gradP))
 !       pa       (work space (P))
 !
-      use modparallel
+      use modparallel, only : master
       use moddft, only : nrad, nleb
       use modmolecule, only : natom
       implicit none

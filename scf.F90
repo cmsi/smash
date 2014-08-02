@@ -746,7 +746,7 @@ end
       do iatom= 1,natom
         rad(iatom)= atomrad(numatomic(iatom))*tobohr
       enddo
-      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2)
+      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2,nproc,myrank)
 !
 ! Calculate initial density matrix
 !
@@ -798,7 +798,8 @@ end
 ! Calculate exchange-correlation terms
 !
         call formrfockexcor(fockd,fock,edft,totalelec,cmo,atomvec,radpt,angpt, &
-&                           rad,ptweight,vao,vmo,xyzpt,rsqrd,work,work2,idft)
+&                           rad,ptweight,vao,vmo,xyzpt,rsqrd,work,work2,idft, &
+&                           nproc,myrank,MPI_COMM_WORLD)
 !
 ! Calculate two-electron integrals
 !
@@ -1563,7 +1564,7 @@ end
       do iatom= 1,natom
         rad(iatom)= atomrad(numatomic(iatom))*tobohr
       enddo
-      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2)
+      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2,nproc,myrank)
 !
 ! Calculate initial density matrix
 !
@@ -1618,7 +1619,7 @@ end
 !
         call formufockexcor(fockda,fockdb,focka,edft,totalelec,cmoa,cmob,atomvec,&
 &                           radpt,angpt,rad,ptweight,vao,vmoa,vmob,xyzpt,rsqrd, &
-&                           work,work(neleca*nao+1),work2,idft)
+&                           work,work(neleca*nao+1),work2,idft,nproc,myrank,MPI_COMM_WORLD)
 !
 ! Calculate two-electron integrals
 !

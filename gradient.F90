@@ -235,7 +235,7 @@ end
       do iatom= 1,natom
         rad(iatom)= atomrad(numatomic(iatom))*tobohr
       enddo
-      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,dweight)
+      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,dweight,nproc,myrank)
 !
 ! Calculate derivatives of two-electron integrals
 !
@@ -246,7 +246,7 @@ end
 ! Calculate derivatives of exchange-correlation terms 
 !
       call gradrexcor(egradtmp,egrad,cmo,fulldmtrx,atomvec,surface,radpt,angpt,rad,ptweight, &
-&                     xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,work,idft)
+&                     xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,work,idft,nproc,myrank)
 !
       call para_allreducer(egradtmp(1,1),egrad(1,1),3*natom,MPI_COMM_WORLD)
 !
@@ -351,7 +351,7 @@ end
       do iatom= 1,natom
         rad(iatom)= atomrad(numatomic(iatom))*tobohr
       enddo
-      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,dweight)
+      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,dweight,nproc,myrank)
 !
 ! Calculate derivatives of two-electron integrals
 !
@@ -363,7 +363,7 @@ end
 !
       call graduexcor(egradtmp,egrad,cmoa,cmob,fulldmtrx1,fulldmtrx2,atomvec,surface,radpt, &
 &                     angpt,rad,ptweight,xyzpt,rsqrd,rr,uvec,vao,vmoa,vmob,dweight, &
-&                     dpa,pa,work,work(neleca*nao+1),idft)
+&                     dpa,pa,work,work(neleca*nao+1),idft,nproc,myrank)
 !
       call para_allreducer(egradtmp(1,1),egrad(1,1),3*natom,MPI_COMM_WORLD)
 !
