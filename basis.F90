@@ -1,15 +1,16 @@
-!----------------------
-  subroutine setbasis
-!----------------------
+!--------------------------------
+  subroutine setbasis(mpi_comm)
+!--------------------------------
 !
 ! Driver of setting basis functions
 !
-      use modparallel
+      use modparallel, only : master
       use modmolecule, only : natom, numatomic
       use modbasis, only : basis, locprim, locbf, locatom, mprim, mbf, mtype, &
 &                          nshell, nao, nprim, ex, coeff, coeffinp
       use modecp, only : flagecp
       implicit none
+      integer(4),intent(in) :: mpi_comm
       integer :: ishell, iatom, i
 !
       if(master) then
@@ -89,23 +90,19 @@
         nshell= ishell
       endif
 !
-      if(parallel) then
-        call para_bcasti(nshell,1,0,MPI_COMM_WORLD)
-        call para_bcasti(locprim,nshell+1,0,MPI_COMM_WORLD)
-        call para_bcasti(locbf  ,nshell+1,0,MPI_COMM_WORLD)
-        call para_bcasti(locatom,nshell+1,0,MPI_COMM_WORLD)
-      endif
+      call para_bcasti(nshell,1,0,mpi_comm)
+      call para_bcasti(locprim,nshell+1,0,mpi_comm)
+      call para_bcasti(locbf  ,nshell+1,0,mpi_comm)
+      call para_bcasti(locatom,nshell+1,0,mpi_comm)
 !
       nao= locbf(nshell+1)
       nprim= locprim(nshell+1)
 !
-      if(parallel) then
-        call para_bcastr(ex   ,nprim,0,MPI_COMM_WORLD)
-        call para_bcastr(coeff,nprim,0,MPI_COMM_WORLD)
-        call para_bcasti(mprim,nshell,0,MPI_COMM_WORLD)
-        call para_bcasti(mbf  ,nshell,0,MPI_COMM_WORLD)
-        call para_bcasti(mtype,nshell,0,MPI_COMM_WORLD)
-      endif
+      call para_bcastr(ex   ,nprim,0,mpi_comm)
+      call para_bcastr(coeff,nprim,0,mpi_comm)
+      call para_bcasti(mprim,nshell,0,mpi_comm)
+      call para_bcasti(mbf  ,nshell,0,mpi_comm)
+      call para_bcasti(mtype,nshell,0,mpi_comm)
 !
       do i= 1,nprim
         coeffinp(i)= coeff(i)

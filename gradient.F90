@@ -41,7 +41,7 @@
 !
 ! Calculate energy gradient of nuclear repulsion 
 !
-      call nucgradient(egradtmp)
+      call nucgradient(egradtmp,nproc,myrank)
 !
 ! Calculate energy-weighted and full density matrix
 !
@@ -122,7 +122,7 @@ end
 !
 ! Calculate energy gradient of nuclear repulsion 
 !
-      call nucgradient(egradtmp)
+      call nucgradient(egradtmp,nproc,myrank)
 !
 ! Calculate energy-weighted and full density matrix
 !
@@ -215,7 +215,7 @@ end
 !
 ! Calculate energy gradient of nuclear repulsion 
 !
-      call nucgradient(egradtmp)
+      call nucgradient(egradtmp,nproc,myrank)
 !
 ! Calculate energy-weighted and full density matrix
 !
@@ -329,7 +329,7 @@ end
 !
 ! Calculate energy gradient of nuclear repulsion 
 !
-      call nucgradient(egradtmp)
+      call nucgradient(egradtmp,nproc,myrank)
 !
 ! Calculate energy-weighted and full density matrix
 !

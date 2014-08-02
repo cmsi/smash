@@ -359,7 +359,7 @@ end
 !
 ! MP2 energy calculation
 !
-        call calcmp2energy(trint4,energymo,emp2st,nocc,nvir,ncore,icycle)
+        call calcrmp2energy(trint4,energymo,emp2st,nocc,nvir,ncore,icycle)
       enddo
       return
 end
@@ -635,9 +635,9 @@ end
 end
 
 
-!--------------------------------------------------------------------------
-  subroutine calcmp2energy(trint4,energymo,emp2st,nocc,nvir,ncore,icycle)
-!--------------------------------------------------------------------------
+!---------------------------------------------------------------------------
+  subroutine calcrmp2energy(trint4,energymo,emp2st,nocc,nvir,ncore,icycle)
+!---------------------------------------------------------------------------
 !
 ! Calculate MP2 energy
 !

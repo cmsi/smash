@@ -4,11 +4,11 @@
 !
 ! Calculate nuclear replusion energy
 !
+      use modparallel, only : master
       use modmolecule, only : natom, coord, znuc
       use modthresh, only : threshatm
       use modenergy, only : enuc
       use modwarn, only : nwarn
-      use modparallel
       implicit none
       integer :: iatom, jatom
       real(8),parameter :: zero=0.0D+00
@@ -41,15 +41,15 @@
 end
 
 
-!--------------------------------
-  subroutine nucgradient(egrad)
-!--------------------------------
+!---------------------------------------------
+  subroutine nucgradient(egrad,nproc,myrank)
+!---------------------------------------------
 !
 ! Calculate gradinet of nuclear replusion energy
 !
-      use modparallel
       use modmolecule, only : natom, coord, znuc
       implicit none
+      integer,intent(in) :: nproc, myrank
       integer :: iatom, jatom, i
       real(8),intent(inout) :: egrad(3,natom)
       real(8) :: xyz(3), rr, chrgij
@@ -79,7 +79,7 @@ end
 ! Set redundant internal coordinate
 ! Covalent radii (H - Cn): P. Pyykko, M. Atsumi, Chem. Eur. J., 186 (2009) 15.
 !
-      use modparallel
+      use modparallel, only : master
       use modmolecule, only : coord, natom, numatomic
       use modunit, only : tobohr
       implicit none
@@ -116,7 +116,8 @@ end
       numbond= 0
       do iatom= 1,natom
         if(numatomic(iatom) > 112) then
-          write(*,'(" Error! This program supports up to Cn in Subroutine setredundantcoord.")')
+          if(master) &
+&         write(*,'(" Error! This program supports up to Cn in Subroutine setredundantcoord.")')
           call iabort
         endif
         icount= 0
@@ -128,7 +129,7 @@ end
           if(rrij <= thresh) then
             icount= icount+1
             if(icount > maxconnect) then
-              write(*,'(" Error! There are too many atoms near Atom",i4,".")')iatom
+              if(master) write(*,'(" Error! There are too many atoms near Atom",i4,".")')iatom
               call iabort
             endif
             ijpair(iatom,icount)= jatom
@@ -189,7 +190,7 @@ end
               exit
             endif
             if(icount == maxconnect) then
-              write(*,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(1)
+              if(master) write(*,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(1)
               call iabort
             endif
           enddo
@@ -199,7 +200,7 @@ end
               exit
             endif
             if(icount == maxconnect) then
-              write(*,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(2)
+              if(master) write(*,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(2)
               call iabort
             endif
           enddo
@@ -369,7 +370,7 @@ end
 !
 ! Calculate new Cartesian coordinate with gradient and hessian
 !
-      use modparallel
+      use modparallel, only : master
       use modprint, only : iprint
       use modunit, only : toang
       use modmolecule, only : numatomic
@@ -470,7 +471,7 @@ end
 ! Covalent raddi (H - Kr): H. B. Schlegel, Theoret. Chim. Acta, 333 (1984) 66.
 ! Covalent radii (Rb- Cn): P. Pyykko, M. Atsumi, Chem. Eur. J., 186 (2009) 15.
 !
-      use modparallel
+      use modparallel, only : master
       use modprint, only : iprint
       use modunit, only : toang, tobohr
       use modmolecule, only : numatomic, natom

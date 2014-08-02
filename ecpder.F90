@@ -1,16 +1,16 @@
-!-------------------------------------------
-  subroutine gradoneeiecp(egrad1,fulldmtrx)
-!-------------------------------------------
+!---------------------------------------------------------
+  subroutine gradoneeiecp(egrad1,fulldmtrx,nproc,myrank)
+!---------------------------------------------------------
 !
 ! Calculate ECP derivative terms and add them into energy gradient matrix
 !
 ! Inout  : egrad1 (one electron gradient matrix)
 !
-      use modparallel
       use modecp, only : nterm1, nterm2, maxangecp
       use modbasis, only : nao, mtype, nshell
       use modmolecule, only : natom
       implicit none
+      integer,intent(in) :: nproc, myrank
       integer :: maxfunc(0:6)=(/1,3,6,10,15,21,28/)
       integer :: maxbasis, numtbasis, maxdim, llmax, maxecpdim, nsizecp1, nsizecp2, ish, jsh
       integer,allocatable :: label1ecp(:), num1ecp(:), label2ecp(:), num2ecp(:)

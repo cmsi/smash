@@ -110,12 +110,12 @@
 !
 ! Calculate maximum density matrix elements
 !
-        call calcrdmax(dmtrx,dmax,work)
+        call calcrdmax(dmtrx,dmax,work,nproc,myrank,MPI_COMM_WORLD)
 !
 ! Calculate two-electron integrals and Fock matrix
 !
         call cpu_time(time1)
-        call formfock(fock,work,dmtrx,dmax,xint,maxdim)
+        call formrfock(fock,work,dmtrx,dmax,xint,maxdim,nproc,myrank,MPI_COMM_WORLD)
         call dscal(nao3,half,fock,1)
         do i= 1,nao
           fock(i*(i+1)/2)= fock(i*(i+1)/2)*two
@@ -137,39 +137,43 @@
 !
 ! DIIS interpolation
 !
-          call calcdiiserr(fock,dmtrxprev,overlap,ortho,cmo,work,work2,errmax,idis,nao,nmo)
+          call calcdiiserr(fock,dmtrxprev,overlap,ortho,cmo,work,work2,errmax,nao,nmo, &
+&                          idis,nproc,myrank,MPI_COMM_WORLD)
           if(((itdiis /= 0).or.(errmax <= thresherr)).and.(errmax > small))then
             itdiis= itdiis+1
-            call calcrdiis(fock,errdiis,fockdiis,diismtrx,cmo,work2,idis,itdiis,nao,maxdiis)
+            call calcrdiis(fock,errdiis,fockdiis,diismtrx,cmo,work2,itdiis,nao,maxdiis, &
+&                          idis,nproc,myrank,MPI_COMM_WORLD)
           endif
 !
 ! Extrapolate Fock matrix
 !
           if(extrap.and.itdiis == 0) &
-&           call fockextrap(fock,fockdiis,work,cmo,dmtrx,idis,itextra,nao,maxdiis)
+&           call fockextrap(fock,fockdiis,work,cmo,dmtrx,itextra,nao,maxdiis, &
+&                           idis,nproc,myrank,MPI_COMM_WORLD)
 !
 ! Diagonalize Fock matrix
 !
-          call diagfock(fock,work,ortho,cmo,work2,eigen,idis)
+          call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc,myrank,MPI_COMM_WORLD)
         else
 !
 ! Approximated Second-order SCF method
 !
           if((itsoscf == 0).or.(convsoscf)) then
-            call diagfock(fock,work,ortho,cmo,work2,eigen,idis)
+            call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc,myrank,MPI_COMM_WORLD)
             sogradmax= zero
             itsoscf= itsoscf+1
           else
             call expand(fock,work,nao)
-            call soscfgrad(work,work2,sograd(1,itsoscf),cmo,nocc,nvir,sogradmax,idis,nao,1)
+            call soscfgrad(work,work2,sograd(1,itsoscf),cmo,nocc,nvir,sogradmax,nao, &
+&                          idis,nproc,myrank,MPI_COMM_WORLD,1)
             if(sogradmax <= threshsoscf) then
               if(itsoscf == 1) call soscfinith(hstart,eigen,nocc,nvir,nao)
               call soscfnewh(hstart,sograd,sodisp,sovecy,nocc,nvir,itsoscf,maxsoscf,sodispmax)
-              call soscfupdate(cmo,sodisp,work,work2,nocc,nvir,itsoscf,maxsoscf,idis, &
-&                              nao,nmo,sodispmax)
+              call soscfupdate(cmo,sodisp,work,work2,nocc,nvir,itsoscf,maxsoscf, &
+&                              nao,nmo,sodispmax,idis,nproc,myrank,MPI_COMM_WORLD)
               itsoscf= itsoscf+1
             else
-              call diagfock(fock,work,ortho,cmo,work2,eigen,idis)
+              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc,myrank,MPI_COMM_WORLD)
             endif
           endif
         endif
@@ -240,17 +244,17 @@
 end
 
 
-!------------------------------------------------------------
-  subroutine diagfock(fock,work,ortho,cmo,work2,eigen,idis)
-!------------------------------------------------------------
+!----------------------------------------------------------------------------------
+  subroutine diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc,myrank,mpi_comm)
+!----------------------------------------------------------------------------------
 !
 ! Driver of Fock matrix diagonalization
 !
-      use modparallel
       use modbasis, only : nao
       use modmolecule, only : nmo
       implicit none
-      integer,intent(in) :: idis(nproc,14)
+      integer,intent(in) :: nproc, myrank, idis(nproc,14)
+      integer(4),intent(in) :: mpi_comm
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: fock(nao*(nao+1)/2), ortho(nao,nao)
       real(8),intent(out) :: work(nao,nao), cmo(nao*nao), work2(*), eigen(nao)
@@ -269,23 +273,23 @@ end
       if(idis(myrank+1,1) /= 0) &
 &       call dgemm('N','N',nao,idis(myrank+1,1),nmo,one,ortho,nao, &
 &                  work(1,idis(myrank+1,2)+1),nao,zero,work2,nao)
-      call para_allgathervr(work2,idis(myrank+1,3),cmo,idis(1,3),idis(1,4),MPI_COMM_WORLD)
+      call para_allgathervr(work2,idis(myrank+1,3),cmo,idis(1,3),idis(1,4),mpi_comm)
 !
       return
 end
 
 
-!-------------------------------------------------------------
-  subroutine formfock(focktotal,fock,dmtrx,dmax,xint,maxdim)
-!-------------------------------------------------------------
+!------------------------------------------------------------------------------------
+  subroutine formrfock(focktotal,fock,dmtrx,dmax,xint,maxdim,nproc,myrank,mpi_comm)
+!------------------------------------------------------------------------------------
 !
 ! Driver of Fock matrix formation from two-electron intgrals
 !
-      use modparallel
       use modbasis, only : nshell, nao
       use modthresh, only : cutint2
       implicit none
-      integer,intent(in) :: maxdim
+      integer,intent(in) :: maxdim, nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       integer :: ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart
       integer(8) :: ncount, icount
@@ -353,7 +357,7 @@ end
       enddo
 !$OMP end parallel do
 !
-      call para_allreducer(fock,focktotal,nao*(nao+1)/2,MPI_COMM_WORLD)
+      call para_allreducer(fock,focktotal,nao*(nao+1)/2,mpi_comm)
       return
 end
 
@@ -459,17 +463,18 @@ end
 end
 
 
-!----------------------------------------------------------------------------
-  subroutine formrdftfock(focktotal,fock,dmtrx,dmax,xint,maxdim,hfexchange)
-!----------------------------------------------------------------------------
+!------------------------------------------------------------------------------
+  subroutine formrdftfock(focktotal,fock,dmtrx,dmax,xint,maxdim,hfexchange, &
+&                         nproc,myrank,mpi_comm)
+!------------------------------------------------------------------------------
 !
 ! Driver of DFT Fock matrix formation from two-electron intgrals
 !
-      use modparallel
       use modbasis, only : nshell, nao
       use modthresh, only : cutint2
       implicit none
-      integer,intent(in) :: maxdim
+      integer,intent(in) :: maxdim, nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       integer :: ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart
       integer(8) :: ncount, icount
@@ -536,7 +541,7 @@ end
       enddo
 !$OMP end parallel do
 !
-      call para_allreducer(fock,focktotal,nao*(nao+1)/2,MPI_COMM_WORLD)
+      call para_allreducer(fock,focktotal,nao*(nao+1)/2,mpi_comm)
       return
 end
 
@@ -787,7 +792,7 @@ end
 !
 ! Calculate maximum density matrix elements
 !
-        call calcrdmax(dmtrx,dmax,work)
+        call calcrdmax(dmtrx,dmax,work,nproc,myrank,MPI_COMM_WORLD)
         call cpu_time(time1)
 !
 ! Calculate exchange-correlation terms
@@ -797,7 +802,8 @@ end
 !
 ! Calculate two-electron integrals
 !
-        call formrdftfock(fock,work,dmtrx,dmax,xint,maxdim,hfexchange)
+        call formrdftfock(fock,work,dmtrx,dmax,xint,maxdim,hfexchange, &
+&                         nproc,myrank,MPI_COMM_WORLD)
         call dscal(nao3,half,fock,1)
         do i= 1,nao
           fock(i*(i+1)/2)= fock(i*(i+1)/2)*two
@@ -823,39 +829,43 @@ end
 !
 ! DIIS interpolation
 !
-          call calcdiiserr(fock,dmtrxprev,overlap,ortho,cmo,work,work2,errmax,idis,nao,nmo)
+          call calcdiiserr(fock,dmtrxprev,overlap,ortho,cmo,work,work2,errmax,nao,nmo, &
+&                          idis,nproc,myrank,MPI_COMM_WORLD)
           if(((itdiis /= 0).or.(errmax <= thresherr)).and.(errmax > small))then
             itdiis= itdiis+1
-            call calcrdiis(fock,errdiis,fockdiis,diismtrx,cmo,work2,idis,itdiis,nao,maxdiis)
+            call calcrdiis(fock,errdiis,fockdiis,diismtrx,cmo,work2,itdiis,nao,maxdiis, &
+&                          idis,nproc,myrank,MPI_COMM_WORLD)
           endif
 !
 ! Extrapolate Fock matrix
 !
           if(extrap.and.itdiis == 0) &
-&           call fockextrap(fock,fockdiis,work,cmo,dmtrx,idis,itextra,nao,maxdiis)
+&           call fockextrap(fock,fockdiis,work,cmo,dmtrx,itextra,nao,maxdiis, &
+&                           idis,nproc,myrank,MPI_COMM_WORLD)
 !
 ! Diagonalize Fock matrix
 !
-          call diagfock(fock,work,ortho,cmo,work2,eigen,idis)
+          call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc,myrank,MPI_COMM_WORLD)
         else
 !
 ! Approximated Second-order SCF method
 !
           if((itsoscf == 0).or.(convsoscf)) then
-            call diagfock(fock,work,ortho,cmo,work2,eigen,idis)
+            call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc,myrank,MPI_COMM_WORLD)
             sogradmax= zero
             itsoscf= itsoscf+1
           else
             call expand(fock,work,nao)
-            call soscfgrad(work,work2,sograd(1,itsoscf),cmo,nocc,nvir,sogradmax,idis,nao,1)
+            call soscfgrad(work,work2,sograd(1,itsoscf),cmo,nocc,nvir,sogradmax,nao, &
+&                          idis,nproc,myrank,MPI_COMM_WORLD,1)
             if(sogradmax <= threshsoscf) then
               if(itsoscf == 1) call soscfinith(hstart,eigen,nocc,nvir,nao)
               call soscfnewh(hstart,sograd,sodisp,sovecy,nocc,nvir,itsoscf,maxsoscf,sodispmax)
-              call soscfupdate(cmo,sodisp,work,work2,nocc,nvir,itsoscf,maxsoscf,idis, &
-&                              nao,nmo,sodispmax)
+              call soscfupdate(cmo,sodisp,work,work2,nocc,nvir,itsoscf,maxsoscf, &
+&                              nao,nmo,sodispmax,idis,nproc,myrank,MPI_COMM_WORLD)
               itsoscf= itsoscf+1
             else
-              call diagfock(fock,work,ortho,cmo,work2,eigen,idis)
+              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc,myrank,MPI_COMM_WORLD)
             endif
           endif
         endif
@@ -1055,12 +1065,12 @@ end
 !
 ! Calculate maximum density matrix elements
 !
-        call calcudmax(dmtrxa,dmtrxb,dmax,work)
+        call calcudmax(dmtrxa,dmtrxb,dmax,work,nproc,myrank,MPI_COMM_WORLD)
 !
 ! Calculate two-electron integrals and Fock matrix
 !
         call cpu_time(time1)
-        call formufock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim)
+        call formufock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,nproc,myrank,MPI_COMM_WORLD)
         call dscal(nao3,half,focka,1)
         call dscal(nao3,half,fockb,1)
         do i= 1,nao
@@ -1086,41 +1096,48 @@ end
 !
 ! DIIS interpolation
 !
-          call calcdiiserr(focka,dmtrxpreva,overlap,ortho,cmoa,work,work2,errmaxa,idis,nao,nmo)
-          call calcdiiserr(fockb,dmtrxprevb,overlap,ortho,cmob,work,work2,errmaxb,idis,nao,nmo)
+          call calcdiiserr(focka,dmtrxpreva,overlap,ortho,cmoa,work,work2,errmaxa,nao,nmo, &
+&                          idis,nproc,myrank,MPI_COMM_WORLD)
+          call calcdiiserr(fockb,dmtrxprevb,overlap,ortho,cmob,work,work2,errmaxb,nao,nmo, &
+&                          idis,nproc,myrank,MPI_COMM_WORLD)
           errmax= max(errmaxa,errmaxb)
           if(((itdiis /= 0).or.(errmax <= thresherr)).and.(errmax > small))then
             itdiis= itdiis+1
             call calcudiis(focka,fockb,errdiisa,errdiisb,fockdiisa,fockdiisb, &
-&                          diismtrx,cmoa,cmob,work2,idis,itdiis,nao,maxdiis)
+&                          diismtrx,cmoa,cmob,work2,itdiis,nao,maxdiis, &
+&                          idis,nproc,myrank,MPI_COMM_WORLD)
           endif
 !
 ! Extrapolate Fock matrix
 !
           if(extrap.and.itdiis == 0) then
-            call fockextrap(focka,fockdiisa,work,cmoa,dmtrxa,idis,itextra,nao,maxdiis)
-            call fockextrap(fockb,fockdiisb,work,cmob,dmtrxb,idis,itextra,nao,maxdiis)
+            call fockextrap(focka,fockdiisa,work,cmoa,dmtrxa,itextra,nao,maxdiis, &
+&                           idis,nproc,myrank,MPI_COMM_WORLD)
+            call fockextrap(fockb,fockdiisb,work,cmob,dmtrxb,itextra,nao,maxdiis, &
+&                           idis,nproc,myrank,MPI_COMM_WORLD)
           endif
 !
 ! Diagonalize Fock matrix
 !
-          call diagfock(focka,work,ortho,cmoa,work2,eigena,idis)
-          call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis)
+          call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc,myrank,MPI_COMM_WORLD)
+          call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc,myrank,MPI_COMM_WORLD)
         else
 !
 ! Approximated Second-order SCF method
 !
           if((itsoscf == 0).or.(convsoscf)) then
-            call diagfock(focka,work,ortho,cmoa,work2,eigena,idis)
-            call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis)
+            call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc,myrank,MPI_COMM_WORLD)
+            call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc,myrank,MPI_COMM_WORLD)
             sogradmax= zero
             itsoscf= itsoscf+1
           else
             call expand(focka,work,nao)
-            call soscfgrad(work,work2,sograda(1,itsoscf),cmoa,nocca,nvira,sogradmaxa,idis,nao,1)
+            call soscfgrad(work,work2,sograda(1,itsoscf),cmoa,nocca,nvira,sogradmaxa,nao, &
+&                          idis,nproc,myrank,MPI_COMM_WORLD,1)
             if(noccb /= 0) then
               call expand(fockb,work,nao)
-              call soscfgrad(work,work2,sogradb(1,itsoscf),cmob,noccb,nvirb,sogradmaxb,idis,nao,2)
+              call soscfgrad(work,work2,sogradb(1,itsoscf),cmob,noccb,nvirb,sogradmaxb,nao, &
+&                            idis,nproc,myrank,MPI_COMM_WORLD,2)
             else
               sogradmaxb= zero
             endif
@@ -1132,15 +1149,15 @@ end
               endif
               call soscfunewh(hstarta,hstartb,sograda,sogradb,sodispa,sodispb,sovecya,sovecyb, &
 &                             nocca,noccb,nvira,nvirb,itsoscf,maxsoscf,sodispmax)
-              call soscfupdate(cmoa,sodispa,work,work2,nocca,nvira,itsoscf,maxsoscf,idis, &
-&                              nao,nmo,sodispmax)
+              call soscfupdate(cmoa,sodispa,work,work2,nocca,nvira,itsoscf,maxsoscf, &
+&                              nao,nmo,sodispmax,idis,nproc,myrank,MPI_COMM_WORLD)
               if(noccb /= 0 ) &
-&               call soscfupdate(cmob,sodispb,work,work2,noccb,nvirb,itsoscf,maxsoscf,idis, &
-&                                nao,nmo,sodispmax)
+&               call soscfupdate(cmob,sodispb,work,work2,noccb,nvirb,itsoscf,maxsoscf, &
+&                                nao,nmo,sodispmax,idis,nproc,myrank,MPI_COMM_WORLD)
               itsoscf= itsoscf+1
             else
-              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis)
-              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis)
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc,myrank,MPI_COMM_WORLD)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc,myrank,MPI_COMM_WORLD)
             endif
           endif
         endif
@@ -1221,7 +1238,8 @@ end
 !
 ! Calculate spin expectation values
 !
-      call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,neleca,nelecb,nao,idis)
+      call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,neleca,nelecb,nao, &
+&                   idis,nproc,myrank,MPI_COMM_WORLD)
 !
       if(master) then
         write(*,'(" -------------------------------")')
@@ -1242,9 +1260,9 @@ end
 end
 
 
-!-------------------------------------------------------------------------
-  subroutine formufock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim)
-!-------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------
+  subroutine formufock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,nproc,myrank,mpi_comm)
+!-----------------------------------------------------------------------------------------------
 !
 ! Driver of Fock matrix formation from two-electron intgrals
 !
@@ -1254,11 +1272,11 @@ end
 !       fock2  (Beta Fock matrix)
 !       fock3  (Work space)
 !
-      use modparallel
       use modbasis, only : nshell, nao
       use modthresh, only : cutint2
       implicit none
-      integer,intent(in) :: maxdim
+      integer,intent(in) :: maxdim, nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       integer :: ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart
       integer(8) :: ncount, icount
@@ -1326,8 +1344,8 @@ end
       enddo
 !$OMP end parallel do
 !
-      call para_allreducer(fock2,fock1,nao*(nao+1)/2,MPI_COMM_WORLD)
-      call para_allreducer(fock3,fock2,nao*(nao+1)/2,MPI_COMM_WORLD)
+      call para_allreducer(fock2,fock1,nao*(nao+1)/2,mpi_comm)
+      call para_allreducer(fock3,fock2,nao*(nao+1)/2,mpi_comm)
       return
 end
 
@@ -1593,7 +1611,7 @@ end
 !
 ! Calculate maximum density matrix elements
 !
-        call calcudmax(dmtrxa,dmtrxb,dmax,work)
+        call calcudmax(dmtrxa,dmtrxb,dmax,work,nproc,myrank,MPI_COMM_WORLD)
         call cpu_time(time1)
 !
 ! Calculate exchange-correlation terms
@@ -1604,7 +1622,8 @@ end
 !
 ! Calculate two-electron integrals
 !
-        call formudftfock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,hfexchange)
+        call formudftfock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,hfexchange, &
+&                         nproc,myrank,MPI_COMM_WORLD)
         call dscal(nao3,half,focka,1)
         call dscal(nao3,half,fockb,1)
         do i= 1,nao
@@ -1635,41 +1654,48 @@ end
 !
 ! DIIS interpolation
 !
-          call calcdiiserr(focka,dmtrxpreva,overlap,ortho,cmoa,work,work2,errmaxa,idis,nao,nmo)
-          call calcdiiserr(fockb,dmtrxprevb,overlap,ortho,cmob,work,work2,errmaxb,idis,nao,nmo)
+          call calcdiiserr(focka,dmtrxpreva,overlap,ortho,cmoa,work,work2,errmaxa,nao,nmo, &
+&                          idis,nproc,myrank,MPI_COMM_WORLD)
+          call calcdiiserr(fockb,dmtrxprevb,overlap,ortho,cmob,work,work2,errmaxb,nao,nmo, &
+&                          idis,nproc,myrank,MPI_COMM_WORLD)
           errmax= max(errmaxa,errmaxb)
           if(((itdiis /= 0).or.(errmax <= thresherr)).and.(errmax > small))then
             itdiis= itdiis+1
             call calcudiis(focka,fockb,errdiisa,errdiisb,fockdiisa,fockdiisb, &
-&                          diismtrx,cmoa,cmob,work2,idis,itdiis,nao,maxdiis)
+&                          diismtrx,cmoa,cmob,work2,itdiis,nao,maxdiis, &
+&                          idis,nproc,myrank,MPI_COMM_WORLD)
           endif
 !
 ! Extrapolate Fock matrix
 !
           if(extrap.and.itdiis == 0) then
-            call fockextrap(focka,fockdiisa,work,cmoa,dmtrxa,idis,itextra,nao,maxdiis)
-            call fockextrap(fockb,fockdiisb,work,cmob,dmtrxb,idis,itextra,nao,maxdiis)
+            call fockextrap(focka,fockdiisa,work,cmoa,dmtrxa,itextra,nao,maxdiis, &
+&                           idis,nproc,myrank,MPI_COMM_WORLD)
+            call fockextrap(fockb,fockdiisb,work,cmob,dmtrxb,itextra,nao,maxdiis, &
+&                           idis,nproc,myrank,MPI_COMM_WORLD)
           endif
 !
 ! Diagonalize Fock matrix
 !
-          call diagfock(focka,work,ortho,cmoa,work2,eigena,idis)
-          call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis)
+          call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc,myrank,MPI_COMM_WORLD)
+          call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc,myrank,MPI_COMM_WORLD)
         else
 !
 ! Approximated Second-order SCF method
 !
           if((itsoscf == 0).or.(convsoscf)) then
-            call diagfock(focka,work,ortho,cmoa,work2,eigena,idis)
-            call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis)
+            call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc,myrank,MPI_COMM_WORLD)
+            call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc,myrank,MPI_COMM_WORLD)
             sogradmax= zero
             itsoscf= itsoscf+1
           else
             call expand(focka,work,nao)
-            call soscfgrad(work,work2,sograda(1,itsoscf),cmoa,nocca,nvira,sogradmaxa,idis,nao,1)
+            call soscfgrad(work,work2,sograda(1,itsoscf),cmoa,nocca,nvira,sogradmaxa,nao, &
+&                          idis,nproc,myrank,MPI_COMM_WORLD,1)
             if(noccb /= 0) then
               call expand(fockb,work,nao)
-              call soscfgrad(work,work2,sogradb(1,itsoscf),cmob,noccb,nvirb,sogradmaxb,idis,nao,2)
+              call soscfgrad(work,work2,sogradb(1,itsoscf),cmob,noccb,nvirb,sogradmaxb,nao, &
+&                            idis,nproc,myrank,MPI_COMM_WORLD,2)
             else
               sogradmaxb= zero
             endif
@@ -1681,15 +1707,15 @@ end
               endif
               call soscfunewh(hstarta,hstartb,sograda,sogradb,sodispa,sodispb,sovecya,sovecyb, &
 &                             nocca,noccb,nvira,nvirb,itsoscf,maxsoscf,sodispmax)
-              call soscfupdate(cmoa,sodispa,work,work2,nocca,nvira,itsoscf,maxsoscf,idis, &
-&                              nao,nmo,sodispmax)
+              call soscfupdate(cmoa,sodispa,work,work2,nocca,nvira,itsoscf,maxsoscf, &
+&                              nao,nmo,sodispmax,idis,nproc,myrank,MPI_COMM_WORLD)
               if(noccb /= 0 ) &
-&               call soscfupdate(cmob,sodispb,work,work2,noccb,nvirb,itsoscf,maxsoscf,idis, &
-&                                nao,nmo,sodispmax)
+&               call soscfupdate(cmob,sodispb,work,work2,noccb,nvirb,itsoscf,maxsoscf, &
+&                                nao,nmo,sodispmax,idis,nproc,myrank,MPI_COMM_WORLD)
               itsoscf= itsoscf+1
             else
-              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis)
-              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis)
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc,myrank,MPI_COMM_WORLD)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc,myrank,MPI_COMM_WORLD)
             endif
           endif
         endif
@@ -1777,7 +1803,8 @@ end
 !
 ! Calculate spin expectation values
 !
-      call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,neleca,nelecb,nao,idis)
+      call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,neleca,nelecb,nao, &
+&                   idis,nproc,myrank,MPI_COMM_WORLD)
 !
       if(master) then
         write(*,'(" -------------------------------")')
@@ -1798,9 +1825,10 @@ end
 end
 
 
-!---------------------------------------------------------------------------------------
-  subroutine formudftfock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,hfexchange)
-!---------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+  subroutine formudftfock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,hfexchange, &
+&                         nproc,myrank,mpi_comm)
+!-----------------------------------------------------------------------------------------
 !
 ! Driver of DFT Fock matrix formation from two-electron intgrals
 !
@@ -1810,11 +1838,11 @@ end
 !       fock2  (Beta Fock matrix)
 !       fock3  (Work space)
 !
-      use modparallel
       use modbasis, only : nshell, nao
       use modthresh, only : cutint2
       implicit none
-      integer,intent(in) :: maxdim
+      integer,intent(in) :: maxdim, nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       integer :: ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart
       integer(8) :: ncount, icount
@@ -1883,8 +1911,8 @@ end
       enddo
 !$OMP end parallel do
 !
-      call para_allreducer(fock2,fock1,nao*(nao+1)/2,MPI_COMM_WORLD)
-      call para_allreducer(fock3,fock2,nao*(nao+1)/2,MPI_COMM_WORLD)
+      call para_allreducer(fock2,fock1,nao*(nao+1)/2,mpi_comm)
+      call para_allreducer(fock3,fock2,nao*(nao+1)/2,mpi_comm)
       return
 end
 

@@ -86,9 +86,9 @@ end
 end
 
 
-!-------------------------------------------
-  subroutine calcrdmax(dmtrx,dmax,dmaxtmp)
-!-------------------------------------------
+!-----------------------------------------------------------------
+  subroutine calcrdmax(dmtrx,dmax,dmaxtmp,nproc,myrank,mpi_comm)
+!-----------------------------------------------------------------
 !
 ! Calculate maximum density matrix element for each shell
 !
@@ -96,9 +96,10 @@ end
 ! Out : dmax    (Maximum density matrix elements)
 !       dmaxtmp (Work array)
 !
-      use modparallel
       use modbasis, only : nshell, nao, mbf, locbf
       implicit none
+      integer,intent(in) :: nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       integer :: ish, jsh, ijsh, locbfi, locbfj, nbfi, nbfj
       integer :: jnbf, i, j, ii, ij
       real(8),parameter :: zero=0.0D+00
@@ -133,14 +134,14 @@ end
       enddo
 !$OMP end parallel
 !
-      call para_allreducer(dmaxtmp,dmax,nshell*(nshell+1)/2,MPI_COMM_WORLD)
+      call para_allreducer(dmaxtmp,dmax,nshell*(nshell+1)/2,mpi_comm)
       return
 end
 
 
-!---------------------------------------------------
-  subroutine calcudmax(dmtrxa,dmtrxb,dmax,dmaxtmp)
-!---------------------------------------------------
+!-------------------------------------------------------------------------
+  subroutine calcudmax(dmtrxa,dmtrxb,dmax,dmaxtmp,nproc,myrank,mpi_comm)
+!-------------------------------------------------------------------------
 !
 ! Calculate maximum unrestricted density matrix element for each shell
 !
@@ -149,9 +150,10 @@ end
 ! Out : dmax    (Maximum density matrix elements)
 !       dmaxtmp (Work array)
 !
-      use modparallel
       use modbasis, only : nshell, nao, mbf, locbf
       implicit none
+      integer,intent(in) :: nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       integer :: ish, jsh, ijsh, locbfi, locbfj, nbfi, nbfj
       integer :: jnbf, i, j, ii, ij
       real(8),parameter :: zero=0.0D+00
@@ -187,7 +189,7 @@ end
       enddo
 !$OMP end parallel
 !
-      call para_allreducer(dmaxtmp,dmax,nshell*(nshell+1)/2,MPI_COMM_WORLD)
+      call para_allreducer(dmaxtmp,dmax,nshell*(nshell+1)/2,mpi_comm)
       return
 end
 
@@ -245,9 +247,10 @@ end
 end
 
 
-!----------------------------------------------------------------------------------
-  subroutine fockextrap(fock,fockwork,work1,work2,work3,idis,itextra,nao,maxdiis)
-!----------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
+  subroutine fockextrap(fock,fockwork,work1,work2,work3,itextra,nao,maxdiis, &
+&                       idis,nproc,myrank,mpi_comm)
+!-------------------------------------------------------------------------------
 !
 ! Extrapolate Fock matrix
 !
@@ -255,9 +258,10 @@ end
 ! InOut : fock    (Fock matrix)
 !         fockwork(Previous Fock and work matrix)
 !
-      use modparallel
+      use modparallel, only : master
       implicit none
-      integer,intent(in) :: idis(nproc,14), nao, maxdiis
+      integer,intent(in) :: nao, maxdiis, nproc, myrank, idis(nproc,14) 
+      integer(4),intent(in) :: mpi_comm
       integer,intent(inout) :: itextra
       integer :: num, istart, i, iskip, nao3
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, four=4.0D+00
@@ -292,9 +296,9 @@ end
         fockwork(i,5)= fockwork(i,3)   -fockwork(i,2)
         fockwork(i,6)= fockwork(i,2)   -fockwork(i,1)
       enddo
-      call para_allgathervr(fockwork(1,4),num,work1,idis(1,5),idis(1,6),MPI_COMM_WORLD)
-      call para_allgathervr(fockwork(1,5),num,work2,idis(1,5),idis(1,6),MPI_COMM_WORLD)
-      call para_allgathervr(fockwork(1,6),num,work3,idis(1,5),idis(1,6),MPI_COMM_WORLD)
+      call para_allgathervr(fockwork(1,4),num,work1,idis(1,5),idis(1,6),mpi_comm)
+      call para_allgathervr(fockwork(1,5),num,work2,idis(1,5),idis(1,6),mpi_comm)
+      call para_allgathervr(fockwork(1,6),num,work3,idis(1,5),idis(1,6),mpi_comm)
       sp11= tridot(work1,work1,nao)
       sp12= tridot(work2,work1,nao)
       sp13= tridot(work3,work1,nao)
@@ -356,9 +360,10 @@ end
 end
 
 
-!-----------------------------------------------------------------------------------------
-  subroutine calcdiiserr(fock,dmtrx,overlap,ortho,work1,work2,work3,errmax,idis,nao,nmo)
-!-----------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------
+  subroutine calcdiiserr(fock,dmtrx,overlap,ortho,work1,work2,work3,errmax,nao,nmo, &
+&                        idis,nproc,myrank,mpi_comm)
+!--------------------------------------------------------------------------------------
 !
 ! Calculate error matrix (=FDS-SDF) for Direct Inversion in the Iterative Subspace
 ! (DIIS) interporation
@@ -369,9 +374,9 @@ end
 !         ortho   (Orthogonalization matrix)
 ! Out   : work1   (Error matrix)
 !
-      use modparallel
       implicit none
-      integer,intent(in) :: idis(nproc,14), nao, nmo
+      integer,intent(in) :: nao, nmo, nproc, myrank, idis(nproc,14)
+      integer(4),intent(in) :: mpi_comm
       integer :: num, istart, i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: fock(nao*(nao+1)/2), dmtrx(nao*(nao+1)/2)
@@ -392,7 +397,7 @@ end
         call dsymm('L','U',nao,num,one,work1,nao,work3,nao,zero,work2,nao)
         call dgemm('T','N',nmo,num,nao,one,ortho,nao,work2,nao,zero,work3,nao)
       endif
-      call para_allgathervr(work3,idis(myrank+1,3),work1,idis(1,3),idis(1,4),MPI_COMM_WORLD)
+      call para_allgathervr(work3,idis(myrank+1,3),work1,idis(1,3),idis(1,4),mpi_comm)
 !
 ! Next calculation should be parallelized.
 !
@@ -418,9 +423,10 @@ end
 end
 
 
-!-------------------------------------------------------------------------------------------
-  subroutine calcrdiis(fock,errdiis,fockdiis,diismtrx,work1,work2,idis,itdiis,nao,maxdiis)
-!-------------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
+  subroutine calcrdiis(fock,errdiis,fockdiis,diismtrx,work1,work2,itdiis,nao,maxdiis, &
+&                      idis,nproc,myrank,mpi_comm)
+!----------------------------------------------------------------------------------------
 !
 ! Direct Inversion in the Iterative Subspace (DIIS) interporation for closed-shell
 !
@@ -429,9 +435,9 @@ end
 ! Inout : fockdiis(Previous Fock matrix)
 !         errdiis (DIIS error matrix)
 !
-      use modparallel
       implicit none
-      integer,intent(in) :: idis(nproc,14), itdiis, nao, maxdiis
+      integer,intent(in) :: itdiis, nao, maxdiis, nproc, myrank, idis(nproc,14)
+      integer(4),intent(in) :: mpi_comm
       integer :: num, istart, i, j, ij, ipiv(maxdiis+1), info
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(inout) :: fock(nao*(nao+1)/2), errdiis(idis(myrank+1,3),maxdiis)
@@ -449,7 +455,7 @@ end
           work2(i)= ddot(num*nao,errdiis(1,i),1,errdiis(1,itdiis),1)
         enddo
       endif
-      call para_allreducer(work2,diismtrx(itdiis*(itdiis-1)/2+1),itdiis,MPI_COMM_WORLD)
+      call para_allreducer(work2,diismtrx(itdiis*(itdiis-1)/2+1),itdiis,mpi_comm)
 !
       do i= 1,itdiis
         do j= 1,i
@@ -477,7 +483,7 @@ end
           call daxpy(num,diiscoeff(i),fockdiis(1,i),1,work1,1)
         enddo
       endif
-      call para_allgathervr(work1,num,fock,idis(1,5),idis(1,6),MPI_COMM_WORLD)
+      call para_allgathervr(work1,num,fock,idis(1,5),idis(1,6),mpi_comm)
 !
       return
 end
@@ -485,7 +491,8 @@ end
 
 !---------------------------------------------------------------------------
   subroutine calcudiis(focka,fockb,errdiisa,errdiisb,fockdiisa,fockdiisb, &
-&                      diismtrx,worka,workb,work2,idis,itdiis,nao,maxdiis)
+&                      diismtrx,worka,workb,work2,itdiis,nao,maxdiis, &
+&                      idis,nproc,myrank,mpi_comm)
 !---------------------------------------------------------------------------
 !
 ! Direct Inversion in the Iterative Subspace (DIIS) interporation for open-shell
@@ -501,9 +508,9 @@ end
 !         errdiisa (History of Alpha DIIS error matrix)
 !         errdiisb (History of Beta DIIS error matrix)
 !
-      use modparallel
       implicit none
-      integer,intent(in) :: idis(nproc,14), itdiis, nao, maxdiis
+      integer,intent(in) :: itdiis, nao, maxdiis, nproc, myrank, idis(nproc,14)
+      integer(4),intent(in) :: mpi_comm
       integer :: num, istart, i, j, ij, ipiv(maxdiis+1), info
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00
       real(8),intent(inout) :: focka(nao*(nao+1)/2), fockb(nao*(nao+1)/2)
@@ -529,7 +536,7 @@ end
           work2(i)= work2(i)+ddot(num*nao,errdiisb(1,i),1,errdiisb(1,itdiis),1)
         enddo
       endif
-      call para_allreducer(work2,diismtrx(itdiis*(itdiis-1)/2+1),itdiis,MPI_COMM_WORLD)
+      call para_allreducer(work2,diismtrx(itdiis*(itdiis-1)/2+1),itdiis,mpi_comm)
 !
       do i= 1,itdiis
         do j= 1,i
@@ -560,7 +567,7 @@ end
           call daxpy(num,diiscoeff(i),fockdiisa(1,i),1,worka,1)
         enddo
       endif
-      call para_allgathervr(worka,num,focka,idis(1,5),idis(1,6),MPI_COMM_WORLD)
+      call para_allgathervr(worka,num,focka,idis(1,5),idis(1,6),mpi_comm)
 !
 ! Interporate beta Fock matrix
 !
@@ -571,15 +578,16 @@ end
           call daxpy(num,diiscoeff(i),fockdiisb(1,i),1,workb,1)
         enddo
       endif
-      call para_allgathervr(workb,num,fockb,idis(1,5),idis(1,6),MPI_COMM_WORLD)
+      call para_allgathervr(workb,num,fockb,idis(1,5),idis(1,6),mpi_comm)
 !
       return
 end
 
 
-!---------------------------------------------------------------------------------
-  subroutine soscfgrad(work,work2,sograd,cmo,nocc,nvir,sogradmax,idis,nao,itype)
-!---------------------------------------------------------------------------------
+!------------------------------------------------------------------------
+  subroutine soscfgrad(work,work2,sograd,cmo,nocc,nvir,sogradmax,nao, &
+&                      idis,nproc,myrank,mpi_comm,itype)
+!------------------------------------------------------------------------
 !
 ! Calculate orbital gradient <occ|F|vir>
 !
@@ -589,9 +597,9 @@ end
 ! Out : sograd    (SOSCF gradient matrix)
 !       sogradmax (Maximum SOSCF gradient
 !
-      use modparallel
       implicit none
-      integer,intent(in) :: nocc, nvir, idis(nproc,14), nao, itype
+      integer,intent(in) :: nocc, nvir, nao, itype, nproc, myrank, idis(nproc,14)
+      integer(4),intent(in) :: mpi_comm
       integer :: numwork, num, istart, isomax, idamax
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmo(nao,nao)
@@ -608,7 +616,7 @@ end
           call dgemm('T','N',nocc,num,nao,one,cmo,nao,work2,nao,zero,work,nocc)
         endif
         numwork= idis(myrank+1,9)
-        call para_allgathervr(work,numwork,sograd,idis(1,9),idis(1,10),MPI_COMM_WORLD)
+        call para_allgathervr(work,numwork,sograd,idis(1,9),idis(1,10),mpi_comm)
 !
 ! Beta electron gradient
 !
@@ -621,7 +629,7 @@ end
         endif
 !
         numwork= idis(myrank+1,13)
-        call para_allgathervr(work,numwork,sograd,idis(1,13),idis(1,14),MPI_COMM_WORLD)
+        call para_allgathervr(work,numwork,sograd,idis(1,13),idis(1,14),mpi_comm)
       endif
 !
 ! Obtain maximum sograd value
@@ -925,16 +933,16 @@ common/ishimura/t4
 end
 
 
-!----------------------------------------------------------------------------------
-  subroutine soscfupdate(cmo,sodisp,work,work2,nocc,nvir,itsoscf,maxsoscf,idis, &
-&                        nao,nmo,sodispmax)
-!----------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------
+  subroutine soscfupdate(cmo,sodisp,work,work2,nocc,nvir,itsoscf,maxsoscf, &
+&                        nao,nmo,sodispmax,idis,nproc,myrank,mpi_comm)
+!-----------------------------------------------------------------------------
 !
 ! Update molecular orbitals using approximated SOSCF method
 !
-      use modparallel
       implicit none
-      integer,intent(in) :: nocc, nvir, itsoscf, maxsoscf, idis(nproc,14), nao, nmo
+      integer,intent(in) :: nocc, nvir, itsoscf, maxsoscf, nao, nmo, nproc, myrank, idis(nproc,14)
+      integer(4),intent(in) :: mpi_comm
       integer :: imo, jmo, num, istart
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00, p01= 1.0D-01
       real(8),intent(in) :: sodisp(nocc,nvir,maxsoscf), sodispmax
@@ -982,20 +990,21 @@ end
       istart= idis(myrank+1,2)+1
       if(num > 0) call dgemm('N','N',nao,num,nmo,one,cmo,nao,work(1,istart),nmo,zero, &
 &                            work2,nao)
-      call para_allgathervr(work2,idis(myrank+1,3),cmo,idis(1,3),idis(1,4),MPI_COMM_WORLD)
+      call para_allgathervr(work2,idis(myrank+1,3),cmo,idis(1,3),idis(1,4),mpi_comm)
       return
 end
 
 
-!-------------------------------------------------------------------------------------------
-  subroutine calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,neleca,nelecb,nao,idis)
-!-------------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
+  subroutine calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,neleca,nelecb,nao, &
+&                     idis,nproc,myrank,mpi_comm)
+!----------------------------------------------------------------------------------------
 !
 ! Calculate spin expectation values, sz and S^2
 !
-      use modparallel
       implicit none
-      integer,intent(in) :: neleca, nelecb, nao, idis(nproc,14)
+      integer,intent(in) :: neleca, nelecb, nao, nproc, myrank, idis(nproc,14)
+      integer(4),intent(in) :: mpi_comm
       integer :: num, istart, ij, i, j
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2), overlap(nao*(nao+1)/2)
@@ -1012,7 +1021,7 @@ end
         call dsymm('L','U',nao,num,one,work,nao,work2(1,istart),nao,zero,work3,nao)
         call dgemm('N','N',nao,num,nao,one,work2,nao,work3,nao,zero,work,nao)
       endif
-      call para_allgathervr(work,num*nao,work2,idis(1,3),idis(1,4),MPI_COMM_WORLD)
+      call para_allgathervr(work,num*nao,work2,idis(1,3),idis(1,4),mpi_comm)
 !
 ! Trace(Db*S*Da*S)
 !
@@ -1035,13 +1044,13 @@ end
 end
 
 
-!------------------------------------------------
+!--------------------------------------------------
   subroutine writeeigenvalue(eigena,eigenb,itype)
-!------------------------------------------------
+!--------------------------------------------------
 !
 ! Write eigenvalues
 !
-      use modparallel
+      use modparallel, only : master
       use modmolecule, only : nmo, neleca, nelecb
       use modprint, only : iprint
       integer,intent(in) :: itype
@@ -1083,7 +1092,7 @@ end
 !
 ! Write eigenvalues
 !
-      use modparallel
+      use modparallel, only : master
       use modmolecule, only : nmo, neleca, numatomic
       use modbasis, only : nao, nshell, mtype, spher, locatom
       use modprint, only : iprint

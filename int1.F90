@@ -40,7 +40,7 @@
 !
 ! Calculate ECP integrals
 !
-      if(flagecp) call oneeiecp(hstmat2)
+      if(flagecp) call oneeiecp(hstmat2,nproc,myrank)
 !
       call para_allreducer(hstmat2,hstmat1,num,MPI_COMM_WORLD)
       call para_allreducer(hstmat3,hstmat2,num,MPI_COMM_WORLD)

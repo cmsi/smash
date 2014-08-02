@@ -1,13 +1,14 @@
-!--------------------
-  subroutine setecp
-!--------------------
+!------------------------------
+  subroutine setecp(mpi_comm)
+!------------------------------
 !
 ! Driver of setting ecp functions
 !
-      use modparallel
+      use modparallel, only : master
       use modecp, only : ecp, maxangecp, izcore, locecp, mprimecp, execp, coeffecp, mtypeecp
       use modmolecule, only : natom, numatomic, neleca, nelecb, znuc
       implicit none
+      integer(4),intent(in) :: mpi_comm
       integer :: iatom, iprim
 !
       maxangecp(1:natom)= -1
@@ -30,16 +31,14 @@
         endif
       endif
 !
-      if(parallel) then
-        call para_bcasti(iprim,1,0,MPI_COMM_WORLD)
-        call para_bcasti(maxangecp,natom,0,MPI_COMM_WORLD)
-        call para_bcasti(izcore,natom,0,MPI_COMM_WORLD)
-        call para_bcasti(locecp(0,1),natom*6,0,MPI_COMM_WORLD)
-        call para_bcasti(mprimecp(0,1),natom*6,0,MPI_COMM_WORLD)
-        call para_bcastr(execp,iprim,0,MPI_COMM_WORLD)
-        call para_bcastr(coeffecp,iprim,0,MPI_COMM_WORLD)
-        call para_bcasti(mtypeecp,iprim,0,MPI_COMM_WORLD)
-      endif
+      call para_bcasti(iprim,1,0,mpi_comm)
+      call para_bcasti(maxangecp,natom,0,mpi_comm)
+      call para_bcasti(izcore,natom,0,mpi_comm)
+      call para_bcasti(locecp(0,1),natom*6,0,mpi_comm)
+      call para_bcasti(mprimecp(0,1),natom*6,0,mpi_comm)
+      call para_bcastr(execp,iprim,0,mpi_comm)
+      call para_bcastr(coeffecp,iprim,0,mpi_comm)
+      call para_bcasti(mtypeecp,iprim,0,mpi_comm)
 ! 
       do iatom= 1,natom
         neleca= neleca-izcore(iatom)/2

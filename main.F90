@@ -41,7 +41,7 @@
 !
 ! Set basis functions
 !
-      call setbasis
+      call setbasis(MPI_COMM_WORLD)
 !
 ! Set number of electrons
 !
@@ -49,7 +49,7 @@
 !
 ! Set ECP functions
 !
-      if(flagecp) call setecp
+      if(flagecp) call setecp(MPI_COMM_WORLD)
 !
 ! Set functional information and adjust the number of DFT grids
 !

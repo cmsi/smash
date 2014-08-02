@@ -247,34 +247,6 @@ end
 end
 
 
-!--------------------------------------------------------------------------------
-  subroutine para_sendrecvd(sbuff,nums,dest,ntags,rbuff,numr,source,ntagr,comm)
-!--------------------------------------------------------------------------------
-      use modparallel
-      implicit none
-      integer,intent(in) :: nums, dest, ntags, numr, source, ntagr
-      integer(4),intent(in) :: comm
-      real(8),intent(in) :: sbuff(*)
-      real(8),intent(out) :: rbuff(*)
-#ifdef MPI
-      integer(4) :: nums4, dest4, ntags4, numr4, source4, ntagr4, ierr
-      integer(4) :: STATUS(MPI_STATUS_SIZE)
-!
-      nums4= nums
-      dest4= dest
-      ntags4= ntags
-      numr4= numr
-      source4= source
-      ntagr4 = ntagr
-      call mpi_sendrecv(sbuff,nums4,MPI_DOUBLE_PRECISION,dest4,ntags4, &
-&                           rbuff,numr4,MPI_DOUBLE_PRECISION,source4,ntagr4,comm,STATUS,ierr)
-#else
-      call dcopy(nums,sbuff,1,rbuff,1)
-#endif
-      return
-end
-
-
 !----------------------------------------------------------------
   subroutine para_allgathervr(sbuff,num,rbuff,idisa,idisb,comm)
 !----------------------------------------------------------------

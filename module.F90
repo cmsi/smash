@@ -54,20 +54,6 @@ end
         end subroutine checkintsize8
       end interface checkintsize
 !
-      interface para_sendrecv
-        subroutine para_sendrecvd1(sbuff,nums,dest,ntags,rbuff,numr,source,ntagr,comm)
-          integer,intent(in) :: nums, dest, ntags, numr, source, ntagr
-          integer(4),intent(in) :: comm
-          real(8),intent(in) :: sbuff
-          real(8),intent(out) :: rbuff
-        end subroutine para_sendrecvd1
-        subroutine para_sendrecvd2(sbuff,nums,dest,ntags,rbuff,numr,source,ntagr,comm)
-          integer,intent(in) :: nums, dest, ntags, numr, source, ntagr
-          integer(4),intent(in) :: comm
-          real(8),intent(in) :: sbuff(*)
-          real(8),intent(out) :: rbuff(*)
-        end subroutine para_sendrecvd2
-      end interface para_sendrecv
 end
 
 
