@@ -984,7 +984,7 @@ end
         work(imo,imo)= work(imo,imo)+one
       enddo
 !
-      call orthonorm(work,nmo)
+      call orthonorm(work,nmo,nproc,myrank,mpi_comm)
 !
       num= idis(myrank+1,1)
       istart= idis(myrank+1,2)+1

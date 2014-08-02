@@ -1,6 +1,6 @@
-!----------------------------------------------------
-  subroutine oneei(hstmat1,hstmat2,hstmat3,hstmat4)
-!----------------------------------------------------
+!--------------------------------------------------------------------------
+  subroutine oneei(hstmat1,hstmat2,hstmat3,hstmat4,nproc,myrank,mpi_comm)
+!--------------------------------------------------------------------------
 !
 ! Driver of one-electron and overlap integrals
 !
@@ -9,11 +9,12 @@
 !       hstmat3 (Kinetic energy matrix)
 !       hstmat4 (Work array)
 !
-      use modparallel
       use modbasis, only : nao, nshell, mtype
       use modecp, only : flagecp
       use modmolecule, only : natom
       implicit none
+      integer,intent(in) :: nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       integer :: ish, jsh, num, maxfunc(0:6), maxbasis, maxdim
       real(8),parameter :: zero=0.0D+00
       real(8),intent(out) :: hstmat1((nao*(nao+1))/2), hstmat2((nao*(nao+1))/2)
@@ -42,9 +43,9 @@
 !
       if(flagecp) call oneeiecp(hstmat2,nproc,myrank)
 !
-      call para_allreducer(hstmat2,hstmat1,num,MPI_COMM_WORLD)
-      call para_allreducer(hstmat3,hstmat2,num,MPI_COMM_WORLD)
-      call para_allreducer(hstmat4,hstmat3,num,MPI_COMM_WORLD)
+      call para_allreducer(hstmat2,hstmat1,num,mpi_comm)
+      call para_allreducer(hstmat3,hstmat2,num,mpi_comm)
+      call para_allreducer(hstmat4,hstmat3,num,mpi_comm)
 !
       return
 end

@@ -1,6 +1,7 @@
-!---------------------------------------------------------------------------------------
-  subroutine grad2eri(egrad,egrad2,fulldmtrx1,fulldmtrx2,xint,hfexchange,maxdim,itype)
-!---------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------
+  subroutine grad2eri(egrad,egrad2,fulldmtrx1,fulldmtrx2,xint,hfexchange, &
+&                     maxdim,nproc,myrank,itype)
+!----------------------------------------------------------------------------
 !
 ! Main driver of derivatives for two-electron integrals
 !
@@ -11,12 +12,11 @@
 !         itype     (1:RHF, 2:UHF)
 ! Inout : egrad2    (Energy gradient values)
 !
-      use modparallel
       use modbasis, only : nshell, nao
       use modthresh, only : cutint2
       use modmolecule, only : natom
       implicit none
-      integer,intent(in) :: maxdim, itype
+      integer,intent(in) :: maxdim, nproc, myrank, itype
       integer :: ish, jsh, ksh, lsh, ij, kl
       integer :: ii, kk, kstart
       integer(8) :: ncount, icount

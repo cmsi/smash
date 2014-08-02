@@ -234,9 +234,10 @@ end
 !
 ! Driver of closed-shell energy calculation
 !
+    
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
-      use modparallel, only : master
+      use modparallel
       use modmolecule, only : nmo, neleca
       use modjob, only : method
       use moddft, only : idft
@@ -270,7 +271,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-      call oneei(h1mtrx,smtrx,tmtrx,work)
+      call oneei(h1mtrx,smtrx,tmtrx,work,nproc,myrank,MPI_COMM_WORLD)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -303,7 +304,7 @@ end
         call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
-        call calcrmp2(cmo,energymo,xint)
+        call calcrmp2(cmo,energymo,xint,nproc,myrank,MPI_COMM_WORLD)
         call tstamp(1)
       else
         if(master) then
@@ -372,7 +373,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-      call oneei(h1mtrx,smtrx,tmtrx,work)
+      call oneei(h1mtrx,smtrx,tmtrx,work,nproc,myrank,MPI_COMM_WORLD)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -446,7 +447,7 @@ end
 !
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
-      use modparallel, only : master
+      use modparallel
       use modmolecule, only : nmo, natom
       use modjob, only : method
       use moddft, only : idft
@@ -482,7 +483,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-      call oneei(h1mtrx,smtrx,tmtrx,work)
+      call oneei(h1mtrx,smtrx,tmtrx,work,nproc,myrank,MPI_COMM_WORLD)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -574,7 +575,7 @@ end
 !
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
-      use modparallel, only : master
+      use modparallel
       use modmolecule, only : nmo, natom
       use modjob, only : method
       use moddft, only : idft
@@ -610,7 +611,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-      call oneei(h1mtrx,smtrx,tmtrx,work)
+      call oneei(h1mtrx,smtrx,tmtrx,work,nproc,myrank,MPI_COMM_WORLD)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -716,7 +717,7 @@ end
 !
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
-      use modparallel, only : master
+      use modparallel
       use modmolecule, only : nmo, natom, coord, coordold
       use modopt, only : nopt, optconv, cartesian
       use modwarn, only : nwarn
@@ -804,7 +805,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-        call oneei(h1mtrx,smtrx,tmtrx,work)
+        call oneei(h1mtrx,smtrx,tmtrx,work,nproc,myrank,MPI_COMM_WORLD)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -963,7 +964,7 @@ end
 !
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
-      use modparallel, only : master
+      use modparallel
       use modmolecule, only : nmo, natom, coord, coordold
       use modopt, only : nopt, optconv, cartesian
       use modwarn, only : nwarn
@@ -1052,7 +1053,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-        call oneei(h1mtrx,smtrx,tmtrx,work)
+        call oneei(h1mtrx,smtrx,tmtrx,work,nproc,myrank,MPI_COMM_WORLD)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !

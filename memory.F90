@@ -44,22 +44,22 @@ end
 !
 ! Allocate requested memory size, "msize".
 !
-      use modmemory, only : memmax, memused, memusedmax
       use modparallel, only : master
+      use modmemory, only : memmax, memused, memusedmax
       implicit none
       integer,intent(in) :: msize
 !
       if(msize < 0) then
-          write(*,'(" Required memory size is negative!",i6,"MB")')msize/125000
-          call iabort
+        if(master) write(*,'(" Required memory size is negative!",i6,"MB")')msize/125000
+        call iabort
       endif
       memused= memused+msize
-      if(master) then
-        if(memused > memmax) then
+      if(memused > memmax) then
+        if(master) then
           write(*,'(" Error! Required memory size exceeds.")')
           write(*,'(" Required:",i6,"MB,  Available:",i6,"MB")')memused/125000, memmax/125000
-          call iabort
         endif
+        call iabort
       endif
       memusedmax=max(memusedmax,memused)
       return
@@ -72,19 +72,17 @@ end
 !
 ! Deallocate requested memory size, "msize".
 !
-      use modmemory, only : memmax, memused
       use modparallel, only : master
+      use modmemory, only : memmax, memused
       use modwarn, only : nwarn
       implicit none
       integer,intent(in) :: msize
 !
       memused= memused-msize
-!     if(master) then
-        if(memused < 0) then
-          nwarn= nwarn+1
-          write(*,'(" Warning! Msize in memunset is less than 0.")')
-        endif
-!     endif
+      if(memused < 0) then
+        nwarn= nwarn+1
+        if(master) write(*,'(" Warning! Msize in memunset is less than 0.")')
+      endif
       return
 end
 
@@ -99,11 +97,9 @@ end
       use modparallel, only : master
       use modwarn, only : nwarn
 !
-      if(master) then
-        if(memused /= 0) then
-          nwarn= nwarn+1
-          write(*,'(" Warning! Memory deallocation is not completed.")')
-        endif
+      if(memused /= 0) then
+        nwarn= nwarn+1
+        if(master) write(*,'(" Warning! Memory deallocation is not completed.")')
       endif
       return
 end
@@ -116,7 +112,6 @@ end
 ! Check available memory size
 !
       use modmemory, only : memmax, memused
-      use modparallel, only : master
       use modwarn, only : nwarn
       implicit none
       integer,intent(out) :: msize

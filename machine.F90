@@ -8,7 +8,7 @@
 ! index = 2 : at the end of the program
 !
       use modtclock, only : cpu0, cpu1, iwall0, iwall1
-      use modparallel
+      use modparallel, only : master
       implicit none
       integer :: index, iwall2, iwrate, iwmax, iday, ihour, imin
       real(8) :: cpu2, wall0, wall1, sec
@@ -69,7 +69,7 @@ end
 !
 ! Get and write hostname of master node
 !
-      use modparallel
+      use modparallel, only : master
       implicit none
       integer :: istat, hostnm, ilen, len_trim
       character(len=70) :: hostname
@@ -89,7 +89,7 @@ end
 !
 ! Write the numbers of processes and threads
 !
-      use modparallel
+      use modparallel, only : master, nproc
 !$    use omp_lib
       implicit none
       integer :: nthread
@@ -114,7 +114,7 @@ end
 !
 ! Abort the calculation
 !
-      use modparallel
+      use modparallel, only : master
       implicit none
 !
       if(master) then

@@ -443,20 +443,20 @@ end
 end
 
 
-!----------------------------------------------
-  subroutine calcschwarzeri(xint,xinttmp,maxdim)
-!----------------------------------------------
+!-----------------------------------------------------------------------
+  subroutine calcschwarzeri(xint,xinttmp,maxdim,nproc,myrank,mpi_comm)
+!-----------------------------------------------------------------------
 !
 ! Driver of (ij|ij) integral calculation
 !
 ! Out : xint    ((ij|ij) integrals for Schwarz screening)
 !       xinttmp (Work array)
 !
-      use modparallel
       use modbasis, only : nshell, mtype, mbf
       use modthresh, only : cutint2, threshex
       implicit none
-      integer,intent(in) :: maxdim
+      integer,intent(in) :: maxdim, nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       integer :: ish, jsh, nbfi, nbfj, i, j, ii, ij
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, two=2.0D+00
       real(8),intent(out) :: xint(nshell*(nshell+1)/2)
@@ -491,7 +491,7 @@ end
       enddo
 !$OMP end parallel
 !
-      call para_allreducer(xinttmp,xint,nshell*(nshell+1)/2,MPI_COMM_WORLD)
+      call para_allreducer(xinttmp,xint,nshell*(nshell+1)/2,mpi_comm)
 !
       cutint2= cutsave
       threshex=threshex*half

@@ -1,6 +1,6 @@
-!------------------------------------------
-  subroutine calcrmp2(cmo,energymo,xint)
-!------------------------------------------
+!---------------------------------------------------------------
+  subroutine calcrmp2(cmo,energymo,xint,nproc,myrank,mpi_comm)
+!---------------------------------------------------------------
 !
 ! Driver of restricted MP2 calculation
 !
@@ -8,11 +8,13 @@
 !       energymo(MO energies)
 !       xint    (Exchange integral matrix)
 !       
-      use modparallel
+      use modparallel, only : master
       use modbasis, only : nshell, nao, mbf
       use modmolecule, only : neleca, nmo
       use modenergy, only : enuc, escf, escfe, emp2, escsmp2
       implicit none
+      integer,intent(in) :: nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       integer :: ncore, ncorecalc, maxdim, nocc, nvir, nao2, ndis, iproc, icount, icountao
       integer :: icountsh, idis(8,0:nproc-1), maxsize, ish, jsh, ishs, jshs, msize, mlsize
       real(8),parameter :: zero=0.0D+00, three=3.0D+00, p12=1.2D+00
@@ -122,7 +124,7 @@
       allocate(trint1b(mlsize*nocc*nao))
 !
       call mp2trans1(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
-&                    mlsize,nocc,maxdim,idis)
+&                    mlsize,nocc,maxdim,idis,nproc,myrank)
 !
       deallocate(trint1b)
       call memunset(mlsize*nocc*nao)
@@ -132,14 +134,15 @@
       call memset(2*nao2)
       allocate(trint3(nao2),trint4(nao2))
 !
-      call mp2trans2(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,nocc,nvir,ncore,idis)
+      call mp2trans2(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,nocc,nvir,ncore, &
+&                    idis,nproc,myrank,mpi_comm)
 !
       deallocate(trint3,trint4)
       call memunset(2*nao2)
       deallocate(trint2)
       call memunset(maxsize*nocc*(nocc+1)/2)
 !
-      call para_allreducer(emp2st,emp2stsum,2,MPI_COMM_WORLD)
+      call para_allreducer(emp2st,emp2stsum,2,mpi_comm)
       emp2= emp2stsum(1)+emp2stsum(2)
       escsmp2= emp2stsum(1)*p12+emp2stsum(2)/three
 !
@@ -179,10 +182,10 @@ end
 end
 
 
-!----------------------------------------------------------------------
+!--------------------------------------------------------------------
   subroutine mp2trans1(cmoocc,cmowrk,trint1a,trint1b,trint2,xint, &
-&                      mlsize,nocc,maxdim,idis)
-!----------------------------------------------------------------------
+&                      mlsize,nocc,maxdim,idis,nproc,myrank)
+!--------------------------------------------------------------------
 !
 ! Driver of AO intengral generation and first and second integral transformations
 !
@@ -197,11 +200,10 @@ end
 !       trint1a (First-transformed integrals)
 !       trint1b (First-transformed integrals)
 !       
-      use modparallel
       use modbasis, only : nshell, nao, mbf, locbf
       use modthresh, only : cutint2
       implicit none
-      integer,intent(in) :: maxdim, mlsize, nocc, idis(8,0:nproc-1)
+      integer,intent(in) :: maxdim, mlsize, nocc, nproc, myrank, idis(8,0:nproc-1)
       integer :: ish, ksh, mlcount, mlstart, numshell, ii
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmoocc(nao,nocc), xint(nshell*(nshell+1)/2)
@@ -227,7 +229,7 @@ end
     call cpu_time(t2)
         mlcount= mlcount+mbf(ish)*mbf(ksh)
         if(numshell == idis(4,myrank)) then
-          call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis)
+          call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis,nproc,myrank)
             mlstart= mlstart+mlcount
             mlcount= 0
         else
@@ -248,7 +250,7 @@ end
 !
 ! Second integral transformation
 !
-            call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis)
+            call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis,nproc,myrank)
             mlstart= mlstart+mlcount
             mlcount= 0
           endif
@@ -272,7 +274,7 @@ end
     call cpu_time(t2)
         mlcount= mlcount+mbf(ish)*mbf(ksh)
         if(numshell == idis(8,myrank)) then
-          call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis)
+          call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis,nproc,myrank)
         else
           ksh= ksh+nproc
           if(ksh > nshell) then
@@ -291,7 +293,7 @@ end
 !
 ! Second integral transformation
 !
-            call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis)
+            call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis,nproc,myrank)
             mlstart= mlstart+mlcount
             mlcount= 0
           endif
@@ -308,7 +310,8 @@ end
 
 
 !-----------------------------------------------------------------------------------------
-  subroutine mp2trans2(cmovir,energymo,trint2,trint3,trint4,emp2st,nocc,nvir,ncore,idis)
+  subroutine mp2trans2(cmovir,energymo,trint2,trint3,trint4,emp2st,nocc,nvir,ncore, &
+&                      idis,nproc,myrank,mpi_comm)
 !-----------------------------------------------------------------------------------------
 !
 ! Driver of third and fourth integral transformations and MP2 energy calculation
@@ -322,11 +325,11 @@ end
 ! Work: trint3  (Third-transformed integrals)
 !       trint4  (Fourth-transformed integrals)
 !
-      use modparallel
       use modbasis, only : nao
       use modmolecule, only : nmo
       implicit none
-      integer,intent(in) :: nocc, nvir, ncore, idis(8,0:nproc-1)
+      integer,intent(in) :: nocc, nvir, ncore, nproc, myrank, idis(8,0:nproc-1)
+      integer(4),intent(in) :: mpi_comm
       integer :: numrecv, iproc, irecv(0:nproc-1), nocc2, ncycle, icycle, myij
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmovir(nao*nvir), energymo(nmo)
@@ -342,7 +345,8 @@ end
       ncycle=(nocc2-1)/nproc+1
 !
       do icycle= 1,ncycle    
-        call mp2int_sendrecv(trint2,trint3,trint4,icycle,irecv,nocc2,idis)
+        call mp2int_sendrecv(trint2,trint3,trint4,icycle,irecv,nocc2, &
+&                            idis,nproc,myrank,mpi_comm)
 !
         myij=(icycle-1)*nproc+1+myrank
         if(myij > nocc2) cycle
@@ -359,15 +363,15 @@ end
 !
 ! MP2 energy calculation
 !
-        call calcrmp2energy(trint4,energymo,emp2st,nocc,nvir,ncore,icycle)
+        call calcrmp2energy(trint4,energymo,emp2st,nocc,nvir,ncore,icycle,nproc,myrank)
       enddo
       return
 end
 
 
-!------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
   subroutine transmoint1(trint1a,trint1b,cmowrk,xint,ish,ksh,maxdim,nocc,mlcount,mlsize)
-!------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !
 ! AO intengral generation and first-quarter integral transformation
 !    (mn|ls) -> (mi|ls)
@@ -382,7 +386,6 @@ end
 ! Out : trint1b (First-transformed integrals, [s,i,ml])
 ! Work: trint1a (First-transformed integrals, [i,s,ml])
 !
-      use modparallel
       use modbasis, only : nao, nshell, mbf, locbf
       use modthresh, only : cutint2
       implicit none
@@ -465,9 +468,9 @@ end
 !
 
 
-!----------------------------------------------------------------------------------
-  subroutine transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis)
-!----------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------------
+  subroutine transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis,nproc,myrank)
+!----------------------------------------------------------------------------------------------
 !
 ! Second-quarter integral transformation
 !    (mi|ls) -> (mi|lj)
@@ -481,10 +484,9 @@ end
 !       idis    (Information for parallelization)
 ! Out : trint2  (Second-transformed integrals, [ml,ij])
 !
-      use modparallel
       use modbasis, only : nao
       implicit none
-      integer,intent(in) :: nocc, mlcount, mlstart, mlsize, idis(8,0:nproc-1)
+      integer,intent(in) :: nocc, mlcount, mlstart, mlsize, nproc, myrank, idis(8,0:nproc-1)
       integer :: imo, ijmo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: trint1b(nao,nocc,mlsize), cmoocc(nao,nocc)
@@ -499,9 +501,10 @@ end
 end
 
 
-!---------------------------------------------------------------------------
-  subroutine mp2int_sendrecv(trint2,trint3,trint4,icycle,irecv,nocc2,idis)
-!---------------------------------------------------------------------------
+!------------------------------------------------------------------------
+  subroutine mp2int_sendrecv(trint2,trint3,trint4,icycle,irecv,nocc2, &
+&                            idis,nproc,myrank,mpi_comm)
+!------------------------------------------------------------------------
 !
 ! Send and Receive second-transformed integrals (mi|lj)
 !
@@ -513,10 +516,10 @@ end
 ! Out : trint4  (Second-transformed integrals, [l,m])
 ! Work: trint3  (Receiving data)
 !
-      use modparallel
       use modbasis, only : nao, nshell, mbf, locbf
       implicit none
-      integer,intent(in) :: icycle, irecv(0:nproc-1), nocc2, idis(8,0:nproc-1)
+      integer,intent(in) :: icycle, nproc, myrank, irecv(0:nproc-1), nocc2, idis(8,0:nproc-1)
+      integer(4),intent(in) :: mpi_comm
       integer :: iproc, jproc, ijstart, myij, ij, nsend, nrecv, ish, ksh, nbfi, nbfk
       integer :: locbfi, locbfk, i, k, ik, num, ii
       real(8),intent(in) :: trint2(idis(3,myrank)+idis(7,myrank),nocc2)
@@ -540,7 +543,7 @@ end
         endif
         if(myij > nocc2) nrecv=0
         call para_sendrecvr(trint2(1,ij),nsend,iproc,myrank, &
-&                           trint3(irecv(jproc)),nrecv,jproc,jproc,MPI_COMM_WORLD)
+&                           trint3(irecv(jproc)),nrecv,jproc,jproc,mpi_comm)
       enddo
 !
       do iproc= 0, myrank-1
@@ -555,7 +558,7 @@ end
         endif
         if(myij > nocc2) nrecv=0
         call para_sendrecvr(trint2(1,ij),nsend,iproc,myrank, &
-&                           trint3(irecv(jproc)),nrecv,jproc,jproc,MPI_COMM_WORLD)
+&                           trint3(irecv(jproc)),nrecv,jproc,jproc,mpi_comm)
       enddo
 !
       nsend= idis(3,myrank)+idis(7,myrank)
@@ -635,9 +638,9 @@ end
 end
 
 
-!---------------------------------------------------------------------------
-  subroutine calcrmp2energy(trint4,energymo,emp2st,nocc,nvir,ncore,icycle)
-!---------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
+  subroutine calcrmp2energy(trint4,energymo,emp2st,nocc,nvir,ncore,icycle,nproc,myrank)
+!----------------------------------------------------------------------------------------
 !
 ! Calculate MP2 energy
 !
@@ -647,10 +650,9 @@ end
 !       nvir     (Number of virtual MOs)
 !       icycle   (Mp2trans2 cycle number)
 !
-      use modparallel
       use modmolecule, only : neleca, nmo
       implicit none
-      integer,intent(in) :: nocc, nvir, ncore, icycle
+      integer,intent(in) :: nocc, nvir, ncore, icycle, nproc, myrank
       integer :: moi, moj, myij, ii, moa, mob
       real(8),parameter:: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: trint4(nvir,nvir), energymo(nmo)

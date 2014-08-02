@@ -117,15 +117,15 @@ end
 end
 
 
-!----------------------------------
-  subroutine orthonorm(hmat,ndim)
-!----------------------------------
+!--------------------------------------------------------
+  subroutine orthonorm(hmat,ndim,nproc,myrank,mpi_comm)
+!--------------------------------------------------------
 !
 ! Gram-Schmidt orthonormalization
 !
-      use modparallel
       implicit none
-      integer,intent(in) :: ndim
+      integer,intent(in) :: ndim, nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       integer :: i, j, k, ndest
       real(8),intent(inout) :: hmat(ndim,ndim)
       real(8) :: dum
@@ -155,7 +155,7 @@ end
 !         call daxpy(ndim,dum,hmat(1,i),1,hmat(1,j),1)
         enddo
         ndest= mod(i+1,nproc)
-        call para_bcastr(hmat(1,i+1),ndim,ndest,MPI_COMM_WORLD)
+        call para_bcastr(hmat(1,i+1),ndim,ndest,mpi_comm)
       enddo
       return
 end

@@ -80,7 +80,7 @@
 !
 ! Calculate (ij|ij) integrals
 !
-      call calcschwarzeri(xint,work,maxdim)
+      call calcschwarzeri(xint,work,maxdim,nproc,myrank,MPI_COMM_WORLD)
 !
       if(master) then
         write(*,'(1x,74("-"))')
@@ -759,7 +759,7 @@ end
 !
 ! Calculate (ij|ij) integrals
 !
-      call calcschwarzeri(xint,work,maxdim)
+      call calcschwarzeri(xint,work,maxdim,nproc,myrank,MPI_COMM_WORLD)
 !
       if(master) then
         write(*,'(1x,74("-"))')
@@ -1035,7 +1035,7 @@ end
 !
 ! Calculate (ij|ij) integrals
 !
-      call calcschwarzeri(xint,work,maxdim)
+      call calcschwarzeri(xint,work,maxdim,nproc,myrank,MPI_COMM_WORLD)
 !
       if(master) then
         write(*,'(1x,74("-"))')
@@ -1578,7 +1578,7 @@ end
 !
 ! Calculate (ij|ij) integrals
 !
-      call calcschwarzeri(xint,work,maxdim)
+      call calcschwarzeri(xint,work,maxdim,nproc,myrank,MPI_COMM_WORLD)
 !
       if(master) then
         write(*,'(1x,74("-"))')

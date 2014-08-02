@@ -35,6 +35,7 @@ end
 ! In  : overinv (overlap integral inverse matrix)
 ! Out : cmo     (initial guess orbitals)
 !
+      use modparallel
       use modguess, only : nao_g, spher_g, coord_g, nmo_g
       use modbasis, only : nao
       use modmolecule, only : coord, natom
@@ -69,7 +70,7 @@ end
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
-      call calcover2(overlap(1,1),overlap(1,2))
+      call calcover2(overlap(1,1),overlap(1,2),nproc,myrank,MPI_COMM_WORLD)
 !
 ! Project orbitals from Huckel to SCF
 !
@@ -757,9 +758,9 @@ end
 end
 
 
-!-------------------------------------
-  subroutine calcover2(overlap,work)
-!-------------------------------------
+!-----------------------------------------------------------
+  subroutine calcover2(overlap,work,nproc,myrank,mpi_comm)
+!-----------------------------------------------------------
 !
 ! Driver of overlap integral calculation
 ! (input basis)x(guess basis)
@@ -767,10 +768,11 @@ end
 ! Out : overlap (overlap integral of guess and SCF basis sets)
 !       work    (work array)
 !
-      use modparallel
       use modbasis, only : nshell, nao
       use modguess, only : nshell_g, nao_g
       implicit none
+      integer,intent(in) :: nproc, myrank
+      integer(4),intent(in) :: mpi_comm
       integer :: ish, jsh
       real(8),parameter :: zero=0.0D+00
       real(8),intent(out) :: overlap(nao*nao_g), work(nao*nao_g)
@@ -786,7 +788,7 @@ end
       enddo
 !$OMP end parallel
 !
-      call para_allreducer(work,overlap,nao*nao_g,MPI_COMM_WORLD)
+      call para_allreducer(work,overlap,nao*nao_g,mpi_comm)
       return
 end
 
@@ -929,6 +931,7 @@ end
 ! Inout : overinv (overlap integral inverse matrix)
 !         cmo     (initial guess orbitals)
 !
+      use modparallel
       use modguess, only : nao_g, nmo_g
       use modbasis, only : nao
       use modmolecule, only : neleca, nmo
@@ -947,7 +950,7 @@ end
 !
 ! Calculate overlap integrals between previous and present bases
 !
-      call calcover2(overlap(1,1),overlap(1,2))
+      call calcover2(overlap(1,1),overlap(1,2),nproc,myrank,MPI_COMM_WORLD)
 !
 ! Project orbitals from previous basis to current basis
 !

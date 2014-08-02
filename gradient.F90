@@ -49,12 +49,13 @@
 !
 ! Calculate derivatives of one-electron integrals
 !
-      call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx)
+      call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx,nproc,myrank)
 !
 ! Calculate derivatives for two-electron integrals
 !
       maxdim=maxfunc(maxval(mtype(1:nshell))+1)
-      call grad2eri(egradtmp,egrad,fulldmtrx,fulldmtrx,xint,one,maxdim,1)
+      call grad2eri(egradtmp,egrad,fulldmtrx,fulldmtrx,xint,one, &
+&                   maxdim,nproc,myrank,1)
 !
       call para_allreducer(egradtmp(1),egrad(1,1),3*natom,MPI_COMM_WORLD)
 !
@@ -131,12 +132,13 @@ end
 !
 ! Calculate derivatives for one-electron integrals
 !
-      call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx)
+      call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx,nproc,myrank)
 !
 ! Calculate derivatives for two-electron integrals
 !
       maxdim=maxfunc(maxval(mtype(1:nshell))+1)
-      call grad2eri(egradtmp,egrad,fulldmtrx1,fulldmtrx2,xint,one,maxdim,2)
+      call grad2eri(egradtmp,egrad,fulldmtrx1,fulldmtrx2,xint,one, &
+&                   maxdim,nproc,myrank,2)
 !
       call para_allreducer(egradtmp(1),egrad(1,1),3*natom,MPI_COMM_WORLD)
 !
@@ -223,7 +225,7 @@ end
 !
 ! Calculate derivatives of one-electron integrals
 !
-      call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx)
+      call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx,nproc,myrank)
 !
 ! Calculate DFT information
 !
@@ -238,7 +240,8 @@ end
 ! Calculate derivatives of two-electron integrals
 !
       maxdim=maxfunc(maxval(mtype(1:nshell))+1)
-      call grad2eri(egradtmp,egrad,fulldmtrx,fulldmtrx,xint,hfexchange,maxdim,1)
+      call grad2eri(egradtmp,egrad,fulldmtrx,fulldmtrx,xint,hfexchange, &
+&                   maxdim,nproc,myrank,1)
 !
 ! Calculate derivatives of exchange-correlation terms 
 !
@@ -338,7 +341,7 @@ end
 !
 ! Calculate derivatives of one-electron integrals
 !
-      call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx)
+      call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx,nproc,myrank)
 !
 ! Calculate DFT information
 !
@@ -353,7 +356,8 @@ end
 ! Calculate derivatives of two-electron integrals
 !
       maxdim=maxfunc(maxval(mtype(1:nshell))+1)
-      call grad2eri(egradtmp,egrad,fulldmtrx1,fulldmtrx2,xint,hfexchange,maxdim,2)
+      call grad2eri(egradtmp,egrad,fulldmtrx1,fulldmtrx2,xint,hfexchange, &
+&                   maxdim,nproc,myrank,2)
 !
 ! Calculate derivatives of exchange-correlation terms 
 !
