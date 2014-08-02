@@ -139,6 +139,12 @@ end program main
       call para_comm_size(nproc,mpi_comm1)
       call para_comm_rank(myrank,mpi_comm1)
 !
+      mpi_comm2= mpi_comm2
+      nproc1= nproc
+      nproc2= nproc
+      myrank1= myrank
+      myrank2= myrank
+!
       if(nproc.gt.1) then
         master =(myrank == 0)
         parallel = .true.
@@ -292,17 +298,21 @@ end
 ! Start SCF
 !
       if(method == 'HARTREE-FOCK') then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo, &
+&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
       elseif(idft >= 1) then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo, &
+&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call tstamp(1)
-        call calcrdft(h1mtrx,cmo,ortho,smtrx,xint,energymo)
+        call calcrdft(h1mtrx,cmo,ortho,smtrx,xint,energymo, &
+&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
       elseif(method == 'MP2') then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo, &
+&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
         call calcrmp2(cmo,energymo,xint,nproc,myrank,MPI_COMM_WORLD)
@@ -395,13 +405,16 @@ end
 ! Start SCF
 !
       if(method == 'HARTREE-FOCK') then
-        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
+        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob, &
+&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
       elseif(idft >= 1) then
-        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
+        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob, &
+&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call tstamp(1)
-        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
+        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob, &
+&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
 !     elseif(method == 'MP2') then
@@ -504,13 +517,16 @@ end
 ! Start SCF
 !
       if(method == 'HARTREE-FOCK') then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo, &
+&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
       elseif(idft >= 1) then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo, &
+&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call tstamp(1)
-        call calcrdft(h1mtrx,cmo,ortho,smtrx,xint,energymo)
+        call calcrdft(h1mtrx,cmo,ortho,smtrx,xint,energymo, &
+&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
       else
@@ -633,13 +649,16 @@ end
 ! Start SCF
 !
       if(method == 'HARTREE-FOCK') then
-        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
+        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob, &
+&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
       elseif(idft >= 1) then
-        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
+        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob, &
+&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call tstamp(1)
-        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
+        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob, &
+&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
 !     elseif(method == 'MP2') then
@@ -827,15 +846,18 @@ end
 ! Calculate energy
 !
         if(method == 'HARTREE-FOCK') then
-          call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
+          call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo, &
+&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1)
           call tstamp(1)
         elseif(idft >= 1) then
           if(iopt == 1) then
-            call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo)
+            call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo, &
+&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
             call tstamp(1)
           endif
-          call calcrdft(h1mtrx,cmo,ortho,smtrx,xint,energymo)
+          call calcrdft(h1mtrx,cmo,ortho,smtrx,xint,energymo, &
+&                       nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1)
           call tstamp(1)
         else
@@ -1083,15 +1105,18 @@ end
 ! Calculate energy
 !
         if(method == 'HARTREE-FOCK') then
-          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
+          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob, &
+&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2)
           call tstamp(1)
         elseif(idft >= 1) then
           if(iopt == 1) then
-            call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
+            call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob, &
+&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
             call tstamp(1)
           endif
-          call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob)
+          call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob, &
+&                       nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2)
           call tstamp(1)
 !       elseif(method == 'MP2') then
