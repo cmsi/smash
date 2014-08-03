@@ -89,7 +89,7 @@ end
 !
 ! Write the numbers of processes and threads
 !
-      use modparallel, only : master, nproc
+      use modparallel, only : master, nproc1
 !$    use omp_lib
       implicit none
       integer :: nthread
@@ -101,7 +101,7 @@ end
 !$OMP end master
 !$OMP end parallel
       if(master) then
-        write(*,'(" Number of processes =",i6  )')nproc
+        write(*,'(" Number of processes =",i6  )')nproc1
         write(*,'(" Number of threads   =",i6,/)')nthread
       endif
       return

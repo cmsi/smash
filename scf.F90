@@ -265,7 +265,7 @@ end
 ! Canonicalize Fock matrix
 !
         call expand(fock,work,nao)
-        call canonicalizep(work,ortho,cmo,work2,nao,nmo,idis)
+        call canonicalizep(work,ortho,cmo,work2,nao,nmo,idis,nproc,myrank,mpi_comm)
 !
 ! Diagonalize canonicalized matrix
 !

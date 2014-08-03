@@ -1,12 +1,14 @@
-!-----------------------
-  subroutine para_init
-!-----------------------
+!----------------------------------
+  subroutine para_init(mpi_comm1)
+!----------------------------------
 #ifdef MPI
       use mpi
       implicit none
+      integer(4),intent(out) :: mpi_comm1
       integer(4) :: ierr
 !
       call mpi_init(ierr)
+      mpi_comm1= MPI_COMM_WORLD
 #endif
       return
 end

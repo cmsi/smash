@@ -88,17 +88,17 @@ end
 end
 
 
-!---------------------------------------------------------------
-  subroutine canonicalizep(hmat,ortho,work,work2,nao,nmo,idis)
-!---------------------------------------------------------------
+!-------------------------------------------------------------------------------------
+  subroutine canonicalizep(hmat,ortho,work,work2,nao,nmo,idis,nproc,myrank,mpi_comm)
+!-------------------------------------------------------------------------------------
 !
 ! Canonicalize symmetric Hamiltonian matrix
 !   In : hmat(nao*nao), elements are in upper triangle.
 !   Out: hmat(nmo*nmo), matrix size is nao*nao
 !
-      use modparallel
       implicit none
-      integer,intent(in) :: nao, nmo, idis(nproc,14)
+      integer,intent(in) :: nao, nmo, nproc, myrank, idis(nproc,14)
+      integer(4),intent(in) :: mpi_comm
       integer :: num, istart
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: ortho(nao,nmo)
@@ -110,7 +110,7 @@ end
         call dsymm('L','U',nao,num,one,hmat,nao,ortho(1,istart),nao,zero,work,nao)
         call dgemm('T','N',nmo,num,nao,one,ortho,nao,work,nao,zero,work2,nao)
       endif
-      call para_allgathervr(work2,num*nao,hmat,idis(1,3),idis(1,4),nproc,MPI_COMM_WORLD)
+      call para_allgathervr(work2,num*nao,hmat,idis(1,3),idis(1,4),nproc,mpi_comm)
 !     call dsymm('L','U',nao,nmo,one,hmat,nao,ortho,nao,zero,work,nao)
 !     call dgemm('T','N',nmo,nmo,nao,one,ortho,nao,work,nao,zero,hmat,nao)
       return

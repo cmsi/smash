@@ -35,16 +35,9 @@ end
 !---------------------
   module modparallel
 !---------------------
-#ifdef MPI
-      use mpi
-#endif
       implicit none
-      integer :: nproc, myrank
       integer :: nproc1, myrank1, nproc2, myrank2
       integer(4) :: mpi_comm1, mpi_comm2
-#ifndef MPI
-      integer :: MPI_COMM_WORLD
-#endif
       logical :: master, parallel
 !
       interface checkintsize
