@@ -56,7 +56,7 @@ end
   module modiofile
 !-------------------
       implicit none
-      integer,parameter :: in=10
+      integer,parameter :: input=10
 end
 
 

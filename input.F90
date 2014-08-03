@@ -5,7 +5,7 @@
 ! Read input data
 !
       use modparallel, only : master, parallel
-      use modiofile, only : in
+      use modiofile, only : input
       use modbasis, only : basis, spher
       use modmolecule, only : numatomic, natom, coord, znuc, neleca, nelecb, charge, multi
       use modjob, only : method, runtype, scftype
@@ -55,9 +55,9 @@
           end select
           ilen=len_trim(line)
           if(ilen > 0) then
-            write(in,'(a)')line(1:ilen)
+            write(input,'(a)')line(1:ilen)
           else
-            write(in,*)
+            write(input,*)
           endif
           if(ii == 100000) then
             write(*,'(" Input file is too long in Subroutine readinput!")')
@@ -65,37 +65,37 @@
           endif
         enddo
 !
-100     rewind(in)
-        read(in,nml=job,end=110,iostat=info)
+100     rewind(input)
+        read(input,nml=job,end=110,iostat=info)
 110     if(info > 0) then
           write(*,'(" Error was found in job line of input file!")')
           call iabort
         endif
         if(len_trim(mem) /= 0) memory= mem
 !
-        rewind(in)
-        read(in,nml=control,end=120,iostat=info)
+        rewind(input)
+        read(input,nml=control,end=120,iostat=info)
 120     if(info > 0) then
           write(*,'(" Error was found in control line of input file!")')
           call iabort
         endif
 !
-        rewind(in)
-        read(in,nml=scf,end=130,iostat=info)
+        rewind(input)
+        read(input,nml=scf,end=130,iostat=info)
 130     if(info > 0) then
           write(*,'(" Error was found in scf line of input file!")')
           call iabort
         endif
 !
-        rewind(in)
-        read(in,nml=opt,end=140,iostat=info)
+        rewind(input)
+        read(input,nml=opt,end=140,iostat=info)
 140     if(info > 0) then
           write(*,'(" Error was found in opt line of input file!")')
           call iabort
         endif
 !
-        rewind(in)
-        read(in,nml=dft,end=150,iostat=info)
+        rewind(input)
+        read(input,nml=dft,end=150,iostat=info)
 150     if(info > 0) then
           write(*,'(" Error was found in dft line of input file!")')
           call iabort
@@ -420,7 +420,7 @@ end
 ! Read atomic data
 !
       use modparallel, only : master
-      use modiofile, only : in
+      use modiofile, only : input
       use modmolecule, only : numatomic, natom, coord, znuc
       use modunit, only : tobohr, bohr
       use modparam, only : mxatom
@@ -448,9 +448,9 @@ end
 &       '106','107','108','109','110','111','112'/)
 !
       if(master) then
-        rewind(in)
+        rewind(input)
         do ii= 1,10000
-          read(in,*,end=9999)line
+          read(input,*,end=9999)line
           if(line(1:4) == "GEOM") exit
           if(ii == 10000) then
             write(*,'(" Error! Molecular geometry is not found.")')
@@ -459,7 +459,7 @@ end
         enddo
         natom= 0
         do ii= 1,mxatom
-          read(in,'(a)',end=100) line
+          read(input,'(a)',end=100) line
           read(line,*,end=100) atomin(ii),(coord(jj,ii),jj=1,3)
           natom= natom+1
         enddo
@@ -531,7 +531,7 @@ end
 !
       use modparallel, only : master
       use modparam, only : mxprim, mxshell
-      use modiofile, only : in
+      use modiofile, only : input
       use modbasis, only : exgen, coeffgen, locgenprim, mgenprim, mgentype, locgenshell, &
 &                          ngenshell, atombasis
       implicit none
@@ -555,9 +555,9 @@ end
       ishell= 0
 !
       if(master) then
-        rewind(in)
+        rewind(input)
         do ii= 1,20000
-          read(in,*,end=9999)line
+          read(input,*,end=9999)line
           if(line(1:5) == "BASIS") exit
           if(ii == 20000) then
             write(*,'(" Error! Keyword BASIS is not found.")')
@@ -567,7 +567,7 @@ end
 !
         do ll= 1,112
           line=''
-          read(in,'(a)',end=300)line
+          read(input,'(a)',end=300)line
           if(len_trim(line) == 0) exit
           element(:)=''
 !
@@ -602,7 +602,7 @@ end
           enddo
           do jj= 1,400
             symbol= ''
-            read(in,'(a)',err=200,end=200) line
+            read(input,'(a)',err=200,end=200) line
             read(line,*,end=200,err=9998) symbol,numprim
             ishell= ishell+1
             natomshell= natomshell+1
@@ -628,12 +628,12 @@ end
             if(symbol /= 'SP') then
               do kprim= 1,numprim 
                 iprim= iprim+1
-                read(in,*,err=9998) exgen(iprim), coeffgen(iprim)
+                read(input,*,err=9998) exgen(iprim), coeffgen(iprim)
               enddo
             else
               do kprim= 1,numprim 
                 iprim= iprim+1
-                read(in,*,err=9998) exgen(iprim), coeffgen(iprim), coeffgen(iprim+numprim)
+                read(input,*,err=9998) exgen(iprim), coeffgen(iprim), coeffgen(iprim+numprim)
                 exgen(iprim+numprim)= exgen(iprim)
               enddo
               ishell= ishell+1
@@ -678,7 +678,7 @@ end
 !
       use modparallel, only : master
       use modparam, only : mxprim, mxshell
-      use modiofile, only : in
+      use modiofile, only : input
       use modecp, only : exgenecp, coeffgenecp, maxgenangecp, izgencore, mgentypeecp, &
 &                        locgenecp, mgenprimecp, atomecp
       implicit none
@@ -701,9 +701,9 @@ end
       iprim= 0
 !
       if(master) then
-        rewind(in)
+        rewind(input)
         do ii= 1,20000
-          read(in,*,end=9999)line
+          read(input,*,end=9999)line
           if(line(1:3) == "ECP") exit
           if(ii == 20000) then
             write(*,'(" Error! Keyword ECP is not found.")')
@@ -713,7 +713,7 @@ end
 !
         do ll= 1,112
           line=''
-          read(in,'(a)',end=300)line
+          read(input,'(a)',end=300)line
           if(len_trim(line) == 0) exit
           element(:)=''
 !
@@ -746,22 +746,22 @@ end
 ! Read ECP functions
 !
           symbol= ''
-          read(in,'(a)',err=200,end=200) line
+          read(input,'(a)',err=200,end=200) line
           read(line,*,end=200) symbol,lmax,ielec
           do ii= 1,nelem
             maxgenangecp(ielem(ii))= lmax
             izgencore(ielem(ii))= ielec
           enddo
           do iang= 0,lmax
-            read(in,*)line
-            read(in,*,err=9998,end=9998)numprim
+            read(input,*)line
+            read(input,*,err=9998,end=9998)numprim
             do ii= 1,nelem
               locgenecp(iang,ielem(ii))= iprim
               mgenprimecp(iang,ielem(ii))= numprim
             enddo
             do jprim=1,numprim
               iprim= iprim+1
-              read(in,*,err=9998,end=9998)mgentypeecp(iprim),exgenecp(iprim),coeffgenecp(iprim)
+              read(input,*,err=9998,end=9998)mgentypeecp(iprim),exgenecp(iprim),coeffgenecp(iprim)
             enddo
           enddo
           cycle

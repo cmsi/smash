@@ -108,6 +108,29 @@ end
 end
  
 
+!-------------------------
+  subroutine opendatfile
+!-------------------------
+!
+! Open temporary file
+!
+      use modparallel, only : master
+      use modiofile, only : input
+      implicit none
+      integer(4) :: getpid, iprocess
+      character(len=30) :: filename
+!
+      if(master) then
+        iprocess= getpid()
+        write(filename,*) iprocess
+        filename= "input.dat"//adjustl(filename)
+        open(unit=input,file=filename,status='replace')
+      endif
+!
+      return
+end
+
+
 !--------------------
   subroutine iabort
 !--------------------

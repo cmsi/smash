@@ -6,14 +6,13 @@
 ! for High performance computing (SMASH).
 !
       use modparallel
-      use modiofile, only : in
       use modwarn, only : nwarn
       use modmemory, only : memusedmax
       use modjob, only : runtype, method, scftype
       use modecp, only : flagecp
+      use modiofile, only : input
       implicit none
       logical :: converged
-!
 !
       call start
 !
@@ -32,7 +31,7 @@
 !
 ! Read input data
 !
-      if(master) open(unit=in,file='input.dat',status='replace')
+      if(master) call opendatfile
       call readinput(mpi_comm1)
 !
 ! Set maximum memory size
@@ -90,7 +89,7 @@
         call iabort
       endif
 !
-      if(master) close(in)
+      if(master) close(unit=input,status='DELETE')
       call para_finalize
       call memcheck
       call tstamp(2)
