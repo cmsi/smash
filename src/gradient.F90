@@ -63,7 +63,7 @@
 !
       if(master) then
         write(*,'(" ----------------------------------------------------")')
-        write(*,'("          Force (Hartree/Bohr)")')
+        write(*,'("          Gradient (Hartree/Bohr)")')
         write(*,'("  Atom            X             Y             Z")')
         write(*,'(" ----------------------------------------------------")')
         do i= 1,natom
@@ -148,7 +148,7 @@ end
 !
       if(master) then
         write(*,'(" ----------------------------------------------------")')
-        write(*,'("          Force (Hartree/Bohr)")')
+        write(*,'("          Gradient (Hartree/Bohr)")')
         write(*,'("  Atom            X             Y             Z")')
         write(*,'(" ----------------------------------------------------")')
         do i= 1,natom
@@ -258,7 +258,7 @@ end
 !
       if(master) then
         write(*,'(" ----------------------------------------------------")')
-        write(*,'("          Force (Hartree/Bohr)")')
+        write(*,'("          Gradient (Hartree/Bohr)")')
         write(*,'("  Atom            X             Y             Z")')
         write(*,'(" ----------------------------------------------------")')
         do i= 1,natom
@@ -377,7 +377,7 @@ end
 !
       if(master) then
         write(*,'(" ----------------------------------------------------")')
-        write(*,'("          Force (Hartree/Bohr)")')
+        write(*,'("          Gradient (Hartree/Bohr)")')
         write(*,'("  Atom            X             Y             Z")')
         write(*,'(" ----------------------------------------------------")')
         do i= 1,natom

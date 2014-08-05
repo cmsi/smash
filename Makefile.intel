@@ -9,23 +9,24 @@ SRC =   basis.F90 geom.F90 guess.F90 input.F90 int1.F90 machine.F90 main.F90 mat
 	ecpder.F90 parallel.F90
 SRC2=   dftpw91.F
 MOD = module.F90 modulefmt.F90 modulerys.F90
-OBJ = $(SRC:.F90=.o)
-OBJ2= $(SRC2:.F=.o)
-OBJM= $(MOD:.F90=.o)
+OBJ = $(addprefix obj/,$(SRC:.F90=.o))
+OBJ2= $(addprefix obj/,$(SRC2:.F=.o))
+OBJM= $(addprefix obj/,$(MOD:.F90=.o))
 OBJS= $(OBJM) $(OBJ) $(OBJ2)
+OBJDIR= obj
 .SUFFIXES:
 .SUFFIXES: .F .F90 .o
 
 smash : $(OBJS)
-	$(F90) -o smash $(OPT) $(OBJS) $(LIB)
+	$(F90) -o bin/smash -I $(OBJDIR) $(OPT) $(OBJS) $(LIB)
 
-.F90.o:
-	$(F90) $(OPT) -c $<
+$(OBJDIR)/%.o : src/%.F90
+	$(F90) $(OPT) -module $(OBJDIR) -o $@ -c $<
 
-.F.o:
-	$(F90) $(OPT) -c $<
+$(OBJDIR)/%.o : src/%.F
+	$(F90) $(OPT) -module $(OBJDIR) -o $@ -c $<
 
-$(OBJ): $(MOD)
+$(OBJ): $(addprefix src/,$(MOD))
 
 clean :
-	rm -f *.mod *.o smash
+	rm -f $(OBJDIR)/*.mod $(OBJDIR)/*.o bin/smash
