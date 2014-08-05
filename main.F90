@@ -5,7 +5,8 @@
 ! This is the main driver of Scalable Molecular Analysis Solver 
 ! for High performance computing (SMASH).
 !
-      use modparallel
+      use modparallel, only : master
+      use modparallel, only : mpi_comm1
       use modwarn, only : nwarn
       use modmemory, only : memusedmax
       use modjob, only : runtype, method, scftype
