@@ -1231,6 +1231,164 @@ end
 end
 
 
+!------------------------------------------
+  subroutine calcrmulliken(dmtrx,overlap)
+!------------------------------------------
+!
+! Execute Mulliken population analysis for closed-shell
+!
+      use modparallel, only : master
+      use modmolecule, only : natom, znuc, numatomic
+      use modbasis, only : locatom, nao, nshell, locbf, mbf
+      implicit none
+      integer :: ii, jj, ij, ish, iatom, locbfi
+      real(8),parameter :: zero=0.0D+00
+      real(8),intent(in) :: dmtrx(nao*(nao+1)/2), overlap(nao*(nao+1)/2)
+      real(8),allocatable :: work(:), grossorb(:), grossatom(:)
+      character(len=3) :: table(112)= &
+&     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+&       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
+&       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
+&       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
+&       'Pm ','Sm ','Eu ','Gd ','Tb ','Dy ','Ho ','Er ','Tm ','Yb ','Lu ','Hf ','Ta ','W  ','Re ',&
+&       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
+&       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
+&       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
+!
+      call memset(nao*(nao+1)/2+nao+natom)
+      allocate(work(nao*(nao+1)/2),grossorb(nao),grossatom(natom))
+!
+      grossorb(:)= zero
+      grossatom(:)= zero
+!
+! Calculate Mulliken population matrix
+!
+!$OMP parallel do
+      do ii= 1,nao*(nao+1)/2
+        work(ii)= dmtrx(ii)*overlap(ii)
+      enddo
+!$OMP end parallel do
+!
+! Calculate Gross orbital population
+!
+      ij= 0
+      do ii= 1,nao
+        do jj= 1,ii-1
+          ij= ij+1
+          grossorb(ii)= grossorb(ii)+work(ij)
+          grossorb(jj)= grossorb(jj)+work(ij)
+        enddo
+        ij= ij+1
+        grossorb(ii)= grossorb(ii)+work(ij)
+      enddo
+!
+! Calculate Gross atom population
+!
+      do ish= 1,nshell
+        iatom= locatom(ish)
+        locbfi= locbf(ish)
+        do ii= 1,mbf(ish)
+          grossatom(iatom)= grossatom(iatom)+grossorb(locbfi+ii)
+        enddo
+      enddo
+!
+      if(master) then
+        write(*,'(" -------------------------------------")')
+        write(*,'("      Mulliken Population Analysis")')
+        write(*,'("     Atom     Population     Charge")')
+        write(*,'(" -------------------------------------")')
+        do iatom= 1,natom
+          write(*,'(1x,i4,2x,a3,2f13.6)')iatom,table(numatomic(iatom)), &
+&                                        grossatom(iatom),znuc(iatom)-grossatom(iatom)
+        enddo
+        write(*,'(" -------------------------------------")')
+        write(*,*)
+      endif
+!
+      call memunset(nao*(nao+1)/2+nao+natom)
+      deallocate(work,grossorb,grossatom)
+      return
+end
+
+
+!--------------------------------------------------
+  subroutine calcumulliken(dmtrxa,dmtrxb,overlap)
+!--------------------------------------------------
+!
+! Execute Mulliken population analysis for open-shell
+!
+      use modparallel, only : master
+      use modmolecule, only : natom, znuc, numatomic
+      use modbasis, only : locatom, nao, nshell, locbf, mbf
+      implicit none
+      integer :: ii, jj, ij, ish, iatom, locbfi
+      real(8),parameter :: zero=0.0D+00
+      real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2), overlap(nao*(nao+1)/2)
+      real(8),allocatable :: work(:), grossorb(:), grossatom(:)
+      character(len=3) :: table(112)= &
+&     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+&       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
+&       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
+&       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
+&       'Pm ','Sm ','Eu ','Gd ','Tb ','Dy ','Ho ','Er ','Tm ','Yb ','Lu ','Hf ','Ta ','W  ','Re ',&
+&       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
+&       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
+&       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
+!
+      call memset(nao*(nao+1)/2+nao+natom)
+      allocate(work(nao*(nao+1)/2),grossorb(nao),grossatom(natom))
+!
+      grossorb(:)= zero
+      grossatom(:)= zero
+!
+! Calculate Mulliken population matrix
+!
+!$OMP parallel do
+      do ii= 1,nao*(nao+1)/2
+        work(ii)=(dmtrxa(ii)+dmtrxb(ii))*overlap(ii)
+      enddo
+!$OMP end parallel do
+!
+! Calculate Gross orbital population
+!
+      ij= 0
+      do ii= 1,nao
+        do jj= 1,ii-1
+          ij= ij+1
+          grossorb(ii)= grossorb(ii)+work(ij)
+          grossorb(jj)= grossorb(jj)+work(ij)
+        enddo
+        ij= ij+1
+        grossorb(ii)= grossorb(ii)+work(ij)
+      enddo
+!
+! Calculate Gross atom population
+!
+      do ish= 1,nshell
+        iatom= locatom(ish)
+        locbfi= locbf(ish)
+        do ii= 1,mbf(ish)
+          grossatom(iatom)= grossatom(iatom)+grossorb(locbfi+ii)
+        enddo
+      enddo
+!
+      if(master) then
+        write(*,'(" -------------------------------------")')
+        write(*,'("      Mulliken Population Analysis")')
+        write(*,'("     Atom     Population     Charge")')
+        write(*,'(" -------------------------------------")')
+        do iatom= 1,natom
+          write(*,'(1x,i4,2x,a3,2f13.6)')iatom,table(numatomic(iatom)), &
+&                                        grossatom(iatom),znuc(iatom)-grossatom(iatom)
+        enddo
+        write(*,'(" -------------------------------------")')
+        write(*,*)
+      endif
+!
+      call memunset(nao*(nao+1)/2+nao+natom)
+      deallocate(work,grossorb,grossatom)
+      return
+end
 
 
 

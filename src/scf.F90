@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !------------------------------------------------------------------------
-  subroutine calcrhf(h1mtrx,cmo,ortho,overlap,xint,eigen, &
+  subroutine calcrhf(h1mtrx,cmo,ortho,overlap,dmtrx,xint,eigen, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
 !------------------------------------------------------------------------
 !
@@ -22,7 +22,8 @@
 ! In  : h1mtrx  (1-electron integral matrix)
 !       ortho   (Orthogonalization matrix)
 !       overlap (Overlap integral matrix)
-! Out : xint    ((ij|ij) integral matrix)
+! Out : dmtrx   (Density matrix)
+!       xint    ((ij|ij) integral matrix)
 !       eigen   (MO energy)
 ! Inout : cmo   (MO coefficient matrix)
 !
@@ -42,9 +43,9 @@
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
       real(8),parameter :: small=1.0D-10
       real(8),intent(in) :: h1mtrx(nao*(nao+1)/2), ortho(nao*nao), overlap(nao*(nao+1)/2)
-      real(8),intent(out) :: xint(nshell*(nshell+1)/2), eigen(nao)
+      real(8),intent(out) :: dmtrx(nao*(nao+1)/2), xint(nshell*(nshell+1)/2), eigen(nao)
       real(8),intent(inout) :: cmo(nao*nao)
-      real(8),allocatable :: fock(:), fockprev(:), dmtrx(:), dmtrxprev(:), dmax(:), work(:)
+      real(8),allocatable :: fock(:), fockprev(:), dmtrxprev(:), dmax(:), work(:)
       real(8),allocatable :: fockdiis(:), errdiis(:), diismtrx(:), work2(:)
       real(8),allocatable :: hstart(:), sograd(:,:), sodisp(:), sovecy(:)
       real(8) :: escfprev, diffmax, tridot, deltae, errmax, sogradmax, sodispmax
@@ -65,8 +66,8 @@
 !
 ! Set arrays
 !
-      call memset(nao2+nao3*4+nshell3)
-      allocate(fock(nao3),fockprev(nao3),dmtrx(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2))
+      call memset(nao2+nao3*3+nshell3)
+      allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2))
 !
       isize1= max(idis(myrank2+1,3),idis(myrank2+1,7)*nao,maxdiis)
       isize2= idis(myrank2+1,3)
@@ -255,8 +256,8 @@
       endif
       deallocate(fockdiis,errdiis,diismtrx,work2)
       call memunset(isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2)
-      deallocate(fock,fockprev,dmtrx,dmtrxprev,dmax,work)
-      call memunset(nao2+nao3*4+nshell3)
+      deallocate(fock,fockprev,dmtrxprev,dmax,work)
+      call memunset(nao2+nao3*3+nshell3)
       return
 end
 
@@ -674,7 +675,7 @@ end
 
 
 !-------------------------------------------------------------------------
-  subroutine calcrdft(h1mtrx,cmo,ortho,overlap,xint,eigen, &
+  subroutine calcrdft(h1mtrx,cmo,ortho,overlap,dmtrx,xint,eigen, &
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
 !-------------------------------------------------------------------------
 !
@@ -683,7 +684,8 @@ end
 ! In  : h1mtrx  (1-electron integral matrix)
 !       ortho   (Orthogonalization matrix)
 !       overlap (Overlap integral matrix)
-! Out : xint    ((ij|ij) integral matrix)
+! Out : dmtrx   (Density matrix)
+!       xint    ((ij|ij) integral matrix)
 !       eigen   (MO energy)
 ! Inout : cmo   (MO coefficient matrix)
 !
@@ -707,9 +709,9 @@ end
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
       real(8),parameter :: small=1.0D-10
       real(8),intent(in) :: h1mtrx(nao*(nao+1)/2), ortho(nao*nao), overlap(nao*(nao+1)/2)
-      real(8),intent(out) :: xint(nshell*(nshell+1)/2), eigen(nao)
+      real(8),intent(out) :: dmtrx(nao*(nao+1)/2), xint(nshell*(nshell+1)/2), eigen(nao)
       real(8),intent(inout) :: cmo(nao*nao)
-      real(8),allocatable :: fock(:), fockprev(:), dmtrx(:), dmtrxprev(:), dmax(:), work(:)
+      real(8),allocatable :: fock(:), fockprev(:), dmtrxprev(:), dmax(:), work(:)
       real(8),allocatable :: fockdiis(:), errdiis(:), diismtrx(:), work2(:)
       real(8),allocatable :: hstart(:), sograd(:,:), sodisp(:), sovecy(:)
       real(8),allocatable :: fockd(:), rad(:), atomvec(:), surface(:),  radpt(:), angpt(:)
@@ -733,8 +735,8 @@ end
 !
 ! Set arrays
 !
-      call memset(nao2+nao3*4+nshell3)
-      allocate(fock(nao3),fockprev(nao3),dmtrx(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2))
+      call memset(nao2+nao3*3+nshell3)
+      allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2))
       call memset(nao3+natom*5+6*natom*natom+2*nrad+4*nleb+natom*nrad*nleb+4*nao+4*nocc)
       allocate(fockd(nao3),rad(natom),atomvec(5*natom*natom),surface(natom*natom), &
 &              radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb),xyzpt(3*natom), &
@@ -955,23 +957,25 @@ end
       call memunset(nao3+natom*5+6*natom*natom+2*nrad+4*nleb+natom*nrad*nleb+4*nao+4*nocc)
       deallocate(fockdiis,errdiis,diismtrx,work2)
       call memunset(isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2)
-      deallocate(fock,fockprev,dmtrx,dmtrxprev,dmax,work)
-      call memunset(nao2+nao3*4+nshell3)
+      deallocate(fock,fockprev,dmtrxprev,dmax,work)
+      call memunset(nao2+nao3*3+nshell3)
       return
 end
 
 
-!--------------------------------------------------------------------------
-  subroutine calcuhf(h1mtrx,cmoa,cmob,ortho,overlap,xint,eigena,eigenb, &
+!----------------------------------------------------------------------------------------
+  subroutine calcuhf(h1mtrx,cmoa,cmob,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
-!--------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted Hartree-Fock calculation
 !
 ! In  : h1mtrx  (1-electron integral matrix)
 !       ortho   (Orthogonalization matrix)
 !       overlap (Overlap integral matrix)
-! Out : xint    ((ij|ij) integral matrix)
+! Out : dmtrxa  (Alpha density matrix)
+!       dmtrxb  (Beta density matrix)
+!       xint    ((ij|ij) integral matrix)
 !       eigena  (Alpha MO energy)
 !       eigenb  (Beta MO energy)
 ! Inout : cmoa  (Alpha MO coefficient matrix)
@@ -993,10 +997,11 @@ end
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
       real(8),parameter :: small=1.0D-10
       real(8),intent(in) :: h1mtrx(nao*(nao+1)/2), ortho(nao*nao), overlap(nao*(nao+1)/2)
+      real(8),intent(out) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
       real(8),intent(out) :: xint(nshell*(nshell+1)/2), eigena(nao), eigenb(nao)
       real(8),intent(inout) :: cmoa(nao*nao), cmob(nao*nao)
-      real(8),allocatable :: focka(:), fockb(:), fockpreva(:), fockprevb(:), dmtrxa(:)
-      real(8),allocatable :: dmtrxb(:), dmtrxpreva(:), dmtrxprevb(:), dmax(:), work(:)
+      real(8),allocatable :: focka(:), fockb(:), fockpreva(:), fockprevb(:) 
+      real(8),allocatable :: dmtrxpreva(:), dmtrxprevb(:), dmax(:), work(:)
       real(8),allocatable :: fockdiisa(:), fockdiisb(:), errdiisa(:), errdiisb(:)
       real(8),allocatable :: diismtrx(:), work2(:), work3(:)
       real(8),allocatable :: hstarta(:), hstartb(:), sograda(:,:), sogradb(:,:)
@@ -1022,9 +1027,9 @@ end
 !
 ! Set arrays
 !
-      call memset(nao3*10+nshell3)
-      allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3),dmtrxa(nao3), &
-&              dmtrxb(nao3),dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(nao3*2))
+      call memset(nao3*8+nshell3)
+      allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
+&              dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(nao3*2))
 !
       isize1= max(idis(myrank2+1,3),idis(myrank2+1,7)*nao,idis(myrank2+1,11)*nao,maxdiis)
       isize2=idis(myrank2+1,3)
@@ -1277,9 +1282,9 @@ end
       deallocate(work2,work3)
       call memunset(nao*nao+idis(myrank2+1,3))
 !
-      deallocate(focka,fockb,fockpreva,fockprevb,dmtrxa, &
-&                dmtrxb,dmtrxpreva,dmtrxprevb,dmax,work)
-      call memunset(nao3*10+nshell3)
+      deallocate(focka,fockb,fockpreva,fockprevb, &
+&                dmtrxpreva,dmtrxprevb,dmax,work)
+      call memunset(nao3*8+nshell3)
       return
 end
 
@@ -1485,17 +1490,19 @@ end
 end
 
 
-!---------------------------------------------------------------------------
-  subroutine calcudft(h1mtrx,cmoa,cmob,ortho,overlap,xint,eigena,eigenb, &
+!-----------------------------------------------------------------------------------------
+  subroutine calcudft(h1mtrx,cmoa,cmob,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
-!---------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted DFT calculation
 !
 ! In  : h1mtrx  (1-electron integral matrix)
 !       ortho   (Orthogonalization matrix)
 !       overlap (Overlap integral matrix)
-! Out : xint    ((ij|ij) integral matrix)
+! Out : dmtrxa  (Alpha density matrix)
+!       dmtrxb  (Beta density matrix)
+!       xint    ((ij|ij) integral matrix)
 !       eigena  (Alpha MO energy)
 !       eigenb  (Beta MO energy)
 ! Inout : cmoa  (Alpha MO coefficient matrix)
@@ -1521,10 +1528,11 @@ end
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
       real(8),parameter :: small=1.0D-10
       real(8),intent(in) :: h1mtrx(nao*(nao+1)/2), ortho(nao*nao), overlap(nao*(nao+1)/2)
+      real(8),intent(out) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
       real(8),intent(out) :: xint(nshell*(nshell+1)/2), eigena(nao), eigenb(nao)
       real(8),intent(inout) :: cmoa(nao*nao), cmob(nao*nao)
-      real(8),allocatable :: focka(:), fockb(:), fockpreva(:), fockprevb(:), dmtrxa(:)
-      real(8),allocatable :: dmtrxb(:), dmtrxpreva(:), dmtrxprevb(:), dmax(:), work(:)
+      real(8),allocatable :: focka(:), fockb(:), fockpreva(:), fockprevb(:)
+      real(8),allocatable :: dmtrxpreva(:), dmtrxprevb(:), dmax(:), work(:)
       real(8),allocatable :: fockdiisa(:), fockdiisb(:), errdiisa(:), errdiisb(:)
       real(8),allocatable :: diismtrx(:), work2(:), work3(:)
       real(8),allocatable :: hstarta(:), hstartb(:), sograda(:,:), sogradb(:,:)
@@ -1553,9 +1561,9 @@ end
 !
 ! Set arrays
 !
-      call memset(nao3*10+nshell3)
-      allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3),dmtrxa(nao3), &
-&              dmtrxb(nao3),dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(nao3*2))
+      call memset(nao3*8+nshell3)
+      allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
+&              dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(nao3*2))
       call memset(nao3*2+natom*5+6*natom*natom+2*nrad+4*nleb+natom*nrad*nleb+4*nao &
 &                 +4*nocca+4*noccb)
       allocate(fockda(nao3),fockdb(nao3),rad(natom),atomvec(5*natom*natom), &
@@ -1846,9 +1854,9 @@ end
       deallocate(work2,work3)
       call memunset(nao*nao+idis(myrank2+1,3))
 !
-      deallocate(focka,fockb,fockpreva,fockprevb,dmtrxa, &
-&                dmtrxb,dmtrxpreva,dmtrxprevb,dmax,work)
-      call memunset(nao3*10+nshell3)
+      deallocate(focka,fockb,fockpreva,fockprevb, &
+&                dmtrxpreva,dmtrxprevb,dmax,work)
+      call memunset(nao3*8+nshell3)
       return
 end
 

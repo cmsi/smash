@@ -269,7 +269,7 @@ end
       use moddft, only : idft
       implicit none
       integer :: nao2, nao3, nshell3
-      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:)
+      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
       real(8), allocatable :: xint(:), energymo(:)
       real(8), allocatable :: overinv(:), work(:)
 !
@@ -279,8 +279,8 @@ end
 !
 ! Set arrays 1
 !
-      call memset(nao3*3+nao2*2+nshell3+nao)
-      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2),&
+      call memset(nao3*4+nao2*2+nshell3+nao)
+      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2),dmtrx(nao3),&
 &              xint(nshell3),energymo(nao))
 !
 ! Calculate nuclear repulsion energy
@@ -317,20 +317,20 @@ end
 ! Start SCF
 !
       if(method == 'HARTREE-FOCK') then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo, &
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
       elseif(idft >= 1) then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo, &
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call tstamp(1)
-        call calcrdft(h1mtrx,cmo,ortho,smtrx,xint,energymo, &
+        call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
       elseif(method == 'MP2') then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo, &
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
@@ -352,11 +352,15 @@ end
       endif
       call writeeigenvector(cmo,energymo)
 !
+! Calculate Mulliken charge
+!
+      call calcrmulliken(dmtrx,smtrx)
+!
 ! Unset arrays 1
 !
-      deallocate(h1mtrx,smtrx,tmtrx,cmo,ortho, &
+      deallocate(h1mtrx,smtrx,tmtrx,cmo,ortho,dmtrx, &
 &                xint,energymo)
-      call memunset(nao3*3+nao2*2+nshell3+nao)
+      call memunset(nao3*4+nao2*2+nshell3+nao)
       return
 end
 
@@ -381,7 +385,7 @@ end
       implicit none
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
-      real(8), allocatable :: xint(:), energymoa(:), energymob(:)
+      real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), energymoa(:), energymob(:)
       real(8), allocatable :: overinv(:), work(:)
 !
       nao2= nao*nao
@@ -390,9 +394,9 @@ end
 !
 ! Set arrays 1
 !
-      call memset(nao3*3+nao2*3+nshell3+nao*2)
+      call memset(nao3*5+nao2*3+nshell3+nao*2)
       allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),cmob(nao2),ortho(nao2),&
-&              xint(nshell3),energymoa(nao),energymob(nao))
+&              dmtrxa(nao3),dmtrxb(nao3),xint(nshell3),energymoa(nao),energymob(nao))
 !
 ! Calculate nuclear repulsion energy
 !
@@ -429,15 +433,15 @@ end
 ! Start SCF
 !
       if(method == 'HARTREE-FOCK') then
-        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob, &
+        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
       elseif(idft >= 1) then
-        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob, &
+        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call tstamp(1)
-        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob, &
+        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
@@ -468,11 +472,15 @@ end
       endif
       call writeeigenvector(cmob,energymob)
 !
+! Calculate Mulliken charge
+!
+      call calcumulliken(dmtrxa,dmtrxb,smtrx)
+!
 ! Unset arrays 1
 !
       deallocate(h1mtrx,smtrx,tmtrx,cmoa,cmob,ortho, &
-&                xint,energymoa,energymob)
-      call memunset(nao3*3+nao2*3+nshell3+nao*2)
+&                dmtrxa,dmtrxb,xint,energymoa,energymob)
+      call memunset(nao3*5+nao2*3+nshell3+nao*2)
       return
 end
 
@@ -496,7 +504,7 @@ end
       use moddft, only : idft
       implicit none
       integer :: nao2, nao3, nshell3
-      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:)
+      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
       real(8), allocatable :: xint(:), energymo(:)
       real(8), allocatable :: overinv(:), work(:)
       real(8), allocatable :: egrad(:)
@@ -508,8 +516,8 @@ end
 !
 ! Set arrays 1
 !
-      call memset(nao3*3+nao2*2+nshell3+nao)
-      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2),&
+      call memset(nao3*4+nao2*2+nshell3+nao)
+      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2),dmtrx(nao3),&
 &              xint(nshell3),energymo(nao))
 !
 ! Calculate nuclear repulsion energy
@@ -546,15 +554,15 @@ end
 ! Start SCF
 !
       if(method == 'HARTREE-FOCK') then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo, &
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
       elseif(idft >= 1) then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo, &
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call tstamp(1)
-        call calcrdft(h1mtrx,cmo,ortho,smtrx,xint,energymo, &
+        call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
@@ -603,11 +611,15 @@ end
       endif
       call writeeigenvector(cmo,energymo)
 !
+! Calculate Mulliken charge
+!
+      call calcrmulliken(dmtrx,smtrx)
+!
 ! Unset arrays 1
 !
-      deallocate(h1mtrx,smtrx,tmtrx,cmo,ortho, &
+      deallocate(h1mtrx,smtrx,tmtrx,cmo,ortho,dmtrx, &
 &                xint,energymo)
-      call memunset(nao3*3+nao2*2+nshell3+nao)
+      call memunset(nao3*4+nao2*2+nshell3+nao)
       call tstamp(1)
       return
 end
@@ -633,7 +645,7 @@ end
       implicit none
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
-      real(8), allocatable :: xint(:), energymoa(:), energymob(:)
+      real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), energymoa(:), energymob(:)
       real(8), allocatable :: overinv(:), work(:)
       real(8), allocatable :: egrad(:)
       real(8) :: egradmax, egradrms
@@ -644,9 +656,9 @@ end
 !
 ! Set arrays 1
 !
-      call memset(nao3*3+nao2*3+nshell3+nao*2)
+      call memset(nao3*5+nao2*3+nshell3+nao*2)
       allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),cmob(nao2),ortho(nao2),&
-&              xint(nshell3),energymoa(nao),energymob(nao))
+&              dmtrxa(nao3),dmtrxb(nao3),xint(nshell3),energymoa(nao),energymob(nao))
 !
 ! Calculate nuclear repulsion energy
 !
@@ -683,15 +695,15 @@ end
 ! Start SCF
 !
       if(method == 'HARTREE-FOCK') then
-        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob, &
+        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
       elseif(idft >= 1) then
-        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob, &
+        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call tstamp(1)
-        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob, &
+        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
@@ -752,11 +764,15 @@ end
       endif
       call writeeigenvector(cmob,energymob)
 !
+! Calculate Mulliken charge
+!
+      call calcumulliken(dmtrxa,dmtrxb,smtrx)
+!
 ! Unset arrays 1
 !
       deallocate(h1mtrx,smtrx,tmtrx,cmoa,cmob,ortho, &
-&                xint,energymoa,energymob)
-      call memunset(nao3*3+nao2*3+nshell3+nao*2)
+&                dmtrxa,dmtrxb,xint,energymoa,energymob)
+      call memunset(nao3*5+nao2*3+nshell3+nao*2)
       call tstamp(1)
       return
 end
@@ -786,7 +802,7 @@ end
       integer :: nao2, nao3, nshell3, natom3, ii, iopt
       integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
       real(8), parameter :: third=0.3333333333333333D+00
-      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:)
+      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
       real(8), allocatable :: xint(:), energymo(:)
       real(8), allocatable :: egrad(:), egradold(:), ehess(:)
       real(8), allocatable :: overinv(:), work(:,:)
@@ -826,8 +842,8 @@ end
 !
 ! Set arrays for energy
 !
-      call memset(nao3*3+nao2*2+nshell3+nao)
-      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2), &
+      call memset(nao3*4+nao2*2+nshell3+nao)
+      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2),dmtrx(nao3), &
 &              xint(nshell3),energymo(nao))
 !
 ! Set arrays for energy gradient and geometry optimization
@@ -884,17 +900,17 @@ end
 ! Calculate energy
 !
         if(method == 'HARTREE-FOCK') then
-          call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo, &
+          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1)
           call tstamp(1)
         elseif(idft >= 1) then
           if(iopt == 1) then
-            call calcrhf(h1mtrx,cmo,ortho,smtrx,xint,energymo, &
+            call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
             call tstamp(1)
           endif
-          call calcrdft(h1mtrx,cmo,ortho,smtrx,xint,energymo, &
+          call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                       nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1)
           call tstamp(1)
@@ -990,6 +1006,10 @@ end
       endif
       call writeeigenvector(cmo,energymo)
 !
+! Calculate Mulliken charge
+!
+      call calcrmulliken(dmtrx,smtrx)
+!
 ! Unset arrays for energy gradient and geometry optimization
 !
       if(cartesian) then
@@ -1003,9 +1023,9 @@ end
 !
 ! Unset arrays for energy
 !
-      deallocate(h1mtrx,smtrx,tmtrx,cmo,ortho, &
+      deallocate(h1mtrx,smtrx,tmtrx,cmo,ortho,dmtrx, &
 &                xint,energymo)
-      call memunset(nao3*3+nao2*2+nshell3+nao)
+      call memunset(nao3*4+nao2*2+nshell3+nao)
 !
 ! Unset array for redundant coordinate
 !
@@ -1045,7 +1065,7 @@ end
       integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
       real(8), parameter :: third=0.3333333333333333D+00
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
-      real(8), allocatable :: xint(:), energymoa(:), energymob(:)
+      real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), energymoa(:), energymob(:)
       real(8), allocatable :: egrad(:), egradold(:), ehess(:)
       real(8), allocatable :: overinv(:,:), work(:,:)
       real(8), allocatable :: workv(:), coordredun(:), egradredun(:)
@@ -1084,9 +1104,9 @@ end
 !
 ! Set arrays for energy
 !
-      call memset(nao3*3+nao2*3+nshell3+nao*2)
+      call memset(nao3*5+nao2*3+nshell3+nao*2)
       allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),cmob(nao2),ortho(nao2), &
-&              xint(nshell3),energymoa(nao),energymob(nao))
+&              dmtrxa(nao3),dmtrxb(nao3),xint(nshell3),energymoa(nao),energymob(nao))
 !
 ! Set arrays for energy gradient and geometry optimization
 !
@@ -1148,17 +1168,17 @@ end
 ! Calculate energy
 !
         if(method == 'HARTREE-FOCK') then
-          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob, &
+          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2)
           call tstamp(1)
         elseif(idft >= 1) then
           if(iopt == 1) then
-            call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob, &
+            call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
             call tstamp(1)
           endif
-          call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,xint,energymoa,energymob, &
+          call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                       nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2)
           call tstamp(1)
@@ -1253,17 +1273,21 @@ end
 ! Print MOs
 !
       if(master) then
-        write(*,'("-----------------------")')
-        write(*,'(" Alpha MO coefficients")')
-        write(*,'("-----------------------")')
+        write(*,'(" -----------------------")')
+        write(*,'("  Alpha MO coefficients")')
+        write(*,'(" -----------------------")')
       endif
       call writeeigenvector(cmoa,energymoa)
       if(master) then
-        write(*,'("-----------------------")')
-        write(*,'(" Beta MO coefficients")')
-        write(*,'("-----------------------")')
+        write(*,'(" -----------------------")')
+        write(*,'("  Beta MO coefficients")')
+        write(*,'(" -----------------------")')
       endif
       call writeeigenvector(cmob,energymob)
+!
+! Calculate Mulliken charge
+!
+      call calcumulliken(dmtrxa,dmtrxb,smtrx)
 !
 ! Unset arrays for energy gradient and geometry optimization
 !
@@ -1279,8 +1303,8 @@ end
 ! Unset arrays for energy
 !
       deallocate(h1mtrx,smtrx,tmtrx,cmoa,cmob,ortho, &
-&                xint,energymoa,energymob)
-      call memunset(nao3*3+nao2*3+nshell3+nao*2)
+&                dmtrxa,dmtrxb,xint,energymoa,energymob)
+      call memunset(nao3*5+nao2*3+nshell3+nao*2)
       call tstamp(1)
 !
 ! Unset array for redundant coordinate
