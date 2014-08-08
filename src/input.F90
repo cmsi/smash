@@ -39,11 +39,11 @@
       character(len=254) :: line
       character(len=16) :: chararray(7), mem=''
       logical :: logarray(5)
-      namelist /job/method, runtype, basis, scftype, memory, mem, charge, multi, ecp
-      namelist /control/cutint2, spher, guess, iprint, bohr
-      namelist /scf/diis, maxiter, dconv, maxdiis, maxsoscf
-      namelist /opt/nopt, optconv, cartesian
-      namelist /dft/nrad, nleb
+      namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp
+      namelist /control/ cutint2, spher, guess, iprint, bohr
+      namelist /scf/ diis, maxiter, dconv, maxdiis, maxsoscf
+      namelist /opt/ nopt, optconv, cartesian
+      namelist /dft/ nrad, nleb
 !
       if(master) then
         do ii= 1,100000

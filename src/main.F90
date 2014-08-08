@@ -19,7 +19,7 @@
 ! This is the main driver of Scalable Molecular Analysis Solver 
 ! for High performance computing (SMASH).
 !
-      use modparallel, only : master
+      use modparallel, only : master, nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       use modparallel, only : mpi_comm1
       use modwarn, only : nwarn
       use modmemory, only : memusedmax
@@ -80,11 +80,11 @@
 !
       if(scftype == 'RHF') then
         if(runtype == 'ENERGY') then
-          call calcrenergy
+          call calcrenergy(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         elseif(runtype == 'GRADIENT') then
-          call calcrgradient
+          call calcrgradient(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         elseif(runtype == 'OPTIMIZE') then
-          call calcrgeometry(converged)
+          call calcrgeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         else
           if(master) then
             write(*,'(" Error! This program does not support ",a16,".")')runtype
@@ -93,11 +93,11 @@
         endif
       elseif(scftype == 'UHF') then
         if(runtype == 'ENERGY') then
-          call calcuenergy
+          call calcuenergy(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         elseif(runtype == 'GRADIENT') then
-          call calcugradient
+          call calcugradient(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         elseif(runtype == 'OPTIMIZE') then
-          call calcugeometry(converged)
+          call calcugeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         endif
       else
         if(master) write(*,'(" Error! SCFtype=",a16," is not supported.")')scftype
@@ -250,9 +250,9 @@ end
 end
 
 
-!-------------------------
-  subroutine calcrenergy
-!-------------------------
+!----------------------------------------------------------------------------
+  subroutine calcrenergy(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+!----------------------------------------------------------------------------
 !
 ! Driver of closed-shell energy calculation
 !
@@ -261,13 +261,15 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modparallel, only : master, nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
+      use modparallel, only : master
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo, neleca
       use modjob, only : method
       use moddft, only : idft
       implicit none
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
+      integer(4),intent(in) :: mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
       real(8), allocatable :: xint(:), energymo(:)
@@ -365,9 +367,9 @@ end
 end
 
 
-!-------------------------
-  subroutine calcuenergy
-!-------------------------
+!----------------------------------------------------------------------------
+  subroutine calcuenergy(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+!----------------------------------------------------------------------------
 !
 ! Driver of open-shell energy calculation
 !
@@ -376,13 +378,15 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modparallel, only : master, nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
+      use modparallel, only : master
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo
       use modjob, only : method
       use moddft, only : idft
       implicit none
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
+      integer(4),intent(in) :: mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
       real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), energymoa(:), energymob(:)
@@ -485,9 +489,9 @@ end
 end
 
 
-!---------------------------
-  subroutine calcrgradient
-!---------------------------
+!------------------------------------------------------------------------------
+  subroutine calcrgradient(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+!------------------------------------------------------------------------------
 !
 ! Driver of energy gradient calculation
 !
@@ -496,13 +500,15 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modparallel, only : master, nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
+      use modparallel, only : master
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom
       use modjob, only : method
       use moddft, only : idft
       implicit none
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
+      integer(4),intent(in) :: mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
       real(8), allocatable :: xint(:), energymo(:)
@@ -625,9 +631,9 @@ end
 end
 
 
-!---------------------------
-  subroutine calcugradient
-!---------------------------
+!------------------------------------------------------------------------------
+  subroutine calcugradient(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+!------------------------------------------------------------------------------
 !
 ! Driver of open-shell energy gradient calculation
 !
@@ -636,13 +642,15 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modparallel, only : master, nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
+      use modparallel, only : master
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom
       use modjob, only : method
       use moddft, only : idft
       implicit none
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
+      integer(4),intent(in) :: mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
       real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), energymoa(:), energymob(:)
@@ -778,9 +786,9 @@ end
 end
 
 
-!--------------------------------------
-  subroutine calcrgeometry(converged)
-!--------------------------------------
+!----------------------------------------------------------------------------------------
+  subroutine calcrgeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+!----------------------------------------------------------------------------------------
 !
 ! Driver of geometry optimization calculation
 !
@@ -789,7 +797,7 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modparallel, only : master, nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
+      use modparallel, only : master
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom, coord, coordold
@@ -798,6 +806,8 @@ end
       use modjob, only : method
       use moddft, only : idft
       implicit none
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
+      integer(4),intent(in) :: mpi_comm1, mpi_comm2
       integer,allocatable :: iredun(:)
       integer :: nao2, nao3, nshell3, natom3, ii, iopt
       integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
@@ -1039,9 +1049,9 @@ end
 end
 
 
-!--------------------------------------
-  subroutine calcugeometry(converged)
-!--------------------------------------
+!----------------------------------------------------------------------------------------
+  subroutine calcugeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+!----------------------------------------------------------------------------------------
 !
 ! Driver of open-shell geometry optimization calculation
 !
@@ -1050,7 +1060,7 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modparallel, only : master, nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
+      use modparallel, only : master
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom, coord, coordold
@@ -1060,6 +1070,8 @@ end
       use modjob, only : method
       use moddft, only : idft
       implicit none
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
+      integer(4),intent(in) :: mpi_comm1, mpi_comm2
       integer,allocatable :: iredun(:)
       integer :: nao2, nao3, nshell3, natom3, ii, iopt
       integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
