@@ -459,9 +459,8 @@ end
       use modunit, only : tobohr, bohr
       use modparam, only : mxatom
       implicit none
-      integer :: ii, jj, dummyi
-      real(8) :: dummyr
-      character(len=16) :: dummyc
+      integer :: ii, jj
+      character(len=16) :: cdummy
       character(len=254) :: line
       character(len=3) :: atomin(mxatom)
       character(len=3) :: table1(112)= &
@@ -532,8 +531,8 @@ end
 !
         else
           rewind(icheck)
-          read(icheck,err=9998)dummyc
-          read(icheck) dummyc,dummyc,dummyc,dummyr,dummyi,natom
+          read(icheck,err=9998)
+          read(icheck) cdummy, natom
           read(icheck)
           read(icheck)(numatomic(ii),ii=1,natom)
           read(icheck)
@@ -859,7 +858,7 @@ end
       use modparallel, only : master
       use modmolecule, only : numatomic, natom, coord, nmo, neleca, nelecb, charge, multi
       use modjob, only : method, runtype, scftype
-      use modbasis, only : nshell, nao, nprim, ex, coeff, locprim, locbf, locatom, &
+      use modbasis, only : nshell, nao, nprim, ex, coeffinp, locprim, locbf, locatom, &
 &                          mprim, mbf, mtype
       implicit none
       integer :: ii, jj
@@ -869,8 +868,8 @@ end
 !
       rewind(icheck)
       write(icheck) version
-      write(icheck) method, runtype, scftype, charge, multi, natom, neleca, nelecb, &
-&                     nao, nmo, nshell, nprim
+      write(icheck) scftype, natom, nao, nmo, nshell, nprim, neleca, nelecb,  &
+&                   method, runtype, charge, multi
 !
       datatype= 'numatomic'
       write(icheck) datatype
@@ -884,9 +883,9 @@ end
       write(icheck) datatype
       write(icheck) (ex(ii),ii=1,nprim)
 !
-      datatype= 'coeff'
+      datatype= 'coeffinp'
       write(icheck) datatype
-      write(icheck) (coeff(ii),ii=1,nprim)
+      write(icheck) (coeffinp(ii),ii=1,nprim)
 !
       datatype= 'locprim'
       write(icheck) datatype
