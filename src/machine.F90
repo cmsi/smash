@@ -145,6 +145,24 @@ end
 end
 
 
+!---------------------------
+  subroutine opencheckfile
+!---------------------------
+!
+! Open checkpoint file
+!
+      use modparallel, only : master
+      use modiofile, only : icheck, check
+      implicit none
+!
+      if(master) then
+        open(unit=icheck,file=check,form='unformatted',status='unknown')
+      endif
+!
+      return
+end
+
+
 !--------------------
   subroutine iabort
 !--------------------

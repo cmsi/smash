@@ -19,7 +19,7 @@
 ! Read input data
 !
       use modparallel, only : master, parallel
-      use modiofile, only : input
+      use modiofile, only : input, check
       use modbasis, only : basis, spher
       use modmolecule, only : numatomic, natom, coord, znuc, neleca, nelecb, charge, multi
       use modjob, only : method, runtype, scftype
@@ -40,7 +40,7 @@
       character(len=16) :: chararray(7), mem=''
       logical :: logarray(5)
       namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp
-      namelist /control/ cutint2, spher, guess, iprint, bohr
+      namelist /control/ cutint2, spher, guess, iprint, bohr, check
       namelist /scf/ diis, maxiter, dconv, maxdiis, maxsoscf
       namelist /opt/ nopt, optconv, cartesian
       namelist /dft/ nrad, nleb
@@ -64,6 +64,7 @@
             case('CON')
               line="&"//trim(line)//" /"
               call addapos(line,'GUESS=',6)
+              call addapos(line,'CHECK=',6)
             case('SCF','OPT','DFT')
               line="&"//trim(line)//" /"
           end select
@@ -150,6 +151,7 @@
         logarray(5)= cartesian
 !
         call para_bcastc(chararray,16*7,0,mpi_comm)
+        call para_bcastc(check,64,0,mpi_comm)
         call para_bcastr(realarray,4,0,mpi_comm)
         call para_bcasti(intarray,9,0,mpi_comm)
         call para_bcastl(logarray,5,0,mpi_comm)
@@ -369,6 +371,7 @@ end
 ! Write computational conditions
 !
       use modparallel, only : master
+      use modiofile, only : check
       use modmolecule, only : natom, neleca, nelecb, charge, multi
       use modbasis, only : nshell, nao, nprim, basis, spher
       use modmemory, only : memmax
@@ -390,6 +393,8 @@ end
         if(runtype == 'OPTIMIZE') &
 &       write(*,'("   Nopt    =  ",i10," ,   Optconv = ",1p,D11.1," ,   Cartesian= ",l1)') &
 &                  nopt, optconv, cartesian
+        if(check /= '') &
+        write(*,'("   Check   =  ",a64)')check
         write(*,'(" --------------------------------------------------------------------------")')
 
         write(*,'(/," ------------------------------------------------")')
@@ -414,15 +419,23 @@ end
 ! Convert lower charcters to upper 
 !
       implicit none
-      integer :: ilen, i, inum
-      character(len=254) :: line
+      integer :: ilen, ii, inum, ispace
+      character(len=254),intent(inout) :: line
+      character(len=254) :: linecopy
       character(len=26) :: upper='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
       character(len=26) :: lower='abcdefghijklmnopqrstuvwxyz'
 !
-      do i= 1,ilen
-        inum=(index(lower,line(i:i)))
-        if(inum > 0) line(i:i)= upper(inum:inum)
+      linecopy(1:ilen)=line(1:ilen)
+      do ii= 1,ilen
+        inum=(index(lower,line(ii:ii)))
+        if(inum > 0) line(ii:ii)= upper(inum:inum)
       enddo
+!
+      inum= index(line(1:ilen),'CHECK=')
+      if(inum > 0) then
+        ispace= index(line(inum:),' ')
+        line(inum+6:inum+ispace-2)= linecopy(inum+6:inum+ispace-2)
+      endif
       return
 end
 
@@ -803,5 +816,114 @@ end
 9999  write(*,'(" Error! Keyword ECP is not found.")')
       call iabort
 end
+
+
+!---------------------------------------------------------------------
+  subroutine writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob)
+!---------------------------------------------------------------------
+!
+! Write checkpoint file
+!
+      use modiofile, only : icheck, version
+      use modparallel, only : master
+      use modmolecule, only : numatomic, natom, coord, nmo, neleca, nelecb, charge, multi
+      use modjob, only : method, runtype, scftype
+      use modbasis, only : nshell, nao, nprim, ex, coeff, locprim, locbf, locatom, &
+&                          mprim, mbf, mtype
+      implicit none
+      integer :: ii, jj
+      real(8),intent(in) :: cmoa(nao,nao), dmtrxa(nao*(nao+1)/2), energymoa(nao)
+      real(8),intent(in) :: cmob(nao,nao), dmtrxb(nao*(nao+1)/2), energymob(nao)
+      character(len=16) :: datatype
+!
+      rewind(icheck)
+      write(icheck) version
+      write(icheck) method, runtype, scftype, charge, multi, natom, neleca, nelecb, &
+&                     nao, nmo, nshell, nprim
+!
+      datatype= 'numatomic'
+      write(icheck) datatype
+      write(icheck) (numatomic(ii),ii=1,natom)
+!
+      datatype= 'coord'
+      write(icheck) datatype
+      write(icheck)((coord(jj,ii),jj=1,3),ii=1,natom)
+!
+      datatype= 'ex'
+      write(icheck) datatype
+      write(icheck) (ex(ii),ii=1,nprim)
+!
+      datatype= 'coeff'
+      write(icheck) datatype
+      write(icheck) (coeff(ii),ii=1,nprim)
+!
+      datatype= 'locprim'
+      write(icheck) datatype
+      write(icheck) (locprim(ii),ii=1,nshell)
+!
+      datatype= 'locbf'
+      write(icheck) datatype
+      write(icheck) (locbf(ii),ii=1,nshell)
+!
+      datatype= 'locatom'
+      write(icheck) datatype
+      write(icheck) (locatom(ii),ii=1,nshell)
+!
+      datatype= 'mprim'
+      write(icheck) datatype
+      write(icheck) (mprim(ii),ii=1,nshell)
+!
+      datatype= 'mbf'
+      write(icheck) datatype
+      write(icheck) (mbf(ii),ii=1,nshell)
+!
+      datatype= 'mtype'
+      write(icheck) datatype
+      write(icheck) (mtype(ii),ii=1,nshell)
+!
+      if(scftype == 'RHF') then
+        datatype= 'cmo'
+        write(icheck) datatype
+        write(icheck)((cmoa(jj,ii),jj=1,nao),ii=1,nmo)
+!
+        datatype= 'dmtrx'
+        write(icheck) datatype
+        write(icheck) (dmtrxa(ii),ii=1,nao*(nao+1)/2)
+!
+        datatype= 'energymo'
+        write(icheck) datatype
+        write(icheck) (energymoa(ii),ii=1,nmo)
+      elseif(scftype == 'UHF') then
+        datatype= 'cmoa'
+        write(icheck) datatype
+        write(icheck)((cmoa(jj,ii),jj=1,nao),ii=1,nmo)
+!
+        datatype= 'cmob'
+        write(icheck) datatype
+        write(icheck)((cmob(jj,ii),jj=1,nao),ii=1,nmo)
+!
+        datatype= 'dmtrxa'
+        write(icheck) datatype
+        write(icheck) (dmtrxa(ii),ii=1,nao*(nao+1)/2)
+!
+        datatype= 'dmtrxb'
+        write(icheck) datatype
+        write(icheck) (dmtrxb(ii),ii=1,nao*(nao+1)/2)
+!
+        datatype= 'energymoa'
+        write(icheck) datatype
+        write(icheck) (energymoa(ii),ii=1,nmo)
+!
+        datatype= 'energymob'
+        write(icheck) datatype
+        write(icheck) (energymob(ii),ii=1,nmo)
+      endif
+!
+      return
+end
+
+
+
+
 
 

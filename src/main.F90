@@ -25,7 +25,7 @@
       use modmemory, only : memusedmax
       use modjob, only : runtype, method, scftype
       use modecp, only : flagecp
-      use modiofile, only : input
+      use modiofile, only : input, icheck, check
       implicit none
       logical :: converged
 !
@@ -48,6 +48,7 @@
 !
       if(master) call opendatfile
       call readinput(mpi_comm1)
+      if(master.and.(check /= '')) call opencheckfile
 !
 ! Set maximum memory size
 !
@@ -105,6 +106,8 @@
       endif
 !
       if(master) close(unit=input,status='DELETE')
+      if(master.and.(check /= '')) close(unit=icheck)
+!
       call para_finalize
       call memcheck
       call tstamp(2)
@@ -262,6 +265,7 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modparallel, only : master
+      use modiofile, only : check
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo, neleca
@@ -358,6 +362,10 @@ end
 !
       call calcrmulliken(dmtrx,smtrx)
 !
+! Write checkpoint file
+!
+      if(master.and.(check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo)
+!
 ! Unset arrays 1
 !
       deallocate(h1mtrx,smtrx,tmtrx,cmo,ortho,dmtrx, &
@@ -379,6 +387,7 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modparallel, only : master
+      use modiofile, only : check
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo
@@ -480,6 +489,10 @@ end
 !
       call calcumulliken(dmtrxa,dmtrxb,smtrx)
 !
+! Write checkpoint file
+!
+      if(master.and.(check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob)
+!
 ! Unset arrays 1
 !
       deallocate(h1mtrx,smtrx,tmtrx,cmoa,cmob,ortho, &
@@ -501,6 +514,7 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modparallel, only : master
+      use modiofile, only : check
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom
@@ -621,6 +635,10 @@ end
 !
       call calcrmulliken(dmtrx,smtrx)
 !
+! Write checkpoint file
+!
+      if(master.and.(check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo)
+!
 ! Unset arrays 1
 !
       deallocate(h1mtrx,smtrx,tmtrx,cmo,ortho,dmtrx, &
@@ -643,6 +661,7 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modparallel, only : master
+      use modiofile, only : check
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom
@@ -776,6 +795,10 @@ end
 !
       call calcumulliken(dmtrxa,dmtrxb,smtrx)
 !
+! Write checkpoint file
+!
+      if(master.and.(check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob)
+!
 ! Unset arrays 1
 !
       deallocate(h1mtrx,smtrx,tmtrx,cmoa,cmob,ortho, &
@@ -798,6 +821,7 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modparallel, only : master
+      use modiofile, only : check
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom, coord, coordold
@@ -1020,6 +1044,10 @@ end
 !
       call calcrmulliken(dmtrx,smtrx)
 !
+! Write checkpoint file
+!
+      if(master.and.(check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo)
+!
 ! Unset arrays for energy gradient and geometry optimization
 !
       if(cartesian) then
@@ -1061,6 +1089,7 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modparallel, only : master
+      use modiofile, only : check
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom, coord, coordold
@@ -1300,6 +1329,10 @@ end
 ! Calculate Mulliken charge
 !
       call calcumulliken(dmtrxa,dmtrxb,smtrx)
+!
+! Write checkpoint file
+!
+      if(master.and.(check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob)
 !
 ! Unset arrays for energy gradient and geometry optimization
 !
