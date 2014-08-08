@@ -44,11 +44,10 @@
       call gethostnm
       call parallelinfo
 !
-! Read input data
+! Read input data and open checkpoint file if necessary
 !
       if(master) call opendatfile
       call readinput(mpi_comm1)
-      if(master.and.(check /= '')) call opencheckfile
 !
 ! Set maximum memory size
 !
@@ -104,6 +103,8 @@
         if(master) write(*,'(" Error! SCFtype=",a16," is not supported.")')scftype
         call iabort
       endif
+!
+! Close input.dat and checkpoint files
 !
       if(master) close(unit=input,status='DELETE')
       if(master.and.(check /= '')) close(unit=icheck)

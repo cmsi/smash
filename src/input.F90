@@ -16,7 +16,7 @@
   subroutine readinput(mpi_comm)
 !---------------------------------
 !
-! Read input data
+! Read input data and open checkpoint file if necessary
 !
       use modparallel, only : master, parallel
       use modiofile, only : input, check
@@ -117,6 +117,13 @@
         endif
 !
       endif
+!
+! Open checkpoint file
+!
+      if(check /= '') call opencheckfile
+!
+! Read geometry data
+!
       call readatom
 !
       if(runtype == 'OPT') runtype='OPTIMIZE'
@@ -447,12 +454,14 @@ end
 ! Read atomic data
 !
       use modparallel, only : master
-      use modiofile, only : input
+      use modiofile, only : input, icheck, check
       use modmolecule, only : numatomic, natom, coord, znuc
       use modunit, only : tobohr, bohr
       use modparam, only : mxatom
       implicit none
-      integer :: ii, jj
+      integer :: ii, jj, dummyi
+      real(8) :: dummyr
+      character(len=16) :: dummyc
       character(len=254) :: line
       character(len=3) :: atomin(mxatom)
       character(len=3) :: table1(112)= &
@@ -478,48 +487,70 @@ end
         rewind(input)
         do ii= 1,10000
           read(input,*,end=9999)line
-          if(line(1:4) == "GEOM") exit
+          if(line(1:4) == 'GEOM') exit
           if(ii == 10000) then
             write(*,'(" Error! Molecular geometry is not found.")')
             call iabort
           endif
         enddo
-        natom= 0
-        do ii= 1,mxatom
-          read(input,'(a)',end=100) line
-          read(line,*,end=100) atomin(ii),(coord(jj,ii),jj=1,3)
-          natom= natom+1
-        enddo
-100     continue
-        do ii= 1,natom
-          do jj= 1,112
-            if((atomin(ii) == table1(jj)).or.(atomin(ii) == table2(jj))) then
-              numatomic(ii)= jj
-              znuc(ii)= dble(jj)
-              exit
-            endif
-            if(jj == 112) then
-              write(*,'(" Error! Atom type ",a3," is not supported.")')atomin(ii)
-              call iabort
-            endif
+!
+! Read data from input file
+!
+        if(index(line,'CHECK') == 0) then
+          natom= 0
+          do ii= 1,mxatom
+            read(input,'(a)',end=100) line
+            read(line,*,end=100) atomin(ii),(coord(jj,ii),jj=1,3)
+            natom= natom+1
           enddo
-        enddo
+100       continue
+          do ii= 1,natom
+            do jj= 1,112
+              if((atomin(ii) == table1(jj)).or.(atomin(ii) == table2(jj))) then
+                numatomic(ii)= jj
+                znuc(ii)= dble(jj)
+                exit
+              endif
+              if(jj == 112) then
+                write(*,'(" Error! Atom type ",a3," is not supported.")')atomin(ii)
+                call iabort
+              endif
+            enddo
+          enddo
 !
 ! Change to atomic unit
 !
-        if(.not.bohr) then
-          do ii= 1,natom
-            do jj= 1,3
-              coord(jj,ii)= coord(jj,ii)*tobohr
+          if(.not.bohr) then
+            do ii= 1,natom
+              do jj= 1,3
+                coord(jj,ii)= coord(jj,ii)*tobohr
+              enddo
             enddo
+          endif
+!
+! Read data from checkpoint file
+!
+        else
+          rewind(icheck)
+          read(icheck,err=9998)dummyc
+          read(icheck) dummyc,dummyc,dummyc,dummyr,dummyi,natom
+          read(icheck)
+          read(icheck)(numatomic(ii),ii=1,natom)
+          read(icheck)
+          read(icheck)((coord(jj,ii),jj=1,3),ii=1,natom)
+          do ii= 1,natom
+            znuc(ii)= dble(numatomic(ii))
           enddo
+          write(*,'(" Geometry is read from checkpoint file.")')
         endif
       endif
       return
 !
 9999  write(*,'(" Error! Keyword GEOM is not found.")')
       call iabort
-      
+9998  write(*,'(" Error! Geometry cannot be read from checkpoint file.")')
+      call iabort
+!
 end
 
 
