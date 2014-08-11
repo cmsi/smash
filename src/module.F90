@@ -126,7 +126,7 @@ end
 !     real(8) :: threshex=28.0D+00, threshover=1.0D-06
       real(8) :: threshatm=2.0D-01, thresherr=0.6D+00
       real(8) :: cutint2, threshsoscf
-      real(8) :: threshweight=1.0D-09, threshrho=1.0D-07, threshdfock=1.0D-06
+      real(8) :: threshweight=1.0D-08, threshrho=1.0D-07, threshdfock=1.0D-06
       real(8) :: threshdftao=1.0D-04
 end
 
