@@ -132,7 +132,7 @@ end program main
       use modparallel, only : master, parallel, nproc1, nproc2, myrank1, myrank2, &
 &                             mpi_comm1, mpi_comm2
       use modwarn, only : nwarn
-      use modguess, only : iguess, spher_g, guess
+      use modguess, only : spher_g, guess
       use modmemory, only : memmax, memused, memusedmax, memory
       use modprint, only : iprint
       use modunit, only : bohr
@@ -169,7 +169,6 @@ end program main
       endif
 !
       nwarn  = 0
-      iguess = 1
       memmax = 250000000
       memused= 0
       memusedmax= 0
@@ -313,7 +312,7 @@ end
 !
 ! Calculate initial MOs
 !
-      call guessmo(cmo,overinv,nproc2,myrank2,mpi_comm2)
+      call guessmo(cmo,cmo,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
 !
 ! Unset arrays 2
 !
@@ -435,8 +434,7 @@ end
 !
 ! Calculate initial MOs
 !
-      call guessmo(cmoa,overinv,nproc2,myrank2,mpi_comm2)
-      cmob(:)= cmoa(:)
+      call guessmo(cmoa,cmob,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
 !
 ! Unset arrays 2
 !
@@ -564,7 +562,7 @@ end
 !
 ! Calculate initial MOs
 !
-      call guessmo(cmo,overinv,nproc2,myrank2,mpi_comm2)
+      call guessmo(cmo,cmo,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
 !
 ! Unset arrays 2
 !
@@ -711,8 +709,7 @@ end
 !
 ! Calculate initial MOs
 !
-      call guessmo(cmoa,overinv,nproc2,myrank2,mpi_comm2)
-      cmob(:)= cmoa(:)
+      call guessmo(cmoa,cmob,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
 !
 ! Unset arrays 2
 !
@@ -923,8 +920,9 @@ end
 !
 ! Calculate initial MOs
 !
-!       call guessmo(cmo,overinv,nproc2,myrank2,mpi_comm2)
-        if(iopt == 1) call guessmo(cmo,overinv,nproc2,myrank2,mpi_comm2)
+        if(iopt == 1) then
+          call guessmo(cmo,cmo,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+        endif
 !
 ! Unset work arrays 1
 !
@@ -1096,7 +1094,6 @@ end
       use modmolecule, only : nmo, natom, coord, coordold
       use modopt, only : nopt, optconv, cartesian
       use modwarn, only : nwarn
-      use modguess, only : iguess
       use modjob, only : method
       use moddft, only : idft
       implicit none
@@ -1192,13 +1189,8 @@ end
 !
 ! Calculate initial MOs
 !
-        if(iguess == 1) then
-          call guessmo(cmoa,overinv,nproc2,myrank2,mpi_comm2)
-          cmob(:)= cmoa(:)
-!       elseif(iguess == 2) then
-!         work(:,:)= overinv(:,:)
-!         call guessmo(cmoa,overinv,nproc2,myrank2,mpi_comm2)
-!         call guessmo(cmob,work,nproc2,myrank2,mpi_comm2)
+        if(iopt == 1) then
+          call guessmo(cmoa,cmob,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         endif
 !
 ! Unset arrays 1
@@ -1373,7 +1365,7 @@ end
       use modbasis, only : ex, coeff, nshell, nao, nprim, locprim, locbf, &
 &                          locatom, mprim, mbf, mtype, spher
       use modguess, only : ex_g, coeff_g, nshell_g, nao_g, nmo_g, nprim_g, locprim_g, locbf_g, &
-&                          locatom_g, mprim_g, mbf_g, mtype_g, spher_g, coord_g, iguess
+&                          locatom_g, mprim_g, mbf_g, mtype_g, spher_g, coord_g, guess
       use modmolecule, only : nmo
       implicit none
       integer,intent(in) :: natom, iopt
@@ -1382,7 +1374,7 @@ end
 !
 ! Set MO projection as initial MO calculation
 !
-      iguess= 2
+      guess= 'UPDATE'
 !
 ! Copy coordinate and energy gradient
 !

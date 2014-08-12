@@ -198,10 +198,6 @@ end
 ! These valuables are for guess calculations.
 ! (Extended Huckel)
 !
-! iguess : type of initial guess
-!    = 1 : calculate extended Huckel orbitals
-!    = 2 : calculate from previous orbitals
-!
 ! nshell_v : the number of valence shells
 ! nao_v    : the number of valence AOs (=contracted basis functions)
 ! nprim_v  : the number of valence primitive basis functions
@@ -227,7 +223,6 @@ end
 !
       use modparam, only : mxprim, mxshell, mxatom
       implicit none
-      integer :: iguess
       integer :: nshell_v, nao_v, nprim_v, nmo_v, nshell_g, nao_g, nprim_g, nmo_g, nao_c
       integer :: locprim_g(mxshell+1), locbf_g(mxshell+1), locatom_g(mxshell)
       integer :: mprim_g(mxshell), mbf_g(mxshell), mtype_g(mxshell)

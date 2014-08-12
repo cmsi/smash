@@ -231,7 +231,7 @@
         endif
         if(iter.eq.maxiter) then
           if(master) then
-            write(*,'(" Not Converged.")')
+            write(*,'(" SCF Not Converged.")')
             call iabort
           endif
         endif

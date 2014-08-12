@@ -131,31 +131,33 @@
       if(ecp /= '') flagecp=.true.
 !
       if(parallel) then
-        chararray(1)= method
-        chararray(2)= runtype
-        chararray(3)= basis
-        chararray(4)= scftype
-        chararray(5)= memory
-        chararray(6)= guess
-        chararray(7)= ecp
-        realarray(1)= charge
-        realarray(2)= cutint2
-        realarray(3)= dconv
-        realarray(4)= optconv
-        intarray(1)= natom
-        intarray(2)= multi
-        intarray(3)= iprint
-        intarray(4)= maxiter
-        intarray(5)= maxdiis
-        intarray(6)= maxsoscf
-        intarray(7)= nopt
-        intarray(8)= nrad
-        intarray(9)= nleb
-        logarray(1)= spher
-        logarray(2)= diis
-        logarray(3)= bohr
-        logarray(4)= flagecp
-        logarray(5)= cartesian
+        if(master) then
+          chararray(1)= method
+          chararray(2)= runtype
+          chararray(3)= basis
+          chararray(4)= scftype
+          chararray(5)= memory
+          chararray(6)= guess
+          chararray(7)= ecp
+          realarray(1)= charge
+          realarray(2)= cutint2
+          realarray(3)= dconv
+          realarray(4)= optconv
+          intarray(1)= natom
+          intarray(2)= multi
+          intarray(3)= iprint
+          intarray(4)= maxiter
+          intarray(5)= maxdiis
+          intarray(6)= maxsoscf
+          intarray(7)= nopt
+          intarray(8)= nrad
+          intarray(9)= nleb
+          logarray(1)= spher
+          logarray(2)= diis
+          logarray(3)= bohr
+          logarray(4)= flagecp
+          logarray(5)= cartesian
+        endif
 !
         call para_bcastc(chararray,16*7,0,mpi_comm)
         call para_bcastc(check,64,0,mpi_comm)

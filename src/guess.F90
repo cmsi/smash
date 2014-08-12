@@ -12,31 +12,35 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!--------------------------------------------------------
-  subroutine guessmo(cmo,overinv,nproc,myrank,mpi_comm)
-!--------------------------------------------------------
+!------------------------------------------------------------------------------------------
+  subroutine guessmo(cmoa,cmob,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+!------------------------------------------------------------------------------------------
 !
-! Initial guess generation
-!   iguess = 1 : extended huckel MOs
-!   iguess = 2 : MOs from previous ones
-!
-! In  : overinv (overlap integral inverse matrix)
-! Out : cmo     (initial guess orbitals)
+! In  : overinv (Overlap integral inverse matrix)
+! Out : cmoa    (Alpha initial guess orbitals)
+!       cmob    (Beta initial guess orbitals)
 !
       use modparallel, only : master
-      use modguess, only : iguess
+      use modguess, only : guess
       use modbasis, only : nao
+      use modjob, only : scftype
       implicit none
-      integer,intent(in) :: nproc, myrank
-      integer(4),intent(in) :: mpi_comm
-      real(8),intent(inout):: cmo(nao*nao), overinv(nao*nao)
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
+      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      real(8),intent(inout):: cmoa(nao*nao), cmob(nao*nao), overinv(nao*nao)
 !
-      if(iguess == 1) then
-        call huckelguess(cmo,overinv,nproc,myrank,mpi_comm)
-      elseif(iguess == 2) then
-        call updatemo(cmo,overinv,nproc,myrank,mpi_comm)
+      if(guess == 'HUCKEL') then
+        call huckelguess(cmoa,overinv,nproc2,myrank2,mpi_comm2)
+        if(scftype == 'UHF') call dcopy(nao*nao,cmoa,1,cmob,1)
+!
+      elseif(guess == 'UPDATE') then
+        call updatemo(cmoa,overinv,nproc2,myrank2,mpi_comm2)
+        if(scftype == 'UHF') call dcopy(nao*nao,cmoa,1,cmob,1)
+!
+      elseif(guess == 'CHECK') then
+        call checkguess(cmoa,cmob,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
       else
-        if(master) write(*,'(" Error! This program supports only iguess= 1 or 2 in guessmo.")')
+        if(master) write(*,'(" Error! This program does not support guess= ",a10,"!")') guess
         call iabort
       endif
       return
@@ -129,7 +133,7 @@ end
 !
 ! Calculate canonicalization matrix
 !
-      call mtrxcanon(ortho,hmo,eigen,nao_g,nmo_g)
+      call mtrxcanon(ortho,hmo,eigen,nao_g,nmo_g,nproc,myrank,mpi_comm)
 !
 ! Canonicalize extended Huckel matrix
 !
@@ -1049,3 +1053,262 @@ end
 end
 
 
+!---------------------------------------------------------------------------------------------
+  subroutine checkguess(cmoa,cmob,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+!---------------------------------------------------------------------------------------------
+!
+! Read and project MOs
+!
+! In    : overinv (Overlap integral inverse matrix)
+! Out   : cmoa    (Alpha initial guess orbitals)
+!         cmob    (Beta initial guess orbitals)
+!
+      use modparallel, only : master, parallel
+      use modjob, only : scftype
+      use modiofile, only : input, icheck
+      use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
+&                          ex_g, coeff_g, nao_g, coord_g, nmo_g, nshell_g, nprim_g
+      use modbasis, only : nao
+      use modmolecule, only : neleca, nelecb, nmo, natom, charge
+      implicit none
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
+      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer :: intarray(4), ii, jj, natom_g, neleca_g, nelecb_g, nelect, nelect_g
+      integer :: ncore, ndim, max
+      real(8),intent(in) :: overinv(nao*nao)
+      real(8),intent(inout) :: cmoa(nao*nao), cmob(nao*nao)
+      real(8),allocatable :: cmoa_g(:,:), cmob_g(:,:)
+      real(8),allocatable :: overlap(:), work1(:), work2(:), work3(:), eigen(:)
+      real(8) :: charge_g
+      character(len=16) :: scftype_g, cdummy
+!
+! Read guess basis functions and MOs from checkpoint file
+!
+      if(master) then
+        write(*,'(" Guess MOs are read from checkpoint file.")')
+        rewind(icheck)
+        read(icheck)
+        read(icheck,err=9999) scftype_g, natom_g, nao_g, nmo_g, nshell_g, nprim_g, neleca_g, &
+&                             nelecb_g, cdummy, cdummy, charge_g
+!
+        if(natom_g /= natom) then
+          write(*,'(" Error! The numbers of atoms in checkpoint and input files are different.")')
+          call iabort
+        endif
+!
+        if(scftype == 'RHF') then
+          call memset(nao_g*nao_g)
+          allocate(cmoa_g(nao_g,nao_g))
+        elseif(scftype == 'UHF') then
+          call memset(nao_g*nao_g*2)
+          allocate(cmoa_g(nao_g,nao_g),cmob_g(nao_g,nao_g))
+        endif
+!
+        read(icheck)
+        read(icheck)
+        read(icheck)
+        read(icheck) ((coord_g(jj,ii),jj=1,3),ii=1,natom)
+        read(icheck)
+        read(icheck) (ex_g(ii),ii=1,nprim_g)
+        read(icheck)
+        read(icheck) (coeff_g(ii),ii=1,nprim_g)
+        read(icheck)
+        read(icheck) (locprim_g(ii),ii=1,nshell_g)
+        read(icheck)
+        read(icheck) (locbf_g(ii),ii=1,nshell_g)
+        read(icheck)
+        read(icheck) (locatom_g(ii),ii=1,nshell_g)
+        read(icheck)
+        read(icheck) (mprim_g(ii),ii=1,nshell_g)
+        read(icheck)
+        read(icheck) (mbf_g(ii),ii=1,nshell_g)
+        read(icheck)
+        read(icheck) (mtype_g(ii),ii=1,nshell_g)
+!
+        locbf_g(nshell_g+1)= nao_g
+        locprim_g(nshell_g+1)= nprim_g
+!
+        read(icheck)
+        read(icheck)((cmoa_g(jj,ii),jj=1,nao_g),ii=1,nmo_g)
+        if((scftype == 'UHF').and.(scftype_g == 'UHF')) then
+          read(icheck)
+          read(icheck)((cmob_g(jj,ii),jj=1,nao_g),ii=1,nmo_g)
+        endif
+      endif
+!
+! Broadcast guess basis functions and MOs
+!
+      if(parallel) then
+        if(master) then
+          intarray(1)= nshell_g
+          intarray(2)= nmo_g
+          intarray(3)= neleca_g
+          intarray(4)= nelecb_g
+        endif
+        call para_bcasti(intarray,4,0,mpi_comm1)
+        call para_bcastc(scftype_g,16,0,mpi_comm1)
+        call para_bcasti(locprim_g,nshell_g+1,0,mpi_comm1)
+        call para_bcasti(locbf_g  ,nshell_g+1,0,mpi_comm1)
+        call para_bcasti(locatom_g,nshell_g  ,0,mpi_comm1)
+!
+        nshell_g= intarray(1)
+        nmo_g   = intarray(2)
+        neleca_g= intarray(3)
+        nelecb_g= intarray(4)
+        nao_g= locbf_g(nshell_g+1)
+        nprim_g= locprim_g(nshell_g+1)
+!
+        call para_bcastr(ex_g   ,nprim_g,0,mpi_comm1)
+        call para_bcastr(coeff_g,nprim_g,0,mpi_comm1)
+        call para_bcastr(coord_g,natom*3,0,mpi_comm1)
+        call para_bcasti(mprim_g,nshell_g,0,mpi_comm1)
+        call para_bcasti(mbf_g  ,nshell_g,0,mpi_comm1)
+        call para_bcasti(mtype_g,nshell_g,0,mpi_comm1)
+!
+        if(.not.master) then
+          if(scftype == 'RHF') then
+            call memset(nao_g*nao_g)
+            allocate(cmoa_g(nao_g,nao_g))
+          elseif(scftype == 'UHF') then
+            call memset(nao_g*nao_g*2)
+            allocate(cmoa_g(nao_g,nao_g),cmob_g(nao_g,nao_g))
+          endif
+        endif
+!
+        call para_bcastr(cmoa_g,nao_g*nmo_g,0,mpi_comm1)
+        if((scftype == 'UHF').and.(scftype_g == 'UHF')) then
+          call para_bcastr(cmob_g,nao_g*nmo_g,0,mpi_comm1)
+        endif
+      endif
+!
+! Orthonormalize guess basis functions
+!
+      call bsnrmlz_g
+!
+! Adjust the number of projected MOs
+!
+      nelect  =neleca  +nelecb  -nint(charge)
+      nelect_g=neleca_g+nelecb_g-nint(charge_g)
+      ncore=(nelect_g-nelect)/2
+write(*,*)"ncore",ncore, nmo_g
+      ncore=0
+
+!     nmo_g= nmo_g-ncore
+      if(ncore < 0) then
+        if(master) write(*,'(" Error! The number of electrons in checkpoint file is too small.")')
+        call iabort
+      endif
+!
+! Set arrays
+!
+      ndim= max(nao_g,nao)
+      call memset(nao_g*(nao*2+ndim+nao_g+1))
+      allocate(overlap(nao*nao_g),work1(ndim*nao_g),work2(nao*nao_g),work3(nao_g*nao_g), &
+&              eigen(nao_g))
+!
+! Calculate overlap integrals between previous and present bases
+!
+      call calcover2(overlap,work2,nproc2,myrank2,mpi_comm2)
+!
+! Project orbitals from previous basis to current basis
+!
+      call projectmo3(cmoa,cmoa_g(1,ncore+1),overinv,overlap,work1,work2,work3,eigen, &
+&                     ndim,nproc2,myrank2,mpi_comm2)
+      if(scftype == 'UHF') then
+        if(scftype_g == 'RHF') then
+          call dcopy(nao*nao,cmoa,1,cmob,1)
+        elseif(scftype_g == 'UHF') then
+          call projectmo3(cmob,cmob_g(1,ncore+1),overinv,overlap,work1,work2,work3,eigen, &
+&                         ndim,nproc2,myrank2,mpi_comm2)
+        endif
+      endif
+!
+! Unset arrays
+!
+      call memunset(nao_g*(nao*2+ndim+nao_g+1))
+      deallocate(overlap,work1,work2,work3, &
+&                eigen)
+!
+      if(scftype == 'RHF') then
+        call memunset(nao_g*nao_g)
+        deallocate(cmoa_g)
+      elseif(scftype == 'UHF') then
+        call memunset(nao_g*nao_g*2)
+        deallocate(cmoa_g,cmob_g)
+      endif
+!
+      return
+!
+ 9999 write(*,'(" Error! Checkpoint file cannot be read in checkguess.")')
+      call iabort
+!
+end
+
+
+!-----------------------------------------------------------------------------
+  subroutine projectmo3(cmo,cmo_g,overinv,overlap,work1,work2,work3,eigen, &
+&                       ndim,nproc,myrank,mpi_comm)
+!-----------------------------------------------------------------------------
+!
+! Project orbitals from previous basis to current basis
+!    C1= S11^-1 * S12 * C2 [C2t * S12t * S11^-1 * S12 * C2]^-1/2
+!
+! In    : cmo_g   (Previous orbitals)
+!         overinv (Overlap integral inverse matrix of SCF basis set)
+!         overlap (Overlap integral of guess and SCF basis sets)
+! Out   : cmo     (Projected orbitals)
+!
+      use modguess, only : nao_g, nmo_g
+      use modbasis, only : nao
+      implicit none
+      integer,intent(in) :: ndim, nproc, myrank
+      integer(4),intent(in) :: mpi_comm
+      integer :: ii, jj, maxmo
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, pm6=1.0D-06
+      real(8),intent(in) :: overinv(nao,nao), overlap(nao,nao_g)
+      real(8),intent(out) :: cmo(nao,nao), work1(ndim,nao_g), work2(nao,nao_g)
+      real(8),intent(out) :: work3(nao_g,nao_g), eigen(nao_g)
+      real(8),intent(inout) :: cmo_g(nao_g,nao_g)
+      real(8) :: eigeninv
+!
+! Calculate S12*C2
+!
+      call dgemm('N','N',nao,nmo_g,nao_g,one,overlap,nao,cmo_g,nao_g,zero,work1,ndim)
+!
+! Calculate S11^-1*S12*C2
+!
+      call dsymm('L','U',nao,nmo_g,one,overinv,nao,work1,ndim,zero,work2,nao)
+!
+! Calculate C2t*S12t*S11^-1*S12*C2
+!
+      call dgemm('T','N',nmo_g,nmo_g,nao,one,work1,ndim,work2,nao,zero,cmo_g,nao_g)
+!
+! Calculate (C2t*S12t*S11^-1*S12*C2)^-1/2
+!
+      call diag('V','U',nmo_g,cmo_g,nao_g,eigen,nproc,myrank,mpi_comm)
+!ishimura
+write(*,*)eigen
+!
+!$OMP parallel do private(eigeninv)
+      do ii= 1,nmo_g
+        if(eigen(ii) > pm6) then
+          eigeninv= one/sqrt(eigen(ii))
+        else
+          eigeninv= zero
+        endif
+        do jj= 1,nmo_g
+          work1(jj,ii)= cmo_g(jj,ii)*eigeninv
+        enddo
+      enddo
+!$OMP end parallel do
+!
+      maxmo= nmo_g
+      if(nmo_g > nao) maxmo= nao
+      call dgemm('N','T',nmo_g,maxmo,nmo_g,one,cmo_g,nao_g,work1,ndim,zero,work3,nao_g)
+!
+! Calculate C1
+!
+      call dgemm('N','N',nao,maxmo,nmo_g,one,work2,nao,work3,nao_g,zero,cmo,nao)
+!
+      return
+end
