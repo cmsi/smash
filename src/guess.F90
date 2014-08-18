@@ -29,7 +29,14 @@
       integer(4),intent(in) :: mpi_comm1, mpi_comm2
       real(8),intent(inout):: cmoa(nao*nao), cmob(nao*nao), overinv(nao*nao)
 !
+      if(master) then
+        write(*,'(" ---------------------")')
+        write(*,'("   Guess calculation")')
+        write(*,'(" ---------------------")')
+      endif
+!
       if(guess == 'HUCKEL') then
+        if(master) write(*,'(" Guess MOs are generated using extended Huckel orbitals.",/)')
         call huckelguess(cmoa,overinv,nproc2,myrank2,mpi_comm2)
         if(scftype == 'UHF') call dcopy(nao*nao,cmoa,1,cmob,1)
 !
@@ -38,6 +45,7 @@
         if(scftype == 'UHF') call dcopy(nao*nao,cmoa,1,cmob,1)
 !
       elseif(guess == 'CHECK') then
+        if(master) write(*,'(" Guess MOs are read from checkpoint file and projected.",/)')
         call checkguess(cmoa,cmob,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
       else
         if(master) write(*,'(" Error! This program does not support guess= ",a10,"!")') guess
@@ -65,12 +73,12 @@ end
       integer :: i, j, nao_g2
       real(8),intent(in):: overinv(nao*nao)
       real(8),intent(out):: cmo(nao*nao)
-      real(8),allocatable :: hmo(:), overlap(:,:), work1(:), work2(:), eigen(:)
+      real(8),allocatable :: hmo(:), overlap(:), work1(:), work2(:), eigen(:)
 !
 ! Set basis functions
 !
       spher_g=.true.
-      call setbasis_g
+      call setbasis_g(1)
 !
 ! Set coordinate
 !
@@ -83,28 +91,29 @@ end
 ! Set required arrays
 !
       nao_g2= nao_g*nao_g
-      call memset(3*nao_g2+2*nao*nao_g+nao_g)
-      allocate(hmo(nao_g2),overlap(nao*nao_g,2),work1(nao_g2),work2(nao_g2),eigen(nao_g))
+      call memset(2*nao_g2+2*nao*nao_g+nao_g)
+      allocate(hmo(nao_g2),overlap(nao*nao_g),work1(nao*nao_g),work2(nao_g2),eigen(nao_g))
 !
 ! Calculate Extended Huckel method
 !
-      call calchuckelg(hmo,work1,work2,eigen,nproc,myrank,mpi_comm)
+      call calchuckelg(hmo,eigen,nproc,myrank,mpi_comm)
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
-      call calcover2(overlap(1,1),overlap(1,2),nproc,myrank,mpi_comm)
+      call calcover2(overlap,work1,nproc,myrank,mpi_comm)
 !
 ! Project orbitals from Huckel to SCF
 !
       call projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,nproc,myrank,mpi_comm)
       deallocate(hmo,overlap,work1,work2,eigen)
-      call memunset(3*nao_g2+2*nao*nao_g+nao_g)
+      call memunset(2*nao_g2+2*nao*nao_g+nao_g)
       return
 end
 
-!-----------------------------------------------------------------------
-  subroutine calchuckelg(hmo,huckel,ortho,eigen,nproc,myrank,mpi_comm)
-!-----------------------------------------------------------------------
+
+!----------------------------------------------------------
+  subroutine calchuckelg(hmo,eigen,nproc,myrank,mpi_comm)
+!----------------------------------------------------------
 !
 ! Driver of extended Huckel calculation for guess generation
 !
@@ -115,8 +124,7 @@ end
       integer,intent(in) :: nproc, myrank
       integer(4),intent(in) :: mpi_comm
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
-      real(8),intent(out) :: hmo(nao_g*nao_g), huckel(nao_g*nao_g)
-      real(8),intent(out) :: ortho(nao_g*nao_g), eigen(nao_g)
+      real(8),intent(out) :: hmo(nao_g*nao_g), eigen(nao_g)
 !
 ! Calculate overlap integrals
 ! (guess basis)x(guess basis)
@@ -125,30 +133,53 @@ end
 !
 ! Set ionization potentials
 !
-      call huckelip(eigen)
+      call huckelip(eigen,1)
 !
 ! Form extended Huckel matrix
 !
-      call formhuckel(huckel,hmo,eigen)
-!
-! Calculate canonicalization matrix
-!
-      call mtrxcanon(ortho,hmo,eigen,nao_g,nmo_g,nproc,myrank,mpi_comm)
-!
-! Canonicalize extended Huckel matrix
-!
-!ishimura
-!     call canonicalize(huckel,ortho,hmo,nao_g,nmo_g)
+      call formhuckel(hmo,eigen)
 !
 ! Diagonalize canonicalized matrix
 !
-      call diag('V','U',nmo_g,huckel,nao_g,eigen,nproc,myrank,mpi_comm)
+      call diag('V','U',nao_g,hmo,nao_g,eigen,nproc,myrank,mpi_comm)
 !
-! Backtransform to AO basis
+      nmo_g= nao_g
+      return
+end
+
+
+!--------------------------------------------------------------
+  subroutine calchuckelgcore(hmo,eigen,nproc,myrank,mpi_comm)
+!--------------------------------------------------------------
 !
-!ishimura
-      call dcopy(nmo_g*nao_g,huckel,1,hmo,1)
-!     call dgemm('N','N',nao_g,nmo_g,nmo_g,one,ortho,nao_g,huckel,nao_g,zero,hmo,nao_g)
+! Driver of extended Huckel calculation for only core orbitals
+!
+! Out : hmo (extended Huckel orbitals)
+!
+      use modguess, only : nao_gcore
+      implicit none
+      integer,intent(in) :: nproc, myrank
+      integer(4),intent(in) :: mpi_comm
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(out) :: hmo(nao_gcore*nao_gcore), eigen(nao_gcore)
+!
+! Calculate overlap integrals
+! (guess basis)x(guess basis)
+!
+      call calcover1core(hmo)
+!
+! Set ionization potentials
+!
+      call huckelip(eigen,2)
+!
+! Form extended Huckel matrix
+!
+      call formhuckelcore(hmo,eigen)
+!
+! Diagonalize canonicalized matrix
+!
+      call diag('V','U',nao_gcore,hmo,nao_gcore,eigen,nproc,myrank,mpi_comm)
+!
       return
 end
 
@@ -212,21 +243,24 @@ end
 end
 
 
-!------------------------------
-  subroutine huckelip(energy)
-!------------------------------
+!------------------------------------
+  subroutine huckelip(energy,itype)
+!------------------------------------
 !
 ! Set ionization potentials
 !
+! In  : itype  (1: normal Huckel calculation)
+!              (2: Huckel calculation for core orbitals)
 ! Out : energy (ionization potential)
 !
       use modmolecule, only : natom, numatomic
       use modguess, only : nao_g, spher_g
       use modecp, only : flagecp, izcore
       implicit none
+      integer,intent(in) :: itype
       integer :: iao, iatom, i
       real(8),parameter :: one=1.0D+00
-      real(8),intent(out) :: energy(nao_g)
+      real(8),intent(out) :: energy(*)
       real(8) :: row1(2)=(/-5.000D-01,-9.180D-01/)
       real(8) :: row2(3,3:10)
       real(8) :: row3(5,11:18)
@@ -421,326 +455,522 @@ end
 ! The order is 1S,2S,2P,3S,3P,3D,4S,4P,4D,4F,5S,5P,5D,5F,6S,6P,6D,7S
 !
       iao= 0
+      if(itype == 1) then
 !
 ! Set valence ionization potentials
 !
-      do iatom= 1,natom
-        select case(numatomic(iatom))
+        do iatom= 1,natom
+          select case(numatomic(iatom))
 ! H - He
-          case(1:2)
-            iao= iao+1
-            energy(iao)= row1(numatomic(iatom))
+            case(1:2)
+              iao= iao+1
+              energy(iao)= row1(numatomic(iatom))
 ! Li - Ne
-          case(3:10)
-            iao= iao+1
-            energy(iao)= row2(2,numatomic(iatom))
-            do i= 1,3
+            case(3:10)
               iao= iao+1
-              energy(iao)= row2(3,numatomic(iatom))
-            enddo
+              energy(iao)= row2(2,numatomic(iatom))
+              do i= 1,3
+                iao= iao+1
+                energy(iao)= row2(3,numatomic(iatom))
+              enddo
 ! Na - Ar
-          case(11:18)
-            iao= iao+1
-            energy(iao)= row3(4,numatomic(iatom))
-            do i= 1,3
+            case(11:18)
               iao= iao+1
-              energy(iao)= row3(5,numatomic(iatom))
-            enddo
+              energy(iao)= row3(4,numatomic(iatom))
+              do i= 1,3
+                iao= iao+1
+                energy(iao)= row3(5,numatomic(iatom))
+              enddo
 ! K  - Ca, Ga - Kr
-          case(19:20,31:36)
-            iao= iao+1
-            energy(iao)= row4(7,numatomic(iatom))
-            do i= 1,3
+            case(19:20,31:36)
               iao= iao+1
-              energy(iao)= row4(8,numatomic(iatom))
-            enddo
+              energy(iao)= row4(7,numatomic(iatom))
+              do i= 1,3
+                iao= iao+1
+                energy(iao)= row4(8,numatomic(iatom))
+              enddo
 ! Sc - Zn
-          case(21:30)
-            iao= iao+1
-            energy(iao)= row4(7,numatomic(iatom))
-            do i= 1,3
+            case(21:30)
               iao= iao+1
-              energy(iao)= row4(8,numatomic(iatom))
-            enddo
-            do i= 1,5
-              iao= iao+1
-              energy(iao)= row4(6,numatomic(iatom))
-            enddo
+              energy(iao)= row4(7,numatomic(iatom))
+              do i= 1,3
+                iao= iao+1
+                energy(iao)= row4(8,numatomic(iatom))
+              enddo
+              do i= 1,5
+                iao= iao+1
+                energy(iao)= row4(6,numatomic(iatom))
+              enddo
 ! Rb - Sr, In - Xe
-          case(37:38,49:54)
-            iao= iao+1
-            energy(iao)= row5(10,numatomic(iatom))
-            do i= 1,3
+            case(37:38,49:54)
               iao= iao+1
-              energy(iao)= row5(11,numatomic(iatom))
-            enddo
+              energy(iao)= row5(10,numatomic(iatom))
+              do i= 1,3
+                iao= iao+1
+                energy(iao)= row5(11,numatomic(iatom))
+              enddo
 ! Y  - Cd
-          case(39:48)
-            iao= iao+1
-            energy(iao)= row5(10,numatomic(iatom))
-            do i= 1,3
+            case(39:48)
               iao= iao+1
-              energy(iao)= row5(11,numatomic(iatom))
-            enddo
-            do i= 1,5
-              iao= iao+1
-              energy(iao)= row5(9,numatomic(iatom))
-            enddo
+              energy(iao)= row5(10,numatomic(iatom))
+              do i= 1,3
+                iao= iao+1
+                energy(iao)= row5(11,numatomic(iatom))
+              enddo
+              do i= 1,5
+                iao= iao+1
+                energy(iao)= row5(9,numatomic(iatom))
+              enddo
 ! Cs - Ba
-          case(55:56)
-            iao= iao+1
-            energy(iao)= row6(14,numatomic(iatom))
+            case(55:56)
+              iao= iao+1
+              energy(iao)= row6(14,numatomic(iatom))
 ! La - Yb
-          case(57:70)
-            iao= iao+1
-            energy(iao)= row6(14,numatomic(iatom))
-            do i= 1,7
+            case(57:70)
               iao= iao+1
-              energy(iao)= row6(9,numatomic(iatom))
-            enddo
-! Lu - Hg
-          case(71:80)
-            iao= iao+1
-            energy(iao)= row6(14,numatomic(iatom))
-            do i= 1,5
-              iao= iao+1
-              energy(iao)= row6(13,numatomic(iatom))
-            enddo
-! Tl - Rn
-          case(81:86)
-            iao= iao+1
-            energy(iao)= row6(14,numatomic(iatom))
-            do i= 1,3
-              iao= iao+1
-              energy(iao)= row6(15,numatomic(iatom))
-            enddo
-          case default
-            write(*,'(" Error! This program supports up to Rn in huckelip.")')
-            call iabort
-        end select
-      enddo
-!
-! Set core ionization potentials
-!
-      do iatom= 1,natom
-        select case(numatomic(iatom))
-! H  - He
-          case(1:2)
-! Li - Ne
-          case(3:10)
-!  1s
-            if(.not.flagecp.or.(izcore(iatom) < 2)) then
-              iao= iao+1
-              energy(iao)= row2(1,numatomic(iatom))
-            endif
-! Na - Ar
-          case(11:18)
-!  1s
-            if(.not.flagecp.or.(izcore(iatom) < 2)) then
-              iao= iao+1
-              energy(iao)=row3(1,numatomic(iatom))
-            endif
-!  2s+2p
-            if(.not.flagecp.or.(izcore(iatom) < 10)) then
-              iao= iao+1
-              energy(iao)=row3(2,numatomic(iatom))
-              do i= 1,3
-                iao= iao+1
-                energy(iao)=row3(3,numatomic(iatom))
-              enddo
-            endif
-! K  - Kr
-          case(19:36)
-!  1s
-            if(.not.flagecp.or.(izcore(iatom) < 2)) then
-              iao= iao+1
-              energy(iao)= row4(1,numatomic(iatom))
-            endif
-!  2s+2p
-            if(.not.flagecp.or.(izcore(iatom) < 10)) then
-              iao= iao+1
-              energy(iao)= row4(2,numatomic(iatom))
-              do i= 1,3
-                iao= iao+1
-                energy(iao)= row4(3,numatomic(iatom))
-              enddo
-            endif
-!  3s+3p
-            if(.not.flagecp.or.(izcore(iatom) < 18)) then
-              iao= iao+1
-              energy(iao)= row4(4,numatomic(iatom))
-              do i= 1,3
-                iao= iao+1
-                energy(iao)= row4(5,numatomic(iatom))
-              enddo
-            endif
-!  3d
-            if(numatomic(iatom) >= 31) then
-              if(.not.flagecp.or.(izcore(iatom) < 28)) then
-                do i= 1,5
-                  iao= iao+1
-                  energy(iao)= row4(6,numatomic(iatom))
-                enddo
-              endif
-            endif
-! Rb - Xe
-          case(37:54)
-!  1s
-            if(.not.flagecp.or.(izcore(iatom) < 2)) then
-              iao= iao+1
-              energy(iao)= row5(1,numatomic(iatom))
-            endif
-!  2s+2p
-            if(.not.flagecp.or.(izcore(iatom) < 10)) then
-              iao= iao+1
-              energy(iao)= row5(2,numatomic(iatom))
-              do i= 1,3
-                iao= iao+1
-                energy(iao)= row5(3,numatomic(iatom))
-              enddo
-            endif
-!  3s+3p
-            if(.not.flagecp.or.(izcore(iatom) < 18)) then
-              iao= iao+1
-              energy(iao)= row5(4,numatomic(iatom))
-              do i= 1,3
-                iao= iao+1
-                energy(iao)= row5(5,numatomic(iatom))
-              enddo
-            endif
-!  3d
-            if(.not.flagecp.or.(izcore(iatom) < 28)) then
-              do i= 1,5
-                iao= iao+1
-                energy(iao)= row5(6,numatomic(iatom))
-              enddo
-            endif
-!  4s+4p
-            if(.not.flagecp.or.(izcore(iatom) < 36)) then
-              iao= iao+1
-              energy(iao)= row5(7,numatomic(iatom))
-              do i= 1,3
-                iao= iao+1
-                energy(iao)= row5(8,numatomic(iatom))
-              enddo
-            endif
-!  4d
-            if(numatomic(iatom) >= 49) then
-              if(.not.flagecp.or.(izcore(iatom) < 46)) then
-                do i= 1,5
-                  iao= iao+1
-                  energy(iao)= row5(9,numatomic(iatom))
-                enddo
-              endif
-            endif
-! Cs - Rn
-          case(55:86)
-!  1s
-            if(.not.flagecp.or.(izcore(iatom) < 2)) then
-              iao= iao+1
-              energy(iao)= row6(1,numatomic(iatom))
-            endif
-!  2s+2p
-            if(.not.flagecp.or.(izcore(iatom) < 10)) then
-              iao= iao+1
-              energy(iao)= row6(2,numatomic(iatom))
-              do i= 1,3
-                iao= iao+1
-                energy(iao)= row6(3,numatomic(iatom))
-              enddo
-            endif
-!  3s+3p
-            if(.not.flagecp.or.(izcore(iatom) < 18)) then
-              iao= iao+1
-              energy(iao)= row6(4,numatomic(iatom))
-              do i= 1,3
-                iao= iao+1
-                energy(iao)= row6(5,numatomic(iatom))
-              enddo
-            endif
-!  3d
-            if(.not.flagecp.or.(izcore(iatom) < 28)) then
-              do i= 1,5
-                iao= iao+1
-                energy(iao)= row6(6,numatomic(iatom))
-              enddo
-            endif
-!  4s+4p
-            if(.not.flagecp.or.(izcore(iatom) < 36)) then
-              iao= iao+1
-              energy(iao)= row6(7,numatomic(iatom))
-              do i= 1,3
-                iao= iao+1
-                energy(iao)= row6(8,numatomic(iatom))
-              enddo
-            endif
-!  4d
-            if(.not.flagecp.or.(izcore(iatom) < 46)) then
-              do i= 1,5
+              energy(iao)= row6(14,numatomic(iatom))
+              do i= 1,7
                 iao= iao+1
                 energy(iao)= row6(9,numatomic(iatom))
               enddo
-            endif
-!  4f
-            if(numatomic(iatom) >= 71) then
-              if(.not.flagecp.or.(izcore(iatom) < 60)) then
-                do i= 1,7
-                  iao= iao+1
-                  energy(iao)= row6(10,numatomic(iatom))
-                enddo
-              endif
-            endif
-!  5s+5p
-            if(.not.flagecp.or.((izcore(iatom) /= 54).and.(izcore(iatom) < 68))) then
+! Lu - Hg
+            case(71:80)
               iao= iao+1
-              energy(iao)= row6(11,numatomic(iatom))
+              energy(iao)= row6(14,numatomic(iatom))
+              do i= 1,5
+                iao= iao+1
+                energy(iao)= row6(13,numatomic(iatom))
+              enddo
+! Tl - Rn
+            case(81:86)
+              iao= iao+1
+              energy(iao)= row6(14,numatomic(iatom))
               do i= 1,3
                 iao= iao+1
-                energy(iao)= row6(12,numatomic(iatom))
+                energy(iao)= row6(15,numatomic(iatom))
               enddo
-            endif
-!  5d
-            if(numatomic(iatom) >= 81) then
-              if(.not.flagecp.or.(izcore(iatom) < 78)) then
-                do i= 1,5
+            case default
+              write(*,'(" Error! This program supports up to Rn in huckelip.")')
+              call iabort
+          end select
+        enddo
+!
+! Set core ionization potentials
+!
+        do iatom= 1,natom
+          select case(numatomic(iatom))
+! H  - He
+            case(1:2)
+! Li - Ne
+            case(3:10)
+!  1s
+              if(.not.flagecp.or.(izcore(iatom) < 2)) then
+                iao= iao+1
+                energy(iao)= row2(1,numatomic(iatom))
+              endif
+! Na - Ar
+            case(11:18)
+!  1s
+              if(.not.flagecp.or.(izcore(iatom) < 2)) then
+                iao= iao+1
+                energy(iao)=row3(1,numatomic(iatom))
+              endif
+!  2s+2p
+              if(.not.flagecp.or.(izcore(iatom) < 10)) then
+                iao= iao+1
+                energy(iao)=row3(2,numatomic(iatom))
+                do i= 1,3
                   iao= iao+1
-                  energy(iao)= row6(13,numatomic(iatom))
+                  energy(iao)=row3(3,numatomic(iatom))
                 enddo
               endif
-            endif
-          case default
-            write(*,'(" Error! This program supports up to Rn in huckelip.")')
-            call iabort
-        end select
-      enddo
+! K  - Kr
+            case(19:36)
+!  1s
+              if(.not.flagecp.or.(izcore(iatom) < 2)) then
+                iao= iao+1
+                energy(iao)= row4(1,numatomic(iatom))
+              endif
+!  2s+2p
+              if(.not.flagecp.or.(izcore(iatom) < 10)) then
+                iao= iao+1
+                energy(iao)= row4(2,numatomic(iatom))
+                do i= 1,3
+                  iao= iao+1
+                  energy(iao)= row4(3,numatomic(iatom))
+                enddo
+              endif
+!  3s+3p
+              if(.not.flagecp.or.(izcore(iatom) < 18)) then
+                iao= iao+1
+                energy(iao)= row4(4,numatomic(iatom))
+                do i= 1,3
+                  iao= iao+1
+                  energy(iao)= row4(5,numatomic(iatom))
+                enddo
+              endif
+!  3d
+              if(numatomic(iatom) >= 31) then
+                if(.not.flagecp.or.(izcore(iatom) < 28)) then
+                  do i= 1,5
+                    iao= iao+1
+                    energy(iao)= row4(6,numatomic(iatom))
+                  enddo
+                endif
+              endif
+! Rb - Xe
+            case(37:54)
+!  1s
+              if(.not.flagecp.or.(izcore(iatom) < 2)) then
+                iao= iao+1
+                energy(iao)= row5(1,numatomic(iatom))
+              endif
+!  2s+2p
+              if(.not.flagecp.or.(izcore(iatom) < 10)) then
+                iao= iao+1
+                energy(iao)= row5(2,numatomic(iatom))
+                do i= 1,3
+                  iao= iao+1
+                  energy(iao)= row5(3,numatomic(iatom))
+                enddo
+              endif
+!  3s+3p
+              if(.not.flagecp.or.(izcore(iatom) < 18)) then
+                iao= iao+1
+                energy(iao)= row5(4,numatomic(iatom))
+                do i= 1,3
+                  iao= iao+1
+                  energy(iao)= row5(5,numatomic(iatom))
+                enddo
+              endif
+!  3d
+              if(.not.flagecp.or.(izcore(iatom) < 28)) then
+                do i= 1,5
+                  iao= iao+1
+                  energy(iao)= row5(6,numatomic(iatom))
+                enddo
+              endif
+!  4s+4p  
+              if(.not.flagecp.or.(izcore(iatom) < 36)) then
+                iao= iao+1
+                energy(iao)= row5(7,numatomic(iatom))
+                do i= 1,3
+                  iao= iao+1
+                  energy(iao)= row5(8,numatomic(iatom))
+                enddo
+              endif
+!  4d
+              if(numatomic(iatom) >= 49) then
+                if(.not.flagecp.or.(izcore(iatom) < 46)) then
+                  do i= 1,5
+                    iao= iao+1
+                    energy(iao)= row5(9,numatomic(iatom))
+                  enddo
+                endif
+              endif
+! Cs - Rn
+            case(55:86)
+!  1s
+              if(.not.flagecp.or.(izcore(iatom) < 2)) then
+                iao= iao+1
+                energy(iao)= row6(1,numatomic(iatom))
+              endif
+!  2s+2p  
+              if(.not.flagecp.or.(izcore(iatom) < 10)) then
+                iao= iao+1
+                energy(iao)= row6(2,numatomic(iatom))
+                do i= 1,3
+                  iao= iao+1
+                  energy(iao)= row6(3,numatomic(iatom))
+                enddo
+              endif
+!  3s+3p  
+              if(.not.flagecp.or.(izcore(iatom) < 18)) then
+                iao= iao+1
+                energy(iao)= row6(4,numatomic(iatom))
+                do i= 1,3
+                  iao= iao+1
+                  energy(iao)= row6(5,numatomic(iatom))
+                enddo
+              endif
+!  3d
+              if(.not.flagecp.or.(izcore(iatom) < 28)) then
+                do i= 1,5
+                  iao= iao+1
+                  energy(iao)= row6(6,numatomic(iatom))
+                enddo
+              endif
+!  4s+4p  
+              if(.not.flagecp.or.(izcore(iatom) < 36)) then
+                iao= iao+1
+                energy(iao)= row6(7,numatomic(iatom))
+                do i= 1,3
+                  iao= iao+1
+                  energy(iao)= row6(8,numatomic(iatom))
+                enddo
+              endif
+!  4d
+              if(.not.flagecp.or.(izcore(iatom) < 46)) then
+                do i= 1,5
+                  iao= iao+1
+                  energy(iao)= row6(9,numatomic(iatom))
+                enddo
+              endif
+!  4f
+              if(numatomic(iatom) >= 71) then
+                if(.not.flagecp.or.(izcore(iatom) < 60)) then
+                  do i= 1,7
+                    iao= iao+1
+                    energy(iao)= row6(10,numatomic(iatom))
+                  enddo
+                endif
+              endif
+!  5s+5p  
+              if(.not.flagecp.or.((izcore(iatom) /= 54).and.(izcore(iatom) < 68))) then
+                iao= iao+1
+                energy(iao)= row6(11,numatomic(iatom))
+                do i= 1,3
+                  iao= iao+1
+                  energy(iao)= row6(12,numatomic(iatom))
+                enddo
+              endif
+!  5d
+              if(numatomic(iatom) >= 81) then
+                if(.not.flagecp.or.(izcore(iatom) < 78)) then
+                  do i= 1,5
+                    iao= iao+1
+                    energy(iao)= row6(13,numatomic(iatom))
+                  enddo
+                endif
+              endif
+            case default
+              write(*,'(" Error! This program supports up to Rn in huckelip.")')
+              call iabort
+          end select
+        enddo
+!
+      elseif(itype == 2) then
+        do iatom= 1,natom
+          select case(numatomic(iatom))
+! H  - He
+            case(1:2)
+! Li - Ne
+            case(3:10)
+!  1s
+              if(izcore(iatom) >= 2) then
+                iao= iao+1
+                energy(iao)= row2(1,numatomic(iatom))
+              endif
+! Na - Ar
+            case(11:18)
+!  1s
+              if(izcore(iatom) >= 2) then
+                iao= iao+1
+                energy(iao)=row3(1,numatomic(iatom))
+              endif
+!  2s+2p
+              if(izcore(iatom) >= 10) then
+                iao= iao+1
+                energy(iao)=row3(2,numatomic(iatom))
+                do i= 1,3
+                  iao= iao+1
+                  energy(iao)=row3(3,numatomic(iatom))
+                enddo
+              endif
+! K  - Kr
+            case(19:36)
+!  1s
+              if(izcore(iatom) >= 2) then
+                iao= iao+1
+                energy(iao)= row4(1,numatomic(iatom))
+              endif
+!  2s+2p
+              if(izcore(iatom) >= 10) then
+                iao= iao+1
+                energy(iao)= row4(2,numatomic(iatom))
+                do i= 1,3
+                  iao= iao+1
+                  energy(iao)= row4(3,numatomic(iatom))
+                enddo
+              endif
+!  3s+3p
+              if(izcore(iatom) >= 18) then
+                iao= iao+1
+                energy(iao)= row4(4,numatomic(iatom))
+                do i= 1,3
+                  iao= iao+1
+                  energy(iao)= row4(5,numatomic(iatom))
+                enddo
+              endif
+!  3d
+              if(numatomic(iatom) >= 31) then
+                if(izcore(iatom) >= 28) then
+                  do i= 1,5
+                    iao= iao+1
+                    energy(iao)= row4(6,numatomic(iatom))
+                  enddo
+                endif
+              endif
+! Rb - Xe
+            case(37:54)
+!  1s
+              if(izcore(iatom) >= 2) then
+                iao= iao+1
+                energy(iao)= row5(1,numatomic(iatom))
+              endif
+!  2s+2p
+              if(izcore(iatom) >= 10) then
+                iao= iao+1
+                energy(iao)= row5(2,numatomic(iatom))
+                do i= 1,3
+                  iao= iao+1
+                  energy(iao)= row5(3,numatomic(iatom))
+                enddo
+              endif
+!  3s+3p
+              if(izcore(iatom) >= 18) then
+                iao= iao+1
+                energy(iao)= row5(4,numatomic(iatom))
+                do i= 1,3
+                  iao= iao+1
+                  energy(iao)= row5(5,numatomic(iatom))
+                enddo
+              endif
+!  3d
+              if(izcore(iatom) >= 28) then
+                do i= 1,5
+                  iao= iao+1
+                  energy(iao)= row5(6,numatomic(iatom))
+                enddo
+              endif
+!  4s+4p  
+              if(izcore(iatom) >= 36) then
+                iao= iao+1
+                energy(iao)= row5(7,numatomic(iatom))
+                do i= 1,3
+                  iao= iao+1
+                  energy(iao)= row5(8,numatomic(iatom))
+                enddo
+              endif
+!  4d
+              if(numatomic(iatom) >= 49) then
+                if(izcore(iatom) >= 46) then
+                  do i= 1,5
+                    iao= iao+1
+                    energy(iao)= row5(9,numatomic(iatom))
+                  enddo
+                endif
+              endif
+! Cs - Rn
+            case(55:86)
+!  1s
+              if(izcore(iatom) >= 2) then
+                iao= iao+1
+                energy(iao)= row6(1,numatomic(iatom))
+              endif
+!  2s+2p
+              if(izcore(iatom) >= 10) then
+                iao= iao+1
+                energy(iao)= row6(2,numatomic(iatom))
+                do i= 1,3
+                  iao= iao+1
+                  energy(iao)= row6(3,numatomic(iatom))
+                enddo
+              endif
+!  3s+3p  
+              if(izcore(iatom) >= 18) then
+                iao= iao+1
+                energy(iao)= row6(4,numatomic(iatom))
+                do i= 1,3
+                  iao= iao+1
+                  energy(iao)= row6(5,numatomic(iatom))
+                enddo
+              endif
+!  3d
+              if(izcore(iatom) >= 28) then
+                do i= 1,5
+                  iao= iao+1
+                  energy(iao)= row6(6,numatomic(iatom))
+                enddo
+              endif
+!  4s+4p  
+              if(izcore(iatom) >= 36) then
+                iao= iao+1
+                energy(iao)= row6(7,numatomic(iatom))
+                do i= 1,3
+                  iao= iao+1
+                  energy(iao)= row6(8,numatomic(iatom))
+                enddo
+              endif
+!  4d
+              if(izcore(iatom) >= 46) then
+                do i= 1,5
+                  iao= iao+1
+                  energy(iao)= row6(9,numatomic(iatom))
+                enddo
+              endif
+!  4f
+              if(numatomic(iatom) >= 71) then
+                if(izcore(iatom) >= 60) then
+                  do i= 1,7
+                    iao= iao+1
+                    energy(iao)= row6(10,numatomic(iatom))
+                  enddo
+                endif
+              endif
+!  5s+5p  
+              if((izcore(iatom) == 54).or.(izcore(iatom) >= 68)) then
+                iao= iao+1
+                energy(iao)= row6(11,numatomic(iatom))
+                do i= 1,3
+                  iao= iao+1
+                  energy(iao)= row6(12,numatomic(iatom))
+                enddo
+              endif
+!  5d
+              if(numatomic(iatom) >= 81) then
+                if(izcore(iatom) >= 78) then
+                  do i= 1,5
+                    iao= iao+1
+                    energy(iao)= row6(13,numatomic(iatom))
+                  enddo
+                endif
+              endif
+            case default
+              write(*,'(" Error! This program supports up to Rn in huckelip.")')
+              call iabort
+          end select
+        enddo
+      endif
+!
       return
 end
 
 
-!-----------------------------------------------
-  subroutine formhuckel(huckel,overlap,energy)
-!-----------------------------------------------
+!---------------------------------------
+  subroutine formhuckel(huckel,energy)
+!---------------------------------------
 !
 ! Form extended Huckel matrix
 !
-! In  : overlap (overlap integral of guess basis set)
-!       energy (ionization potential)
-! Out : huckel (extended Huckel Hamiltonian)
+! In   : energy (ionization potential)
+! Inout: huckel[in] (overlap integral of guess basis set)
+!              [out](extended Huckel Hamiltonian)
 !
       use modguess, only : nao_g, nao_v
       implicit none
       integer :: i, j
       real(8),parameter :: factor=0.875D+00  !(=1.75/2.0)
       real(8),parameter :: fdown=0.05D+00
-      real(8),intent(in) :: overlap(nao_g,nao_g), energy(nao_g)
-      real(8),intent(out) :: huckel(nao_g,nao_g)
+      real(8),intent(in) :: energy(nao_g)
+      real(8),intent(inout) :: huckel(nao_g,nao_g)
 !
 ! Generate Huckel matrix from overlap integrals and ionization potentials
 !
 !$OMP parallel do schedule(static,1) private(j)
       do i= 1,nao_g
         do j= 1,i-1
-          huckel(j,i)=factor*overlap(j,i)*(energy(i)+energy(j))
+          huckel(j,i)=factor*huckel(j,i)*(energy(i)+energy(j))
         enddo
         huckel(i,i)= energy(i)
       enddo
@@ -753,6 +983,39 @@ end
         do j= 1,i-1
           huckel(j,i)= fdown*huckel(j,i)
         enddo
+      enddo
+!$OMP end parallel do
+      return
+end
+
+
+!-------------------------------------------
+  subroutine formhuckelcore(huckel,energy)
+!-------------------------------------------
+!
+! Form extended Huckel matrix for only core orbitals
+!
+! In   : energy (ionization potential)
+! Inout: huckel[in] (overlap integral of guess basis set)
+!              [out](extended Huckel Hamiltonian)
+!
+      use modguess, only : nao_gcore
+      implicit none
+      integer :: i, j
+      real(8),parameter :: factor=0.875D+00  !(=1.75/2.0)
+      real(8),parameter :: fdown=0.05D+00
+      real(8),intent(in) :: energy(nao_gcore)
+      real(8),intent(inout) :: huckel(nao_gcore,nao_gcore)
+!
+! Generate Huckel matrix from overlap integrals and ionization potentials
+! Scale down core-core and core-valence elements
+!
+!$OMP parallel do schedule(static,1) private(j)
+      do i= 1,nao_gcore
+        do j= 1,i-1
+          huckel(j,i)= fdown*factor*huckel(j,i)*(energy(i)+energy(j))
+        enddo
+        huckel(i,i)= energy(i)
       enddo
 !$OMP end parallel do
       return
@@ -777,6 +1040,31 @@ end
       do ish= nshell_g,1,-1
         do jsh= 1,ish
           call intover1(overlap,ish,jsh)
+        enddo
+      enddo
+!$OMP end parallel do
+      return
+end
+
+
+!------------------------------------
+  subroutine calcover1core(overlap)
+!------------------------------------
+!
+! Driver of overlap integral calculation for only core orbitals
+! (guess basis)x(guess basis)
+!
+! Out : overlap (overlap integral of guess basis set)
+!
+      use modguess, only : nshell_gcore, nao_gcore
+      implicit none
+      integer :: ish, jsh
+      real(8),intent(out) :: overlap(nao_gcore*nao_gcore)
+!
+!$OMP parallel do private(jsh)
+      do ish= nshell_gcore,1,-1
+        do jsh= 1,ish
+          call intover1core(overlap,ish,jsh)
         enddo
       enddo
 !$OMP end parallel do
@@ -819,9 +1107,43 @@ end
 end
 
 
-!-----------------------------------------
+!---------------------------------------------------------------
+  subroutine calcover2core(overlap,work,nproc,myrank,mpi_comm)
+!---------------------------------------------------------------
+!
+! Driver of overlap integral calculation for only core orbitals
+! (input basis)x(guess basis)
+!
+! Out : overlap (overlap integral of guess and SCF basis sets)
+!       work    (work array)
+!
+      use modguess, only : nshell_g, nao_g, nshell_gcore, nao_gcore
+      implicit none
+      integer,intent(in) :: nproc, myrank
+      integer(4),intent(in) :: mpi_comm
+      integer :: ish, jsh
+      real(8),parameter :: zero=0.0D+00
+      real(8),intent(out) :: overlap(nao_gcore*nao_g), work(nao_gcore*nao_g)
+!
+      work(:)= zero
+!$OMP parallel
+      do ish= nshell_g-myrank,1,-nproc
+!$OMP do
+        do jsh= 1,nshell_gcore
+          call intover2core(work,ish,jsh)
+        enddo
+!$OMP enddo
+      enddo
+!$OMP end parallel
+!
+      call para_allreducer(work,overlap,nao_gcore*nao_g,mpi_comm)
+      return
+end
+
+
+!---------------------------------------
   subroutine intover1(overlap,ish,jsh)
-!-----------------------------------------
+!---------------------------------------
 !
 ! Overlap integral calculation
 ! (guess basis)x(guess basis)
@@ -884,9 +1206,9 @@ end
 end
 
 
-!-----------------------------------------
+!---------------------------------------
   subroutine intover2(overlap,ish,jsh)
-!-----------------------------------------
+!---------------------------------------
 !
 ! Overlap integral calculation
 ! (input basis)x(guess basis)
@@ -933,6 +1255,135 @@ end
       do jprim= 1,nprimij(2)
         exij(jprim,2)= ex(jloc+jprim)
         coij(jprim,2)= coeff(jloc+jprim)
+      enddo
+!
+! Calculate overlap integrals
+!
+      call ints(sint,exij,coij,coordij,nprimij,nangij,nbfij,mxprsh,threshex)
+!
+      do ii= 1,nbfij(1)
+        do jj= 1,nbfij(2)
+          overlap(jlocbf+jj,ilocbf+ii)= sint(jj,ii)
+        enddo
+      enddo
+      return
+end
+
+
+!-------------------------------------------
+  subroutine intover1core(overlap,ish,jsh)
+!-------------------------------------------
+!
+! Overlap integral calculation
+! (guess basis)x(guess basis)
+!
+! In  : ish, jsh (shell index)
+! Out : overlap (overlap integral of guess basis set)
+!
+      use modparam, only : mxprsh
+      use modthresh, only : threshex
+      use modguess, only : locatom_gcore, locprim_gcore, locbf_gcore, mprim_gcore, mbf_gcore, &
+&                          mtype_gcore, ex_gcore, coeff_gcore, nao_gcore, coord_g
+      implicit none
+      integer,intent(in) :: ish, jsh
+      integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, iprim, jprim
+      integer :: nbfij(2), nprimij(2), nangij(2), ii, jj, maxj
+      real(8),intent(out) :: overlap(nao_gcore,nao_gcore)
+      real(8) :: sint(28,28), exij(mxprsh,2), coij(mxprsh,2), coordij(3,2)
+      logical :: iandj
+!
+! Set parameters
+!
+      iandj =(ish == jsh)
+      nangij(1)= mtype_gcore(ish)
+      nangij(2)= mtype_gcore(jsh)
+      nprimij(1)= mprim_gcore(ish)
+      nprimij(2)= mprim_gcore(jsh)
+      nbfij(1)  = mbf_gcore(ish)
+      nbfij(2)  = mbf_gcore(jsh)
+      iatom = locatom_gcore(ish)
+      iloc  = locprim_gcore(ish)
+      ilocbf= locbf_gcore(ish)
+      jatom = locatom_gcore(jsh)
+      jloc  = locprim_gcore(jsh)
+      jlocbf= locbf_gcore(jsh)
+      do ii= 1,3
+        coordij(ii,1)= coord_g(ii,iatom)
+        coordij(ii,2)= coord_g(ii,jatom)
+      enddo
+      do iprim= 1,nprimij(1)
+        exij(iprim,1)= ex_gcore(iloc+iprim)
+        coij(iprim,1)= coeff_gcore(iloc+iprim)
+      enddo
+      do jprim= 1,nprimij(2)
+        exij(jprim,2)= ex_gcore(jloc+jprim)
+        coij(jprim,2)= coeff_gcore(jloc+jprim)
+      enddo
+!
+! Calculate overlap integrals
+!
+      call ints(sint,exij,coij,coordij,nprimij,nangij,nbfij,mxprsh,threshex)
+!
+      maxj= nbfij(2)
+      do ii= 1,nbfij(1)
+        if(iandj) maxj= ii
+        do jj= 1,maxj
+          overlap(jlocbf+jj,ilocbf+ii)= sint(jj,ii)
+        enddo
+      enddo
+      return
+end
+
+
+!-------------------------------------------
+  subroutine intover2core(overlap,ish,jsh)
+!-------------------------------------------
+!
+! Overlap integral calculation for only core orbitals
+! (core-guess basis)x(guess basis)
+!
+! In  : ish, jsh (shell index)
+! Out : overlap (overlap integral of core-guess and guess basis sets)
+!
+      use modparam, only : mxprsh
+      use modthresh, only : threshex
+      use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
+&                          ex_g, coeff_g, nao_g, coord_g, &
+&                          locatom_gcore, locprim_gcore, locbf_gcore, mprim_gcore, &
+&                          mbf_gcore, mtype_gcore, ex_gcore, coeff_gcore, nao_gcore
+      implicit none
+      integer,intent(in) :: ish, jsh
+      integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, iprim, jprim
+      integer :: nbfij(2), nprimij(2), nangij(2), ii, jj
+      real(8),parameter :: zero=0.0D+0, one=1.0D+0
+      real(8),intent(out) :: overlap(nao_gcore,nao_g)
+      real(8) :: sint(28,28), exij(mxprsh,2), coij(mxprsh,2), coordij(3,2)
+!
+! Set parameters
+!
+      nangij(1)= mtype_g(ish)
+      nangij(2)= mtype_gcore(jsh)
+      nprimij(1)= mprim_g(ish)
+      nprimij(2)= mprim_gcore(jsh)
+      nbfij(1)  = mbf_g(ish)
+      nbfij(2)  = mbf_gcore(jsh)
+      iatom = locatom_g(ish)
+      iloc  = locprim_g(ish)
+      ilocbf= locbf_g(ish)
+      jatom = locatom_gcore(jsh)
+      jloc  = locprim_gcore(jsh)
+      jlocbf= locbf_gcore(jsh)
+      do ii= 1,3
+        coordij(ii,1)= coord_g(ii,iatom)
+        coordij(ii,2)= coord_g(ii,jatom)
+      enddo
+      do iprim= 1,nprimij(1)
+        exij(iprim,1)= ex_g(iloc+iprim)
+        coij(iprim,1)= coeff_g(iloc+iprim)
+      enddo
+      do jprim= 1,nprimij(2)
+        exij(jprim,2)= ex_gcore(jloc+jprim)
+        coij(jprim,2)= coeff_gcore(jloc+jprim)
       enddo
 !
 ! Calculate overlap integrals
@@ -1067,29 +1518,31 @@ end
       use modjob, only : scftype
       use modiofile, only : input, icheck
       use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
-&                          ex_g, coeff_g, nao_g, coord_g, nmo_g, nshell_g, nprim_g
+&                          ex_g, coeff_g, nao_g, coord_g, nmo_g, nshell_g, nprim_g, &
+&                          nao_gcore
       use modbasis, only : nao
       use modmolecule, only : neleca, nelecb, nmo, natom, charge
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
       integer(4),intent(in) :: mpi_comm1, mpi_comm2
-      integer :: intarray(4), ii, jj, natom_g, neleca_g, nelecb_g, nelect, nelect_g
-      integer :: ncore, ndim, max
+      integer :: intarray(6), ii, jj, natom_g, neleca_g, nelecb_g, nelect, nelect_g
+      integer :: ncore, ndim, max, idummy
       real(8),intent(in) :: overinv(nao*nao)
       real(8),intent(inout) :: cmoa(nao*nao), cmob(nao*nao)
       real(8),allocatable :: cmoa_g(:,:), cmob_g(:,:)
       real(8),allocatable :: overlap(:), work1(:), work2(:), work3(:), eigen(:)
+      real(8),allocatable :: coremo(:,:)
       real(8) :: charge_g
       character(len=16) :: scftype_g, cdummy
+      logical :: flagecp_g
 !
 ! Read guess basis functions and MOs from checkpoint file
 !
       if(master) then
-        write(*,'(" Guess MOs are read from checkpoint file.")')
         rewind(icheck)
         read(icheck)
         read(icheck,err=9999) scftype_g, natom_g, nao_g, nmo_g, nshell_g, nprim_g, neleca_g, &
-&                             nelecb_g, cdummy, cdummy, charge_g
+&                             nelecb_g, cdummy, cdummy, charge_g, idummy, flagecp_g
 !
         if(natom_g /= natom) then
           write(*,'(" Error! The numbers of atoms in checkpoint and input files are different.")')
@@ -1125,9 +1578,6 @@ end
         read(icheck)
         read(icheck) (mtype_g(ii),ii=1,nshell_g)
 !
-        locbf_g(nshell_g+1)= nao_g
-        locprim_g(nshell_g+1)= nprim_g
-!
         read(icheck)
         read(icheck)((cmoa_g(jj,ii),jj=1,nao_g),ii=1,nmo_g)
         if((scftype == 'UHF').and.(scftype_g == 'UHF')) then
@@ -1144,23 +1594,27 @@ end
           intarray(2)= nmo_g
           intarray(3)= neleca_g
           intarray(4)= nelecb_g
+          intarray(5)= nao_g
+          intarray(6)= nprim_g
         endif
-        call para_bcasti(intarray,4,0,mpi_comm1)
-        call para_bcastc(scftype_g,16,0,mpi_comm1)
-        call para_bcasti(locprim_g,nshell_g+1,0,mpi_comm1)
-        call para_bcasti(locbf_g  ,nshell_g+1,0,mpi_comm1)
-        call para_bcasti(locatom_g,nshell_g  ,0,mpi_comm1)
+        call para_bcasti(intarray,6,0,mpi_comm1)
 !
         nshell_g= intarray(1)
         nmo_g   = intarray(2)
         neleca_g= intarray(3)
         nelecb_g= intarray(4)
-        nao_g= locbf_g(nshell_g+1)
-        nprim_g= locprim_g(nshell_g+1)
+        nao_g   = intarray(5)
+        nprim_g = intarray(6)
 !
+        call para_bcastc(scftype_g,16,0,mpi_comm1)
+        call para_bcastl(flagecp_g,1,0,mpi_comm1)
+        call para_bcasti(locprim_g,nshell_g,0,mpi_comm1)
+        call para_bcasti(locbf_g  ,nshell_g,0,mpi_comm1)
+        call para_bcasti(locatom_g,nshell_g,0,mpi_comm1)
         call para_bcastr(ex_g   ,nprim_g,0,mpi_comm1)
         call para_bcastr(coeff_g,nprim_g,0,mpi_comm1)
         call para_bcastr(coord_g,natom*3,0,mpi_comm1)
+        call para_bcastr(charge_g,1,0,mpi_comm1)
         call para_bcasti(mprim_g,nshell_g,0,mpi_comm1)
         call para_bcasti(mbf_g  ,nshell_g,0,mpi_comm1)
         call para_bcasti(mtype_g,nshell_g,0,mpi_comm1)
@@ -1190,13 +1644,27 @@ end
       nelect  =neleca  +nelecb  -nint(charge)
       nelect_g=neleca_g+nelecb_g-nint(charge_g)
       ncore=(nelect_g-nelect)/2
-write(*,*)"ncore",ncore, nmo_g
-      ncore=0
-
-!     nmo_g= nmo_g-ncore
+!
       if(ncore < 0) then
         if(master) write(*,'(" Error! The number of electrons in checkpoint file is too small.")')
         call iabort
+      elseif((ncore /= 0).and.flagecp_g) then
+        if(master) then
+          write(*,'(" Error! The ECP functions in checkpoint and input files are different.")')
+        endif
+        call iabort
+      endif
+!
+      if(ncore > 0) then
+        call setbasis_g(2)
+        call memset(nao_gcore*(nao_gcore+nao_g*3+1))
+        allocate(coremo(nao_gcore,nao_gcore),work1(nao_g*nao_gcore),work2(nao_g*nao_gcore), &
+&                work3(nao_g*nao_gcore),eigen(nao_gcore))
+        call calccoremo(cmoa_g,cmob_g,coremo,work1,work2,work3,eigen,scftype_g, &
+&                       nproc2,myrank2,mpi_comm2)
+        call memunset(nao_gcore*(nao_gcore+nao_g*3+1))
+        deallocate(coremo,work1,work2,work3,eigen)
+        nmo_g= nmo_g-ncore
       endif
 !
 ! Set arrays
@@ -1212,13 +1680,13 @@ write(*,*)"ncore",ncore, nmo_g
 !
 ! Project orbitals from previous basis to current basis
 !
-      call projectmo3(cmoa,cmoa_g(1,ncore+1),overinv,overlap,work1,work2,work3,eigen, &
+      call projectmo3(cmoa,cmoa_g,overinv,overlap,work1,work2,work3,eigen, &
 &                     ndim,nproc2,myrank2,mpi_comm2)
       if(scftype == 'UHF') then
         if(scftype_g == 'RHF') then
           call dcopy(nao*nao,cmoa,1,cmob,1)
         elseif(scftype_g == 'UHF') then
-          call projectmo3(cmob,cmob_g(1,ncore+1),overinv,overlap,work1,work2,work3,eigen, &
+          call projectmo3(cmob,cmob_g,overinv,overlap,work1,work2,work3,eigen, &
 &                         ndim,nproc2,myrank2,mpi_comm2)
         endif
       endif
@@ -1286,8 +1754,6 @@ end
 ! Calculate (C2t*S12t*S11^-1*S12*C2)^-1/2
 !
       call diag('V','U',nmo_g,cmo_g,nao_g,eigen,nproc,myrank,mpi_comm)
-!ishimura
-write(*,*)eigen
 !
 !$OMP parallel do private(eigeninv)
       do ii= 1,nmo_g
@@ -1312,3 +1778,97 @@ write(*,*)eigen
 !
       return
 end
+
+!------------------------------------------------------------------------------------
+  subroutine calccoremo(cmoa_g,cmob_g,coremo,overlap,work2,work3,eigen,scftype_g, &
+&                       nproc,myrank,mpi_comm)
+!------------------------------------------------------------------------------------
+!
+! Calculate and remove core orbitals corresponding ECP
+!
+      use modguess, only : nao_g, nmo_g, nao_gcore
+      use modjob, only : scftype
+      implicit none
+      integer,intent(in) :: nproc, myrank
+      integer(4),intent(in) :: mpi_comm
+      integer :: ii, jj, idamax, icount
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(inout) :: cmoa_g(nao_g,nao_g), cmob_g(nao_g,nao_g)
+      real(8),intent(out) :: coremo(nao_gcore,nao_gcore), overlap(nao_gcore,nao_g)
+      real(8),intent(out) :: work2(nao_gcore,nao_g), work3(nao_g,nao_gcore), eigen(nao_gcore)
+      character(len=16),intent(in) :: scftype_g
+      logical :: skipmo(nao_g)
+!
+!
+! Calculate Extended Huckel method
+!
+      call calchuckelgcore(coremo,eigen,nproc,myrank,mpi_comm)
+!
+! Calculate overlap integrals between core-guess basis and guess bases
+!
+      call calcover2core(overlap,work2,nproc,myrank,mpi_comm)
+!
+! Calculate Cguess-t*Overlap*Ccore
+!
+      call dgemm('N','N',nao_gcore,nmo_g,nao_g,one,overlap,nao_gcore,cmoa_g,nao_g,zero, &
+&                work2,nao_gcore)
+      call dgemm('T','N',nmo_g,nao_gcore,nao_gcore,one,work2,nao_gcore,coremo,nao_gcore,zero, &
+&                work3,nao_g)
+!
+! Check correspoing orbitals
+!
+      skipmo(:)=.false.
+      do ii= 1,nao_gcore
+        skipmo(idamax(nmo_g,work3(1,ii),1))=.true.
+      enddo
+!
+! Skip core orbitals
+!
+      icount= 0
+      do ii= 1,nmo_g
+        if(skipmo(ii)) cycle
+        icount= icount+1
+        do jj= 1,nao_g
+          cmoa_g(jj,icount)= cmoa_g(jj,ii)
+        enddo 
+      enddo 
+!
+      if((scftype == 'UHF').and.(scftype_g == 'UHF')) then
+!
+! Calculate Cguess-t*Overlap*Ccore
+!
+        call dgemm('N','N',nao_gcore,nmo_g,nao_g,one,overlap,nao_gcore,cmob_g,nao_g,zero, &
+&                  work2,nao_gcore)
+        call dgemm('T','N',nmo_g,nao_gcore,nao_gcore,one,work2,nao_gcore,coremo,nao_gcore,zero, &
+&                  work3,nao_g)
+!
+! Check correspoing orbitals
+!
+        skipmo(:)=.false.
+        do ii= 1,nao_gcore
+          skipmo(idamax(nmo_g,work3(1,ii),1))=.true.
+        enddo
+!
+! Skip core orbitals
+!
+        icount= 0
+        do ii= 1,nmo_g
+          if(skipmo(ii)) cycle
+          icount= icount+1
+          do jj= 1,nao_g
+            cmob_g(jj,icount)= cmob_g(jj,ii)
+          enddo
+        enddo
+      endif
+!
+      return
+end
+
+
+
+
+
+
+
+
+

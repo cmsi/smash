@@ -188,8 +188,6 @@ end
       integer :: info
       integer, allocatable :: iwork(:)
       real(8),intent(out) :: eigen(lda)
-!ishimura
-!     real(8),intent(inout) :: vector(lda,*)
       real(8),intent(inout) :: vector(*)
       real(8), allocatable :: work(:)
       character(len=1),intent(in) :: jobz, uplo

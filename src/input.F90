@@ -387,6 +387,7 @@ end
       use modjob, only : method, runtype, scftype
       use modopt, only : nopt, optconv, cartesian
       use modunit, only : bohr
+      use modguess, only : guess
       implicit none
 !
       if(master) then
@@ -403,7 +404,8 @@ end
 &       write(*,'("   Nopt    =  ",i10," ,   Optconv = ",1p,D11.1," ,   Cartesian= ",l1)') &
 &                  nopt, optconv, cartesian
         if(check /= '') &
-        write(*,'("   Check   =  ",a64)')check
+        write(*,'("   Guess   = ",a12)') guess
+        write(*,'("   Check   = ",a64)') check
         write(*,'(" --------------------------------------------------------------------------")')
 
         write(*,'(/," ------------------------------------------------")')
@@ -487,7 +489,7 @@ end
       if(master) then
         rewind(input)
         do ii= 1,10000
-          read(input,*,end=9999)line
+          read(input,'(a)',end=9999)line
           if(line(1:4) == 'GEOM') exit
           if(ii == 10000) then
             write(*,'(" Error! Molecular geometry is not found.")')
@@ -616,7 +618,7 @@ end
       if(master) then
         rewind(input)
         do ii= 1,20000
-          read(input,*,end=9999)line
+          read(input,'(a)',end=9999)line
           if(line(1:5) == "BASIS") exit
           if(ii == 20000) then
             write(*,'(" Error! Keyword BASIS is not found.")')
@@ -862,6 +864,7 @@ end
       use modjob, only : method, runtype, scftype
       use modbasis, only : nshell, nao, nprim, ex, coeffinp, locprim, locbf, locatom, &
 &                          mprim, mbf, mtype
+      use modecp, only : flagecp
       implicit none
       integer :: ii, jj
       real(8),intent(in) :: cmoa(nao,nao), dmtrxa(nao*(nao+1)/2), energymoa(nao)
@@ -871,7 +874,7 @@ end
       rewind(icheck)
       write(icheck) version
       write(icheck) scftype, natom, nao, nmo, nshell, nprim, neleca, nelecb,  &
-&                   method, runtype, charge, multi
+&                   method, runtype, charge, multi, flagecp
 !
       datatype= 'numatomic'
       write(icheck) datatype

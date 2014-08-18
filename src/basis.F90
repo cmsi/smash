@@ -218,6 +218,26 @@ end
 end
 
 
+!---------------------------
+  subroutine bsnrmlz_gcore
+!---------------------------
+!
+! Normalize basis functions for guess calculation of core orbitals
+!
+      use modguess, only : nshell_gcore, mtype_gcore, ex_gcore, coeff_gcore, &
+&                          locprim_gcore, mprim_gcore
+      implicit none
+      integer :: ishell
+!
+!$OMP parallel do
+      do ishell= 1,nshell_gcore
+        call bsnor(ishell,ex_gcore,coeff_gcore,locprim_gcore,mprim_gcore,mtype_gcore)
+      enddo
+!$OMP end parallel do
+      return
+end
+
+
 !---------------------------------
   subroutine setgenbasis(ishell)
 !---------------------------------
@@ -1045,50 +1065,79 @@ end
 end
 
 
-!------------------------
-  subroutine setbasis_g
-!------------------------
+!-------------------------------
+  subroutine setbasis_g(itype)
+!-------------------------------
 !
 ! Driver of setting basis functions for guess calculations
 !
+! In : itype =1 (For normal extended Huckel calculation)
+!            =2 (For extended Huckel calculation of only core orbitals)
+!
       use modmolecule, only : natom, numatomic
       use modguess, only : locprim_g, locbf_g, nshell_v, nao_v, nprim_v, nshell_g, &
-&                       nao_g, nprim_g, nao_c
+&                          nao_g, nprim_g, nao_c, &
+&                          locprim_gcore, locbf_gcore, nao_gcore, nprim_gcore, nshell_gcore
       implicit none
+      integer,intent(in) :: itype
       integer :: ishell, iatom
 !
-      ishell= 0
-      locprim_g(1)=0
-      locbf_g(1)=0
+      select case(itype)
+!
+! For normal extended Huckel calculation
+!
+        case(1)
+          ishell= 0
+          locprim_g(1)=0
+          locbf_g(1)=0
 !
 ! Set valence basis functions
 !
-      do iatom= 1,natom
-        if(numatomic(iatom) <= 54) then
-          call bssto3g_g(iatom,ishell,1)
-        else
-          call bshuzmini6_g(iatom,ishell,1)
-        endif
-      enddo
-      nshell_v= ishell
-      nao_v   = locbf_g(ishell+1)
-      nprim_v = locprim_g(ishell+1)
+          do iatom= 1,natom
+            if(numatomic(iatom) <= 54) then
+              call bssto3g_g(iatom,ishell,1)
+            else
+              call bshuzmini6_g(iatom,ishell,1)
+            endif
+          enddo
+          nshell_v= ishell
+          nao_v   = locbf_g(ishell+1)
+          nprim_v = locprim_g(ishell+1)
 !
 ! Set core basis functions
 !
-      do iatom= 1,natom
-        if(numatomic(iatom) <= 54) then
-          call bssto3g_g(iatom,ishell,2)
-        else
-          call bshuzmini6_g(iatom,ishell,2)
-        endif
-      enddo
-      nshell_g= ishell
-      nao_g   = locbf_g(ishell+1)
-      nao_c   = nao_g-nao_v
-      nprim_g = locprim_g(ishell+1)
+          do iatom= 1,natom
+            if(numatomic(iatom) <= 54) then
+              call bssto3g_g(iatom,ishell,2)
+            else
+              call bshuzmini6_g(iatom,ishell,2)
+            endif
+          enddo
+          nshell_g= ishell
+          nao_g   = locbf_g(ishell+1)
+          nao_c   = nao_g-nao_v
+          nprim_g = locprim_g(ishell+1)
+          call bsnrmlz_g
 !
-      call bsnrmlz_g
+! For extended Huckel calculation of only core orbitals
+!
+        case(2)
+          ishell= 0
+          locprim_gcore(1)=0
+          locbf_gcore(1)=0
+          do iatom= 1,natom
+            if(numatomic(iatom) <= 54) then
+              call bssto3g_g(iatom,ishell,3)
+            else
+              call bshuzmini6_g(iatom,ishell,3)
+            endif
+          enddo
+          nshell_gcore= ishell
+          nao_gcore   = locbf_gcore(ishell+1)
+          nprim_gcore = locprim_gcore(ishell+1)
+          call bsnrmlz_gcore
+      end select
+!
       return
 end
 
@@ -1100,10 +1149,12 @@ end
 ! Set basis functions of STO-3G for guess calculation
 ! itype = 1 : valence functions
 !       = 2 : core functions
+!       = 3 : core functions for core calculation
 !
       use modmolecule, only : numatomic
       use modguess, only : ex_g, coeff_g, locprim_g, locbf_g, locatom_g, mprim_g, mbf_g, &
-&                          mtype_g, spher_g
+&                          mtype_g, spher_g, ex_gcore, coeff_gcore, locprim_gcore, &
+&                          locbf_gcore, locatom_gcore, mprim_gcore, mbf_gcore, mtype_gcore
       use modparam, only : mxao, mxshell, mxprim
       use modecp, only : flagecp, izcore
       implicit none
@@ -1832,20 +1883,171 @@ end
             endif
           endif
         endif
+!
+! Set core basis functions for core orbital calculation
+!
+      elseif(itype == 3) then
+! Set 1S functions
+        if(numatomic(iatom) >= 3) then
+          if(izcore(iatom) >= 2)then
+            ishell= ishell+1
+            do j= 1,3
+              ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j)
+              coeff_gcore(locprim_gcore(ishell)+j)= cssto(is(numatomic(iatom))+j)
+            enddo
+            mprim_gcore(ishell)= 3
+            mbf_gcore(ishell)= 1
+            mtype_gcore(ishell)= 0
+            locatom_gcore(ishell)= iatom
+            locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
+            locbf_gcore(ishell+1) = locbf_gcore(ishell)+1
+          endif
+        endif
+! Set 2SP functions
+        if(numatomic(iatom) >= 11) then
+          if(izcore(iatom) >= 10)then
+!   S function
+            ishell= ishell+1
+            do j= 1,3
+              ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
+              coeff_gcore(locprim_gcore(ishell)+j)= cssto(is(numatomic(iatom))+j+3)
+            enddo
+            mprim_gcore(ishell)= 3
+            mbf_gcore(ishell)= 1
+            mtype_gcore(ishell)= 0
+            locatom_gcore(ishell)= iatom
+            locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
+            locbf_gcore(ishell+1) = locbf_gcore(ishell)+1
+!   P function
+            ishell= ishell+1
+            do j= 1,3
+              ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
+              coeff_gcore(locprim_gcore(ishell)+j)= cpsto(ip(numatomic(iatom))+j)
+            enddo
+            mprim_gcore(ishell)= 3
+            mbf_gcore(ishell)= 3
+            mtype_gcore(ishell)= 1
+            locatom_gcore(ishell)= iatom
+            locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
+            locbf_gcore(ishell+1) = locbf_gcore(ishell)+3
+          endif
+        endif
+! Set 3SPD functions
+        if(numatomic(iatom) >= 19) then
+          if(izcore(iatom) >= 18)then
+!   S function
+            ishell= ishell+1
+            do j= 1,3
+              ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
+              coeff_gcore(locprim_gcore(ishell)+j)= cssto(is(numatomic(iatom))+j+6)
+            enddo
+            mprim_gcore(ishell)= 3
+            mbf_gcore(ishell)= 1
+            mtype_gcore(ishell)= 0
+            locatom_gcore(ishell)= iatom
+            locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
+            locbf_gcore(ishell+1) = locbf_gcore(ishell)+1
+!   P function
+            ishell= ishell+1
+            do j= 1,3
+              ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
+              coeff_gcore(locprim_gcore(ishell)+j)= cpsto(ip(numatomic(iatom))+j+3)
+            enddo
+            mprim_gcore(ishell)= 3
+            mbf_gcore(ishell)= 3
+            mtype_gcore(ishell)= 1
+            locatom_gcore(ishell)= iatom
+            locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
+            locbf_gcore(ishell+1) = locbf_gcore(ishell)+3
+          endif
+        endif
+!   D function
+        if(numatomic(iatom) >= 31) then
+          if(izcore(iatom) >= 28)then
+            ishell= ishell+1
+            do j= 1,3
+              ex_gcore(locprim_gcore(ishell)+j)= exdsto(id(numatomic(iatom))+j)
+              coeff_gcore(locprim_gcore(ishell)+j)= cdsto(id(numatomic(iatom))+j)
+            enddo
+            mprim_gcore(ishell)= 3
+            mtype_gcore(ishell)= 2
+            locatom_gcore(ishell)= iatom
+            locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
+            mbf_gcore(ishell)= 5
+            locbf_gcore(ishell+1) = locbf_gcore(ishell)+5
+          endif
+        endif
+! Set 4SPD functions
+        if(numatomic(iatom) >= 37) then
+          if(izcore(iatom) >= 36)then
+!   S function
+            ishell= ishell+1
+            do j= 1,3
+              ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
+              coeff_gcore(locprim_gcore(ishell)+j)= cssto(is(numatomic(iatom))+j+9)
+            enddo
+            mprim_gcore(ishell)= 3
+            mbf_gcore(ishell)= 1
+            mtype_gcore(ishell)= 0
+            locatom_gcore(ishell)= iatom
+            locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
+            locbf_gcore(ishell+1) = locbf_gcore(ishell)+1
+!   P function
+            ishell= ishell+1
+            do j= 1,3
+              ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
+              coeff_gcore(locprim_gcore(ishell)+j)= cpsto(ip(numatomic(iatom))+j+6)
+            enddo
+            mprim_gcore(ishell)= 3
+            mbf_gcore(ishell)= 3
+            mtype_gcore(ishell)= 1
+            locatom_gcore(ishell)= iatom
+            locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
+            locbf_gcore(ishell+1) = locbf_gcore(ishell)+3
+          endif
+        endif
+!   D function
+        if(numatomic(iatom) >= 49) then
+          if(izcore(iatom) >= 46)then
+            ishell= ishell+1
+            do j= 1,3
+              ex_gcore(locprim_gcore(ishell)+j)= exdsto(id(numatomic(iatom))+j+3)
+              coeff_gcore(locprim_gcore(ishell)+j)= cdsto(id(numatomic(iatom))+j+3)
+            enddo
+            mprim_gcore(ishell)= 3
+            mtype_gcore(ishell)= 2
+            locatom_gcore(ishell)= iatom
+            locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
+            mbf_gcore(ishell)= 5
+            locbf_gcore(ishell+1) = locbf_gcore(ishell)+5
+          endif
+        endif
       endif
 !
       if(ishell > mxshell) then
         write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
         call iabort
       endif
-      if(locprim_g(ishell+1) > mxprim ) then
-        write(*,'(" Error! The number of primitive basis functions exceeds mxprim",&
-&             i6,".")')mxprim
-        call iabort
-      endif
-      if(locbf_g(ishell+1) > mxao ) then
-        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
-        call iabort
+      if(itype <= 2) then
+        if(locprim_g(ishell+1) > mxprim ) then
+          write(*,'(" Error! The number of primitive basis functions exceeds mxprim",&
+&               i6,".")')mxprim
+          call iabort
+        endif
+        if(locbf_g(ishell+1) > mxao ) then
+          write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
+          call iabort
+        endif
+      elseif(itype == 3) then
+        if(locprim_gcore(ishell+1) > mxprim ) then
+          write(*,'(" Error! The number of primitive basis functions exceeds mxprim",&
+&               i6,".")')mxprim
+          call iabort
+        endif
+        if(locbf_gcore(ishell+1) > mxao ) then
+          write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
+          call iabort
+        endif
       endif
       return
 end

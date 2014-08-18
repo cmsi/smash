@@ -71,8 +71,8 @@ end
 !-------------------
       implicit none
       integer,parameter :: input=10, icheck=20
-      character(len=16) :: version='1.0'
-      character(len=64) :: check=''
+      character(len=16) :: version
+      character(len=64) :: check
 end
 
 
@@ -121,9 +121,7 @@ end
 ! threshdfock : threshold for functional at a grid point
 !
       implicit none
-!ishimura
       real(8) :: threshex=30.0D+00, threshover=1.0D-06
-!     real(8) :: threshex=28.0D+00, threshover=1.0D-06
       real(8) :: threshatm=2.0D-01, thresherr=0.6D+00
       real(8) :: cutint2, threshsoscf
       real(8) :: threshweight=1.0D-08, threshrho=1.0D-07, threshdfock=1.0D-06
@@ -226,8 +224,12 @@ end
       integer :: nshell_v, nao_v, nprim_v, nmo_v, nshell_g, nao_g, nprim_g, nmo_g, nao_c
       integer :: locprim_g(mxshell+1), locbf_g(mxshell+1), locatom_g(mxshell)
       integer :: mprim_g(mxshell), mbf_g(mxshell), mtype_g(mxshell)
+      integer :: nshell_gcore, nao_gcore, nprim_gcore
+      integer :: locprim_gcore(mxshell+1), locbf_gcore(mxshell+1), locatom_gcore(mxshell)
+      integer :: mprim_gcore(mxshell), mbf_gcore(mxshell), mtype_gcore(mxshell)
       real(8) :: ex_g(mxprim), coeff_g(mxprim), coord_g(3,mxatom)
-      logical :: spshell_g, spdshell_g, spher_g
+      real(8) :: ex_gcore(mxprim), coeff_gcore(mxprim), coord_gcore(3,mxatom)
+      logical :: spher_g
       character(len=16) :: guess
 end
 

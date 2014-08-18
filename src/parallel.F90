@@ -111,47 +111,47 @@ end
 end
 
 
-!---------------------------------------------------
-  subroutine para_bcastr(buff,num,myrank,mpi_comm)
-!---------------------------------------------------
+!--------------------------------------------------
+  subroutine para_bcastr(buff,num,irank,mpi_comm)
+!--------------------------------------------------
 #ifdef MPI
       use mpi
       implicit none
-      integer,intent(in) :: num, myrank
+      integer,intent(in) :: num, irank
       integer(4),intent(in) :: mpi_comm
-      integer(4) :: num4, myrank4, ierr
+      integer(4) :: num4, irank4, ierr
       real(8),intent(inout) :: buff(*)
 !
       num4= num
-      myrank4= myrank
+      irank4= irank
 !
-      call mpi_bcast(buff,num4,mpi_real8,myrank4,mpi_comm,ierr)
+      call mpi_bcast(buff,num4,mpi_real8,irank4,mpi_comm,ierr)
 #endif
       return
 end
 
 
 !----------------------------------------------------
-  subroutine para_bcasti(ibuff,num,myrank,mpi_comm)
+  subroutine para_bcasti(ibuff,num,irank,mpi_comm)
 !----------------------------------------------------
 #ifdef MPI
       use mpi
       use modparallel, only : checkintsize
       implicit none
-      integer,intent(in) :: num, myrank
+      integer,intent(in) :: num, irank
       integer(4),intent(in) :: mpi_comm
-      integer(4) :: num4, myrank4, ierr
+      integer(4) :: num4, irank4, ierr
       integer,intent(inout) :: ibuff(*)
       integer :: isize
 !
       num4= num
-      myrank4= myrank
+      irank4= irank
 !
       call checkintsize(isize)
       if(isize == 4) then
-        call mpi_bcast(ibuff,num4,mpi_integer4,myrank4,mpi_comm,ierr)
+        call mpi_bcast(ibuff,num4,mpi_integer4,irank4,mpi_comm,ierr)
       elseif(isize == 8) then
-        call mpi_bcast(ibuff,num4,mpi_integer8,myrank4,mpi_comm,ierr)
+        call mpi_bcast(ibuff,num4,mpi_integer8,irank4,mpi_comm,ierr)
       endif
 #endif
       return
@@ -159,41 +159,43 @@ end
 
 
 !---------------------------------------------------
-  subroutine para_bcastc(buff,num,myrank,mpi_comm)
+  subroutine para_bcastc(buff,num,irank,mpi_comm)
 !---------------------------------------------------
 #ifdef MPI
       use mpi
       implicit none
-      integer,intent(in) :: num, myrank
+      integer,intent(in) :: num, irank
       integer(4),intent(in) :: mpi_comm
-      integer(4) :: num4, myrank4, ierr
+      integer(4) :: num4, irank4, ierr
       character(*),intent(inout) :: buff(*)
 !
       num4= num
-      myrank4= myrank
+      irank4= irank
 !
-      call mpi_bcast(buff,num4,mpi_character,myrank4,mpi_comm,ierr)
+      call mpi_bcast(buff,num4,mpi_character,irank4,mpi_comm,ierr)
 #endif
       return
 end
 
 
 !---------------------------------------------------
-  subroutine para_bcastl(buff,num,myrank,mpi_comm)
+  subroutine para_bcastl(buff,num,irank,mpi_comm)
 !---------------------------------------------------
 #ifdef MPI
       use mpi
       implicit none
-      integer,intent(in) :: num, myrank
+      integer,intent(in) :: num, irank
       integer(4),intent(in) :: mpi_comm
-      integer :: ii
-      integer(4) :: num4, myrank4, ierr, itmp(num)
+      integer :: ii, myrank
+      integer(4) :: num4, irank4, ierr, itmp(num)
       logical,intent(inout) :: buff(*)
 !
       num4= num
-      myrank4= myrank
+      irank4= irank
 !
-      if(myrank == 0) then
+      call para_comm_rank(myrank,mpi_comm)
+!
+      if(irank == myrank) then
         do ii= 1,num
           if(buff(ii)) then
             itmp(ii)= 1
@@ -203,7 +205,7 @@ end
         enddo
       endif
 !
-      call mpi_bcast(itmp,num4,mpi_integer4,myrank4,mpi_comm,ierr)
+      call mpi_bcast(itmp,num4,mpi_integer4,irank4,mpi_comm,ierr)
 !
       do ii= 1,num
         if(itmp(ii) == 1) then

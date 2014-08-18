@@ -25,20 +25,21 @@
       use modmemory, only : memusedmax
       use modjob, only : runtype, method, scftype
       use modecp, only : flagecp
-      use modiofile, only : input, icheck, check
+      use modiofile, only : input, icheck, check, version
       implicit none
       logical :: converged
 !
       call start
+      version='1.0'
 !
       if(master) then
         write(*,&
 &           '(" ****************************************",/,&
 &             "    Scalable Molecular Analysis Solver",/,&
 &             "      for High performance computing",/,&
-&             "            SMASH Version 0.1",/,&
+&             "            SMASH Version ",a10/,&
 &             "          written by K. ISHIMURA",/,&
-&             " ****************************************",/)')
+&             " ****************************************",/)') version
       endif
       call tstamp(0)
       call gethostnm
@@ -131,6 +132,7 @@ end program main
 !
       use modparallel, only : master, parallel, nproc1, nproc2, myrank1, myrank2, &
 &                             mpi_comm1, mpi_comm2
+      use modiofile, only : check
       use modwarn, only : nwarn
       use modguess, only : spher_g, guess
       use modmemory, only : memmax, memused, memusedmax, memory
@@ -202,6 +204,7 @@ end program main
       basis='STO-3G'
       guess='HUCKEL'
       ecp=''
+      check=''
 !
       return
 end
@@ -328,9 +331,11 @@ end
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
       elseif(idft >= 1) then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
-        call tstamp(1)
+        if(check == '') then
+          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
+&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+          call tstamp(1)
+        endif
         call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymo,energymo,1)
@@ -450,9 +455,11 @@ end
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
       elseif(idft >= 1) then
-        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
-        call tstamp(1)
+        if(check == '') then
+          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
+&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+          call tstamp(1)
+        endif
         call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymoa,energymob,2)
@@ -578,9 +585,11 @@ end
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
       elseif(idft >= 1) then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
-        call tstamp(1)
+        if(check == '') then
+          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
+&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+          call tstamp(1)
+        endif
         call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymo,energymo,1)
@@ -725,9 +734,11 @@ end
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
       elseif(idft >= 1) then
-        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
-        call tstamp(1)
+        if(check == '') then
+          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
+&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+          call tstamp(1)
+        endif
         call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymoa,energymob,2)
@@ -938,7 +949,7 @@ end
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1)
           call tstamp(1)
         elseif(idft >= 1) then
-          if(iopt == 1) then
+          if((iopt == 1).and.(check == '')) then
             call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
             call tstamp(1)
@@ -1207,7 +1218,7 @@ end
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2)
           call tstamp(1)
         elseif(idft >= 1) then
-          if(iopt == 1) then
+          if((iopt == 1).and.(check == '')) then
             call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
             call tstamp(1)
