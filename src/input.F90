@@ -731,6 +731,69 @@ end
 end
 
 
+!---------------------------
+  subroutine setcheckbasis
+!---------------------------
+!
+! Read basis set from checkpoint file
+!
+      use modiofile, only : icheck
+      use modbasis, only : nshell, nao, nprim, ex, coeff, locprim, locbf, locatom, &
+&                          mprim, mbf, mtype
+      use modparam, only : mxao, mxshell, mxprim
+      implicit none
+      integer :: idummy, ii
+      character(len=16) :: cdummy
+!
+      rewind(icheck)
+      read(icheck,err=9999)
+      read(icheck) cdummy, idummy, nao, idummy, nshell, nprim
+!
+      write(*,'(" Basis set is read from checkpoint file.")')
+      if(nshell+1 > mxshell) then
+        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
+        call iabort
+      endif
+      if(nprim > mxprim ) then
+        write(*,'(" Error! The number of primitive basis functions exceeds mxprim",i6,".")')mxprim
+        call iabort
+      endif
+      if(nao > mxao ) then
+        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
+        call iabort
+      endif
+!
+      read(icheck)
+      read(icheck)
+      read(icheck)
+      read(icheck)
+      read(icheck)
+      read(icheck) (ex(ii),ii=1,nprim)
+      read(icheck)
+      read(icheck) (coeff(ii),ii=1,nprim)
+      read(icheck)
+      read(icheck) (locprim(ii),ii=1,nshell)
+      read(icheck)
+      read(icheck) (locbf(ii),ii=1,nshell)
+      read(icheck)
+      read(icheck) (locatom(ii),ii=1,nshell)
+      read(icheck)
+      read(icheck) (mprim(ii),ii=1,nshell)
+      read(icheck)
+      read(icheck) (mbf(ii),ii=1,nshell)
+      read(icheck)
+      read(icheck) (mtype(ii),ii=1,nshell)
+!
+      locbf(nshell+1)= nao
+      locprim(nshell+1)= nprim
+!
+      return
+9999  write(*,'(" Error! Basis set cannot be read from checkpoint file.")')
+      call iabort
+!
+end
+
+
 !---------------------
   subroutine readecp
 !---------------------
