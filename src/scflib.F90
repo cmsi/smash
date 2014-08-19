@@ -12,9 +12,9 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!----------------------------------------------------
+!---------------------------------------------------
   subroutine calcdmtrx(cmo,dmtrx,work,ndim,neleca)
-!----------------------------------------------------
+!---------------------------------------------------
 !
 ! Calculate density matrix for closed shell
 !
@@ -208,9 +208,9 @@ end
 end
 
 
-!----------------------------------------------------
+!------------------------------------------------------
   subroutine ddiff(dmtrx,dmtrxprev,work,ndim,diffmax)
-!----------------------------------------------------
+!------------------------------------------------------
 !
 ! Calculate largest absolute change in density matrix
 !
@@ -503,11 +503,11 @@ end
 end
 
 
-!---------------------------------------------------------------------------
+!----------------------------------------------------------------------------
   subroutine calcudiis(focka,fockb,errdiisa,errdiisb,fockdiisa,fockdiisb, &
 &                      diismtrx,worka,workb,work2,itdiis,nao,maxdiis, &
 &                      idis,nproc,myrank,mpi_comm)
-!---------------------------------------------------------------------------
+!----------------------------------------------------------------------------
 !
 ! Direct Inversion in the Iterative Subspace (DIIS) interporation for open-shell
 !
@@ -1053,179 +1053,6 @@ end
 !
       sz= half*(neleca-nelecb)
       s2= sz*sz+half*(neleca+nelecb)-s2
-!
-      return
-end
-
-
-!--------------------------------------------------
-  subroutine writeeigenvalue(eigena,eigenb,itype)
-!--------------------------------------------------
-!
-! Write eigenvalues
-!
-      use modparallel, only : master
-      use modmolecule, only : nmo, neleca, nelecb
-      use modprint, only : iprint
-      integer,intent(in) :: itype
-      integer :: imo
-      real(8),intent(in) :: eigena(nmo), eigenb(nmo)
-!
-! Closed-shell
-!
-      if(master.and.(iprint >= 1)) then
-        if(itype == 1) then
-          write(*,'(1x,80("-"))')
-          write(*,'("   Eigenvalues (Hartree)")')
-          write(*,'(1x,80("-"))')
-          write(*,'("   Alpha Occupied: ",5f12.5)')(eigena(imo),imo=1,neleca)
-          write(*,'("   Alpha Virtual : ",5f12.5)')(eigena(imo),imo=neleca+1,nmo)
-          write(*,'(1x,80("-"))')
-!
-! Open-shell
-!
-        elseif(itype == 2) then
-          write(*,'(1x,80("-"))')
-          write(*,'("   Eigenvalues (Hartree)")')
-          write(*,'(1x,80("-"))')
-          write(*,'("   Alpha Occupied: ",5f12.5)')(eigena(imo),imo=1,neleca)
-          write(*,'("   Alpha Virtual : ",5f12.5)')(eigena(imo),imo=neleca+1,nmo)
-          write(*,'("   Beta  Occupied: ",5f12.5)')(eigenb(imo),imo=1,nelecb)
-          write(*,'("   Beta  Virtual : ",5f12.5)')(eigenb(imo),imo=nelecb+1,nmo)
-          write(*,'(1x,80("-"))')
-        endif
-      endif
-!
-      return
-end
-
-
-!-----------------------------------------
-  subroutine writeeigenvector(cmo,eigen)
-!-----------------------------------------
-!
-! Write eigenvalues
-!
-      use modparallel, only : master
-      use modmolecule, only : nmo, neleca, numatomic
-      use modbasis, only : nao, nshell, mtype, spher, locatom
-      use modprint, only : iprint
-      use modparam, only : mxao
-      implicit none
-      integer :: maxmo, imin, imax, ii, jj, kk, iao, iatom
-      real(8),intent(in) :: cmo(nao,nao), eigen(nmo)
-      character(len=8) :: atomlabel(mxao)
-      character(len=5) :: bflabel(mxao)
-      character(len=3) :: table(112)= &
-&     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
-&       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
-&       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
-&       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
-&       'Pm ','Sm ','Eu ','Gd ','Tb ','Dy ','Ho ','Er ','Tm ','Yb ','Lu ','Hf ','Ta ','W  ','Re ',&
-&       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
-&       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
-&       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
-!
-      character(len=5) :: anglabel(56)= &
-&     (/'S    ','Px   ','Py   ','Pz   ','Dxx  ','Dyy  ','Dzz  ','Dxy  ','Dxz  ','Dyz  ', &
-&       'D 0  ','D+1  ','D-1  ','D+2  ','D-2  ','Fxxx ','Fyyy ','Fzzz ','Fxxy ','Fxxz ', &
-&       'Fxyy ','Fyyz ','Fxzz ','Fyzz ','Fxyz ','F 0  ','F+1  ','F-1  ','F+2  ','F-2  ', &
-&       'F+3  ','F-3  ','Gxxxx','Gyyyy','Gzzzz','Gxxxy','Gxxxz','Gxyyy','Gyyyz','Gxzzz', &
-&       'Gyzzz','Gxxyy','Gxxzz','Gyyzz','Gxxyz','Gxyyz','Gxyzz','G 0  ','G+1  ','G-1  ', &
-&       'G+2  ','G-2  ','G+3  ','G-3  ','G+4  ','G-4  '/)
-!
-      if(maxval(mtype(1:nshell)) >= 5) then
-        if(master) write(*,'(" Sorry! This program can not display MOs of h functions now.")')
-        return
-      endif
-!
-      atomlabel(1:nao)= ''
-      iao= 1
-      iatom= 0
-      do ii= 1,nshell
-        select case(mtype(ii))
-          case(0)
-            bflabel(iao)= anglabel(1)
-            if(locatom(ii) /= iatom) then
-              iatom= locatom(ii)
-              write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
-            endif
-            iao= iao+1
-          case(1)
-            bflabel(iao:iao+2)= anglabel(2:4)
-            if(locatom(ii) /= iatom) then
-              iatom= locatom(ii)
-              write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
-            endif
-            iao= iao+3
-          case(2)
-            if(spher) then
-              bflabel(iao:iao+4)= anglabel(11:15)
-              if(locatom(ii) /= iatom) then
-                iatom= locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
-              endif
-              iao= iao+5
-            else
-              bflabel(iao:iao+5)= anglabel(5:10)
-              if(locatom(ii) /= iatom) then
-                iatom= locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
-              endif
-              iao= iao+6
-            endif
-          case(3)
-            if(spher) then
-              bflabel(iao:iao+6)= anglabel(26:32)
-              if(locatom(ii) /= iatom) then
-                iatom= locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
-              endif
-              iao= iao+7
-            else
-              bflabel(iao:iao+9)= anglabel(16:25)
-              if(locatom(ii) /= iatom) then
-                iatom= locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
-              endif
-              iao= iao+10
-            endif
-          case(4)
-            if(spher) then
-              bflabel(iao:iao+8)= anglabel(48:56)
-              if(locatom(ii) /= iatom) then
-                iatom= locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
-              endif
-              iao= iao+9
-            else
-              bflabel(iao:iao+14)= anglabel(33:47)
-              if(locatom(ii) /= iatom) then
-                iatom= locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
-              endif
-              iao= iao+15
-            endif
-        end select
-      enddo
-!
-      maxmo=min(nmo,neleca+20)
-      imin= 1
-      imax= 5
-      if(master) then
-        do ii= 1,(maxmo-1)/5+1
-          if(imax > maxmo) imax= maxmo
-          write(*,*)
-          write(*,'(18x,5(5x,i4,2x))')(jj,jj=imin,imax)
-          write(*,'(18x,5f11.4)')(eigen(jj),jj=imin,imax)
-          do kk= 1,nao
-            write(*,'(i5,a8,a5,5f11.4)')kk,atomlabel(kk),bflabel(kk),(cmo(kk,jj),jj=imin,imax)
-          enddo
-          imin= imin+5
-          imax= imax+5
-        enddo
-        write(*,*)
-      endif
 !
       return
 end

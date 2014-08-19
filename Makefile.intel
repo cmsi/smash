@@ -1,4 +1,4 @@
-F90 = mpif90 -DMPI
+F90 = mpif90    #-DnoMPI
 LIB = -mkl=parallel
 OPT = -openmp -i8 -warn -xHOST
 

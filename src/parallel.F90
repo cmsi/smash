@@ -15,7 +15,10 @@
 !----------------------------------
   subroutine para_init(mpi_comm1)
 !----------------------------------
-#ifdef MPI
+!
+! Start MPI and set mpi_comm1=MPI_COMM_WORLD
+!
+#ifndef noMPI
       use mpi
       implicit none
       integer(4),intent(out) :: mpi_comm1
@@ -31,7 +34,10 @@ end
 !--------------------------------------------
   subroutine para_comm_size(nproc,mpi_comm)
 !--------------------------------------------
-#ifdef MPI
+!
+! Return the number of processes in mpi_comm
+!
+#ifndef noMPI
       use mpi
       implicit none
       integer(4),intent(in) :: mpi_comm
@@ -48,7 +54,10 @@ end
 !---------------------------------------------
   subroutine para_comm_rank(myrank,mpi_comm)
 !---------------------------------------------
-#ifdef MPI
+!
+! Return the MPI rank in mpi_comm
+!
+#ifndef noMPI
       use mpi
       implicit none
       integer(4),intent(in) :: mpi_comm
@@ -65,7 +74,10 @@ end
 !---------------------------
   subroutine para_finalize
 !---------------------------
-#ifdef MPI
+!
+! Finalize MPI
+!
+#ifndef noMPI
       use mpi
       implicit none
       integer(4) :: ierr
@@ -79,7 +91,7 @@ end
 !------------------------
   subroutine para_abort
 !------------------------
-#ifdef MPI
+#ifndef noMPI
       use mpi
       implicit none
       integer(4) :: icode, ierr
@@ -114,7 +126,10 @@ end
 !--------------------------------------------------
   subroutine para_bcastr(buff,num,irank,mpi_comm)
 !--------------------------------------------------
-#ifdef MPI
+!
+! Broadcast real(8) data
+!
+#ifndef noMPI
       use mpi
       implicit none
       integer,intent(in) :: num, irank
@@ -131,10 +146,13 @@ end
 end
 
 
-!----------------------------------------------------
+!---------------------------------------------------
   subroutine para_bcasti(ibuff,num,irank,mpi_comm)
-!----------------------------------------------------
-#ifdef MPI
+!---------------------------------------------------
+!
+! Broadcast integer data
+!
+#ifndef noMPI
       use mpi
       use modparallel, only : checkintsize
       implicit none
@@ -158,10 +176,13 @@ end
 end
 
 
-!---------------------------------------------------
+!--------------------------------------------------
   subroutine para_bcastc(buff,num,irank,mpi_comm)
-!---------------------------------------------------
-#ifdef MPI
+!--------------------------------------------------
+!
+! Broadcast character data
+!
+#ifndef noMPI
       use mpi
       implicit none
       integer,intent(in) :: num, irank
@@ -178,10 +199,13 @@ end
 end
 
 
-!---------------------------------------------------
+!--------------------------------------------------
   subroutine para_bcastl(buff,num,irank,mpi_comm)
-!---------------------------------------------------
-#ifdef MPI
+!--------------------------------------------------
+!
+! Broadcast logical data
+!
+#ifndef noMPI
       use mpi
       implicit none
       integer,intent(in) :: num, irank
@@ -222,7 +246,11 @@ end
 !-------------------------------------------------------
   subroutine para_allreducer(sbuff,rbuff,num,mpi_comm)
 !-------------------------------------------------------
-#ifdef MPI
+!
+! Combine real(8) values from all processes and 
+! distributes the result back to all processes in mpi_comm
+!
+#ifndef noMPI
       use mpi
 #endif
       implicit none
@@ -230,7 +258,7 @@ end
       integer(4),intent(in) :: mpi_comm
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out) :: rbuff(*)
-#ifdef MPI
+#ifndef noMPI
       integer(4) :: num4, ierr
 !
       num4= num
@@ -245,7 +273,11 @@ end
 !-------------------------------------------------------
   subroutine para_allreducei(sbuff,rbuff,num,mpi_comm)
 !-------------------------------------------------------
-#ifdef MPI
+!
+! Combine integer values from all processes and 
+! distributes the result back to all processes in mpi_comm
+!
+#ifndef noMPI
       use mpi
       use modparallel, only : checkintsize
 #endif
@@ -255,7 +287,7 @@ end
       integer,intent(in) :: sbuff(*)
       integer,intent(out) :: rbuff(*)
       integer :: isize
-#ifdef MPI
+#ifndef noMPI
       integer(4) :: num4, ierr
 !
       num4= num
@@ -277,10 +309,13 @@ end
 end
 
 
-!--------------------------------------------------------------------
+!--------------------------------------------------------------------------
   subroutine para_allgathervr(sbuff,num,rbuff,idisa,idisb,nproc,mpi_comm)
-!--------------------------------------------------------------------
-#ifdef MPI
+!--------------------------------------------------------------------------
+!
+! Gather data from all tasks and deliver the combined data to all tasks in mpi_comm
+!
+#ifndef noMPI
       use mpi
 #endif
       implicit none
@@ -288,7 +323,7 @@ end
       integer(4),intent(in) :: mpi_comm
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out):: rbuff(*)
-#ifdef MPI
+#ifndef noMPI
       integer :: i
       integer(4) :: num4, idisa4(nproc), idisb4(nproc), ierr
 !
@@ -309,7 +344,10 @@ end
 !------------------------------------------------------------------------------------
   subroutine para_sendrecvr(sbuff,nums,dest,ntags,rbuff,numr,source,ntagr,mpi_comm)
 !------------------------------------------------------------------------------------
-#ifdef MPI
+!
+! Send and receive real(8) data
+!
+#ifndef noMPI
       use mpi
 #endif
       implicit none
@@ -317,7 +355,7 @@ end
       integer(4),intent(in) :: mpi_comm
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out) :: rbuff(*)
-#ifdef MPI
+#ifndef noMPI
       integer(4) :: nums4, dest4, ntags4, numr4, source4, ntagr4, ierr
       integer(4) :: STATUS(MPI_STATUS_SIZE)
 !
@@ -334,7 +372,3 @@ end
 #endif
       return
 end
-
-
-
-
