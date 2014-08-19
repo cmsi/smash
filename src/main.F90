@@ -247,11 +247,6 @@ end
         call iabort
       endif
 !
-!      if(neleca > nao) then
-!        if(master) write(*,'(" Error! The number of electrons is larger than the number ",&
-!&                            "of basis functions.")')
-!        call iabort
-!      endif
       return
 end
 

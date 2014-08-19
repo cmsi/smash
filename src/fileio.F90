@@ -391,6 +391,14 @@ end
       implicit none
 !
       if(master) then
+!
+! Check the numbers of electrons and basis functions
+!
+        if(neleca > nao) then
+          write(*,'(" Error! The number of basis functions is smaller than that of electrons.")')
+          call iabort
+        endif
+!
         write(*,'(" --------------------------------------------------------------------------")')
         write(*,'("   Job infomation")')
         write(*,'(" --------------------------------------------------------------------------")')
@@ -791,6 +799,127 @@ end
 9999  write(*,'(" Error! Basis set cannot be read from checkpoint file.")')
       call iabort
 !
+end
+
+
+!------------------------------------------------------------------------------------
+  subroutine readcheckinfo(scftype_g,charge_g,flagecp_g,neleca_g,nelecb_g,mpi_comm)
+!------------------------------------------------------------------------------------
+!
+! Read checkpoint information
+!
+      use modparallel, only : master
+      use modiofile, only : icheck
+      use modguess, only : nao_g, nmo_g, nshell_g, nprim_g
+      use modmolecule, only : natom
+      implicit none
+      integer(4),intent(in) :: mpi_comm
+      integer,intent(out) :: neleca_g, nelecb_g
+      integer :: intarray(6), natom_g, idummy
+      real(8),intent(out) :: charge_g
+      character(len=16),intent(out) :: scftype_g
+      character(len=16) :: cdummy
+      logical,intent(out) :: flagecp_g
+!
+      if(master) then
+        rewind(icheck)
+        read(icheck)
+        read(icheck,err=9999) scftype_g, natom_g, nao_g, nmo_g, nshell_g, nprim_g, neleca_g, &
+&                             nelecb_g, cdummy, cdummy, charge_g, idummy, flagecp_g
+        if(natom_g /= natom) then
+          write(*,'(" Error! The numbers of atoms in checkpoint and input files are different.")')
+          call iabort
+        endif
+        intarray(1)= nshell_g
+        intarray(2)= nmo_g
+        intarray(3)= neleca_g
+        intarray(4)= nelecb_g
+        intarray(5)= nao_g
+        intarray(6)= nprim_g
+      endif
+      call para_bcasti(intarray,6,0,mpi_comm)
+      call para_bcastc(scftype_g,16,0,mpi_comm)
+      call para_bcastl(flagecp_g,1,0,mpi_comm)
+      call para_bcastr(charge_g,1,0,mpi_comm)
+      nshell_g= intarray(1)
+      nmo_g   = intarray(2)
+      neleca_g= intarray(3)
+      nelecb_g= intarray(4)
+      nao_g   = intarray(5)
+      nprim_g = intarray(6)
+!
+      return
+!
+ 9999 write(*,'(" Error! Checkpoint file cannot be read in checkguess.")')
+      call iabort
+end
+
+
+!--------------------------------------------------------------
+  subroutine readcheckguess(cmoa_g,cmob_g,scftype_g,mpi_comm)
+!--------------------------------------------------------------
+!
+! Read guess basis functions and MOs from checkpoint file
+!
+      use modparallel, only : master
+      use modiofile, only : icheck
+      use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
+&                          ex_g, coeff_g, nao_g, coord_g, nmo_g, nshell_g, nprim_g
+      use modmolecule, only : natom
+      use modjob, only : scftype
+      implicit none
+      integer(4),intent(in) :: mpi_comm
+      integer :: ii, jj
+      real(8),intent(out) :: cmoa_g(nao_g,nao_g), cmob_g(nao_g,nao_g)
+      character(len=16),intent(in) :: scftype_g
+!
+      if(master) then
+        read(icheck)
+        read(icheck)
+        read(icheck)
+        read(icheck) ((coord_g(jj,ii),jj=1,3),ii=1,natom)
+        read(icheck)
+        read(icheck) (ex_g(ii),ii=1,nprim_g)
+        read(icheck)
+        read(icheck) (coeff_g(ii),ii=1,nprim_g)
+        read(icheck)
+        read(icheck) (locprim_g(ii),ii=1,nshell_g)
+        read(icheck)
+        read(icheck) (locbf_g(ii),ii=1,nshell_g)
+        read(icheck)
+        read(icheck) (locatom_g(ii),ii=1,nshell_g)
+        read(icheck)
+        read(icheck) (mprim_g(ii),ii=1,nshell_g)
+        read(icheck)
+        read(icheck) (mbf_g(ii),ii=1,nshell_g)
+        read(icheck)
+        read(icheck) (mtype_g(ii),ii=1,nshell_g)
+!
+        read(icheck)
+        read(icheck)((cmoa_g(jj,ii),jj=1,nao_g),ii=1,nmo_g)
+        if((scftype == 'UHF').and.(scftype_g == 'UHF')) then
+          read(icheck)
+          read(icheck)((cmob_g(jj,ii),jj=1,nao_g),ii=1,nmo_g)
+        endif
+      endif
+!
+! Broadcast guess basis functions and MOs
+!
+      call para_bcasti(locprim_g,nshell_g,0,mpi_comm)
+      call para_bcasti(locbf_g  ,nshell_g,0,mpi_comm)
+      call para_bcasti(locatom_g,nshell_g,0,mpi_comm)
+      call para_bcastr(ex_g   ,nprim_g,0,mpi_comm)
+      call para_bcastr(coeff_g,nprim_g,0,mpi_comm)
+      call para_bcastr(coord_g,natom*3,0,mpi_comm)
+      call para_bcasti(mprim_g,nshell_g,0,mpi_comm)
+      call para_bcasti(mbf_g  ,nshell_g,0,mpi_comm)
+      call para_bcasti(mtype_g,nshell_g,0,mpi_comm)
+      call para_bcastr(cmoa_g,nao_g*nmo_g,0,mpi_comm)
+      if((scftype == 'UHF').and.(scftype_g == 'UHF')) then
+        call para_bcastr(cmob_g,nao_g*nmo_g,0,mpi_comm)
+      endif
+!
+      return
 end
 
 
