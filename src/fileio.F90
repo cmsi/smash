@@ -128,6 +128,7 @@
 !
       if(runtype == 'OPT') runtype='OPTIMIZE'
       if(method == 'HF') method='HARTREE-FOCK'
+      if(ecp /='NONE') ecp = ''
       if(ecp /= '') flagecp=.true.
 !
       if(parallel) then

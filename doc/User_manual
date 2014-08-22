@@ -1,0 +1,215 @@
+  ===========================
+      SMASH user's manual
+          version 1.0
+  ===========================
+
+  *****************
+  Important setting
+  *****************
+  In general, the default stack size limitation on the system resources
+  and the default of the OMP_STACKSIZE environmental variable are small.
+  Set new stack sizes according to your shell.
+
+  * bash:
+    Write the following two lines in the ~/.bashrc file.
+      ulimit -s unlimited
+      export OMP_STACKSIZE=1G
+
+  * csh, tcsh:
+    Write the following two lines in the ~/.cshrc or ~/.tcshrc file.
+      unlimit
+      setenv OMP_STACKSIZE 1G
+
+  If a large calculation stops at the first SCF iteration, increase the
+  size of OMP_STACKSIZE.
+
+
+  Sample input and output
+  -----------------------
+  Sample input and output files are included in the example/ directory.
+
+
+  How to run SMASH
+  ----------------
+  * Intra-node (OpenMP) parallel computing
+    Set the OMP_NUM_THREADS environment variable to specify the number
+    of threads for each MPI process. It is recommended that the value of
+    OMP_NUM_THREADS be set equal to the number of CPU cores in a node.
+  
+    bash: in the ~/.bashrc file
+      export OMP_NUM_THEADS=(# of threads)
+
+    csh, tcsh:  in the ~/.cshrc or ~/.tcshrc file
+      setenv OMP_NUM_THEADS (# of threads)
+    
+    After the setting, start a calculation.
+
+      $ bin/smash < input > output
+  
+  * Inter-node (MPI) parallel computing
+    Use mpirun or mpiexec command to start a calculation, and specify
+    the number of MPI processes by -np option.
+
+      $ mpirun -np (# of processes) bin/smash < input > output
+
+  * Hybrid parallel computing
+    Parallel computing with MPI and OpenMP is recommended when you use
+    cluster or supercomputer systems.
+
+      ex) Shell: tcsh    Machine: 10nodes, 8cores/node
+      Write the following line in the ~/.tcshrc file.
+        setenv OMP_NUM_THREADS 8
+      And then, run the MPI job.
+        $ mpirun -np 10 bin/smash < input > output
+
+
+  Input format
+  ------------
+  1. Overview
+    Computational conditions are set in first several lines.
+    Subsequently, molecular data, basis and effective core potential (ECP)
+    functions are set.
+
+  2. Keywords
+    2.1 List of keyword Groups
+      Group     Function
+     -------------------------------
+      job     : Basic computational condition
+      control : Detailed computational condition
+      scf     : Self-consistent field
+      opt     : Geometry optimization
+      dft     : Density functional theory
+      geom    : Molecular data (atom type, geometry)
+      basis   : Basis function
+      ecp     : Effective Core Potential
+
+    2.2 job keywords
+      runtype              specifies the type of computation.
+              = energy     Molecular energy (default)
+              = gradient   Molecular energy and gradient
+              = optimize   Molecular geometry optimization
+
+      method               specifies the method of computation.
+              = HF         Hartree-Fock (default)
+              = B3LYP      B3LYP DFT
+              = MP2        Second-order Moller-Plesset perturbation theory
+
+      basis                specifies basis functions.
+              = STO-3G     (default)
+              = gen        Basis functions for each element are set in
+                           "basis" group. See Section 2.7.
+              = 6-31G
+              = 6-31G(d)
+              = cc-pvdz
+              = cc-pvtz
+              = cc-pvqz
+              = d95v
+              = lanl2dz
+
+      memory               specifies the memory size per process. (default: 2GB)
+                           Supported unit: B, KB, MB, GB, TB
+                            
+      charge               specifies the total charge of the system. (default: 0.0)
+
+      multi                specifies the spin multiplicity of the system.
+              = 1          Singlet (default)
+              = 2          Doublet
+              = 3,4,...    Triplet, Quartet, ...
+
+      scftype              specifies the type of the SCF wavefunction.
+              = RHF        Restricted Hartree-Fock (default)
+              = UHF        Unrestricted Hartree-Fock
+
+      ecp                  specifies ECP functions.
+              = none       ECP functions are not used. (default)
+              = Lanl2DZ    Hay-Wadt ECP function
+              = gen        ECP functions for each element are set in
+                           "ecp" group. See Section 2.8.
+
+    2.2 control keywords
+      spher                specifies spherical harmonics or Cartesian basis functions
+              = .true.     Speherical harmonics (5d, 7f, 9g, default)
+              = .false.    Cartesian (6d, 10f, 15g)
+
+      guess                specifies the guess calculation.
+              = huckel     Huckel calculation (default)
+              = check      checkpoint file
+
+      check                specifies the checkpoint file. (defalut: <empty>)
+
+      cutint2              specifies the threshold for the two-electron integral
+                           calculation. (defalut: 1.0D-12)
+
+      bohr                 specifies the unit of the input geometry.
+              = .false.    Angstrom (default)
+              = .true.     Atomic unit
+
+      iprint               controls output.
+              = 1          minimal printing
+              = 2          normal printing (default)
+
+    2.3 scf keywords
+      maxiter              specifies the maximum number of SCF iteration cycles.
+                           (default: 100)
+
+      dconv                specifies the SCF density convergence tolerance.
+                           (default: 5.0D-6)
+
+      diis                 specifies the type of SCF convergence method.
+              = .true.     Pulay's DIIS interpolation. (defalut)
+              = .false.    Second-order SCF (SOSCF) orbital optimization.
+
+      maxdiis              specifies the maximum number of DIIS steps. (default: 20)
+
+      maxsocf              specifies the maximum number of SOSCF steps. (default: 20)
+
+    2.4 opt keywords
+      nopt                 specifies the maximum number of geometry optimization steps.
+                           (default: 50)
+
+      optconv              specifies the gradient convergence tolerance of geometry
+                           optimization. (default: 1.0D-4)
+
+      cartesian            specifies the type of the coordinate system.
+              = .false.    Redundant coordinate (default)
+              = .true.     Cartesian coordinate
+
+    2.5 dft keywords
+      nrad                 specifies the number of radial points. (default: 96) 
+
+      nleb                 specifies the number of Lebedev angular points.
+                           Possible values are 6, 14, 26, 38, 50, 74, 86, 110,
+                           146, 170, 194, 230, 266, 302, 350, 434, 590, 770, 974,
+                           1202, and 1454. (default: 302)
+
+    2.6 geom
+      Write "geom" to specify the starting point for the molecular geometry.
+      After the line of "geom", write atomic names and their nuclear Cartesian
+      coordinates. A blank line or the end of the file means the end of the
+      molecular geometry section.
+
+      ex)  geom
+           O   0.0  0.0  0.0
+           H   1.0  0.0  0.0
+           H   0.0  1.0  0.0
+
+
+    2.7 basis
+      To read basis functions, basis=gen in the job group is necessary.
+      Write "basis" to specify the starting point for the basis functions.
+      After the line of "basis", 
+
+      A blank line or the end of the file means the end of the
+      basis function section.
+
+    2.8 ecp
+      To read ECP functions, ecp=gen in the job group is necessary.
+      Write "ecp" to specify the starting point for the ECP functions.
+
+      A blank line or the end of the file means the end of the
+      ECP function section.
+
+
+
+
+

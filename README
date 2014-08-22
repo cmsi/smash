@@ -1,0 +1,37 @@
+  About SMASH
+  -----------
+    Scalable Molecular Analysis Solver for High-performance computing (SMASH)
+  is open-source software for massively parallel quantum chemistry calculations.
+    It is currently capable of energy, analytical gradient, and
+  geometry optimization calculations of Hartree-Fock theory and 
+  Density Functional Theory (DFT), and energy calculations of 
+  Second-order Moller-Plesset (MP2) perturbation theory. DFT 
+  calculations can be performed on 100,000 CPU cores of K Computer
+  with high parallel efficiency.
+     The Fortran 90/95 language is used with MPI and OpenMP for
+  inter-node and intra-node parallelization, respectively.
+  Supported platforms are x86-64/Linux with Intel or GNU compilers,
+  and K Computer and FX10 with Fujitsu compiler.
+  SMASH is developed and distributed under the Apache License 2.0.
+
+  Documentation
+  -------------
+  The user's and programmer's manuals are included in the doc/ directory.
+  The user's manual written in Japanese is also available.
+
+  Installation
+  ------------
+  Please see the file called INSTALL.
+
+  Sample input and output
+  -----------------------
+  Sample input and output files are included in the example/ directory.
+
+  Licensing
+  ---------
+  Please see the file called LICENSE.
+
+  Contact
+  -------
+  If you have questions or find bugs, please contact the developer via e-mail.
+    ishimura@ims.ac.jp (Kazuya Ishimura, Institute for Molecular Science)
