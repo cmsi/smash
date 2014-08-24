@@ -137,7 +137,7 @@ end
         icount= 0
         do jatom= 1,natom
           if(jatom == iatom) cycle
-          thresh=(1.2D+00*tobohr*(radii(numatomic(iatom))+radii(numatomic(jatom))))**2
+          thresh=(1.25D+00*tobohr*(radii(numatomic(iatom))+radii(numatomic(jatom))))**2
           rrij= (coord(1,jatom)-coord(1,iatom))**2+(coord(2,jatom)-coord(2,iatom))**2 &
 &              +(coord(3,jatom)-coord(3,iatom))**2
           if(rrij <= thresh) then
@@ -673,7 +673,7 @@ end
         do ii= 1,numdim
           suml= suml+workv(ii,1)*workv(ii,1)/(rlambda-workv(ii,3))
         enddo
-        if(master) then
+        if(master.and.(iprint >= 3)) then
           write(*,'(" Lambda iteration of RFO",i3,3x,"Lambda=",1p,d15.8,4x,"Sum=",1p,d15.8)') &
 &               iterrfo,rlambda,suml
         endif
@@ -713,7 +713,7 @@ end
 !
         rmsdx= sqrt(ddot(natom3,workv,1,workv,1)/natom3)
         rmsqx= sqrt(ddot(numredun,workv(1,2),1,workv(1,2),1)/numredun)
-        if(master) then
+        if(master.and.(iprint >= 3)) then
           write(*,'(" Displacement Iteration",i3,2x,"RMS(Cart)=",1p,d10.3,4x, &
 &                   "RMS(Red)=",1p,d10.3)') iterdx, rmsdx, rmsqx
         endif

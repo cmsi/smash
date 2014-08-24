@@ -195,21 +195,126 @@
 
 
     2.7 basis
-      To read basis functions, basis=gen in the job group is necessary.
+      To use the basis section, basis=gen in the job group is necessary.
       Write "basis" to specify the starting point for the basis functions.
-      After the line of "basis", 
-
+      After the line of "basis", write atomic names. From the next line,
+      write their basis set or basis functions. At the end of the basis set
+      or functions, write "****".
+      For basis functions, the format is as follows.
+        (atomic name)
+        (angular momenta=S,P,D,F,G,SP)  (number of primitive functions) 
+          (Gaussian exponent) (contraction coefficient) (P contraction coefficient if SP)
+          (Gaussian exponent) (contraction coefficient) (P contraction coefficient if SP)
+          ...repeat the primitive function number of times
+        ...repeat functions
+        ****
       A blank line or the end of the file means the end of the
       basis function section.
 
+      ex1) C O
+           6-31G(d)
+           ****
+           H
+           STO-3G
+           ****
+
+      ex2) C
+             S  6
+               3047.5248800      0.0018347
+                457.3695180      0.0140373
+                103.9486850      0.0688426
+                 29.2101553      0.2321844
+                  9.2866630      0.4679413
+                  3.1639270      0.3623120
+             SP 3
+                  7.8682723     -0.1193324   0.0689991
+                  1.8812885     -0.1608542   0.3164240
+                  0.5442493      1.1434564   0.7443083
+             SP 1
+                  0.1687145      1.0000000   1.0000000
+             D  1
+                  0.8000000      1.0000000
+           ****
+           H
+             S  3
+                 18.7311370      0.0334946
+                  2.8253944      0.2347270
+                  0.6401217      0.8137573
+             S  1
+                  0.1612778      1.0000000
+           ****
+
     2.8 ecp
-      To read ECP functions, ecp=gen in the job group is necessary.
+      To use the ecp section, ecp=gen in the job group is necessary.
       Write "ecp" to specify the starting point for the ECP functions.
+      After the line of "basis", write atomic names. From the next line,
+      write their ECP function name or functions.
+      For ECP functions, the format is as follows.
+        (atomic name)
+        (name, anything OK) (maximum angular mementum) (number of removed core electrons)
+        (title, anything OK)
+        (number of Gaussians)
+          (power of R for Gaussian) (exponent of Gaussian) (coefficient of Gaussian)
+          (power of R for Gaussian) (exponent of Gaussian) (coefficient of Gaussian)
+          ...repeat the Gaussian number of times
+        ...repeat functions
 
       A blank line or the end of the file means the end of the
       ECP function section.
 
+      ex1) Fe Ru
+           LANL2DZ
 
-
-
+      ex2) Cl
+           Cl-ECP     2   10
+           d-ul potential
+             5
+           1      94.8130000     -10.0000000
+           2     165.6440000      66.2729170
+           2      30.8317000     -28.9685950
+           2      10.5841000     -12.8663370
+           2       3.7704000      -1.7102170
+           s-ul potential
+             5
+           0     128.8391000       3.0000000
+           1     120.3786000      12.8528510
+           2      63.5622000     275.6723980
+           2      18.0695000     115.6777120
+           2       3.8142000      35.0606090
+           p-ul potential
+             6
+           0     216.5263000       5.0000000
+           1      46.5723000       7.4794860
+           2     147.4685000     613.0320000
+           2      48.9869000     280.8006850
+           2      13.2096000     107.8788240
+           2       3.1831000      15.3439560
+           Br
+           Br-ECP     3   28
+           f-ul potential
+             4
+           1     213.6143969     -28.0000000
+           2      41.0585380    -134.9268852
+           2       8.7086530     -41.9271913
+           2       2.6074661      -5.9336420
+           s-ul potential
+             4
+           0      54.1980682       3.0000000
+           1      32.9053558      27.3430642
+           2      13.6744890     118.8028847
+           2       3.0341152      43.4354876
+           p-ul potential
+             5
+           0      54.2563340       5.0000000
+           1      26.0095593      25.0504252
+           2      28.2012995      92.6157463
+           2       9.4341061      95.8249016
+           2       2.5321764      26.2684983
+           d-ul potential
+             5
+           0      87.6328721       3.0000000
+           1      61.7373377      22.5533557
+           2      32.4385104     178.1241988
+           2       8.7537199      76.9924162
+           2       1.6633189       9.4818270
 
