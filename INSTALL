@@ -1,8 +1,6 @@
-
   SMASH INSTALLATION OVERVIEW
   ---------------------------
-
-    If your machine is not a x86-64/Linux system or does not include
+  If your machine is not a x86-64/Linux system or does not include
   an MPI library, choose an appropriate Makefile. Make sure that
   the compiler and library in the Makefile are correct, and then
   type the following command to build SMASH.
@@ -16,4 +14,4 @@
     (K Computer or FX10 with MPI)
       $ make -f Makefile.fujitsu
 
-  If it is successfully completed, you can find the file bin/smash.
+  If it is successfully completed, you can find the bin/smash file.
