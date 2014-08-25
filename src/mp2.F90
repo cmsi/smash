@@ -216,15 +216,17 @@ end
 !       
       use modbasis, only : nshell, nao, mbf, locbf
       use modthresh, only : cutint2
+      use modprint, only : iprint
       implicit none
       integer,intent(in) :: maxdim, mlsize, nocc, nproc, myrank, idis(8,0:nproc-1)
       integer :: ish, ksh, mlcount, mlstart, numshell, ii
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmoocc(nao,nocc), xint(nshell*(nshell+1)/2)
       real(8),intent(out) :: cmowrk(nocc,nao), trint1a(nocc,maxdim,maxdim**2)
-      real(8),intent(out) :: trint1b(mlsize*nocc*nao), trint2((idis(3,myrank)+idis(7,myrank))*nocc*(nocc+1)/2)
+      real(8),intent(out) :: trint1b(mlsize*nocc*nao)
+      real(8),intent(out) :: trint2((idis(3,myrank)+idis(7,myrank))*nocc*(nocc+1)/2)
 !ishimura
-    real(8) :: t1,t2,t3,tr1=0.0D0,tr2=0.0D0
+      real(8) :: t1,t2,t3,tr1=0.0D0,tr2=0.0D0
 !
       cmowrk=transpose(cmoocc)
 !
@@ -234,13 +236,13 @@ end
       mlstart= 1
       do numshell= 1,idis(4,myrank)
 !ishimura
-    call cpu_time(t1)
+        call cpu_time(t1)
 !
 ! AO intengral generation and first integral transformation
 !
         call transmoint1(trint1a,trint1b,cmowrk,xint,ish,ksh,maxdim,nocc,mlcount,mlsize)
 !ishimura
-    call cpu_time(t2)
+        call cpu_time(t2)
         mlcount= mlcount+mbf(ish)*mbf(ksh)
         if(numshell == idis(4,myrank)) then
           call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis,nproc,myrank)
@@ -270,22 +272,22 @@ end
           endif
         endif
 !ishimura
-    call cpu_time(t3)
-    tr1=tr1+t2-t1
-    tr2=tr2+t3-t2
+        call cpu_time(t3)
+        tr1=tr1+t2-t1
+        tr2=tr2+t3-t2
       enddo
 !ishimura
       ish= idis(5,myrank)
       ksh= idis(6,myrank)
       do numshell= 1,idis(8,myrank)
 !ishimura
-    call cpu_time(t1)
+        call cpu_time(t1)
 !
 ! AO intengral generation and first integral transformation
 !
         call transmoint1(trint1a,trint1b,cmowrk,xint,ish,ksh,maxdim,nocc,mlcount,mlsize)
 !ishimura
-    call cpu_time(t2)
+        call cpu_time(t2)
         mlcount= mlcount+mbf(ish)*mbf(ksh)
         if(numshell == idis(8,myrank)) then
           call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis,nproc,myrank)
@@ -313,12 +315,14 @@ end
           endif
         endif
 !ishimura
-    call cpu_time(t3)
-    tr1=tr1+t2-t1
-    tr2=tr2+t3-t2
+        call cpu_time(t3)
+        tr1=tr1+t2-t1
+        tr2=tr2+t3-t2
       enddo
-
-    write(*,'("Time for Tr1=",f9.3,"  Time for Tr2=",f9.3,i3)')tr1,tr2,myrank
+!
+      if(iprint >= 3) then
+        write(*,'("Time for Tr1=",f9.3,"  Time for Tr2=",f9.3,i3)')tr1,tr2,myrank
+      endif
       return
 end
 
@@ -444,7 +448,7 @@ end
 ! AO integral calculation
 !
           if(xint(ij)*xint(kl) < cutint2) cycle
-          call calc2eri(twoeri,ksh,lsh,ish,jsh,maxdim)
+          call calc2eri(twoeri,ksh,lsh,ish,jsh,maxdim,.false.,zero)
 !
 ! First integral transformation
 !

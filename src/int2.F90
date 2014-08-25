@@ -12,13 +12,15 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!-----------------------------------------------------
-  subroutine calc2eri(twoeri,ish,jsh,ksh,lsh,maxdim)
-!-----------------------------------------------------
+!----------------------------------------------------------------
+  subroutine calc2eri(twoeri,ish,jsh,ksh,lsh,maxdim,lrint,emu2)
+!----------------------------------------------------------------
 !
 ! Driver of two-electron repulsion integrals 
 ! 
 ! In  : ish, jsh, ksh, lsh (Shell indices)
+!       lrint  (Flag of long range correction)
+!       emu2   (mu*mu value for long range correction)
 ! Out : twoeri (Two-electron repulsion integrals)
 !       idxeri (Indices of two-electron repulsion integrals)
 !       numeri (Number of two-electron repulsion integrals)
@@ -31,8 +33,15 @@
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nangijkl(4), nprimijkl(4), nbfijkl(4)
       integer :: iloc, jloc, kloc, lloc, i, j, k, l
+      real(8),intent(in) :: emu2
       real(8),intent(out) :: twoeri(maxdim,maxdim,maxdim,maxdim)
       real(8) :: xyzijkl(3,4), exijkl(mxprsh,4), coijkl(mxprsh,4)
+      logical,intent(in) :: lrint
+!
+      if(lrint) then
+        write(*,'(" Error! Long range correction is not supported now.")')
+        write(*,'(" emu2=",d10.3)')emu2
+      endif
 !
       nangijkl(1)= mtype(ish)
       nangijkl(2)= mtype(jsh)
@@ -81,13 +90,13 @@
 ! Pople-Hehre and McMurchie-Davidson scheme
 !
         call int2phmd(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                     mxprsh,threshex)
+&                     mxprsh,threshex,lrint,emu2)
       else
 !
 ! Rys quadrature scheme
 !
         call int2rys(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                    mxprsh,threshex)
+&                    mxprsh,threshex,lrint,emu2)
       endif
       return
 end
@@ -95,7 +104,7 @@ end
 
 !----------------------------------------------------------------------------------------
   subroutine int2phmd(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                     mxprsh,threshex)
+&                     mxprsh,threshex,lrint,emu2)
 !----------------------------------------------------------------------------------------
 !
 ! Driver of two-electron integrals from (ss|ss) to (dd|dd)
@@ -110,6 +119,8 @@ end
 !       maxdim    (Dimension of two-electron integral array)
 !       mxprsh    (Size of primitive function array)
 !       threshex  (Threshold of exponential calculation)
+!       lrint     (Flag of long range correction)
+!       emu2      (mu*mu value for long range correction)
 ! Out : twoeri    (Two-electron integrals
 !                  The values are stored in order of (lsh,ksh,jsh,ish).)
 !
@@ -122,6 +133,7 @@ end
       real(8),parameter :: zero=0.0d+00, one=1.0D+00, half=0.5D+00, pt7=0.7D+00
       real(8),parameter :: pi52=0.3498683665524973D+02 ! 2.0*pi**2.5
       real(8),intent(in) :: exijkl(mxprsh,4), coijkl(mxprsh,4), xyzijkl(3,4), threshex
+      real(8),intent(in) :: emu2
       real(8),intent(out) :: twoeri(maxdim,maxdim,maxdim,maxdim)
       real(8) :: phmdint(6,6,6,6)
       real(8) :: r12, r34, rij, rkl, tmp, rot(3,3), veckl(3), cosph, sinph, abscos
@@ -130,6 +142,7 @@ end
       real(8) :: exk, exl, ck, cl, ex34, ex43, ex3q, ex4q, r34ex
       real(8) :: exfac(5,mxprsh2*mxprsh2*2), xyziq(3,mxprsh2*mxprsh2)
       real(8) :: tmpexp(mxprsh2*mxprsh2)
+      logical,intent(in) :: lrint
       data intijkl/1,2,3,4, 2,1,3,4, 1,2,4,3, 3,4,1,2, 2,1,4,3, 3,4,2,1, 4,3,1,2, 4,3,2,1/
       data inttable/ 1, 2, 7, 2, 3, 8, 7, 8,10, 2, 4, 9, 4, 5,11, 9,11,14, 7, 9,&
 &                   12, 9,13,15,12,15,17, 2, 4, 9, 4, 5,11, 9,11,14, 3, 5,13, 5,&
@@ -139,6 +152,11 @@ end
 &                   1,7,4,1,3,3,1,6,2,2,5,2,2,5,5,2,4,4,1,7,&
 &                   1,1,3,3,1,4,4,4,7,4,1,7,3,1,6,6,2,8,6,2,&
 &                   5,5,2,6,6,6,8,6,2,8,5,2,4,4,4,7,4,4,7,7,1/
+!
+      if(lrint) then
+        write(*,'(" Error! Long range correction is not supported now.")')
+        write(*,'(" emu2=",d10.3)')emu2
+      endif
 !
       if(mxprsh > mxprsh2) then
         write(*,'(" Error! Parameter mxprsh2 in int2phmd is small!")')
@@ -490,7 +508,7 @@ end
 !$OMP do
         do jsh = 1,ish
           nbfj = mbf(jsh)
-          call calc2eri(twoeri,ish,jsh,ish,jsh,maxdim)
+          call calc2eri(twoeri,ish,jsh,ish,jsh,maxdim,.false.,zero)
           xintmax= zero
           do i= 1,nbfi
             do j= 1,nbfj

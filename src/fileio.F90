@@ -128,7 +128,7 @@
 !
       if(runtype == 'OPT') runtype='OPTIMIZE'
       if(method == 'HF') method='HARTREE-FOCK'
-      if(ecp /='NONE') ecp = ''
+      if(ecp =='NONE') ecp = ''
       if(ecp /= '') flagecp=.true.
 !
       if(parallel) then
@@ -608,7 +608,7 @@ end
       integer :: ii, jj, iprim, ishell, ll, ielem(112), nelem, kprim, numprim, natomshell
       character(len=3) :: element(112)
       character(len=100) :: line
-      character(len=2) :: symbol
+      character(len=16) :: symbol
       character(len=3) :: table(112)= &
 &     (/'H  ','HE ','LI ','BE ','B  ','C  ','N  ','O  ','F  ','NE ','NA ','MG ','AL ','SI ','P  ',&
 &       'S  ','CL ','AR ','K  ','CA ','SC ','TI ','V  ','CR ','MN ','FE ','CO ','NI ','CU ','ZN ',&
@@ -670,7 +670,7 @@ end
           do ii= 1,nelem
             locgenshell(ielem(ii))= ishell
           enddo
-          do jj= 1,400
+          do jj= 1,1000
             symbol= ''
             read(input,'(a)',err=200,end=200) line
             read(line,*,end=200,err=9998) symbol, numprim
@@ -1099,7 +1099,6 @@ end
       use modparallel, only : master
       use modmolecule, only : nmo, neleca, numatomic
       use modbasis, only : nao, nshell, mtype, spher, locatom
-      use modprint, only : iprint
       use modparam, only : mxao
       implicit none
       integer :: maxmo, imin, imax, ii, jj, kk, iao, iatom

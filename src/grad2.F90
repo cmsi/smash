@@ -180,13 +180,13 @@ end
 ! Pople-Hehre and McMurchie-Davidson scheme
 !
         call int2phmd(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                     mxprsh,threshex)
+&                     mxprsh,threshex,.false.,zero)
       else
 !
 ! Rys quadrature scheme
 !
         call int2rys(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                    mxprsh,threshex)
+&                    mxprsh,threshex,.false.,zero)
       endif
 !
       select case(nangijkl(4))
@@ -292,10 +292,10 @@ end
 !
         if((nangijkl(1)<=2).and.(nangijkl(2)<=2).and.(nangijkl(3)<=2).and.(nangijkl(4)<=2)) then
           call int2phmd(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                       mxprsh,threshex)
+&                       mxprsh,threshex,.false.,zero)
         else
           call int2rys(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                      mxprsh,threshex)
+&                      mxprsh,threshex,.false.,zero)
         endif
 !
         select case(nangijkl(4))
@@ -418,10 +418,10 @@ end
 !
       if((nangijkl(1)<=2).and.(nangijkl(2)<=2).and.(nangijkl(3)<=2).and.(nangijkl(4)<=2)) then
         call int2phmd(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                     mxprsh,threshex)
+&                     mxprsh,threshex,.false.,zero)
       else
         call int2rys(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                    mxprsh,threshex)
+&                    mxprsh,threshex,.false.,zero)
       endif
 !
       select case(nangijkl(3))
@@ -527,10 +527,10 @@ end
 !
         if((nangijkl(1)<=2).and.(nangijkl(2)<=2).and.(nangijkl(3)<=2).and.(nangijkl(4)<=2)) then
           call int2phmd(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                       mxprsh,threshex)
+&                       mxprsh,threshex,.false.,zero)
         else
           call int2rys(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                      mxprsh,threshex)
+&                      mxprsh,threshex,.false.,zero)
         endif
 !
         select case(nangijkl(3))
@@ -653,10 +653,10 @@ end
 !
       if((nangijkl(1)<=2).and.(nangijkl(2)<=2).and.(nangijkl(3)<=2).and.(nangijkl(4)<=2)) then
         call int2phmd(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                     mxprsh,threshex)
+&                     mxprsh,threshex,.false.,zero)
       else
         call int2rys(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                    mxprsh,threshex)
+&                    mxprsh,threshex,.false.,zero)
       endif
 !
       select case(nangijkl(2))
@@ -762,10 +762,10 @@ end
 !
         if((nangijkl(1)<=2).and.(nangijkl(2)<=2).and.(nangijkl(3)<=2).and.(nangijkl(4)<=2)) then
           call int2phmd(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                       mxprsh,threshex)
+&                       mxprsh,threshex,.false.,zero)
         else
           call int2rys(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                      mxprsh,threshex)
+&                      mxprsh,threshex,.false.,zero)
         endif
 !
         select case(nangijkl(2))

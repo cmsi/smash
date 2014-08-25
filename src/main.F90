@@ -187,7 +187,7 @@ end program main
       idft   = 0
       nrad   = 96
       nleb   = 302
-      iprint = 1
+      iprint = 2
       bohr   =.false.
       spher  =.true.
       spher_g=.true.
@@ -269,6 +269,7 @@ end
       use modmolecule, only : nmo, neleca
       use modjob, only : method
       use moddft, only : idft
+      use modprint, only : iprint
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
       integer(4),intent(in) :: mpi_comm1, mpi_comm2
@@ -351,12 +352,12 @@ end
 !
 ! Print MOs
 !
-      if(master) then
+      if(master.and.(iprint >= 2)) then
         write(*,'("-----------------")')
         write(*,'(" MO coefficients")')
         write(*,'("-----------------")')
+        call writeeigenvector(cmo,energymo)
       endif
-      call writeeigenvector(cmo,energymo)
 !
 ! Calculate Mulliken charge
 !
@@ -393,6 +394,7 @@ end
       use modmolecule, only : nmo
       use modjob, only : method
       use moddft, only : idft
+      use modprint, only : iprint
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
       integer(4),intent(in) :: mpi_comm1, mpi_comm2
@@ -473,18 +475,16 @@ end
 !
 ! Print MOs
 !
-      if(master) then
+      if(master.and.(iprint >= 2)) then
         write(*,'("-----------------------")')
         write(*,'(" Alpha MO coefficients")')
         write(*,'("-----------------------")')
-      endif
-      call writeeigenvector(cmoa,energymoa)
-      if(master) then
+        call writeeigenvector(cmoa,energymoa)
         write(*,'("-----------------------")')
         write(*,'(" Beta MO coefficients")')
         write(*,'("-----------------------")')
+        call writeeigenvector(cmob,energymob)
       endif
-      call writeeigenvector(cmob,energymob)
 !
 ! Calculate Mulliken charge
 !
@@ -521,6 +521,7 @@ end
       use modmolecule, only : nmo, natom
       use modjob, only : method
       use moddft, only : idft
+      use modprint, only : iprint
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
       integer(4),intent(in) :: mpi_comm1, mpi_comm2
@@ -627,12 +628,12 @@ end
 !
 ! Print MOs
 !
-      if(master) then
+      if(master.and.(iprint >= 2)) then
         write(*,'("-----------------")')
         write(*,'(" MO coefficients")')
         write(*,'("-----------------")')
+        call writeeigenvector(cmo,energymo)
       endif
-      call writeeigenvector(cmo,energymo)
 !
 ! Calculate Mulliken charge
 !
@@ -670,6 +671,7 @@ end
       use modmolecule, only : nmo, natom
       use modjob, only : method
       use moddft, only : idft
+      use modprint, only : iprint
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
       integer(4),intent(in) :: mpi_comm1, mpi_comm2
@@ -782,18 +784,16 @@ end
 !
 ! Print MOs
 !
-      if(master) then
+      if(master.and.(iprint >= 2)) then
         write(*,'("-----------------------")')
         write(*,'(" Alpha MO coefficients")')
         write(*,'("-----------------------")')
-      endif
-      call writeeigenvector(cmoa,energymoa)
-      if(master) then
+        call writeeigenvector(cmoa,energymoa)
         write(*,'("-----------------------")')
         write(*,'(" Beta MO coefficients")')
         write(*,'("-----------------------")')
+        call writeeigenvector(cmob,energymob)
       endif
-      call writeeigenvector(cmob,energymob)
 !
 ! Calculate Mulliken charge
 !
@@ -833,6 +833,7 @@ end
       use modwarn, only : nwarn
       use modjob, only : method
       use moddft, only : idft
+      use modprint, only : iprint
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
       integer(4),intent(in) :: mpi_comm1, mpi_comm2
@@ -1038,12 +1039,12 @@ end
 !
 ! Print MOs
 !
-      if(master) then
+      if(master.and.(iprint >= 2)) then
         write(*,'("-----------------")')
         write(*,'(" MO coefficients")')
         write(*,'("-----------------")')
+        call writeeigenvector(cmo,energymo)
       endif
-      call writeeigenvector(cmo,energymo)
 !
 ! Calculate Mulliken charge
 !
@@ -1102,6 +1103,7 @@ end
       use modwarn, only : nwarn
       use modjob, only : method
       use moddft, only : idft
+      use modprint, only : iprint
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
       integer(4),intent(in) :: mpi_comm1, mpi_comm2
@@ -1312,18 +1314,16 @@ end
 !
 ! Print MOs
 !
-      if(master) then
+      if(master.and.(iprint >= 2)) then
         write(*,'(" -----------------------")')
         write(*,'("  Alpha MO coefficients")')
         write(*,'(" -----------------------")')
-      endif
-      call writeeigenvector(cmoa,energymoa)
-      if(master) then
+        call writeeigenvector(cmoa,energymoa)
         write(*,'(" -----------------------")')
         write(*,'("  Beta MO coefficients")')
         write(*,'(" -----------------------")')
+        call writeeigenvector(cmob,energymob)
       endif
-      call writeeigenvector(cmob,energymob)
 !
 ! Calculate Mulliken charge
 !

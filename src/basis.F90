@@ -310,7 +310,7 @@ end
               call iabort
             endif
           case default
-            write(*,'(" Error! This program is not support the basis set, ",a12,".")')
+            write(*,'(" Error! This program is not support the basis set, ",a12,".")')atombasis(nn)
             call iabort
         end select
 !

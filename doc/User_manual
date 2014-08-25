@@ -33,8 +33,7 @@
   ----------------
   * Intra-node (OpenMP) parallel computing
     Set the OMP_NUM_THREADS environment variable to specify the number
-    of threads for each MPI process. It is recommended that the value of
-    OMP_NUM_THREADS be set equal to the number of CPU cores in a node.
+    of threads for one process.
   
     bash: in the ~/.bashrc file
       export OMP_NUM_THEADS=(# of threads)
@@ -53,8 +52,9 @@
       $ mpirun -np (# of processes) bin/smash < input > output
 
   * Hybrid parallel computing
-    Parallel computing with MPI and OpenMP is recommended when you use
-    cluster or supercomputer systems.
+    Parallel computing with MPI and OpenMP when you use cluster or
+    supercomputer systems. It is recommended that the value of
+    OMP_NUM_THREADS be set equal to the number of CPU cores in a node.
 
       ex) Shell: tcsh    Machine: 10nodes, 8cores/node
       Write the following line in the ~/.tcshrc file.
@@ -147,6 +147,7 @@
       iprint               controls output.
               = 1          minimal printing
               = 2          normal printing (default)
+              = 3          detailed information
 
     2.3 scf keywords
       maxiter              specifies the maximum number of SCF iteration cycles.

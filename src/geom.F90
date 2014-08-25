@@ -780,7 +780,8 @@ end
         endif
       enddo
       if(master) then
-        write(*,'(/," ---------------------------------------------------------")')
+        if(iprint >= 3) write(*,*)
+        write(*,'(" ---------------------------------------------------------")')
         write(*,'("   Redundant coordinate parameters (Angstrom and Degree)")')
         write(*,'("                                  New           Old")')
         write(*,'(" ---------------------------------------------------------")')

@@ -238,7 +238,7 @@
         call dcopy(nao3,dmtrx,1,dmtrxprev,1)
         call dcopy(nao3,work,1,dmtrx,1)
         call cpu_time(time4)
-        if(master.and.(iprint >= 2)) write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
+        if(master.and.(iprint >= 3)) write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
       if(master) then
@@ -367,7 +367,7 @@ end
               endif
             enddo
             do lsh= 1,lnum
-              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
+              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,.false.,zero)
               call fockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
             enddo
           enddo
@@ -551,7 +551,7 @@ end
               endif
             enddo
             do lsh= 1,lnum
-              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
+              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,.false.,zero)
               call dftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,hfexchange)
             enddo
           enddo
@@ -935,7 +935,7 @@ end
         call dcopy(nao3,dmtrx,1,dmtrxprev,1)
         call dcopy(nao3,work,1,dmtrx,1)
         call cpu_time(time4)
-        if(master.and.(iprint >= 2)) write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
+        if(master.and.(iprint >= 3)) write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
       if(master) then
@@ -1237,7 +1237,7 @@ end
         call dcopy(nao3,work(1),1,dmtrxa,1)
         call dcopy(nao3,work(nao3+1),1,dmtrxb,1)
         call cpu_time(time4)
-        if(master.and.(iprint >= 2)) write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
+        if(master.and.(iprint >= 3)) write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
       if(master) then
@@ -1365,7 +1365,7 @@ end
               endif
             enddo
             do lsh= 1,lnum
-              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
+              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,.false.,zero)
               call ufockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
             enddo
           enddo
@@ -1802,7 +1802,7 @@ end
         call dcopy(nao3,work(1),1,dmtrxa,1)
         call dcopy(nao3,work(nao3+1),1,dmtrxb,1)
         call cpu_time(time4)
-        if(master.and.(iprint >= 2)) write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
+        if(master.and.(iprint >= 3)) write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
       if(master) then
@@ -1938,7 +1938,7 @@ end
               endif
             enddo
             do lsh= 1,lnum
-              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
+              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,.false.,zero)
               call udftfockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim, &
 &                              hfexchange)
             enddo
