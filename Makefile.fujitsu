@@ -1,4 +1,4 @@
-F90 = mpifrtpx    #-DnoMPI
+F90 = mpifrtpx
 LIB = -SSL2BLAMP
 OPT = -Kfast,openmp
 

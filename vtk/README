@@ -1,0 +1,27 @@
+  SMASH VTK-GENERATOR
+  -------------------
+  The vtk-generator in SMASH visualizes MOs from its checkpoint file.
+
+  INSTALLATION
+  ------------
+  To compile the vtk-generator, use the Makefile in the same directory.
+  Make sure that the integer sizes and endianness of SMASH and
+  vtk-generator are correct.
+
+    $ make
+
+  HOW TO USE VTK-GENERATOR
+  ------------------------
+  The vtk-generator requires four argments.
+    1. checkpoint file
+       Name of the checkpoint file.
+    2. vtk file
+       Name of the vtk file.
+    3. MO type
+       Type of MO to be visualized.
+       MO or MOA : Alpha MO
+       MOB       : Beta MO
+    4. MO number
+       HOMO, LUMO, or integer.
+
+    ex) $ ./vtk-generator methan.check methan-homo.vtk MO HOMO
