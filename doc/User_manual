@@ -188,6 +188,8 @@
       After the line of "geom", write atomic names and their nuclear Cartesian
       coordinates. A blank line or the end of the file means the end of the
       molecular geometry section.
+      To read the molecular geometry of a checkpoint file, write "geom=check"
+      instead of "geom".
 
       ex)  geom
            O   0.0  0.0  0.0
@@ -203,7 +205,7 @@
       or functions, write "****".
       For basis functions, the format is as follows.
         (atomic name)
-        (angular momenta=S,P,D,F,G,SP)  (number of primitive functions) 
+        (angular momentum=S,P,D,F,G,SP)  (number of primitive functions) 
           (Gaussian exponent) (contraction coefficient) (P contraction coefficient if SP)
           (Gaussian exponent) (contraction coefficient) (P contraction coefficient if SP)
           ...repeat the primitive function number of times
@@ -252,7 +254,7 @@
       write their ECP function name or functions.
       For ECP functions, the format is as follows.
         (atomic name)
-        (name, anything OK) (maximum angular mementum) (number of removed core electrons)
+        (name, anything OK) (maximum angular momentum) (number of removed core electrons)
         (title, anything OK)
         (number of Gaussians)
           (power of R for Gaussian) (exponent of Gaussian) (coefficient of Gaussian)

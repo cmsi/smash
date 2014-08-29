@@ -16,7 +16,7 @@
     1. checkpoint file
        Name of the checkpoint file.
     2. vtk file
-       Name of the vtk file.
+       Name of the vtk file to be generated.
     3. MO type
        Type of MO to be visualized.
        MO or MOA : Alpha MO
@@ -25,3 +25,13 @@
        HOMO, LUMO, or integer.
 
     ex) $ ./vtk-generator methan.check methan-homo.vtk MO HOMO
+
+  HOW TO VISUALIZE MO
+  -------------------
+  The ParaView software is used to visualize MOs.
+    1. Start ParaView.
+    2. Choose File -> Load State
+    3. Open the mo-view.pvsm file in the smash/vtk directory.
+    4. Open a vtk file.
+
+

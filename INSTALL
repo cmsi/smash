@@ -1,5 +1,7 @@
   SMASH INSTALLATION OVERVIEW
   ---------------------------
+  To install SMASH, a fortran compiler, BLAS, LAPACK, and MPI
+  (optional) libraries are required.
   If your machine is not a x86-64/Linux system or does not include
   an MPI library, choose an appropriate Makefile. Make sure that
   the compiler and library (F90, LIB, OPT) in the Makefile are

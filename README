@@ -4,7 +4,7 @@
 
   About SMASH
   -----------
-  Scalable Molecular Analysis Solver for High-performance computing
+  Scalable Molecular Analysis Solver for High-performance computing systems
   (SMASH) is open-source software for massively parallel quantum
   chemistry calculations. It is currently capable of energy, analytical
   gradient, and geometry optimization calculations of Hartree-Fock

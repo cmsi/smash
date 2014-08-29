@@ -509,7 +509,7 @@ end
       real(8),intent(inout) :: work4(maxredun,maxredun), workv(maxredun,3) 
       real(8) :: parambond(7,7), rij, paramb
       real(8) :: rcov(112), rjk, suml, rlambda, rmsdx, rmsqx, ddot
-      character(len=27) :: paramred
+      character(len=33) :: paramred
       character(len=5) :: chartmp(5)
       character(len=3) :: table(112)= &
 &     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
@@ -781,33 +781,33 @@ end
       enddo
       if(master) then
         if(iprint >= 3) write(*,*)
-        write(*,'(" ---------------------------------------------------------")')
+        write(*,'(" ---------------------------------------------------------------")')
         write(*,'("   Redundant coordinate parameters (Angstrom and Degree)")')
-        write(*,'("                                  New           Old")')
-        write(*,'(" ---------------------------------------------------------")')
+        write(*,'("                                        New           Old")')
+        write(*,'(" ---------------------------------------------------------------")')
         do ii= 1,numbond
           write(chartmp(1:3),'(i5)')ii,iredun(1:2,ii)
-          paramred= trim(trim("R"//adjustl(chartmp(1)) //"("//adjustl(chartmp(2)))//"," &
-&                                //adjustl(chartmp(3)))//")"
-          write(*,'(3x,a27,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*toang, &
+          paramred= trim(trim("Bond"//adjustl(chartmp(1)) //"("//adjustl(chartmp(2)))//"," &
+&                                  //adjustl(chartmp(3)))//")"
+          write(*,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*toang, &
 &                                                  coordredun(ii,2)*toang
         enddo
         do ii= numbond+1,numbond+numangle
           write(chartmp(1:4),'(i5)')ii-numbond,iredun(1:3,ii)
-          paramred= trim(trim(trim("A"//adjustl(chartmp(1)) //"("//adjustl(chartmp(2)))//"," &
-&                                     //adjustl(chartmp(3)))//","//adjustl(chartmp(4)))//")"
-          write(*,'(3x,a27,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*rad2deg, &
+          paramred= trim(trim(trim("Angle"//adjustl(chartmp(1)) //"("//adjustl(chartmp(2)))//"," &
+&                                         //adjustl(chartmp(3)))//","//adjustl(chartmp(4)))//")"
+          write(*,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*rad2deg, &
 &                                                  coordredun(ii,2)*rad2deg
         enddo
         do ii= numbond+numangle+1,numbond+numangle+numtorsion
           write(chartmp(1:5),'(i5)')ii-numbond-numangle,iredun(1:4,ii)
-          paramred= trim(trim(trim(trim("D"//adjustl(chartmp(1)) //"("// &
+          paramred= trim(trim(trim(trim("Torsion"//adjustl(chartmp(1)) //"("// &
 &                   adjustl(chartmp(2)))//","//adjustl(chartmp(3)))//","// &
 &                   adjustl(chartmp(4)))//","//adjustl(chartmp(5)))//")"
-          write(*,'(3x,a27,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*rad2deg, &
+          write(*,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*rad2deg, &
 &                                                  coordredun(ii,2)*rad2deg
         enddo
-        write(*,'(" ---------------------------------------------------------")')
+        write(*,'(" ---------------------------------------------------------------")')
       endif
 
 !
