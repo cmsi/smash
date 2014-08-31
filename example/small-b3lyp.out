@@ -1,38 +1,11 @@
-Sender: LSF System <lavaadmin@hpcs02.local>
-Subject: Job 1854: </usr/share/lava/1.0/linux2.6-glibc2.12-x86_64/bin/openmpi_wrapper -np 3 /home/ishimura/smash/bin/smash < small.inp > Done
-
-Job </usr/share/lava/1.0/linux2.6-glibc2.12-x86_64/bin/openmpi_wrapper -np 3 /home/ishimura/smash/bin/smash < small.inp > was submitted from host <hpcs01.local> by user <ishimura>.
-Job was executed on host(s) <1*hpcs02.local>, in queue <normal>, as user <ishimura>.
-                            <1*hpcs01.local>
-                            <1*hpcs03.local>
-</home/ishimura> was used as the home directory.
-</home/ishimura/tmp/examples> was used as the working directory.
-Started at Fri Aug 29 16:44:20 2014
-Results reported at Fri Aug 29 16:45:44 2014
-
-Your job looked like:
-
-------------------------------------------------------------
-# LSBATCH: User input
-/usr/share/lava/1.0/linux2.6-glibc2.12-x86_64/bin/openmpi_wrapper -np 3 /home/ishimura/smash/bin/smash < small.inp 
-------------------------------------------------------------
-
-Successfully completed.
-
-Resource usage summary:
-
-    CPU time   :    406.53 sec.
-
-The output (if any) follows:
-
- ****************************************
-    Scalable Molecular Analysis Solver
-      for High performance computing
+ *******************************************
+    Scalable Molecular Analysis Solver for
+      High performance computing systems
             SMASH Version 1.0       
-          written by K. ISHIMURA
- ****************************************
+           written by K. ISHIMURA
+ *******************************************
 
- The job started at Fri Aug 29 16:44:25 2014
+ The job started at Sun Aug 31 19:08:09 2014
  Master node is hpcs02.local
  Number of processes =     3
  Number of threads   =    12
@@ -259,8 +232,16 @@ The output (if any) follows:
  ---------------------
  Guess MOs are generated using extended Huckel orbitals.
 
- Step CPU :       2.1, Total CPU :       2.1 of Master node
- Step Wall :      0.6, Total Wall :      0.6 at Fri Aug 29 16:44:26 2014
+ If the calculation stops at the beginning of SCF, increase the stack size.
+ bash: Write the following two lines in the ~/.bashrc file.
+       ulimit -s unlimited
+       export OMP_STACKSIZE=1G
+ tcsh: Write the following two lines in the ~/.tcshrc file.
+       unlimit
+       setenv OMP_STACKSIZE 1G
+
+ Step CPU :       1.2, Total CPU :       1.2 of Master node
+ Step Wall :      0.1, Total Wall :      0.1 at Sun Aug 31 19:08:10 2014
 
  --------------------------------------------------------------------------
    Hartree-Fock calculation
@@ -292,8 +273,8 @@ The output (if any) follows:
     RHF Energy =   -1549.794174901 a.u.
  -----------------------------------------
 
- Step CPU :     184.9, Total CPU :     187.1 of Master node
- Step Wall :     20.7, Total Wall :     21.3 at Fri Aug 29 16:44:47 2014
+ Step CPU :     181.0, Total CPU :     182.2 of Master node
+ Step Wall :     15.2, Total Wall :     15.3 at Sun Aug 31 19:08:25 2014
 
  --------------------------------------------------------------------------
    DFT calculation
@@ -392,8 +373,8 @@ The output (if any) follows:
    Alpha Virtual :      3.15007     3.15638     3.28318     3.41158     3.45739
    Alpha Virtual :      3.47392     3.68027     3.74801
  --------------------------------------------------------------------------------
- Step CPU :     219.1, Total CPU :     406.2 of Master node
- Step Wall :     45.4, Total Wall :     66.7 at Fri Aug 29 16:45:32 2014
+ Step CPU :     210.4, Total CPU :     392.7 of Master node
+ Step Wall :     69.4, Total Wall :     84.7 at Sun Aug 31 19:09:34 2014
 
 -----------------
  MO coefficients
@@ -6188,9 +6169,9 @@ The output (if any) follows:
    26  H       0.923984     0.076016
  -------------------------------------
  
- Total CPU time :      406.5 seconds
- Total wall time:       67.5 seconds
-                 ( 0 days  0 hours  1 minutes  7.5 seconds)
- The job finished at Fri Aug 29 16:45:33 2014
+ Total CPU time :      393.0 seconds
+ Total wall time:       84.7 seconds
+                 ( 0 days  0 hours  1 minutes 24.7 seconds)
+ The job finished at Sun Aug 31 19:09:34 2014
  Used memory :     21 MB
  Your calculation finished with  0 warning(s).

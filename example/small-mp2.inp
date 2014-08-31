@@ -1,4 +1,4 @@
-job runtype=energy method=mp2 basis=cc-pvdz mem=10gb
+job runtype=energy method=mp2 basis=sto-3g mem=1gb
 geom
 C    -0.151854  -0.019504   0.291605
 N    -0.876114  -1.013821   0.787674

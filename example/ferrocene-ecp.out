@@ -1,13 +1,13 @@
- ****************************************
-    Scalable Molecular Analysis Solver
-      for High performance computing
+ *******************************************
+    Scalable Molecular Analysis Solver for
+      High performance computing systems
             SMASH Version 1.0       
-          written by K. ISHIMURA
- ****************************************
+           written by K. ISHIMURA
+ *******************************************
 
- The job started at Fri Aug 29 16:53:42 2014
- Master node is hpcs01.local
- Number of processes =     1
+ The job started at Sun Aug 31 19:07:13 2014
+ Master node is hpcs03.local
+ Number of processes =     3
  Number of threads   =    12
 
  --------------------------------------------------------------------------
@@ -150,8 +150,16 @@
  ---------------------
  Guess MOs are generated using extended Huckel orbitals.
 
- Step CPU :       0.6, Total CPU :       0.6 of Master node
- Step Wall :      0.1, Total Wall :      0.1 at Fri Aug 29 16:53:42 2014
+ If the calculation stops at the beginning of SCF, increase the stack size.
+ bash: Write the following two lines in the ~/.bashrc file.
+       ulimit -s unlimited
+       export OMP_STACKSIZE=1G
+ tcsh: Write the following two lines in the ~/.tcshrc file.
+       unlimit
+       setenv OMP_STACKSIZE 1G
+
+ Step CPU :       3.0, Total CPU :       3.0 of Master node
+ Step Wall :      0.3, Total Wall :      0.3 at Sun Aug 31 19:07:13 2014
 
  --------------------------------------------------------------------------
    Hartree-Fock calculation
@@ -210,8 +218,8 @@
    Alpha Virtual :      1.57408     1.61369     1.62157     1.62157     1.76209
    Alpha Virtual :      1.76211     1.79243     1.79244     4.97649
  --------------------------------------------------------------------------------
- Step CPU :      57.6, Total CPU :      58.3 of Master node
- Step Wall :      5.5, Total Wall :      5.5 at Fri Aug 29 16:53:47 2014
+ Step CPU :      21.7, Total CPU :      24.7 of Master node
+ Step Wall :      4.0, Total Wall :      4.3 at Sun Aug 31 19:07:17 2014
 
 -----------------
  MO coefficients
@@ -1739,7 +1747,7 @@
    33        S        -0.1216     0.3032    -0.1739    -0.1684     0.0776
    34   7 C  S        -0.0281    -0.0235    -0.0118    -0.0675     0.0410
    35        S         0.0226     0.0188     0.0033     0.0187     0.0268
-   36        S         0.4952     0.4145     0.3736     2.1298    -0.9674
+   36        S         0.4952     0.4145     0.3735     2.1298    -0.9674
    37        Px        0.0770     0.0642    -0.0202    -0.1153     0.0659
    38        Py        0.0136    -0.0039    -0.0039     0.0205    -0.1170
    39        Pz        0.0059     0.0139     0.0101     0.0323    -0.0485
@@ -1759,7 +1767,7 @@
    53        Pz       -0.4251    -0.0585     1.4170     0.2364     0.7233
    54  10 H  S        -0.0522    -0.0035    -0.0221    -0.0031     0.0390
    55        S        -0.3259    -0.0221     0.2395     0.0341     0.2302
-   56  11 C  S        -0.0281    -0.0236     0.0116     0.0675    -0.0410
+   56  11 C  S        -0.0281    -0.0236     0.0115     0.0675    -0.0410
    57        S         0.0225     0.0189    -0.0032    -0.0187    -0.0267
    58        S         0.4956     0.4145    -0.3648    -2.1310     0.9656
    59        Px       -0.0768    -0.0644    -0.0197    -0.1154     0.0658
@@ -1777,7 +1785,7 @@
    71        Py       -0.0142    -0.0031     0.0056    -0.0259    -0.1227
    72        Pz        0.0051    -0.0139    -0.0180     0.0236     0.0319
    73        Px       -0.3176     0.1986    -0.0972     0.1970    -0.0898
-   74        Py        0.1235    -0.3403    -0.1840     0.9780     0.0499
+   74        Py        0.1235    -0.3403    -0.1840     0.9779     0.0499
    75        Pz       -0.3781     0.0032     0.6907    -0.8629    -0.7612
    76  14 H  S         0.0444    -0.0278     0.0098    -0.0200     0.0323
    77        S         0.2772    -0.1733    -0.1070     0.2171     0.1901
@@ -1999,9 +2007,9 @@
    21  Fe     15.811828     0.188172
  -------------------------------------
  
- Total CPU time :       58.4 seconds
- Total wall time:        5.5 seconds
-                 ( 0 days  0 hours  0 minutes  5.5 seconds)
- The job finished at Fri Aug 29 16:53:47 2014
+ Total CPU time :       25.3 seconds
+ Total wall time:        4.4 seconds
+                 ( 0 days  0 hours  0 minutes  4.4 seconds)
+ The job finished at Sun Aug 31 19:07:17 2014
  Used memory :     52 MB
  Your calculation finished with  0 warning(s).
