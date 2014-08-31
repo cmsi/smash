@@ -51,6 +51,17 @@
         if(master) write(*,'(" Error! This program does not support guess= ",a10,"!")') guess
         call iabort
       endif
+!
+      if(master) then
+        write(*,'(" If the calculation stops at the beginning of SCF, " &
+&                 "increase the stack size.")')
+        write(*,'(" bash: Write the following two lines in the ~/.bashrc file.")')
+        write(*,'("       ulimit -s unlimited")')
+        write(*,'("       export OMP_STACKSIZE=1G")')
+        write(*,'(" tcsh: Write the following two lines in the ~/.tcshrc file.")')
+        write(*,'("       unlimit")')
+        write(*,'("       setenv OMP_STACKSIZE 1G",/)')
+      endif
       return
 end
 

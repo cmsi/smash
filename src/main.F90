@@ -34,12 +34,12 @@
 !
       if(master) then
         write(*,&
-&           '(" ****************************************",/,&
-&             "    Scalable Molecular Analysis Solver",/,&
-&             "      for High performance computing",/,&
+&           '(" *******************************************",/,&
+&             "    Scalable Molecular Analysis Solver for",/,&
+&             "      High performance computing systems",/,&
 &             "            SMASH Version ",a10/,&
-&             "          written by K. ISHIMURA",/,&
-&             " ****************************************",/)') version
+&             "           written by K. ISHIMURA",/,&
+&             " *******************************************",/)') version
       endif
       call tstamp(0)
       call gethostnm
