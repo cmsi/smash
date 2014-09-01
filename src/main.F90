@@ -88,7 +88,7 @@
           call calcrgeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         else
           if(master) then
-            write(*,'(" Error! This program does not support ",a16,".")')runtype
+            write(*,'(" Error! This program does not support runtype= ",a16,".")')runtype
             call iabort
           endif
         endif
@@ -345,7 +345,7 @@ end
         call tstamp(1)
       else
         if(master) then
-          write(*,'(" Error! This program does not support ",a16,".")')method
+          write(*,'(" Error! This program does not support method= ",a16,".")')method
           call iabort
         endif
       endif
@@ -468,7 +468,7 @@ end
 !       call tstamp(1)
       else
         if(master) then
-          write(*,'(" Error! This program does not support ",a16,".")')method
+          write(*,'(" Error! This program does not support method= ",a16,".")')method
           call iabort
         endif
       endif
@@ -592,7 +592,7 @@ end
         call tstamp(1)
       else
         if(master) then
-          write(*,'(" Error! This program does not support ",a16,".")')method
+          write(*,'(" Error! This program does not support method= ",a16,".")')method
           call iabort
         endif
       endif
@@ -610,7 +610,7 @@ end
         call calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
       else
         if(master) then
-          write(*,'(" Error! This program does not support ",a16,".")')method
+          write(*,'(" Error! This program does not support method= ",a16,".")')method
           call iabort
         endif
       endif
@@ -747,7 +747,7 @@ end
 !       call tstamp(1)
       else
         if(master) then
-          write(*,'(" Error! This program does not support ",a16,".")')method
+          write(*,'(" Error! This program does not support method= ",a16,".")')method
           call iabort
         endif
       endif
@@ -765,7 +765,7 @@ end
         call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1)
       else
         if(master) then
-          write(*,'(" Error! This program does not support ",a16," in energy gradient.")') &
+          write(*,'(" Error! This program does not support method= ",a16," in energy gradient.")') &
 &               method
           call iabort
         endif
@@ -956,7 +956,7 @@ end
           call tstamp(1)
         else
           if(master) then
-            write(*,'(" Error! This program does not support ",a16,".")')method
+            write(*,'(" Error! This program does not support method= ",a16,".")')method
             call iabort
           endif
         endif
@@ -971,7 +971,7 @@ end
           call tstamp(1)
         else
           if(master) then
-            write(*,'(" Error! This program does not support ",a16,".")')method
+            write(*,'(" Error! This program does not support method= ",a16,".")')method
             call iabort
           endif
         endif
@@ -1231,7 +1231,7 @@ end
 !         call tstamp(1)
         else
           if(master) then
-            write(*,'(" Error! This program does not support ",a16,".")')method
+            write(*,'(" Error! This program does not support method= ",a16,".")')method
             call iabort
           endif
         endif
@@ -1244,7 +1244,7 @@ end
           call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1)
         else
           if(master) then
-            write(*,'(" Error! This program does not support ",a16," in energy gradient.")') &
+            write(*,'(" Error! This program does not support method= ",a16," in energy gradient.")') &
 &                 method
             call iabort
           endif
@@ -1438,9 +1438,6 @@ end
       select case(method)
         case('B3LYP')
           idft= 1
-          hfexchange= 0.2D+00
-        case('B3PW91')
-          idft= 2
           hfexchange= 0.2D+00
       endselect
 !

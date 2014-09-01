@@ -2064,10 +2064,10 @@
     </Proxy>
     <Proxy group="sources" type="LegacyVTKFileReader" id="4286" servers="1">
       <Property name="FileNameInfo" id="4286.FileNameInfo" number_of_elements="1">
-        <Element index="0" value="C:\Users\Kazuya\Desktop\anthracene2.vtk"/>
+        <Element index="0" value="C:mol.vtk"/>
       </Property>
       <Property name="FileNames" id="4286.FileNames" number_of_elements="1">
-        <Element index="0" value="C:\Users\Kazuya\Desktop\anthracene2.vtk"/>
+        <Element index="0" value="C:mol.vtk"/>
         <Domain name="files" id="4286.FileNames.files"/>
       </Property>
       <Property name="TimestepValues" id="4286.TimestepValues"/>
@@ -2449,7 +2449,7 @@
     <ProxyCollection name="sources">
       <Item id="4452" name="Contour1"/>
       <Item id="4577" name="Contour2"/>
-      <Item id="4286" name="anthracene2.vtk"/>
+      <Item id="4286" name="mo.vtk"/>
     </ProxyCollection>
     <ProxyCollection name="timekeeper">
       <Item id="257" name="TimeKeeper"/>

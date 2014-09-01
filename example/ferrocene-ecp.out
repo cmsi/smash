@@ -1,3 +1,30 @@
+Sender: LSF System <lavaadmin@hpcs03.local>
+Subject: Job 1902: </usr/share/lava/1.0/linux2.6-glibc2.12-x86_64/bin/openmpi_wrapper -np 3 /home/ishimura/smash/bin/smash < ferrocene-ecp.inp > Done
+
+Job </usr/share/lava/1.0/linux2.6-glibc2.12-x86_64/bin/openmpi_wrapper -np 3 /home/ishimura/smash/bin/smash < ferrocene-ecp.inp > was submitted from host <hpcs01.local> by user <ishimura>.
+Job was executed on host(s) <1*hpcs03.local>, in queue <normal>, as user <ishimura>.
+                            <1*hpcs02.local>
+                            <1*hpcs01.local>
+</home/ishimura> was used as the home directory.
+</home/ishimura/tmp/examples> was used as the working directory.
+Started at Mon Sep  1 13:14:09 2014
+Results reported at Mon Sep  1 13:15:00 2014
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+/usr/share/lava/1.0/linux2.6-glibc2.12-x86_64/bin/openmpi_wrapper -np 3 /home/ishimura/smash/bin/smash < ferrocene-ecp.inp 
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time   :     22.98 sec.
+
+The output (if any) follows:
+
  *******************************************
     Scalable Molecular Analysis Solver for
       High performance computing systems
@@ -5,7 +32,7 @@
            written by K. ISHIMURA
  *******************************************
 
- The job started at Sun Aug 31 19:07:13 2014
+ The job started at Mon Sep  1 13:14:45 2014
  Master node is hpcs03.local
  Number of processes =     3
  Number of threads   =    12
@@ -158,8 +185,8 @@
        unlimit
        setenv OMP_STACKSIZE 1G
 
- Step CPU :       3.0, Total CPU :       3.0 of Master node
- Step Wall :      0.3, Total Wall :      0.3 at Sun Aug 31 19:07:13 2014
+ Step CPU :       1.1, Total CPU :       1.1 of Master node
+ Step Wall :      0.1, Total Wall :      0.1 at Mon Sep  1 13:14:45 2014
 
  --------------------------------------------------------------------------
    Hartree-Fock calculation
@@ -218,8 +245,8 @@
    Alpha Virtual :      1.57408     1.61369     1.62157     1.62157     1.76209
    Alpha Virtual :      1.76211     1.79243     1.79244     4.97649
  --------------------------------------------------------------------------------
- Step CPU :      21.7, Total CPU :      24.7 of Master node
- Step Wall :      4.0, Total Wall :      4.3 at Sun Aug 31 19:07:17 2014
+ Step CPU :      21.6, Total CPU :      22.7 of Master node
+ Step Wall :      1.9, Total Wall :      2.0 at Mon Sep  1 13:14:47 2014
 
 -----------------
  MO coefficients
@@ -1719,7 +1746,7 @@
     5        Py        0.0088     0.0126     0.0329    -0.0135    -0.0812
     6        Pz       -0.0105     0.0091     0.0100    -0.0142     0.0958
     7        Px       -0.0914    -0.3632     0.1944    -0.1031     0.0303
-    8        Py        0.0199    -0.4112    -1.2350     0.4917    -0.1326
+    8        Py        0.0199    -0.4112    -1.2351     0.4917    -0.1326
     9        Pz       -0.3069    -0.1016    -0.3585     0.5610     0.8132
    10   2 H  S        -0.0127    -0.0507     0.0197    -0.0105     0.0110
    11        S        -0.0796    -0.3168    -0.2141     0.1129     0.0647
@@ -1775,12 +1802,12 @@
    61        Pz        0.0059     0.0140    -0.0099    -0.0322     0.0481
    62        Px       -0.2871    -0.2406    -0.0372    -0.2166    -0.0862
    63        Py       -0.0024    -0.3373    -0.1807     0.7729     0.1472
-   64        Pz       -0.3812    -0.1225     0.3891     1.1960    -0.7555
+   64        Pz       -0.3812    -0.1225     0.3891     1.1961    -0.7555
    65  12 H  S         0.0401     0.0336     0.0038     0.0219     0.0309
    66        S         0.2505     0.2100    -0.0413    -0.2386     0.1822
    67  13 C  S        -0.0311     0.0195     0.0303    -0.0614    -0.0428
    68        S         0.0250    -0.0156    -0.0084     0.0170    -0.0279
-   69        S         0.5471    -0.3432    -0.9572     1.9388     1.0093
+   69        S         0.5471    -0.3432    -0.9573     1.9388     1.0093
    70        Px       -0.0850     0.0531    -0.0518     0.1050     0.0688
    71        Py       -0.0142    -0.0031     0.0056    -0.0259    -0.1227
    72        Pz        0.0051    -0.0139    -0.0180     0.0236     0.0319
@@ -2007,9 +2034,9 @@
    21  Fe     15.811828     0.188172
  -------------------------------------
  
- Total CPU time :       25.3 seconds
- Total wall time:        4.4 seconds
-                 ( 0 days  0 hours  0 minutes  4.4 seconds)
- The job finished at Sun Aug 31 19:07:17 2014
+ Total CPU time :       22.9 seconds
+ Total wall time:        2.0 seconds
+                 ( 0 days  0 hours  0 minutes  2.0 seconds)
+ The job finished at Mon Sep  1 13:14:47 2014
  Used memory :     52 MB
  Your calculation finished with  0 warning(s).

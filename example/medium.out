@@ -1,3 +1,30 @@
+Sender: LSF System <lavaadmin@hpcs03.local>
+Subject: Job 1907: </usr/share/lava/1.0/linux2.6-glibc2.12-x86_64/bin/openmpi_wrapper -np 3 /home/ishimura/smash/bin/smash < medium.inp > Done
+
+Job </usr/share/lava/1.0/linux2.6-glibc2.12-x86_64/bin/openmpi_wrapper -np 3 /home/ishimura/smash/bin/smash < medium.inp > was submitted from host <hpcs01.local> by user <ishimura>.
+Job was executed on host(s) <1*hpcs03.local>, in queue <normal>, as user <ishimura>.
+                            <1*hpcs02.local>
+                            <1*hpcs01.local>
+</home/ishimura> was used as the home directory.
+</home/ishimura/tmp/examples> was used as the working directory.
+Started at Mon Sep  1 13:15:57 2014
+Results reported at Mon Sep  1 13:22:01 2014
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+/usr/share/lava/1.0/linux2.6-glibc2.12-x86_64/bin/openmpi_wrapper -np 3 /home/ishimura/smash/bin/smash < medium.inp 
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time   :   3266.68 sec.
+
+The output (if any) follows:
+
  *******************************************
     Scalable Molecular Analysis Solver for
       High performance computing systems
@@ -5,7 +32,7 @@
            written by K. ISHIMURA
  *******************************************
 
- The job started at Sun Aug 31 19:09:03 2014
+ The job started at Mon Sep  1 13:17:07 2014
  Master node is hpcs03.local
  Number of processes =     3
  Number of threads   =    12
@@ -244,8 +271,8 @@
        unlimit
        setenv OMP_STACKSIZE 1G
 
- Step CPU :       8.8, Total CPU :       8.8 of Master node
- Step Wall :      4.0, Total Wall :      4.0 at Sun Aug 31 19:09:07 2014
+ Step CPU :       7.5, Total CPU :       7.5 of Master node
+ Step Wall :      1.0, Total Wall :      1.0 at Mon Sep  1 13:17:08 2014
 
  --------------------------------------------------------------------------
    Hartree-Fock calculation
@@ -259,12 +286,12 @@
  ====================
  Iter SubIt   Total Energy      Delta Energy      Delta Density     DIIS Error
    1    0   -2895.268514828   -2895.268514828      0.639198692      0.735267602
-   2    1   -2909.506918994     -14.238404166      0.465944722      0.126126412
+   2    1   -2909.506918995     -14.238404166      0.465944722      0.126126412
    3    2   -2910.398015455      -0.891096461      0.247035831      0.130604339
    4    3   -2911.805440040      -1.407424585      0.024758319      0.007766424
    5    4   -2911.817783137      -0.012343097      0.011033251      0.004412183
    6    5   -2911.821455303      -0.003672166      0.003181582      0.001312040
-   7    6   -2911.821920153      -0.000464849      0.001601710      0.000607823
+   7    6   -2911.821920153      -0.000464850      0.001601710      0.000607823
    8    7   -2911.821990722      -0.000070569      0.000877580      0.000275188
    9    8   -2911.822010832      -0.000020110      0.000470721      0.000110974
   10    9   -2911.822013990      -0.000003158      0.000176965      0.000052354
@@ -490,8 +517,8 @@
    Alpha Virtual :      5.17074     5.24452     5.30892     5.35050     5.40005
    Alpha Virtual :      5.58948
  --------------------------------------------------------------------------------
- Step CPU :    2378.9, Total CPU :    2387.7 of Master node
- Step Wall :    239.1, Total Wall :    243.1 at Sun Aug 31 19:13:06 2014
+ Step CPU :    2366.1, Total CPU :    2373.6 of Master node
+ Step Wall :    212.8, Total Wall :    213.9 at Mon Sep  1 13:20:41 2014
 
  --------------------------------------------
    Hartree-Fock energy gradient calculation
@@ -52489,12 +52516,12 @@
   113  H       0.764966     0.235034
  -------------------------------------
  
- Step CPU :     890.6, Total CPU :    3278.3 of Master node
- Step Wall :     75.8, Total Wall :    318.9 at Sun Aug 31 19:14:21 2014
+ Step CPU :     892.7, Total CPU :    3266.3 of Master node
+ Step Wall :     76.0, Total Wall :    289.9 at Mon Sep  1 13:21:57 2014
 
- Total CPU time :     3278.5 seconds
- Total wall time:      318.9 seconds
-                 ( 0 days  0 hours  5 minutes 18.9 seconds)
- The job finished at Sun Aug 31 19:14:22 2014
+ Total CPU time :     3266.5 seconds
+ Total wall time:      289.9 seconds
+                 ( 0 days  0 hours  4 minutes 49.9 seconds)
+ The job finished at Mon Sep  1 13:21:57 2014
  Used memory :    171 MB
  Your calculation finished with  0 warning(s).

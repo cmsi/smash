@@ -35,6 +35,10 @@
   ---------
   Please see the file called LICENSE.
 
+  Visualization
+  -------------
+  A vtk file generator is included in the vtk/ directory.
+
   Contact
   -------
   If you have questions or find bugs, please contact the developer via e-mail.

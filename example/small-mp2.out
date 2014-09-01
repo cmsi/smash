@@ -1,3 +1,30 @@
+Sender: LSF System <lavaadmin@hpcs03.local>
+Subject: Job 1901: </usr/share/lava/1.0/linux2.6-glibc2.12-x86_64/bin/openmpi_wrapper -np 3 /home/ishimura/smash/bin/smash < small-mp2.inp > Done
+
+Job </usr/share/lava/1.0/linux2.6-glibc2.12-x86_64/bin/openmpi_wrapper -np 3 /home/ishimura/smash/bin/smash < small-mp2.inp > was submitted from host <hpcs01.local> by user <ishimura>.
+Job was executed on host(s) <1*hpcs03.local>, in queue <normal>, as user <ishimura>.
+                            <1*hpcs02.local>
+                            <1*hpcs01.local>
+</home/ishimura> was used as the home directory.
+</home/ishimura/tmp/examples> was used as the working directory.
+Started at Mon Sep  1 13:14:03 2014
+Results reported at Mon Sep  1 13:14:54 2014
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+/usr/share/lava/1.0/linux2.6-glibc2.12-x86_64/bin/openmpi_wrapper -np 3 /home/ishimura/smash/bin/smash < small-mp2.inp 
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time   :     19.06 sec.
+
+The output (if any) follows:
+
  *******************************************
     Scalable Molecular Analysis Solver for
       High performance computing systems
@@ -5,9 +32,9 @@
            written by K. ISHIMURA
  *******************************************
 
- The job started at Sun Aug 31 19:23:08 2014
- Master node is hpcs01.local
- Number of processes =     1
+ The job started at Mon Sep  1 13:14:27 2014
+ Master node is hpcs03.local
+ Number of processes =     3
  Number of threads   =    12
 
  --------------------------------------------------------------------------
@@ -150,8 +177,8 @@
        unlimit
        setenv OMP_STACKSIZE 1G
 
- Step CPU :       0.4, Total CPU :       0.4 of Master node
- Step Wall :      0.0, Total Wall :      0.0 at Sun Aug 31 19:23:08 2014
+ Step CPU :       2.2, Total CPU :       2.2 of Master node
+ Step Wall :      0.2, Total Wall :      0.2 at Mon Sep  1 13:14:27 2014
 
  --------------------------------------------------------------------------
    Hartree-Fock calculation
@@ -208,8 +235,8 @@
    Alpha Virtual :      0.83736     0.83932     0.88306     0.89486     0.91191
    Alpha Virtual :      0.96977     0.99711     1.07297     1.11281
  --------------------------------------------------------------------------------
- Step CPU :      19.8, Total CPU :      20.1 of Master node
- Step Wall :      1.7, Total Wall :      1.7 at Sun Aug 31 19:23:10 2014
+ Step CPU :       7.9, Total CPU :      10.1 of Master node
+ Step Wall :      0.7, Total Wall :      0.9 at Mon Sep  1 13:14:28 2014
 
  ----------------------------------------------
    MP2 calculation 
@@ -226,8 +253,8 @@
    SCS-MP2 Correlation Energy =     -0.957531261
    HF + SCS-MP2 Energy        =  -1532.427689239
  -------------------------------------------------
- Step CPU :      21.0, Total CPU :      41.1 of Master node
- Step Wall :      1.9, Total Wall :      3.6 at Sun Aug 31 19:23:12 2014
+ Step CPU :       8.3, Total CPU :      18.3 of Master node
+ Step Wall :      0.9, Total Wall :      1.7 at Mon Sep  1 13:14:29 2014
 
 -----------------
  MO coefficients
@@ -2336,9 +2363,9 @@
    26  H       0.921663     0.078337
  -------------------------------------
  
- Total CPU time :       41.2 seconds
- Total wall time:        3.6 seconds
-                 ( 0 days  0 hours  0 minutes  3.6 seconds)
- The job finished at Sun Aug 31 19:23:12 2014
- Used memory :    535 MB
+ Total CPU time :       19.0 seconds
+ Total wall time:        1.8 seconds
+                 ( 0 days  0 hours  0 minutes  1.8 seconds)
+ The job finished at Mon Sep  1 13:14:29 2014
+ Used memory :    193 MB
  Your calculation finished with  0 warning(s).
