@@ -12,9 +12,15 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
+!
+!
 !--------------------------------------------
   subroutine lebedevquad1(angpt,weight,num)
 !--------------------------------------------
+!
+!  Generate Lebedev grids for integration on a spher.
+!  V.I. Lebedev, and D.N. Laikov, Doklady Mathematics, 59 (1999) 477-481.
+!
       implicit none
       integer,intent(inout) :: num
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
@@ -55,6 +61,10 @@ end
 !--------------------------------------------
   subroutine lebedevquad2(angpt,weight,num)
 !--------------------------------------------
+!
+!  Generate Lebedev grids for integration on a spher.
+!  V.I. Lebedev, and D.N. Laikov, Doklady Mathematics, 59 (1999) 477-481.
+!
       implicit none
       integer,intent(inout) :: num
       real(8),parameter :: zero=0.0D+00, half=0.5D+00
@@ -121,6 +131,10 @@ end
 !--------------------------------------------
   subroutine lebedevquad3(angpt,weight,num)
 !--------------------------------------------
+!
+!  Generate Lebedev grids for integration on a spher.
+!  V.I. Lebedev, and D.N. Laikov, Doklady Mathematics, 59 (1999) 477-481.
+!
       implicit none
       integer,intent(inout) :: num
       real(8),parameter :: one=1.0D+00, three=3.0D+00
@@ -171,6 +185,10 @@ end
 !----------------------------------------------
   subroutine lebedevquad4(angpt,a,weight,num)
 !----------------------------------------------
+!
+!  Generate Lebedev grids for integration on a spher.
+!  V.I. Lebedev, and D.N. Laikov, Doklady Mathematics, 59 (1999) 477-481.
+!
       implicit none
       integer,intent(inout) :: num
       real(8),parameter :: one=1.0D+00, two=2.0D+00
@@ -285,6 +303,10 @@ end
 !----------------------------------------------
   subroutine lebedevquad5(angpt,a,weight,num)
 !----------------------------------------------
+!
+!  Generate Lebedev grids for integration on a spher.
+!  V.I. Lebedev, and D.N. Laikov, Doklady Mathematics, 59 (1999) 477-481.
+!
       implicit none
       integer,intent(inout) :: num
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
@@ -398,6 +420,10 @@ end
 !------------------------------------------------
   subroutine lebedevquad6(angpt,a,b,weight,num)
 !------------------------------------------------
+!
+!  Generate Lebedev grids for integration on a spher.
+!  V.I. Lebedev, and D.N. Laikov, Doklady Mathematics, 59 (1999) 477-481.
+!
       implicit none
       integer,intent(inout) :: num
       real(8),parameter :: one=1.0D+00

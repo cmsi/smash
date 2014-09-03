@@ -1,30 +1,3 @@
-Sender: LSF System <lavaadmin@hpcs03.local>
-Subject: Job 1901: </usr/share/lava/1.0/linux2.6-glibc2.12-x86_64/bin/openmpi_wrapper -np 3 /home/ishimura/smash/bin/smash < small-mp2.inp > Done
-
-Job </usr/share/lava/1.0/linux2.6-glibc2.12-x86_64/bin/openmpi_wrapper -np 3 /home/ishimura/smash/bin/smash < small-mp2.inp > was submitted from host <hpcs01.local> by user <ishimura>.
-Job was executed on host(s) <1*hpcs03.local>, in queue <normal>, as user <ishimura>.
-                            <1*hpcs02.local>
-                            <1*hpcs01.local>
-</home/ishimura> was used as the home directory.
-</home/ishimura/tmp/examples> was used as the working directory.
-Started at Mon Sep  1 13:14:03 2014
-Results reported at Mon Sep  1 13:14:54 2014
-
-Your job looked like:
-
-------------------------------------------------------------
-# LSBATCH: User input
-/usr/share/lava/1.0/linux2.6-glibc2.12-x86_64/bin/openmpi_wrapper -np 3 /home/ishimura/smash/bin/smash < small-mp2.inp 
-------------------------------------------------------------
-
-Successfully completed.
-
-Resource usage summary:
-
-    CPU time   :     19.06 sec.
-
-The output (if any) follows:
-
  *******************************************
     Scalable Molecular Analysis Solver for
       High performance computing systems

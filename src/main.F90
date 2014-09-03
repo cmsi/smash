@@ -17,7 +17,7 @@
 !---------------
 !
 ! This is the main driver of Scalable Molecular Analysis Solver 
-! for High performance computing (SMASH).
+! for High performance computing systems (SMASH).
 !
       use modparallel, only : master, nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       use modparallel, only : mpi_comm1

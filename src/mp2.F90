@@ -36,7 +36,6 @@
       real(8),allocatable :: trint2(:), cmowrk(:), trint1a(:), trint1b(:)
       real(8),allocatable :: trint3(:), trint4(:)
       real(8) :: emp2st(2), emp2stsum(2)
-!ishimura
       integer :: jproc
 !
       ncore= ncorecalc()
@@ -114,8 +113,6 @@
           if(iproc == nproc) iproc= 0
         enddo
       enddo
-!ishimura
-!  if(master)write(*,'(8i6)')idis
 !
       ishs=0
       do iproc=0,nproc-1

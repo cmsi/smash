@@ -799,7 +799,6 @@ end
       real(8),intent(inout) :: sovecya(nocca*nvira,maxsoscf-1), sovecyb(noccb*nvirb,maxsoscf-1)
       real(8),intent(out) :: sodispmax
       real(8) :: s1, s2, s3, s4, s5, s6, s1s2, t1, t2, t3, t4
-common/ishimura/t4
 !
 ! Initialize displacement vector
 !
@@ -923,15 +922,14 @@ common/ishimura/t4
 !$OMP end parallel do
 !
 !ishimura
-   t1=dot_product(sodispa(1:nocca*nvira,itsoscf),sodispa(1:nocca*nvira,itsoscf)) &
-&    +dot_product(sodispb(1:noccb*nvirb,itsoscf),sodispb(1:noccb*nvirb,itsoscf))
-   t1=sqrt(t1)
+      t1=dot_product(sodispa(1:nocca*nvira,itsoscf),sodispa(1:nocca*nvira,itsoscf)) &
+&       +dot_product(sodispb(1:noccb*nvirb,itsoscf),sodispb(1:noccb*nvirb,itsoscf))
+      t1=sqrt(t1)
       ijmo= idamax(nocca*nvira,sodispa(1,itsoscf),1)
       it= idamax(noccb*nvirb,sodispb(1,itsoscf),1)
       t4=max(sodispa(ijmo,itsoscf),sodispb(it,itsoscf))
      
 !  if(t1.gt.1.0)then
-!rite(*,*)"ishi",t1
 !    call dscal(nocca*nvira,1.0/t1,sodispa(1,itsoscf),1)
 !    call dscal(noccb*nvirb,1.0/t1,sodispb(1,itsoscf),1)
 !  endif
@@ -964,7 +962,7 @@ end
       real(8),intent(out) :: work(nmo,nmo), work2(*)
       real(8) :: factor
 !
-! U = exp(A) = I + A + A*A/2
+! U = exp(A) = I + A
 !
 !ishimura
       work(:,:)= zero
@@ -1216,9 +1214,3 @@ end
       deallocate(work,grossorb,grossatom)
       return
 end
-
-
-
-
-
-

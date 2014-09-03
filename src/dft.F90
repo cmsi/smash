@@ -48,12 +48,6 @@
       real(8),intent(out) :: transcmo(neleca,nao), work(nao)
       real(8) :: weight, rhoa, grhoa(3), excora(4)
       real(8) :: radpoint, tmp(2,2), wcutoff, rcutoff, fcutoff, aocutoff
-!ishimura
-    real(8) :: ee1,ee2,ee3
-    common/kazuyadft/ee1,ee2,ee3
-    ee1=0.0D+0
-    ee2=0.0D+0
-    ee3=0.0D+0
 !
       transcmo=transpose(cmo)
       fockd(:)= zero
@@ -138,9 +132,6 @@ end
       real(8),intent(inout) :: energy
       real(8) :: rhoa13, rhob13, csdlda, cb88, cvwn, clyp, cpw91lda, cpw91
       real(8) :: dummy, vrhoa, vrhob, zk, vsigmaaa, vsigmaab, vsigmabb, gradaa, gradab, gradbb
-!ishimura
-    real(8) :: ee1,ee2,ee3,eold
-    common/kazuyadft/ee1,ee2,ee3
 !
       excora(1:4)= zero
       excorb(1:4)= zero
@@ -155,17 +146,11 @@ end
           cvwn=   0.19D+00
           clyp=   0.81D+00
 !
-  eold=energy
           call funcsdlda(excora,excorb,energy,rhoa,rhob,rhoa13,rhob13,weight,csdlda,iscf)
-  ee1=ee1+energy-eold
-  eold=energy
           call funcbecke88(excora,excorb,energy,rhoa,rhob,grhoa,grhob,rhoa13,rhob13, &
 &                        weight,cb88,iscf)
-  ee2=ee2+energy-eold
-  eold=energy
           call funcvwn5(excora,excorb,energy,rhoa,rhob,weight,cvwn,iscf)
           call funclyp(excora,excorb,energy,rhoa,rhob,grhoa,grhob,rhoa13,rhob13,weight,clyp,iscf)
-  ee3=ee3+energy-eold
       end select
       return
 end
@@ -239,12 +224,6 @@ end
       real(8),intent(out) :: transcmoa(neleca,nao), transcmob(nelecb,nao), work(nao*2)
       real(8) :: weight, rhoa, rhob, grhoa(3), grhob(3), excora(4), excorb(4)
       real(8) :: radpoint, tmp(2,2), wcutoff, rcutoff, fcutoff, aocutoff
-!ishimura
-    real(8) :: ee1,ee2,ee3
-    common/kazuyadft/ee1,ee2,ee3
-    ee1=0.0D+0
-    ee2=0.0D+0
-    ee3=0.0D+0
 !
       transcmoa= transpose(cmoa)
       transcmob= transpose(cmob)

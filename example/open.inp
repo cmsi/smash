@@ -1,4 +1,4 @@
-job runtype=gradient method=b3lyp basis='6-31g(d)' multi=2 memory=1g 
+job runtype=gradient method=b3lyp basis=6-31g(d) multi=2 memory=1g 
 geom
  C                 -4.86644501   -3.60253363   -0.00044900
  C                 -3.47359701   -3.60253363   -0.00044900
