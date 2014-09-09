@@ -522,7 +522,7 @@ end
 !
       factor= ddot(ndim,vec(1,1),1,vec(1,3),1)
       factor= one/factor
-!$OMP parallel do 
+!$OMP parallel do private(ii)
       do i= 1,ndim
         ii= i*(i-1)/2
         do j= 1,i
