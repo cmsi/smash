@@ -22,7 +22,7 @@
       use modecp, only : ecp, maxangecp, izcore, locecp, mprimecp, execp, coeffecp, mtypeecp
       use modmolecule, only : natom, numatomic, neleca, nelecb, znuc
       implicit none
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: mpi_comm
       integer :: iatom, iprim
 !
       maxangecp(1:natom)= -1

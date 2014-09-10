@@ -131,7 +131,7 @@ end
       use modparallel, only : master
       use modiofile, only : input
       implicit none
-      integer(4) :: getpid, iprocess
+      integer(selected_int_kind(9)) :: getpid, iprocess
       character(len=30) :: filename
 !
       if(master) then

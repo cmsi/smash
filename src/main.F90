@@ -20,7 +20,6 @@
 ! for High performance computing systems (SMASH).
 !
       use modparallel, only : master, nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
-      use modparallel, only : mpi_comm1
       use modwarn, only : nwarn
       use modmemory, only : memusedmax
       use modjob, only : runtype, method, scftype
@@ -30,7 +29,7 @@
       logical :: converged
 !
       call start
-      version='1.0.1'
+      version='1.1.0'
 !
       if(master) then
         write(*,&
@@ -271,8 +270,7 @@ end
       use moddft, only : idft
       use modprint, only : iprint
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
       real(8), allocatable :: xint(:), energymo(:)
@@ -396,8 +394,7 @@ end
       use moddft, only : idft
       use modprint, only : iprint
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
       real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), energymoa(:), energymob(:)
@@ -523,8 +520,7 @@ end
       use moddft, only : idft
       use modprint, only : iprint
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
       real(8), allocatable :: xint(:), energymo(:)
@@ -673,8 +669,7 @@ end
       use moddft, only : idft
       use modprint, only : iprint
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
       real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), energymoa(:), energymob(:)
@@ -835,8 +830,7 @@ end
       use moddft, only : idft
       use modprint, only : iprint
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer,allocatable :: iredun(:)
       integer :: nao2, nao3, nshell3, natom3, ii, iopt
       integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
@@ -1105,8 +1099,7 @@ end
       use moddft, only : idft
       use modprint, only : iprint
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer,allocatable :: iredun(:)
       integer :: nao2, nao3, nshell3, natom3, ii, iopt
       integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun

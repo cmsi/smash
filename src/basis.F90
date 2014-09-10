@@ -24,7 +24,7 @@
 &                          nshell, nao, nprim, ex, coeff, coeffinp
       use modecp, only : flagecp
       implicit none
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: mpi_comm
       integer :: ishell, iatom, i
 !
       if(master) then

@@ -50,16 +50,15 @@ end
   module modparallel
 !---------------------
       implicit none
-      integer :: nproc1, myrank1, nproc2, myrank2
-      integer(4) :: mpi_comm1, mpi_comm2
+      integer :: nproc1, myrank1, nproc2, myrank2, mpi_comm1, mpi_comm2
       logical :: master, parallel
 !
       interface checkintsize
         subroutine checkintsize4(isize)
-          integer(4),intent(out) :: isize
+          integer(selected_int_kind(9)),intent(out) :: isize
         end subroutine checkintsize4
         subroutine checkintsize8(isize)
-          integer(8),intent(out) :: isize
+          integer(selected_int_kind(18)),intent(out) :: isize
         end subroutine checkintsize8
       end interface checkintsize
 !

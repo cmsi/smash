@@ -22,8 +22,7 @@
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom, neleca, numatomic
       implicit none
-      integer,intent(in) :: nproc1, myrank1
-      integer(4),intent(in) :: mpi_comm1
+      integer,intent(in) :: nproc1, myrank1, mpi_comm1
       integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmo(nao*nao), energymo(nao), xint(nshell*(nshell+1)/2)
@@ -105,8 +104,7 @@ end
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom, neleca, nelecb, numatomic
       implicit none
-      integer,intent(in) :: nproc1, myrank1
-      integer(4),intent(in) :: mpi_comm1
+      integer,intent(in) :: nproc1, myrank1, mpi_comm1
       integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmoa(nao*nao), cmob(nao*nao), energymoa(nao), energymob(nao)
@@ -194,8 +192,7 @@ end
       use modunit, only : tobohr
       use moddft, only : idft, hfexchange
       implicit none
-      integer,intent(in) :: nproc1, myrank1
-      integer(4),intent(in) :: mpi_comm1
+      integer,intent(in) :: nproc1, myrank1, mpi_comm1
       integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j, iatom
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmo(nao*nao), energymo(nao), xint(nshell*(nshell+1)/2)
@@ -310,8 +307,7 @@ end
       use moddft, only : idft, hfexchange
       implicit none
       integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j, iatom
-      integer,intent(in) :: nproc1, myrank1
-      integer(4),intent(in) :: mpi_comm1
+      integer,intent(in) :: nproc1, myrank1, mpi_comm1
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmoa(nao*nao), cmob(nao*nao), energymoa(nao), energymob(nao)
       real(8),intent(in) :: xint(nshell*(nshell+1)/2)

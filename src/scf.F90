@@ -35,8 +35,7 @@
       use modthresh, only : threshsoscf, cutint2, threshex, threshover, thresherr
       use modprint, only : iprint
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, i, itsub, itdiis
       integer :: itextra, itsoscf, nocc, nvir
       integer :: idis(nproc2,14), isize1, isize2, isize3
@@ -271,8 +270,7 @@ end
       use modbasis, only : nao
       use modmolecule, only : nmo
       implicit none
-      integer,intent(in) :: nproc, myrank, idis(nproc,14)
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nproc, myrank, mpi_comm, idis(nproc,14)
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: fock(nao*(nao+1)/2), ortho(nao,nao)
       real(8),intent(out) :: work(nao,nao), cmo(nao*nao), work2(*), eigen(nao)
@@ -306,8 +304,7 @@ end
       use modbasis, only : nshell, nao
       use modthresh, only : cutint2
       implicit none
-      integer,intent(in) :: maxdim, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart
       integer(8) :: ncount, icount
@@ -491,8 +488,7 @@ end
       use modbasis, only : nshell, nao
       use modthresh, only : cutint2
       implicit none
-      integer,intent(in) :: maxdim, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart
       integer(8) :: ncount, icount
@@ -701,8 +697,7 @@ end
       use modprint, only : iprint
       use modunit, only : tobohr
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, i, itsub, itdiis
       integer :: itextra, itsoscf, nocc, nvir
       integer :: idis(nproc2,14), isize1, isize2, isize3, iatom
@@ -989,8 +984,7 @@ end
       use modthresh, only : threshsoscf, cutint2, threshex, threshover, thresherr
       use modprint, only : iprint
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao3, nshell3, maxdim, maxfunc(0:6), iter, i, itsub, itdiis
       integer :: itextra, itsoscf, nocca, nvira, noccb, nvirb
       integer :: idis(nproc2,14), isize1, isize2, isize3
@@ -1304,8 +1298,7 @@ end
       use modbasis, only : nshell, nao
       use modthresh, only : cutint2
       implicit none
-      integer,intent(in) :: maxdim, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart
       integer(8) :: ncount, icount
@@ -1520,8 +1513,7 @@ end
       use modprint, only : iprint
       use modunit, only : tobohr
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao3, nshell3, maxdim, maxfunc(0:6), iter, i, itsub, itdiis
       integer :: itextra, itsoscf, nocca, nvira, noccb, nvirb
       integer :: idis(nproc2,14), isize1, isize2, isize3, iatom
@@ -1877,8 +1869,7 @@ end
       use modbasis, only : nshell, nao
       use modthresh, only : cutint2
       implicit none
-      integer,intent(in) :: maxdim, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart
       integer(8) :: ncount, icount

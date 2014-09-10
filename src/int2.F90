@@ -487,8 +487,7 @@ end
       use modbasis, only : nshell, mtype, mbf
       use modthresh, only : cutint2, threshex
       implicit none
-      integer,intent(in) :: maxdim, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ish, jsh, nbfi, nbfj, i, j, ii, ij
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, two=2.0D+00
       real(8),intent(out) :: xint(nshell*(nshell+1)/2)

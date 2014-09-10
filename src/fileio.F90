@@ -33,7 +33,7 @@
       use moddft, only : nrad, nleb
       use modecp, only : ecp, flagecp
       implicit none
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: mpi_comm
       integer :: ii, ilen, intarray(9), info
       real(8) :: realarray(4)
       character(len=254) :: line
@@ -817,7 +817,7 @@ end
       use modguess, only : nao_g, nmo_g, nshell_g, nprim_g
       use modmolecule, only : natom
       implicit none
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: mpi_comm
       integer,intent(out) :: neleca_g, nelecb_g
       integer :: intarray(6), natom_g, idummy
       real(8),intent(out) :: charge_g
@@ -872,7 +872,7 @@ end
       use modmolecule, only : natom
       use modjob, only : scftype
       implicit none
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: mpi_comm
       integer :: ii, jj
       real(8),intent(out) :: cmoa_g(nao_g,nao_g), cmob_g(nao_g,nao_g)
       character(len=16),intent(in) :: scftype_g

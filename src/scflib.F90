@@ -112,8 +112,7 @@ end
 !
       use modbasis, only : nshell, nao, mbf, locbf
       implicit none
-      integer,intent(in) :: nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh, ijsh, locbfi, locbfj, nbfi, nbfj
       integer :: jnbf, i, j, ii, ij
       real(8),parameter :: zero=0.0D+00
@@ -166,8 +165,7 @@ end
 !
       use modbasis, only : nshell, nao, mbf, locbf
       implicit none
-      integer,intent(in) :: nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh, ijsh, locbfi, locbfj, nbfi, nbfj
       integer :: jnbf, i, j, ii, ij
       real(8),parameter :: zero=0.0D+00
@@ -274,8 +272,7 @@ end
 !
       use modparallel, only : master
       implicit none
-      integer,intent(in) :: nao, maxdiis, nproc, myrank, idis(nproc,14) 
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nao, maxdiis, nproc, myrank, mpi_comm, idis(nproc,14) 
       integer,intent(inout) :: itextra
       integer :: num, istart, i, iskip, nao3
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, four=4.0D+00
@@ -389,8 +386,7 @@ end
 ! Out   : work1   (Error matrix)
 !
       implicit none
-      integer,intent(in) :: nao, nmo, nproc, myrank, idis(nproc,14)
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nao, nmo, nproc, myrank, mpi_comm, idis(nproc,14)
       integer :: num, istart, i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: fock(nao*(nao+1)/2), dmtrx(nao*(nao+1)/2)
@@ -450,8 +446,7 @@ end
 !         errdiis (DIIS error matrix)
 !
       implicit none
-      integer,intent(in) :: itdiis, nao, maxdiis, nproc, myrank, idis(nproc,14)
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: itdiis, nao, maxdiis, nproc, myrank, mpi_comm, idis(nproc,14)
       integer :: num, istart, i, j, ij, ipiv(maxdiis+1), info
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(inout) :: fock(nao*(nao+1)/2), errdiis(idis(myrank+1,3),maxdiis)
@@ -523,8 +518,7 @@ end
 !         errdiisb (History of Beta DIIS error matrix)
 !
       implicit none
-      integer,intent(in) :: itdiis, nao, maxdiis, nproc, myrank, idis(nproc,14)
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: itdiis, nao, maxdiis, nproc, myrank, mpi_comm, idis(nproc,14)
       integer :: num, istart, i, j, ij, ipiv(maxdiis+1), info
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00
       real(8),intent(inout) :: focka(nao*(nao+1)/2), fockb(nao*(nao+1)/2)
@@ -612,8 +606,7 @@ end
 !       sogradmax (Maximum SOSCF gradient
 !
       implicit none
-      integer,intent(in) :: nocc, nvir, nao, itype, nproc, myrank, idis(nproc,14)
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nocc, nvir, nao, itype, nproc, myrank, mpi_comm, idis(nproc,14)
       integer :: numwork, num, istart, isomax, idamax
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmo(nao,nao)
@@ -953,8 +946,8 @@ end
 ! Update molecular orbitals using approximated SOSCF method
 !
       implicit none
-      integer,intent(in) :: nocc, nvir, itsoscf, maxsoscf, nao, nmo, nproc, myrank, idis(nproc,14)
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nocc, nvir, itsoscf, maxsoscf, nao, nmo, nproc, myrank, mpi_comm
+      integer,intent(in) :: idis(nproc,14)
       integer :: imo, jmo, num, istart
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00, p01= 1.0D-01
       real(8),intent(in) :: sodisp(nocc,nvir,maxsoscf), sodispmax
@@ -1015,8 +1008,7 @@ end
 ! Calculate spin expectation values, sz and S^2
 !
       implicit none
-      integer,intent(in) :: neleca, nelecb, nao, nproc, myrank, idis(nproc,14)
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: neleca, nelecb, nao, nproc, myrank, mpi_comm, idis(nproc,14)
       integer :: num, istart, ij, i, j
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2), overlap(nao*(nao+1)/2)

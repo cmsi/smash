@@ -390,8 +390,7 @@ end
       use modunit, only : toang
       use modmolecule, only : numatomic
       implicit none
-      integer,intent(in) :: natom3, iopt, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: natom3, iopt, nproc, myrank, mpi_comm
       integer :: i, j, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, third=0.3333333333333333D+00
       real(8),intent(inout) :: egrad(natom3), egradold(natom3), ehess(natom3*(natom3+1)/2)
@@ -495,8 +494,7 @@ end
       implicit none
       integer,parameter :: maxiterdx=100, maxiterrfo=1000
       integer,intent(in) :: iopt, isizered, maxredun, iredun(4,isizered/4)
-      integer,intent(in) :: numbond, numangle, numtorsion, numredun, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: numbond, numangle, numtorsion, numredun, nproc, myrank, mpi_comm
       integer :: irow(112)
       integer :: natom3, ii, jj, ij, kk, iatom, jatom, katom, iterrfo, iterdx
       integer :: numdim

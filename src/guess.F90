@@ -25,8 +25,7 @@
       use modbasis, only : nao
       use modjob, only : scftype
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       real(8),intent(inout):: cmoa(nao*nao), cmob(nao*nao), overinv(nao*nao)
 !
       if(master) then
@@ -79,8 +78,7 @@ end
       use modbasis, only : nao
       use modmolecule, only : coord, natom
       implicit none
-      integer,intent(in) :: nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: i, j, nao_g2
       real(8),intent(in):: overinv(nao*nao)
       real(8),intent(out):: cmo(nao*nao)
@@ -132,8 +130,7 @@ end
 !
       use modguess, only : nao_g, nmo_g
       implicit none
-      integer,intent(in) :: nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nproc, myrank, mpi_comm
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(out) :: hmo(nao_g*nao_g), eigen(nao_g)
 !
@@ -169,8 +166,7 @@ end
 !
       use modguess, only : nao_gcore
       implicit none
-      integer,intent(in) :: nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nproc, myrank, mpi_comm
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(out) :: hmo(nao_gcore*nao_gcore), eigen(nao_gcore)
 !
@@ -211,8 +207,7 @@ end
       use modbasis, only : nao
       use modmolecule, only : neleca, nmo
       implicit none
-      integer,intent(in) :: nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: overinv(nao,nao)
@@ -1096,8 +1091,7 @@ end
       use modbasis, only : nshell, nao
       use modguess, only : nshell_g, nao_g
       implicit none
-      integer,intent(in) :: nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh
       real(8),parameter :: zero=0.0D+00
       real(8),intent(out) :: overlap(nao*nao_g), work(nao*nao_g)
@@ -1130,8 +1124,7 @@ end
 !
       use modguess, only : nshell_g, nao_g, nshell_gcore, nao_gcore
       implicit none
-      integer,intent(in) :: nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh
       real(8),parameter :: zero=0.0D+00
       real(8),intent(out) :: overlap(nao_gcore*nao_g), work(nao_gcore*nao_g)
@@ -1423,8 +1416,7 @@ end
       use modbasis, only : nao
       use modmolecule, only : neleca, nmo
       implicit none
-      integer,intent(in) :: nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ndim
       real(8),intent(inout) :: cmo(nao*nao), overinv(nao*nao)
       real(8),allocatable :: overlap(:,:), work1(:), work2(:), eigen(:)
@@ -1470,8 +1462,7 @@ end
       use modguess, only : nao_g
       use modbasis, only : nao
       implicit none
-      integer,intent(in) :: ndim, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: ndim, nproc, myrank, mpi_comm
       integer :: i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(inout) :: cmo(nao,nao), overinv(nao,nao), overlap(nao,nao_g)
@@ -1531,8 +1522,7 @@ end
       use modbasis, only : nao
       use modmolecule, only : neleca, nelecb, charge
       implicit none
-      integer,intent(in) :: nproc2, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc2, myrank2, mpi_comm1, mpi_comm2
       integer :: neleca_g, nelecb_g, nelect, nelect_g
       integer :: ncore, ndim, max
       real(8),intent(in) :: overinv(nao*nao)
@@ -1650,8 +1640,7 @@ end
       use modguess, only : nao_g, nmo_g
       use modbasis, only : nao
       implicit none
-      integer,intent(in) :: ndim, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: ndim, nproc, myrank, mpi_comm
       integer :: ii, jj, maxmo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, pm6=1.0D-06
       real(8),intent(in) :: overinv(nao,nao), overlap(nao,nao_g)
@@ -1710,8 +1699,7 @@ end
       use modguess, only : nao_g, nmo_g, nao_gcore
       use modjob, only : scftype
       implicit none
-      integer,intent(in) :: nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ii, jj, idamax, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(inout) :: cmoa_g(nao_g,nao_g), cmob_g(nao_g,nao_g)
