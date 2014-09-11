@@ -19,14 +19,16 @@
 ! Start MPI and set mpi_comm1=MPI_COMM_WORLD
 !
 #ifndef noMPI
+#ifndef ILP64
       use mpi
       implicit none
-      integer,intent(out) :: mpi_comm1
-#ifdef ILP64
-      integer(selected_int_kind(18)) :: ierr
-#else
       integer(selected_int_kind(9)) :: ierr
+#else
+      implicit none
+      include "mpif.h"
+      integer(selected_int_kind(18)) :: ierr
 #endif
+      integer,intent(out) :: mpi_comm1
 !
       call mpi_init(ierr)
       mpi_comm1= MPI_COMM_WORLD
@@ -42,15 +44,16 @@ end
 ! Return the number of processes in mpi_comm
 !
 #ifndef noMPI
+#ifndef ILP64
       use mpi
       implicit none
+      integer(selected_int_kind(9)) :: mpi_comm4, nproc4, ierr
+#else
+      implicit none
+      integer(selected_int_kind(18)) :: mpi_comm4, nproc4, ierr
+#endif
       integer,intent(in) :: mpi_comm
       integer,intent(out) :: nproc
-#ifdef ILP64
-      integer(selected_int_kind(18)) :: mpi_comm4, nproc4, ierr
-#else
-      integer(selected_int_kind(9)) :: mpi_comm4, nproc4, ierr
-#endif
 !
       mpi_comm4= mpi_comm
       call mpi_comm_size(mpi_comm4,nproc4,ierr)
@@ -67,15 +70,16 @@ end
 ! Return the MPI rank in mpi_comm
 !
 #ifndef noMPI
+#ifndef ILP64
       use mpi
       implicit none
+      integer(selected_int_kind(9)) :: mpi_comm4, myrank4, ierr
+#else
+      implicit none
+      integer(selected_int_kind(18)) :: mpi_comm4, myrank4, ierr
+#endif
       integer,intent(in) :: mpi_comm
       integer,intent(out) :: myrank
-#ifdef ILP64
-      integer(selected_int_kind(18)) :: mpi_comm4, myrank4, ierr
-#else
-      integer(selected_int_kind(9)) :: mpi_comm4, myrank4, ierr
-#endif
 !
       mpi_comm4= mpi_comm
       call mpi_comm_rank(mpi_comm4,myrank4,ierr)
@@ -92,12 +96,13 @@ end
 ! Finalize MPI
 !
 #ifndef noMPI
+#ifndef ILP64
       use mpi
       implicit none
-#ifdef ILP64
-      integer(selected_int_kind(18)) :: ierr
-#else
       integer(selected_int_kind(9)) :: ierr
+#else
+      implicit none
+      integer(selected_int_kind(18)) :: ierr
 #endif
 !
       call mpi_finalize(ierr)
@@ -110,12 +115,14 @@ end
   subroutine para_abort
 !------------------------
 #ifndef noMPI
+#ifndef ILP64
       use mpi
       implicit none
-#ifdef ILP64
-      integer(selected_int_kind(18)) :: icode, ierr
-#else
       integer(selected_int_kind(9)) :: icode, ierr
+#else
+      implicit none
+      include "mpif.h"
+      integer(selected_int_kind(18)) :: icode, ierr
 #endif
 !
       icode=9
@@ -152,14 +159,16 @@ end
 ! Broadcast real(8) data
 !
 #ifndef noMPI
+#ifndef ILP64
       use mpi
       implicit none
-      integer,intent(in) :: num, irank, mpi_comm
-#ifdef ILP64
-      integer(selected_int_kind(18)) :: num4, irank4, mpi_comm4, ierr
-#else
       integer(selected_int_kind(9)) :: num4, irank4, mpi_comm4, ierr
+#else
+      implicit none
+      include "mpif.h"
+      integer(selected_int_kind(18)) :: num4, irank4, mpi_comm4, ierr
 #endif
+      integer,intent(in) :: num, irank, mpi_comm
       real(8),intent(inout) :: buff(*)
 !
       num4= num
@@ -179,15 +188,18 @@ end
 ! Broadcast integer data
 !
 #ifndef noMPI
+#ifndef ILP64
       use mpi
       use modparallel, only : checkintsize
       implicit none
-      integer,intent(in) :: num, irank, mpi_comm
-#ifdef ILP64
-      integer(selected_int_kind(18)) :: num4, irank4, mpi_comm4, ierr
-#else
       integer(selected_int_kind(9)) :: num4, irank4, mpi_comm4, ierr
+#else
+      use modparallel, only : checkintsize
+      implicit none
+      include "mpif.h"
+      integer(selected_int_kind(18)) :: num4, irank4, mpi_comm4, ierr
 #endif
+      integer,intent(in) :: num, irank, mpi_comm
       integer,intent(inout) :: ibuff(*)
       integer :: isize
 !
@@ -213,14 +225,16 @@ end
 ! Broadcast character data
 !
 #ifndef noMPI
+#ifndef ILP64
       use mpi
       implicit none
-      integer,intent(in) :: num, irank, mpi_comm
-#ifdef ILP64
-      integer(selected_int_kind(18)) :: num4, irank4, mpi_comm4, ierr
-#else
       integer(selected_int_kind(9)) :: num4, irank4, mpi_comm4, ierr
+#else
+      implicit none
+      include "mpif.h"
+      integer(selected_int_kind(18)) :: num4, irank4, mpi_comm4, ierr
 #endif
+      integer,intent(in) :: num, irank, mpi_comm
       character(*),intent(inout) :: buff(*)
 !
       num4= num
@@ -240,16 +254,18 @@ end
 ! Broadcast logical data
 !
 #ifndef noMPI
+#ifndef ILP64
       use mpi
       implicit none
-      integer,intent(in) :: num, irank, mpi_comm
-      integer :: ii, myrank
-#ifdef ILP64
+      integer(selected_int_kind(9)) :: num4, irank4, mpi_comm4, ierr, itmp(num)
+#else
+      implicit none
+      include "mpif.h"
       integer(selected_int_kind(18)) :: num4, irank4, mpi_comm4, ierr
       integer(selected_int_kind(9)) :: itmp(num)
-#else
-      integer(selected_int_kind(9)) :: num4, irank4, mpi_comm4, ierr, itmp(num)
 #endif
+      integer,intent(in) :: num, irank, mpi_comm
+      integer :: ii, myrank
       logical,intent(inout) :: buff(*)
 !
       call para_comm_rank(myrank,mpi_comm)
@@ -290,23 +306,28 @@ end
 ! distributes the result back to all processes in mpi_comm
 !
 #ifndef noMPI
+#ifndef ILP64
       use mpi
-#endif
       implicit none
+      integer(selected_int_kind(9)) :: num4, mpi_comm4, ierr
+#else
+      implicit none
+      include "mpif.h"
+      integer(selected_int_kind(18)) :: num4, mpi_comm4, ierr
+#endif
       integer,intent(in) :: num, mpi_comm
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out) :: rbuff(*)
-#ifndef noMPI
-#ifdef ILP64
-      integer(selected_int_kind(18)) :: num4, mpi_comm4, ierr
-#else
-      integer(selected_int_kind(9)) :: num4, mpi_comm4, ierr
-#endif
 !
       num4= num
       mpi_comm4= mpi_comm
       call mpi_allreduce(sbuff,rbuff,num4,mpi_real8,MPI_SUM,mpi_comm4,ierr)
 #else
+      implicit none
+      integer,intent(in) :: num, mpi_comm
+      real(8),intent(in) :: sbuff(*)
+      real(8),intent(out) :: rbuff(*)
+!
       call dcopy(num,sbuff,1,rbuff,1)
 #endif
       return
@@ -321,20 +342,21 @@ end
 ! distributes the result back to all processes in mpi_comm
 !
 #ifndef noMPI
+#ifndef ILP64
       use mpi
       use modparallel, only : checkintsize
-#endif
       implicit none
+      integer(selected_int_kind(9)) :: num4, mpi_comm4, ierr
+#else
+      use modparallel, only : checkintsize
+      implicit none
+      include "mpif.h"
+      integer(selected_int_kind(18)) :: num4, mpi_comm4, ierr
+#endif
       integer,intent(in) :: num, mpi_comm
       integer,intent(in) :: sbuff(*)
       integer,intent(out) :: rbuff(*)
       integer :: isize
-#ifndef noMPI
-#ifdef ILP64
-      integer(selected_int_kind(18)) :: num4, mpi_comm4, ierr
-#else
-      integer(selected_int_kind(9)) :: num4, mpi_comm4, ierr
-#endif
 !
       num4= num
       mpi_comm4= mpi_comm
@@ -346,6 +368,10 @@ end
         call mpi_allreduce(sbuff,rbuff,num4,mpi_integer8,MPI_SUM,mpi_comm4,ierr)
       endif
 #else
+      implicit none
+      integer,intent(in) :: num, mpi_comm
+      integer,intent(in) :: sbuff(*)
+      integer,intent(out) :: rbuff(*)
       integer ii
 !
       do ii= 1,num
@@ -363,28 +389,33 @@ end
 ! Gather data from all tasks and deliver the combined data to all tasks in mpi_comm
 !
 #ifndef noMPI
+#ifndef ILP64
       use mpi
+      implicit none
+      integer(selected_int_kind(9)) :: num4, idisa4(nproc), idisb4(nproc), mpi_comm4, ierr
+#else
+      implicit none
+      include "mpif.h"
+      integer(selected_int_kind(18)) :: num4, idisa4(nproc), idisb4(nproc), mpi_comm4, ierr
 #endif
+      integer,intent(in) :: num, nproc, idisa(nproc), idisb(nproc), mpi_comm
+      real(8),intent(in) :: sbuff(*)
+      real(8),intent(out):: rbuff(*)
+      integer :: ii
+!
+      num4= num
+      mpi_comm4= mpi_comm
+      do ii= 1,nproc
+        idisa4(ii)= idisa(ii)
+        idisb4(ii)= idisb(ii)
+      enddo
+      call mpi_allgatherv(sbuff,num4,mpi_real8,rbuff,idisa4,idisb4,mpi_real8,mpi_comm4,ierr)
+#else
       implicit none
       integer,intent(in) :: num, nproc, idisa(nproc), idisb(nproc), mpi_comm
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out):: rbuff(*)
-#ifndef noMPI
-      integer :: i
-#ifdef ILP64
-      integer(selected_int_kind(18)) :: num4, idisa4(nproc), idisb4(nproc), mpi_comm4, ierr
-#else
-      integer(selected_int_kind(9)) :: num4, idisa4(nproc), idisb4(nproc), mpi_comm4, ierr
-#endif
 !
-      num4= num
-      mpi_comm4= mpi_comm
-      do i= 1,nproc
-        idisa4(i)= idisa(i)
-        idisb4(i)= idisb(i)
-      enddo
-      call mpi_allgatherv(sbuff,num4,mpi_real8,rbuff,idisa4,idisb4,mpi_real8,mpi_comm4,ierr)
-#else
       call dcopy(num,sbuff,1,rbuff,1)
 #endif
 !
@@ -399,20 +430,20 @@ end
 ! Send and receive real(8) data
 !
 #ifndef noMPI
+#ifndef ILP64
       use mpi
-#endif
       implicit none
+      integer(selected_int_kind(9)) :: nums4, idest4, ntags4, numr4, isource4, ntagr4
+      integer(selected_int_kind(9)) :: mpi_comm4, ierr, STATUS(MPI_STATUS_SIZE)
+#else
+      implicit none
+      include "mpif.h"
+      integer(selected_int_kind(18)) :: nums4, idest4, ntags4, numr4, isource4, ntagr4
+      integer(selected_int_kind(18)) :: mpi_comm4, ierr, STATUS(MPI_STATUS_SIZE)
+#endif
       integer,intent(in) :: nums, idest, ntags, numr, isource, ntagr, mpi_comm
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out) :: rbuff(*)
-#ifndef noMPI
-#ifdef ILP64
-      integer(selected_int_kind(18)) :: nums4, idest4, ntags4, numr4, isource4, ntagr4
-      integer(selected_int_kind(18)) :: mpi_comm4, ierr, STATUS(MPI_STATUS_SIZE)
-#else
-      integer(selected_int_kind(9)) :: nums4, idest4, ntags4, numr4, isource4, ntagr4
-      integer(selected_int_kind(9)) :: mpi_comm4, ierr, STATUS(MPI_STATUS_SIZE)
-#endif
 !
       nums4= nums
       idest4= idest
@@ -424,6 +455,11 @@ end
       call mpi_sendrecv(sbuff,nums4,MPI_DOUBLE_PRECISION,idest4,ntags4, &
 &                       rbuff,numr4,MPI_DOUBLE_PRECISION,isource4,ntagr4,mpi_comm4,STATUS,ierr)
 #else
+      implicit none
+      integer,intent(in) :: nums, idest, ntags, numr, isource, ntagr, mpi_comm
+      real(8),intent(in) :: sbuff(*)
+      real(8),intent(out) :: rbuff(*)
+!
       call dcopy(nums,sbuff,1,rbuff,1)
 #endif
       return
