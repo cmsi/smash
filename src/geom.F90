@@ -97,7 +97,7 @@ end
       use modmolecule, only : coord, natom, numatomic
       use modunit, only : tobohr
       implicit none
-      integer,parameter :: maxconnect=10
+      integer,parameter :: maxconnect=13
       integer,intent(in) :: isizered
       integer,intent(out) :: iredun(4,isizered/4), numbond, numangle, numtorsion
       integer :: numredun, maxsize, ijpair(natom,maxconnect), iatom, jatom, katom, icount
