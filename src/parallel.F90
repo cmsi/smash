@@ -257,14 +257,15 @@ end
 #ifndef ILP64
       use mpi
       implicit none
+      integer,intent(in) :: num, irank, mpi_comm
       integer(selected_int_kind(9)) :: num4, irank4, mpi_comm4, ierr, itmp(num)
 #else
       implicit none
       include "mpif.h"
+      integer,intent(in) :: num, irank, mpi_comm
       integer(selected_int_kind(18)) :: num4, irank4, mpi_comm4, ierr
       integer(selected_int_kind(9)) :: itmp(num)
 #endif
-      integer,intent(in) :: num, irank, mpi_comm
       integer :: ii, myrank
       logical,intent(inout) :: buff(*)
 !
@@ -302,7 +303,7 @@ end
   subroutine para_allreducer(sbuff,rbuff,num,mpi_comm)
 !-------------------------------------------------------
 !
-! Combine real(8) values from all processes and 
+! Accumulate real(8) values from all processes and 
 ! distributes the result back to all processes in mpi_comm
 !
 #ifndef noMPI
@@ -338,7 +339,7 @@ end
   subroutine para_allreducei(sbuff,rbuff,num,mpi_comm)
 !-------------------------------------------------------
 !
-! Combine integer values from all processes and 
+! Accumulate integer values from all processes and 
 ! distributes the result back to all processes in mpi_comm
 !
 #ifndef noMPI
@@ -392,13 +393,14 @@ end
 #ifndef ILP64
       use mpi
       implicit none
+      integer,intent(in) :: num, nproc, idisa(nproc), idisb(nproc), mpi_comm
       integer(selected_int_kind(9)) :: num4, idisa4(nproc), idisb4(nproc), mpi_comm4, ierr
 #else
       implicit none
       include "mpif.h"
+      integer,intent(in) :: num, nproc, idisa(nproc), idisb(nproc), mpi_comm
       integer(selected_int_kind(18)) :: num4, idisa4(nproc), idisb4(nproc), mpi_comm4, ierr
 #endif
-      integer,intent(in) :: num, nproc, idisa(nproc), idisb(nproc), mpi_comm
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out):: rbuff(*)
       integer :: ii
@@ -433,15 +435,16 @@ end
 #ifndef ILP64
       use mpi
       implicit none
+      integer,intent(in) :: nums, idest, ntags, numr, isource, ntagr, mpi_comm
       integer(selected_int_kind(9)) :: nums4, idest4, ntags4, numr4, isource4, ntagr4
       integer(selected_int_kind(9)) :: mpi_comm4, ierr, STATUS(MPI_STATUS_SIZE)
 #else
       implicit none
       include "mpif.h"
+      integer,intent(in) :: nums, idest, ntags, numr, isource, ntagr, mpi_comm
       integer(selected_int_kind(18)) :: nums4, idest4, ntags4, numr4, isource4, ntagr4
       integer(selected_int_kind(18)) :: mpi_comm4, ierr, STATUS(MPI_STATUS_SIZE)
 #endif
-      integer,intent(in) :: nums, idest, ntags, numr, isource, ntagr, mpi_comm
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out) :: rbuff(*)
 !
