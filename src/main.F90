@@ -309,7 +309,9 @@ end
 !
 ! Calculate initial MOs
 !
-      call guessmo(cmo,cmo,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+!     call guessmo(cmo,cmo,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+      call guessmo(cmo,cmo,overinv,h1mtrx,ortho, &
+&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
 !
 ! Unset arrays 2
 !

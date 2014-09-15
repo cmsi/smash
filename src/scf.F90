@@ -267,6 +267,11 @@ end
 !
 ! Driver of Fock matrix diagonalization
 !
+! In  : fock  (Fock matrix)
+!       ortho (Orthogonalization matrix)
+! Out : cmo   (Canonical MO matrx)
+!       work, work2, eigen (work space)
+!
       use modbasis, only : nao
       use modmolecule, only : nmo
       implicit none
