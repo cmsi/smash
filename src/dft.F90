@@ -32,7 +32,7 @@
 !       totalelec(Number of numerially integrated electrons)
 !       vao,vmo,xyzpt,work (work space)
 !
-      use modmolecule, only : natom, numatomic, neleca
+      use modmolecule, only : natom, neleca
       use moddft, only : nrad, nleb
       use modbasis, only : nao
       use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
@@ -206,7 +206,7 @@ end
 !       fock2 (Beta Fock matrix)
 !       fock3 (Work space)
 !
-      use modmolecule, only : natom, numatomic, neleca, nelecb
+      use modmolecule, only : natom, neleca, nelecb
       use moddft, only : nrad, nleb
       use modbasis, only : nao
       use modthresh, only : threshweight, threshrho, threshdfock, threshdftao

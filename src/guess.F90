@@ -548,6 +548,17 @@ end
                 iao= iao+1
                 energy(iao)= row6(9,numatomic(iatom))
               enddo
+!ishi
+              if(numatomic(iatom)==58) then
+                do i= 1,3
+                  iao= iao+1
+                  energy(iao)=-0.20D0
+                enddo
+                do i= 1,5
+                  iao= iao+1
+                  energy(iao)=-0.35D0
+                enddo
+              endif
 ! Lu - Hg
             case(71:80)
               iao= iao+1

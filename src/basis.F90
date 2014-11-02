@@ -10103,6 +10103,31 @@ end
               mbf_g(ishell)= 10
               locbf_g(ishell+1) = locbf_g(ishell)+10
             endif
+!ishi
+   if(numatomic(iatom)==58)then
+        ishell= ishell+1
+            do j= 1,1
+              ex_g(locprim_g(ishell)+j)= 0.05D0
+              coeff_g(locprim_g(ishell)+j)= 1.0D0
+            enddo
+            mprim_g(ishell)= 1
+            mtype_g(ishell)= 1
+            locatom_g(ishell)= iatom
+            locprim_g(ishell+1)= locprim_g(ishell)+1
+              mbf_g(ishell)= 3
+              locbf_g(ishell+1) = locbf_g(ishell)+3
+        ishell= ishell+1
+            do j= 1,1
+              ex_g(locprim_g(ishell)+j)= 0.3D0
+              coeff_g(locprim_g(ishell)+j)= 1.0D0
+            enddo
+            mprim_g(ishell)= 1
+            mtype_g(ishell)= 2
+            locatom_g(ishell)= iatom
+            locprim_g(ishell+1)= locprim_g(ishell)+1
+              mbf_g(ishell)= 5
+              locbf_g(ishell+1) = locbf_g(ishell)+5
+    endif   
 !
 ! Set Lu - Hg functions
 !
