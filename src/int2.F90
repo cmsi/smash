@@ -12,15 +12,13 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!----------------------------------------------------------------
-  subroutine calc2eri(twoeri,ish,jsh,ksh,lsh,maxdim,lrint,emu2)
-!----------------------------------------------------------------
+!-----------------------------------------------------
+  subroutine calc2eri(twoeri,ish,jsh,ksh,lsh,maxdim)
+!-----------------------------------------------------
 !
 ! Driver of two-electron repulsion integrals 
 ! 
 ! In  : ish, jsh, ksh, lsh (Shell indices)
-!       lrint  (Flag of long range correction)
-!       emu2   (mu*mu value for long range correction)
 ! Out : twoeri (Two-electron repulsion integrals)
 !       idxeri (Indices of two-electron repulsion integrals)
 !       numeri (Number of two-electron repulsion integrals)
@@ -33,15 +31,8 @@
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nangijkl(4), nprimijkl(4), nbfijkl(4)
       integer :: iloc, jloc, kloc, lloc, i, j, k, l
-      real(8),intent(in) :: emu2
       real(8),intent(out) :: twoeri(maxdim,maxdim,maxdim,maxdim)
       real(8) :: xyzijkl(3,4), exijkl(mxprsh,4), coijkl(mxprsh,4)
-      logical,intent(in) :: lrint
-!
-      if(lrint) then
-        write(*,'(" Error! Long range correction is not supported now.")')
-        write(*,'(" emu2=",d10.3)')emu2
-      endif
 !
       nangijkl(1)= mtype(ish)
       nangijkl(2)= mtype(jsh)
@@ -90,13 +81,13 @@
 ! Pople-Hehre and McMurchie-Davidson scheme
 !
         call int2phmd(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                     mxprsh,threshex,lrint,emu2)
+&                     mxprsh,threshex)
       else
 !
 ! Rys quadrature scheme
 !
         call int2rys(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                    mxprsh,threshex,lrint,emu2)
+&                    mxprsh,threshex)
       endif
       return
 end
@@ -104,7 +95,7 @@ end
 
 !----------------------------------------------------------------------------------------
   subroutine int2phmd(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                     mxprsh,threshex,lrint,emu2)
+&                     mxprsh,threshex)
 !----------------------------------------------------------------------------------------
 !
 ! Driver of two-electron integrals from (ss|ss) to (dd|dd)
@@ -119,30 +110,28 @@ end
 !       maxdim    (Dimension of two-electron integral array)
 !       mxprsh    (Size of primitive function array)
 !       threshex  (Threshold of exponential calculation)
-!       lrint     (Flag of long range correction)
-!       emu2      (mu*mu value for long range correction)
 ! Out : twoeri    (Two-electron integrals
 !                  The values are stored in order of (lsh,ksh,jsh,ish).)
 !
       implicit none
       integer,intent(in) :: nprimijkl(4), nangijkl(4), nbfijkl(4), maxdim, mxprsh
-      integer,parameter :: mxprsh2=40
+      integer,parameter :: mxprsh2=30
       integer :: nangtotal, inttype, intorder
       integer :: iprim, jprim, kprim, lprim, i, j, k, l, nijkl(2)
       integer :: intijkl(4,8), inttable(81,2), ii, jj, kk, ll, nbfijkl2(4)
-      real(8),parameter :: zero=0.0d+00, one=1.0D+00, half=0.5D+00, pt7=0.7D+00
+      real(8),parameter :: zero=0.0d+00, one=1.0D+00, half=0.5D+00
       real(8),parameter :: pi52=0.3498683665524973D+02 ! 2.0*pi**2.5
       real(8),intent(in) :: exijkl(mxprsh,4), coijkl(mxprsh,4), xyzijkl(3,4), threshex
-      real(8),intent(in) :: emu2
       real(8),intent(out) :: twoeri(maxdim,maxdim,maxdim,maxdim)
       real(8) :: phmdint(6,6,6,6)
       real(8) :: r12, r34, rij, rkl, tmp, rot(3,3), veckl(3), cosph, sinph, abscos
       real(8) :: xyzij(3), xyzkl(3), xyzik(3), xzkl(2)
-      real(8) :: exi, exj, ci, cj, ex12, ex21, ex1p, ex2p, r12ex
-      real(8) :: exk, exl, ck, cl, ex34, ex43, ex3q, ex4q, r34ex
+      real(8) :: exi, exj, ci, cj, ex12, ex21, ex1p, ex2p, r12exi, rijexi, rijexj, cij, r12ex
+      real(8) :: exk, exl, ck, cl, ex34, ex43, ex3q, ex4q, r34exk, ckl, r34ex
+!     real(8) :: exi, exj, ci, cj, ex12, ex21, ex1p, ex2p, r12ex
+!     real(8) :: exk, exl, ck, cl, ex34, ex43, ex3q, ex4q, r34ex
       real(8) :: exfac(5,mxprsh2*mxprsh2*2), xyziq(3,mxprsh2*mxprsh2)
-      real(8) :: tmpexp(mxprsh2*mxprsh2)
-      logical,intent(in) :: lrint
+      real(8) :: work(mxprsh2*mxprsh2*6)
       data intijkl/1,2,3,4, 2,1,3,4, 1,2,4,3, 3,4,1,2, 2,1,4,3, 3,4,2,1, 4,3,1,2, 4,3,2,1/
       data inttable/ 1, 2, 7, 2, 3, 8, 7, 8,10, 2, 4, 9, 4, 5,11, 9,11,14, 7, 9,&
 &                   12, 9,13,15,12,15,17, 2, 4, 9, 4, 5,11, 9,11,14, 3, 5,13, 5,&
@@ -152,11 +141,6 @@ end
 &                   1,7,4,1,3,3,1,6,2,2,5,2,2,5,5,2,4,4,1,7,&
 &                   1,1,3,3,1,4,4,4,7,4,1,7,3,1,6,6,2,8,6,2,&
 &                   5,5,2,6,6,6,8,6,2,8,5,2,4,4,4,7,4,4,7,7,1/
-!
-      if(lrint) then
-        write(*,'(" Error! Long range correction is not supported now.")')
-        write(*,'(" emu2=",d10.3)')emu2
-      endif
 !
       if(mxprsh > mxprsh2) then
         write(*,'(" Error! Parameter mxprsh2 in int2phmd is small!")')
@@ -242,7 +226,7 @@ end
         else
           tmp= one/sqrt(one-tmp)
         endif
-        if(abs(rot(1,3)).le.pt7) then
+        if(abs(rot(1,3)).le.0.7D+00) then
           rot(1,2)= zero
           rot(2,2)= rot(3,3)*tmp
           rot(3,2)=-rot(2,3)*tmp
@@ -273,59 +257,54 @@ end
       do iprim= 1,nprimijkl(ii)
         exi= exijkl(iprim,ii)
         ci = coijkl(iprim,ii)*pi52
+        r12exi= exi*r12
+        rijexi=-exi*rij
         do jprim= 1,nprimijkl(jj)
           exj = exijkl(jprim,jj)
-          cj  = coijkl(jprim,jj)
+          cij = ci*coijkl(jprim,jj)
           ex12= exi+exj
-          ex21= one/ex12
-          ex1p= exi*ex21
-          ex2p= exj*ex21
-          r12ex= r12*exj*ex1p
-          if(r12ex.gt.threshex)cycle
+          rijexj= rij*exj
+          r12ex= r12exi*exj
+          if(r12ex.gt.threshex*ex12)cycle
           nijkl(1)= nijkl(1)+1
           exfac(1,nijkl(1))= ex12
-          exfac(2,nijkl(1))= ex21*half
-          exfac(3,nijkl(1))=-ex1p*rij
-          exfac(4,nijkl(1))= ex2p*rij
-!         exfac(5,nijkl(1))= ex21*ci*cj*exp(-r12ex)
-          exfac(5,nijkl(1))= ex21*ci*cj
-          tmpexp(nijkl(1))=-r12ex
+          exfac(3,nijkl(1))= rijexi
+          exfac(4,nijkl(1))= rijexj
+          exfac(5,nijkl(1))= cij
+          work(nijkl(1))=-r12ex
         enddo
       enddo
 !
-!     do i=1,nijkl(1)
-!       exfac1(5,i)=exfac1(5,i)*exp(tmpexp(i))
-!     enddo
-!
-!     nijkl(2)= 0
       do kprim= 1,nprimijkl(kk)
         exk= exijkl(kprim,kk)
         ck = coijkl(kprim,kk)
+        r34exk= r34*exk
         do lprim= 1,nprimijkl(ll)
           exl = exijkl(lprim,ll)
-          cl  = coijkl(lprim,ll)
+          ckl = ck*coijkl(lprim,ll)
           ex34= exk+exl
-          ex43= one/ex34
-          ex3q= exk*ex43
-          ex4q= exl*ex43
-          r34ex= r34*exl*ex3q
-          if(r34ex.gt.threshex)cycle
+          r34ex= r34exk*exl
+          if(r34ex.gt.threshex*ex34)cycle
           nijkl(2)= nijkl(2)+1
           exfac(1,nijkl(1)+nijkl(2))= ex34
-          exfac(2,nijkl(1)+nijkl(2))= ex43*half
-          exfac(3,nijkl(1)+nijkl(2))=-ex3q
-          exfac(4,nijkl(1)+nijkl(2))= ex4q
-!         exfac(5,nijkl(1)+nijkl(2))= ex43*ck*cl*exp(-r34ex)
-          exfac(5,nijkl(1)+nijkl(2))= ex43*ck*cl
-          tmpexp(nijkl(1)+nijkl(2))=-r34ex
-          xyziq(1,nijkl(2))= xyzik(1)+xzkl(1)*ex4q
-          xyziq(2,nijkl(2))= xyzik(2)
-          xyziq(3,nijkl(2))= xyzik(3)+xzkl(2)*ex4q
+          exfac(3,nijkl(1)+nijkl(2))=-exk
+          exfac(4,nijkl(1)+nijkl(2))= exl
+          exfac(5,nijkl(1)+nijkl(2))= ckl
+          work(nijkl(1)+nijkl(2))=-r34ex
         enddo
       enddo
 !
       do i=1,nijkl(1)+nijkl(2)
-        exfac(5,i)=exfac(5,i)*exp(tmpexp(i))
+        ex21= one/exfac(1,i)
+        exfac(2,i)= ex21*half
+        exfac(3,i)= exfac(3,i)*ex21
+        exfac(4,i)= exfac(4,i)*ex21
+        exfac(5,i)= exfac(5,i)*ex21*exp(work(i)*ex21)
+      enddo
+      do i=1,nijkl(2)
+        xyziq(1,i)= xyzik(1)+xzkl(1)*exfac(4,nijkl(1)+i)
+        xyziq(2,i)= xyzik(2)
+        xyziq(3,i)= xyzik(3)+xzkl(2)*exfac(4,nijkl(1)+i)
       enddo
 !
 ! Transpose rotational matrix
@@ -345,13 +324,13 @@ end
 !
       select case(inttype)
         case (1)
-          call int2ssss(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,nijkl)
+          call int2ssss(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,work,nijkl)
         case (2)
-          call int2psss(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,nijkl)
+          call int2psss(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,work,nijkl)
         case (3)
-          call int2ppss(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,nijkl)
+          call int2ppss(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,work,nijkl)
         case (4)
-          call int2psps(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,nijkl)
+          call int2psps(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,work,nijkl)
         case (5)
           call int2ppps(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,nijkl)
         case (6)
@@ -507,7 +486,7 @@ end
 !$OMP do
         do jsh = 1,ish
           nbfj = mbf(jsh)
-          call calc2eri(twoeri,ish,jsh,ish,jsh,maxdim,.false.,zero)
+          call calc2eri(twoeri,ish,jsh,ish,jsh,maxdim)
           xintmax= zero
           do i= 1,nbfi
             do j= 1,nbfj

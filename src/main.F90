@@ -309,7 +309,6 @@ end
 !
 ! Calculate initial MOs
 !
-!     call guessmo(cmo,cmo,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
       call guessmo(cmo,cmo,overinv,h1mtrx,ortho, &
 &                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
 !
@@ -435,7 +434,8 @@ end
 !
 ! Calculate initial MOs
 !
-      call guessmo(cmoa,cmob,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+      call guessmo(cmoa,cmob,overinv,h1mtrx,ortho, &
+&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
 !
 ! Unset arrays 2
 !
@@ -563,7 +563,8 @@ end
 !
 ! Calculate initial MOs
 !
-      call guessmo(cmo,cmo,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+      call guessmo(cmo,cmo,overinv,h1mtrx,ortho, &
+&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
 !
 ! Unset arrays 2
 !
@@ -712,7 +713,8 @@ end
 !
 ! Calculate initial MOs
 !
-      call guessmo(cmoa,cmob,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+      call guessmo(cmoa,cmob,overinv,h1mtrx,ortho, &
+&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
 !
 ! Unset arrays 2
 !
@@ -924,7 +926,8 @@ end
 ! Calculate initial MOs
 !
         if(iopt == 1) then
-          call guessmo(cmo,cmo,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+          call guessmo(cmo,cmo,overinv,h1mtrx,ortho, &
+&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         endif
 !
 ! Unset work arrays 1
@@ -1193,7 +1196,8 @@ end
 ! Calculate initial MOs
 !
         if(iopt == 1) then
-          call guessmo(cmoa,cmob,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+          call guessmo(cmoa,cmob,overinv,h1mtrx,ortho, &
+&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         endif
 !
 ! Unset arrays 1

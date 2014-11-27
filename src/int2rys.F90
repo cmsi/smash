@@ -14,7 +14,7 @@
 !
 !---------------------------------------------------------------------------------------
   subroutine int2rys(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                    mxprsh,threshex,lrint,emu2)
+&                    mxprsh,threshex)
 !---------------------------------------------------------------------------------------
 !
 ! Calculate two-electron integrals using Rys quadrature
@@ -28,28 +28,19 @@
 !       maxdim    (Dimension of two-electron integral array)
 !       mxprsh    (Size of primitive function array)
 !       threshex  (Threshold of exponential calculation)
-!       lrint     (Flag of long range correction)
-!       emu2      (mu*mu value for long range correction)
 ! Out : twoeri    (Two-electron integrals
 !                  The values are stored in order of (lsh,ksh,jsh,ish).)
 !
       implicit none
       integer,intent(in) :: nprimijkl(4), nangijkl(4), nbfijkl(4), maxdim, mxprsh
-      integer,parameter :: ncart(0:6)=(/1,3,6,10,15,21,28/), maxdim2=28, mxprsh2=40
+      integer,parameter :: ncart(0:6)=(/1,3,6,10,15,21,28/), maxdim2=28, mxprsh2=30
       integer :: ncartijkl(4)
       real(8),intent(in) :: exijkl(mxprsh,4), coijkl(mxprsh,4), xyzijkl(3,4), threshex
-      real(8),intent(in) :: emu2
       real(8),intent(out) :: twoeri(maxdim,maxdim,maxdim,maxdim)
       real(8) :: eritmp(maxdim2*maxdim2*maxdim2*maxdim2)
       real(8) :: ex12(3,mxprsh2*mxprsh2), ex34(3,mxprsh2*mxprsh2)
       real(8) :: xyza(3,mxprsh2*mxprsh2), xyzb(3,mxprsh2*mxprsh2)
       real(8) :: xyzaj(3,mxprsh2*mxprsh2), xyzbl(3,mxprsh2*mxprsh2)
-      logical,intent(in) :: lrint
-!
-      if(lrint) then
-        write(*,'(" Error! Long range correction is not supported now.")')
-        write(*,'(" emu2=",d10.3)')emu2
-      endif
 !
       if(mxprsh > mxprsh2) then
         write(*,'(" Error! Parameter mxprsh2 in int2rys is small!")')
@@ -65,16 +56,14 @@
       ncartijkl(4)= ncart(nangijkl(4))
 !
       call int2rys2(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                   mxprsh,threshex,eritmp,ex12,ex34,xyza,xyzb,xyzaj,xyzbl,ncartijkl, &
-&                   lrint,emu2)
+&                   mxprsh,threshex,eritmp,ex12,ex34,xyza,xyzb,xyzaj,xyzbl,ncartijkl)
       return
 end
 
 
 !------------------------------------------------------------------------------------------
   subroutine int2rys2(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                     mxprsh,threshex,eritmp,ex12,ex34,xyza,xyzb,xyzaj,xyzbl,ncartijkl, &
-&                     lrint,emu2)
+&                     mxprsh,threshex,eritmp,ex12,ex34,xyza,xyzb,xyzaj,xyzbl,ncartijkl)
 !------------------------------------------------------------------------------------------
 !
 ! Calculate two-electron integrals using Rys quadrature
@@ -107,7 +96,6 @@ end
       real(8),parameter :: facg6=0.18742611911532351D+00 ! 1/sqrt(196/5-24/sqrt(5))
       real(8),parameter :: facg7=1.11803398874989484D+00 ! 1/sqrt(4/5)
       real(8),intent(in) :: exijkl(mxprsh,4), coijkl(mxprsh,4), xyzijkl(3,4), threshex
-      real(8),intent(in) :: emu2
       real(8),intent(out) :: twoeri(maxdim,maxdim,maxdim,maxdim)
       real(8),intent(out) :: eritmp(ncartijkl(4),ncartijkl(3),ncartijkl(2),ncartijkl(1))
       real(8),intent(out) :: ex12(3,*), xyza(3,*), xyzaj(3,*)
@@ -118,7 +106,6 @@ end
       real(8) :: ex41, ex41h, ex43h, b10t, bp01t, cx, cy, cz, cpx, cpy, cpz, tval
       real(8) :: trys(13), wrys(13), b00, b10, bp01, c00(3),cp00(3)
       real(8) :: xyzint(3,0:12,0:6,0:12), rysint(3,8,0:6,0:6,0:12,0:6,13), work(28)
-      logical,intent(in) :: lrint
       data ix/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
 &             1,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
 &             2,0,0,1,1,0,0,0,0,0,0,0,0,0,0, &
@@ -134,11 +121,6 @@ end
 &             0,0,2,0,1,1,0,0,0,0,0,0,0,0,0, &
 &             0,0,3,0,1,0,1,2,2,1,0,0,0,0,0, &
 &             0,0,4,0,1,0,1,3,3,0,2,2,1,1,2/
-!
-      if(lrint) then
-        write(*,'(" Error! Long range correction is not supported now.")')
-        write(*,'(" emu2=",d10.3)')emu2
-      endif
 !
       nroots=(nangijkl(1)+nangijkl(2)+nangijkl(3)+nangijkl(4))/2+1
       mmax= nangijkl(1)+nangijkl(2)

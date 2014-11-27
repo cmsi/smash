@@ -369,7 +369,7 @@ end
               endif
             enddo
             do lsh= 1,lnum
-              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,.false.,zero)
+              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
               call fockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
             enddo
           enddo
@@ -552,7 +552,7 @@ end
               endif
             enddo
             do lsh= 1,lnum
-              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,.false.,zero)
+              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
               call dftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,hfexchange)
             enddo
           enddo
@@ -1363,7 +1363,7 @@ end
               endif
             enddo
             do lsh= 1,lnum
-              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,.false.,zero)
+              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
               call ufockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
             enddo
           enddo
@@ -1934,7 +1934,7 @@ end
               endif
             enddo
             do lsh= 1,lnum
-              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,.false.,zero)
+              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
               call udftfockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim, &
 &                              hfexchange)
             enddo

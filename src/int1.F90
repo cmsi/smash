@@ -697,7 +697,7 @@ end
 !
       implicit none
       integer,intent(in) :: nprimij(2), nangij(2), nbfij(2), len1, natom, mxprsh
-      integer,parameter :: mxprsh2=40
+      integer,parameter :: mxprsh2=30
       integer :: inttyp, nij, iprim, jprim, i, j, ii, jj, nbfij2(2)
       real(8),parameter :: one=1.0D+00, pi2=6.283185307179586D+00
       real(8),intent(in) :: exij(mxprsh,2), coij(mxprsh,2), coordij(3,2)

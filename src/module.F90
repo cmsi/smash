@@ -24,7 +24,7 @@
       integer,parameter :: mxatom=1000
       integer,parameter :: mxshell=5000
       integer,parameter :: mxprim=20000
-      integer,parameter :: mxprsh=30, mxprsh2=30*30
+      integer,parameter :: mxprsh=30
       integer,parameter :: mxang=7
 end
 
