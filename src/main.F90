@@ -984,7 +984,7 @@ end
 ! Check convergence
 !
         if((egradmax <= optconv).and.(egradrms <= optconv*third)) then
-          if(master) write(*,'(" Geometry is converged.",/)')
+          if(master) write(*,'(" Geometry converged.",/)')
           converged=.true.
           exit
         endif
@@ -1026,7 +1026,7 @@ end
         call setnextopt(coordold,natom,iopt)
 !
         if((iopt == nopt).and.master) then
-          write(*,'("Warning! Geometry is not converged.")')
+          write(*,'("Warning! Geometry did not converge.")')
           exit
         endif
         call tstamp(1)
@@ -1259,7 +1259,7 @@ end
 ! Check convergence
 !
         if((egradmax <= optconv).and.(egradrms <= optconv*third)) then
-          if(master) write(*,'(" Geometry is converged.",/)')
+          if(master) write(*,'(" Geometry converged.",/)')
           converged=.true.
           exit
         endif
@@ -1301,7 +1301,7 @@ end
         call setnextopt(coordold,natom,iopt)
 !
         if((iopt == nopt).and.master) then
-          write(*,'("Warning! Geometry is not converged.")')
+          write(*,'("Warning! Geometry did not converge.")')
           exit
         endif
         call tstamp(1)

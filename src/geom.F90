@@ -678,7 +678,7 @@ end
         if(abs(rlambda-suml) <= convl) exit
         rlambda= suml
         if(iterrfo == maxiterrfo) then
-          if(master) write(*,'(" Error! RFO step in calcnewcoordred not converged.")')
+          if(master) write(*,'(" Error! RFO step in calcnewcoordred dit not converge.")')
           call iabort
         endif
       enddo
@@ -772,7 +772,7 @@ end
 !
         if(iterdx == maxiterdx) then
           if(master) then
-            write(*,'(" Error! Transformation from redundant to Cartesian not converged.")')
+            write(*,'(" Error! Transformation from redundant to Cartesian did not converge.")')
           endif
           call iabort
         endif

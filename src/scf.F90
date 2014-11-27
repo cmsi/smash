@@ -230,7 +230,7 @@
         endif
         if(iter.eq.maxiter) then
           if(master) then
-            write(*,'(" SCF Not Converged.")')
+            write(*,'(" SCF did not converge.")')
             call iabort
           endif
         endif
@@ -1013,7 +1013,7 @@ end
         endif
         if(iter.eq.maxiter) then
           if(master) then
-            write(*,'(" Not Converged.")')
+            write(*,'(" SCF did not converge.")')
             call iabort
           endif
         endif
@@ -1312,7 +1312,7 @@ end
         endif
         if(iter.eq.maxiter) then
           if(master) then
-            write(*,'(" SCF Not Converged.")')
+            write(*,'(" SCF did not converge.")')
             call iabort
           endif
         endif
@@ -1931,7 +1931,7 @@ end
         endif
         if(iter.eq.maxiter) then
           if(master) then
-            write(*,'(" SCF Not Converged.")')
+            write(*,'(" SCF did not converge.")')
             call iabort
           endif
         endif
