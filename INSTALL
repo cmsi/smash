@@ -10,6 +10,9 @@
     (x86-64 with MPI)
       $ make
 
+    (x86-64 with Intel MPI (mpiifort))
+      $ make -f Makefile.mpiifort
+
     (x86-64 without MPI)
       $ make -f Makefile.x86.noMPI
 
