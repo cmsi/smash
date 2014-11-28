@@ -601,7 +601,7 @@ end
 !
       use modparallel, only : master
       use modparam, only : mxprim, mxshell
-      use modiofile, only : input
+      use modiofile, only : input, maxline
       use modbasis, only : exgen, coeffgen, locgenprim, mgenprim, mgentype, locgenshell, &
 &                          ngenshell, atombasis
       implicit none
@@ -626,10 +626,10 @@ end
 !
       if(master) then
         rewind(input)
-        do ii= 1,20000
+        do ii= 1,maxline
           read(input,'(a)',end=9999)line
           if(line(1:5) == "BASIS") exit
-          if(ii == 20000) then
+          if(ii == maxline) then
             write(*,'(" Error! Keyword BASIS is not found.")')
             call iabort
           endif
@@ -670,7 +670,7 @@ end
           do ii= 1,nelem
             locgenshell(ielem(ii))= ishell
           enddo
-          do jj= 1,1000
+          do jj= 1,maxline
             symbol= ''
             read(input,'(a)',err=200,end=200) line
             read(line,*,end=200,err=9998) symbol, numprim
@@ -935,7 +935,7 @@ end
 !
       use modparallel, only : master
       use modparam, only : mxprim, mxshell
-      use modiofile, only : input
+      use modiofile, only : input, maxline
       use modecp, only : exgenecp, coeffgenecp, maxgenangecp, izgencore, mgentypeecp, &
 &                        locgenecp, mgenprimecp, atomecp
       implicit none
@@ -959,10 +959,10 @@ end
 !
       if(master) then
         rewind(input)
-        do ii= 1,20000
+        do ii= 1,maxline
           read(input,*,end=9999)line
           if(line(1:3) == "ECP") exit
-          if(ii == 20000) then
+          if(ii == maxline) then
             write(*,'(" Error! Keyword ECP is not found.")')
             call iabort
           endif
