@@ -1061,7 +1061,7 @@ end
       integer :: ii, jj, ij, ish, iatom, locbfi
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: dmtrx(nao*(nao+1)/2), overlap(nao*(nao+1)/2)
-      real(8),allocatable :: work(:), grossorb(:), grossatom(:)
+      real(8) :: grossorb(nao), grossatom(natom), totalgross
       character(len=3) :: table(112)= &
 &     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
@@ -1072,32 +1072,24 @@ end
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
 &       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
 !
-      call memset(nao*(nao+1)/2+nao+natom)
-      allocate(work(nao*(nao+1)/2),grossorb(nao),grossatom(natom))
-!
+      totalgross= zero
       grossorb(:)= zero
       grossatom(:)= zero
 !
-! Calculate Mulliken population matrix
-!
-!$OMP parallel do
-      do ii= 1,nao*(nao+1)/2
-        work(ii)= dmtrx(ii)*overlap(ii)
-      enddo
-!$OMP end parallel do
-!
 ! Calculate Gross orbital population
 !
-      ij= 0
+!$OMP parallel do schedule(static,1) private(ij) reduction(+:grossorb)
       do ii= 1,nao
+        ij= ii*(ii-1)/2
         do jj= 1,ii-1
           ij= ij+1
-          grossorb(ii)= grossorb(ii)+work(ij)
-          grossorb(jj)= grossorb(jj)+work(ij)
+          grossorb(ii)= grossorb(ii)+dmtrx(ij)*overlap(ij)
+          grossorb(jj)= grossorb(jj)+dmtrx(ij)*overlap(ij)
         enddo
         ij= ij+1
-        grossorb(ii)= grossorb(ii)+work(ij)
+        grossorb(ii)= grossorb(ii)+dmtrx(ij)*overlap(ij)
       enddo
+!$OMP end parallel do
 !
 ! Calculate Gross atom population
 !
@@ -1107,6 +1099,9 @@ end
         do ii= 1,mbf(ish)
           grossatom(iatom)= grossatom(iatom)+grossorb(locbfi+ii)
         enddo
+      enddo
+      do iatom= 1,natom
+        totalgross= totalgross+znuc(iatom)-grossatom(iatom)
       enddo
 !
       if(master) then
@@ -1119,11 +1114,11 @@ end
 &                                        grossatom(iatom),znuc(iatom)-grossatom(iatom)
         enddo
         write(*,'(" -------------------------------------")')
+        write(*,'("     Total",13x,f13.6)')totalgross
+        write(*,'(" -------------------------------------")')
         write(*,*)
       endif
 !
-      call memunset(nao*(nao+1)/2+nao+natom)
-      deallocate(work,grossorb,grossatom)
       return
 end
 
@@ -1141,7 +1136,7 @@ end
       integer :: ii, jj, ij, ish, iatom, locbfi
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2), overlap(nao*(nao+1)/2)
-      real(8),allocatable :: work(:), grossorb(:), grossatom(:)
+      real(8) :: grossorb(nao), grossatom(natom), totalgross
       character(len=3) :: table(112)= &
 &     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
@@ -1152,32 +1147,24 @@ end
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
 &       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
 !
-      call memset(nao*(nao+1)/2+nao+natom)
-      allocate(work(nao*(nao+1)/2),grossorb(nao),grossatom(natom))
-!
+      totalgross= zero
       grossorb(:)= zero
       grossatom(:)= zero
 !
-! Calculate Mulliken population matrix
-!
-!$OMP parallel do
-      do ii= 1,nao*(nao+1)/2
-        work(ii)=(dmtrxa(ii)+dmtrxb(ii))*overlap(ii)
-      enddo
-!$OMP end parallel do
-!
 ! Calculate Gross orbital population
 !
-      ij= 0
+!$OMP parallel do schedule(static,1) private(ij) reduction(+:grossorb)
       do ii= 1,nao
+        ij= ii*(ii-1)/2
         do jj= 1,ii-1
           ij= ij+1
-          grossorb(ii)= grossorb(ii)+work(ij)
-          grossorb(jj)= grossorb(jj)+work(ij)
+          grossorb(ii)= grossorb(ii)+(dmtrxa(ij)+dmtrxb(ij))*overlap(ij)
+          grossorb(jj)= grossorb(jj)+(dmtrxa(ij)+dmtrxb(ij))*overlap(ij)
         enddo
         ij= ij+1
-        grossorb(ii)= grossorb(ii)+work(ij)
+        grossorb(ii)= grossorb(ii)+(dmtrxa(ij)+dmtrxb(ij))*overlap(ij)
       enddo
+!$OMP end parallel do
 !
 ! Calculate Gross atom population
 !
@@ -1187,6 +1174,9 @@ end
         do ii= 1,mbf(ish)
           grossatom(iatom)= grossatom(iatom)+grossorb(locbfi+ii)
         enddo
+      enddo
+      do iatom= 1,natom
+        totalgross= totalgross+znuc(iatom)-grossatom(iatom)
       enddo
 !
       if(master) then
@@ -1199,10 +1189,10 @@ end
 &                                        grossatom(iatom),znuc(iatom)-grossatom(iatom)
         enddo
         write(*,'(" -------------------------------------")')
+        write(*,'("     Total",13x,f13.6)')totalgross
+        write(*,'(" -------------------------------------")')
         write(*,*)
       endif
 !
-      call memunset(nao*(nao+1)/2+nao+natom)
-      deallocate(work,grossorb,grossatom)
       return
 end

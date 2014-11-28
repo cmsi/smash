@@ -78,7 +78,7 @@
 !
 ! Set several information (currently, charge only)
 !
-      call setdetails
+      call setdetails(mpi_comm1)
 !
 ! Start calculations
 !

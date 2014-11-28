@@ -1340,7 +1340,6 @@ end
       integer,intent(in) :: mpi_comm
       integer :: ii, jj, iatom
       real(8) :: znew
-      logical :: flagchrg
       character(len=254) :: line
 !
       if(master) then
