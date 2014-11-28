@@ -69,7 +69,7 @@ end
   module modiofile
 !-------------------
       implicit none
-      integer,parameter :: input=10, icheck=20
+      integer,parameter :: input=10, icheck=20, maxline=100000
       character(len=16) :: version
       character(len=64) :: check
 end

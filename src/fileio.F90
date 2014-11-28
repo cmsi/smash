@@ -19,7 +19,7 @@
 ! Read input data and open checkpoint file if necessary
 !
       use modparallel, only : master, parallel
-      use modiofile, only : input, check
+      use modiofile, only : input, check, maxline
       use modbasis, only : basis, spher
       use modmolecule, only : numatomic, natom, coord, znuc, neleca, nelecb, charge, multi
       use modjob, only : method, runtype, scftype
@@ -46,7 +46,7 @@
       namelist /dft/ nrad, nleb
 !
       if(master) then
-        do ii= 1,100000
+        do ii= 1,maxline
           read(5,'(a)',end=100) line
           line=adjustl(line)
           ilen=len_trim(line)
@@ -74,7 +74,7 @@
           else
             write(input,*)
           endif
-          if(ii == 100000) then
+          if(ii == maxline) then
             write(*,'(" Input file is too long in Subroutine readinput!")')
             call iabort
           endif
@@ -467,7 +467,7 @@ end
 ! Read atomic data
 !
       use modparallel, only : master
-      use modiofile, only : input, icheck, check
+      use modiofile, only : input, icheck, check, maxline
       use modmolecule, only : numatomic, natom, coord, znuc
       use modunit, only : tobohr, bohr
       use modparam, only : mxatom
@@ -497,10 +497,10 @@ end
 !
       if(master) then
         rewind(input)
-        do ii= 1,10000
+        do ii= 1,maxline
           read(input,'(a)',end=9999)line
           if(line(1:4) == 'GEOM') exit
-          if(ii == 10000) then
+          if(ii == maxline) then
             write(*,'(" Error! Molecular geometry is not found.")')
             call iabort
           endif
@@ -1325,6 +1325,49 @@ end
       return
 end
 
+
+!----------------------------------
+  subroutine setdetails(mpi_comm)
+!----------------------------------
+!
+! Read and write settings (currently, charge only)
+!
+      use modparallel, only : master
+      use modiofile, only : input, maxline
+      use modmolecule, only : znuc, natom
+      use modparam, only : mxatom
+      implicit none
+      integer,intent(in) :: mpi_comm
+      integer :: ii, jj, iatom
+      real(8) :: znew
+      logical :: flagchrg
+      character(len=254) :: line
+!
+      if(master) then
+        rewind(input)
+        do ii= 1,maxline
+          read(input,'(a)',end=200)line
+          if(line(1:6) == 'CHARGE') then
+            write(*,'(/," -----------------")')
+            write(*,'(  "   Atomic charge")')
+            write(*,'(  " -----------------")')
+            write(*,'(  "   Atomic charges are set manually.")')
+            do jj= 1,mxatom
+              read(input,'(a)',end=100) line
+              read(line,*,end=100) iatom, znew
+              znuc(iatom)= znew
+              write(*,'("   Charge of Atom ",i5,"     ",f6.2)')iatom, znew
+            enddo
+ 100        write(*,*)
+          endif
+        enddo
+      endif
+ 200  continue
+!
+      call para_bcastr(znuc,natom,0,mpi_comm)
+!
+      return
+end
 
 
 

@@ -76,6 +76,10 @@
       call writebasis
       if(flagecp) call writeecp
 !
+! Set several information (currently, charge only)
+!
+      call setdetails
+!
 ! Start calculations
 !
       if(scftype == 'RHF') then
