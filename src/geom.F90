@@ -40,12 +40,12 @@
           if(rr /= zero) then
             enuc= enuc+chrgij/rr
             if((rr <= threshatm).and.master) then
-              write(*,'("Warning! Distance of Atoms",i4," and",i4," is short!")')
+              write(*,'("Warning! Distance of Atoms",i4," and",i4," is short!")') iatom, jatom
               nwarn= nwarn+1
             endif       
           else
             if((chrgij /= zero).and.master) then
-              write(*,'("Error! Atoms",i4," and",i4," are the same position!")') jatom, iatom
+              write(*,'("Error! Atoms",i4," and",i4," are the same position!")') iatom, jatom
               call iabort
             endif
           endif

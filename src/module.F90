@@ -169,10 +169,10 @@ end
       integer :: locprim(mxshell+1), locbf(mxshell+1), locatom(mxshell)
       integer :: mprim(mxshell),  mbf(mxshell), mtype(mxshell)
       integer :: locgenprim(mxshell+1), mgenprim(mxshell), mgentype(mxshell)
-      integer :: locgenshell(112), ngenshell(112)
+      integer :: locgenshell(-5:112), ngenshell(-5:112)
       real(8) :: ex(mxprim), coeff(mxprim), coeffinp(mxprim)
       real(8) :: exgen(mxprim), coeffgen(mxprim)
-      character(len=16) :: basis, atombasis(112)
+      character(len=16) :: basis, atombasis(-5:112)
       logical :: spher
 end
 
@@ -339,12 +339,12 @@ end
       integer,parameter :: lfunc=16, nterm1=625291, nterm2=26841
       integer :: maxangecp(mxatom), izcore(mxatom)=0, mtypeecp(mxprim)
       integer :: locecp(0:5,mxatom), mprimecp(0:5,mxatom)
-      integer :: maxgenangecp(112), izgencore(112), mgentypeecp(mxprim)
-      integer :: locgenecp(0:5,112), mgenprimecp(0:5,112)
+      integer :: maxgenangecp(-5:112), izgencore(-5:112), mgentypeecp(mxprim)
+      integer :: locgenecp(0:5,-5:112), mgenprimecp(0:5,-5:112)
       integer :: lmf(122), lmx(581), lmy(581), lmz(581), nbfirst(0:7), nx(84), ny(84), nz(84)
       real(8) :: execp(mxprim), coeffecp(mxprim), zlm(581)
       real(8) :: exgenecp(mxprim), coeffgenecp(mxprim)
-      character(lfunc) :: ecp, atomecp(112)
+      character(lfunc) :: ecp, atomecp(-5:112)
       logical :: flagecp
       data lmf/1, 2,3,4, 5,7,8,10,11, 12,14,16,18,20,22,23, 25,28,30,34,36,39,41,43,45,&
 &              47,50,53,57,61,64,67,70,72,76,78, 81,85,88,94,98,104,107,111,114,117,121,125,128,&

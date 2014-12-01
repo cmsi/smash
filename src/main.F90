@@ -231,7 +231,7 @@ end
 !
       nume= -charge
       do ii= 1,natom
-        nume= nume+numatomic(ii)
+        if(numatomic(ii) > 0) nume= nume+numatomic(ii)
       enddo
 !
 ! Calculate numbers of alpha and beta electrons
@@ -356,9 +356,9 @@ end
 ! Print MOs
 !
       if(master.and.(iprint >= 2)) then
-        write(*,'("-----------------")')
-        write(*,'(" MO coefficients")')
-        write(*,'("-----------------")')
+        write(*,'("  -------------------")')
+        write(*,'("    MO coefficients")')
+        write(*,'("  -------------------")')
         call writeeigenvector(cmo,energymo)
       endif
 !
@@ -479,13 +479,13 @@ end
 ! Print MOs
 !
       if(master.and.(iprint >= 2)) then
-        write(*,'("-----------------------")')
-        write(*,'(" Alpha MO coefficients")')
-        write(*,'("-----------------------")')
+        write(*,'("  -------------------------")')
+        write(*,'("    Alpha MO coefficients")')
+        write(*,'("  -------------------------")')
         call writeeigenvector(cmoa,energymoa)
-        write(*,'("-----------------------")')
-        write(*,'(" Beta MO coefficients")')
-        write(*,'("-----------------------")')
+        write(*,'("  ------------------------")')
+        write(*,'("    Beta MO coefficients")')
+        write(*,'("  ------------------------")')
         call writeeigenvector(cmob,energymob)
       endif
 !
@@ -632,9 +632,9 @@ end
 ! Print MOs
 !
       if(master.and.(iprint >= 2)) then
-        write(*,'("-----------------")')
-        write(*,'(" MO coefficients")')
-        write(*,'("-----------------")')
+        write(*,'("  -------------------")')
+        write(*,'("    MO coefficients")')
+        write(*,'("  -------------------")')
         call writeeigenvector(cmo,energymo)
       endif
 !
@@ -788,13 +788,13 @@ end
 ! Print MOs
 !
       if(master.and.(iprint >= 2)) then
-        write(*,'("-----------------------")')
-        write(*,'(" Alpha MO coefficients")')
-        write(*,'("-----------------------")')
+        write(*,'("  -------------------------")')
+        write(*,'("    Alpha MO coefficients")')
+        write(*,'("  -------------------------")')
         call writeeigenvector(cmoa,energymoa)
-        write(*,'("-----------------------")')
-        write(*,'(" Beta MO coefficients")')
-        write(*,'("-----------------------")')
+        write(*,'("  ------------------------")')
+        write(*,'("    Beta MO coefficients")')
+        write(*,'("  ------------------------")')
         call writeeigenvector(cmob,energymob)
       endif
 !
@@ -1043,9 +1043,9 @@ end
 ! Print MOs
 !
       if(master.and.(iprint >= 2)) then
-        write(*,'("-----------------")')
-        write(*,'(" MO coefficients")')
-        write(*,'("-----------------")')
+        write(*,'("  -------------------")')
+        write(*,'("    MO coefficients")')
+        write(*,'("  -------------------")')
         call writeeigenvector(cmo,energymo)
       endif
 !
@@ -1318,13 +1318,13 @@ end
 ! Print MOs
 !
       if(master.and.(iprint >= 2)) then
-        write(*,'(" -----------------------")')
-        write(*,'("  Alpha MO coefficients")')
-        write(*,'(" -----------------------")')
+        write(*,'("  -------------------------")')
+        write(*,'("    Alpha MO coefficients")')
+        write(*,'("  -------------------------")')
         call writeeigenvector(cmoa,energymoa)
-        write(*,'(" -----------------------")')
-        write(*,'("  Beta MO coefficients")')
-        write(*,'(" -----------------------")')
+        write(*,'("  ------------------------")')
+        write(*,'("    Beta MO coefficients")')
+        write(*,'("  ------------------------")')
         call writeeigenvector(cmob,energymob)
       endif
 !

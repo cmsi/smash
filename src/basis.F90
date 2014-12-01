@@ -253,8 +253,9 @@ end
       implicit none
       integer,intent(out) :: ishell
       integer :: iatom, nn, ii, jj, ll, lprim
-      character(len=3) :: table(112)= &
-&     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+      character(len=3) :: table(-5:112)= &
+&     (/'Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
 &       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
 &       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
@@ -299,10 +300,12 @@ end
               write(*,'(" Error! ECP is not set!.")')
               call iabort
             endif
-            if(nn < 11) then
-              call bsd95v(iatom,ishell)
-            else
-              call bslanl2dz(iatom,ishell)
+            if(nn > 0) then
+              if(nn < 11) then
+                call bsd95v(iatom,ishell)
+              else
+                call bslanl2dz(iatom,ishell)
+              endif
             endif
           case('')
             if(ngenshell(nn) == 0) then
