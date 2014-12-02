@@ -476,6 +476,7 @@ end
       use modparam, only : mxatom
       use modopt, only : cartesian
       use modwarn, only : nwarn
+      use modjob, only : runtype
       implicit none
       integer :: ii, jj, minatomic
       real(8),parameter :: zero=0.0D+00
@@ -575,11 +576,13 @@ end
 !
 ! Check dummy and ghost atoms
 !
-        minatomic= minval(numatomic(1:natom))
-        if((minatomic <= 0).and.(.not.cartesian)) then
-          cartesian=.false.
-          write(*,'(" Warning! Cartesian coordinate is used during geometry optimization.")')
-          nwarn= nwarn+1
+        if(runtype=='OPTIMIZE') then
+          minatomic= minval(numatomic(1:natom))
+          if((minatomic <= 0).and.(.not.cartesian)) then
+            cartesian=.true.
+            write(*,'(" Warning! Cartesian coordinate is used during geometry optimization.")')
+            nwarn= nwarn+1
+          endif
         endif
       endif
       return

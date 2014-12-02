@@ -887,6 +887,7 @@ end
             enddo
             iprim= iprim+numecp(4)
           endif
+        case (:0)
         case (84:)
           write(*,'(" Error! This program supports Na - La, Hf - Bi Lanl2dz ECP.")')
           call iabort
