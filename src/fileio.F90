@@ -30,12 +30,12 @@
       use modscf, only : diis, maxiter, dconv, maxdiis, maxsoscf
       use modopt, only : nopt, optconv, cartesian
       use modunit, only : bohr
-      use moddft, only : nrad, nleb
+      use moddft, only : nrad, nleb, bqrad
       use modecp, only : ecp, flagecp
       implicit none
       integer,intent(in) :: mpi_comm
       integer :: ii, ilen, intarray(9), info
-      real(8) :: realarray(4)
+      real(8) :: realarray(9)
       character(len=254) :: line
       character(len=16) :: chararray(7), mem=''
       logical :: logarray(5)
@@ -43,7 +43,7 @@
       namelist /control/ cutint2, spher, guess, iprint, bohr, check
       namelist /scf/ diis, maxiter, dconv, maxdiis, maxsoscf
       namelist /opt/ nopt, optconv, cartesian
-      namelist /dft/ nrad, nleb
+      namelist /dft/ nrad, nleb, bqrad
 !
       if(master) then
         do ii= 1,maxline
@@ -144,6 +144,11 @@
           realarray(2)= cutint2
           realarray(3)= dconv
           realarray(4)= optconv
+          realarray(5)= bqrad(1)
+          realarray(6)= bqrad(2)
+          realarray(7)= bqrad(3)
+          realarray(8)= bqrad(4)
+          realarray(9)= bqrad(5)
           intarray(1)= natom
           intarray(2)= multi
           intarray(3)= iprint
@@ -162,7 +167,7 @@
 !
         call para_bcastc(chararray,16*7,0,mpi_comm)
         call para_bcastc(check,64,0,mpi_comm)
-        call para_bcastr(realarray,4,0,mpi_comm)
+        call para_bcastr(realarray,9,0,mpi_comm)
         call para_bcasti(intarray,9,0,mpi_comm)
         call para_bcastl(logarray,5,0,mpi_comm)
 !
@@ -183,6 +188,11 @@
         cutint2 = realarray(2)
         dconv   = realarray(3)
         optconv = realarray(4)
+        bqrad(1)= realarray(5)
+        bqrad(2)= realarray(6)
+        bqrad(3)= realarray(7)
+        bqrad(4)= realarray(8)
+        bqrad(5)= realarray(9)
         multi   = intarray(2)
         iprint  = intarray(3)
         maxiter = intarray(4)

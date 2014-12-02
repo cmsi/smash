@@ -133,6 +133,11 @@ end
           if(master) &
 &         write(*,'(" Error! This program supports up to Cn in Subroutine setredundantcoord.")')
           call iabort
+        elseif(numatomic(iatom) < 1) then
+          if(master) &
+&         write(*,'(" Error! This program does not support dummy and ghost atoms ", &
+&                   "in Subroutine setredundantcoord currently.")')
+          call iabort
         endif
         icount= 0
         do jatom= 1,natom

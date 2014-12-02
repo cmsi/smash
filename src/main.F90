@@ -144,7 +144,7 @@ end program main
       use modbasis, only : spher, basis
       use modscf, only : maxiter, dconv, fdiff, diis, maxdiis, maxsoscf, extrap
       use modthresh, only : cutint2, threshsoscf
-      use moddft, only : idft, nrad, nleb
+      use moddft, only : idft, nrad, nleb, bqrad
       use modopt, only : nopt, optconv, cartesian
       use modecp, only : ecp, flagecp
       use modjob, only : scftype, runtype, method
@@ -199,6 +199,7 @@ end program main
       cartesian=.false.
       multi  = 1
       charge = 0.0D+00
+      bqrad(:)=1.06D+00
 !
       flagecp= .false.
       scftype='RHF'
@@ -1431,12 +1432,19 @@ end
 ! Adjust the numbe of DFT grids when heavy elements are included
 !
       use modparallel, only : master
-      use moddft, only : idft, nrad, nleb, hfexchange
+      use moddft, only : idft, nrad, nleb, hfexchange, bqrad
+      use modatom, only : atomrad
       use modmolecule, only : natom, numatomic
       use modjob, only : method
       use modwarn, only : nwarn
       implicit none
       integer :: maxelem
+!
+      atomrad(-1)= bqrad(1)
+      atomrad(-2)= bqrad(2)
+      atomrad(-3)= bqrad(3)
+      atomrad(-4)= bqrad(4)
+      atomrad(-5)= bqrad(5)
 !
       select case(method)
         case('B3LYP')
