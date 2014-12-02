@@ -9207,6 +9207,42 @@ end
           locatom(ishell)= iatom
           locprim(ishell+1)= locprim(ishell)+1
           locbf(ishell+1) = locbf(ishell)+3
+! D function
+          if(numatomic(iatom) == 30) then
+            ishell= ishell+1
+            do j= 1,4
+              ex(locprim(ishell)+j)= expd4(ide4(numatomic(iatom))+j)
+              coeff(locprim(ishell)+j)= coeffd4(ide4(numatomic(iatom))+j)
+            enddo
+            mprim(ishell)= 4
+            mtype(ishell)= 2
+            locatom(ishell)= iatom
+            locprim(ishell+1)= locprim(ishell)+4
+            if(spher) then
+              mbf(ishell)= 5
+              locbf(ishell+1) = locbf(ishell)+5
+            else
+              mbf(ishell)= 6
+              locbf(ishell+1) = locbf(ishell)+6
+            endif
+!
+            ishell= ishell+1
+            do j= 1,1
+              ex(locprim(ishell)+j)= expd4(ide4(numatomic(iatom))+j+4)
+              coeff(locprim(ishell)+j)= coeffd4(ide4(numatomic(iatom))+j+4)
+            enddo
+            mprim(ishell)= 1
+            mtype(ishell)= 2
+            locatom(ishell)= iatom
+            locprim(ishell+1)= locprim(ishell)+1
+            if(spher) then
+              mbf(ishell)= 5
+              locbf(ishell+1) = locbf(ishell)+5
+            else
+              mbf(ishell)= 6
+              locbf(ishell+1) = locbf(ishell)+6
+            endif
+          endif
 !
 ! Set Rb - Ag functions
 !
