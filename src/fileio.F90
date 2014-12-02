@@ -1247,7 +1247,7 @@ end
       imin= minmo
       imax= minmo+4
       if(master) then
-        do ii= 1,(maxmo-1)/5+1
+        do ii= 1,(maxmo-minmo-1)/5+1
           if(imax > maxmo) imax= maxmo
           write(*,*)
           write(*,'(18x,5(5x,i4,2x))')(jj,jj=imin,imax)
