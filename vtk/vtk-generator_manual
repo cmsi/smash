@@ -26,7 +26,7 @@
     4. MO number
        HOMO, LUMO, or integer.
 
-    ex) $ ./vtk-generator methan.check methan-homo.vtk MO HOMO
+    ex) $ ./vtk-generator methane.check methane-homo.vtk MO HOMO
 
   HOW TO VISUALIZE MO
   -------------------
