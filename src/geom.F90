@@ -356,6 +356,30 @@ end
         enddo
       enddo
 !
+      if((natom >= 4).and.(numtorsion == 0)) then
+        do iangle= numbond+1,numbond+numangle
+          iatom= iredun(1,iangle)
+          jatom= iredun(2,iangle)
+          katom= iredun(3,iangle)
+          do jangle= iangle+1,numbond+numangle
+            if(iredun(1,jangle) == katom) then
+              if(iredun(2,jangle) == jatom) then
+                numredun= numredun+1
+                if(numredun > maxsize) then
+                  exceed=.true.
+                  return
+                endif
+                numtorsion= numtorsion+1
+                iredun(1,numbond+numangle+numtorsion)= iatom
+                iredun(2,numbond+numangle+numtorsion)= jatom
+                iredun(3,numbond+numangle+numtorsion)= katom
+                iredun(4,numbond+numangle+numtorsion)= iredun(3,jangle)
+              endif
+            endif
+          enddo
+        enddo
+      endif
+!
       return
 end
 

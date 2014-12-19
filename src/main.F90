@@ -1054,6 +1054,15 @@ end
 !
       call calcrmulliken(dmtrx,smtrx)
 !
+! Write optimized geometry
+!
+      if(master) then
+        write(*,'(" ==========================")')
+        write(*,'("     Optimized Geometry")')
+        write(*,'(" ==========================")')
+        call writegeom
+      endif
+!
 ! Write checkpoint file
 !
       if(master.and.(check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo)
@@ -1332,6 +1341,15 @@ end
 ! Calculate Mulliken charge
 !
       call calcumulliken(dmtrxa,dmtrxb,smtrx)
+!
+! Write optimized geometry
+!
+      if(master) then
+        write(*,'(" ==========================")')
+        write(*,'("     Optimized Geometry")')
+        write(*,'(" ==========================")')
+        call writegeom
+      endif
 !
 ! Write checkpoint file
 !
