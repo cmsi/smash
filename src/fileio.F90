@@ -422,11 +422,11 @@ end
 &                  memmax/125000, scftype, spher
         write(*,'("   Charge  = ",F11.1," ,   Multi   =  ",i10," ,   Bohr     = ",l1)') &
 &                  charge, multi, bohr
+        write(*,'("   Guess   = ",a12)') guess
         if(runtype == 'OPTIMIZE') &
 &       write(*,'("   Nopt    =  ",i10," ,   Optconv = ",1p,D11.1," ,   Cartesian= ",l1)') &
 &                  nopt, optconv, cartesian
         if(check /= '') &
-        write(*,'("   Guess   = ",a12)') guess
         write(*,'("   Check   = ",a64)') check
         write(*,'(" --------------------------------------------------------------------------")')
 
