@@ -273,6 +273,7 @@ end
       use modmolecule, only : nmo, neleca
       use modjob, only : method
       use moddft, only : idft
+      use modguess, only : guess
       use modprint, only : iprint
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
@@ -331,7 +332,7 @@ end
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
       elseif(idft >= 1) then
-        if(check == '') then
+        if(guess == 'HUCKEL') then
           call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
           call tstamp(1)
@@ -398,6 +399,7 @@ end
       use modmolecule, only : nmo
       use modjob, only : method
       use moddft, only : idft
+      use modguess, only : guess
       use modprint, only : iprint
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
@@ -456,7 +458,7 @@ end
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
       elseif(idft >= 1) then
-        if(check == '') then
+        if(guess == 'HUCKEL') then
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
           call tstamp(1)
@@ -525,6 +527,7 @@ end
       use modmolecule, only : nmo, natom
       use modjob, only : method
       use moddft, only : idft
+      use modguess, only : guess
       use modprint, only : iprint
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
@@ -585,7 +588,7 @@ end
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
       elseif(idft >= 1) then
-        if(check == '') then
+        if(guess == 'HUCKEL') then
           call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
           call tstamp(1)
@@ -675,6 +678,7 @@ end
       use modmolecule, only : nmo, natom
       use modjob, only : method
       use moddft, only : idft
+      use modguess, only : guess
       use modprint, only : iprint
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
@@ -735,7 +739,7 @@ end
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
       elseif(idft >= 1) then
-        if(check == '') then
+        if(guess == 'HUCKEL') then
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
           call tstamp(1)
@@ -837,6 +841,7 @@ end
       use modwarn, only : nwarn
       use modjob, only : method
       use moddft, only : idft
+      use modguess, only : guess
       use modprint, only : iprint
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
@@ -949,7 +954,7 @@ end
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1)
           call tstamp(1)
         elseif(idft >= 1) then
-          if((iopt == 1).and.(check == '')) then
+          if((iopt == 1).and.(guess == 'HUCKEL')) then
             call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
             call tstamp(1)
@@ -1116,6 +1121,7 @@ end
       use modwarn, only : nwarn
       use modjob, only : method
       use moddft, only : idft
+      use modguess, only : guess
       use modprint, only : iprint
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
@@ -1228,7 +1234,7 @@ end
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2)
           call tstamp(1)
         elseif(idft >= 1) then
-          if((iopt == 1).and.(check == '')) then
+          if((iopt == 1).and.(guess == 'HUCKEL')) then
             call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
             call tstamp(1)
