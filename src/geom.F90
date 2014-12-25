@@ -815,15 +815,15 @@ end
         write(*,'(" ---------------------------------------------------------------")')
         do ii= 1,numbond
           write(chartmp(1:3),'(i5)')ii,iredun(1:2,ii)
-          paramred= trim(trim("Bond"//adjustl(chartmp(1)) //"("//adjustl(chartmp(2)))//"," &
+          paramred= trim(trim("Bond"//adjustl(chartmp(1)) //"   ("//adjustl(chartmp(2)))//"," &
 &                                  //adjustl(chartmp(3)))//")"
           write(*,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*toang, &
 &                                                  coordredun(ii,2)*toang
         enddo
         do ii= numbond+1,numbond+numangle
           write(chartmp(1:4),'(i5)')ii-numbond,iredun(1:3,ii)
-          paramred= trim(trim(trim("Angle"//adjustl(chartmp(1)) //"("//adjustl(chartmp(2)))//"," &
-&                                         //adjustl(chartmp(3)))//","//adjustl(chartmp(4)))//")"
+          paramred= trim(trim(trim("Angle"//adjustl(chartmp(1)) //"  ("//adjustl(chartmp(2))) &
+&                                    //","//adjustl(chartmp(3)))//","//adjustl(chartmp(4)))//")"
           write(*,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*rad2deg, &
 &                                                  coordredun(ii,2)*rad2deg
         enddo
