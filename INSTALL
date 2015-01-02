@@ -14,7 +14,7 @@
       $ make -f Makefile.mpiifort
 
     (x86-64 without MPI)
-      $ make -f Makefile.x86.noMPI
+      $ make -f Makefile.x86_64.noMPI
 
     (K Computer or FX10 with MPI)
       $ make -f Makefile.fujitsu

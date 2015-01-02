@@ -1,6 +1,6 @@
   ===========================
       SMASH user's manual
-          version 1.0.1
+          version 1.1.0
   ===========================
 
   *****************
@@ -106,7 +106,7 @@
               = d95v
               = lanl2dz
 
-      memory               specifies the memory size per process. (default: 2GB)
+      memory               specifies the memory size per process. (default: 4GB)
                            Supported unit: B, KB, MB, GB, TB
                             
       charge               specifies the total charge of the system. (default: 0.0)

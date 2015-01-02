@@ -87,8 +87,8 @@ end
       real(8) :: phmdint(6,6,6,6)
       real(8) :: r12, r34, rij, rkl, tmp, rot(3,3), veckl(3), cosph, sinph, abscos
       real(8) :: xyzij(3), xyzkl(3), xyzik(3), xzkl(2)
-      real(8) :: exi, exj, ci, cj, ex12, ex21, ex1p, ex2p, r12exi, rijexi, rijexj, cij, r12ex
-      real(8) :: exk, exl, ck, cl, ex34, ex43, ex3q, ex4q, r34exk, ckl, r34ex
+      real(8) :: exi, exj, ci, ex12, ex21, r12exi, rijexi, rijexj, cij, r12ex
+      real(8) :: exk, exl, ck, ex34, r34exk, ckl, r34ex
       real(8) :: exfac(5,mxprsh2*mxprsh2*2), xyziq(3,mxprsh2*mxprsh2)
       real(8) :: work(mxprsh2*mxprsh2*6)
       data intijkl/1,2,3,4, 2,1,3,4, 1,2,4,3, 3,4,1,2, 2,1,4,3, 3,4,2,1, 4,3,1,2, 4,3,2,1/
