@@ -35,8 +35,7 @@
       use modthresh, only : threshsoscf, cutint2, threshex, threshover, thresherr
       use modprint, only : iprint
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, i, itsub, itdiis
       integer :: itextra, itsoscf, nocc, nvir
       integer :: idis(nproc2,14), isize1, isize2, isize3
@@ -231,7 +230,7 @@
         endif
         if(iter.eq.maxiter) then
           if(master) then
-            write(*,'(" SCF Not Converged.")')
+            write(*,'(" SCF did not converge.")')
             call iabort
           endif
         endif
@@ -268,11 +267,15 @@ end
 !
 ! Driver of Fock matrix diagonalization
 !
+! In  : fock  (Fock matrix)
+!       ortho (Orthogonalization matrix)
+! Out : cmo   (Canonical MO matrx)
+!       work, work2, eigen (work space)
+!
       use modbasis, only : nao
       use modmolecule, only : nmo
       implicit none
-      integer,intent(in) :: nproc, myrank, idis(nproc,14)
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nproc, myrank, mpi_comm, idis(nproc,14)
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: fock(nao*(nao+1)/2), ortho(nao,nao)
       real(8),intent(out) :: work(nao,nao), cmo(nao*nao), work2(*), eigen(nao)
@@ -306,8 +309,7 @@ end
       use modbasis, only : nshell, nao
       use modthresh, only : cutint2
       implicit none
-      integer,intent(in) :: maxdim, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart
       integer(8) :: ncount, icount
@@ -367,8 +369,8 @@ end
               endif
             enddo
             do lsh= 1,lnum
-              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,.false.,zero)
-              call fockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
+              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
+              call rfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
             enddo
           enddo
         enddo
@@ -380,9 +382,9 @@ end
 end
 
 
-!---------------------------------------------------------------
-  subroutine fockeri(fock,dmtrx,twoeri,ish,jsh,ksh,lsh,maxdim)
-!---------------------------------------------------------------
+!----------------------------------------------------------------
+  subroutine rfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,lsh,maxdim)
+!----------------------------------------------------------------
 !
 ! Form Fock matrix from two-electron intgrals
 !
@@ -393,7 +395,7 @@ end
       integer :: nbfi, nbfj, nbfk, nbfl
       integer :: locbfi, locbfj, locbfk, locbfl, jmax, lmax, i, j, k, l, ij, kl
       integer :: nij, nkl, nik, nil, njk, njl
-      integer :: iloc, jloc, kloc, lloc, iloc2, jloc2, kloc2, lloc2
+      integer :: iloc, jloc, kloc, lloc, iloc2, jloc2, kloc2, lloc2, kloc0, jloc0
       real(8),parameter :: half=0.5D+00, four=4.0D+00
       real(8),intent(in) :: dmtrx(nao*(nao+1)/2), twoeri(maxdim,maxdim,maxdim,maxdim)
       real(8),intent(inout) :: fock(nao*(nao+1)/2)
@@ -418,35 +420,80 @@ end
       jmax= nbfj
       lmax= nbfl
       ij= 0
+      jloc0= locbfj*(locbfj-1)/2
+      kloc0= locbfk*(locbfk-1)/2
 !
-      do i= 1,nbfi
-        iloc= locbfi+i
-        iloc2= iloc*(iloc-1)/2
-        if(ieqj) jmax= i
-        do j= 1,jmax
-          jloc= locbfj+j
-          jloc2= jloc*(jloc-1)/2
-          ij= ij+1
-          kl= 0
-  kloop:  do k= 1,nbfk
-            kloc= locbfk+k
-            kloc2= kloc*(kloc-1)/2
-            if(keql) lmax= k
-            do l= 1,lmax
-              kl= kl+1
-              if(ikandjl.and.kl.gt.ij) exit kloop
-              val= twoeri(l,k,j,i)
-              if(abs(val).lt.cutint2) cycle
-              lloc= locbfl+l
-              nij= iloc2+jloc
-              nkl= kloc2+lloc
+      if(.not.ieqk)then
+        do i= 1,nbfi
+          iloc= locbfi+i
+          iloc2= iloc*(iloc-1)/2
+          jloc2= jloc0
+          if(ieqj) jmax= i
+          do j= 1,jmax
+            jloc= locbfj+j
+            jloc2= jloc2+jloc-1
+            kloc2= kloc0
+            nij= iloc2+jloc
+            do k= 1,nbfk
+              kloc= locbfk+k
+              kloc2= kloc2+kloc-1
               nik= iloc2+kloc
-              nil= iloc2+lloc
               njk= jloc2+kloc
-              njl= jloc2+lloc
               if(jloc.lt.kloc) njk= kloc2+jloc
-              if(jloc.lt.lloc) njl= lloc*(lloc-1)/2+jloc
-              if(ieqk) then
+              if(keql) lmax= k
+              do l= 1,lmax
+                val= twoeri(l,k,j,i)
+                if(abs(val).lt.cutint2) cycle
+                lloc= locbfl+l
+                nkl= kloc2+lloc
+                nil= iloc2+lloc
+                njl= jloc2+lloc
+                if(jloc.lt.lloc) njl= lloc*(lloc-1)/2+jloc
+                if(ijorkl) then
+                  if(iloc.eq.jloc) val= val*half
+                  if(kloc.eq.lloc) val= val*half
+                endif
+                val4= val*four
+                fock(nij)= fock(nij)+val4*dmtrx(nkl)
+                fock(nkl)= fock(nkl)+val4*dmtrx(nij)
+                fock(nik)= fock(nik)-val *dmtrx(njl)
+                fock(nil)= fock(nil)-val *dmtrx(njk)
+                fock(njk)= fock(njk)-val *dmtrx(nil)
+                fock(njl)= fock(njl)-val *dmtrx(nik)
+              enddo
+            enddo
+          enddo
+        enddo
+      else
+        do i= 1,nbfi
+          iloc= locbfi+i
+          iloc2= iloc*(iloc-1)/2
+          jloc2= jloc0
+          if(ieqj) jmax= i
+          do j= 1,jmax
+            jloc= locbfj+j
+            jloc2= jloc2+jloc-1
+            kloc2= kloc0
+            ij= ij+1
+            kl= 0
+     kloop: do k= 1,nbfk
+              kloc= locbfk+k
+              kloc2= kloc2+kloc-1
+              if(keql) lmax= k
+              do l= 1,lmax
+                kl= kl+1
+                if(ikandjl.and.kl.gt.ij) exit kloop
+                val= twoeri(l,k,j,i)
+                if(abs(val).lt.cutint2) cycle
+                lloc= locbfl+l
+                nij= iloc2+jloc
+                nkl= kloc2+lloc
+                nik= iloc2+kloc
+                nil= iloc2+lloc
+                njk= jloc2+kloc
+                njl= jloc2+lloc
+                if(jloc.lt.kloc) njk= kloc2+jloc
+                if(jloc.lt.lloc) njl= lloc*(lloc-1)/2+jloc
                 if(iloc.lt.kloc) then
                   lloc2= lloc*(lloc-1)/2
                   nij= kloc2+lloc
@@ -460,23 +507,24 @@ end
                 elseif(iloc.eq.kloc.and.jloc.eq.lloc) then
                   val= val*half
                 endif
-              endif
-              if(ijorkl) then
-                if(iloc.eq.jloc) val= val*half
-                if(kloc.eq.lloc) val= val*half
-              endif
-              val4= val*four
+                if(ijorkl) then
+                  if(iloc.eq.jloc) val= val*half
+                  if(kloc.eq.lloc) val= val*half
+                endif
+                val4= val*four
 !
-              fock(nij)= fock(nij)+val4*dmtrx(nkl)
-              fock(nkl)= fock(nkl)+val4*dmtrx(nij)
-              fock(nik)= fock(nik)-val *dmtrx(njl)
-              fock(nil)= fock(nil)-val *dmtrx(njk)
-              fock(njk)= fock(njk)-val *dmtrx(nil)
-              fock(njl)= fock(njl)-val *dmtrx(nik)
-            enddo
-          enddo kloop
+                fock(nij)= fock(nij)+val4*dmtrx(nkl)
+                fock(nkl)= fock(nkl)+val4*dmtrx(nij)
+                fock(nik)= fock(nik)-val *dmtrx(njl)
+                fock(nil)= fock(nil)-val *dmtrx(njk)
+                fock(njk)= fock(njk)-val *dmtrx(nil)
+                fock(njl)= fock(njl)-val *dmtrx(nik)
+              enddo
+            enddo kloop
+          enddo
         enddo
-      enddo
+      endif
+!
       return
 end
 
@@ -491,8 +539,7 @@ end
       use modbasis, only : nshell, nao
       use modthresh, only : cutint2
       implicit none
-      integer,intent(in) :: maxdim, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart
       integer(8) :: ncount, icount
@@ -551,8 +598,8 @@ end
               endif
             enddo
             do lsh= 1,lnum
-              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,.false.,zero)
-              call dftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,hfexchange)
+              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
+              call rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,hfexchange)
             enddo
           enddo
         enddo
@@ -564,9 +611,9 @@ end
 end
 
 
-!-----------------------------------------------------------------------------
-  subroutine dftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,lsh,maxdim,hfexchange)
-!-----------------------------------------------------------------------------
+!------------------------------------------------------------------------------
+  subroutine rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,lsh,maxdim,hfexchange)
+!------------------------------------------------------------------------------
 !
 ! Form DFT Fock matrix from two-electron intgrals
 !
@@ -576,8 +623,8 @@ end
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nbfi, nbfj, nbfk, nbfl
       integer :: locbfi, locbfj, locbfk, locbfl, jmax, lmax, i, j, k, l, ij, kl
-      integer :: ii, jj, kk, ll, ii2, jj2, kk2, n, nij, nkl, nik, nil, njk, njl
-      integer :: iloc, jloc, kloc, iloc2, jloc2, kloc2
+      integer :: nij, nkl, nik, nil, njk, njl
+      integer :: iloc, jloc, kloc, lloc, iloc2, jloc2, kloc2, lloc2, jloc0, kloc0
       real(8),parameter :: half=0.5D+00, four=4.0D+00
       real(8),intent(in) :: dmtrx(nao*(nao+1)/2), twoeri(maxdim,maxdim,maxdim,maxdim)
       real(8),intent(in) :: hfexchange
@@ -603,75 +650,114 @@ end
       jmax= nbfj
       lmax= nbfl
       ij= 0
+      jloc0= locbfj*(locbfj-1)/2
+      kloc0= locbfk*(locbfk-1)/2
 !
-      do i= 1,nbfi
-        iloc=locbfi+i
-        iloc2= iloc*(iloc-1)/2
-        if(ieqj) jmax= i
-        do j= 1,jmax
-          jloc=locbfj+j
-          jloc2= jloc*(jloc-1)/2
-          ij= ij+1
-          kl= 0
-  kloop:  do k= 1,nbfk
-            kloc=locbfk+k
-            kloc2= kloc*(kloc-1)/2
-            if(keql) lmax= k
-            do l= 1,lmax
-              kl= kl+1
-              if(ikandjl.and.kl.gt.ij) exit kloop
-              val= twoeri(l,k,j,i)
-              if(abs(val).lt.cutint2) cycle
-              ii= iloc
-              jj= jloc
-              kk= kloc
-              ll= locbfl+l
-              ii2= iloc2
-              jj2= jloc2
-              kk2= kloc2
-              if(ieqk) then
-                if(ii.lt.kk) then
-                  n = ii
-                  ii= kk
-                  kk= n
-                  n = jj
-                  jj= ll
-                  ll= n
-                  n  = ii2
-                  ii2= kk2
-                  kk2= n
-                  jj2= ll*(ll-1)/2
-                elseif(ii.eq.kk.and.jj.eq.ll) then
+      if(.not.ieqk)then
+        do i= 1,nbfi
+          iloc= locbfi+i
+          iloc2= iloc*(iloc-1)/2
+          jloc2= jloc0
+          if(ieqj) jmax= i
+          do j= 1,jmax
+            jloc= locbfj+j
+            jloc2= jloc2+jloc-1
+            kloc2= kloc0
+            nij= iloc2+jloc
+            do k= 1,nbfk
+              kloc= locbfk+k
+              kloc2= kloc2+kloc-1
+              nik= iloc2+kloc
+              njk= jloc2+kloc
+              if(jloc.lt.kloc) njk= kloc2+jloc
+              if(keql) lmax= k
+              do l= 1,lmax
+                val= twoeri(l,k,j,i)
+                if(abs(val).lt.cutint2) cycle
+                lloc= locbfl+l
+                nkl= kloc2+lloc
+                nil= iloc2+lloc
+                njl= jloc2+lloc
+                if(jloc.lt.lloc) njl= lloc*(lloc-1)/2+jloc
+                if(ijorkl) then
+                  if(iloc.eq.jloc) val= val*half
+                  if(kloc.eq.lloc) val= val*half
+                endif
+                val4= val*four
+                val = val*hfexchange
+                fock(nij)= fock(nij)+val4*dmtrx(nkl)
+                fock(nkl)= fock(nkl)+val4*dmtrx(nij)
+                fock(nik)= fock(nik)-val *dmtrx(njl)
+                fock(nil)= fock(nil)-val *dmtrx(njk)
+                fock(njk)= fock(njk)-val *dmtrx(nil)
+                fock(njl)= fock(njl)-val *dmtrx(nik)
+              enddo
+            enddo
+          enddo
+        enddo
+      else
+        do i= 1,nbfi
+          iloc= locbfi+i
+          iloc2= iloc*(iloc-1)/2
+          jloc2= jloc0
+          if(ieqj) jmax= i
+          do j= 1,jmax
+            jloc= locbfj+j
+            jloc2= jloc2+jloc-1
+            kloc2= kloc0
+            ij= ij+1
+            kl= 0
+     kloop: do k= 1,nbfk
+              kloc= locbfk+k
+              kloc2= kloc2+kloc-1
+              if(keql) lmax= k
+              do l= 1,lmax
+                kl= kl+1
+                if(ikandjl.and.kl.gt.ij) exit kloop
+                val= twoeri(l,k,j,i)
+                if(abs(val).lt.cutint2) cycle
+                lloc= locbfl+l
+                nij= iloc2+jloc
+                nkl= kloc2+lloc
+                nik= iloc2+kloc
+                nil= iloc2+lloc
+                njk= jloc2+kloc
+                njl= jloc2+lloc
+                if(jloc.lt.kloc) njk= kloc2+jloc
+                if(jloc.lt.lloc) njl= lloc*(lloc-1)/2+jloc
+                if(iloc.lt.kloc) then
+                  lloc2= lloc*(lloc-1)/2
+                  nij= kloc2+lloc
+                  nkl= iloc2+jloc
+                  nik= kloc2+iloc
+                  nil= kloc2+jloc
+                  njk= lloc2+iloc
+                  njl= lloc2+jloc
+                  if(lloc.lt.iloc) njk= iloc2+lloc
+                  if(lloc.lt.jloc) njl= jloc2+lloc
+                elseif(iloc.eq.kloc.and.jloc.eq.lloc) then
                   val= val*half
                 endif
-              endif
-              if(ijorkl) then
-                if(ii.eq.jj) val= val*half
-                if(kk.eq.ll) val= val*half
-              endif
-              nij= ii2+jj
-              nkl= kk2+ll
-              nik= ii2+kk
-              nil= ii2+ll
-              njk= jj2+kk
-              njl= jj2+ll
-              if(jj.lt.kk) njk= kk2+jj
-              if(jj.lt.ll) njl= ll*(ll-1)/2+jj
-              val4= val*four
-!
-              fock(nij)= fock(nij)+val4*dmtrx(nkl)
-              fock(nkl)= fock(nkl)+val4*dmtrx(nij)
-              fock(nik)= fock(nik)-val *dmtrx(njl)*hfexchange
-              fock(nil)= fock(nil)-val *dmtrx(njk)*hfexchange
-              fock(njk)= fock(njk)-val *dmtrx(nil)*hfexchange
-              fock(njl)= fock(njl)-val *dmtrx(nik)*hfexchange
-            enddo
-          enddo kloop
+                if(ijorkl) then
+                  if(iloc.eq.jloc) val= val*half
+                  if(kloc.eq.lloc) val= val*half
+                endif
+                val4= val*four
+                val = val*hfexchange
+                fock(nij)= fock(nij)+val4*dmtrx(nkl)
+                fock(nkl)= fock(nkl)+val4*dmtrx(nij)
+                fock(nik)= fock(nik)-val *dmtrx(njl)
+                fock(nil)= fock(nil)-val *dmtrx(njk)
+                fock(njk)= fock(njk)-val *dmtrx(nil)
+                fock(njl)= fock(njl)-val *dmtrx(nik)
+              enddo
+            enddo kloop
+          enddo
         enddo
-      enddo
+      endif
+!
       return
 end
-
 
 
 !-------------------------------------------------------------------------
@@ -701,8 +787,7 @@ end
       use modprint, only : iprint
       use modunit, only : tobohr
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, i, itsub, itdiis
       integer :: itextra, itsoscf, nocc, nvir
       integer :: idis(nproc2,14), isize1, isize2, isize3, iatom
@@ -928,7 +1013,7 @@ end
         endif
         if(iter.eq.maxiter) then
           if(master) then
-            write(*,'(" Not Converged.")')
+            write(*,'(" SCF did not converge.")')
             call iabort
           endif
         endif
@@ -989,8 +1074,7 @@ end
       use modthresh, only : threshsoscf, cutint2, threshex, threshover, thresherr
       use modprint, only : iprint
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao3, nshell3, maxdim, maxfunc(0:6), iter, i, itsub, itdiis
       integer :: itextra, itsoscf, nocca, nvira, noccb, nvirb
       integer :: idis(nproc2,14), isize1, isize2, isize3
@@ -1228,7 +1312,7 @@ end
         endif
         if(iter.eq.maxiter) then
           if(master) then
-            write(*,'(" SCF Not Converged.")')
+            write(*,'(" SCF did not converge.")')
             call iabort
           endif
         endif
@@ -1304,8 +1388,7 @@ end
       use modbasis, only : nshell, nao
       use modthresh, only : cutint2
       implicit none
-      integer,intent(in) :: maxdim, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart
       integer(8) :: ncount, icount
@@ -1365,7 +1448,7 @@ end
               endif
             enddo
             do lsh= 1,lnum
-              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,.false.,zero)
+              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
               call ufockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
             enddo
           enddo
@@ -1392,7 +1475,7 @@ end
       integer :: nbfi, nbfj, nbfk, nbfl
       integer :: locbfi, locbfj, locbfk, locbfl, jmax, lmax, i, j, k, l, ij, kl
       integer :: nij, nkl, nik, nil, njk, njl
-      integer :: iloc, jloc, kloc, lloc, iloc2, jloc2, kloc2, lloc2
+      integer :: iloc, jloc, kloc, lloc, iloc2, jloc2, kloc2, lloc2, jloc0, kloc0
       real(8),parameter :: half=0.5D+00, two=2.0D+00, four=4.0D+00
       real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
       real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim)
@@ -1418,35 +1501,90 @@ end
       jmax= nbfj
       lmax= nbfl
       ij= 0
+      jloc0= locbfj*(locbfj-1)/2
+      kloc0= locbfk*(locbfk-1)/2
 !
-      do i= 1,nbfi
-        iloc= locbfi+i
-        iloc2= iloc*(iloc-1)/2
-        if(ieqj) jmax= i
-        do j= 1,jmax
-          jloc= locbfj+j
-          jloc2= jloc*(jloc-1)/2
-          ij= ij+1
-          kl= 0
-  kloop:  do k= 1,nbfk
-            kloc= locbfk+k
-            kloc2= kloc*(kloc-1)/2
-            if(keql) lmax= k
-            do l= 1,lmax
-              kl= kl+1
-              if(ikandjl.and.kl.gt.ij) exit kloop
-              val= twoeri(l,k,j,i)
-              if(abs(val).lt.cutint2) cycle
-              lloc= locbfl+l
-              nij= iloc2+jloc
-              nkl= kloc2+lloc
+      if(.not.ieqk)then
+        do i= 1,nbfi
+          iloc= locbfi+i
+          iloc2= iloc*(iloc-1)/2
+          jloc2= jloc0
+          if(ieqj) jmax= i
+          do j= 1,jmax
+            jloc= locbfj+j
+            jloc2= jloc2+jloc-1
+            kloc2= kloc0
+            nij= iloc2+jloc
+            do k= 1,nbfk
+              kloc= locbfk+k
+              kloc2= kloc2+kloc-1
               nik= iloc2+kloc
-              nil= iloc2+lloc
               njk= jloc2+kloc
-              njl= jloc2+lloc
               if(jloc.lt.kloc) njk= kloc2+jloc
-              if(jloc.lt.lloc) njl= lloc*(lloc-1)/2+jloc
-              if(ieqk) then
+              if(keql) lmax= k
+              do l= 1,lmax
+                val= twoeri(l,k,j,i)
+                if(abs(val).lt.cutint2) cycle
+                lloc= locbfl+l
+                nkl= kloc2+lloc
+                nil= iloc2+lloc
+                njl= jloc2+lloc
+                if(jloc.lt.lloc) njl= lloc*(lloc-1)/2+jloc
+                if(ijorkl) then
+                  if(iloc.eq.jloc) val= val*half
+                  if(kloc.eq.lloc) val= val*half
+                endif
+                val2= val*two
+                val4= val*four
+!
+                focka(nij)= focka(nij)+val4*(dmtrxa(nkl)+dmtrxb(nkl))
+                fockb(nij)= fockb(nij)+val4*(dmtrxa(nkl)+dmtrxb(nkl))
+                focka(nkl)= focka(nkl)+val4*(dmtrxa(nij)+dmtrxb(nij))
+                fockb(nkl)= fockb(nkl)+val4*(dmtrxa(nij)+dmtrxb(nij))
+!
+                focka(nik)= focka(nik)-val2*dmtrxa(njl)
+                focka(nil)= focka(nil)-val2*dmtrxa(njk)
+                focka(njk)= focka(njk)-val2*dmtrxa(nil)
+                focka(njl)= focka(njl)-val2*dmtrxa(nik)
+!
+                fockb(nik)= fockb(nik)-val2*dmtrxb(njl)
+                fockb(nil)= fockb(nil)-val2*dmtrxb(njk)
+                fockb(njk)= fockb(njk)-val2*dmtrxb(nil)
+                fockb(njl)= fockb(njl)-val2*dmtrxb(nik)
+              enddo
+            enddo
+          enddo
+        enddo
+      else
+        do i= 1,nbfi
+          iloc= locbfi+i
+          iloc2= iloc*(iloc-1)/2
+          jloc2= jloc0
+          if(ieqj) jmax= i
+          do j= 1,jmax
+            jloc= locbfj+j
+            jloc2= jloc2+jloc-1
+            kloc2= kloc0
+            ij= ij+1
+            kl= 0
+     kloop: do k= 1,nbfk
+              kloc= locbfk+k
+              kloc2= kloc2+kloc-1
+              if(keql) lmax= k
+              do l= 1,lmax
+                kl= kl+1
+                if(ikandjl.and.kl.gt.ij) exit kloop
+                val= twoeri(l,k,j,i)
+                if(abs(val).lt.cutint2) cycle
+                lloc= locbfl+l
+                nij= iloc2+jloc
+                nkl= kloc2+lloc
+                nik= iloc2+kloc
+                nil= iloc2+lloc
+                njk= jloc2+kloc
+                njl= jloc2+lloc
+                if(jloc.lt.kloc) njk= kloc2+jloc
+                if(jloc.lt.lloc) njl= lloc*(lloc-1)/2+jloc
                 if(iloc.lt.kloc) then
                   lloc2= lloc*(lloc-1)/2
                   nij= kloc2+lloc
@@ -1460,32 +1598,33 @@ end
                 elseif(iloc.eq.kloc.and.jloc.eq.lloc) then
                   val= val*half
                 endif
-              endif
-              if(ijorkl) then
-                if(iloc.eq.jloc) val= val*half
-                if(kloc.eq.lloc) val= val*half
-              endif
-              val2= val*two
-              val4= val*four
+                if(ijorkl) then
+                  if(iloc.eq.jloc) val= val*half
+                  if(kloc.eq.lloc) val= val*half
+                endif
+                val2= val*two
+                val4= val*four
 !
-              focka(nij)= focka(nij)+val4*(dmtrxa(nkl)+dmtrxb(nkl))
-              fockb(nij)= fockb(nij)+val4*(dmtrxa(nkl)+dmtrxb(nkl))
-              focka(nkl)= focka(nkl)+val4*(dmtrxa(nij)+dmtrxb(nij))
-              fockb(nkl)= fockb(nkl)+val4*(dmtrxa(nij)+dmtrxb(nij))
+                focka(nij)= focka(nij)+val4*(dmtrxa(nkl)+dmtrxb(nkl))
+                fockb(nij)= fockb(nij)+val4*(dmtrxa(nkl)+dmtrxb(nkl))
+                focka(nkl)= focka(nkl)+val4*(dmtrxa(nij)+dmtrxb(nij))
+                fockb(nkl)= fockb(nkl)+val4*(dmtrxa(nij)+dmtrxb(nij))
 !
-              focka(nik)= focka(nik)-val2*dmtrxa(njl)
-              focka(nil)= focka(nil)-val2*dmtrxa(njk)
-              focka(njk)= focka(njk)-val2*dmtrxa(nil)
-              focka(njl)= focka(njl)-val2*dmtrxa(nik)
+                focka(nik)= focka(nik)-val2*dmtrxa(njl)
+                focka(nil)= focka(nil)-val2*dmtrxa(njk)
+                focka(njk)= focka(njk)-val2*dmtrxa(nil)
+                focka(njl)= focka(njl)-val2*dmtrxa(nik)
 !
-              fockb(nik)= fockb(nik)-val2*dmtrxb(njl)
-              fockb(nil)= fockb(nil)-val2*dmtrxb(njk)
-              fockb(njk)= fockb(njk)-val2*dmtrxb(nil)
-              fockb(njl)= fockb(njl)-val2*dmtrxb(nik)
-            enddo
-          enddo kloop
+                fockb(nik)= fockb(nik)-val2*dmtrxb(njl)
+                fockb(nil)= fockb(nil)-val2*dmtrxb(njk)
+                fockb(njk)= fockb(njk)-val2*dmtrxb(nil)
+                fockb(njl)= fockb(njl)-val2*dmtrxb(nik)
+              enddo
+            enddo kloop
+          enddo
         enddo
-      enddo
+      endif
+!
       return
 end
 
@@ -1520,8 +1659,7 @@ end
       use modprint, only : iprint
       use modunit, only : tobohr
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao3, nshell3, maxdim, maxfunc(0:6), iter, i, itsub, itdiis
       integer :: itextra, itsoscf, nocca, nvira, noccb, nvirb
       integer :: idis(nproc2,14), isize1, isize2, isize3, iatom
@@ -1793,7 +1931,7 @@ end
         endif
         if(iter.eq.maxiter) then
           if(master) then
-            write(*,'(" SCF Not Converged.")')
+            write(*,'(" SCF did not converge.")')
             call iabort
           endif
         endif
@@ -1877,8 +2015,7 @@ end
       use modbasis, only : nshell, nao
       use modthresh, only : cutint2
       implicit none
-      integer,intent(in) :: maxdim, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart
       integer(8) :: ncount, icount
@@ -1938,7 +2075,7 @@ end
               endif
             enddo
             do lsh= 1,lnum
-              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,.false.,zero)
+              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
               call udftfockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim, &
 &                              hfexchange)
             enddo
@@ -1967,7 +2104,7 @@ end
       integer :: nbfi, nbfj, nbfk, nbfl
       integer :: locbfi, locbfj, locbfk, locbfl, jmax, lmax, i, j, k, l, ij, kl
       integer :: nij, nkl, nik, nil, njk, njl
-      integer :: iloc, jloc, kloc, lloc, iloc2, jloc2, kloc2, lloc2
+      integer :: iloc, jloc, kloc, lloc, iloc2, jloc2, kloc2, lloc2, jloc0, kloc0
       real(8),parameter :: half=0.5D+00, two=2.0D+00, four=4.0D+00
       real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
       real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim), hfexchange
@@ -1993,35 +2130,90 @@ end
       jmax= nbfj
       lmax= nbfl
       ij= 0
+      jloc0= locbfj*(locbfj-1)/2
+      kloc0= locbfk*(locbfk-1)/2
 !
-      do i= 1,nbfi
-        iloc= locbfi+i
-        iloc2= iloc*(iloc-1)/2
-        if(ieqj) jmax= i
-        do j= 1,jmax
-          jloc= locbfj+j
-          jloc2= jloc*(jloc-1)/2
-          ij= ij+1
-          kl= 0
-  kloop:  do k= 1,nbfk
-            kloc= locbfk+k
-            kloc2= kloc*(kloc-1)/2
-            if(keql) lmax= k
-            do l= 1,lmax
-              kl= kl+1
-              if(ikandjl.and.kl.gt.ij) exit kloop
-              val= twoeri(l,k,j,i)
-              if(abs(val).lt.cutint2) cycle
-              lloc= locbfl+l
-              nij= iloc2+jloc
-              nkl= kloc2+lloc
+      if(.not.ieqk)then
+        do i= 1,nbfi
+          iloc= locbfi+i
+          iloc2= iloc*(iloc-1)/2
+          jloc2= jloc0
+          if(ieqj) jmax= i
+          do j= 1,jmax
+            jloc= locbfj+j
+            jloc2= jloc2+jloc-1
+            kloc2= kloc0
+            nij= iloc2+jloc
+            do k= 1,nbfk
+              kloc= locbfk+k
+              kloc2= kloc2+kloc-1
               nik= iloc2+kloc
-              nil= iloc2+lloc
               njk= jloc2+kloc
-              njl= jloc2+lloc
               if(jloc.lt.kloc) njk= kloc2+jloc
-              if(jloc.lt.lloc) njl= lloc*(lloc-1)/2+jloc
-              if(ieqk) then
+              if(keql) lmax= k
+              do l= 1,lmax
+                val= twoeri(l,k,j,i)
+                if(abs(val).lt.cutint2) cycle
+                lloc= locbfl+l
+                nkl= kloc2+lloc
+                nil= iloc2+lloc
+                njl= jloc2+lloc
+                if(jloc.lt.lloc) njl= lloc*(lloc-1)/2+jloc
+                if(ijorkl) then
+                  if(iloc.eq.jloc) val= val*half
+                  if(kloc.eq.lloc) val= val*half
+                endif
+                val2= val*two*hfexchange
+                val4= val*four
+!
+                focka(nij)= focka(nij)+val4*(dmtrxa(nkl)+dmtrxb(nkl))
+                fockb(nij)= fockb(nij)+val4*(dmtrxa(nkl)+dmtrxb(nkl))
+                focka(nkl)= focka(nkl)+val4*(dmtrxa(nij)+dmtrxb(nij))
+                fockb(nkl)= fockb(nkl)+val4*(dmtrxa(nij)+dmtrxb(nij))
+!
+                focka(nik)= focka(nik)-val2*dmtrxa(njl)
+                focka(nil)= focka(nil)-val2*dmtrxa(njk)
+                focka(njk)= focka(njk)-val2*dmtrxa(nil)
+                focka(njl)= focka(njl)-val2*dmtrxa(nik)
+!
+                fockb(nik)= fockb(nik)-val2*dmtrxb(njl)
+                fockb(nil)= fockb(nil)-val2*dmtrxb(njk)
+                fockb(njk)= fockb(njk)-val2*dmtrxb(nil)
+                fockb(njl)= fockb(njl)-val2*dmtrxb(nik)
+              enddo
+            enddo
+          enddo
+        enddo
+      else
+        do i= 1,nbfi
+          iloc= locbfi+i
+          iloc2= iloc*(iloc-1)/2
+          jloc2= jloc0
+          if(ieqj) jmax= i
+          do j= 1,jmax
+            jloc= locbfj+j
+            jloc2= jloc2+jloc-1
+            kloc2= kloc0
+            ij= ij+1
+            kl= 0
+     kloop: do k= 1,nbfk
+              kloc= locbfk+k
+              kloc2= kloc2+kloc-1
+              if(keql) lmax= k
+              do l= 1,lmax
+                kl= kl+1
+                if(ikandjl.and.kl.gt.ij) exit kloop
+                val= twoeri(l,k,j,i)
+                if(abs(val).lt.cutint2) cycle
+                lloc= locbfl+l
+                nij= iloc2+jloc
+                nkl= kloc2+lloc
+                nik= iloc2+kloc
+                nil= iloc2+lloc
+                njk= jloc2+kloc
+                njl= jloc2+lloc
+                if(jloc.lt.kloc) njk= kloc2+jloc
+                if(jloc.lt.lloc) njl= lloc*(lloc-1)/2+jloc
                 if(iloc.lt.kloc) then
                   lloc2= lloc*(lloc-1)/2
                   nij= kloc2+lloc
@@ -2035,32 +2227,33 @@ end
                 elseif(iloc.eq.kloc.and.jloc.eq.lloc) then
                   val= val*half
                 endif
-              endif
-              if(ijorkl) then
-                if(iloc.eq.jloc) val= val*half
-                if(kloc.eq.lloc) val= val*half
-              endif
-              val2= val*two*hfexchange
-              val4= val*four
+                if(ijorkl) then
+                  if(iloc.eq.jloc) val= val*half
+                  if(kloc.eq.lloc) val= val*half
+                endif
+                val2= val*two*hfexchange
+                val4= val*four
 !
-              focka(nij)= focka(nij)+val4*(dmtrxa(nkl)+dmtrxb(nkl))
-              fockb(nij)= fockb(nij)+val4*(dmtrxa(nkl)+dmtrxb(nkl))
-              focka(nkl)= focka(nkl)+val4*(dmtrxa(nij)+dmtrxb(nij))
-              fockb(nkl)= fockb(nkl)+val4*(dmtrxa(nij)+dmtrxb(nij))
+                focka(nij)= focka(nij)+val4*(dmtrxa(nkl)+dmtrxb(nkl))
+                fockb(nij)= fockb(nij)+val4*(dmtrxa(nkl)+dmtrxb(nkl))
+                focka(nkl)= focka(nkl)+val4*(dmtrxa(nij)+dmtrxb(nij))
+                fockb(nkl)= fockb(nkl)+val4*(dmtrxa(nij)+dmtrxb(nij))
 !
-              focka(nik)= focka(nik)-val2*dmtrxa(njl)
-              focka(nil)= focka(nil)-val2*dmtrxa(njk)
-              focka(njk)= focka(njk)-val2*dmtrxa(nil)
-              focka(njl)= focka(njl)-val2*dmtrxa(nik)
+                focka(nik)= focka(nik)-val2*dmtrxa(njl)
+                focka(nil)= focka(nil)-val2*dmtrxa(njk)
+                focka(njk)= focka(njk)-val2*dmtrxa(nil)
+                focka(njl)= focka(njl)-val2*dmtrxa(nik)
 !
-              fockb(nik)= fockb(nik)-val2*dmtrxb(njl)
-              fockb(nil)= fockb(nil)-val2*dmtrxb(njk)
-              fockb(njk)= fockb(njk)-val2*dmtrxb(nil)
-              fockb(njl)= fockb(njl)-val2*dmtrxb(nik)
-            enddo
-          enddo kloop
+                fockb(nik)= fockb(nik)-val2*dmtrxb(njl)
+                fockb(nil)= fockb(nil)-val2*dmtrxb(njk)
+                fockb(njk)= fockb(njk)-val2*dmtrxb(nil)
+                fockb(njl)= fockb(njl)-val2*dmtrxb(nik)
+              enddo
+            enddo kloop
+          enddo
         enddo
-      enddo
+      endif
+!
       return
 end
 

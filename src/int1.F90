@@ -27,8 +27,7 @@
       use modecp, only : flagecp
       use modmolecule, only : natom
       implicit none
-      integer,intent(in) :: nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh, num, maxfunc(0:6), maxbasis, maxdim
       real(8),parameter :: zero=0.0D+00
       real(8),intent(out) :: hstmat1((nao*(nao+1))/2), hstmat2((nao*(nao+1))/2)
@@ -698,7 +697,7 @@ end
 !
       implicit none
       integer,intent(in) :: nprimij(2), nangij(2), nbfij(2), len1, natom, mxprsh
-      integer,parameter :: mxprsh2=40
+      integer,parameter :: mxprsh2=30
       integer :: inttyp, nij, iprim, jprim, i, j, ii, jj, nbfij2(2)
       real(8),parameter :: one=1.0D+00, pi2=6.283185307179586D+00
       real(8),intent(in) :: exij(mxprsh,2), coij(mxprsh,2), coordij(3,2)

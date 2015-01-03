@@ -68,7 +68,7 @@
         imin = mod((iwall2-iwall0)/iwrate,3600)/60
         sec  = dble(iwall2-iwall0)/dble(iwrate)-dble(86400*iday+3600*ihour+60*imin)
         write(*,'(1x,"Total CPU time :",f11.1," seconds")') cpu2
-        write(*,'(1x,"Total wall time:",f11.1," seconds")') wall0
+        write(*,'(1x,"Total Wall time:",f11.1," seconds")') wall0
         write(*,'(17x,"(",i2," days",i3," hours",i3," minutes",f5.1," seconds)")')&
 &                   iday, ihour, imin, sec
         write(*,'(" The job finished at ",a)')tdate
@@ -131,7 +131,7 @@ end
       use modparallel, only : master
       use modiofile, only : input
       implicit none
-      integer(4) :: getpid, iprocess
+      integer(selected_int_kind(9)) :: getpid, iprocess
       character(len=30) :: filename
 !
       if(master) then

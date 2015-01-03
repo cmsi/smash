@@ -845,7 +845,7 @@ end
 !
       implicit none
       integer,intent(in) :: nprimij(2), nangij(2), nbfij(2), locbfij(2), natom, nao, mxprsh
-      integer,parameter :: mxprsh2=40
+      integer,parameter :: mxprsh2=30
       integer :: inttyp, nij, iprim, jprim, i, ii, jj, nbfij2(2), locbfij2(2)
       real(8),parameter :: one=1.0D+00, pi2=6.283185307179586D+00
       real(8),intent(in) :: fulldmtrx(nao,nao), exij(mxprsh,2), cij(mxprsh,2), coordij(3,2)
@@ -2405,7 +2405,6 @@ end
 !
       implicit none
       integer,intent(in) :: nprimij(2), nangij(2), nbfij(2), locbfij(2), natom, nao, mxprsh
-      integer,parameter :: mxprsh2=40
       integer :: ix(21,0:5), iy(21,0:5), iz(21,0:5)
       integer :: nroots, ncart(0:6), ncarti, ncartj, i, j, k, iprim, jprim, iatom, iroot
       integer :: iang, jang, icx, icy, icz, jcx, jcy, jcz

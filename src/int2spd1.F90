@@ -37,7 +37,7 @@
       real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
       real(8) :: tinv, ft(0:2)
       real(8) :: f0, f1(2), f2(3), r0(2), r1(3), r2(6)
-      real(8) :: ex12, ex34, ex43, ex41, expq, ex3q, ex4q, c12, c34, zip, xiq, yiq, ziq
+      real(8) :: ex12, ex34, ex43, ex14, ex41, expq, ex3q, ex4q, c12, c34, zip, xiq, yiq, ziq
       real(8) :: xiq2, yiq2, xypq2, zpq, zpq2, fac, qmd, qmd2, qx, qz, xx, xz, zz
       real(8) :: eri(6), work(6), rot2(6,6), rot3(6,5)
 !
@@ -66,20 +66,23 @@
           ex12= exfac1(1,ij)
           zip = exfac1(4,ij)
           c12 = exfac1(5,ij)
-          ex41= one/(ex12+ex34)
+          ex14= ex12+ex34
           zpq = ziq-zip
           zpq2= zpq*zpq
-          expq= ex12*ex34*ex41
+          expq= ex12*ex34
           tval=(xypq2+zpq2)*expq
 !
 ! Calculate Fm(T)
 !
-          if(tval >= threshtval) then
-            tinv= one/tval
-            ft(0)= c12*sqrtpi4*sqrt(ex41*tval)*tinv
-            ft(1)= ft(0)*tinv*expq
-            ft(2)= ft(1)*tinv*expq*three
+          if(tval >= threshtval*ex14) then
+            tinv= one/sqrt(tval)
+            ft(0)= c12*sqrtpi4*tinv
+            expq= expq*tinv*tinv
+            ft(1)= ft(0)*expq
+            ft(2)= ft(1)*expq*three
           else
+            ex41= one/sqrt(ex14)
+            tval= tval*ex41*ex41
             igrid= int(tval)
             tval2= tval *tval
             tval3= tval2*tval
@@ -96,8 +99,8 @@
 &                    +fgrid(6,ii,igrid)*tval6+fgrid( 7,ii,igrid)*tval7 +fgrid( 8,ii,igrid)*tval8 &
 &                    +fgrid(9,ii,igrid)*tval9+fgrid(10,ii,igrid)*tval10
             enddo
-            fac= c12*sqrt(ex41)
-            expq= expq*two
+            fac= c12*ex41
+            expq= expq*two*ex41*ex41
             ft(0)= ft(0)*fac
             ft(1)= ft(1)*fac*expq
             ft(2)= ft(2)*fac*expq*expq
@@ -212,8 +215,8 @@ end
       real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
       real(8) :: tinv, ft(0:3)
       real(8) :: f0, f1(2), f2(3), f3(4), r0(3), r1(3,3), r2(6,2), r3(10)
-      real(8) :: ex12, ex34, ex43, ex41, expq, expq2, ex3q, ex4q, c12, c34, zip, xiq, yiq, ziq
-      real(8) :: xiq2, yiq2, xyiq, xypq2, zpq, zpq2, fac, qmd, qmd2, qmd3, qmd3x, qmd3y
+      real(8) :: ex12, ex34, ex43, ex14, ex41, expq, expq2, ex3q, ex4q, c12, c34, zip, xiq, yiq
+      real(8) :: ziq, xiq2, yiq2, xyiq, xypq2, zpq, zpq2, fac, qmd, qmd2, qmd3, qmd3x, qmd3y
       real(8) :: qx, qz, xx, xz, zz, xxx, xxz, xzz, zzz, eri(6,3), work(6), rot2(6,6), rot3(6,5)
 !
 ! Zero-clear
@@ -244,21 +247,24 @@ end
           ex12= exfac1(1,ij)
           zip = exfac1(4,ij)
           c12 = exfac1(5,ij)
-          ex41= one/(ex12+ex34)
+          ex14= ex12+ex34
           zpq = ziq-zip
           zpq2= zpq*zpq
-          expq= ex12*ex34*ex41
+          expq= ex12*ex34
           tval=(xypq2+zpq2)*expq
 !
 ! Calculate Fm(T)
 !
-          if(tval >= threshtval) then
-            tinv= one/tval
-            ft(0)= c12*sqrtpi4*sqrt(ex41*tval)*tinv
-            ft(1)= ft(0)*tinv*expq
-            ft(2)= ft(1)*tinv*expq*three
-            ft(3)= ft(2)*tinv*expq*five
+          if(tval >= threshtval*ex14) then
+            tinv= one/sqrt(tval)
+            ft(0)= c12*sqrtpi4*tinv
+            expq= expq*tinv*tinv
+            ft(1)= ft(0)*expq
+            ft(2)= ft(1)*expq*three
+            ft(3)= ft(2)*expq*five
           else
+            ex41= one/sqrt(ex14)
+            tval= tval*ex41*ex41
             igrid= int(tval)
             tval2= tval *tval
             tval3= tval2*tval
@@ -275,8 +281,8 @@ end
 &                    +fgrid(6,ii,igrid)*tval6+fgrid( 7,ii,igrid)*tval7 +fgrid( 8,ii,igrid)*tval8 &
 &                    +fgrid(9,ii,igrid)*tval9+fgrid(10,ii,igrid)*tval10
             enddo
-            fac= c12*sqrt(ex41)
-            expq= expq*two
+            fac= c12*ex41
+            expq= expq*two*ex41*ex41
             expq2= expq*expq
             ft(0)= ft(0)*fac
             ft(1)= ft(1)*fac*expq
@@ -457,8 +463,8 @@ end
       real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
       real(8) :: tinv, ft(0:3)
       real(8) :: f0, f1(2,2), f2(3,2), f3(4), r0(2), r1(3,3), r2(6,2), r3(10)
-      real(8) :: ex12, ex34, ex43, ex41, expq, expq2, ex3q, ex4q, c12, c34, zip, xiq, yiq, ziq
-      real(8) :: xiq2, yiq2, xyiq, xypq2, zpq, zpq2, fac, qmd, qmd2, qmd2x, qmd2y, pmd, zjp
+      real(8) :: ex12, ex34, ex43, ex14, ex41, expq, expq2, ex3q, ex4q, c12, c34, zip, xiq, yiq
+      real(8) :: ziq, xiq2, yiq2, xyiq, xypq2, zpq, zpq2, fac, qmd, qmd2, qmd2x, qmd2y, pmd, zjp
       real(8) :: qx, qz, xx, xz, zz, eri(6,3), work(6), rot2(6,6), rot3(6,5)
 !
 ! Zero-clear
@@ -491,21 +497,24 @@ end
           zjp = exfac1(3,ij)
           zip = exfac1(4,ij)
           c12 = exfac1(5,ij)
-          ex41= one/(ex12+ex34)
+          ex14= ex12+ex34
           zpq = ziq-zip
           zpq2= zpq*zpq
-          expq= ex12*ex34*ex41
+          expq= ex12*ex34
           tval=(xypq2+zpq2)*expq
 !
 ! Calculate Fm(T)
 !
-          if(tval >= threshtval) then
-            tinv= one/tval
-            ft(0)= c12*sqrtpi4*sqrt(ex41*tval)*tinv
-            ft(1)= ft(0)*tinv*expq
-            ft(2)= ft(1)*tinv*expq*three
-            ft(3)= ft(2)*tinv*expq*five
+          if(tval >= threshtval*ex14) then
+            tinv= one/sqrt(tval)
+            ft(0)= c12*sqrtpi4*tinv
+            expq= expq*tinv*tinv
+            ft(1)= ft(0)*expq
+            ft(2)= ft(1)*expq*three
+            ft(3)= ft(2)*expq*five
           else
+            ex41= one/sqrt(ex14)
+            tval= tval*ex41*ex41
             igrid= int(tval)
             tval2= tval *tval
             tval3= tval2*tval
@@ -522,8 +531,8 @@ end
 &                    +fgrid(6,ii,igrid)*tval6+fgrid( 7,ii,igrid)*tval7 +fgrid( 8,ii,igrid)*tval8 &
 &                    +fgrid(9,ii,igrid)*tval9+fgrid(10,ii,igrid)*tval10
             enddo
-            fac= c12*sqrt(ex41)
-            expq= expq*two
+            fac= c12*ex41
+            expq= expq*two*ex41*ex41
             expq2= expq*expq
             ft(0)= ft(0)*fac
             ft(1)= ft(1)*fac*expq
@@ -701,11 +710,11 @@ end
       real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
       real(8) :: tinv, ft(0:4)
       real(8) :: f0, f1(2), f2(3), f3(4), f4(5), r0(5), r1(3,4), r2(6,4), r3(10,2), r4(15)
-      real(8) :: ex12, ex34, ex43, ex41, expq, expq2, ex3q, ex4q, c12, c34, zip, xiq, yiq, ziq
-      real(8) :: xiq2, yiq2, xyiq, xiq4, yiq4, xyiq2, xypq2, zpq, zpq2, fac, ex33q, ex34q, ex44q
-      real(8) :: qmd, qmd2, qmd3, qmd4, qmd4x, qmd4y, qmd4xy,qx, qz, xx, xz, zz, xxx, xxz, xzz
-      real(8) :: zzz, xxxx, xxxz, xxzz, xzzz, zzzz, eri(6,6), work(6), f1w(3), f2w(6), f3w(10)
-      real(8) :: rot2(6,6), rot3(6,5)
+      real(8) :: ex12, ex34, ex43, ex14, ex41, expq, expq2, ex3q, ex4q, c12, c34, zip
+      real(8) :: xiq, yiq, ziq, xiq2, yiq2, xyiq, xiq4, yiq4, xyiq2, xypq2, zpq, zpq2, fac
+      real(8) :: ex33q, ex34q, ex44q, qmd, qmd2, qmd3, qmd4, qmd4x, qmd4y, qmd4xy
+      real(8) :: qx, qz, xx, xz, zz, xxx, xxz, xzz, zzz, xxxx, xxxz, xxzz, xzzz, zzzz
+      real(8) :: eri(6,6), work(6), f1w(3), f2w(6), f3w(10), rot2(6,6), rot3(6,5)
 !
 ! Zero-clear
 !
@@ -740,22 +749,25 @@ end
           ex12= exfac1(1,ij)
           zip = exfac1(4,ij)
           c12 = exfac1(5,ij)
-          ex41= one/(ex12+ex34)
+          ex14= ex12+ex34
           zpq = ziq-zip
           zpq2= zpq*zpq
-          expq= ex12*ex34*ex41
+          expq= ex12*ex34
           tval=(xypq2+zpq2)*expq
 !
 ! Calculate Fm(T)
 !
-          if(tval >= threshtval) then
-            tinv= one/tval
-            ft(0)= c12*sqrtpi4*sqrt(ex41*tval)*tinv
-            ft(1)= ft(0)*tinv*expq
-            ft(2)= ft(1)*tinv*expq*three
-            ft(3)= ft(2)*tinv*expq*five
-            ft(4)= ft(3)*tinv*expq*seven
+          if(tval >= threshtval*ex14) then
+            tinv= one/sqrt(tval)
+            ft(0)= c12*sqrtpi4*tinv
+            expq= expq*tinv*tinv
+            ft(1)= ft(0)*expq
+            ft(2)= ft(1)*expq*three
+            ft(3)= ft(2)*expq*five
+            ft(4)= ft(3)*expq*seven
           else
+            ex41= one/sqrt(ex14)
+            tval= tval*ex41*ex41
             igrid= int(tval)
             tval2= tval *tval
             tval3= tval2*tval
@@ -772,8 +784,8 @@ end
 &                    +fgrid(6,ii,igrid)*tval6+fgrid( 7,ii,igrid)*tval7 +fgrid( 8,ii,igrid)*tval8 &
 &                    +fgrid(9,ii,igrid)*tval9+fgrid(10,ii,igrid)*tval10
             enddo
-            fac= c12*sqrt(ex41)
-            expq= expq*two
+            fac= c12*ex41
+            expq= expq*two*ex41*ex41
             expq2= expq*expq
             ft(0)= ft(0)*fac
             ft(1)= ft(1)*fac*expq
@@ -1072,10 +1084,10 @@ end
       real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
       real(8) :: tinv, ft(0:4)
       real(8) :: f0, f1(2,2), f2(3,2), f3(4,2), f4(5), r0(3), r1(3,6), r2(6,5), r3(10,3), r4(15)
-      real(8) :: ex12, ex34, ex43, ex41, expq, expq2, ex3q, ex4q, c12, c34, zip, xiq, yiq, ziq
-      real(8) :: xiq2, yiq2, xyiq, xiq4, yiq4, xyiq2, xypq2, zpq, zpq2, fac, ex33q, ex34q, zjp
-      real(8) :: pmd, qmd, qmd2, qmd3, qmd3x, qmd3y, qmd3xy, qx, qz, xx, xz, zz
-      real(8) :: xxx, xxz, xzz, zzz, eri(6,3,3), work(9), f2w(6,2), f3w(10,2)
+      real(8) :: ex12, ex34, ex43, ex14, ex41, expq, expq2, ex3q, ex4q, c12, c34, zip
+      real(8) :: xiq, yiq, ziq, xiq2, yiq2, xyiq, xiq4, yiq4, xyiq2, xypq2, zpq, zpq2, fac
+      real(8) :: ex33q, ex34q, zjp, pmd, qmd, qmd2, qmd3, qmd3x, qmd3y, qmd3xy, qx, qz
+      real(8) :: xx, xz, zz, xxx, xxz, xzz, zzz, eri(6,3,3), work(9), f2w(6,2), f3w(10,2)
       real(8) :: rot2(6,6), rot3(6,5)
 !
 ! Zero-clear
@@ -1113,22 +1125,25 @@ end
           zjp = exfac1(3,ij)
           zip = exfac1(4,ij)
           c12 = exfac1(5,ij)
-          ex41= one/(ex12+ex34)
+          ex14= ex12+ex34
           zpq = ziq-zip
           zpq2= zpq*zpq
-          expq= ex12*ex34*ex41
+          expq= ex12*ex34
           tval=(xypq2+zpq2)*expq
 !
 ! Calculate Fm(T)
 !
-          if(tval >= threshtval) then
-            tinv= one/tval
-            ft(0)= c12*sqrtpi4*sqrt(ex41*tval)*tinv
-            ft(1)= ft(0)*tinv*expq
-            ft(2)= ft(1)*tinv*expq*three
-            ft(3)= ft(2)*tinv*expq*five
-            ft(4)= ft(3)*tinv*expq*seven
+          if(tval >= threshtval*ex14) then
+            tinv= one/sqrt(tval)
+            ft(0)= c12*sqrtpi4*tinv
+            expq= expq*tinv*tinv
+            ft(1)= ft(0)*expq
+            ft(2)= ft(1)*expq*three
+            ft(3)= ft(2)*expq*five
+            ft(4)= ft(3)*expq*seven
           else
+            ex41= one/sqrt(ex14)
+            tval= tval*ex41*ex41
             igrid= int(tval)
             tval2= tval *tval
             tval3= tval2*tval
@@ -1145,8 +1160,8 @@ end
 &                    +fgrid(6,ii,igrid)*tval6+fgrid( 7,ii,igrid)*tval7 +fgrid( 8,ii,igrid)*tval8 &
 &                    +fgrid(9,ii,igrid)*tval9+fgrid(10,ii,igrid)*tval10
             enddo
-            fac= c12*sqrt(ex41)
-            expq= expq*two
+            fac= c12*ex41
+            expq= expq*two*ex41*ex41
             expq2= expq*expq
             ft(0)= ft(0)*fac
             ft(1)= ft(1)*fac*expq
@@ -1468,12 +1483,12 @@ end
       real(8),intent(in) :: xyziq(3,*), xzkl(2), rot(3,3)
       real(8),intent(out) :: phmdint(6,6,6,6)
       real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
-      real(8) :: tinv, ft(0:4)
-      real(8) :: f0(2), f1(2,4), f2(3,4), f3(4,2), f4(5), r0(4), r1(3,4), r2(6,5), r3(10,2), r4(15)
-      real(8) :: ex12, ex34, ex43, ex41, expq, expq2, ex3q, ex4q, c12, c34, zip, xiq, yiq, ziq
-      real(8) :: xiq2, yiq2, xyiq, xiq4, yiq4, xyiq2, xypq2, zpq, zpq2, zpq3, fac, ex33q, ex3qmd
-      real(8) :: zjp, pmd, qmd, qmd2, qmd2x, qmd2y, qmd2xy, qx, qz, xx, xz, zz
-      real(8) :: eri(6,6), work(6), f2w(6,4), f3w(10,2), rot2(6,6), rot3(6,5)
+      real(8) :: tinv, ft(0:4), f0(2), f1(2,4), f2(3,4), f3(4,2), f4(5)
+      real(8) :: r0(4), r1(3,4), r2(6,5), r3(10,2), r4(15)
+      real(8) :: ex12, ex34, ex43, ex14, ex41, expq, expq2, ex3q, ex4q, c12, c34, zip
+      real(8) :: xiq, yiq, ziq, xiq2, yiq2, xyiq, xiq4, yiq4, xyiq2, xypq2, zpq, zpq2, zpq3
+      real(8) :: fac, ex33q, ex3qmd, zjp, pmd, qmd, qmd2, qmd2x, qmd2y, qmd2xy, qx, qz
+      real(8) :: xx, xz, zz, eri(6,6), work(6), f2w(6,4), f3w(10,2), rot2(6,6), rot3(6,5)
 !
 ! Zero-clear
 !
@@ -1510,22 +1525,25 @@ end
           zjp = exfac1(3,ij)
           zip = exfac1(4,ij)
           c12 = exfac1(5,ij)
-          ex41= one/(ex12+ex34)
+          ex14= ex12+ex34
           zpq = ziq-zip
           zpq2= zpq*zpq
-          expq= ex12*ex34*ex41
+          expq= ex12*ex34
           tval=(xypq2+zpq2)*expq
 !
 ! Calculate Fm(T)
 !
-          if(tval >= threshtval) then
-            tinv= one/tval
-            ft(0)= c12*sqrtpi4*sqrt(ex41*tval)*tinv
-            ft(1)= ft(0)*tinv*expq
-            ft(2)= ft(1)*tinv*expq*three
-            ft(3)= ft(2)*tinv*expq*five
-            ft(4)= ft(3)*tinv*expq*seven
+          if(tval >= threshtval*ex14) then
+            tinv= one/sqrt(tval)
+            ft(0)= c12*sqrtpi4*tinv
+            expq= expq*tinv*tinv
+            ft(1)= ft(0)*expq
+            ft(2)= ft(1)*expq*three
+            ft(3)= ft(2)*expq*five
+            ft(4)= ft(3)*expq*seven
           else
+            ex41= one/sqrt(ex14)
+            tval= tval*ex41*ex41
             igrid= int(tval)
             tval2= tval *tval
             tval3= tval2*tval
@@ -1542,8 +1560,8 @@ end
 &                    +fgrid(6,ii,igrid)*tval6+fgrid( 7,ii,igrid)*tval7 +fgrid( 8,ii,igrid)*tval8 &
 &                    +fgrid(9,ii,igrid)*tval9+fgrid(10,ii,igrid)*tval10
             enddo
-            fac= c12*sqrt(ex41)
-            expq= expq*two
+            fac= c12*ex41
+            expq= expq*two*ex41*ex41
             expq2= expq*expq
             ft(0)= ft(0)*fac
             ft(1)= ft(1)*fac*expq
@@ -1808,11 +1826,11 @@ end
       real(8),intent(in) :: xyziq(3,*), xzkl(2), rot(3,3)
       real(8),intent(out) :: phmdint(6,6,6,6)
       real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
-      real(8) :: tinv, ft(0:4), ftw(4,5)
-      real(8) :: f0(2), f1(2,5), f2(3,5), f3(4,3), f4(5), r0(4), r1(3,6), r2(6,6), r3(10,3), r4(15)
-      real(8) :: ex12, ex34, ex43, ex41, expq, expq2, ex3q, ex4q, c12, c34, zip, xiq, yiq, ziq
-      real(8) :: xiq2, yiq2, xyiq, xiq4, yiq4, xyiq2, xypq2, zpq, zpq2, zpq3, fac, ex33q, ex3qmd
-      real(8) :: zjp, pmd, qmd, qmd2, qmd2x, qmd2y, qmd2xy, qx, qz, xx, xz, zz
+      real(8) :: tinv, ft(0:4), ftw(4,5), f0(2), f1(2,5), f2(3,5), f3(4,3), f4(5)
+      real(8) :: r0(4), r1(3,6), r2(6,6), r3(10,3), r4(15) 
+      real(8) :: ex12, ex34, ex43, ex14, ex41, expq, expq2, ex3q, ex4q, c12, c34, zip
+      real(8) :: xiq, yiq, ziq, xiq2, yiq2, xyiq, xiq4, yiq4, xyiq2, xypq2, zpq, zpq2, zpq3, fac
+      real(8) :: ex33q, ex3qmd, zjp, pmd, qmd, qmd2, qmd2x, qmd2y, qmd2xy, qx, qz, xx, xz, zz
       real(8) :: eri(6,3,3), work(6), f1w(3,4), f2w(6,5), f3w(10,3), rot2(6,6), rot3(6,5)
 !
 ! Zero-clear
@@ -1850,22 +1868,25 @@ end
           zjp = exfac1(3,ij)
           zip = exfac1(4,ij)
           c12 = exfac1(5,ij)
-          ex41= one/(ex12+ex34)
+          ex14= ex12+ex34
           zpq = ziq-zip
           zpq2= zpq*zpq
-          expq= ex12*ex34*ex41
+          expq= ex12*ex34
           tval=(xypq2+zpq2)*expq
 !
 ! Calculate Fm(T)
 !
-          if(tval >= threshtval) then
-            tinv= one/tval
-            ft(0)= c12*sqrtpi4*sqrt(ex41*tval)*tinv
-            ft(1)= ft(0)*tinv*expq
-            ft(2)= ft(1)*tinv*expq*three
-            ft(3)= ft(2)*tinv*expq*five
-            ft(4)= ft(3)*tinv*expq*seven
+          if(tval >= threshtval*ex14) then
+            tinv= one/sqrt(tval)
+            ft(0)= c12*sqrtpi4*tinv
+            expq= expq*tinv*tinv
+            ft(1)= ft(0)*expq
+            ft(2)= ft(1)*expq*three
+            ft(3)= ft(2)*expq*five
+            ft(4)= ft(3)*expq*seven
           else
+            ex41= one/sqrt(ex14)
+            tval= tval*ex41*ex41
             igrid= int(tval)
             tval2= tval *tval
             tval3= tval2*tval
@@ -1882,8 +1903,8 @@ end
 &                    +fgrid(6,ii,igrid)*tval6+fgrid( 7,ii,igrid)*tval7 +fgrid( 8,ii,igrid)*tval8 &
 &                    +fgrid(9,ii,igrid)*tval9+fgrid(10,ii,igrid)*tval10
             enddo
-            fac= c12*sqrt(ex41)
-            expq= expq*two
+            fac= c12*ex41
+            expq= expq*two*ex41*ex41
             expq2= expq*expq
             ft(0)= ft(0)*fac
             ft(1)= ft(1)*fac*expq
@@ -2196,7 +2217,7 @@ end
       real(8) :: tinv, ft(0:5)
       real(8) :: f0, f1(2,2), f2(3,2), f3(4,2), f4(5,2), f5(6), ftw(5,2)
       real(8) :: r0(5), r1(3,9), r2(6,8), r3(10,6), r4(15,3), r5(21)
-      real(8) :: ex12, ex34, ex43, ex41, expq, expq2, expq4, ex3q, ex4q, c12, c34, zip
+      real(8) :: ex12, ex34, ex43, ex14, ex41, expq, expq2, expq4, ex3q, ex4q, c12, c34, zip
       real(8) :: xiq, yiq, ziq, xiq2, yiq2, xyiq, xiq4, yiq4, xyiq2, xypq2, zpq, zpq2, fac
       real(8) :: ex33q, ex34q, ex44q, zjp, pmd, qmd, qmd2, qmd3, qmd4, qmd4x, qmd4y, qmd4xy
       real(8) :: qx, qz, xx, xz, zz, xxx, xxz, xzz, zzz, xxxx, xxxz, xxzz, xzzz, zzzz
@@ -2240,23 +2261,26 @@ end
           zjp = exfac1(3,ij)
           zip = exfac1(4,ij)
           c12 = exfac1(5,ij)
-          ex41= one/(ex12+ex34)
+          ex14= ex12+ex34
           zpq = ziq-zip
           zpq2= zpq*zpq
-          expq= ex12*ex34*ex41
+          expq= ex12*ex34
           tval=(xypq2+zpq2)*expq
 !
 ! Calculate Fm(T)
 !
-          if(tval >= threshtval) then
-            tinv= one/tval
-            ft(0)= c12*sqrtpi4*sqrt(ex41*tval)*tinv
-            ft(1)= ft(0)*tinv*expq
-            ft(2)= ft(1)*tinv*expq*three
-            ft(3)= ft(2)*tinv*expq*five
-            ft(4)= ft(3)*tinv*expq*seven
-            ft(5)= ft(4)*tinv*expq*nine
+          if(tval >= threshtval*ex14) then
+            tinv= one/sqrt(tval)
+            ft(0)= c12*sqrtpi4*tinv
+            expq= expq*tinv*tinv
+            ft(1)= ft(0)*expq
+            ft(2)= ft(1)*expq*three
+            ft(3)= ft(2)*expq*five
+            ft(4)= ft(3)*expq*seven
+            ft(5)= ft(4)*expq*nine
           else
+            ex41= one/sqrt(ex14)
+            tval= tval*ex41*ex41
             igrid= int(tval)
             tval2= tval *tval
             tval3= tval2*tval
@@ -2273,8 +2297,8 @@ end
 &                    +fgrid(6,ii,igrid)*tval6+fgrid( 7,ii,igrid)*tval7 +fgrid( 8,ii,igrid)*tval8 &
 &                    +fgrid(9,ii,igrid)*tval9+fgrid(10,ii,igrid)*tval10
             enddo
-            fac= c12*sqrt(ex41)
-            expq= expq*two
+            fac= c12*ex41
+            expq= expq*two*ex41*ex41
             expq2= expq*expq
             expq4= expq2*expq2
             ft(0)= ft(0)*fac
@@ -2870,7 +2894,7 @@ end
       real(8) :: tinv, ft(0:5)
       real(8) :: f0(2), f1(2,4), f2(3,4), f3(4,4), f4(5,2), f5(6), ftw(5,4)
       real(8) :: r0(6), r1(3,9), r2(6,10), r3(10,7), r4(15,3), r5(21)
-      real(8) :: ex12, ex34, ex43, ex41, expq, expq2, expq4, ex3q, ex4q, c12, c34, zip
+      real(8) :: ex12, ex34, ex43, ex14, ex41, expq, expq2, expq4, ex3q, ex4q, c12, c34, zip
       real(8) :: xiq, yiq, ziq, xiq2, yiq2, xyiq, xiq4, yiq4, xyiq2, xypq2, zpq, zpq2, fac
       real(8) :: ex33q, ex34q, zjp, pmd, qmd, qmd2, qmd3, qmd3x, qmd3y, qmd3xy
       real(8) :: qx, qz, xx, xz, zz, xxx, xxz, xzz, zzz, eri(6,3,6), work(8)
@@ -2913,23 +2937,26 @@ end
           zjp = exfac1(3,ij)
           zip = exfac1(4,ij)
           c12 = exfac1(5,ij)
-          ex41= one/(ex12+ex34)
+          ex14= ex12+ex34
           zpq = ziq-zip
           zpq2= zpq*zpq
-          expq= ex12*ex34*ex41
+          expq= ex12*ex34
           tval=(xypq2+zpq2)*expq
 !
 ! Calculate Fm(T)
 !
-          if(tval >= threshtval) then
-            tinv= one/tval
-            ft(0)= c12*sqrtpi4*sqrt(ex41*tval)*tinv
-            ft(1)= ft(0)*tinv*expq
-            ft(2)= ft(1)*tinv*expq*three
-            ft(3)= ft(2)*tinv*expq*five
-            ft(4)= ft(3)*tinv*expq*seven
-            ft(5)= ft(4)*tinv*expq*nine
+          if(tval >= threshtval*ex14) then
+            tinv= one/sqrt(tval)
+            ft(0)= c12*sqrtpi4*tinv
+            expq= expq*tinv*tinv
+            ft(1)= ft(0)*expq
+            ft(2)= ft(1)*expq*three
+            ft(3)= ft(2)*expq*five
+            ft(4)= ft(3)*expq*seven
+            ft(5)= ft(4)*expq*nine
           else
+            ex41= one/sqrt(ex14)
+            tval= tval*ex41*ex41
             igrid= int(tval)
             tval2= tval *tval
             tval3= tval2*tval
@@ -2946,8 +2973,8 @@ end
 &                    +fgrid(6,ii,igrid)*tval6+fgrid( 7,ii,igrid)*tval7 +fgrid( 8,ii,igrid)*tval8 &
 &                    +fgrid(9,ii,igrid)*tval9+fgrid(10,ii,igrid)*tval10
             enddo
-            fac= c12*sqrt(ex41)
-            expq= expq*two
+            fac= c12*ex41
+            expq= expq*two*ex41*ex41
             expq2= expq*expq
             expq4= expq2*expq2
             ft(0)= ft(0)*fac
@@ -3511,7 +3538,7 @@ end
       real(8) :: tinv, ft(0:5)
       real(8) :: f0(2), f1(2,5), f2(3,5), f3(4,5), f4(5,3), f5(6), ftw(5,5)
       real(8) :: r0(6), r1(3,12), r2(6,13), r3(10,9), r4(15,4), r5(21)
-      real(8) :: ex12, ex34, ex43, ex41, expq, expq2, expq4, ex3q, ex4q, c12, c34, zip
+      real(8) :: ex12, ex34, ex43, ex14, ex41, expq, expq2, expq4, ex3q, ex4q, c12, c34, zip
       real(8) :: xiq, yiq, ziq, xiq2, yiq2, xyiq, xiq4, yiq4, xyiq2, xypq2, zpq, zpq2, fac
       real(8) :: ex33q, ex34q, zjp, pmd, qmd, qmd2, qmd3, qmd3x, qmd3y, qmd3xy
       real(8) :: qx, qz, xx, xz, zz, xxx, xxz, xzz, zzz, eri(6,3,3,3), work(8)
@@ -3554,23 +3581,26 @@ end
           zjp = exfac1(3,ij)
           zip = exfac1(4,ij)
           c12 = exfac1(5,ij)
-          ex41= one/(ex12+ex34)
+          ex14= ex12+ex34
           zpq = ziq-zip
           zpq2= zpq*zpq
-          expq= ex12*ex34*ex41
+          expq= ex12*ex34
           tval=(xypq2+zpq2)*expq
 !
 ! Calculate Fm(T)
 !
-          if(tval >= threshtval) then
-            tinv= one/tval
-            ft(0)= c12*sqrtpi4*sqrt(ex41*tval)*tinv
-            ft(1)= ft(0)*tinv*expq
-            ft(2)= ft(1)*tinv*expq*three
-            ft(3)= ft(2)*tinv*expq*five
-            ft(4)= ft(3)*tinv*expq*seven
-            ft(5)= ft(4)*tinv*expq*nine
+          if(tval >= threshtval*ex14) then
+            tinv= one/sqrt(tval)
+            ft(0)= c12*sqrtpi4*tinv
+            expq= expq*tinv*tinv
+            ft(1)= ft(0)*expq
+            ft(2)= ft(1)*expq*three
+            ft(3)= ft(2)*expq*five
+            ft(4)= ft(3)*expq*seven
+            ft(5)= ft(4)*expq*nine
           else
+            ex41= one/sqrt(ex14)
+            tval= tval*ex41*ex41
             igrid= int(tval)
             tval2= tval *tval
             tval3= tval2*tval
@@ -3587,8 +3617,8 @@ end
 &                    +fgrid(6,ii,igrid)*tval6+fgrid( 7,ii,igrid)*tval7 +fgrid( 8,ii,igrid)*tval8 &
 &                    +fgrid(9,ii,igrid)*tval9+fgrid(10,ii,igrid)*tval10
             enddo
-            fac= c12*sqrt(ex41)
-            expq= expq*two
+            fac= c12*ex41
+            expq= expq*two*ex41*ex41
             expq2= expq*expq
             expq4= expq2*expq2
             ft(0)= ft(0)*fac
@@ -4285,7 +4315,7 @@ end
       real(8) :: tinv, ft(0:6)
       real(8) :: f0(2), f1(2,4), f2(3,4), f3(4,4), f4(5,4), f5(6,2), f6(7), ftw(6,4)
       real(8) :: r0(10), r1(3,13), r2(6,17), r3(10,12), r4(15,8), r5(21,3), r6(28)
-      real(8) :: ex12, ex34, ex43, ex41, expq, expq2, expq4, ex3q, ex4q, c12, c34, zip
+      real(8) :: ex12, ex34, ex43, ex14, ex41, expq, expq2, expq4, ex3q, ex4q, c12, c34, zip
       real(8) :: xiq, yiq, ziq, xiq2, yiq2, xyiq, xiq4, yiq4, xyiq2, xiq6, yiq6, x4y2, x2y4
       real(8) :: xypq2, zpq, zpq2, zpq3, zpq4, zpq5, fac, ex33q, ex34q, ex44q, zjp
       real(8) :: pmd, qmd, qmd2, qmd3, qmd4, qmd4x, qmd4y, qmd4xy
@@ -4336,24 +4366,27 @@ end
           zjp = exfac1(3,ij)
           zip = exfac1(4,ij)
           c12 = exfac1(5,ij)
-          ex41= one/(ex12+ex34)
+          ex14= ex12+ex34
           zpq = ziq-zip
           zpq2= zpq*zpq
-          expq= ex12*ex34*ex41
+          expq= ex12*ex34
           tval=(xypq2+zpq2)*expq
 !
 ! Calculate Fm(T)
 !
-          if(tval >= threshtval) then
-            tinv= one/tval
-            ft(0)= c12*sqrtpi4*sqrt(ex41*tval)*tinv
-            ft(1)= ft(0)*tinv*expq
-            ft(2)= ft(1)*tinv*expq*three
-            ft(3)= ft(2)*tinv*expq*five
-            ft(4)= ft(3)*tinv*expq*seven
-            ft(5)= ft(4)*tinv*expq*nine
-            ft(6)= ft(5)*tinv*expq*p11
+          if(tval >= threshtval*ex14) then
+            tinv= one/sqrt(tval)
+            ft(0)= c12*sqrtpi4*tinv
+            expq= expq*tinv*tinv
+            ft(1)= ft(0)*expq
+            ft(2)= ft(1)*expq*three
+            ft(3)= ft(2)*expq*five
+            ft(4)= ft(3)*expq*seven
+            ft(5)= ft(4)*expq*nine
+            ft(6)= ft(5)*expq*p11
           else
+            ex41= one/sqrt(ex14)
+            tval= tval*ex41*ex41
             igrid= int(tval)
             tval2= tval *tval
             tval3= tval2*tval
@@ -4370,8 +4403,8 @@ end
 &                    +fgrid(6,ii,igrid)*tval6+fgrid( 7,ii,igrid)*tval7 +fgrid( 8,ii,igrid)*tval8 &
 &                    +fgrid(9,ii,igrid)*tval9+fgrid(10,ii,igrid)*tval10
             enddo
-            fac= c12*sqrt(ex41)
-            expq= expq*two
+            fac= c12*ex41
+            expq= expq*two*ex41*ex41
             expq2= expq*expq
             expq4= expq2*expq2
             ft(0)= ft(0)*fac

@@ -22,15 +22,15 @@
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom, neleca, numatomic
       implicit none
-      integer,intent(in) :: nproc1, myrank1
-      integer(4),intent(in) :: mpi_comm1
+      integer,intent(in) :: nproc1, myrank1, mpi_comm1
       integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmo(nao*nao), energymo(nao), xint(nshell*(nshell+1)/2)
       real(8),intent(out) :: egrad(3,natom)
       real(8),allocatable :: fulldmtrx(:), ewdmtrx(:), egradtmp(:)
-      character(len=3) :: table(112)= &
-&     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+      character(len=3) :: table(-5:112)= &
+&     (/'Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
 &       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
 &       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
@@ -105,16 +105,16 @@ end
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom, neleca, nelecb, numatomic
       implicit none
-      integer,intent(in) :: nproc1, myrank1
-      integer(4),intent(in) :: mpi_comm1
+      integer,intent(in) :: nproc1, myrank1, mpi_comm1
       integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmoa(nao*nao), cmob(nao*nao), energymoa(nao), energymob(nao)
       real(8),intent(in) :: xint(nshell*(nshell+1)/2)
       real(8),intent(out) :: egrad(3,natom)
       real(8),allocatable :: fulldmtrx1(:), fulldmtrx2(:), ewdmtrx(:), egradtmp(:)
-      character(len=3) :: table(112)= &
-&     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+      character(len=3) :: table(-5:112)= &
+&     (/'Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
 &       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
 &       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
@@ -194,8 +194,7 @@ end
       use modunit, only : tobohr
       use moddft, only : idft, hfexchange
       implicit none
-      integer,intent(in) :: nproc1, myrank1
-      integer(4),intent(in) :: mpi_comm1
+      integer,intent(in) :: nproc1, myrank1, mpi_comm1
       integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j, iatom
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmo(nao*nao), energymo(nao), xint(nshell*(nshell+1)/2)
@@ -204,8 +203,9 @@ end
       real(8),allocatable :: atomvec(:), surface(:), radpt(:), angpt(:), rad(:), ptweight(:)
       real(8),allocatable :: xyzpt(:), rsqrd(:), rr(:), uvec(:), vao(:), vmo(:)
       real(8),allocatable :: dweight(:), dpa(:), pa(:), work(:)
-      character(len=3) :: table(112)= &
-&     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+      character(len=3) :: table(-5:112)= &
+&     (/'Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
 &       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
 &       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
@@ -310,8 +310,7 @@ end
       use moddft, only : idft, hfexchange
       implicit none
       integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j, iatom
-      integer,intent(in) :: nproc1, myrank1
-      integer(4),intent(in) :: mpi_comm1
+      integer,intent(in) :: nproc1, myrank1, mpi_comm1
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmoa(nao*nao), cmob(nao*nao), energymoa(nao), energymob(nao)
       real(8),intent(in) :: xint(nshell*(nshell+1)/2)
@@ -320,8 +319,9 @@ end
       real(8),allocatable :: atomvec(:), surface(:), radpt(:), angpt(:), rad(:), ptweight(:)
       real(8),allocatable :: xyzpt(:), rsqrd(:), rr(:), uvec(:), vao(:), vmoa(:)
       real(8),allocatable :: vmob(:), dweight(:), dpa(:), pa(:), work(:)
-      character(len=3) :: table(112)= &
-&     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+      character(len=3) :: table(-5:112)= &
+&     (/'Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
 &       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
 &       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&

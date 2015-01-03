@@ -112,8 +112,7 @@ end
 !
       use modbasis, only : nshell, nao, mbf, locbf
       implicit none
-      integer,intent(in) :: nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh, ijsh, locbfi, locbfj, nbfi, nbfj
       integer :: jnbf, i, j, ii, ij
       real(8),parameter :: zero=0.0D+00
@@ -166,8 +165,7 @@ end
 !
       use modbasis, only : nshell, nao, mbf, locbf
       implicit none
-      integer,intent(in) :: nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh, ijsh, locbfi, locbfj, nbfi, nbfj
       integer :: jnbf, i, j, ii, ij
       real(8),parameter :: zero=0.0D+00
@@ -274,8 +272,7 @@ end
 !
       use modparallel, only : master
       implicit none
-      integer,intent(in) :: nao, maxdiis, nproc, myrank, idis(nproc,14) 
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nao, maxdiis, nproc, myrank, mpi_comm, idis(nproc,14) 
       integer,intent(inout) :: itextra
       integer :: num, istart, i, iskip, nao3
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, four=4.0D+00
@@ -389,8 +386,7 @@ end
 ! Out   : work1   (Error matrix)
 !
       implicit none
-      integer,intent(in) :: nao, nmo, nproc, myrank, idis(nproc,14)
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nao, nmo, nproc, myrank, mpi_comm, idis(nproc,14)
       integer :: num, istart, i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: fock(nao*(nao+1)/2), dmtrx(nao*(nao+1)/2)
@@ -450,8 +446,7 @@ end
 !         errdiis (DIIS error matrix)
 !
       implicit none
-      integer,intent(in) :: itdiis, nao, maxdiis, nproc, myrank, idis(nproc,14)
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: itdiis, nao, maxdiis, nproc, myrank, mpi_comm, idis(nproc,14)
       integer :: num, istart, i, j, ij, ipiv(maxdiis+1), info
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(inout) :: fock(nao*(nao+1)/2), errdiis(idis(myrank+1,3),maxdiis)
@@ -523,8 +518,7 @@ end
 !         errdiisb (History of Beta DIIS error matrix)
 !
       implicit none
-      integer,intent(in) :: itdiis, nao, maxdiis, nproc, myrank, idis(nproc,14)
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: itdiis, nao, maxdiis, nproc, myrank, mpi_comm, idis(nproc,14)
       integer :: num, istart, i, j, ij, ipiv(maxdiis+1), info
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00
       real(8),intent(inout) :: focka(nao*(nao+1)/2), fockb(nao*(nao+1)/2)
@@ -612,8 +606,7 @@ end
 !       sogradmax (Maximum SOSCF gradient
 !
       implicit none
-      integer,intent(in) :: nocc, nvir, nao, itype, nproc, myrank, idis(nproc,14)
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nocc, nvir, nao, itype, nproc, myrank, mpi_comm, idis(nproc,14)
       integer :: numwork, num, istart, isomax, idamax
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmo(nao,nao)
@@ -953,8 +946,8 @@ end
 ! Update molecular orbitals using approximated SOSCF method
 !
       implicit none
-      integer,intent(in) :: nocc, nvir, itsoscf, maxsoscf, nao, nmo, nproc, myrank, idis(nproc,14)
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nocc, nvir, itsoscf, maxsoscf, nao, nmo, nproc, myrank, mpi_comm
+      integer,intent(in) :: idis(nproc,14)
       integer :: imo, jmo, num, istart
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00, p01= 1.0D-01
       real(8),intent(in) :: sodisp(nocc,nvir,maxsoscf), sodispmax
@@ -1015,8 +1008,7 @@ end
 ! Calculate spin expectation values, sz and S^2
 !
       implicit none
-      integer,intent(in) :: neleca, nelecb, nao, nproc, myrank, idis(nproc,14)
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: neleca, nelecb, nao, nproc, myrank, mpi_comm, idis(nproc,14)
       integer :: num, istart, ij, i, j
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2), overlap(nao*(nao+1)/2)
@@ -1069,9 +1061,10 @@ end
       integer :: ii, jj, ij, ish, iatom, locbfi
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: dmtrx(nao*(nao+1)/2), overlap(nao*(nao+1)/2)
-      real(8),allocatable :: work(:), grossorb(:), grossatom(:)
-      character(len=3) :: table(112)= &
-&     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+      real(8) :: grossorb(nao), grossatom(natom), totalgross
+      character(len=3) :: table(-5:112)= &
+&     (/'Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
 &       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
 &       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
@@ -1080,32 +1073,24 @@ end
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
 &       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
 !
-      call memset(nao*(nao+1)/2+nao+natom)
-      allocate(work(nao*(nao+1)/2),grossorb(nao),grossatom(natom))
-!
+      totalgross= zero
       grossorb(:)= zero
       grossatom(:)= zero
 !
-! Calculate Mulliken population matrix
-!
-!$OMP parallel do
-      do ii= 1,nao*(nao+1)/2
-        work(ii)= dmtrx(ii)*overlap(ii)
-      enddo
-!$OMP end parallel do
-!
 ! Calculate Gross orbital population
 !
-      ij= 0
+!$OMP parallel do schedule(static,1) private(ij) reduction(+:grossorb)
       do ii= 1,nao
+        ij= ii*(ii-1)/2
         do jj= 1,ii-1
           ij= ij+1
-          grossorb(ii)= grossorb(ii)+work(ij)
-          grossorb(jj)= grossorb(jj)+work(ij)
+          grossorb(ii)= grossorb(ii)+dmtrx(ij)*overlap(ij)
+          grossorb(jj)= grossorb(jj)+dmtrx(ij)*overlap(ij)
         enddo
         ij= ij+1
-        grossorb(ii)= grossorb(ii)+work(ij)
+        grossorb(ii)= grossorb(ii)+dmtrx(ij)*overlap(ij)
       enddo
+!$OMP end parallel do
 !
 ! Calculate Gross atom population
 !
@@ -1115,6 +1100,9 @@ end
         do ii= 1,mbf(ish)
           grossatom(iatom)= grossatom(iatom)+grossorb(locbfi+ii)
         enddo
+      enddo
+      do iatom= 1,natom
+        totalgross= totalgross+znuc(iatom)-grossatom(iatom)
       enddo
 !
       if(master) then
@@ -1127,11 +1115,11 @@ end
 &                                        grossatom(iatom),znuc(iatom)-grossatom(iatom)
         enddo
         write(*,'(" -------------------------------------")')
+        write(*,'("     Total",13x,f13.6)')totalgross
+        write(*,'(" -------------------------------------")')
         write(*,*)
       endif
 !
-      call memunset(nao*(nao+1)/2+nao+natom)
-      deallocate(work,grossorb,grossatom)
       return
 end
 
@@ -1149,9 +1137,10 @@ end
       integer :: ii, jj, ij, ish, iatom, locbfi
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2), overlap(nao*(nao+1)/2)
-      real(8),allocatable :: work(:), grossorb(:), grossatom(:)
-      character(len=3) :: table(112)= &
-&     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+      real(8) :: grossorb(nao), grossatom(natom), totalgross
+      character(len=3) :: table(-5:112)= &
+&     (/'Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
 &       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
 &       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
@@ -1160,32 +1149,24 @@ end
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
 &       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
 !
-      call memset(nao*(nao+1)/2+nao+natom)
-      allocate(work(nao*(nao+1)/2),grossorb(nao),grossatom(natom))
-!
+      totalgross= zero
       grossorb(:)= zero
       grossatom(:)= zero
 !
-! Calculate Mulliken population matrix
-!
-!$OMP parallel do
-      do ii= 1,nao*(nao+1)/2
-        work(ii)=(dmtrxa(ii)+dmtrxb(ii))*overlap(ii)
-      enddo
-!$OMP end parallel do
-!
 ! Calculate Gross orbital population
 !
-      ij= 0
+!$OMP parallel do schedule(static,1) private(ij) reduction(+:grossorb)
       do ii= 1,nao
+        ij= ii*(ii-1)/2
         do jj= 1,ii-1
           ij= ij+1
-          grossorb(ii)= grossorb(ii)+work(ij)
-          grossorb(jj)= grossorb(jj)+work(ij)
+          grossorb(ii)= grossorb(ii)+(dmtrxa(ij)+dmtrxb(ij))*overlap(ij)
+          grossorb(jj)= grossorb(jj)+(dmtrxa(ij)+dmtrxb(ij))*overlap(ij)
         enddo
         ij= ij+1
-        grossorb(ii)= grossorb(ii)+work(ij)
+        grossorb(ii)= grossorb(ii)+(dmtrxa(ij)+dmtrxb(ij))*overlap(ij)
       enddo
+!$OMP end parallel do
 !
 ! Calculate Gross atom population
 !
@@ -1195,6 +1176,9 @@ end
         do ii= 1,mbf(ish)
           grossatom(iatom)= grossatom(iatom)+grossorb(locbfi+ii)
         enddo
+      enddo
+      do iatom= 1,natom
+        totalgross= totalgross+znuc(iatom)-grossatom(iatom)
       enddo
 !
       if(master) then
@@ -1207,10 +1191,10 @@ end
 &                                        grossatom(iatom),znuc(iatom)-grossatom(iatom)
         enddo
         write(*,'(" -------------------------------------")')
+        write(*,'("     Total",13x,f13.6)')totalgross
+        write(*,'(" -------------------------------------")')
         write(*,*)
       endif
 !
-      call memunset(nao*(nao+1)/2+nao+natom)
-      deallocate(work,grossorb,grossatom)
       return
 end

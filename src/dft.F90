@@ -32,13 +32,12 @@
 !       totalelec(Number of numerially integrated electrons)
 !       vao,vmo,xyzpt,work (work space)
 !
-      use modmolecule, only : natom, numatomic, neleca
+      use modmolecule, only : natom, neleca
       use moddft, only : nrad, nleb
       use modbasis, only : nao
       use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
       implicit none
-      integer,intent(in) :: idft, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: idft, nproc, myrank, mpi_comm
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: cmo(nao,neleca), atomvec(5,natom,natom), radpt(2,nrad)
@@ -207,13 +206,12 @@ end
 !       fock2 (Beta Fock matrix)
 !       fock3 (Work space)
 !
-      use modmolecule, only : natom, numatomic, neleca, nelecb
+      use modmolecule, only : natom, neleca, nelecb
       use moddft, only : nrad, nleb
       use modbasis, only : nao
       use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
       implicit none
-      integer,intent(in) :: idft, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: idft, nproc, myrank, mpi_comm
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: cmoa(nao,neleca), cmob(nao,nelecb), atomvec(5,natom,natom)

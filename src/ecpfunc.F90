@@ -22,7 +22,7 @@
       use modecp, only : ecp, maxangecp, izcore, locecp, mprimecp, execp, coeffecp, mtypeecp
       use modmolecule, only : natom, numatomic, neleca, nelecb, znuc
       implicit none
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: mpi_comm
       integer :: iatom, iprim
 !
       maxangecp(1:natom)= -1
@@ -887,6 +887,7 @@ end
             enddo
             iprim= iprim+numecp(4)
           endif
+        case (:0)
         case (84:)
           write(*,'(" Error! This program supports Na - La, Hf - Bi Lanl2dz ECP.")')
           call iabort

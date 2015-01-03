@@ -40,12 +40,12 @@
           if(rr /= zero) then
             enuc= enuc+chrgij/rr
             if((rr <= threshatm).and.master) then
-              write(*,'("Warning! Distance of Atoms",i4," and",i4," is short!")')
+              write(*,'("Warning! Distance of Atoms",i4," and",i4," is short!")') iatom, jatom
               nwarn= nwarn+1
             endif       
           else
             if((chrgij /= zero).and.master) then
-              write(*,'("Error! Atoms",i4," and",i4," are the same position!")') jatom, iatom
+              write(*,'("Error! Atoms",i4," and",i4," are the same position!")') iatom, jatom
               call iabort
             endif
           endif
@@ -97,7 +97,7 @@ end
       use modmolecule, only : coord, natom, numatomic
       use modunit, only : tobohr
       implicit none
-      integer,parameter :: maxconnect=10
+      integer,parameter :: maxconnect=13
       integer,intent(in) :: isizered
       integer,intent(out) :: iredun(4,isizered/4), numbond, numangle, numtorsion
       integer :: numredun, maxsize, ijpair(natom,maxconnect), iatom, jatom, katom, icount
@@ -132,6 +132,11 @@ end
         if(numatomic(iatom) > 112) then
           if(master) &
 &         write(*,'(" Error! This program supports up to Cn in Subroutine setredundantcoord.")')
+          call iabort
+        elseif(numatomic(iatom) < 1) then
+          if(master) &
+&         write(*,'(" Error! This program does not support dummy and ghost atoms ", &
+&                   "in Subroutine setredundantcoord currently.")')
           call iabort
         endif
         icount= 0
@@ -351,6 +356,30 @@ end
         enddo
       enddo
 !
+      if((natom >= 4).and.(numtorsion == 0)) then
+        do iangle= numbond+1,numbond+numangle
+          iatom= iredun(1,iangle)
+          jatom= iredun(2,iangle)
+          katom= iredun(3,iangle)
+          do jangle= iangle+1,numbond+numangle
+            if(iredun(1,jangle) == katom) then
+              if(iredun(2,jangle) == jatom) then
+                numredun= numredun+1
+                if(numredun > maxsize) then
+                  exceed=.true.
+                  return
+                endif
+                numtorsion= numtorsion+1
+                iredun(1,numbond+numangle+numtorsion)= iatom
+                iredun(2,numbond+numangle+numtorsion)= jatom
+                iredun(3,numbond+numangle+numtorsion)= katom
+                iredun(4,numbond+numangle+numtorsion)= iredun(3,jangle)
+              endif
+            endif
+          enddo
+        enddo
+      endif
+!
       return
 end
 
@@ -390,8 +419,7 @@ end
       use modunit, only : toang
       use modmolecule, only : numatomic
       implicit none
-      integer,intent(in) :: natom3, iopt, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: natom3, iopt, nproc, myrank, mpi_comm
       integer :: i, j, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, third=0.3333333333333333D+00
       real(8),intent(inout) :: egrad(natom3), egradold(natom3), ehess(natom3*(natom3+1)/2)
@@ -399,8 +427,9 @@ end
 !
       real(8) :: work(natom3,natom3),eigen(natom3),work2(natom3,natom3),work3(natom3,natom3)
 !
-      character(len=3) :: table(112)= &
-&     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+      character(len=3) :: table(-5:112)= &
+&     (/'Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
 &       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
 &       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
@@ -495,8 +524,7 @@ end
       implicit none
       integer,parameter :: maxiterdx=100, maxiterrfo=1000
       integer,intent(in) :: iopt, isizered, maxredun, iredun(4,isizered/4)
-      integer,intent(in) :: numbond, numangle, numtorsion, numredun, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: numbond, numangle, numtorsion, numredun, nproc, myrank, mpi_comm
       integer :: irow(112)
       integer :: natom3, ii, jj, ij, kk, iatom, jatom, katom, iterrfo, iterdx
       integer :: numdim
@@ -680,7 +708,7 @@ end
         if(abs(rlambda-suml) <= convl) exit
         rlambda= suml
         if(iterrfo == maxiterrfo) then
-          if(master) write(*,'(" Error! RFO step in calcnewcoordred not converged.")')
+          if(master) write(*,'(" Error! RFO step in calcnewcoordred dit not converge.")')
           call iabort
         endif
       enddo
@@ -774,7 +802,7 @@ end
 !
         if(iterdx == maxiterdx) then
           if(master) then
-            write(*,'(" Error! Transformation from redundant to Cartesian not converged.")')
+            write(*,'(" Error! Transformation from redundant to Cartesian did not converge.")')
           endif
           call iabort
         endif
@@ -787,15 +815,15 @@ end
         write(*,'(" ---------------------------------------------------------------")')
         do ii= 1,numbond
           write(chartmp(1:3),'(i5)')ii,iredun(1:2,ii)
-          paramred= trim(trim("Bond"//adjustl(chartmp(1)) //"("//adjustl(chartmp(2)))//"," &
+          paramred= trim(trim("Bond"//adjustl(chartmp(1)) //"   ("//adjustl(chartmp(2)))//"," &
 &                                  //adjustl(chartmp(3)))//")"
           write(*,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*toang, &
 &                                                  coordredun(ii,2)*toang
         enddo
         do ii= numbond+1,numbond+numangle
           write(chartmp(1:4),'(i5)')ii-numbond,iredun(1:3,ii)
-          paramred= trim(trim(trim("Angle"//adjustl(chartmp(1)) //"("//adjustl(chartmp(2)))//"," &
-&                                         //adjustl(chartmp(3)))//","//adjustl(chartmp(4)))//")"
+          paramred= trim(trim(trim("Angle"//adjustl(chartmp(1)) //"  ("//adjustl(chartmp(2))) &
+&                                    //","//adjustl(chartmp(3)))//","//adjustl(chartmp(4)))//")"
           write(*,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*rad2deg, &
 &                                                  coordredun(ii,2)*rad2deg
         enddo

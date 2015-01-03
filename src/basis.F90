@@ -24,7 +24,7 @@
 &                          nshell, nao, nprim, ex, coeff, coeffinp
       use modecp, only : flagecp
       implicit none
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: mpi_comm
       integer :: ishell, iatom, i
 !
       if(master) then
@@ -253,8 +253,9 @@ end
       implicit none
       integer,intent(out) :: ishell
       integer :: iatom, nn, ii, jj, ll, lprim
-      character(len=3) :: table(112)= &
-&     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+      character(len=3) :: table(-5:112)= &
+&     (/'Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
 &       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
 &       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
@@ -299,13 +300,15 @@ end
               write(*,'(" Error! ECP is not set!.")')
               call iabort
             endif
-            if(nn < 11) then
-              call bsd95v(iatom,ishell)
-            else
-              call bslanl2dz(iatom,ishell)
+            if(nn > 0) then
+              if(nn < 11) then
+                call bsd95v(iatom,ishell)
+              else
+                call bslanl2dz(iatom,ishell)
+              endif
             endif
           case('')
-            if(ngenshell(nn) == 0) then
+            if((nn > 0).and.(ngenshell(nn) == 0)) then
               write(*,'(" Error! Basis set for ",a3,"is not set.")')table(nn)
               call iabort
             endif
@@ -810,6 +813,8 @@ end
       if(numatomic(iatom) > 54) then
         write(*,'(" Error! This program supports H - Xe STO-3G basis set.")')
         call iabort
+      elseif(numatomic(iatom) <= 0) then
+        return
       endif
 !
 ! Set 1S functions
@@ -1031,9 +1036,9 @@ end
 ! Set valence basis functions
 !
           do iatom= 1,natom
-            if(numatomic(iatom) <= 54) then
+            if((numatomic(iatom) >= 1).and.(numatomic(iatom) <= 54)) then
               call bssto3g_g(iatom,ishell,1)
-            else
+            elseif(numatomic(iatom) >= 55) then
               call bshuzmini6_g(iatom,ishell,1)
             endif
           enddo
@@ -1044,9 +1049,9 @@ end
 ! Set core basis functions
 !
           do iatom= 1,natom
-            if(numatomic(iatom) <= 54) then
+            if((numatomic(iatom) >= 1).and.(numatomic(iatom) <= 54)) then
               call bssto3g_g(iatom,ishell,2)
-            else
+            elseif(numatomic(iatom) >= 55) then
               call bshuzmini6_g(iatom,ishell,2)
             endif
           enddo
@@ -1063,9 +1068,9 @@ end
           locprim_gcore(1)=0
           locbf_gcore(1)=0
           do iatom= 1,natom
-            if(numatomic(iatom) <= 54) then
+            if((numatomic(iatom) >= 1).and.(numatomic(iatom) <= 54)) then
               call bssto3g_g(iatom,ishell,3)
-            else
+            elseif(numatomic(iatom) >= 55) then
               call bshuzmini6_g(iatom,ishell,3)
             endif
           enddo
@@ -2970,6 +2975,7 @@ end
                 locbf(ishell+1)= locbf(ishell)+6
               endif
           end select
+        case (:0)
         case default
           write(*,'(" Error! This program supports H - Xe 3-21G basis set.")')
           call iabort
@@ -3598,6 +3604,7 @@ end
               locbf(ishell+1) = locbf(ishell)+6
             endif
           endif
+        case (:0)
         case default
           write(*,'(" Error! This program supports H - Zn 6-31G basis set.")')
           call iabort
@@ -3651,11 +3658,12 @@ end
 !
       call bs631g(iatom,ishell)
 !
-      if(numatomic(iatom) <= 2) then
-        call bs631gss(iatom,ishell)
-      else
-        call bs631gs(iatom,ishell)
-      endif
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs631gss(iatom,ishell)
+        case(3:)
+          call bs631gs(iatom,ishell)
+      end select
 !
       return
 end
@@ -3681,7 +3689,7 @@ end
 &       8.00D-01,8.00D-01,8.00D-01,8.00D-01/)
 !
       select case (numatomic(iatom))
-        case(1:2)
+        case(:2)
         case(3:20)
           ishell= ishell+1
           ex(locprim(ishell)+1)= ex631gs(numatomic(iatom))
@@ -4487,6 +4495,7 @@ end
               locbf(ishell+1)= locbf(ishell)+6
             endif
           endif
+        case(:0)
         case default
           write(*,'(" Error! This program supports H - Ca, Ga - Kr 6-311G basis set.")')
           call iabort
@@ -4541,11 +4550,12 @@ end
 !
       call bs6311g(iatom,ishell)
 !
-      if(numatomic(iatom) <= 2) then
-        call bs6311gss(iatom,ishell)
-      else
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs6311gss(iatom,ishell)
+        case(3:)
         call bs6311gs(iatom,ishell)
-      endif
+      end select
 !
       return
 end
@@ -4573,7 +4583,7 @@ end
 &      /1.690D-01,2.280D-01,2.640D-01,3.050D-01,4.510D-01,3.950D-01/
 !
       select case (numatomic(iatom))
-        case(1:2)
+        case(:2)
         case(3:20,31:36)
           ishell= ishell+1
           ex(locprim(ishell)+1)= ex6311gs(numatomic(iatom))
@@ -6053,6 +6063,7 @@ end
             mbf(ishell)= 10
             locbf(ishell+1)= locbf(ishell)+10
           endif
+        case(:0)
         case default
           write(*,'(" Error! This program supports H - Ar, Ca - Kr cc-PVDZ basis set.")')
           call iabort
@@ -7757,6 +7768,7 @@ end
             mbf(ishell)= 15
             locbf(ishell+1)= locbf(ishell)+15
           endif
+        case(:0)
         case default
           write(*,'(" Error! This program supports H - Ar, Ca - Kr cc-PVTZ basis set.")')
           call iabort
@@ -8902,7 +8914,7 @@ end
 &        0.15602900D-01, 0.62265100D+00, 0.10000000D+01/)
 !
       select case(numatomic(iatom))
-        case(1:10)
+        case(:10)
 !
 ! Set Na - Ar functions
 !
@@ -9195,6 +9207,42 @@ end
           locatom(ishell)= iatom
           locprim(ishell+1)= locprim(ishell)+1
           locbf(ishell+1) = locbf(ishell)+3
+! D function
+          if(numatomic(iatom) == 30) then
+            ishell= ishell+1
+            do j= 1,4
+              ex(locprim(ishell)+j)= expd4(ide4(numatomic(iatom))+j)
+              coeff(locprim(ishell)+j)= coeffd4(ide4(numatomic(iatom))+j)
+            enddo
+            mprim(ishell)= 4
+            mtype(ishell)= 2
+            locatom(ishell)= iatom
+            locprim(ishell+1)= locprim(ishell)+4
+            if(spher) then
+              mbf(ishell)= 5
+              locbf(ishell+1) = locbf(ishell)+5
+            else
+              mbf(ishell)= 6
+              locbf(ishell+1) = locbf(ishell)+6
+            endif
+!
+            ishell= ishell+1
+            do j= 1,1
+              ex(locprim(ishell)+j)= expd4(ide4(numatomic(iatom))+j+4)
+              coeff(locprim(ishell)+j)= coeffd4(ide4(numatomic(iatom))+j+4)
+            enddo
+            mprim(ishell)= 1
+            mtype(ishell)= 2
+            locatom(ishell)= iatom
+            locprim(ishell+1)= locprim(ishell)+1
+            if(spher) then
+              mbf(ishell)= 5
+              locbf(ishell+1) = locbf(ishell)+5
+            else
+              mbf(ishell)= 6
+              locbf(ishell+1) = locbf(ishell)+6
+            endif
+          endif
 !
 ! Set Rb - Ag functions
 !
@@ -10103,6 +10151,31 @@ end
               mbf_g(ishell)= 10
               locbf_g(ishell+1) = locbf_g(ishell)+10
             endif
+!ishi
+   if(numatomic(iatom)==58)then
+        ishell= ishell+1
+            do j= 1,1
+              ex_g(locprim_g(ishell)+j)= 0.05D0
+              coeff_g(locprim_g(ishell)+j)= 1.0D0
+            enddo
+            mprim_g(ishell)= 1
+            mtype_g(ishell)= 1
+            locatom_g(ishell)= iatom
+            locprim_g(ishell+1)= locprim_g(ishell)+1
+              mbf_g(ishell)= 3
+              locbf_g(ishell+1) = locbf_g(ishell)+3
+        ishell= ishell+1
+            do j= 1,1
+              ex_g(locprim_g(ishell)+j)= 0.3D0
+              coeff_g(locprim_g(ishell)+j)= 1.0D0
+            enddo
+            mprim_g(ishell)= 1
+            mtype_g(ishell)= 2
+            locatom_g(ishell)= iatom
+            locprim_g(ishell+1)= locprim_g(ishell)+1
+              mbf_g(ishell)= 5
+              locbf_g(ishell+1) = locbf_g(ishell)+5
+    endif   
 !
 ! Set Lu - Hg functions
 !

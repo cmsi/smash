@@ -47,8 +47,7 @@ end
 !
       use modthresh, only : threshover
       implicit none
-      integer,intent(in) :: ndim, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: ndim, nproc, myrank, mpi_comm
       integer,intent(out) :: newdim
       integer :: i, j, icount
       real(8),parameter :: one=1.0D+00
@@ -111,8 +110,7 @@ end
 !   Out: hmat(nmo*nmo), matrix size is nao*nao
 !
       implicit none
-      integer,intent(in) :: nao, nmo, nproc, myrank, idis(nproc,14)
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nao, nmo, nproc, myrank, mpi_comm, idis(nproc,14)
       integer :: num, istart
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: ortho(nao,nmo)
@@ -138,8 +136,7 @@ end
 ! Gram-Schmidt orthonormalization
 !
       implicit none
-      integer,intent(in) :: ndim, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: ndim, nproc, myrank, mpi_comm
       integer :: i, j, k, ndest
       real(8),intent(inout) :: hmat(ndim,ndim)
       real(8) :: dum
@@ -183,8 +180,7 @@ end
 !
       use modparallel, only : master
       implicit none
-      integer,intent(in) :: ndim, lda, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: ndim, lda, nproc, myrank, mpi_comm
       integer :: info
       integer, allocatable :: iwork(:)
       real(8),intent(out) :: eigen(lda)
@@ -223,8 +219,7 @@ end
 !
       use modthresh, only : threshover
       implicit none
-      integer,intent(in) :: ndim, nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: ndim, nproc, myrank, mpi_comm
       integer,intent(out) :: newdim
       integer :: i, j, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00

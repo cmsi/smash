@@ -24,7 +24,7 @@
       integer,parameter :: mxatom=1000
       integer,parameter :: mxshell=5000
       integer,parameter :: mxprim=20000
-      integer,parameter :: mxprsh=30, mxprsh2=30*30
+      integer,parameter :: mxprsh=30
       integer,parameter :: mxang=7
 end
 
@@ -50,16 +50,15 @@ end
   module modparallel
 !---------------------
       implicit none
-      integer :: nproc1, myrank1, nproc2, myrank2
-      integer(4) :: mpi_comm1, mpi_comm2
+      integer :: nproc1, myrank1, nproc2, myrank2, mpi_comm1, mpi_comm2
       logical :: master, parallel
 !
       interface checkintsize
         subroutine checkintsize4(isize)
-          integer(4),intent(out) :: isize
+          integer(selected_int_kind(9)),intent(out) :: isize
         end subroutine checkintsize4
         subroutine checkintsize8(isize)
-          integer(8),intent(out) :: isize
+          integer(selected_int_kind(18)),intent(out) :: isize
         end subroutine checkintsize8
       end interface checkintsize
 !
@@ -70,7 +69,7 @@ end
   module modiofile
 !-------------------
       implicit none
-      integer,parameter :: input=10, icheck=20
+      integer,parameter :: input=10, icheck=20, maxline=100000
       character(len=16) :: version
       character(len=64) :: check
 end
@@ -170,10 +169,10 @@ end
       integer :: locprim(mxshell+1), locbf(mxshell+1), locatom(mxshell)
       integer :: mprim(mxshell),  mbf(mxshell), mtype(mxshell)
       integer :: locgenprim(mxshell+1), mgenprim(mxshell), mgentype(mxshell)
-      integer :: locgenshell(112), ngenshell(112)
+      integer :: locgenshell(-5:112), ngenshell(-5:112)
       real(8) :: ex(mxprim), coeff(mxprim), coeffinp(mxprim)
       real(8) :: exgen(mxprim), coeffgen(mxprim)
-      character(len=16) :: basis, atombasis(112)
+      character(len=16) :: basis, atombasis(-5:112)
       logical :: spher
 end
 
@@ -274,7 +273,7 @@ end
 !----------------
       implicit none
       integer :: idft, nrad, nleb
-      real(8) :: hfexchange
+      real(8) :: hfexchange, bqrad(5)
 end
 
 
@@ -283,11 +282,13 @@ end
 !-----------------
 !
 ! Covalent radii  H       : Bohr radius
-!                (He - Cn): P. Pyykko, M. Atsumi, Chem. Eur. J., 186 (2009) 15.
+!                 He - Cn : P. Pyykko, M. Atsumi, Chem. Eur. J., 186 (2009) 15.
+!                 
 !
       implicit none
-      real(8) :: atomrad(112)
+      real(8) :: atomrad(-5:112)
       data atomrad/ &
+&     1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 0.00D+00, &
 &     0.53D+00, 0.46D+00, 1.33D+00, 1.02D+00, 0.85D+00, 0.75D+00, 0.71D+00, 0.63D+00, 0.64D+00, &
 &     0.67D+00, 1.55D+00, 1.39D+00, 1.26D+00, 1.16D+00, 1.11D+00, 1.03D+00, 0.99D+00, 0.96D+00, &
 &     1.96D+00, 1.71D+00, 1.48D+00, 1.36D+00, 1.34D+00, 1.22D+00, 1.19D+00, 1.16D+00, 1.11D+00, &
@@ -301,21 +302,6 @@ end
 &     1.69D+00, 1.70D+00, 1.71D+00, 1.72D+00, 1.66D+00, 1.66D+00, 1.68D+00, 1.68D+00, 1.65D+00, &
 &     1.67D+00, 1.73D+00, 1.76D+00, 1.61D+00, 1.57D+00, 1.49D+00, 1.43D+00, 1.41D+00, 1.34D+00, &
 &     1.29D+00, 1.28D+00, 1.21D+00, 1.22D+00/
-!      implicit none
-!      real(8) :: atomrad(94)
-!      data atomrad/ &
-!&  5.2918D-01, 3.1126D-01, 1.6282D+00, 1.0855D+00, 8.1414D-01, 6.5131D-01, 5.4272D-01, 4.6520D-01, &
-!&  4.0704D-01, 3.6185D-01, 2.1648D+00, 1.6711D+00, 1.3607D+00, 1.1476D+00, 9.9221D-01, 8.7388D-01, &
-!&  7.8075D-01, 7.0555D-01, 2.2000D+00, 1.8000D+00, 1.6000D+00, 1.4000D+00, 1.3500D+00, 1.4000D+00, &
-!&  1.4000D+00, 1.4000D+00, 1.3500D+00, 1.3500D+00, 1.3500D+00, 1.3500D+00, 1.3000D+00, 1.2500D+00, &
-!&  1.1500D+00, 1.1500D+00, 1.1500D+00, 8.8002D-01, 2.3500D+00, 2.0000D+00, 1.8000D+00, 1.5500D+00, &
-!&  1.4500D+00, 1.4500D+00, 1.3500D+00, 1.3000D+00, 1.3500D+00, 1.4000D+00, 1.6000D+00, 1.5500D+00, &
-!&  1.5500D+00, 1.4500D+00, 1.4500D+00, 1.4000D+00, 1.4000D+00, 1.0800D+00, 2.6000D+00, 2.1500D+00, &
-!&  1.9500D+00, 1.8500D+00, 1.8500D+00, 1.8500D+00, 1.8500D+00, 1.8500D+00, 1.8500D+00, 1.8000D+00, &
-!&  1.7500D+00, 1.7500D+00, 1.7500D+00, 1.7500D+00, 1.7500D+00, 1.7500D+00, 1.7500D+00, 1.5500D+00, &
-!&  1.4500D+00, 1.3500D+00, 1.3500D+00, 1.3000D+00, 1.3500D+00, 1.3500D+00, 1.3500D+00, 1.5000D+00, &
-!&  1.9000D+00, 1.8000D+00, 1.6000D+00, 1.9000D+00, 1.2700D+00, 1.2000D+00, 2.6000D+00, 2.1500D+00, &
-!&  1.9500D+00, 1.8000D+00, 1.7500D+00, 1.7500D+00, 1.7500D+00, 1.7500D+00/
 end
 
 
@@ -340,12 +326,12 @@ end
       integer,parameter :: lfunc=16, nterm1=625291, nterm2=26841
       integer :: maxangecp(mxatom), izcore(mxatom)=0, mtypeecp(mxprim)
       integer :: locecp(0:5,mxatom), mprimecp(0:5,mxatom)
-      integer :: maxgenangecp(112), izgencore(112), mgentypeecp(mxprim)
-      integer :: locgenecp(0:5,112), mgenprimecp(0:5,112)
+      integer :: maxgenangecp(-5:112), izgencore(-5:112), mgentypeecp(mxprim)
+      integer :: locgenecp(0:5,-5:112), mgenprimecp(0:5,-5:112)
       integer :: lmf(122), lmx(581), lmy(581), lmz(581), nbfirst(0:7), nx(84), ny(84), nz(84)
       real(8) :: execp(mxprim), coeffecp(mxprim), zlm(581)
       real(8) :: exgenecp(mxprim), coeffgenecp(mxprim)
-      character(lfunc) :: ecp, atomecp(112)
+      character(lfunc) :: ecp, atomecp(-5:112)
       logical :: flagecp
       data lmf/1, 2,3,4, 5,7,8,10,11, 12,14,16,18,20,22,23, 25,28,30,34,36,39,41,43,45,&
 &              47,50,53,57,61,64,67,70,72,76,78, 81,85,88,94,98,104,107,111,114,117,121,125,128,&

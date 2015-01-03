@@ -3138,7 +3138,7 @@ end
       real(8),parameter :: five=5.0D+00, six=6.0D+00, p75=7.5D+00, fifteen=15.0D+00
       real(8),intent(in) :: alpha, xp0, xp1
       real(8) :: type1radint, radtmp, dawrad, dawson, type1radintps, alpha2, xalpha
-      real(8) :: errrad, alpha3, alpha4
+      real(8) :: errrad, alpha3, alpha4, erf
 !
       if(ll == 0)then
         if(alpha >= athresh) then
@@ -3537,7 +3537,7 @@ end
       real(8),parameter :: sqrtpi2=3.544907701811032D+00
       real(8),intent(in) :: sqrtinvzeta, xp0, xka, xkb, gamma1, gamma2, a1, a2, zeta
       real(8),intent(out) :: rho(15), sga(15), sgb(15), tau(15)
-      real(8) :: factor, factbc(13), b1(15), b2(15), c1(15), c2(15), dawerf, dawson
+      real(8) :: factor, factbc(13), b1(15), b2(15), c1(15), c2(15), dawerf, dawson, erf
       real(8) :: zeta2, xkabp, xkabm, xp0p, xp0m, facp, denom, facm, facb, facc, facbc
       data factbc/1.0D+00,4.0D+00,1.8D+01,9.6D+01,6.0D+02,4.32D+03, &
 &                 3.528D+04,3.2256D+05,3.26592D+06,3.6288D+07, &

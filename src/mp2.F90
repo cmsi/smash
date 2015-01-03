@@ -27,8 +27,7 @@
       use modmolecule, only : neleca, nmo
       use modenergy, only : enuc, escf, escfe, emp2, escsmp2
       implicit none
-      integer,intent(in) :: nproc, myrank
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ncore, ncorecalc, maxdim, nocc, nvir, nao2, ndis, iproc, icount, icountao
       integer :: icountsh, idis(8,0:nproc-1), maxsize, ish, jsh, ishs, jshs, msize, mlsize
       real(8),parameter :: zero=0.0D+00, three=3.0D+00, p12=1.2D+00
@@ -343,8 +342,7 @@ end
       use modbasis, only : nao
       use modmolecule, only : nmo
       implicit none
-      integer,intent(in) :: nocc, nvir, ncore, nproc, myrank, idis(8,0:nproc-1)
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: nocc, nvir, ncore, nproc, myrank, mpi_comm, idis(8,0:nproc-1)
       integer :: numrecv, iproc, irecv(0:nproc-1), nocc2, ncycle, icycle, myij
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmovir(nao*nvir), energymo(nmo)
@@ -445,7 +443,7 @@ end
 ! AO integral calculation
 !
           if(xint(ij)*xint(kl) < cutint2) cycle
-          call calc2eri(twoeri,ksh,lsh,ish,jsh,maxdim,.false.,zero)
+          call calc2eri(twoeri,ksh,lsh,ish,jsh,maxdim)
 !
 ! First integral transformation
 !
@@ -533,8 +531,8 @@ end
 !
       use modbasis, only : nao, nshell, mbf, locbf
       implicit none
-      integer,intent(in) :: icycle, nproc, myrank, irecv(0:nproc-1), nocc2, idis(8,0:nproc-1)
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: icycle, nproc, myrank, mpi_comm, irecv(0:nproc-1)
+      integer,intent(in) :: nocc2, idis(8,0:nproc-1)
       integer :: iproc, jproc, ijstart, myij, ij, nsend, nrecv, ish, ksh, nbfi, nbfk
       integer :: locbfi, locbfk, i, k, ik, num, ii
       real(8),intent(in) :: trint2(idis(3,myrank)+idis(7,myrank),nocc2)

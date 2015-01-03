@@ -20,7 +20,6 @@
 ! for High performance computing systems (SMASH).
 !
       use modparallel, only : master, nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
-      use modparallel, only : mpi_comm1
       use modwarn, only : nwarn
       use modmemory, only : memusedmax
       use modjob, only : runtype, method, scftype
@@ -30,7 +29,7 @@
       logical :: converged
 !
       call start
-      version='1.0.1'
+      version='1.1.0'
 !
       if(master) then
         write(*,&
@@ -76,6 +75,10 @@
       call writegeom
       call writebasis
       if(flagecp) call writeecp
+!
+! Set several information (currently, charge only)
+!
+      call setdetails(mpi_comm1)
 !
 ! Start calculations
 !
@@ -141,7 +144,7 @@ end program main
       use modbasis, only : spher, basis
       use modscf, only : maxiter, dconv, fdiff, diis, maxdiis, maxsoscf, extrap
       use modthresh, only : cutint2, threshsoscf
-      use moddft, only : idft, nrad, nleb
+      use moddft, only : idft, nrad, nleb, bqrad
       use modopt, only : nopt, optconv, cartesian
       use modecp, only : ecp, flagecp
       use modjob, only : scftype, runtype, method
@@ -171,7 +174,7 @@ end program main
       endif
 !
       nwarn  = 0
-      memmax = 250000000
+      memmax = 500000000
       memused= 0
       memusedmax= 0
       memory = ''
@@ -196,6 +199,7 @@ end program main
       cartesian=.false.
       multi  = 1
       charge = 0.0D+00
+      bqrad(:)=1.06D+00
 !
       flagecp= .false.
       scftype='RHF'
@@ -228,7 +232,7 @@ end
 !
       nume= -charge
       do ii= 1,natom
-        nume= nume+numatomic(ii)
+        if(numatomic(ii) > 0) nume= nume+numatomic(ii)
       enddo
 !
 ! Calculate numbers of alpha and beta electrons
@@ -269,14 +273,17 @@ end
       use modmolecule, only : nmo, neleca
       use modjob, only : method
       use moddft, only : idft
+      use modguess, only : guess
       use modprint, only : iprint
+      use modscf, only : dconv
+      use modthresh, only : cutint2
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
       real(8), allocatable :: xint(:), energymo(:)
       real(8), allocatable :: overinv(:), work(:)
+      real(8) :: savedconv, savecutint2
 !
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
@@ -311,7 +318,8 @@ end
 !
 ! Calculate initial MOs
 !
-      call guessmo(cmo,cmo,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+      call guessmo(cmo,cmo,overinv,h1mtrx,ortho, &
+&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
 !
 ! Unset arrays 2
 !
@@ -327,9 +335,15 @@ end
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
       elseif(idft >= 1) then
-        if(check == '') then
+        if(guess == 'HUCKEL') then
+          savedconv= dconv
+          savecutint2= cutint2
+          dconv= max(dconv,1.0D-2)
+          cutint2= max(cutint2,1.0D-9)
           call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+          dconv= savedconv
+          cutint2= savecutint2
           call tstamp(1)
         endif
         call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
@@ -353,9 +367,9 @@ end
 ! Print MOs
 !
       if(master.and.(iprint >= 2)) then
-        write(*,'("-----------------")')
-        write(*,'(" MO coefficients")')
-        write(*,'("-----------------")')
+        write(*,'("  -------------------")')
+        write(*,'("    MO coefficients")')
+        write(*,'("  -------------------")')
         call writeeigenvector(cmo,energymo)
       endif
 !
@@ -394,10 +408,10 @@ end
       use modmolecule, only : nmo
       use modjob, only : method
       use moddft, only : idft
+      use modguess, only : guess
       use modprint, only : iprint
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
       real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), energymoa(:), energymob(:)
@@ -436,7 +450,8 @@ end
 !
 ! Calculate initial MOs
 !
-      call guessmo(cmoa,cmob,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+      call guessmo(cmoa,cmob,overinv,h1mtrx,ortho, &
+&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
 !
 ! Unset arrays 2
 !
@@ -452,7 +467,7 @@ end
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
       elseif(idft >= 1) then
-        if(check == '') then
+        if(guess == 'HUCKEL') then
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
           call tstamp(1)
@@ -476,13 +491,13 @@ end
 ! Print MOs
 !
       if(master.and.(iprint >= 2)) then
-        write(*,'("-----------------------")')
-        write(*,'(" Alpha MO coefficients")')
-        write(*,'("-----------------------")')
+        write(*,'("  -------------------------")')
+        write(*,'("    Alpha MO coefficients")')
+        write(*,'("  -------------------------")')
         call writeeigenvector(cmoa,energymoa)
-        write(*,'("-----------------------")')
-        write(*,'(" Beta MO coefficients")')
-        write(*,'("-----------------------")')
+        write(*,'("  ------------------------")')
+        write(*,'("    Beta MO coefficients")')
+        write(*,'("  ------------------------")')
         call writeeigenvector(cmob,energymob)
       endif
 !
@@ -521,16 +536,19 @@ end
       use modmolecule, only : nmo, natom
       use modjob, only : method
       use moddft, only : idft
+      use modguess, only : guess
       use modprint, only : iprint
+      use modscf, only : dconv
+      use modthresh, only : cutint2
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
       real(8), allocatable :: xint(:), energymo(:)
       real(8), allocatable :: overinv(:), work(:)
       real(8), allocatable :: egrad(:)
       real(8) :: egradmax, egradrms
+      real(8) :: savedconv, savecutint2
 !
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
@@ -565,7 +583,8 @@ end
 !
 ! Calculate initial MOs
 !
-      call guessmo(cmo,cmo,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+      call guessmo(cmo,cmo,overinv,h1mtrx,ortho, &
+&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
 !
 ! Unset arrays 2
 !
@@ -581,10 +600,16 @@ end
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
       elseif(idft >= 1) then
-        if(check == '') then
+        if(guess == 'HUCKEL') then
+          savedconv= dconv
+          savecutint2= cutint2
+          dconv= max(dconv,1.0D-2)
+          cutint2= max(cutint2,1.0D-9)
           call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
           call tstamp(1)
+          dconv= savedconv
+          cutint2= savecutint2
         endif
         call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
@@ -629,9 +654,9 @@ end
 ! Print MOs
 !
       if(master.and.(iprint >= 2)) then
-        write(*,'("-----------------")')
-        write(*,'(" MO coefficients")')
-        write(*,'("-----------------")')
+        write(*,'("  -------------------")')
+        write(*,'("    MO coefficients")')
+        write(*,'("  -------------------")')
         call writeeigenvector(cmo,energymo)
       endif
 !
@@ -671,10 +696,10 @@ end
       use modmolecule, only : nmo, natom
       use modjob, only : method
       use moddft, only : idft
+      use modguess, only : guess
       use modprint, only : iprint
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
       real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), energymoa(:), energymob(:)
@@ -715,7 +740,8 @@ end
 !
 ! Calculate initial MOs
 !
-      call guessmo(cmoa,cmob,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+      call guessmo(cmoa,cmob,overinv,h1mtrx,ortho, &
+&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
 !
 ! Unset arrays 2
 !
@@ -731,7 +757,7 @@ end
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
       elseif(idft >= 1) then
-        if(check == '') then
+        if(guess == 'HUCKEL') then
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
           call tstamp(1)
@@ -785,13 +811,13 @@ end
 ! Print MOs
 !
       if(master.and.(iprint >= 2)) then
-        write(*,'("-----------------------")')
-        write(*,'(" Alpha MO coefficients")')
-        write(*,'("-----------------------")')
+        write(*,'("  -------------------------")')
+        write(*,'("    Alpha MO coefficients")')
+        write(*,'("  -------------------------")')
         call writeeigenvector(cmoa,energymoa)
-        write(*,'("-----------------------")')
-        write(*,'(" Beta MO coefficients")')
-        write(*,'("-----------------------")')
+        write(*,'("  ------------------------")')
+        write(*,'("    Beta MO coefficients")')
+        write(*,'("  ------------------------")')
         call writeeigenvector(cmob,energymob)
       endif
 !
@@ -833,10 +859,12 @@ end
       use modwarn, only : nwarn
       use modjob, only : method
       use moddft, only : idft
+      use modguess, only : guess
       use modprint, only : iprint
+      use modscf, only : dconv
+      use modthresh, only : cutint2
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer,allocatable :: iredun(:)
       integer :: nao2, nao3, nshell3, natom3, ii, iopt
       integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
@@ -847,6 +875,7 @@ end
       real(8), allocatable :: overinv(:), work(:,:)
       real(8), allocatable :: workv(:), coordredun(:), egradredun(:)
       real(8) :: egradmax, egradrms
+      real(8) :: savedconv, savecutint2
       logical,intent(out) :: converged
       logical :: exceed
 !
@@ -928,7 +957,8 @@ end
 ! Calculate initial MOs
 !
         if(iopt == 1) then
-          call guessmo(cmo,cmo,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+          call guessmo(cmo,cmo,overinv,h1mtrx,ortho, &
+&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         endif
 !
 ! Unset work arrays 1
@@ -945,9 +975,15 @@ end
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1)
           call tstamp(1)
         elseif(idft >= 1) then
-          if((iopt == 1).and.(check == '')) then
+          if((iopt == 1).and.(guess == 'HUCKEL')) then
+            savedconv= dconv
+            savecutint2= cutint2
+            dconv= max(dconv,1.0D-2)
+            cutint2= max(cutint2,1.0D-9)
             call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+            dconv= savedconv
+            cutint2= savecutint2
             call tstamp(1)
           endif
           call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
@@ -985,7 +1021,7 @@ end
 ! Check convergence
 !
         if((egradmax <= optconv).and.(egradrms <= optconv*third)) then
-          if(master) write(*,'(" Geometry is converged.",/)')
+          if(master) write(*,'(" Geometry converged.",/)')
           converged=.true.
           exit
         endif
@@ -1027,7 +1063,7 @@ end
         call setnextopt(coordold,natom,iopt)
 !
         if((iopt == nopt).and.master) then
-          write(*,'("Warning! Geometry is not converged.")')
+          write(*,'("Warning! Geometry did not converge.")')
           exit
         endif
         call tstamp(1)
@@ -1040,15 +1076,24 @@ end
 ! Print MOs
 !
       if(master.and.(iprint >= 2)) then
-        write(*,'("-----------------")')
-        write(*,'(" MO coefficients")')
-        write(*,'("-----------------")')
+        write(*,'("  -------------------")')
+        write(*,'("    MO coefficients")')
+        write(*,'("  -------------------")')
         call writeeigenvector(cmo,energymo)
       endif
 !
 ! Calculate Mulliken charge
 !
       call calcrmulliken(dmtrx,smtrx)
+!
+! Write optimized geometry
+!
+      if(master) then
+        write(*,'(" ==========================")')
+        write(*,'("     Optimized Geometry")')
+        write(*,'(" ==========================")')
+        call writegeom
+      endif
 !
 ! Write checkpoint file
 !
@@ -1103,10 +1148,10 @@ end
       use modwarn, only : nwarn
       use modjob, only : method
       use moddft, only : idft
+      use modguess, only : guess
       use modprint, only : iprint
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2
-      integer(4),intent(in) :: mpi_comm1, mpi_comm2
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer,allocatable :: iredun(:)
       integer :: nao2, nao3, nshell3, natom3, ii, iopt
       integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
@@ -1198,7 +1243,8 @@ end
 ! Calculate initial MOs
 !
         if(iopt == 1) then
-          call guessmo(cmoa,cmob,overinv,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+          call guessmo(cmoa,cmob,overinv,h1mtrx,ortho, &
+&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         endif
 !
 ! Unset arrays 1
@@ -1215,7 +1261,7 @@ end
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2)
           call tstamp(1)
         elseif(idft >= 1) then
-          if((iopt == 1).and.(check == '')) then
+          if((iopt == 1).and.(guess == 'HUCKEL')) then
             call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
             call tstamp(1)
@@ -1260,7 +1306,7 @@ end
 ! Check convergence
 !
         if((egradmax <= optconv).and.(egradrms <= optconv*third)) then
-          if(master) write(*,'(" Geometry is converged.",/)')
+          if(master) write(*,'(" Geometry converged.",/)')
           converged=.true.
           exit
         endif
@@ -1302,7 +1348,7 @@ end
         call setnextopt(coordold,natom,iopt)
 !
         if((iopt == nopt).and.master) then
-          write(*,'("Warning! Geometry is not converged.")')
+          write(*,'("Warning! Geometry did not converge.")')
           exit
         endif
         call tstamp(1)
@@ -1315,19 +1361,28 @@ end
 ! Print MOs
 !
       if(master.and.(iprint >= 2)) then
-        write(*,'(" -----------------------")')
-        write(*,'("  Alpha MO coefficients")')
-        write(*,'(" -----------------------")')
+        write(*,'("  -------------------------")')
+        write(*,'("    Alpha MO coefficients")')
+        write(*,'("  -------------------------")')
         call writeeigenvector(cmoa,energymoa)
-        write(*,'(" -----------------------")')
-        write(*,'("  Beta MO coefficients")')
-        write(*,'(" -----------------------")')
+        write(*,'("  ------------------------")')
+        write(*,'("    Beta MO coefficients")')
+        write(*,'("  ------------------------")')
         call writeeigenvector(cmob,energymob)
       endif
 !
 ! Calculate Mulliken charge
 !
       call calcumulliken(dmtrxa,dmtrxb,smtrx)
+!
+! Write optimized geometry
+!
+      if(master) then
+        write(*,'(" ==========================")')
+        write(*,'("     Optimized Geometry")')
+        write(*,'(" ==========================")')
+        call writegeom
+      endif
 !
 ! Write checkpoint file
 !
@@ -1428,12 +1483,19 @@ end
 ! Adjust the numbe of DFT grids when heavy elements are included
 !
       use modparallel, only : master
-      use moddft, only : idft, nrad, nleb, hfexchange
+      use moddft, only : idft, nrad, nleb, hfexchange, bqrad
+      use modatom, only : atomrad
       use modmolecule, only : natom, numatomic
       use modjob, only : method
       use modwarn, only : nwarn
       implicit none
       integer :: maxelem
+!
+      atomrad(-1)= bqrad(1)
+      atomrad(-2)= bqrad(2)
+      atomrad(-3)= bqrad(3)
+      atomrad(-4)= bqrad(4)
+      atomrad(-5)= bqrad(5)
 !
       select case(method)
         case('B3LYP')

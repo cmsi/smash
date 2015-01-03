@@ -19,7 +19,7 @@
 ! Read input data and open checkpoint file if necessary
 !
       use modparallel, only : master, parallel
-      use modiofile, only : input, check
+      use modiofile, only : input, check, maxline
       use modbasis, only : basis, spher
       use modmolecule, only : numatomic, natom, coord, znuc, neleca, nelecb, charge, multi
       use modjob, only : method, runtype, scftype
@@ -30,12 +30,12 @@
       use modscf, only : diis, maxiter, dconv, maxdiis, maxsoscf
       use modopt, only : nopt, optconv, cartesian
       use modunit, only : bohr
-      use moddft, only : nrad, nleb
+      use moddft, only : nrad, nleb, bqrad
       use modecp, only : ecp, flagecp
       implicit none
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: mpi_comm
       integer :: ii, ilen, intarray(9), info
-      real(8) :: realarray(4)
+      real(8) :: realarray(9)
       character(len=254) :: line
       character(len=16) :: chararray(7), mem=''
       logical :: logarray(5)
@@ -43,10 +43,10 @@
       namelist /control/ cutint2, spher, guess, iprint, bohr, check
       namelist /scf/ diis, maxiter, dconv, maxdiis, maxsoscf
       namelist /opt/ nopt, optconv, cartesian
-      namelist /dft/ nrad, nleb
+      namelist /dft/ nrad, nleb, bqrad
 !
       if(master) then
-        do ii= 1,100000
+        do ii= 1,maxline
           read(5,'(a)',end=100) line
           line=adjustl(line)
           ilen=len_trim(line)
@@ -74,7 +74,7 @@
           else
             write(input,*)
           endif
-          if(ii == 100000) then
+          if(ii == maxline) then
             write(*,'(" Input file is too long in Subroutine readinput!")')
             call iabort
           endif
@@ -144,6 +144,11 @@
           realarray(2)= cutint2
           realarray(3)= dconv
           realarray(4)= optconv
+          realarray(5)= bqrad(1)
+          realarray(6)= bqrad(2)
+          realarray(7)= bqrad(3)
+          realarray(8)= bqrad(4)
+          realarray(9)= bqrad(5)
           intarray(1)= natom
           intarray(2)= multi
           intarray(3)= iprint
@@ -162,7 +167,7 @@
 !
         call para_bcastc(chararray,16*7,0,mpi_comm)
         call para_bcastc(check,64,0,mpi_comm)
-        call para_bcastr(realarray,4,0,mpi_comm)
+        call para_bcastr(realarray,9,0,mpi_comm)
         call para_bcasti(intarray,9,0,mpi_comm)
         call para_bcastl(logarray,5,0,mpi_comm)
 !
@@ -183,6 +188,11 @@
         cutint2 = realarray(2)
         dconv   = realarray(3)
         optconv = realarray(4)
+        bqrad(1)= realarray(5)
+        bqrad(2)= realarray(6)
+        bqrad(3)= realarray(7)
+        bqrad(4)= realarray(8)
+        bqrad(5)= realarray(9)
         multi   = intarray(2)
         iprint  = intarray(3)
         maxiter = intarray(4)
@@ -213,8 +223,9 @@ end
       use modunit, only : toang
       implicit none
       integer :: i, j
-      character(len=3) :: table(112)= &
-&     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+      character(len=3) :: table(-5:112)= &
+&     (/'Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
 &       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
 &       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
@@ -248,10 +259,11 @@ end
       use modbasis, only : nshell, nao, nprim, ex, coeffinp, locprim, locatom, mprim, mtype
       use modprint, only : iprint
       implicit none
-      integer :: iatom, ishell, iloc, iprim, jatomcheck(112)=0
+      integer :: iatom, ishell, iloc, iprim, jatomcheck(-5:112)=0
       logical :: second
-      character(len=3) :: table(112)= &
-&     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+      character(len=3) :: table(-5:112)= &
+&     (/'Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
 &       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
 &       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
@@ -312,10 +324,11 @@ end
       use modecp, only : maxangecp, mtypeecp, locecp, mprimecp, execp, coeffecp, izcore
       use modprint, only : iprint
       implicit none
-      integer :: iatom, ll, jprim, jloc, k, nprim, jatomcheck(112)=0
+      integer :: iatom, ll, jprim, jloc, k, nprim, jatomcheck(-5:112)=0
       character(len=7) :: tblecp
-      character(len=3) :: table(112)= &
-&     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+      character(len=3) :: table(-5:112)= &
+&     (/'Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
 &       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
 &       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
@@ -409,11 +422,11 @@ end
 &                  memmax/125000, scftype, spher
         write(*,'("   Charge  = ",F11.1," ,   Multi   =  ",i10," ,   Bohr     = ",l1)') &
 &                  charge, multi, bohr
+        write(*,'("   Guess   = ",a12)') guess
         if(runtype == 'OPTIMIZE') &
 &       write(*,'("   Nopt    =  ",i10," ,   Optconv = ",1p,D11.1," ,   Cartesian= ",l1)') &
 &                  nopt, optconv, cartesian
         if(check /= '') &
-        write(*,'("   Guess   = ",a12)') guess
         write(*,'("   Check   = ",a64)') check
         write(*,'(" --------------------------------------------------------------------------")')
 
@@ -467,17 +480,22 @@ end
 ! Read atomic data
 !
       use modparallel, only : master
-      use modiofile, only : input, icheck, check
+      use modiofile, only : input, icheck, check, maxline
       use modmolecule, only : numatomic, natom, coord, znuc
       use modunit, only : tobohr, bohr
       use modparam, only : mxatom
+      use modopt, only : cartesian
+      use modwarn, only : nwarn
+      use modjob, only : runtype
       implicit none
-      integer :: ii, jj
+      integer :: ii, jj, minatomic
+      real(8),parameter :: zero=0.0D+00
       character(len=16) :: cdummy
       character(len=254) :: line
       character(len=3) :: atomin(mxatom)
-      character(len=3) :: table1(112)= &
-&     (/'H  ','HE ','LI ','BE ','B  ','C  ','N  ','O  ','F  ','NE ','NA ','MG ','AL ','SI ','P  ',&
+      character(len=3) :: table1(-5:112)= &
+&     (/'BQ5','BQ4','BQ3','BQ2','BQ ','X  ',&
+&       'H  ','HE ','LI ','BE ','B  ','C  ','N  ','O  ','F  ','NE ','NA ','MG ','AL ','SI ','P  ',&
 &       'S  ','CL ','AR ','K  ','CA ','SC ','TI ','V  ','CR ','MN ','FE ','CO ','NI ','CU ','ZN ',&
 &       'GA ','GE ','AS ','SE ','BR ','KR ','RB ','SR ','Y  ','ZR ','NB ','MO ','TC ','RU ','RH ',&
 &       'PD ','AG ','CD ','IN ','SN ','SB ','TE ','I  ','XE ','CS ','BA ','LA ','CE ','PR ','ND ',&
@@ -485,8 +503,9 @@ end
 &       'OS ','IR ','PT ','AU ','HG ','TL ','PB ','BI ','PO ','AT ','RN ','FR ','RA ','AC ','TH ',&
 &       'PA ','U  ','NP ','PU ','AM ','CM ','BK ','CF ','ES ','FM ','MD ','NO ','LR ','RF ','DB ',&
 &       'SG ','BH ','HS ','MT ','UUN','UUU','UUB'/)
-      character(len=3) :: table2(112)= &
-&     (/'1  ','2  ','3  ','4  ','5  ','6  ','7  ','8  ','9  ','10 ','11 ','12 ','13 ','14 ','15 ',&
+      character(len=3) :: table2(-5:112)= &
+&     (/'-5 ','-4 ','-3 ','-2 ','-1 ','0  ',&
+&       '1  ','2  ','3  ','4  ','5  ','6  ','7  ','8  ','9  ','10 ','11 ','12 ','13 ','14 ','15 ',&
 &       '16 ','17 ','18 ','19 ','20 ','21 ','22 ','23 ','24 ','25 ','26 ','27 ','28 ','29 ','30 ',&
 &       '31 ','32 ','33 ','34 ','35 ','36 ','37 ','38 ','39 ','40 ','41 ','42 ','43 ','44 ','45 ',&
 &       '46 ','47 ','48 ','49 ','50 ','51 ','52 ','53 ','54 ','55 ','56 ','57 ','58 ','59 ','60 ',&
@@ -497,10 +516,10 @@ end
 !
       if(master) then
         rewind(input)
-        do ii= 1,10000
+        do ii= 1,maxline
           read(input,'(a)',end=9999)line
           if(line(1:4) == 'GEOM') exit
-          if(ii == 10000) then
+          if(ii == maxline) then
             write(*,'(" Error! Molecular geometry is not found.")')
             call iabort
           endif
@@ -517,10 +536,15 @@ end
           enddo
 100       continue
           do ii= 1,natom
-            do jj= 1,112
+            if(atomin(ii) == 'BQ1') atomin(ii)= 'BQ'
+            do jj= -5,112
               if((atomin(ii) == table1(jj)).or.(atomin(ii) == table2(jj))) then
                 numatomic(ii)= jj
-                znuc(ii)= dble(jj)
+                if(jj > 0) then
+                  znuc(ii)= dble(jj)
+                else
+                  znuc(ii)= zero
+                endif
                 exit
               endif
               if(jj == 112) then
@@ -551,9 +575,24 @@ end
           read(icheck)
           read(icheck)((coord(jj,ii),jj=1,3),ii=1,natom)
           do ii= 1,natom
-            znuc(ii)= dble(numatomic(ii))
+            if(numatomic(ii) > 0) then
+              znuc(ii)= dble(numatomic(ii))
+            else
+              znuc(ii)= zero
+            endif
           enddo
           write(*,'(" Geometry is read from checkpoint file.")')
+        endif
+!
+! Check dummy and ghost atoms
+!
+        if(runtype=='OPTIMIZE') then
+          minatomic= minval(numatomic(1:natom))
+          if((minatomic <= 0).and.(.not.cartesian)) then
+            cartesian=.true.
+            write(*,'(" Warning! Cartesian coordinate is used during geometry optimization.")')
+            nwarn= nwarn+1
+          endif
         endif
       endif
       return
@@ -601,16 +640,17 @@ end
 !
       use modparallel, only : master
       use modparam, only : mxprim, mxshell
-      use modiofile, only : input
+      use modiofile, only : input, maxline
       use modbasis, only : exgen, coeffgen, locgenprim, mgenprim, mgentype, locgenshell, &
 &                          ngenshell, atombasis
       implicit none
-      integer :: ii, jj, iprim, ishell, ll, ielem(112), nelem, kprim, numprim, natomshell
-      character(len=3) :: element(112)
+      integer :: ii, jj, iprim, ishell, ll, ielem(-5:112), nelem, kprim, numprim, natomshell
+      character(len=3) :: element(-5:112)
       character(len=100) :: line
       character(len=16) :: symbol
-      character(len=3) :: table(112)= &
-&     (/'H  ','HE ','LI ','BE ','B  ','C  ','N  ','O  ','F  ','NE ','NA ','MG ','AL ','SI ','P  ',&
+      character(len=3) :: table(-5:112)= &
+&     (/'BQ5','BQ4','BQ3','BQ2','BQ ','X  ',&
+&       'H  ','HE ','LI ','BE ','B  ','C  ','N  ','O  ','F  ','NE ','NA ','MG ','AL ','SI ','P  ',&
 &       'S  ','CL ','AR ','K  ','CA ','SC ','TI ','V  ','CR ','MN ','FE ','CO ','NI ','CU ','ZN ',&
 &       'GA ','GE ','AS ','SE ','BR ','KR ','RB ','SR ','Y  ','ZR ','NB ','MO ','TC ','RU ','RH ',&
 &       'PD ','AG ','CD ','IN ','SN ','SB ','TE ','I  ','XE ','CS ','BA ','LA ','CE ','PR ','ND ',&
@@ -626,16 +666,16 @@ end
 !
       if(master) then
         rewind(input)
-        do ii= 1,20000
+        do ii= 1,maxline
           read(input,'(a)',end=9999)line
           if(line(1:5) == "BASIS") exit
-          if(ii == 20000) then
+          if(ii == maxline) then
             write(*,'(" Error! Keyword BASIS is not found.")')
             call iabort
           endif
         enddo
 !
-        do ll= 1,112
+        do ll= -5,112
           line=''
           read(input,'(a)',end=300)line
           if(len_trim(line) == 0) exit
@@ -643,15 +683,16 @@ end
 !
 ! Read elements
 !
-          read(line,*,end=100)(element(ii),ii=1,112)
+          read(line,*,end=100)(element(ii),ii=-5,112)
  100      continue
           nelem= 0
 !
 ! Check elements
 !
-          do ii= 1,112
+          do ii= -5,112
             if((element(ii) == '0').or.(element(ii) == '')) exit
-            do jj= 1,112
+            if(element(ii) == 'BQ1') element(ii)= 'BQ'
+            do jj= -5,112
               if(element(ii) == table(jj)) then
                 ielem(ii)= jj
                 nelem= nelem+1
@@ -667,10 +708,10 @@ end
 ! Read basis functions
 !
           natomshell= 0
-          do ii= 1,nelem
+          do ii= -5,nelem-6
             locgenshell(ielem(ii))= ishell
           enddo
-          do jj= 1,1000
+          do jj= 1,maxline
             symbol= ''
             read(input,'(a)',err=200,end=200) line
             read(line,*,end=200,err=9998) symbol, numprim
@@ -718,7 +759,7 @@ end
             cycle
 !
  200        if(symbol(1:2) == '**') then
-              do ii= 1,nelem
+              do ii= -5,nelem-6
                 ngenshell(ielem(ii))= natomshell
               enddo
               exit
@@ -726,7 +767,7 @@ end
               write(*,'(" Error! End of basis functions is not found.")')
               call iabort
             endif
-            do ii= 1,nelem
+            do ii= -5,nelem-6
               atombasis(ielem(ii))= symbol
             enddo
           enddo
@@ -817,7 +858,7 @@ end
       use modguess, only : nao_g, nmo_g, nshell_g, nprim_g
       use modmolecule, only : natom
       implicit none
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: mpi_comm
       integer,intent(out) :: neleca_g, nelecb_g
       integer :: intarray(6), natom_g, idummy
       real(8),intent(out) :: charge_g
@@ -872,7 +913,7 @@ end
       use modmolecule, only : natom
       use modjob, only : scftype
       implicit none
-      integer(4),intent(in) :: mpi_comm
+      integer,intent(in) :: mpi_comm
       integer :: ii, jj
       real(8),intent(out) :: cmoa_g(nao_g,nao_g), cmob_g(nao_g,nao_g)
       character(len=16),intent(in) :: scftype_g
@@ -935,16 +976,17 @@ end
 !
       use modparallel, only : master
       use modparam, only : mxprim, mxshell
-      use modiofile, only : input
+      use modiofile, only : input, maxline
       use modecp, only : exgenecp, coeffgenecp, maxgenangecp, izgencore, mgentypeecp, &
 &                        locgenecp, mgenprimecp, atomecp
       implicit none
-      integer :: ii, jj, iprim, ll, ielem(112), nelem, jprim, numprim, lmax, ielec, iang
-      character(len=3) :: element(112)
+      integer :: ii, jj, iprim, ll, ielem(-5:112), nelem, jprim, numprim, lmax, ielec, iang
+      character(len=3) :: element(-5:112)
       character(len=100) :: line
       character(len=16) :: symbol
-      character(len=3) :: table(112)= &
-&     (/'H  ','HE ','LI ','BE ','B  ','C  ','N  ','O  ','F  ','NE ','NA ','MG ','AL ','SI ','P  ',&
+      character(len=3) :: table(-5:112)= &
+&     (/'BQ5','BQ4','BQ3','BQ2','BQ ','X  ',&
+&       'H  ','HE ','LI ','BE ','B  ','C  ','N  ','O  ','F  ','NE ','NA ','MG ','AL ','SI ','P  ',&
 &       'S  ','CL ','AR ','K  ','CA ','SC ','TI ','V  ','CR ','MN ','FE ','CO ','NI ','CU ','ZN ',&
 &       'GA ','GE ','AS ','SE ','BR ','KR ','RB ','SR ','Y  ','ZR ','NB ','MO ','TC ','RU ','RH ',&
 &       'PD ','AG ','CD ','IN ','SN ','SB ','TE ','I  ','XE ','CS ','BA ','LA ','CE ','PR ','ND ',&
@@ -959,16 +1001,16 @@ end
 !
       if(master) then
         rewind(input)
-        do ii= 1,20000
+        do ii= 1,maxline
           read(input,*,end=9999)line
           if(line(1:3) == "ECP") exit
-          if(ii == 20000) then
+          if(ii == maxline) then
             write(*,'(" Error! Keyword ECP is not found.")')
             call iabort
           endif
         enddo
 !
-        do ll= 1,112
+        do ll= -5,112
           line=''
           read(input,'(a)',end=300)line
           if(len_trim(line) == 0) exit
@@ -976,14 +1018,15 @@ end
 !
 ! Read elements
 !
-          read(line,*,end=100)(element(ii),ii=1,112)
+          read(line,*,end=100)(element(ii),ii=-5,112)
  100      nelem= 0
 !
 ! Check elements
 !
-          do ii= 1,112
+          do ii= -5,112
             if((element(ii) == '0').or.(element(ii) == '')) exit
-            do jj= 1,112
+            if(element(ii) == 'BQ1') element(ii)= 'BQ'
+            do jj= -5,112
               if(element(ii) == table(jj)) then
                 ielem(ii)= jj
                 nelem= nelem+1
@@ -1005,14 +1048,14 @@ end
           symbol= ''
           read(input,'(a)',err=200,end=200) line
           read(line,*,end=200) symbol,lmax,ielec
-          do ii= 1,nelem
+          do ii= -5,nelem-6
             maxgenangecp(ielem(ii))= lmax
             izgencore(ielem(ii))= ielec
           enddo
           do iang= 0,lmax
             read(input,*)line
             read(input,*,err=9998,end=9998)numprim
-            do ii= 1,nelem
+            do ii= -5,nelem-6
               locgenecp(iang,ielem(ii))= iprim
               mgenprimecp(iang,ielem(ii))= numprim
             enddo
@@ -1024,7 +1067,7 @@ end
           cycle
 !
  200      if(symbol == 'LANL2DZ') then
-            do ii= 1,nelem
+            do ii= -5,nelem-6
               atomecp(ielem(ii))= symbol
             enddo
             cycle
@@ -1101,12 +1144,13 @@ end
       use modbasis, only : nao, nshell, mtype, spher, locatom
       use modparam, only : mxao
       implicit none
-      integer :: maxmo, imin, imax, ii, jj, kk, iao, iatom
+      integer :: minmo, maxmo, imin, imax, ii, jj, kk, iao, iatom
       real(8),intent(in) :: cmo(nao,nao), eigen(nmo)
       character(len=8) :: atomlabel(mxao)
       character(len=5) :: bflabel(mxao)
-      character(len=3) :: table(112)= &
-&     (/'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+      character(len=3) :: table(-5:112)= &
+&     (/'Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
 &       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
 &       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
@@ -1198,11 +1242,12 @@ end
         end select
       enddo
 !
+      minmo=max(1,neleca-20)
       maxmo=min(nmo,neleca+20)
-      imin= 1
-      imax= 5
+      imin= minmo
+      imax= minmo+4
       if(master) then
-        do ii= 1,(maxmo-1)/5+1
+        do ii= 1,(maxmo-minmo-1)/5+1
           if(imax > maxmo) imax= maxmo
           write(*,*)
           write(*,'(18x,5(5x,i4,2x))')(jj,jj=imin,imax)
@@ -1325,6 +1370,48 @@ end
       return
 end
 
+
+!----------------------------------
+  subroutine setdetails(mpi_comm)
+!----------------------------------
+!
+! Read and write settings (currently, charge only)
+!
+      use modparallel, only : master
+      use modiofile, only : input, maxline
+      use modmolecule, only : znuc, natom
+      use modparam, only : mxatom
+      implicit none
+      integer,intent(in) :: mpi_comm
+      integer :: ii, jj, iatom
+      real(8) :: znew
+      character(len=254) :: line
+!
+      if(master) then
+        rewind(input)
+        do ii= 1,maxline
+          read(input,'(a)',end=200)line
+          if(line(1:6) == 'CHARGE') then
+            write(*,'(/," -----------------")')
+            write(*,'(  "   Atomic charge")')
+            write(*,'(  " -----------------")')
+            write(*,'(  "   Atomic charges are set manually.")')
+            do jj= 1,mxatom
+              read(input,'(a)',end=100) line
+              read(line,*,end=100) iatom, znew
+              znuc(iatom)= znew
+              write(*,'("   Charge of Atom ",i5,"     ",f6.2)')iatom, znew
+            enddo
+ 100        write(*,*)
+          endif
+        enddo
+      endif
+ 200  continue
+!
+      call para_bcastr(znuc,natom,0,mpi_comm)
+!
+      return
+end
 
 
 

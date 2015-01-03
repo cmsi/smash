@@ -12,9 +12,9 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!---------------------------------------------------------
-  subroutine int2ssss(phmdint,exfac1,exfac2,xyziq,nijkl)
-!---------------------------------------------------------
+!--------------------------------------------------------------
+  subroutine int2ssss(phmdint,exfac1,exfac2,xyziq,work,nijkl)
+!--------------------------------------------------------------
 !
 ! Calculate (ss|ss) integral
 !
@@ -22,18 +22,20 @@
 !       xyziq    (x,y,z length of i and q)
 !       nij, nkl (number of primitive pair functions)
 ! Out : phmdint  (two-electron integral)
+!       work     (work space)
 !
       use fmtgrid, only : fgrid, threshtval
       implicit none
+      integer,parameter :: mxprsh2=30
       integer,intent(in) :: nijkl(2)
-      integer :: ij, kl, igrid
+      integer :: ij, kl, igrid, i1
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, sqrtpi4=0.8862269254527580D+00
       real(8),intent(in) :: exfac1(5,*), exfac2(5,*)
       real(8),intent(in) :: xyziq(3,*)
-      real(8),intent(out) :: phmdint(6,6,6,6)
+      real(8),intent(out) :: phmdint(6,6,6,6), work(2,*)
       real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
       real(8) :: tinv, f0, ft0, r0
-      real(8) :: ex12, ex34, ex41, expq, c12, c34, zip, xiq, yiq, ziq, xypq2, zpq, zpq2
+      real(8) :: ex12, ex34, ex14, ex41, expq, c12, c34, zip, xiq, yiq, ziq, xypq2, zpq, zpq2
 !
 ! Zero-clear
 !
@@ -47,22 +49,26 @@
         ziq = xyziq(3,kl)
         xypq2= xiq*xiq+yiq*yiq
         f0= zero
+        i1= 0
         do ij= 1,nijkl(1)
           ex12= exfac1(1,ij)
           zip = exfac1(4,ij)
           c12 = exfac1(5,ij)
-          ex41= one/(ex12+ex34)
+          ex14= ex12+ex34
           zpq = ziq-zip
           zpq2= zpq*zpq
-          expq= ex12*ex34*ex41
+          expq= ex12*ex34
           tval=(xypq2+zpq2)*expq
 !
 ! Calculate Fm(T)
 !
-          if(tval >= threshtval) then
-            tinv= one/tval
-            ft0= c12*sqrtpi4*sqrt(ex41*tval)*tinv
+          if(tval >= threshtval*ex14) then
+            i1= i1+1
+            work(1,i1)= tval
+            work(2,i1)= c12
           else
+            ex41= one/sqrt(ex14)
+            tval= tval*ex41*ex41
             igrid= int(tval)
             tval2= tval *tval
             tval3= tval2*tval
@@ -77,9 +83,13 @@
 &               +fgrid(3,0,igrid)*tval3+fgrid( 4,0,igrid)*tval4 +fgrid( 5,0,igrid)*tval5 &
 &               +fgrid(6,0,igrid)*tval6+fgrid( 7,0,igrid)*tval7 +fgrid( 8,0,igrid)*tval8 &
 &               +fgrid(9,0,igrid)*tval9+fgrid(10,0,igrid)*tval10
-            ft0= ft0*c12*sqrt(ex41)
+            ft0= ft0*c12*ex41
+            f0= f0+ft0
           endif
-          f0= f0+ft0
+        enddo
+        do ij= 1,i1
+          tinv= work(2,ij)/sqrt(work(1,ij))
+          f0= f0+sqrtpi4*tinv
         enddo
         r0= r0+f0*c34
       enddo
@@ -89,9 +99,9 @@
 end
 
 
-!------------------------------------------------------------------
-  subroutine int2psss(phmdint,exfac1,exfac2,xyziq,xzkl,rot,nijkl)
-!------------------------------------------------------------------
+!-----------------------------------------------------------------------
+  subroutine int2psss(phmdint,exfac1,exfac2,xyziq,xzkl,rot,work,nijkl)
+!-----------------------------------------------------------------------
 !
 ! Calculate (ps|ss) integrals
 !
@@ -100,16 +110,18 @@ end
 !       xzkl     (x,z elements of k and l)
 !       nij, nkl (number of primitive pair functions)
 ! Out : phmdint  (two-electron integral)
+!       work     (work space)
 !
       use fmtgrid, only : fgrid, threshtval
       implicit none
+      integer,parameter :: mxprsh2=30
       integer,intent(in) :: nijkl(2)
-      integer :: ij, kl, igrid
+      integer :: ij, kl, igrid, i1
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, sqrtpi4=0.8862269254527580D+00
       real(8),parameter :: two=2.0D+00, half=0.5D+00
       real(8),intent(in) :: exfac1(5,*), exfac2(5,*)
       real(8),intent(in) :: xyziq(3,*), xzkl(2), rot(3,3)
-      real(8),intent(out) :: phmdint(6,6,6,6)
+      real(8),intent(out) :: phmdint(6,6,6,6), work(4,*)
       real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
       real(8) :: tinv, ft(0:1)
       real(8) :: f0, f1(2), r0, r1(3)
@@ -135,24 +147,28 @@ end
         f0= zero
         f1(1)= zero
         f1(2)= zero
+        i1=0
         do ij= 1,nijkl(1)
           ex12= exfac1(1,ij)
           zip = exfac1(4,ij)
           c12 = exfac1(5,ij)
           ex14= ex12+ex34
-          ex41= one/(ex12+ex34)
           zpq = ziq-zip
           zpq2= zpq*zpq
-          expq= ex12*ex34*ex41
+          expq= ex12*ex34
           tval=(xypq2+zpq2)*expq
 !
 ! Calculate Fm(T)
 !
-          if(tval >= threshtval) then
-            tinv= one/tval
-            ft(0)= c12*sqrtpi4*sqrt(ex41*tval)*tinv
-            ft(1)= ft(0)*tinv*expq
+          if(tval >= threshtval*ex14) then
+            i1= i1+1
+            work(1,i1)= tval
+            work(2,i1)= c12
+            work(3,i1)= expq
+            work(4,i1)= zpq
           else
+            ex41=one/sqrt(ex14)
+            tval=tval*ex41*ex41
             igrid= int(tval)
             tval2= tval *tval
             tval3= tval2*tval
@@ -171,13 +187,20 @@ end
 &                 +fgrid(3,1,igrid)*tval3+fgrid( 4,1,igrid)*tval4 +fgrid( 5,1,igrid)*tval5 &
 &                 +fgrid(6,1,igrid)*tval6+fgrid( 7,1,igrid)*tval7 +fgrid( 8,1,igrid)*tval8 &
 &                 +fgrid(9,1,igrid)*tval9+fgrid(10,1,igrid)*tval10
-            fac= c12*sqrt(ex41)
-            ft(0)= ft(0)*fac
-            ft(1)= ft(1)*fac*expq*two
+            fac= c12*ex41
+            ft(1)= ft(1)*fac*expq*ex41*ex41*two
+            f0= f0+ft(0)*fac
+            f1(1)= f1(1)-ft(1)
+            f1(2)= f1(2)-ft(1)*zpq
           endif
+        enddo
+        do ij= 1,i1
+          tinv= one/sqrt(work(1,ij))
+          ft(0)= work(2,ij)*sqrtpi4*tinv
+          ft(1)= ft(0)*tinv*tinv*work(3,ij)
           f0= f0+ft(0)
           f1(1)= f1(1)-ft(1)
-          f1(2)= f1(2)-ft(1)*zpq
+          f1(2)= f1(2)-ft(1)*work(4,ij)
         enddo
         exq= ex43*c34
         r0= r0+f0*ex3q*c34
@@ -201,9 +224,9 @@ end
 end
 
 
-!------------------------------------------------------------------
-  subroutine int2ppss(phmdint,exfac1,exfac2,xyziq,xzkl,rot,nijkl)
-!------------------------------------------------------------------
+!------------------------------------------------------------------------
+  subroutine int2ppss(phmdint,exfac1,exfac2,xyziq,xzkl,rot,work2,nijkl)
+!------------------------------------------------------------------------
 !
 ! Calculate (pp|ss) integrals
 !
@@ -212,20 +235,22 @@ end
 !       xzkl     (x,z elements of k and l)
 !       nij, nkl (number of primitive pair functions)
 ! Out : phmdint  (two-electron integral)
+!       work2    (work space)
 !
       use fmtgrid, only : fgrid, threshtval
       implicit none
+      integer,parameter :: mxprsh2=30
       integer,intent(in) :: nijkl(2)
-      integer :: ij, kl, igrid, ii, i, k, l
+      integer :: ij, kl, igrid, ii, i, k, l, i1
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, sqrtpi4=0.8862269254527580D+00
       real(8),parameter :: half=0.5D+00, two=2.0D+00, three=3.0D+00
       real(8),intent(in) :: exfac1(5,*), exfac2(5,*)
       real(8),intent(in) :: xyziq(3,*), xzkl(2), rot(3,3)
-      real(8),intent(out) :: phmdint(6,6,6,6)
+      real(8),intent(out) :: phmdint(6,6,6,6), work2(4,*)
       real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
       real(8) :: tinv, ft(0:2)
       real(8) :: f0, f1(2), f2(3), r0(2), r1(3,2), r2(6)
-      real(8) :: ex12, ex34, ex43, ex41, expq, ex3q, ex4q, c12, c34, zip, xiq, yiq, ziq
+      real(8) :: ex12, ex34, ex43, ex14, ex41, expq, ex3q, ex4q, c12, c34, zip, xiq, yiq, ziq
       real(8) :: xiq2, yiq2, xypq2, zpq, zpq2, fac, qmd, qmd2, qx, qz, eri(3,3), work(3)
 !
 ! Zero-clear
@@ -249,24 +274,28 @@ end
         f0   = zero
         f1(1:2)= zero
         f2(1:3)= zero
+        i1= 0
         do ij= 1,nijkl(1)
           ex12= exfac1(1,ij)
           zip = exfac1(4,ij)
           c12 = exfac1(5,ij)
-          ex41= one/(ex12+ex34)
+          ex14= ex12+ex34
           zpq = ziq-zip
           zpq2= zpq*zpq
-          expq= ex12*ex34*ex41
+          expq= ex12*ex34
           tval=(xypq2+zpq2)*expq
 !
 ! Calculate Fm(T)
 !
-          if(tval >= threshtval) then
-            tinv= one/tval
-            ft(0)= c12*sqrtpi4*sqrt(ex41*tval)*tinv
-            ft(1)= ft(0)*tinv*expq
-            ft(2)= ft(1)*tinv*expq*three
+          if(tval >= threshtval*ex14) then
+            i1= i1+1
+            work2(1,i1)= tval
+            work2(2,i1)= c12
+            work2(3,i1)= expq
+            work2(4,i1)= zpq
           else
+            ex41= one/sqrt(ex14)
+            tval= tval*ex41*ex41
             igrid= int(tval)
             tval2= tval *tval
             tval3= tval2*tval
@@ -283,18 +312,31 @@ end
 &                    +fgrid(6,ii,igrid)*tval6+fgrid( 7,ii,igrid)*tval7 +fgrid( 8,ii,igrid)*tval8 &
 &                    +fgrid(9,ii,igrid)*tval9+fgrid(10,ii,igrid)*tval10
             enddo
-            fac= c12*sqrt(ex41)
-            expq= expq*two
+            fac= c12*ex41
+            expq= expq*two*ex41*ex41
             ft(0)= ft(0)*fac
             ft(1)= ft(1)*fac*expq
             ft(2)= ft(2)*fac*expq*expq
+            f0= f0+ft(0)
+            f1(1)= f1(1)-ft(1)
+            f1(2)= f1(2)-ft(1)*zpq
+            f2(1)= f2(1)+ft(2)
+            f2(2)= f2(2)+ft(2)*zpq
+            f2(3)= f2(3)+ft(2)*zpq2
           endif
+        enddo
+        do ij= 1,i1
+          tinv= one/sqrt(work2(1,ij))
+          ft(0)= work2(2,ij)*sqrtpi4*tinv
+          expq= work2(3,ij)*tinv*tinv
+          ft(1)= ft(0)*expq
+          ft(2)= ft(1)*expq*three
           f0= f0+ft(0)
           f1(1)= f1(1)-ft(1)
-          f1(2)= f1(2)-ft(1)*zpq
+          f1(2)= f1(2)-ft(1)*work2(4,ij)
           f2(1)= f2(1)+ft(2)
-          f2(2)= f2(2)+ft(2)*zpq
-          f2(3)= f2(3)+ft(2)*zpq2
+          f2(2)= f2(2)+ft(2)*work2(4,ij)
+          f2(3)= f2(3)+ft(2)*work2(4,ij)*work2(4,ij)
         enddo
         qmd = ex43*c34
         qmd2= qmd*ex43
@@ -353,9 +395,9 @@ end
 end
 
 
-!------------------------------------------------------------------
-  subroutine int2psps(phmdint,exfac1,exfac2,xyziq,xzkl,rot,nijkl)
-!------------------------------------------------------------------
+!-----------------------------------------------------------------------
+  subroutine int2psps(phmdint,exfac1,exfac2,xyziq,xzkl,rot,work,nijkl)
+!-----------------------------------------------------------------------
 !
 ! Calculate (ps|ps) integrals
 !
@@ -364,20 +406,22 @@ end
 !       xzkl     (x,z elements of k and l)
 !       nij, nkl (number of primitive pair functions)
 ! Out : phmdint  (two-electron integral)
+!       work     (work space)
 !
       use fmtgrid, only : fgrid, threshtval
       implicit none
+      integer,parameter :: mxprsh2=30
       integer,intent(in) :: nijkl(2)
-      integer :: ij, kl, igrid, ii, j, l
+      integer :: ij, kl, igrid, ii, j, l, i1
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, sqrtpi4=0.8862269254527580D+00
       real(8),parameter :: half=0.5D+00, two=2.0D+00, three=3.0D+00
       real(8),intent(in) :: exfac1(5,*), exfac2(5,*)
       real(8),intent(in) :: xyziq(3,*), xzkl(2), rot(3,3)
-      real(8),intent(out) :: phmdint(6,6,6,6)
+      real(8),intent(out) :: phmdint(6,6,6,6), work(6,*)
       real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
       real(8) :: tinv, ft(0:2)
       real(8) :: f0, f1(4), f2(3), r0, r1(3,2), r2(6)
-      real(8) :: ex12, ex34, ex43, ex41, expq, ex3q, c12, c34, zip, zjp, xiq, yiq, ziq
+      real(8) :: ex12, ex34, ex43, ex14, ex41, expq, ex3q, c12, c34, zip, zjp, xiq, yiq, ziq
       real(8) :: xiq2, yiq2, xypq2, zpq, zpq2, fac, pmd, qmd, qx, qz, eri(3,3), eri2(3,3)
 !
 ! Zero-clear
@@ -400,26 +444,32 @@ end
         f0= zero
         f1(1:4)= zero
         f2(1:3)= zero
+        i1= 0
         do ij= 1,nijkl(1)
           ex12= exfac1(1,ij)
           pmd = exfac1(2,ij)
           zjp = exfac1(3,ij)
           zip = exfac1(4,ij)
           c12 = exfac1(5,ij)
-          ex41= one/(ex12+ex34)
+          ex14= ex12+ex34
           zpq = ziq-zip
           zpq2= zpq*zpq
-          expq= ex12*ex34*ex41
+          expq= ex12*ex34
           tval=(xypq2+zpq2)*expq
 !
 ! Calculate Fm(T)
 !
-          if(tval >= threshtval) then
-            tinv= one/tval
-            ft(0)= c12*sqrtpi4*sqrt(ex41*tval)*tinv
-            ft(1)= ft(0)*tinv*expq
-            ft(2)= ft(1)*tinv*expq*three
+          if(tval >= threshtval*ex14) then
+            i1= i1+1
+            work(1,i1)= tval
+            work(2,i1)= c12
+            work(3,i1)= expq
+            work(4,i1)= zjp
+            work(5,i1)= zpq
+            work(6,i1)= pmd
           else
+            ex41= one/sqrt(ex14)
+            tval= tval*ex41*ex41
             igrid= int(tval)
             tval2= tval *tval
             tval3= tval2*tval
@@ -436,20 +486,35 @@ end
 &                    +fgrid(6,ii,igrid)*tval6+fgrid( 7,ii,igrid)*tval7 +fgrid( 8,ii,igrid)*tval8 &
 &                    +fgrid(9,ii,igrid)*tval9+fgrid(10,ii,igrid)*tval10
             enddo
-            fac= c12*sqrt(ex41)
-            expq= expq*two
+            fac= c12*ex41
+            expq= expq*two*ex41*ex41
             ft(0)= ft(0)*fac
             ft(1)= ft(1)*fac*expq
             ft(2)= ft(2)*fac*expq*expq
+            f0   = f0   +ft(0)*zjp
+            f1(1)= f1(1)-ft(1)*zjp
+            f1(2)= f1(2)-ft(1)*zjp*zpq
+            f1(3)= f1(3)-ft(1)*pmd
+            f1(4)= f1(4)-ft(1)*pmd*zpq
+            f2(1)= f2(1)+ft(2)*pmd
+            f2(2)= f2(2)+ft(2)*pmd*zpq
+            f2(3)= f2(3)+ft(2)*pmd*zpq2
           endif
-          f0   = f0   +ft(0)*zjp
-          f1(1)= f1(1)-ft(1)*zjp
-          f1(2)= f1(2)-ft(1)*zjp*zpq
-          f1(3)= f1(3)-ft(1)*pmd
-          f1(4)= f1(4)-ft(1)*pmd*zpq
-          f2(1)= f2(1)+ft(2)*pmd
-          f2(2)= f2(2)+ft(2)*pmd*zpq
-          f2(3)= f2(3)+ft(2)*pmd*zpq2
+        enddo
+        do ij= 1,i1
+          tinv= one/sqrt(work(1,ij))
+          ft(0)= work(2,ij)*sqrtpi4*tinv
+          expq= work(3,ij)*tinv*tinv
+          ft(1)= ft(0)*expq
+          ft(2)= ft(1)*expq*three
+          f0   = f0   +ft(0)*work(4,ij)
+          f1(1)= f1(1)-ft(1)*work(4,ij)
+          f1(2)= f1(2)-ft(1)*work(4,ij)*work(5,ij)
+          f1(3)= f1(3)-ft(1)*work(6,ij)
+          f1(4)= f1(4)-ft(1)*work(6,ij)*work(5,ij)
+          f2(1)= f2(1)+ft(2)*work(6,ij)
+          f2(2)= f2(2)+ft(2)*work(6,ij)*work(5,ij)
+          f2(3)= f2(3)+ft(2)*work(6,ij)*work(5,ij)*work(5,ij)
         enddo
         qmd = ex43*c34
         ex3q= ex3q*c34
@@ -524,7 +589,7 @@ end
       real(8) :: tval, tval2, tval3, tval4, tval5, tval6, tval7, tval8, tval9, tval10
       real(8) :: tinv, ft(0:3)
       real(8) :: f0, f1(2,2), f2(3,2), f3(4), r0(2), r1(3,4), r2(6,3), r3(10)
-      real(8) :: ex12, ex34, ex43, ex41, expq, expq2, ex3q, ex4q, c12, c34, zip, zjp
+      real(8) :: ex12, ex34, ex43, ex14, ex41, expq, expq2, ex3q, ex4q, c12, c34, zip, zjp
       real(8) :: xiq, yiq, ziq, xiq2, yiq2, xyiq, xypq2, zpq, zpq2, fac, pmd
       real(8) :: qmd, qmd2, qmd2x, qmd2y, qx, qz, xx, xz, zz, eri(3,3,3), work(4), fw(6)
       real(8) :: eri2(3,3,3)
@@ -559,21 +624,24 @@ end
           zjp = exfac1(3,ij)
           zip = exfac1(4,ij)
           c12 = exfac1(5,ij)
-          ex41= one/(ex12+ex34)
+          ex14= ex12+ex34
           zpq = ziq-zip
           zpq2= zpq*zpq
-          expq= ex12*ex34*ex41
+          expq= ex12*ex34
           tval=(xypq2+zpq2)*expq
 !
 ! Calculate Fm(T)
 !
-          if(tval >= threshtval) then
-            tinv= one/tval
-            ft(0)= c12*sqrtpi4*sqrt(ex41*tval)*tinv
-            ft(1)= ft(0)*tinv*expq
-            ft(2)= ft(1)*tinv*expq*three
-            ft(3)= ft(2)*tinv*expq*five
+          if(tval >= threshtval*ex14) then
+            tinv= one/sqrt(tval)
+            ft(0)= c12*sqrtpi4*tinv
+            expq= expq*tinv*tinv
+            ft(1)= ft(0)*expq
+            ft(2)= ft(1)*expq*three
+            ft(3)= ft(2)*expq*five
           else
+            ex41= one/sqrt(ex14)
+            tval= tval*ex41*ex41
             igrid= int(tval)
             tval2= tval *tval
             tval3= tval2*tval
@@ -590,8 +658,8 @@ end
 &                    +fgrid(6,ii,igrid)*tval6+fgrid( 7,ii,igrid)*tval7 +fgrid( 8,ii,igrid)*tval8 &
 &                    +fgrid(9,ii,igrid)*tval9+fgrid(10,ii,igrid)*tval10
             enddo
-            fac= c12*sqrt(ex41)
-            expq = expq*two
+            fac= c12*ex41
+            expq = expq*two*ex41*ex41
             expq2= expq*expq
             ft(0)= ft(0)*fac
             ft(1)= ft(1)*fac*expq
@@ -706,33 +774,24 @@ end
 &                -r1(3,3)*zz-r1(3,4)+r0(1)*zz+r0(2)
 !
       do j=1,3
-      do k= 1,3
-        do l= 1,3
-          eri2(l,k,j)= eri(l,k,1)*rot(1,j)+eri(l,k,2)*rot(2,j)+eri(l,k,3)*rot(3,j)
-!         eri2(l,k,1)= eri(l,k,1)*rot(1,1)+eri(l,k,2)*rot(2,1)+eri(l,k,3)*rot(3,1)
-!         eri2(l,k,2)= eri(l,k,1)*rot(1,2)+eri(l,k,2)*rot(2,2)+eri(l,k,3)*rot(3,2)
-!         eri2(l,k,3)= eri(l,k,1)*rot(1,3)+eri(l,k,2)*rot(2,3)+eri(l,k,3)*rot(3,3)
+        do k= 1,3
+          do l= 1,3
+            eri2(l,k,j)= eri(l,k,1)*rot(1,j)+eri(l,k,2)*rot(2,j)+eri(l,k,3)*rot(3,j)
+          enddo
         enddo
-      enddo
       enddo
       do j= 1,3
-       do k=1,3
-        do l= 1,3
-          eri(l,k,j)= eri2(l,1,j)*rot(1,k)+eri2(l,2,j)*rot(2,k)+eri2(l,3,j)*rot(3,k)
-!         eri(l,1,j)= eri2(l,1,j)*rot(1,1)+eri2(l,2,j)*rot(2,1)+eri2(l,3,j)*rot(3,1)
-!         eri(l,2,j)= eri2(l,1,j)*rot(1,2)+eri2(l,2,j)*rot(2,2)+eri2(l,3,j)*rot(3,2)
-!         eri(l,3,j)= eri2(l,1,j)*rot(1,3)+eri2(l,2,j)*rot(2,3)+eri2(l,3,j)*rot(3,3)
+        do k=1,3
+          do l= 1,3
+            eri(l,k,j)= eri2(l,1,j)*rot(1,k)+eri2(l,2,j)*rot(2,k)+eri2(l,3,j)*rot(3,k)
+          enddo
         enddo
-       enddo
       enddo
       do j= 1,3
         do k= 1,3
-         do l= 1,3
-          eri2(l,k,j)= eri(1,k,j)*rot(1,l)+eri(2,k,j)*rot(2,l)+eri(3,k,j)*rot(3,l)
-         enddo
-!         eri2(1,k,j)= eri(1,k,j)*rot(1,1)+eri(2,k,j)*rot(2,1)+eri(3,k,j)*rot(3,1)
-!         eri2(2,k,j)= eri(1,k,j)*rot(1,2)+eri(2,k,j)*rot(2,2)+eri(3,k,j)*rot(3,2)
-!         eri2(3,k,j)= eri(1,k,j)*rot(1,3)+eri(2,k,j)*rot(2,3)+eri(3,k,j)*rot(3,3)
+          do l= 1,3
+            eri2(l,k,j)= eri(1,k,j)*rot(1,l)+eri(2,k,j)*rot(2,l)+eri(3,k,j)*rot(3,l)
+          enddo
         enddo
       enddo
 !
@@ -774,7 +833,7 @@ end
       real(8) :: tinv, ft(0:4)
       real(8) :: f0(2), f1(2,5), f2(3,5), f3(4,3), f4(5), r0(4), r1(3,8), r2(6,8)
       real(8) :: r3(10,4), r4(15), f1w(3,4), f2w(6,5), f3w(10,3), ftw(4,5)
-      real(8) :: ex12, ex34, ex43, ex41, expq, expq2, ex3q, ex4q, c12, c34, zip, zjp
+      real(8) :: ex12, ex34, ex43, ex14, ex41, expq, expq2, ex3q, ex4q, c12, c34, zip, zjp
       real(8) :: xiq, yiq, ziq, xiq2, yiq2, xiq4, yiq4, xyiq, xyiq2, xypq2, zpq, zpq2, zpq3
       real(8) :: fac, pmd, qmd, qmd2, qmd2x, qmd2y, qmd2xy, qx, qz, xx, xz, zz, eri(3,3,3,3)
       real(8) :: work(5)
@@ -814,23 +873,26 @@ end
           zjp = exfac1(3,ij)
           zip = exfac1(4,ij)
           c12 = exfac1(5,ij)
-          ex41= one/(ex12+ex34)
+          ex14= ex12+ex34
           zpq = ziq-zip
           zpq2= zpq*zpq
           zpq3= zpq*zpq2
-          expq= ex12*ex34*ex41
+          expq= ex12*ex34
           tval=(xypq2+zpq2)*expq
 !
 ! Calculate Fm(T)
 !
-          if(tval >= threshtval) then
-            tinv= one/tval
-            ft(0)= c12*sqrtpi4*sqrt(ex41*tval)*tinv
-            ft(1)= ft(0)*tinv*expq
-            ft(2)= ft(1)*tinv*expq*three
-            ft(3)= ft(2)*tinv*expq*five
-            ft(4)= ft(3)*tinv*expq*seven
+          if(tval >= threshtval*ex14) then
+            tinv= one/sqrt(tval)
+            ft(0)= c12*sqrtpi4*tinv
+            expq= expq*tinv*tinv
+            ft(1)= ft(0)*expq
+            ft(2)= ft(1)*expq*three
+            ft(3)= ft(2)*expq*five
+            ft(4)= ft(3)*expq*seven
           else
+            ex41= one/sqrt(ex14)
+            tval= tval*ex41*ex41
             igrid= int(tval)
             tval2= tval *tval
             tval3= tval *tval *tval
@@ -847,8 +909,8 @@ end
 &                    +fgrid(6,ii,igrid)*tval6+fgrid( 7,ii,igrid)*tval7 +fgrid( 8,ii,igrid)*tval8 &
 &                    +fgrid(9,ii,igrid)*tval9+fgrid(10,ii,igrid)*tval10
             enddo
-            fac= c12*sqrt(ex41)
-            expq = expq*two
+            fac= c12*ex41
+            expq = expq*two*ex41*ex41
             expq2= expq*expq
             ft(0)= ft(0)*fac
             ft(1)= ft(1)*fac*expq

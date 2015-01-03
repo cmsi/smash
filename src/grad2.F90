@@ -175,19 +175,10 @@ end
         coijkl(l,4)= two*ex(lloc+l)*coeff(lloc+l)
       enddo
 !
-      if((nangijkl(1)<=2).and.(nangijkl(2)<=2).and.(nangijkl(3)<=2).and.(nangijkl(4)<=2)) then
+! Two-electron integral calculation
 !
-! Pople-Hehre and McMurchie-Davidson scheme
-!
-        call int2phmd(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                     mxprsh,threshex,.false.,zero)
-      else
-!
-! Rys quadrature scheme
-!
-        call int2rys(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                    mxprsh,threshex,.false.,zero)
-      endif
+      call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
+&                   mxprsh,threshex)
 !
       select case(nangijkl(4))
         case(1)
@@ -290,13 +281,10 @@ end
           coijkl(l,4)= coeff(lloc+l)
         enddo
 !
-        if((nangijkl(1)<=2).and.(nangijkl(2)<=2).and.(nangijkl(3)<=2).and.(nangijkl(4)<=2)) then
-          call int2phmd(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                       mxprsh,threshex,.false.,zero)
-        else
-          call int2rys(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                      mxprsh,threshex,.false.,zero)
-        endif
+! Two-electron integral calculation
+!
+        call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
+&                     mxprsh,threshex)
 !
         select case(nangijkl(4))
           case(0)
@@ -416,13 +404,10 @@ end
         coijkl(k,3)= two*ex(kloc+k)*coeff(kloc+k)
       enddo
 !
-      if((nangijkl(1)<=2).and.(nangijkl(2)<=2).and.(nangijkl(3)<=2).and.(nangijkl(4)<=2)) then
-        call int2phmd(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                     mxprsh,threshex,.false.,zero)
-      else
-        call int2rys(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                    mxprsh,threshex,.false.,zero)
-      endif
+! Two-electron integral calculation
+!
+      call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
+&                   mxprsh,threshex)
 !
       select case(nangijkl(3))
         case(1)
@@ -525,13 +510,10 @@ end
           coijkl(k,3)= coeff(kloc+k)
         enddo
 !
-        if((nangijkl(1)<=2).and.(nangijkl(2)<=2).and.(nangijkl(3)<=2).and.(nangijkl(4)<=2)) then
-          call int2phmd(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                       mxprsh,threshex,.false.,zero)
-        else
-          call int2rys(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                      mxprsh,threshex,.false.,zero)
-        endif
+! Two-electron integral calculation
+!
+        call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
+&                     mxprsh,threshex)
 !
         select case(nangijkl(3))
           case(0)
@@ -651,13 +633,10 @@ end
         coijkl(j,2)= two*ex(jloc+j)*coeff(jloc+j)
       enddo
 !
-      if((nangijkl(1)<=2).and.(nangijkl(2)<=2).and.(nangijkl(3)<=2).and.(nangijkl(4)<=2)) then
-        call int2phmd(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                     mxprsh,threshex,.false.,zero)
-      else
-        call int2rys(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                    mxprsh,threshex,.false.,zero)
-      endif
+! Two-electron integral calculation
+!
+      call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
+&                   mxprsh,threshex)
 !
       select case(nangijkl(2))
         case(1)
@@ -760,13 +739,10 @@ end
           coijkl(j,2)= coeff(jloc+j)
         enddo
 !
-        if((nangijkl(1)<=2).and.(nangijkl(2)<=2).and.(nangijkl(3)<=2).and.(nangijkl(4)<=2)) then
-          call int2phmd(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                       mxprsh,threshex,.false.,zero)
-        else
-          call int2rys(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
-&                      mxprsh,threshex,.false.,zero)
-        endif
+! Two-electron integral calculation
+!
+        call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
+&                     mxprsh,threshex)
 !
         select case(nangijkl(2))
           case(0)
