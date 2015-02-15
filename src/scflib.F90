@@ -225,11 +225,13 @@ end
       real(8),intent(in) :: dmtrx(ndim), dmtrxprev(ndim)
       real(8),intent(out) :: diffmax, work(ndim)
 !
+      diffmax= zero
+!$OMP parallel do reduction(max:diffmax)
       do i= 1,ndim
         work(i)= dmtrx(i)-dmtrxprev(i)
+        if(abs(work(i)) > diffmax) diffmax= abs(work(i))
       enddo
-      imax= idamax(ndim,work,1)
-      diffmax=abs(work(imax))
+!$OMP end parallel do
       return
 end
 
