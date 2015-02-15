@@ -29,7 +29,7 @@
       logical :: converged
 !
       call start
-      version='1.1.0'
+      version='1.2.0'
 !
       if(master) then
         write(*,&
