@@ -868,8 +868,8 @@ end
 !
       if(master) then
         rewind(icheck)
-        read(icheck)
-        read(icheck,err=9999) scftype_g, natom_g, nao_g, nmo_g, nshell_g, nprim_g, neleca_g, &
+        read(icheck,end=9999)
+        read(icheck,err=9998) scftype_g, natom_g, nao_g, nmo_g, nshell_g, nprim_g, neleca_g, &
 &                             nelecb_g, cdummy, cdummy, charge_g, idummy, flagecp_g
         if(natom_g /= natom) then
           write(*,'(" Error! The numbers of atoms in checkpoint and input files are different.")')
@@ -896,6 +896,9 @@ end
       return
 !
  9999 write(*,'(" Error! Checkpoint file cannot be read in checkguess.")')
+      write(*,'(" Check the checkpoint file name.",/)')
+      call iabort
+ 9998 write(*,'(" Error! Checkpoint file cannot be read in checkguess.")')
       call iabort
 end
 
