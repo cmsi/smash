@@ -329,7 +329,7 @@
           endif
         case default
           write(*,'("Subroutine rysroot supports up to nroots=9")')
-          call iabort
+          call exit
       end select
       return
 end
