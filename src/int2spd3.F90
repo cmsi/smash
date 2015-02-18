@@ -607,39 +607,41 @@
       call int2dddp2(eri,r0,r1,r2,r3,r4,r5,r6,r7,qx,qz)
       call int2dddp3(eri,r0,r1,r2,r3,r4,r5,r6,r7,qx,qz)
 !
-      do l= 1,3
-        rot2(1,l)= rot(1,l)*rot(1,l)
-        rot2(2,l)= rot(2,l)*rot(2,l)
-        rot2(3,l)= rot(3,l)*rot(3,l)
-        rot2(4,l)= rot(1,l)*rot(2,l)*two
-        rot2(5,l)= rot(1,l)*rot(3,l)*two
-        rot2(6,l)= rot(2,l)*rot(3,l)*two
+      rot2(1,1)= rot(1,1)*rot(1,1)
+      rot2(2,1)= rot(2,1)*rot(2,1)
+      rot2(3,1)= rot(3,1)*rot(3,1)
+      rot2(4,1)= rot(1,1)*rot(2,1)*two
+      rot2(5,1)= rot(1,1)*rot(3,1)*two
+      rot2(6,1)= rot(2,1)*rot(3,1)*two
+      do l= 2,3
+        rot2(1,l)= rot(1,1)*rot(1,l)*sqrt3
+        rot2(2,l)= rot(2,1)*rot(2,l)*sqrt3
+        rot2(3,l)= rot(3,1)*rot(3,l)*sqrt3
+        rot2(4,l)=(rot(1,1)*rot(2,l)+rot(2,1)*rot(1,l))*sqrt3
+        rot2(5,l)=(rot(1,1)*rot(3,l)+rot(3,1)*rot(1,l))*sqrt3
+        rot2(6,l)=(rot(2,1)*rot(3,l)+rot(3,1)*rot(2,l))*sqrt3
       enddo
-      do l= 4,5
-        rot2(1,l)= rot(1,1)*rot(1,l-2)
-        rot2(2,l)= rot(2,1)*rot(2,l-2)
-        rot2(3,l)= rot(3,1)*rot(3,l-2)
-        rot2(4,l)= rot(1,1)*rot(2,l-2)+rot(2,1)*rot(1,l-2)
-        rot2(5,l)= rot(1,1)*rot(3,l-2)+rot(3,1)*rot(1,l-2)
-        rot2(6,l)= rot(2,1)*rot(3,l-2)+rot(3,1)*rot(2,l-2)
+      do l= 2,3
+        rot2(1,l*2)= rot(1,l)*rot(1,l)
+        rot2(2,l*2)= rot(2,l)*rot(2,l)
+        rot2(3,l*2)= rot(3,l)*rot(3,l)
+        rot2(4,l*2)= rot(1,l)*rot(2,l)*two
+        rot2(5,l*2)= rot(1,l)*rot(3,l)*two
+        rot2(6,l*2)= rot(2,l)*rot(3,l)*two
       enddo
-      rot2(1,6)= rot(1,2)*rot(1,3)
-      rot2(2,6)= rot(2,2)*rot(2,3)
-      rot2(3,6)= rot(3,2)*rot(3,3)
-      rot2(4,6)= rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3)
-      rot2(5,6)= rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3)
-      rot2(6,6)= rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3)
-      do l= 4,6
-        do k= 1,6
-          rot2(k,l)= rot2(k,l)*sqrt3
-        enddo
-      enddo
+      rot2(1,5)= rot(1,2)*rot(1,3)*sqrt3
+      rot2(2,5)= rot(2,2)*rot(2,3)*sqrt3
+      rot2(3,5)= rot(3,2)*rot(3,3)*sqrt3
+      rot2(4,5)=(rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3))*sqrt3
+      rot2(5,5)=(rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3))*sqrt3
+      rot2(6,5)=(rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3))*sqrt3
+!
       do l= 1,6
-        rot3(l,1)= rot2(l,3)-(rot2(l,1)+rot2(l,2))*half
+        rot3(l,1)= rot2(l,2)
         rot3(l,2)= rot2(l,5)
-        rot3(l,3)= rot2(l,6)
-        rot3(l,4)=(rot2(l,1)-rot2(l,2))*sqrt3h
-        rot3(l,5)= rot2(l,4)
+        rot3(l,3)= rot2(l,6)-(rot2(l,1)+rot2(l,4))*half
+        rot3(l,4)= rot2(l,3)
+        rot3(l,5)=(rot2(l,1)-rot2(l,4))*sqrt3h
       enddo
 !
       do j= 1,6
@@ -741,6 +743,91 @@
         enddo
       endif
 !
+      if(nbfijkl(2) == 6)then
+        do i= 1,3
+        do k= 1,nbfijkl(3)
+        do l= 1,nbfijkl(4)
+          work(1:6)= phmdint(l,k,1:6,i)
+          phmdint(l,k,1,i)=work(1)
+          phmdint(l,k,2,i)=work(4)
+          phmdint(l,k,3,i)=work(6)
+          phmdint(l,k,4,i)=work(2)
+          phmdint(l,k,5,i)=work(3)
+          phmdint(l,k,6,i)=work(5)
+        enddo
+        enddo
+        enddo
+      else
+        do i= 1,3
+        do k= 1,nbfijkl(3)
+        do l= 1,nbfijkl(4)
+          work(1:5)= phmdint(l,k,1:5,i)
+          phmdint(l,k,1,i)=work(3)
+          phmdint(l,k,2,i)=work(4)
+          phmdint(l,k,3,i)=work(2)
+          phmdint(l,k,4,i)=work(5)
+          phmdint(l,k,5,i)=work(1)
+        enddo
+        enddo
+        enddo
+      endif
+      if(nbfijkl(3) == 6)then
+        do i= 1,3
+        do j= 1,nbfijkl(2)
+        do l= 1,nbfijkl(4)
+          work(1:6)= phmdint(l,1:6,j,i)
+          phmdint(l,1,j,i)=work(1)
+          phmdint(l,2,j,i)=work(4)
+          phmdint(l,3,j,i)=work(6)
+          phmdint(l,4,j,i)=work(2)
+          phmdint(l,5,j,i)=work(3)
+          phmdint(l,6,j,i)=work(5)
+        enddo
+        enddo
+        enddo
+      else
+        do i= 1,3
+        do j= 1,nbfijkl(2)
+        do l= 1,nbfijkl(4)
+          work(1:5)= phmdint(l,1:5,j,i)
+          phmdint(l,1,j,i)=work(3)
+          phmdint(l,2,j,i)=work(4)
+          phmdint(l,3,j,i)=work(2)
+          phmdint(l,4,j,i)=work(5)
+          phmdint(l,5,j,i)=work(1)
+        enddo
+        enddo
+        enddo
+      endif
+      if(nbfijkl(4) == 6)then
+        do i= 1,3
+        do j= 1,nbfijkl(2)
+        do k= 1,nbfijkl(3)
+          work(1:6)= phmdint(1:6,k,j,i)
+          phmdint(1,k,j,i)=work(1)
+          phmdint(2,k,j,i)=work(4)
+          phmdint(3,k,j,i)=work(6)
+          phmdint(4,k,j,i)=work(2)
+          phmdint(5,k,j,i)=work(3)
+          phmdint(6,k,j,i)=work(5)
+        enddo
+        enddo
+        enddo
+      else
+        do i= 1,3
+        do j= 1,nbfijkl(2)
+        do k= 1,nbfijkl(3)
+          work(1:5)= phmdint(1:5,k,j,i)
+          phmdint(1,k,j,i)=work(3)
+          phmdint(2,k,j,i)=work(4)
+          phmdint(3,k,j,i)=work(2)
+          phmdint(4,k,j,i)=work(5)
+          phmdint(5,k,j,i)=work(1)
+        enddo
+        enddo
+        enddo
+      endif
+!
       return
 end
 
@@ -775,46 +862,6 @@ end
       xxzz= xx*zz
       xzzz= xz*zz
       zzzz= zz*zz
-!
-      r400=-r7(1)-r5(1,3)*three-r5(1,8)*six-r3(1,15)*p18-r3(1,27)*three-r1(1,23)*nine
-      r310=-r7(2)-r5(2,3)*three-r5(2,8)*three-r3(2,15)*nine
-      r301=-r7(3)-r5(3,3)*three-r5(3,8)*three-r3(3,15)*nine
-      r220=-r7(4)-r5(4,3)*three-r5(1,8)-r5(4,8)-r3(1,15)*three-r3(4,15)*three-r3(1,27) &
-&          -r1(1,23)*three
-      r211=-r7(5)-r5(5,3)*three-r5(5,8)-r3(5,15)*three
-      r202=-r7(6)-r5(6,3)*three-r5(1,8)-r5(6,8)-r3(1,15)*three-r3(6,15)*three-r3(1,27) &
-&          -r1(1,23)*three
-      r130=-r7(7)-r5(7,3)*three-r5(2,8)*three-r3(2,15)*nine
-      r121=-r7(8)-r5(8,3)*three-r5(3,8)-r3(3,15)*three
-      r112=-r7(9)-r5(9,3)*three-r5(2,8)-r3(2,15)*three
-      r103=-r7(10)-r5(10,3)*three-r5(3,8)*three-r3(3,15)*nine
-      r040=-r7(11)-r5(11,3)*three-r5(4,8)*six-r3(4,15)*p18-r3(1,27)*three-r1(1,23)*nine
-      r031=-r7(12)-r5(12,3)*three-r5(5,8)*three-r3(5,15)*nine
-      r022=-r7(13)-r5(13,3)*three-r5(4,8)-r5(6,8)-r3(4,15)*three-r3(6,15)*three-r3(1,27) &
-&          -r1(1,23)*three
-      r013=-r7(14)-r5(14,3)*three-r5(5,8)*three-r3(5,15)*nine
-      r004=-r7(15)-r5(15,3)*three-r5(6,8)*six-r3(6,15)*p18-r3(1,27)*three-r1(1,23)*nine
-      rxyz(1)=-r3(1,31)-r1(1,27)*three
-      rxyz(2)=-r4(2,21)-r2(4,24)*three
-      rxyz(3)=-r4(2,20)-r2(4,23)*three
-      rxyz(4)=-r5(4,9)-r3(4,16)*three-r3(1,28)-r1(1,24)*three
-      rxyz(5)=-r5(4,11)-r3(4,18)*three-r3(1,30)-r1(1,26)*three
-      rxyz(6)=-r5(4,10)-r3(4,17)*three-r3(1,29)-r1(1,25)*three
-      rxyz(7)=-r6(7,3)-r4(7,8)*three-r4(2,18)*three-r2(4,21)*nine
-      rxyz(8)=-r6(7,4)-r4(7,9)*three-r4(2,19)*three-r2(4,22)*nine
-      rxyz(9)=-r6(5,3)-r6(5,4)-r4(5,8)*three-r4(5,9)*three
-      rxyz(10)=-r5(5,10)-r3(5,17)*three
-      rxyz(11)=-r5(2,10)-r3(2,17)*three
-      rxyz(12)=-r6(8,3)-r4(8,8)*three-r4(3,18)-r2(5,21)*three
-      rxyz(13)=-r6(8,4)-r4(8,9)*three-r4(3,19)-r2(5,22)*three
-      rxyz(14)=-r6(4,4)-r4(4,9)*three-r4(1,19)-r2(1,22)*three
-      rxyz(15)=-r6(4,3)-r4(4,8)*three-r4(1,18)-r2(1,21)*three
-      rxyz(16)=-r6(2,4)-r4(2,9)*three-r4(2,19)-r2(4,22)*three
-      rxyz(17)=-r6(2,3)-r4(2,8)*three-r4(2,18)-r2(4,21)*three
-      rxyz(18)=-r6(9,3)-r4(9,8)*three-r4(2,18)-r2(4,21)*three
-      rxyz(19)=-r6(9,4)-r4(9,9)*three-r4(2,19)-r2(4,22)*three
-      rxyz(20)=-r5(3,10)*four-r3(3,17)*p12
-
 !
       r400=-r7(1)-r5(1,3)*three-r5(1,8)*six-r3(1,15)*p18-r3(1,27)*three-r1(1,23)*nine
       r310=-r7(2)-r5(2,3)*three-r5(2,8)*three-r3(2,15)*nine

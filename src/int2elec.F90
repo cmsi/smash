@@ -474,8 +474,7 @@ end
       integer,intent(in) :: ncartijkl(4)
       integer :: nroots, mmax, nmax
       integer :: i, j, k, l, nij, nkl, ij, kl, iprim, jprim, kprim, lprim, iroot
-      integer :: irx, iry, irz, jrx, jry, jrz, krx, kry, krz, lrx, lry, lrz
-      integer :: ix(15,0:4), iy(15,0:4), iz(15,0:4), icount, nn
+      integer :: ii, jj, kk, ll, ix, iy, iz, jx, jy, jz, kx, ky, kz, lx, ly, lz, icount, nn
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
       real(8),parameter :: two=2.0D+00, three=3.0D+00, four=4.0D+00
       real(8),parameter :: six=6.0D+00, eight=8.0D+00, p24=24.0D+00
@@ -507,21 +506,6 @@ end
       real(8) :: ex41, ex41h, ex43h, b10t, bp01t, cx, cy, cz, cpx, cpy, cpz, tval
       real(8) :: trys(13), wrys(13), b00, b10, bp01, c00(3),cp00(3)
       real(8) :: xyzint(3,0:12,0:6,0:12), rysint(3,8,0:6,0:6,0:12,0:6,13), work(28)
-      data ix/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             1,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             2,0,0,1,1,0,0,0,0,0,0,0,0,0,0, &
-&             3,0,0,2,2,1,0,1,0,1,0,0,0,0,0, &
-&             4,0,0,3,3,1,0,1,0,2,2,0,2,1,1/
-      data iy/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,1,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,2,0,1,0,1,0,0,0,0,0,0,0,0,0, &
-&             0,3,0,1,0,2,2,0,1,1,0,0,0,0,0, &
-&             0,4,0,1,0,3,3,0,1,2,0,2,1,2,1/
-      data iz/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,0,1,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,0,2,0,1,1,0,0,0,0,0,0,0,0,0, &
-&             0,0,3,0,1,0,1,2,2,1,0,0,0,0,0, &
-&             0,0,4,0,1,0,1,3,3,0,2,2,1,1,2/
 !
       nroots=(nangijkl(1)+nangijkl(2)+nangijkl(3)+nangijkl(4))/2+1
       mmax= nangijkl(1)+nangijkl(2)
@@ -725,27 +709,36 @@ end
           enddo
 !
           if(icount == 8) then
-            do i= 1,ncartijkl(1)
-              irx= ix(i,nangijkl(1))
-              iry= iy(i,nangijkl(1))
-              irz= iz(i,nangijkl(1))
-              do j= 1,ncartijkl(2)
-                jrx= ix(j,nangijkl(2))
-                jry= iy(j,nangijkl(2))
-                jrz= iz(j,nangijkl(2))
-                do k= 1,ncartijkl(3)
-                  krx= ix(k,nangijkl(3))
-                  kry= iy(k,nangijkl(3))
-                  krz= iz(k,nangijkl(3))
-                  do l= 1,ncartijkl(4)
-                    lrx= ix(l,nangijkl(4))
-                    lry= iy(l,nangijkl(4))
-                    lrz= iz(l,nangijkl(4))
-                    do iroot= 1,nroots
-                      do nn= 1,8
-                        eritmp(l,k,j,i)= eritmp(l,k,j,i)+(rysint(1,nn,lrx,krx,jrx,irx,iroot) &
-&                                                        *rysint(2,nn,lry,kry,jry,iry,iroot) &
-&                                                        *rysint(3,nn,lrz,krz,jrz,irz,iroot))
+            ii= 0
+            do ix= nangijkl(1),0,-1
+              do iy= nangijkl(1)-ix,0,-1
+                iz= nangijkl(1)-ix-iy
+                ii= ii+1
+                jj= 0
+                do jx= nangijkl(2),0,-1
+                  do jy= nangijkl(2)-jx,0,-1
+                    jz= nangijkl(2)-jx-jy
+                    jj= jj+1
+                    kk= 0
+                    do kx= nangijkl(3),0,-1
+                      do ky= nangijkl(3)-kx,0,-1
+                        kz= nangijkl(3)-kx-ky
+                        kk= kk+1
+                        ll= 0
+                        do lx= nangijkl(4),0,-1
+                          do ly= nangijkl(4)-lx,0,-1
+                            lz= nangijkl(4)-lx-ly
+                            ll= ll+1
+                            do iroot= 1,nroots
+                              do nn= 1,8
+                                eritmp(ll,kk,jj,ii)= eritmp(ll,kk,jj,ii) &
+&                                                  +(rysint(1,nn,lx,kx,jx,ix,iroot) &
+&                                                   *rysint(2,nn,ly,ky,jy,iy,iroot) &
+&                                                   *rysint(3,nn,lz,kz,jz,iz,iroot))
+                              enddo
+                            enddo
+                          enddo
+                        enddo
                       enddo
                     enddo
                   enddo
@@ -759,27 +752,36 @@ end
       enddo
 !
       if(icount /= 0) then
-        do i= 1,ncartijkl(1)
-          irx= ix(i,nangijkl(1))
-          iry= iy(i,nangijkl(1))
-          irz= iz(i,nangijkl(1))
-          do j= 1,ncartijkl(2)
-            jrx= ix(j,nangijkl(2))
-            jry= iy(j,nangijkl(2))
-            jrz= iz(j,nangijkl(2))
-            do k= 1,ncartijkl(3)
-              krx= ix(k,nangijkl(3))
-              kry= iy(k,nangijkl(3))
-              krz= iz(k,nangijkl(3))
-              do l= 1,ncartijkl(4)
-                lrx= ix(l,nangijkl(4))
-                lry= iy(l,nangijkl(4))
-                lrz= iz(l,nangijkl(4))
-                do iroot= 1,nroots
-                  do nn= 1,icount
-                    eritmp(l,k,j,i)= eritmp(l,k,j,i)+(rysint(1,nn,lrx,krx,jrx,irx,iroot) &
-&                                                    *rysint(2,nn,lry,kry,jry,iry,iroot) &
-&                                                    *rysint(3,nn,lrz,krz,jrz,irz,iroot))
+        ii= 0
+        do ix= nangijkl(1),0,-1
+          do iy= nangijkl(1)-ix,0,-1
+            iz= nangijkl(1)-ix-iy
+            ii= ii+1
+            jj= 0
+            do jx= nangijkl(2),0,-1
+              do jy= nangijkl(2)-jx,0,-1
+                jz= nangijkl(2)-jx-jy
+                jj= jj+1
+                kk= 0
+                do kx= nangijkl(3),0,-1
+                  do ky= nangijkl(3)-kx,0,-1
+                    kz= nangijkl(3)-kx-ky
+                    kk= kk+1
+                    ll= 0
+                    do lx= nangijkl(4),0,-1
+                      do ly= nangijkl(4)-lx,0,-1
+                        lz= nangijkl(4)-lx-ly
+                        ll= ll+1
+                        do iroot= 1,nroots
+                          do nn= 1,icount
+                            eritmp(ll,kk,jj,ii)= eritmp(ll,kk,jj,ii) &
+&                                              +(rysint(1,nn,lx,kx,jx,ix,iroot) &
+&                                               *rysint(2,nn,ly,ky,jy,iy,iroot) &
+&                                               *rysint(3,nn,lz,kz,jz,iz,iroot))
+                          enddo
+                        enddo
+                      enddo
+                    enddo
                   enddo
                 enddo
               enddo
@@ -797,24 +799,53 @@ end
                 do i= 1,6
                   work(i)= eritmp(l,k,j,i)
                 enddo
-                eritmp(l,k,j,1)=(work(3)*two-work(1)-work(2))*half
+                eritmp(l,k,j,1)= work(2)*sqrt3
                 eritmp(l,k,j,2)= work(5)*sqrt3
-                eritmp(l,k,j,3)= work(6)*sqrt3
-                eritmp(l,k,j,4)=(work(1)-work(2))*sqrt3h
-                eritmp(l,k,j,5)= work(4)*sqrt3
+                eritmp(l,k,j,3)=(work(6)*two-work(1)-work(4))*half
+                eritmp(l,k,j,4)= work(3)*sqrt3
+                eritmp(l,k,j,5)=(work(1)-work(4))*sqrt3h
               enddo
             enddo
           enddo
+!ishimura
+          do j= 1,ncartijkl(2)
+            do k= 1,ncartijkl(3)
+              do l= 1,ncartijkl(4)
+                work(1:5)= eritmp(l,k,j,1:5)
+                eritmp(l,k,j,1)= work(3)
+                eritmp(l,k,j,2)= work(4)
+                eritmp(l,k,j,3)= work(2)
+                eritmp(l,k,j,4)= work(5)
+                eritmp(l,k,j,5)= work(1)
+              enddo
+            enddo
+          enddo
+!
         elseif(nbfijkl(1) == 6) then
-          do i= 4,6
-            do j= 1,ncartijkl(2)
-              do k= 1,ncartijkl(3)
-                do l= 1,ncartijkl(4)
-                  eritmp(l,k,j,i)= eritmp(l,k,j,i)*sqrt3
-                enddo
+          do j= 1,ncartijkl(2)
+            do k= 1,ncartijkl(3)
+              do l= 1,ncartijkl(4)
+                eritmp(l,k,j,2)= eritmp(l,k,j,2)*sqrt3
+                eritmp(l,k,j,3)= eritmp(l,k,j,3)*sqrt3
+                eritmp(l,k,j,5)= eritmp(l,k,j,5)*sqrt3
               enddo
             enddo
           enddo
+!ishimura
+          do j= 1,ncartijkl(2)
+            do k= 1,ncartijkl(3)
+              do l= 1,ncartijkl(4)
+                work(1:6)= eritmp(l,k,j,1:6)
+                eritmp(l,k,j,1)= work(1)
+                eritmp(l,k,j,2)= work(4)
+                eritmp(l,k,j,3)= work(6)
+                eritmp(l,k,j,4)= work(2)
+                eritmp(l,k,j,5)= work(3)
+                eritmp(l,k,j,6)= work(5)
+              enddo
+            enddo
+          enddo
+!
         elseif(nbfijkl(1) == 7) then
           do j= 1,ncartijkl(2)
             do k= 1,ncartijkl(3)
@@ -901,24 +932,53 @@ end
                 do j= 1,6
                   work(j)= eritmp(l,k,j,i)
                 enddo
-                eritmp(l,k,1,i)=(work(3)*two-work(1)-work(2))*half
+                eritmp(l,k,1,i)= work(2)*sqrt3
                 eritmp(l,k,2,i)= work(5)*sqrt3
-                eritmp(l,k,3,i)= work(6)*sqrt3
-                eritmp(l,k,4,i)=(work(1)-work(2))*sqrt3h
-                eritmp(l,k,5,i)= work(4)*sqrt3
+                eritmp(l,k,3,i)=(work(6)*two-work(1)-work(4))*half
+                eritmp(l,k,4,i)= work(3)*sqrt3
+                eritmp(l,k,5,i)=(work(1)-work(4))*sqrt3h
               enddo
             enddo
           enddo
+!ishimura
+          do i= 1,nbfijkl(1)
+            do k= 1,ncartijkl(3)
+              do l= 1,ncartijkl(4)
+                work(1:5)= eritmp(l,k,1:5,i)
+                eritmp(l,k,1,i)= work(3)
+                eritmp(l,k,2,i)= work(4)
+                eritmp(l,k,3,i)= work(2)
+                eritmp(l,k,4,i)= work(5)
+                eritmp(l,k,5,i)= work(1)
+              enddo
+            enddo
+          enddo
+!
         elseif(nbfijkl(2) == 6) then
           do i= 1,nbfijkl(1)
-            do j= 4,6
-              do k= 1,ncartijkl(3)
-                do l= 1,ncartijkl(4)
-                  eritmp(l,k,j,i)= eritmp(l,k,j,i)*sqrt3
-                enddo
+            do k= 1,ncartijkl(3)
+              do l= 1,ncartijkl(4)
+                eritmp(l,k,2,i)= eritmp(l,k,2,i)*sqrt3
+                eritmp(l,k,3,i)= eritmp(l,k,3,i)*sqrt3
+                eritmp(l,k,5,i)= eritmp(l,k,5,i)*sqrt3
               enddo
             enddo
           enddo
+!ishimura
+          do i= 1,nbfijkl(1)
+            do k= 1,ncartijkl(3)
+              do l= 1,ncartijkl(4)
+                work(1:6)= eritmp(l,k,1:6,i)
+                eritmp(l,k,1,i)= work(1)
+                eritmp(l,k,2,i)= work(4)
+                eritmp(l,k,3,i)= work(6)
+                eritmp(l,k,4,i)= work(2)
+                eritmp(l,k,5,i)= work(3)
+                eritmp(l,k,6,i)= work(5)
+              enddo
+            enddo
+          enddo
+!
         elseif(nbfijkl(2) == 7) then
           do i= 1,nbfijkl(1)
             do k= 1,ncartijkl(3)
@@ -1005,24 +1065,53 @@ end
                 do k= 1,6
                   work(k)= eritmp(l,k,j,i)
                 enddo
-                eritmp(l,1,j,i)=(work(3)*two-work(1)-work(2))*half
+                eritmp(l,1,j,i)= work(2)*sqrt3
                 eritmp(l,2,j,i)= work(5)*sqrt3
-                eritmp(l,3,j,i)= work(6)*sqrt3
-                eritmp(l,4,j,i)=(work(1)-work(2))*sqrt3h
-                eritmp(l,5,j,i)= work(4)*sqrt3
+                eritmp(l,3,j,i)=(work(6)*two-work(1)-work(4))*half
+                eritmp(l,4,j,i)= work(3)*sqrt3
+                eritmp(l,5,j,i)=(work(1)-work(4))*sqrt3h
               enddo
             enddo
           enddo
+!ishimura
+          do i= 1,nbfijkl(1)
+            do j= 1,nbfijkl(2)
+              do l= 1,ncartijkl(4)
+                work(1:5)= eritmp(l,1:5,j,i)
+                eritmp(l,1,j,i)= work(3)
+                eritmp(l,2,j,i)= work(4)
+                eritmp(l,3,j,i)= work(2)
+                eritmp(l,4,j,i)= work(5)
+                eritmp(l,5,j,i)= work(1)
+              enddo
+            enddo
+          enddo
+!
         elseif(nbfijkl(3) == 6)then
           do i= 1,nbfijkl(1)
             do j= 1,nbfijkl(2)
-              do k= 4,6
-                do l= 1,ncartijkl(4)
-                  eritmp(l,k,j,i)= eritmp(l,k,j,i)*sqrt3
-                enddo
+              do l= 1,ncartijkl(4)
+                eritmp(l,2,j,i)= eritmp(l,2,j,i)*sqrt3
+                eritmp(l,3,j,i)= eritmp(l,3,j,i)*sqrt3
+                eritmp(l,5,j,i)= eritmp(l,5,j,i)*sqrt3
               enddo
             enddo
           enddo
+!ishimura
+          do i= 1,nbfijkl(1)
+            do j= 1,nbfijkl(2)
+              do l= 1,ncartijkl(4)
+                work(1:6)= eritmp(l,1:6,j,i)
+                eritmp(l,1,j,i)= work(1)
+                eritmp(l,2,j,i)= work(4)
+                eritmp(l,3,j,i)= work(6)
+                eritmp(l,4,j,i)= work(2)
+                eritmp(l,5,j,i)= work(3)
+                eritmp(l,6,j,i)= work(5)
+              enddo
+            enddo
+          enddo
+!
         elseif(nbfijkl(3) == 7)then
           do i= 1,nbfijkl(1)
             do j= 1,nbfijkl(2)
@@ -1119,27 +1208,56 @@ end
                 do l= 1,6
                   work(l)= eritmp(l,k,j,i)
                 enddo
-                twoeri(1,k,j,i)=(work(3)*two-work(1)-work(2))*half
+                twoeri(1,k,j,i)= work(2)*sqrt3
                 twoeri(2,k,j,i)= work(5)*sqrt3
-                twoeri(3,k,j,i)= work(6)*sqrt3
-                twoeri(4,k,j,i)=(work(1)-work(2))*sqrt3h
-                twoeri(5,k,j,i)= work(4)*sqrt3
+                twoeri(3,k,j,i)=(work(6)*two-work(1)-work(4))*half
+                twoeri(4,k,j,i)= work(3)*sqrt3
+                twoeri(5,k,j,i)=(work(1)-work(4))*sqrt3h
               enddo
             enddo
           enddo
+!ishimura
+          do i= 1,nbfijkl(1)
+            do j= 1,nbfijkl(2)
+              do k= 1,nbfijkl(3)
+                work(1:5)= twoeri(1:5,k,j,i)
+                twoeri(1,k,j,i)= work(3)
+                twoeri(2,k,j,i)= work(4)
+                twoeri(3,k,j,i)= work(2)
+                twoeri(4,k,j,i)= work(5)
+                twoeri(5,k,j,i)= work(1)
+              enddo
+            enddo
+          enddo
+!
         elseif(nbfijkl(4) == 6)then
           do i= 1,nbfijkl(1)
             do j= 1,nbfijkl(2)
               do k= 1,nbfijkl(3)
-                do l= 1,3
-                  twoeri(l,k,j,i)= eritmp(l,k,j,i)
-                enddo
-                do l= 4,6
-                  twoeri(l,k,j,i)= eritmp(l,k,j,i)*sqrt3
-                enddo
+                twoeri(1,k,j,i)= eritmp(1,k,j,i)
+                twoeri(2,k,j,i)= eritmp(2,k,j,i)*sqrt3
+                twoeri(3,k,j,i)= eritmp(3,k,j,i)*sqrt3
+                twoeri(4,k,j,i)= eritmp(4,k,j,i)
+                twoeri(5,k,j,i)= eritmp(5,k,j,i)*sqrt3
+                twoeri(6,k,j,i)= eritmp(6,k,j,i)
               enddo
             enddo
           enddo
+!ishimura
+          do i= 1,nbfijkl(1)
+            do j= 1,nbfijkl(2)
+              do k= 1,nbfijkl(3)
+                work(1:6)= twoeri(1:6,k,j,i)
+                twoeri(1,k,j,i)= work(1)
+                twoeri(2,k,j,i)= work(4)
+                twoeri(3,k,j,i)= work(6)
+                twoeri(4,k,j,i)= work(2)
+                twoeri(5,k,j,i)= work(3)
+                twoeri(6,k,j,i)= work(5)
+              enddo
+            enddo
+          enddo
+!
         elseif(nbfijkl(4) == 7)then
           do i= 1,nbfijkl(1)
             do j= 1,nbfijkl(2)

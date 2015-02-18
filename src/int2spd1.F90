@@ -141,33 +141,34 @@
       eri(5)= r2(5)+r1(1)*qz+r1(3)*qx +r0(2)*xz
       eri(6)= r2(6)+r1(2)*qz
 !
-      do l= 1,3
-        rot2(1,l)= rot(1,l)*rot(1,l)
-        rot2(2,l)= rot(2,l)*rot(2,l)
-        rot2(3,l)= rot(3,l)*rot(3,l)
-        rot2(4,l)= rot(1,l)*rot(2,l)*two
-        rot2(5,l)= rot(1,l)*rot(3,l)*two
-        rot2(6,l)= rot(2,l)*rot(3,l)*two
+      rot2(1,1)= rot(1,1)*rot(1,1)
+      rot2(2,1)= rot(2,1)*rot(2,1)
+      rot2(3,1)= rot(3,1)*rot(3,1)
+      rot2(4,1)= rot(1,1)*rot(2,1)*two
+      rot2(5,1)= rot(1,1)*rot(3,1)*two
+      rot2(6,1)= rot(2,1)*rot(3,1)*two
+      do l= 2,3
+        rot2(1,l)= rot(1,1)*rot(1,l)*sqrt3
+        rot2(2,l)= rot(2,1)*rot(2,l)*sqrt3
+        rot2(3,l)= rot(3,1)*rot(3,l)*sqrt3
+        rot2(4,l)=(rot(1,1)*rot(2,l)+rot(2,1)*rot(1,l))*sqrt3
+        rot2(5,l)=(rot(1,1)*rot(3,l)+rot(3,1)*rot(1,l))*sqrt3
+        rot2(6,l)=(rot(2,1)*rot(3,l)+rot(3,1)*rot(2,l))*sqrt3
       enddo
-      do l= 4,5
-        rot2(1,l)= rot(1,1)*rot(1,l-2)
-        rot2(2,l)= rot(2,1)*rot(2,l-2)
-        rot2(3,l)= rot(3,1)*rot(3,l-2)
-        rot2(4,l)= rot(1,1)*rot(2,l-2)+rot(2,1)*rot(1,l-2)
-        rot2(5,l)= rot(1,1)*rot(3,l-2)+rot(3,1)*rot(1,l-2)
-        rot2(6,l)= rot(2,1)*rot(3,l-2)+rot(3,1)*rot(2,l-2)
+      do l= 2,3
+        rot2(1,l*2)= rot(1,l)*rot(1,l)
+        rot2(2,l*2)= rot(2,l)*rot(2,l)
+        rot2(3,l*2)= rot(3,l)*rot(3,l)
+        rot2(4,l*2)= rot(1,l)*rot(2,l)*two
+        rot2(5,l*2)= rot(1,l)*rot(3,l)*two
+        rot2(6,l*2)= rot(2,l)*rot(3,l)*two
       enddo
-      rot2(1,6)= rot(1,2)*rot(1,3)
-      rot2(2,6)= rot(2,2)*rot(2,3)
-      rot2(3,6)= rot(3,2)*rot(3,3)
-      rot2(4,6)= rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3)
-      rot2(5,6)= rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3)
-      rot2(6,6)= rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3)
-      do l= 4,6
-        do k= 1,6
-          rot2(k,l)= rot2(k,l)*sqrt3
-        enddo
-      enddo
+      rot2(1,5)= rot(1,2)*rot(1,3)*sqrt3
+      rot2(2,5)= rot(2,2)*rot(2,3)*sqrt3
+      rot2(3,5)= rot(3,2)*rot(3,3)*sqrt3
+      rot2(4,5)=(rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3))*sqrt3
+      rot2(5,5)=(rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3))*sqrt3
+      rot2(6,5)=(rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3))*sqrt3
 !
       if(nbfijkl(4) == 6)then
         do l= 1,6
@@ -176,11 +177,11 @@
         enddo
       else
         do l= 1,6
-          rot3(l,1)= rot2(l,3)-(rot2(l,1)+rot2(l,2))*half
+          rot3(l,1)= rot2(l,2)
           rot3(l,2)= rot2(l,5)
-          rot3(l,3)= rot2(l,6)
-          rot3(l,4)=(rot2(l,1)-rot2(l,2))*sqrt3h
-          rot3(l,5)= rot2(l,4)
+          rot3(l,3)= rot2(l,6)-(rot2(l,1)+rot2(l,4))*half
+          rot3(l,4)= rot2(l,3)
+          rot3(l,5)=(rot2(l,1)-rot2(l,4))*sqrt3h
         enddo
         do l= 1,5
           phmdint(l,1,1,1)= eri(1)*rot3(1,l)+eri(2)*rot3(2,l)+eri(3)*rot3(3,l) &
@@ -188,8 +189,27 @@
         enddo
       endif
 !
+      if(nbfijkl(4) == 6)then
+        work(1:6)=phmdint(1:6,1,1,1)
+        phmdint(1,1,1,1)=work(1)
+        phmdint(2,1,1,1)=work(4)
+        phmdint(3,1,1,1)=work(6)
+        phmdint(4,1,1,1)=work(2)
+        phmdint(5,1,1,1)=work(3)
+        phmdint(6,1,1,1)=work(5)
+      else
+        work(1:5)=phmdint(1:5,1,1,1)
+        phmdint(1,1,1,1)=work(3)
+        phmdint(2,1,1,1)=work(4)
+        phmdint(3,1,1,1)=work(2)
+        phmdint(4,1,1,1)=work(5)
+        phmdint(5,1,1,1)=work(1)
+      endif
+!
       return
 end
+
+
 !--------------------------------------------------------------------------
   subroutine int2dpss(phmdint,exfac1,exfac2,xyziq,xzkl,rot,nijkl,nbfijkl)
 !--------------------------------------------------------------------------
@@ -377,33 +397,34 @@ end
 &              *xz+r1(1,3)*zz+r0(3)*xzz
       eri(6,3)= r3(9)+r1(2,1)+(+r2(6,1)+r2(6,2))*qz+r1(2,3)*zz
 !
-      do l= 1,3
-        rot2(1,l)= rot(1,l)*rot(1,l)
-        rot2(2,l)= rot(2,l)*rot(2,l)
-        rot2(3,l)= rot(3,l)*rot(3,l)
-        rot2(4,l)= rot(1,l)*rot(2,l)*two
-        rot2(5,l)= rot(1,l)*rot(3,l)*two
-        rot2(6,l)= rot(2,l)*rot(3,l)*two
+      rot2(1,1)= rot(1,1)*rot(1,1)
+      rot2(2,1)= rot(2,1)*rot(2,1)
+      rot2(3,1)= rot(3,1)*rot(3,1)
+      rot2(4,1)= rot(1,1)*rot(2,1)*two
+      rot2(5,1)= rot(1,1)*rot(3,1)*two
+      rot2(6,1)= rot(2,1)*rot(3,1)*two
+      do l= 2,3
+        rot2(1,l)= rot(1,1)*rot(1,l)*sqrt3
+        rot2(2,l)= rot(2,1)*rot(2,l)*sqrt3
+        rot2(3,l)= rot(3,1)*rot(3,l)*sqrt3
+        rot2(4,l)=(rot(1,1)*rot(2,l)+rot(2,1)*rot(1,l))*sqrt3
+        rot2(5,l)=(rot(1,1)*rot(3,l)+rot(3,1)*rot(1,l))*sqrt3
+        rot2(6,l)=(rot(2,1)*rot(3,l)+rot(3,1)*rot(2,l))*sqrt3
       enddo
-      do l= 4,5
-        rot2(1,l)= rot(1,1)*rot(1,l-2)
-        rot2(2,l)= rot(2,1)*rot(2,l-2)
-        rot2(3,l)= rot(3,1)*rot(3,l-2)
-        rot2(4,l)= rot(1,1)*rot(2,l-2)+rot(2,1)*rot(1,l-2)
-        rot2(5,l)= rot(1,1)*rot(3,l-2)+rot(3,1)*rot(1,l-2)
-        rot2(6,l)= rot(2,1)*rot(3,l-2)+rot(3,1)*rot(2,l-2)
+      do l= 2,3
+        rot2(1,l*2)= rot(1,l)*rot(1,l)
+        rot2(2,l*2)= rot(2,l)*rot(2,l)
+        rot2(3,l*2)= rot(3,l)*rot(3,l)
+        rot2(4,l*2)= rot(1,l)*rot(2,l)*two
+        rot2(5,l*2)= rot(1,l)*rot(3,l)*two
+        rot2(6,l*2)= rot(2,l)*rot(3,l)*two
       enddo
-      rot2(1,6)= rot(1,2)*rot(1,3)
-      rot2(2,6)= rot(2,2)*rot(2,3)
-      rot2(3,6)= rot(3,2)*rot(3,3)
-      rot2(4,6)= rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3)
-      rot2(5,6)= rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3)
-      rot2(6,6)= rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3)
-      do l= 4,6
-        do k= 1,6
-          rot2(k,l)= rot2(k,l)*sqrt3
-        enddo
-      enddo
+      rot2(1,5)= rot(1,2)*rot(1,3)*sqrt3
+      rot2(2,5)= rot(2,2)*rot(2,3)*sqrt3
+      rot2(3,5)= rot(3,2)*rot(3,3)*sqrt3
+      rot2(4,5)=(rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3))*sqrt3
+      rot2(5,5)=(rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3))*sqrt3
+      rot2(6,5)=(rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3))*sqrt3
 !
       do l=1,6
         work(1)= eri(l,1)
@@ -423,11 +444,11 @@ end
         enddo
       else
         do l= 1,6
-          rot3(l,1)= rot2(l,3)-(rot2(l,1)+rot2(l,2))*half
+          rot3(l,1)= rot2(l,2)
           rot3(l,2)= rot2(l,5)
-          rot3(l,3)= rot2(l,6)
-          rot3(l,4)=(rot2(l,1)-rot2(l,2))*sqrt3h
-          rot3(l,5)= rot2(l,4)
+          rot3(l,3)= rot2(l,6)-(rot2(l,1)+rot2(l,4))*half
+          rot3(l,4)= rot2(l,3)
+          rot3(l,5)=(rot2(l,1)-rot2(l,4))*sqrt3h
         enddo
         do k= 1,3
           do l= 1,5
@@ -436,8 +457,32 @@ end
           enddo
         enddo
       endif
+!
+      if(nbfijkl(4) == 6)then
+        eri(1:6,1:3)= phmdint(1:6,1:3,1,1)
+        do k=1,3
+          phmdint(1,k,1,1)=eri(1,k)
+          phmdint(2,k,1,1)=eri(4,k)
+          phmdint(3,k,1,1)=eri(6,k)
+          phmdint(4,k,1,1)=eri(2,k)
+          phmdint(5,k,1,1)=eri(3,k)
+          phmdint(6,k,1,1)=eri(5,k)
+        enddo
+      else
+        eri(1:5,1:3)=phmdint(1:5,1:3,1,1)
+        do k=1,3
+          phmdint(1,k,1,1)=eri(3,k)
+          phmdint(2,k,1,1)=eri(4,k)
+          phmdint(3,k,1,1)=eri(2,k)
+          phmdint(4,k,1,1)=eri(5,k)
+          phmdint(5,k,1,1)=eri(1,k)
+        enddo
+      endif
+!
       return
 end
+
+
 !--------------------------------------------------------------------------
   subroutine int2dsps(phmdint,exfac1,exfac2,xyziq,xzkl,rot,nijkl,nbfijkl)
 !--------------------------------------------------------------------------
@@ -623,33 +668,34 @@ end
       eri(5,3)= -r3(6)+r2(5,1)+(-r2(3,2)+r1(3,1))*qx+(-r2(5,2)+r1(1,1))*qz+(-r1(3,3)+r0(2))*xz
       eri(6,3)= -r3(9)+r2(6,1)+(-r2(6,2)+r1(2,1))*qz
 !
-      do l= 1,3
-        rot2(1,l)= rot(1,l)*rot(1,l)
-        rot2(2,l)= rot(2,l)*rot(2,l)
-        rot2(3,l)= rot(3,l)*rot(3,l)
-        rot2(4,l)= rot(1,l)*rot(2,l)*two
-        rot2(5,l)= rot(1,l)*rot(3,l)*two
-        rot2(6,l)= rot(2,l)*rot(3,l)*two
+      rot2(1,1)= rot(1,1)*rot(1,1)
+      rot2(2,1)= rot(2,1)*rot(2,1)
+      rot2(3,1)= rot(3,1)*rot(3,1)
+      rot2(4,1)= rot(1,1)*rot(2,1)*two
+      rot2(5,1)= rot(1,1)*rot(3,1)*two
+      rot2(6,1)= rot(2,1)*rot(3,1)*two
+      do l= 2,3
+        rot2(1,l)= rot(1,1)*rot(1,l)*sqrt3
+        rot2(2,l)= rot(2,1)*rot(2,l)*sqrt3
+        rot2(3,l)= rot(3,1)*rot(3,l)*sqrt3
+        rot2(4,l)=(rot(1,1)*rot(2,l)+rot(2,1)*rot(1,l))*sqrt3
+        rot2(5,l)=(rot(1,1)*rot(3,l)+rot(3,1)*rot(1,l))*sqrt3
+        rot2(6,l)=(rot(2,1)*rot(3,l)+rot(3,1)*rot(2,l))*sqrt3
       enddo
-      do l= 4,5
-        rot2(1,l)= rot(1,1)*rot(1,l-2)
-        rot2(2,l)= rot(2,1)*rot(2,l-2)
-        rot2(3,l)= rot(3,1)*rot(3,l-2)
-        rot2(4,l)= rot(1,1)*rot(2,l-2)+rot(2,1)*rot(1,l-2)
-        rot2(5,l)= rot(1,1)*rot(3,l-2)+rot(3,1)*rot(1,l-2)
-        rot2(6,l)= rot(2,1)*rot(3,l-2)+rot(3,1)*rot(2,l-2)
+      do l= 2,3
+        rot2(1,l*2)= rot(1,l)*rot(1,l)
+        rot2(2,l*2)= rot(2,l)*rot(2,l)
+        rot2(3,l*2)= rot(3,l)*rot(3,l)
+        rot2(4,l*2)= rot(1,l)*rot(2,l)*two
+        rot2(5,l*2)= rot(1,l)*rot(3,l)*two
+        rot2(6,l*2)= rot(2,l)*rot(3,l)*two
       enddo
-      rot2(1,6)= rot(1,2)*rot(1,3)
-      rot2(2,6)= rot(2,2)*rot(2,3)
-      rot2(3,6)= rot(3,2)*rot(3,3)
-      rot2(4,6)= rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3)
-      rot2(5,6)= rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3)
-      rot2(6,6)= rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3)
-      do l= 4,6
-        do k= 1,6
-          rot2(k,l)= rot2(k,l)*sqrt3
-        enddo
-      enddo
+      rot2(1,5)= rot(1,2)*rot(1,3)*sqrt3
+      rot2(2,5)= rot(2,2)*rot(2,3)*sqrt3
+      rot2(3,5)= rot(3,2)*rot(3,3)*sqrt3
+      rot2(4,5)=(rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3))*sqrt3
+      rot2(5,5)=(rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3))*sqrt3
+      rot2(6,5)=(rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3))*sqrt3
 !
       do l=1,6
         work(1)= eri(l,1)
@@ -660,7 +706,7 @@ end
         eri(l,3)= work(1)*rot(1,3)+work(2)*rot(2,3)+work(3)*rot(3,3)
       enddo
 !
-      if(nbfijkl(4) == 6)then
+      if(nbfijkl(4) == 6) then
         do j= 1,3
           do l= 1,6
             phmdint(l,1,j,1)= eri(1,j)*rot2(1,l)+eri(2,j)*rot2(2,l)+eri(3,j)*rot2(3,l) &
@@ -669,11 +715,11 @@ end
         enddo
       else
         do l= 1,6
-          rot3(l,1)= rot2(l,3)-(rot2(l,1)+rot2(l,2))*half
+          rot3(l,1)= rot2(l,2)
           rot3(l,2)= rot2(l,5)
-          rot3(l,3)= rot2(l,6)
-          rot3(l,4)=(rot2(l,1)-rot2(l,2))*sqrt3h
-          rot3(l,5)= rot2(l,4)
+          rot3(l,3)= rot2(l,6)-(rot2(l,1)+rot2(l,4))*half
+          rot3(l,4)= rot2(l,3)
+          rot3(l,5)=(rot2(l,1)-rot2(l,4))*sqrt3h
         enddo
         do j= 1,3
           do l= 1,5
@@ -682,8 +728,32 @@ end
           enddo
         enddo
       endif
+!
+      if(nbfijkl(4) == 6)then
+        eri(1:6,1:3)= phmdint(1:6,1,1:3,1)
+        do j=1,3
+          phmdint(1,1,j,1)=eri(1,j)
+          phmdint(2,1,j,1)=eri(4,j)
+          phmdint(3,1,j,1)=eri(6,j)
+          phmdint(4,1,j,1)=eri(2,j)
+          phmdint(5,1,j,1)=eri(3,j)
+          phmdint(6,1,j,1)=eri(5,j)
+        enddo
+      else
+        eri(1:5,1:3)=phmdint(1:5,1,1:3,1)
+        do j=1,3
+          phmdint(1,1,j,1)=eri(3,j)
+          phmdint(2,1,j,1)=eri(4,j)
+          phmdint(3,1,j,1)=eri(2,j)
+          phmdint(4,1,j,1)=eri(5,j)
+          phmdint(5,1,j,1)=eri(1,j)
+        enddo
+      endif
+!
       return
 end
+
+
 !--------------------------------------------------------------------------
   subroutine int2ddss(phmdint,exfac1,exfac2,xyziq,xzkl,rot,nijkl,nbfijkl)
 !--------------------------------------------------------------------------
@@ -983,42 +1053,44 @@ end
       eri(6,6)= r4(13)+r2(2,1)+r2(3,1)+r0(1)+(+r3(8,1)+r3(8,2)+r1(3,1)+r1(3,2))*qz+( &
 &              +r2(2,3)+r0(3))*zz
 !
-      do l= 1,3
-        rot2(1,l)= rot(1,l)*rot(1,l)
-        rot2(2,l)= rot(2,l)*rot(2,l)
-        rot2(3,l)= rot(3,l)*rot(3,l)
-        rot2(4,l)= rot(1,l)*rot(2,l)*two
-        rot2(5,l)= rot(1,l)*rot(3,l)*two
-        rot2(6,l)= rot(2,l)*rot(3,l)*two
+      rot2(1,1)= rot(1,1)*rot(1,1)
+      rot2(2,1)= rot(2,1)*rot(2,1)
+      rot2(3,1)= rot(3,1)*rot(3,1)
+      rot2(4,1)= rot(1,1)*rot(2,1)*two
+      rot2(5,1)= rot(1,1)*rot(3,1)*two
+      rot2(6,1)= rot(2,1)*rot(3,1)*two
+      do l= 2,3
+        rot2(1,l)= rot(1,1)*rot(1,l)*sqrt3
+        rot2(2,l)= rot(2,1)*rot(2,l)*sqrt3
+        rot2(3,l)= rot(3,1)*rot(3,l)*sqrt3
+        rot2(4,l)=(rot(1,1)*rot(2,l)+rot(2,1)*rot(1,l))*sqrt3
+        rot2(5,l)=(rot(1,1)*rot(3,l)+rot(3,1)*rot(1,l))*sqrt3
+        rot2(6,l)=(rot(2,1)*rot(3,l)+rot(3,1)*rot(2,l))*sqrt3
       enddo
-      do l= 4,5
-        rot2(1,l)= rot(1,1)*rot(1,l-2)
-        rot2(2,l)= rot(2,1)*rot(2,l-2)
-        rot2(3,l)= rot(3,1)*rot(3,l-2)
-        rot2(4,l)= rot(1,1)*rot(2,l-2)+rot(2,1)*rot(1,l-2)
-        rot2(5,l)= rot(1,1)*rot(3,l-2)+rot(3,1)*rot(1,l-2)
-        rot2(6,l)= rot(2,1)*rot(3,l-2)+rot(3,1)*rot(2,l-2)
+      do l= 2,3
+        rot2(1,l*2)= rot(1,l)*rot(1,l)
+        rot2(2,l*2)= rot(2,l)*rot(2,l)
+        rot2(3,l*2)= rot(3,l)*rot(3,l)
+        rot2(4,l*2)= rot(1,l)*rot(2,l)*two
+        rot2(5,l*2)= rot(1,l)*rot(3,l)*two
+        rot2(6,l*2)= rot(2,l)*rot(3,l)*two
       enddo
-      rot2(1,6)= rot(1,2)*rot(1,3)
-      rot2(2,6)= rot(2,2)*rot(2,3)
-      rot2(3,6)= rot(3,2)*rot(3,3)
-      rot2(4,6)= rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3)
-      rot2(5,6)= rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3)
-      rot2(6,6)= rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3)
-      do l= 4,6
-        do k= 1,6
-          rot2(k,l)= rot2(k,l)*sqrt3
-        enddo
-      enddo
+      rot2(1,5)= rot(1,2)*rot(1,3)*sqrt3
+      rot2(2,5)= rot(2,2)*rot(2,3)*sqrt3
+      rot2(3,5)= rot(3,2)*rot(3,3)*sqrt3
+      rot2(4,5)=(rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3))*sqrt3
+      rot2(5,5)=(rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3))*sqrt3
+      rot2(6,5)=(rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3))*sqrt3
+!
       do l= 1,6
-        rot3(l,1)= rot2(l,3)-(rot2(l,1)+rot2(l,2))*half
+        rot3(l,1)= rot2(l,2)
         rot3(l,2)= rot2(l,5)
-        rot3(l,3)= rot2(l,6)
-        rot3(l,4)=(rot2(l,1)-rot2(l,2))*sqrt3h
-        rot3(l,5)= rot2(l,4)
+        rot3(l,3)= rot2(l,6)-(rot2(l,1)+rot2(l,4))*half
+        rot3(l,4)= rot2(l,3)
+        rot3(l,5)=(rot2(l,1)-rot2(l,4))*sqrt3h
       enddo
 !
-      if(nbfijkl(3) == 6)then
+      if(nbfijkl(3) == 6) then
         do l= 1,6
           do k= 1,6
             work(k)= eri(l,k)
@@ -1056,8 +1128,51 @@ end
         enddo
       endif
 !
+      if(nbfijkl(3) == 6)then
+        do l= 1,nbfijkl(4)
+          work(1:6)= phmdint(l,1:6,1,1)
+          phmdint(l,1,1,1)=work(1)
+          phmdint(l,2,1,1)=work(4)
+          phmdint(l,3,1,1)=work(6)
+          phmdint(l,4,1,1)=work(2)
+          phmdint(l,5,1,1)=work(3)
+          phmdint(l,6,1,1)=work(5)
+        enddo
+      else
+        do l= 1,nbfijkl(4)
+          work(1:5)= phmdint(l,1:5,1,1)
+          phmdint(l,1,1,1)=work(3)
+          phmdint(l,2,1,1)=work(4)
+          phmdint(l,3,1,1)=work(2)
+          phmdint(l,4,1,1)=work(5)
+          phmdint(l,5,1,1)=work(1)
+        enddo
+      endif
+      if(nbfijkl(4) == 6)then
+        do k= 1,nbfijkl(3)
+          work(1:6)= phmdint(1:6,k,1,1)
+          phmdint(1,k,1,1)=work(1)
+          phmdint(2,k,1,1)=work(4)
+          phmdint(3,k,1,1)=work(6)
+          phmdint(4,k,1,1)=work(2)
+          phmdint(5,k,1,1)=work(3)
+          phmdint(6,k,1,1)=work(5)
+        enddo
+      else
+        do k= 1,nbfijkl(3)
+          work(1:5)= phmdint(1:5,k,1,1)
+          phmdint(1,k,1,1)=work(3)
+          phmdint(2,k,1,1)=work(4)
+          phmdint(3,k,1,1)=work(2)
+          phmdint(4,k,1,1)=work(5)
+          phmdint(5,k,1,1)=work(1)
+        enddo
+      endif
+!
       return
 end
+
+
 !--------------------------------------------------------------------------
   subroutine int2dpps(phmdint,exfac1,exfac2,xyziq,xzkl,rot,nijkl,nbfijkl)
 !--------------------------------------------------------------------------
@@ -1382,33 +1497,34 @@ end
       eri(6,3,3)=-r4(14)+r3(9,1)-r2(6,3)+r1(2,1)+(-r3(9,2)-r3(9,3)+r2(6,1)+r2(6,2))*qz+( &
 &                -r2(6,5)+r1(2,3))*zz
 !
-      do l= 1,3
-        rot2(1,l)= rot(1,l)*rot(1,l)
-        rot2(2,l)= rot(2,l)*rot(2,l)
-        rot2(3,l)= rot(3,l)*rot(3,l)
-        rot2(4,l)= rot(1,l)*rot(2,l)*two
-        rot2(5,l)= rot(1,l)*rot(3,l)*two
-        rot2(6,l)= rot(2,l)*rot(3,l)*two
+      rot2(1,1)= rot(1,1)*rot(1,1)
+      rot2(2,1)= rot(2,1)*rot(2,1)
+      rot2(3,1)= rot(3,1)*rot(3,1)
+      rot2(4,1)= rot(1,1)*rot(2,1)*two
+      rot2(5,1)= rot(1,1)*rot(3,1)*two
+      rot2(6,1)= rot(2,1)*rot(3,1)*two
+      do l= 2,3
+        rot2(1,l)= rot(1,1)*rot(1,l)*sqrt3
+        rot2(2,l)= rot(2,1)*rot(2,l)*sqrt3
+        rot2(3,l)= rot(3,1)*rot(3,l)*sqrt3
+        rot2(4,l)=(rot(1,1)*rot(2,l)+rot(2,1)*rot(1,l))*sqrt3
+        rot2(5,l)=(rot(1,1)*rot(3,l)+rot(3,1)*rot(1,l))*sqrt3
+        rot2(6,l)=(rot(2,1)*rot(3,l)+rot(3,1)*rot(2,l))*sqrt3
       enddo
-      do l= 4,5
-        rot2(1,l)= rot(1,1)*rot(1,l-2)
-        rot2(2,l)= rot(2,1)*rot(2,l-2)
-        rot2(3,l)= rot(3,1)*rot(3,l-2)
-        rot2(4,l)= rot(1,1)*rot(2,l-2)+rot(2,1)*rot(1,l-2)
-        rot2(5,l)= rot(1,1)*rot(3,l-2)+rot(3,1)*rot(1,l-2)
-        rot2(6,l)= rot(2,1)*rot(3,l-2)+rot(3,1)*rot(2,l-2)
+      do l= 2,3
+        rot2(1,l*2)= rot(1,l)*rot(1,l)
+        rot2(2,l*2)= rot(2,l)*rot(2,l)
+        rot2(3,l*2)= rot(3,l)*rot(3,l)
+        rot2(4,l*2)= rot(1,l)*rot(2,l)*two
+        rot2(5,l*2)= rot(1,l)*rot(3,l)*two
+        rot2(6,l*2)= rot(2,l)*rot(3,l)*two
       enddo
-      rot2(1,6)= rot(1,2)*rot(1,3)
-      rot2(2,6)= rot(2,2)*rot(2,3)
-      rot2(3,6)= rot(3,2)*rot(3,3)
-      rot2(4,6)= rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3)
-      rot2(5,6)= rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3)
-      rot2(6,6)= rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3)
-      do l= 4,6
-        do k= 1,6
-          rot2(k,l)= rot2(k,l)*sqrt3
-        enddo
-      enddo
+      rot2(1,5)= rot(1,2)*rot(1,3)*sqrt3
+      rot2(2,5)= rot(2,2)*rot(2,3)*sqrt3
+      rot2(3,5)= rot(3,2)*rot(3,3)*sqrt3
+      rot2(4,5)=(rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3))*sqrt3
+      rot2(5,5)=(rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3))*sqrt3
+      rot2(6,5)=(rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3))*sqrt3
 !
       do k= 1,3
         do l= 1,6
@@ -1441,11 +1557,11 @@ end
         enddo
       else
         do l= 1,6
-          rot3(l,1)= rot2(l,3)-(rot2(l,1)+rot2(l,2))*half
+          rot3(l,1)= rot2(l,2)
           rot3(l,2)= rot2(l,5)
-          rot3(l,3)= rot2(l,6)
-          rot3(l,4)=(rot2(l,1)-rot2(l,2))*sqrt3h
-          rot3(l,5)= rot2(l,4)
+          rot3(l,3)= rot2(l,6)-(rot2(l,1)+rot2(l,4))*half
+          rot3(l,4)= rot2(l,3)
+          rot3(l,5)=(rot2(l,1)-rot2(l,4))*sqrt3h
         enddo
         do j= 1,3
           do k= 1,3
@@ -1457,8 +1573,35 @@ end
         enddo
       endif
 !
+      if(nbfijkl(4) == 6)then
+        eri(1:6,1:3,1:3)= phmdint(1:6,1:3,1:3,1)
+        do j=1,3
+        do k=1,3
+          phmdint(1,k,j,1)=eri(1,k,j)
+          phmdint(2,k,j,1)=eri(4,k,j)
+          phmdint(3,k,j,1)=eri(6,k,j)
+          phmdint(4,k,j,1)=eri(2,k,j)
+          phmdint(5,k,j,1)=eri(3,k,j)
+          phmdint(6,k,j,1)=eri(5,k,j)
+        enddo
+        enddo
+      else
+        eri(1:5,1:3,1:3)=phmdint(1:5,1:3,1:3,1)
+        do j=1,3
+        do k=1,3
+          phmdint(1,k,j,1)=eri(3,k,j)
+          phmdint(2,k,j,1)=eri(4,k,j)
+          phmdint(3,k,j,1)=eri(2,k,j)
+          phmdint(4,k,j,1)=eri(5,k,j)
+          phmdint(5,k,j,1)=eri(1,k,j)
+        enddo
+        enddo
+      endif
+!
       return
 end
+
+
 !--------------------------------------------------------------------------
   subroutine int2dsds(phmdint,exfac1,exfac2,xyziq,xzkl,rot,nijkl,nbfijkl)
 !--------------------------------------------------------------------------
@@ -1727,39 +1870,41 @@ end
       eri(5,6)= r4(9)-r3(5,1)+(+r3(9,2)-r2(6,3))*qx+(+r3(5,2)-r2(4,3))*qz+(+r2(6,5)-r1(2,4))*xz
       eri(6,6)= r4(13)-r3(8,1)+(+r3(8,2)-r2(2,3))*qz
 !
-      do l= 1,3
-        rot2(1,l)= rot(1,l)*rot(1,l)
-        rot2(2,l)= rot(2,l)*rot(2,l)
-        rot2(3,l)= rot(3,l)*rot(3,l)
-        rot2(4,l)= rot(1,l)*rot(2,l)*two
-        rot2(5,l)= rot(1,l)*rot(3,l)*two
-        rot2(6,l)= rot(2,l)*rot(3,l)*two
+      rot2(1,1)= rot(1,1)*rot(1,1)
+      rot2(2,1)= rot(2,1)*rot(2,1)
+      rot2(3,1)= rot(3,1)*rot(3,1)
+      rot2(4,1)= rot(1,1)*rot(2,1)*two
+      rot2(5,1)= rot(1,1)*rot(3,1)*two
+      rot2(6,1)= rot(2,1)*rot(3,1)*two
+      do l= 2,3
+        rot2(1,l)= rot(1,1)*rot(1,l)*sqrt3
+        rot2(2,l)= rot(2,1)*rot(2,l)*sqrt3
+        rot2(3,l)= rot(3,1)*rot(3,l)*sqrt3
+        rot2(4,l)=(rot(1,1)*rot(2,l)+rot(2,1)*rot(1,l))*sqrt3
+        rot2(5,l)=(rot(1,1)*rot(3,l)+rot(3,1)*rot(1,l))*sqrt3
+        rot2(6,l)=(rot(2,1)*rot(3,l)+rot(3,1)*rot(2,l))*sqrt3
       enddo
-      do l= 4,5
-        rot2(1,l)= rot(1,1)*rot(1,l-2)
-        rot2(2,l)= rot(2,1)*rot(2,l-2)
-        rot2(3,l)= rot(3,1)*rot(3,l-2)
-        rot2(4,l)= rot(1,1)*rot(2,l-2)+rot(2,1)*rot(1,l-2)
-        rot2(5,l)= rot(1,1)*rot(3,l-2)+rot(3,1)*rot(1,l-2)
-        rot2(6,l)= rot(2,1)*rot(3,l-2)+rot(3,1)*rot(2,l-2)
+      do l= 2,3
+        rot2(1,l*2)= rot(1,l)*rot(1,l)
+        rot2(2,l*2)= rot(2,l)*rot(2,l)
+        rot2(3,l*2)= rot(3,l)*rot(3,l)
+        rot2(4,l*2)= rot(1,l)*rot(2,l)*two
+        rot2(5,l*2)= rot(1,l)*rot(3,l)*two
+        rot2(6,l*2)= rot(2,l)*rot(3,l)*two
       enddo
-      rot2(1,6)= rot(1,2)*rot(1,3)
-      rot2(2,6)= rot(2,2)*rot(2,3)
-      rot2(3,6)= rot(3,2)*rot(3,3)
-      rot2(4,6)= rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3)
-      rot2(5,6)= rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3)
-      rot2(6,6)= rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3)
-      do l= 4,6
-        do k= 1,6
-          rot2(k,l)= rot2(k,l)*sqrt3
-        enddo
-      enddo
+      rot2(1,5)= rot(1,2)*rot(1,3)*sqrt3
+      rot2(2,5)= rot(2,2)*rot(2,3)*sqrt3
+      rot2(3,5)= rot(3,2)*rot(3,3)*sqrt3
+      rot2(4,5)=(rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3))*sqrt3
+      rot2(5,5)=(rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3))*sqrt3
+      rot2(6,5)=(rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3))*sqrt3
+!
       do l= 1,6
-        rot3(l,1)= rot2(l,3)-(rot2(l,1)+rot2(l,2))*half
+        rot3(l,1)= rot2(l,2)
         rot3(l,2)= rot2(l,5)
-        rot3(l,3)= rot2(l,6)
-        rot3(l,4)=(rot2(l,1)-rot2(l,2))*sqrt3h
-        rot3(l,5)= rot2(l,4)
+        rot3(l,3)= rot2(l,6)-(rot2(l,1)+rot2(l,4))*half
+        rot3(l,4)= rot2(l,3)
+        rot3(l,5)=(rot2(l,1)-rot2(l,4))*sqrt3h
       enddo
 !
       if(nbfijkl(2) == 6)then
@@ -1800,8 +1945,51 @@ end
         enddo
       endif
 !
+      if(nbfijkl(2) == 6)then
+        do l= 1,nbfijkl(4)
+          work(1:6)= phmdint(l,1,1:6,1)
+          phmdint(l,1,1,1)=work(1)
+          phmdint(l,1,2,1)=work(4)
+          phmdint(l,1,3,1)=work(6)
+          phmdint(l,1,4,1)=work(2)
+          phmdint(l,1,5,1)=work(3)
+          phmdint(l,1,6,1)=work(5)
+        enddo
+      else
+        do l= 1,nbfijkl(4)
+          work(1:5)= phmdint(l,1,1:5,1)
+          phmdint(l,1,1,1)=work(3)
+          phmdint(l,1,2,1)=work(4)
+          phmdint(l,1,3,1)=work(2)
+          phmdint(l,1,4,1)=work(5)
+          phmdint(l,1,5,1)=work(1)
+        enddo
+      endif
+      if(nbfijkl(4) == 6)then
+        do k= 1,nbfijkl(2)
+          work(1:6)= phmdint(1:6,1,k,1)
+          phmdint(1,1,k,1)=work(1)
+          phmdint(2,1,k,1)=work(4)
+          phmdint(3,1,k,1)=work(6)
+          phmdint(4,1,k,1)=work(2)
+          phmdint(5,1,k,1)=work(3)
+          phmdint(6,1,k,1)=work(5)
+        enddo
+      else
+        do k= 1,nbfijkl(2)
+          work(1:5)= phmdint(1:5,1,k,1)
+          phmdint(1,1,k,1)=work(3)
+          phmdint(2,1,k,1)=work(4)
+          phmdint(3,1,k,1)=work(2)
+          phmdint(4,1,k,1)=work(5)
+          phmdint(5,1,k,1)=work(1)
+        enddo
+      endif
+!
       return
 end
+
+
 !--------------------------------------------------------------------------
   subroutine int2dspp(phmdint,exfac1,exfac2,xyziq,xzkl,rot,nijkl,nbfijkl)
 !--------------------------------------------------------------------------
@@ -2113,33 +2301,34 @@ end
       eri(6,3,3)= r4(14)-r3(9,1)-r3(9,2)+r2(6,1)+r2(6,2)+(+r3(9,3)-r2(6,3)-r2(6,4)+r1(2,1) &
 &                +r1(2,2))*qz
 !
-      do l= 1,3
-        rot2(1,l)= rot(1,l)*rot(1,l)
-        rot2(2,l)= rot(2,l)*rot(2,l)
-        rot2(3,l)= rot(3,l)*rot(3,l)
-        rot2(4,l)= rot(1,l)*rot(2,l)*two
-        rot2(5,l)= rot(1,l)*rot(3,l)*two
-        rot2(6,l)= rot(2,l)*rot(3,l)*two
+      rot2(1,1)= rot(1,1)*rot(1,1)
+      rot2(2,1)= rot(2,1)*rot(2,1)
+      rot2(3,1)= rot(3,1)*rot(3,1)
+      rot2(4,1)= rot(1,1)*rot(2,1)*two
+      rot2(5,1)= rot(1,1)*rot(3,1)*two
+      rot2(6,1)= rot(2,1)*rot(3,1)*two
+      do l= 2,3
+        rot2(1,l)= rot(1,1)*rot(1,l)*sqrt3
+        rot2(2,l)= rot(2,1)*rot(2,l)*sqrt3
+        rot2(3,l)= rot(3,1)*rot(3,l)*sqrt3
+        rot2(4,l)=(rot(1,1)*rot(2,l)+rot(2,1)*rot(1,l))*sqrt3
+        rot2(5,l)=(rot(1,1)*rot(3,l)+rot(3,1)*rot(1,l))*sqrt3
+        rot2(6,l)=(rot(2,1)*rot(3,l)+rot(3,1)*rot(2,l))*sqrt3
       enddo
-      do l= 4,5
-        rot2(1,l)= rot(1,1)*rot(1,l-2)
-        rot2(2,l)= rot(2,1)*rot(2,l-2)
-        rot2(3,l)= rot(3,1)*rot(3,l-2)
-        rot2(4,l)= rot(1,1)*rot(2,l-2)+rot(2,1)*rot(1,l-2)
-        rot2(5,l)= rot(1,1)*rot(3,l-2)+rot(3,1)*rot(1,l-2)
-        rot2(6,l)= rot(2,1)*rot(3,l-2)+rot(3,1)*rot(2,l-2)
+      do l= 2,3
+        rot2(1,l*2)= rot(1,l)*rot(1,l)
+        rot2(2,l*2)= rot(2,l)*rot(2,l)
+        rot2(3,l*2)= rot(3,l)*rot(3,l)
+        rot2(4,l*2)= rot(1,l)*rot(2,l)*two
+        rot2(5,l*2)= rot(1,l)*rot(3,l)*two
+        rot2(6,l*2)= rot(2,l)*rot(3,l)*two
       enddo
-      rot2(1,6)= rot(1,2)*rot(1,3)
-      rot2(2,6)= rot(2,2)*rot(2,3)
-      rot2(3,6)= rot(3,2)*rot(3,3)
-      rot2(4,6)= rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3)
-      rot2(5,6)= rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3)
-      rot2(6,6)= rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3)
-      do l= 4,6
-        do k= 1,6
-          rot2(k,l)= rot2(k,l)*sqrt3
-        enddo
-      enddo
+      rot2(1,5)= rot(1,2)*rot(1,3)*sqrt3
+      rot2(2,5)= rot(2,2)*rot(2,3)*sqrt3
+      rot2(3,5)= rot(3,2)*rot(3,3)*sqrt3
+      rot2(4,5)=(rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3))*sqrt3
+      rot2(5,5)=(rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3))*sqrt3
+      rot2(6,5)=(rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3))*sqrt3
 !
       do j= 1,3
         do l= 1,6
@@ -2172,11 +2361,11 @@ end
         enddo
       else
         do l= 1,6
-          rot3(l,1)= rot2(l,3)-(rot2(l,1)+rot2(l,2))*half
+          rot3(l,1)= rot2(l,2)
           rot3(l,2)= rot2(l,5)
-          rot3(l,3)= rot2(l,6)
-          rot3(l,4)=(rot2(l,1)-rot2(l,2))*sqrt3h
-          rot3(l,5)= rot2(l,4)
+          rot3(l,3)= rot2(l,6)-(rot2(l,1)+rot2(l,4))*half
+          rot3(l,4)= rot2(l,3)
+          rot3(l,5)=(rot2(l,1)-rot2(l,4))*sqrt3h
         enddo
         do i= 1,3
           do j= 1,3
@@ -2188,8 +2377,35 @@ end
         enddo
       endif
 !
+      if(nbfijkl(4) == 6)then
+        eri(1:6,1:3,1:3)= phmdint(1:6,1,1:3,1:3)
+        do j=1,3
+        do k=1,3
+          phmdint(1,1,k,j)=eri(1,k,j)
+          phmdint(2,1,k,j)=eri(4,k,j)
+          phmdint(3,1,k,j)=eri(6,k,j)
+          phmdint(4,1,k,j)=eri(2,k,j)
+          phmdint(5,1,k,j)=eri(3,k,j)
+          phmdint(6,1,k,j)=eri(5,k,j)
+        enddo
+        enddo
+      else
+        eri(1:5,1:3,1:3)=phmdint(1:5,1,1:3,1:3)
+        do j=1,3
+        do k=1,3
+          phmdint(1,1,k,j)=eri(3,k,j)
+          phmdint(2,1,k,j)=eri(4,k,j)
+          phmdint(3,1,k,j)=eri(2,k,j)
+          phmdint(4,1,k,j)=eri(5,k,j)
+          phmdint(5,1,k,j)=eri(1,k,j)
+        enddo
+        enddo
+      endif
+!
       return
 end
+
+
 !--------------------------------------------------------------------------
   subroutine int2ddps(phmdint,exfac1,exfac2,xyziq,xzkl,rot,nijkl,nbfijkl)
 !--------------------------------------------------------------------------
@@ -2773,39 +2989,41 @@ end
 &                -r4(13,2)-r4(13,3)+r3(8,1)+r3(8,2)-r2(3,5)-r2(3,6)+r1(3,1)+r1(3,2))*qz+( &
 &                -r3(8,5)+r2(2,3)-r1(3,7)+r0(3))*zz
 !
-      do l= 1,3
-        rot2(1,l)= rot(1,l)*rot(1,l)
-        rot2(2,l)= rot(2,l)*rot(2,l)
-        rot2(3,l)= rot(3,l)*rot(3,l)
-        rot2(4,l)= rot(1,l)*rot(2,l)*two
-        rot2(5,l)= rot(1,l)*rot(3,l)*two
-        rot2(6,l)= rot(2,l)*rot(3,l)*two
+      rot2(1,1)= rot(1,1)*rot(1,1)
+      rot2(2,1)= rot(2,1)*rot(2,1)
+      rot2(3,1)= rot(3,1)*rot(3,1)
+      rot2(4,1)= rot(1,1)*rot(2,1)*two
+      rot2(5,1)= rot(1,1)*rot(3,1)*two
+      rot2(6,1)= rot(2,1)*rot(3,1)*two
+      do l= 2,3
+        rot2(1,l)= rot(1,1)*rot(1,l)*sqrt3
+        rot2(2,l)= rot(2,1)*rot(2,l)*sqrt3
+        rot2(3,l)= rot(3,1)*rot(3,l)*sqrt3
+        rot2(4,l)=(rot(1,1)*rot(2,l)+rot(2,1)*rot(1,l))*sqrt3
+        rot2(5,l)=(rot(1,1)*rot(3,l)+rot(3,1)*rot(1,l))*sqrt3
+        rot2(6,l)=(rot(2,1)*rot(3,l)+rot(3,1)*rot(2,l))*sqrt3
       enddo
-      do l= 4,5
-        rot2(1,l)= rot(1,1)*rot(1,l-2)
-        rot2(2,l)= rot(2,1)*rot(2,l-2)
-        rot2(3,l)= rot(3,1)*rot(3,l-2)
-        rot2(4,l)= rot(1,1)*rot(2,l-2)+rot(2,1)*rot(1,l-2)
-        rot2(5,l)= rot(1,1)*rot(3,l-2)+rot(3,1)*rot(1,l-2)
-        rot2(6,l)= rot(2,1)*rot(3,l-2)+rot(3,1)*rot(2,l-2)
+      do l= 2,3
+        rot2(1,l*2)= rot(1,l)*rot(1,l)
+        rot2(2,l*2)= rot(2,l)*rot(2,l)
+        rot2(3,l*2)= rot(3,l)*rot(3,l)
+        rot2(4,l*2)= rot(1,l)*rot(2,l)*two
+        rot2(5,l*2)= rot(1,l)*rot(3,l)*two
+        rot2(6,l*2)= rot(2,l)*rot(3,l)*two
       enddo
-      rot2(1,6)= rot(1,2)*rot(1,3)
-      rot2(2,6)= rot(2,2)*rot(2,3)
-      rot2(3,6)= rot(3,2)*rot(3,3)
-      rot2(4,6)= rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3)
-      rot2(5,6)= rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3)
-      rot2(6,6)= rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3)
-      do l= 4,6
-        do k= 1,6
-          rot2(k,l)= rot2(k,l)*sqrt3
-        enddo
-      enddo
+      rot2(1,5)= rot(1,2)*rot(1,3)*sqrt3
+      rot2(2,5)= rot(2,2)*rot(2,3)*sqrt3
+      rot2(3,5)= rot(3,2)*rot(3,3)*sqrt3
+      rot2(4,5)=(rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3))*sqrt3
+      rot2(5,5)=(rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3))*sqrt3
+      rot2(6,5)=(rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3))*sqrt3
+!
       do l= 1,6
-        rot3(l,1)= rot2(l,3)-(rot2(l,1)+rot2(l,2))*half
+        rot3(l,1)= rot2(l,2)
         rot3(l,2)= rot2(l,5)
-        rot3(l,3)= rot2(l,6)
-        rot3(l,4)=(rot2(l,1)-rot2(l,2))*sqrt3h
-        rot3(l,5)= rot2(l,4)
+        rot3(l,3)= rot2(l,6)-(rot2(l,1)+rot2(l,4))*half
+        rot3(l,4)= rot2(l,3)
+        rot3(l,5)=(rot2(l,1)-rot2(l,4))*sqrt3h
       enddo
 !
       do k= 1,6
@@ -2865,8 +3083,59 @@ end
         enddo
       endif
 !
+      if(nbfijkl(3) == 6)then
+        do j=1,3
+        do l= 1,nbfijkl(4)
+          work(1:6)= phmdint(l,1:6,j,1)
+          phmdint(l,1,j,1)=work(1)
+          phmdint(l,2,j,1)=work(4)
+          phmdint(l,3,j,1)=work(6)
+          phmdint(l,4,j,1)=work(2)
+          phmdint(l,5,j,1)=work(3)
+          phmdint(l,6,j,1)=work(5)
+        enddo
+        enddo
+      else
+        do j=1,3
+        do l= 1,nbfijkl(4)
+          work(1:5)= phmdint(l,1:5,j,1)
+          phmdint(l,1,j,1)=work(3)
+          phmdint(l,2,j,1)=work(4)
+          phmdint(l,3,j,1)=work(2)
+          phmdint(l,4,j,1)=work(5)
+          phmdint(l,5,j,1)=work(1)
+        enddo
+        enddo
+      endif
+      if(nbfijkl(4) == 6)then
+        do j=1,3
+        do k= 1,nbfijkl(3)
+          work(1:6)= phmdint(1:6,k,j,1)
+          phmdint(1,k,j,1)=work(1)
+          phmdint(2,k,j,1)=work(4)
+          phmdint(3,k,j,1)=work(6)
+          phmdint(4,k,j,1)=work(2)
+          phmdint(5,k,j,1)=work(3)
+          phmdint(6,k,j,1)=work(5)
+        enddo
+        enddo
+      else
+        do j=1,3
+        do k= 1,nbfijkl(3)
+          work(1:5)= phmdint(1:5,k,j,1)
+          phmdint(1,k,j,1)=work(3)
+          phmdint(2,k,j,1)=work(4)
+          phmdint(3,k,j,1)=work(2)
+          phmdint(4,k,j,1)=work(5)
+          phmdint(5,k,j,1)=work(1)
+        enddo
+        enddo
+      endif
+!
       return
 end
+
+
 !--------------------------------------------------------------------------
   subroutine int2dpds(phmdint,exfac1,exfac2,xyziq,xzkl,rot,nijkl,nbfijkl)
 !--------------------------------------------------------------------------
@@ -3417,39 +3686,41 @@ end
       eri(6,3,6)= r5(19)-r4(13,1)+r3(8,5)-r2(2,5)+(+r4(13,2)+r4(13,3)-r3(8,3)-r3(8,4))*qz &
 &                +(+r3(8,7)-r2(2,7))*zz
 !
-      do l= 1,3
-        rot2(1,l)= rot(1,l)*rot(1,l)
-        rot2(2,l)= rot(2,l)*rot(2,l)
-        rot2(3,l)= rot(3,l)*rot(3,l)
-        rot2(4,l)= rot(1,l)*rot(2,l)*two
-        rot2(5,l)= rot(1,l)*rot(3,l)*two
-        rot2(6,l)= rot(2,l)*rot(3,l)*two
+      rot2(1,1)= rot(1,1)*rot(1,1)
+      rot2(2,1)= rot(2,1)*rot(2,1)
+      rot2(3,1)= rot(3,1)*rot(3,1)
+      rot2(4,1)= rot(1,1)*rot(2,1)*two
+      rot2(5,1)= rot(1,1)*rot(3,1)*two
+      rot2(6,1)= rot(2,1)*rot(3,1)*two
+      do l= 2,3
+        rot2(1,l)= rot(1,1)*rot(1,l)*sqrt3
+        rot2(2,l)= rot(2,1)*rot(2,l)*sqrt3
+        rot2(3,l)= rot(3,1)*rot(3,l)*sqrt3
+        rot2(4,l)=(rot(1,1)*rot(2,l)+rot(2,1)*rot(1,l))*sqrt3
+        rot2(5,l)=(rot(1,1)*rot(3,l)+rot(3,1)*rot(1,l))*sqrt3
+        rot2(6,l)=(rot(2,1)*rot(3,l)+rot(3,1)*rot(2,l))*sqrt3
       enddo
-      do l= 4,5
-        rot2(1,l)= rot(1,1)*rot(1,l-2)
-        rot2(2,l)= rot(2,1)*rot(2,l-2)
-        rot2(3,l)= rot(3,1)*rot(3,l-2)
-        rot2(4,l)= rot(1,1)*rot(2,l-2)+rot(2,1)*rot(1,l-2)
-        rot2(5,l)= rot(1,1)*rot(3,l-2)+rot(3,1)*rot(1,l-2)
-        rot2(6,l)= rot(2,1)*rot(3,l-2)+rot(3,1)*rot(2,l-2)
+      do l= 2,3
+        rot2(1,l*2)= rot(1,l)*rot(1,l)
+        rot2(2,l*2)= rot(2,l)*rot(2,l)
+        rot2(3,l*2)= rot(3,l)*rot(3,l)
+        rot2(4,l*2)= rot(1,l)*rot(2,l)*two
+        rot2(5,l*2)= rot(1,l)*rot(3,l)*two
+        rot2(6,l*2)= rot(2,l)*rot(3,l)*two
       enddo
-      rot2(1,6)= rot(1,2)*rot(1,3)
-      rot2(2,6)= rot(2,2)*rot(2,3)
-      rot2(3,6)= rot(3,2)*rot(3,3)
-      rot2(4,6)= rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3)
-      rot2(5,6)= rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3)
-      rot2(6,6)= rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3)
-      do l= 4,6
-        do k= 1,6
-          rot2(k,l)= rot2(k,l)*sqrt3
-        enddo
-      enddo
+      rot2(1,5)= rot(1,2)*rot(1,3)*sqrt3
+      rot2(2,5)= rot(2,2)*rot(2,3)*sqrt3
+      rot2(3,5)= rot(3,2)*rot(3,3)*sqrt3
+      rot2(4,5)=(rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3))*sqrt3
+      rot2(5,5)=(rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3))*sqrt3
+      rot2(6,5)=(rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3))*sqrt3
+!
       do l= 1,6
-        rot3(l,1)= rot2(l,3)-(rot2(l,1)+rot2(l,2))*half
+        rot3(l,1)= rot2(l,2)
         rot3(l,2)= rot2(l,5)
-        rot3(l,3)= rot2(l,6)
-        rot3(l,4)=(rot2(l,1)-rot2(l,2))*sqrt3h
-        rot3(l,5)= rot2(l,4)
+        rot3(l,3)= rot2(l,6)-(rot2(l,1)+rot2(l,4))*half
+        rot3(l,4)= rot2(l,3)
+        rot3(l,5)=(rot2(l,1)-rot2(l,4))*sqrt3h
       enddo
 !
       if(nbfijkl(2) == 6)then
@@ -3509,8 +3780,59 @@ end
         enddo
       endif
 !
+      if(nbfijkl(2) == 6)then
+        do j=1,3
+        do l= 1,nbfijkl(4)
+          work(1:6)= phmdint(l,j,1:6,1)
+          phmdint(l,j,1,1)=work(1)
+          phmdint(l,j,2,1)=work(4)
+          phmdint(l,j,3,1)=work(6)
+          phmdint(l,j,4,1)=work(2)
+          phmdint(l,j,5,1)=work(3)
+          phmdint(l,j,6,1)=work(5)
+        enddo
+        enddo
+      else
+        do j=1,3
+        do l= 1,nbfijkl(4)
+          work(1:5)= phmdint(l,j,1:5,1)
+          phmdint(l,j,1,1)=work(3)
+          phmdint(l,j,2,1)=work(4)
+          phmdint(l,j,3,1)=work(2)
+          phmdint(l,j,4,1)=work(5)
+          phmdint(l,j,5,1)=work(1)
+        enddo
+        enddo
+      endif
+      if(nbfijkl(4) == 6)then
+        do j=1,3
+        do k= 1,nbfijkl(2)
+          work(1:6)= phmdint(1:6,j,k,1)
+          phmdint(1,j,k,1)=work(1)
+          phmdint(2,j,k,1)=work(4)
+          phmdint(3,j,k,1)=work(6)
+          phmdint(4,j,k,1)=work(2)
+          phmdint(5,j,k,1)=work(3)
+          phmdint(6,j,k,1)=work(5)
+        enddo
+        enddo
+      else
+        do j=1,3
+        do k= 1,nbfijkl(2)
+          work(1:5)= phmdint(1:5,j,k,1)
+          phmdint(1,j,k,1)=work(3)
+          phmdint(2,j,k,1)=work(4)
+          phmdint(3,j,k,1)=work(2)
+          phmdint(4,j,k,1)=work(5)
+          phmdint(5,j,k,1)=work(1)
+        enddo
+        enddo
+      endif
+!
       return
 end
+
+
 !--------------------------------------------------------------------------
   subroutine int2dppp(phmdint,exfac1,exfac2,xyziq,xzkl,rot,nijkl,nbfijkl)
 !--------------------------------------------------------------------------
@@ -4187,33 +4509,34 @@ end
 &                  +r2(6,1)+r2(6,2)+r2(6,3)+r2(6,4))*qz+(+r3(9,9)-r2(6,7)-r2(6,10)+r1(2,3) &
 &                  +r1(2,6))*zz
 !
-      do l= 1,3
-        rot2(1,l)= rot(1,l)*rot(1,l)
-        rot2(2,l)= rot(2,l)*rot(2,l)
-        rot2(3,l)= rot(3,l)*rot(3,l)
-        rot2(4,l)= rot(1,l)*rot(2,l)*two
-        rot2(5,l)= rot(1,l)*rot(3,l)*two
-        rot2(6,l)= rot(2,l)*rot(3,l)*two
+      rot2(1,1)= rot(1,1)*rot(1,1)
+      rot2(2,1)= rot(2,1)*rot(2,1)
+      rot2(3,1)= rot(3,1)*rot(3,1)
+      rot2(4,1)= rot(1,1)*rot(2,1)*two
+      rot2(5,1)= rot(1,1)*rot(3,1)*two
+      rot2(6,1)= rot(2,1)*rot(3,1)*two
+      do l= 2,3
+        rot2(1,l)= rot(1,1)*rot(1,l)*sqrt3
+        rot2(2,l)= rot(2,1)*rot(2,l)*sqrt3
+        rot2(3,l)= rot(3,1)*rot(3,l)*sqrt3
+        rot2(4,l)=(rot(1,1)*rot(2,l)+rot(2,1)*rot(1,l))*sqrt3
+        rot2(5,l)=(rot(1,1)*rot(3,l)+rot(3,1)*rot(1,l))*sqrt3
+        rot2(6,l)=(rot(2,1)*rot(3,l)+rot(3,1)*rot(2,l))*sqrt3
       enddo
-      do l= 4,5
-        rot2(1,l)= rot(1,1)*rot(1,l-2)
-        rot2(2,l)= rot(2,1)*rot(2,l-2)
-        rot2(3,l)= rot(3,1)*rot(3,l-2)
-        rot2(4,l)= rot(1,1)*rot(2,l-2)+rot(2,1)*rot(1,l-2)
-        rot2(5,l)= rot(1,1)*rot(3,l-2)+rot(3,1)*rot(1,l-2)
-        rot2(6,l)= rot(2,1)*rot(3,l-2)+rot(3,1)*rot(2,l-2)
+      do l= 2,3
+        rot2(1,l*2)= rot(1,l)*rot(1,l)
+        rot2(2,l*2)= rot(2,l)*rot(2,l)
+        rot2(3,l*2)= rot(3,l)*rot(3,l)
+        rot2(4,l*2)= rot(1,l)*rot(2,l)*two
+        rot2(5,l*2)= rot(1,l)*rot(3,l)*two
+        rot2(6,l*2)= rot(2,l)*rot(3,l)*two
       enddo
-      rot2(1,6)= rot(1,2)*rot(1,3)
-      rot2(2,6)= rot(2,2)*rot(2,3)
-      rot2(3,6)= rot(3,2)*rot(3,3)
-      rot2(4,6)= rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3)
-      rot2(5,6)= rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3)
-      rot2(6,6)= rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3)
-      do l= 4,6
-        do k= 1,6
-          rot2(k,l)= rot2(k,l)*sqrt3
-        enddo
-      enddo
+      rot2(1,5)= rot(1,2)*rot(1,3)*sqrt3
+      rot2(2,5)= rot(2,2)*rot(2,3)*sqrt3
+      rot2(3,5)= rot(3,2)*rot(3,3)*sqrt3
+      rot2(4,5)=(rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3))*sqrt3
+      rot2(5,5)=(rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3))*sqrt3
+      rot2(6,5)=(rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3))*sqrt3
 !
       do j= 1,3
         do k= 1,3
@@ -4266,11 +4589,11 @@ end
         enddo
       else
         do l= 1,6
-          rot3(l,1)= rot2(l,3)-(rot2(l,1)+rot2(l,2))*half
+          rot3(l,1)= rot2(l,2)
           rot3(l,2)= rot2(l,5)
-          rot3(l,3)= rot2(l,6)
-          rot3(l,4)=(rot2(l,1)-rot2(l,2))*sqrt3h
-          rot3(l,5)= rot2(l,4)
+          rot3(l,3)= rot2(l,6)-(rot2(l,1)+rot2(l,4))*half
+          rot3(l,4)= rot2(l,3)
+          rot3(l,5)=(rot2(l,1)-rot2(l,4))*sqrt3h
         enddo
         do i= 1,3
           do j= 1,3
@@ -4285,8 +4608,39 @@ end
         enddo
       endif
 !
+      if(nbfijkl(4) == 6)then
+        eri(1:6,1:3,1:3,1:3)= phmdint(1:6,1:3,1:3,1:3)
+        do i=1,3
+        do j=1,3
+        do k=1,3
+          phmdint(1,k,j,i)=eri(1,k,j,i)
+          phmdint(2,k,j,i)=eri(4,k,j,i)
+          phmdint(3,k,j,i)=eri(6,k,j,i)
+          phmdint(4,k,j,i)=eri(2,k,j,i)
+          phmdint(5,k,j,i)=eri(3,k,j,i)
+          phmdint(6,k,j,i)=eri(5,k,j,i)
+        enddo
+        enddo
+        enddo
+      else
+        eri(1:5,1:3,1:3,1:3)=phmdint(1:5,1:3,1:3,1:3)
+        do i=1,3
+        do j=1,3
+        do k=1,3
+          phmdint(1,k,j,i)=eri(3,k,j,i)
+          phmdint(2,k,j,i)=eri(4,k,j,i)
+          phmdint(3,k,j,i)=eri(2,k,j,i)
+          phmdint(4,k,j,i)=eri(5,k,j,i)
+          phmdint(5,k,j,i)=eri(1,k,j,i)
+        enddo
+        enddo
+        enddo
+      endif
+!
       return
 end
+
+
 !--------------------------------------------------------------------------
   subroutine int2ddds(phmdint,exfac1,exfac2,xyziq,xzkl,rot,nijkl,nbfijkl)
 !--------------------------------------------------------------------------
@@ -5526,39 +5880,41 @@ end
 &                +r5(18,2)+r5(18,3)-r4(12,3)-r4(12,4)+r3(9,9)+r3(9,10)-r2(6,9)-r2(6,10))*qz+( &
 &                +r4(12,7)-r3(7,7)+r2(6,15)-r1(2,11))*zz
 !
-      do l= 1,3
-        rot2(1,l)= rot(1,l)*rot(1,l)
-        rot2(2,l)= rot(2,l)*rot(2,l)
-        rot2(3,l)= rot(3,l)*rot(3,l)
-        rot2(4,l)= rot(1,l)*rot(2,l)*two
-        rot2(5,l)= rot(1,l)*rot(3,l)*two
-        rot2(6,l)= rot(2,l)*rot(3,l)*two
+      rot2(1,1)= rot(1,1)*rot(1,1)
+      rot2(2,1)= rot(2,1)*rot(2,1)
+      rot2(3,1)= rot(3,1)*rot(3,1)
+      rot2(4,1)= rot(1,1)*rot(2,1)*two
+      rot2(5,1)= rot(1,1)*rot(3,1)*two
+      rot2(6,1)= rot(2,1)*rot(3,1)*two
+      do l= 2,3
+        rot2(1,l)= rot(1,1)*rot(1,l)*sqrt3
+        rot2(2,l)= rot(2,1)*rot(2,l)*sqrt3
+        rot2(3,l)= rot(3,1)*rot(3,l)*sqrt3
+        rot2(4,l)=(rot(1,1)*rot(2,l)+rot(2,1)*rot(1,l))*sqrt3
+        rot2(5,l)=(rot(1,1)*rot(3,l)+rot(3,1)*rot(1,l))*sqrt3
+        rot2(6,l)=(rot(2,1)*rot(3,l)+rot(3,1)*rot(2,l))*sqrt3
       enddo
-      do l= 4,5
-        rot2(1,l)= rot(1,1)*rot(1,l-2)
-        rot2(2,l)= rot(2,1)*rot(2,l-2)
-        rot2(3,l)= rot(3,1)*rot(3,l-2)
-        rot2(4,l)= rot(1,1)*rot(2,l-2)+rot(2,1)*rot(1,l-2)
-        rot2(5,l)= rot(1,1)*rot(3,l-2)+rot(3,1)*rot(1,l-2)
-        rot2(6,l)= rot(2,1)*rot(3,l-2)+rot(3,1)*rot(2,l-2)
+      do l= 2,3
+        rot2(1,l*2)= rot(1,l)*rot(1,l)
+        rot2(2,l*2)= rot(2,l)*rot(2,l)
+        rot2(3,l*2)= rot(3,l)*rot(3,l)
+        rot2(4,l*2)= rot(1,l)*rot(2,l)*two
+        rot2(5,l*2)= rot(1,l)*rot(3,l)*two
+        rot2(6,l*2)= rot(2,l)*rot(3,l)*two
       enddo
-      rot2(1,6)= rot(1,2)*rot(1,3)
-      rot2(2,6)= rot(2,2)*rot(2,3)
-      rot2(3,6)= rot(3,2)*rot(3,3)
-      rot2(4,6)= rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3)
-      rot2(5,6)= rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3)
-      rot2(6,6)= rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3)
-      do l= 4,6
-        do k= 1,6
-          rot2(k,l)= rot2(k,l)*sqrt3
-        enddo
-      enddo
+      rot2(1,5)= rot(1,2)*rot(1,3)*sqrt3
+      rot2(2,5)= rot(2,2)*rot(2,3)*sqrt3
+      rot2(3,5)= rot(3,2)*rot(3,3)*sqrt3
+      rot2(4,5)=(rot(1,2)*rot(2,3)+rot(2,2)*rot(1,3))*sqrt3
+      rot2(5,5)=(rot(1,2)*rot(3,3)+rot(3,2)*rot(1,3))*sqrt3
+      rot2(6,5)=(rot(2,2)*rot(3,3)+rot(3,2)*rot(2,3))*sqrt3
+!
       do l= 1,6
-        rot3(l,1)= rot2(l,3)-(rot2(l,1)+rot2(l,2))*half
+        rot3(l,1)= rot2(l,2)
         rot3(l,2)= rot2(l,5)
-        rot3(l,3)= rot2(l,6)
-        rot3(l,4)=(rot2(l,1)-rot2(l,2))*sqrt3h
-        rot3(l,5)= rot2(l,4)
+        rot3(l,3)= rot2(l,6)-(rot2(l,1)+rot2(l,4))*half
+        rot3(l,4)= rot2(l,3)
+        rot3(l,5)=(rot2(l,1)-rot2(l,4))*sqrt3h
       enddo
 !
       if(nbfijkl(2) == 6)then
@@ -5630,6 +5986,79 @@ end
 &                              +eri(4,k,j)*rot3(4,l)+eri(5,k,j)*rot3(5,l)+eri(6,k,j)*rot3(6,l)
             enddo
           enddo
+        enddo
+      endif
+!
+      if(nbfijkl(2) == 6)then
+        do k= 1,nbfijkl(3)
+        do l= 1,nbfijkl(4)
+          work(1:6)= phmdint(l,k,1:6,1)
+          phmdint(l,k,1,1)=work(1)
+          phmdint(l,k,2,1)=work(4)
+          phmdint(l,k,3,1)=work(6)
+          phmdint(l,k,4,1)=work(2)
+          phmdint(l,k,5,1)=work(3)
+          phmdint(l,k,6,1)=work(5)
+        enddo
+        enddo
+      else
+        do k= 1,nbfijkl(3)
+        do l= 1,nbfijkl(4)
+          work(1:5)= phmdint(l,k,1:5,1)
+          phmdint(l,k,1,1)=work(3)
+          phmdint(l,k,2,1)=work(4)
+          phmdint(l,k,3,1)=work(2)
+          phmdint(l,k,4,1)=work(5)
+          phmdint(l,k,5,1)=work(1)
+        enddo
+        enddo
+      endif
+      if(nbfijkl(3) == 6)then
+        do j= 1,nbfijkl(2)
+        do l= 1,nbfijkl(4)
+          work(1:6)= phmdint(l,1:6,j,1)
+          phmdint(l,1,j,1)=work(1)
+          phmdint(l,2,j,1)=work(4)
+          phmdint(l,3,j,1)=work(6)
+          phmdint(l,4,j,1)=work(2)
+          phmdint(l,5,j,1)=work(3)
+          phmdint(l,6,j,1)=work(5)
+        enddo
+        enddo
+      else
+        do j= 1,nbfijkl(2)
+        do l= 1,nbfijkl(4)
+          work(1:5)= phmdint(l,1:5,j,1)
+          phmdint(l,1,j,1)=work(3)
+          phmdint(l,2,j,1)=work(4)
+          phmdint(l,3,j,1)=work(2)
+          phmdint(l,4,j,1)=work(5)
+          phmdint(l,5,j,1)=work(1)
+        enddo
+        enddo
+      endif
+      if(nbfijkl(4) == 6)then
+        do j= 1,nbfijkl(2)
+        do k= 1,nbfijkl(3)
+          work(1:6)= phmdint(1:6,k,j,1)
+          phmdint(1,k,j,1)=work(1)
+          phmdint(2,k,j,1)=work(4)
+          phmdint(3,k,j,1)=work(6)
+          phmdint(4,k,j,1)=work(2)
+          phmdint(5,k,j,1)=work(3)
+          phmdint(6,k,j,1)=work(5)
+        enddo
+        enddo
+      else
+        do j= 1,nbfijkl(2)
+        do k= 1,nbfijkl(3)
+          work(1:5)= phmdint(1:5,k,j,1)
+          phmdint(1,k,j,1)=work(3)
+          phmdint(2,k,j,1)=work(4)
+          phmdint(3,k,j,1)=work(2)
+          phmdint(4,k,j,1)=work(5)
+          phmdint(5,k,j,1)=work(1)
+        enddo
         enddo
       endif
 !

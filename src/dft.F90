@@ -714,11 +714,11 @@ end
               if(ex(icount)*rsqrd(iatom) > threshex) cycle
               expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
               tmp(1,1)= expval*xyzpt(1,iatom)*xyzpt(1,iatom)
-              tmp(2,1)= expval*xyzpt(2,iatom)*xyzpt(2,iatom)
-              tmp(3,1)= expval*xyzpt(3,iatom)*xyzpt(3,iatom)
-              tmp(4,1)= expval*xyzpt(1,iatom)*xyzpt(2,iatom)*sqrt3
-              tmp(5,1)= expval*xyzpt(1,iatom)*xyzpt(3,iatom)*sqrt3
-              tmp(6,1)= expval*xyzpt(2,iatom)*xyzpt(3,iatom)*sqrt3
+              tmp(2,1)= expval*xyzpt(1,iatom)*xyzpt(2,iatom)*sqrt3
+              tmp(3,1)= expval*xyzpt(1,iatom)*xyzpt(3,iatom)*sqrt3
+              tmp(4,1)= expval*xyzpt(2,iatom)*xyzpt(2,iatom)
+              tmp(5,1)= expval*xyzpt(2,iatom)*xyzpt(3,iatom)*sqrt3
+              tmp(6,1)= expval*xyzpt(3,iatom)*xyzpt(3,iatom)
               fac= ex(icount)*two
               xxx=-xyzpt(1,iatom)*xyzpt(1,iatom)*xyzpt(1,iatom)*fac
               xxy=-xyzpt(1,iatom)*xyzpt(1,iatom)*xyzpt(2,iatom)*fac
@@ -731,23 +731,23 @@ end
               yzz=-xyzpt(2,iatom)*xyzpt(3,iatom)*xyzpt(3,iatom)*fac
               zzz=-xyzpt(3,iatom)*xyzpt(3,iatom)*xyzpt(3,iatom)*fac
               tmp(1,2)= expval*(xyzpt(1,iatom)*two+xxx)
-              tmp(2,2)= expval*(                  +xyy)
-              tmp(3,2)= expval*(                  +xzz)
-              tmp(4,2)= expval*(xyzpt(2,iatom)    +xxy)*sqrt3
-              tmp(5,2)= expval*(xyzpt(3,iatom)    +xxz)*sqrt3
-              tmp(6,2)= expval*(                  +xyz)*sqrt3
+              tmp(2,2)= expval*(xyzpt(2,iatom)    +xxy)*sqrt3
+              tmp(3,2)= expval*(xyzpt(3,iatom)    +xxz)*sqrt3
+              tmp(4,2)= expval*(                  +xyy)
+              tmp(5,2)= expval*(                  +xyz)*sqrt3
+              tmp(6,2)= expval*(                  +xzz)
               tmp(1,3)= expval*(                  +xxy)
-              tmp(2,3)= expval*(xyzpt(2,iatom)*two+yyy)
-              tmp(3,3)= expval*(                  +yzz)
-              tmp(4,3)= expval*(xyzpt(1,iatom)    +xyy)*sqrt3
-              tmp(5,3)= expval*(                  +xyz)*sqrt3
-              tmp(6,3)= expval*(xyzpt(3,iatom)    +yyz)*sqrt3
+              tmp(2,3)= expval*(xyzpt(1,iatom)    +xyy)*sqrt3
+              tmp(3,3)= expval*(                  +xyz)*sqrt3
+              tmp(4,3)= expval*(xyzpt(2,iatom)*two+yyy)
+              tmp(5,3)= expval*(xyzpt(3,iatom)    +yyz)*sqrt3
+              tmp(6,3)= expval*(                  +yzz)
               tmp(1,4)= expval*(                  +xxz)
-              tmp(2,4)= expval*(                  +yyz)
-              tmp(3,4)= expval*(xyzpt(3,iatom)*two+zzz)
-              tmp(4,4)= expval*(                  +xyz)*sqrt3
-              tmp(5,4)= expval*(xyzpt(1,iatom)    +xzz)*sqrt3
-              tmp(6,4)= expval*(xyzpt(2,iatom)    +yzz)*sqrt3
+              tmp(2,4)= expval*(                  +xyz)*sqrt3
+              tmp(3,4)= expval*(xyzpt(1,iatom)    +xzz)*sqrt3
+              tmp(4,4)= expval*(                  +yyz)
+              tmp(5,4)= expval*(xyzpt(2,iatom)    +yzz)*sqrt3
+              tmp(6,4)= expval*(xyzpt(3,iatom)*two+zzz)
               if(nbf == 6) then
                 do jj= 1,4
                   do ii= 1,6
@@ -756,14 +756,36 @@ end
                 enddo
               else
                 do jj= 1,4
-                  vao(ilocbf+1,jj)= vao(ilocbf+1,jj)+tmp(3,jj)-(tmp(1,jj)+tmp(2,jj))*half
+                  vao(ilocbf+1,jj)= vao(ilocbf+1,jj)+tmp(2,jj)
                   vao(ilocbf+2,jj)= vao(ilocbf+2,jj)+tmp(5,jj)
-                  vao(ilocbf+3,jj)= vao(ilocbf+3,jj)+tmp(6,jj)
-                  vao(ilocbf+4,jj)= vao(ilocbf+4,jj)+(tmp(1,jj)-tmp(2,jj))*sqrt3h
-                  vao(ilocbf+5,jj)= vao(ilocbf+5,jj)+tmp(4,jj)
+                  vao(ilocbf+3,jj)= vao(ilocbf+3,jj)+tmp(6,jj)-(tmp(1,jj)+tmp(4,jj))*half
+                  vao(ilocbf+4,jj)= vao(ilocbf+4,jj)+tmp(3,jj)
+                  vao(ilocbf+5,jj)= vao(ilocbf+5,jj)+(tmp(1,jj)-tmp(4,jj))*sqrt3h
                 enddo
               endif
             enddo
+!ishimura
+            if(nbf == 6) then
+              do jj= 1,4
+                tmp(1:6,1)= vao(ilocbf+1:ilocbf+6,jj)
+                vao(ilocbf+1,jj)= tmp(1,1)
+                vao(ilocbf+2,jj)= tmp(4,1)
+                vao(ilocbf+3,jj)= tmp(6,1)
+                vao(ilocbf+4,jj)= tmp(2,1)
+                vao(ilocbf+5,jj)= tmp(3,1)
+                vao(ilocbf+6,jj)= tmp(5,1)
+              enddo
+            else
+              do jj= 1,4
+                tmp(1:5,1)= vao(ilocbf+1:ilocbf+5,jj)
+                vao(ilocbf+1,jj)= tmp(3,1) 
+                vao(ilocbf+2,jj)= tmp(4,1) 
+                vao(ilocbf+3,jj)= tmp(2,1) 
+                vao(ilocbf+4,jj)= tmp(5,1) 
+                vao(ilocbf+5,jj)= tmp(1,1) 
+              enddo
+            endif
+!
             do ii= 1,nbf
               if(abs(vao(ilocbf+ii,1))+abs(vao(ilocbf+ii,2)) &
 &               +abs(vao(ilocbf+ii,3))+abs(vao(ilocbf+ii,4)) > aocutoff) then
