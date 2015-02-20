@@ -2193,27 +2193,77 @@ end
 ! F function
         case(7)
           do i= 1,ncarti
-            do j= 1,3
-              work(j)= onei(j,i)
-            enddo
-            do j= 4,9
-              work(j)= onei(j,i)*sqrt5
-            enddo
-            work(10)= onei(10,i)*sqrt15
-            onei(1,i)=( work(3)*two-work(5)*three-work(7)*three)*facf4
-            onei(2,i)=(-work(1)-work(6)+work(8)*four           )*facf3
-            onei(3,i)=(-work(2)-work(4)+work(9)*four           )*facf3
-            onei(4,i)=( work(5)-work(7)                        )*facf2
-            onei(5,i)=  work(10)
-            onei(6,i)=( work(1)-work(6)*three                  )*facf1
-            onei(7,i)=(-work(2)+work(4)*three                  )*facf1
+!           do j= 1,3
+!             work(j)= onei(j,i)
+!           enddo
+!           do j= 4,9
+!             work(j)= onei(j,i)*sqrt5
+!           enddo
+!           work(10)= onei(10,i)*sqrt15
+!           onei(1,i)=( work(3)*two-work(5)*three-work(7)*three)*facf4
+!           onei(2,i)=(-work(1)-work(6)+work(8)*four           )*facf3
+!           onei(3,i)=(-work(2)-work(4)+work(9)*four           )*facf3
+!           onei(4,i)=( work(5)-work(7)                        )*facf2
+!           onei(5,i)=  work(10)
+!           onei(6,i)=( work(1)-work(6)*three                  )*facf1
+!           onei(7,i)=(-work(2)+work(4)*three                  )*facf1
+            work( 1)= onei( 1,i)
+            work( 2)= onei( 2,i)*sqrt5
+            work( 3)= onei( 3,i)*sqrt5
+            work( 4)= onei( 4,i)*sqrt5
+            work( 5)= onei( 5,i)*sqrt15
+            work( 6)= onei( 6,i)*sqrt5
+            work( 7)= onei( 7,i)
+            work( 8)= onei( 8,i)*sqrt5
+            work( 9)= onei( 9,i)*sqrt5
+            work(10)= onei(10,i)
+            onei(1,i)=(-work(7)+three*work(2)                   )*facf1
+            onei(2,i)=  work(5)
+            onei(3,i)=(-work(7)-work(2)+four*work(9)            )*facf3
+            onei(4,i)=( two*work(10)-three*work(3)-three*work(8))*facf4
+            onei(5,i)=(-work(1)-work(4)+four*work(6)            )*facf3
+            onei(6,i)=( work(3)-work(8)                         )*facf2
+            onei(7,i)=( work(1)-three*work(4)                   )*facf1
           enddo
+!ishimura
+          do i= 1,ncarti
+            work(1:7)= onei(1:7,i)
+            onei(1,i)= work(4)
+            onei(2,i)= work(5)
+            onei(3,i)= work(3)
+            onei(4,i)= work(6)
+            onei(5,i)= work(2)
+            onei(6,i)= work(7)
+            onei(7,i)= work(1)
+          enddo
+!
         case(10)
           do i= 1,ncarti
-            do j= 4,9
-              onei(j,i)= onei(j,i)*sqrt5
-            enddo
-            onei(10,i)= onei(10,i)*sqrt15
+!           do j= 4,9
+!             onei(j,i)= onei(j,i)*sqrt5
+!           enddo
+!           onei(10,i)= onei(10,i)*sqrt15
+            onei(2,i)= onei(2,i)*sqrt5
+            onei(3,i)= onei(3,i)*sqrt5
+            onei(4,i)= onei(4,i)*sqrt5
+            onei(5,i)= onei(5,i)*sqrt15
+            onei(6,i)= onei(6,i)*sqrt5
+            onei(8,i)= onei(8,i)*sqrt5
+            onei(9,i)= onei(9,i)*sqrt5
+          enddo
+!ishimura
+          do i= 1,ncarti
+            work(1:10)= onei(1:10,i)
+            onei( 1,i)= work( 1)
+            onei( 2,i)= work( 7)
+            onei( 3,i)= work(10)
+            onei( 4,i)= work( 2)
+            onei( 5,i)= work( 3)
+            onei( 6,i)= work( 4)
+            onei( 7,i)= work( 8)
+            onei( 8,i)= work( 6)
+            onei( 9,i)= work( 9)
+            onei(10,i)= work( 5)
           enddo
 ! G function
         case(9)
@@ -2304,27 +2354,75 @@ end
 ! F function
         case(7)
           do j= 1,nbfj
-            do i= 1,3
-              work(i)= onei(j,i)
-            enddo
-            do i= 4,9
-              work(i)= onei(j,i)*sqrt5
-            enddo
-            work(10)= onei(j,10)*sqrt15
-            onei(j,1)=( two*work(3)-three*work(5)-three*work(7))*facf4
-            onei(j,2)=(-work(1)-work(6)+four*work(8)           )*facf3
-            onei(j,3)=(-work(2)-work(4)+four*work(9)           )*facf3
-            onei(j,4)=( work(5)-work(7)                        )*facf2
-            onei(j,5)=  work(10)
-            onei(j,6)=( work(1)-three*work(6)                  )*facf1
-            onei(j,7)=(-work(2)+three*work(4)                  )*facf1
+!           do i= 1,3
+!             work(i)= onei(j,i)
+!           enddo
+!           do i= 4,9
+!             work(i)= onei(j,i)*sqrt5
+!           enddo
+!           work(10)= onei(j,10)*sqrt15
+!           onei(j,1)=( two*work(3)-three*work(5)-three*work(7))*facf4
+!           onei(j,2)=(-work(1)-work(6)+four*work(8)           )*facf3
+!           onei(j,3)=(-work(2)-work(4)+four*work(9)           )*facf3
+!           onei(j,4)=( work(5)-work(7)                        )*facf2
+!           onei(j,5)=  work(10)
+!           onei(j,6)=( work(1)-three*work(6)                  )*facf1
+!           onei(j,7)=(-work(2)+three*work(4)                  )*facf1
+            work( 1)= onei(j, 1)
+            work( 2)= onei(j, 2)*sqrt5
+            work( 3)= onei(j, 3)*sqrt5
+            work( 4)= onei(j, 4)*sqrt5
+            work( 5)= onei(j, 5)*sqrt15
+            work( 6)= onei(j, 6)*sqrt5
+            work( 7)= onei(j, 7)
+            work( 8)= onei(j, 8)*sqrt5
+            work( 9)= onei(j, 9)*sqrt5
+            work(10)= onei(j,10)
+            onei(j,1)=(-work(7)+three*work(2)                   )*facf1
+            onei(j,2)=  work(5)
+            onei(j,3)=(-work(7)-work(2)+four*work(9)            )*facf3
+            onei(j,4)=( two*work(10)-three*work(3)-three*work(8))*facf4
+            onei(j,5)=(-work(1)-work(4)+four*work(6)            )*facf3
+            onei(j,6)=( work(3)-work(8)                         )*facf2
+            onei(j,7)=( work(1)-three*work(4)                   )*facf1
+          enddo
+!ishimura
+          do j= 1,nbfj
+            work(1:7)= onei(j,1:7)
+            onei(j,1)= work(4)
+            onei(j,2)= work(5)
+            onei(j,3)= work(3)
+            onei(j,4)= work(6)
+            onei(j,5)= work(2)
+            onei(j,6)= work(7)
+            onei(j,7)= work(1)
           enddo
         case(10)
           do j= 1,nbfj
-            do i= 4,9
-              onei(j,i)= onei(j,i)*sqrt5
-            enddo
-            onei(j,10)= onei(j,10)*sqrt15
+!           do i= 4,9
+!             onei(j,i)= onei(j,i)*sqrt5
+!           enddo
+!           onei(j,10)= onei(j,10)*sqrt15
+            onei(j,2)= onei(j,2)*sqrt5
+            onei(j,3)= onei(j,3)*sqrt5
+            onei(j,4)= onei(j,4)*sqrt5
+            onei(j,5)= onei(j,5)*sqrt15
+            onei(j,6)= onei(j,6)*sqrt5
+            onei(j,8)= onei(j,8)*sqrt5
+            onei(j,9)= onei(j,9)*sqrt5
+          enddo
+          do j= 1,nbfj
+            work(1:10)= onei(j,1:10)
+            onei(j, 1)= work( 1)
+            onei(j, 2)= work( 7)
+            onei(j, 3)= work(10)
+            onei(j, 4)= work( 2)
+            onei(j, 5)= work( 3)
+            onei(j, 6)= work( 4)
+            onei(j, 7)= work( 8)
+            onei(j, 8)= work( 6)
+            onei(j, 9)= work( 9)
+            onei(j,10)= work( 5)
           enddo
 ! G function
         case(9)
