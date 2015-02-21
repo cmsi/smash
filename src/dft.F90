@@ -764,27 +764,6 @@ end
                 enddo
               endif
             enddo
-!ishimura
-            if(nbf == 6) then
-              do jj= 1,4
-                tmp(1:6,1)= vao(ilocbf+1:ilocbf+6,jj)
-                vao(ilocbf+1,jj)= tmp(1,1)
-                vao(ilocbf+2,jj)= tmp(4,1)
-                vao(ilocbf+3,jj)= tmp(6,1)
-                vao(ilocbf+4,jj)= tmp(2,1)
-                vao(ilocbf+5,jj)= tmp(3,1)
-                vao(ilocbf+6,jj)= tmp(5,1)
-              enddo
-            else
-              do jj= 1,4
-                tmp(1:5,1)= vao(ilocbf+1:ilocbf+5,jj)
-                vao(ilocbf+1,jj)= tmp(3,1) 
-                vao(ilocbf+2,jj)= tmp(4,1) 
-                vao(ilocbf+3,jj)= tmp(2,1) 
-                vao(ilocbf+4,jj)= tmp(5,1) 
-                vao(ilocbf+5,jj)= tmp(1,1) 
-              enddo
-            endif
 !
             do ii= 1,nbf
               if(abs(vao(ilocbf+ii,1))+abs(vao(ilocbf+ii,2)) &
@@ -886,33 +865,6 @@ end
                 enddo
               endif
             enddo
-!ishimura
-            if(nbf == 10) then
-              do jj= 1,4
-                tmp(1:10,1)= vao(ilocbf+1:ilocbf+10,jj)
-                vao(ilocbf+ 1,jj)= tmp( 1,1)
-                vao(ilocbf+ 2,jj)= tmp( 7,1)
-                vao(ilocbf+ 3,jj)= tmp(10,1)
-                vao(ilocbf+ 4,jj)= tmp( 2,1)
-                vao(ilocbf+ 5,jj)= tmp( 3,1)
-                vao(ilocbf+ 6,jj)= tmp( 4,1)
-                vao(ilocbf+ 7,jj)= tmp( 8,1)
-                vao(ilocbf+ 8,jj)= tmp( 6,1)
-                vao(ilocbf+ 9,jj)= tmp( 9,1)
-                vao(ilocbf+10,jj)= tmp( 5,1)
-              enddo
-            else
-              do jj= 1,4
-                tmp(1:7,1)= vao(ilocbf+1:ilocbf+7,jj)
-                vao(ilocbf+1,jj)= tmp(4,1)
-                vao(ilocbf+2,jj)= tmp(5,1)
-                vao(ilocbf+3,jj)= tmp(3,1)
-                vao(ilocbf+4,jj)= tmp(6,1)
-                vao(ilocbf+5,jj)= tmp(2,1)
-                vao(ilocbf+6,jj)= tmp(7,1)
-                vao(ilocbf+7,jj)= tmp(1,1)
-              enddo
-            endif
 !
             do ii= 1,nbf
               if(abs(vao(ilocbf+ii,1))+abs(vao(ilocbf+ii,2)) &
@@ -1107,27 +1059,6 @@ end
                 enddo
               endif
             enddo
-!ishimura
-            if(nbf == 6) then
-              do jj= 1,4
-                tmp(1:6,1)= vao(ilocbf+1:ilocbf+6,jj)
-                vao(ilocbf+1,jj)= tmp(1,1)
-                vao(ilocbf+2,jj)= tmp(4,1)
-                vao(ilocbf+3,jj)= tmp(6,1)
-                vao(ilocbf+4,jj)= tmp(2,1)
-                vao(ilocbf+5,jj)= tmp(3,1)
-                vao(ilocbf+6,jj)= tmp(5,1)
-              enddo
-            else
-              do jj= 1,4
-                tmp(1:5,1)= vao(ilocbf+1:ilocbf+5,jj)
-                vao(ilocbf+1,jj)= tmp(3,1)
-                vao(ilocbf+2,jj)= tmp(4,1)
-                vao(ilocbf+3,jj)= tmp(2,1)
-                vao(ilocbf+4,jj)= tmp(5,1)
-                vao(ilocbf+5,jj)= tmp(1,1)
-              enddo
-            endif
 !
             do ii= 1,nbf
               if(abs(vao(ilocbf+ii,1))+abs(vao(ilocbf+ii,2)) &
@@ -1235,33 +1166,6 @@ end
                 enddo
               endif
             enddo
-!ishimura
-            if(nbf == 10) then
-              do jj= 1,4
-                tmp(1:10,1)= vao(ilocbf+1:ilocbf+10,jj)
-                vao(ilocbf+ 1,jj)= tmp( 1,1)
-                vao(ilocbf+ 2,jj)= tmp( 7,1)
-                vao(ilocbf+ 3,jj)= tmp(10,1)
-                vao(ilocbf+ 4,jj)= tmp( 2,1)
-                vao(ilocbf+ 5,jj)= tmp( 3,1)
-                vao(ilocbf+ 6,jj)= tmp( 4,1)
-                vao(ilocbf+ 7,jj)= tmp( 8,1)
-                vao(ilocbf+ 8,jj)= tmp( 6,1)
-                vao(ilocbf+ 9,jj)= tmp( 9,1)
-                vao(ilocbf+10,jj)= tmp( 5,1)
-              enddo
-            else
-              do jj= 1,4
-                tmp(1:7,1)= vao(ilocbf+1:ilocbf+7,jj)
-                vao(ilocbf+1,jj)= tmp(4,1)
-                vao(ilocbf+2,jj)= tmp(5,1)
-                vao(ilocbf+3,jj)= tmp(3,1)
-                vao(ilocbf+4,jj)= tmp(6,1)
-                vao(ilocbf+5,jj)= tmp(2,1)
-                vao(ilocbf+6,jj)= tmp(7,1)
-                vao(ilocbf+7,jj)= tmp(1,1)
-              enddo
-            endif
 !
             do ii= 1,nbf
               if(abs(vao(ilocbf+ii,1))+abs(vao(ilocbf+ii,2)) &

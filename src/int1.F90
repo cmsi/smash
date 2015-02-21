@@ -258,11 +258,8 @@ end
       enddo
 !
       if((nbfij(1) >= 5).or.(nbfij(2) >= 5)) then
-!ishimura
-!       call nrmlz1(sintmp,nbfij(1),nbfij(2),ncarti)
-!       call nrmlz1(tintmp,nbfij(1),nbfij(2),ncarti)
-        call nrmlz2(sintmp,nbfij(1),nbfij(2),ncarti)
-        call nrmlz2(tintmp,nbfij(1),nbfij(2),ncarti)
+        call nrmlz1(sintmp,nbfij(1),nbfij(2),ncarti)
+        call nrmlz1(tintmp,nbfij(1),nbfij(2),ncarti)
       endif
       do ii= 1,nbfij(1)
         do jj= 1,nbfij(2)
@@ -380,211 +377,6 @@ end
         xyzint(i)= xyzint(i)+ghxyz(i)
         enddo
       enddo
-      return
-end
-
-
-!------------------------------------------
-  subroutine nrmlz1(onei,nbfi,nbfj,ncarti)
-!------------------------------------------
-!
-! Normalize one-electron and overlap integrals
-!
-      implicit none
-      integer,intent(in) :: nbfi, nbfj, ncarti
-      integer :: i, j
-      real(8),parameter :: half=0.5D+00, two=2.0D+00, three=3.0D+00, four=4.0D+00
-      real(8),parameter :: six=6.0D+00, eight=8.0D+00, p24=24.0D+00
-      real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
-      real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
-      real(8),parameter :: sqrt7=2.645751311064590D+00, sqrt35=5.916079783099616D+00
-      real(8),parameter :: sqrt35third=3.415650255319866D+00
-      real(8),parameter :: facf1=0.36969351199675831D+00 ! 1/sqrt(10-6/sqrt(5))
-      real(8),parameter :: facf2=0.86602540378443865D+00 ! 1/sqrt(4/3)
-      real(8),parameter :: facf3=0.28116020334310144D+00 ! 1/sqrt(46/3-6/sqrt(5))
-      real(8),parameter :: facf4=0.24065403274177409D+00 ! 1/sqrt(28-24/sqrt(5))
-      real(8),parameter :: facg1=0.19440164201192295D+00 ! 1/sqrt(1336/35-8sqrt(15/7))
-      real(8),parameter :: facg2=0.36969351199675831D+00 ! 1/sqrt(10-6/sqrt(5)
-      real(8),parameter :: facg3=0.15721262982485929D+00 ! 1/sqrt(1774/35-8sqrt(15/7)-8sqrt(3/35))
-      real(8),parameter :: facg4=0.24313189758394717D+00 ! 1/sqrt(98/5-6/sqrt(5))
-      real(8),parameter :: facg5=3.20603188768051639D-02
-!                                                 ! 1/sqrt(51512/35-984sqrt(5/21)-102/sqrt(105))
-      real(8),parameter :: facg6=0.18742611911532351D+00 ! 1/sqrt(196/5-24/sqrt(5))
-      real(8),parameter :: facg7=1.11803398874989484D+00 ! 1/sqrt(4/5)
-      real(8),intent(inout) :: onei(28,28)
-      real(8) :: work(28)
-!
-! Bra part
-!
-      select case(nbfj)
-! D function
-        case(5)
-          do i= 1,ncarti
-            do j= 1,6
-              work(j)= onei(j,i)
-            enddo
-            onei(1,i)=(work(3)*two-work(1)-work(2))*half
-            onei(2,i)= work(5)*sqrt3
-            onei(3,i)= work(6)*sqrt3
-            onei(4,i)=(work(1)-work(2))*sqrt3h
-            onei(5,i)= work(4)*sqrt3
-          enddo
-        case(6)
-          do i= 1,ncarti
-            do j= 4,6
-              onei(j,i)= onei(j,i)*sqrt3
-            enddo
-          enddo
-! F function
-        case(7)
-          do i= 1,ncarti
-            do j= 1,3
-              work(j)= onei(j,i)
-            enddo
-            do j= 4,9
-              work(j)= onei(j,i)*sqrt5
-            enddo
-            work(10)= onei(10,i)*sqrt15
-            onei(1,i)=( work(3)*two-work(5)*three-work(7)*three)*facf4
-            onei(2,i)=(-work(1)-work(6)+work(8)*four           )*facf3
-            onei(3,i)=(-work(2)-work(4)+work(9)*four           )*facf3
-            onei(4,i)=( work(5)-work(7)                        )*facf2
-            onei(5,i)=  work(10)
-            onei(6,i)=( work(1)-work(6)*three                  )*facf1
-            onei(7,i)=(-work(2)+work(4)*three                  )*facf1
-          enddo
-        case(10)
-          do i= 1,ncarti
-            do j= 4,9
-              onei(j,i)= onei(j,i)*sqrt5
-            enddo
-            onei(10,i)= onei(10,i)*sqrt15
-          enddo
-! G function
-        case(9)
-          do i= 1,ncarti
-            do j= 1,3
-              work(j)= onei(j,i)
-            enddo
-            do j= 4,9
-              work(j)= onei(j,i)*sqrt7
-            enddo
-            do j= 10,12
-              work(j)= onei(j,i)*sqrt35third
-            enddo
-            do j= 13,15
-              work(j)= onei(j,i)*sqrt35
-            enddo
-            onei(1,i)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
-&                      -work(11)*p24-work(12)*p24)*facg5
-            onei(2,i)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
-            onei(3,i)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
-            onei(4,i)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
-            onei(5,i)=(-work(4)-work(6)+work(15)*six)*facg6
-            onei(6,i)=(work(5)-work(14)*three)*facg2
-            onei(7,i)=(-work(7)+work(13)*three)*facg2
-            onei(8,i)=(work(1)+work(2)-work(10)*six)*facg1
-            onei(9,i)=(work(4)-work(6))*facg7
-          enddo
-        case(15)
-          do i= 1,ncarti
-            do j= 4,9
-              onei(j,i)= onei(j,i)*sqrt7
-            enddo
-            do j= 10,12
-              onei(j,i)= onei(j,i)*sqrt35third
-            enddo
-            do j= 13,15
-              onei(j,i)= onei(j,i)*sqrt35
-            enddo
-          enddo
-      end select
-!
-! Ket part
-!
-      select case(nbfi)
-! D function
-        case(5)
-          do j= 1,nbfj
-            do i= 1,6
-              work(i)= onei(j,i)
-            enddo
-            onei(j,1)=(work(3)*two-work(1)-work(2))*half
-            onei(j,2)= work(5)*sqrt3
-            onei(j,3)= work(6)*sqrt3
-            onei(j,4)=(work(1)-work(2))*sqrt3h
-            onei(j,5)= work(4)*sqrt3
-          enddo
-        case(6)
-          do j= 1,nbfj
-            do i= 4,6
-              onei(j,i)= onei(j,i)*sqrt3
-            enddo
-          enddo
-! F function
-        case(7)
-          do j= 1,nbfj
-            do i= 1,3
-              work(i)= onei(j,i)
-            enddo
-            do i= 4,9
-              work(i)= onei(j,i)*sqrt5
-            enddo
-            work(10)= onei(j,10)*sqrt15
-            onei(j,1)=( two*work(3)-three*work(5)-three*work(7))*facf4
-            onei(j,2)=(-work(1)-work(6)+four*work(8)           )*facf3
-            onei(j,3)=(-work(2)-work(4)+four*work(9)           )*facf3
-            onei(j,4)=( work(5)-work(7)                        )*facf2
-            onei(j,5)=  work(10)
-            onei(j,6)=( work(1)-three*work(6)                  )*facf1
-            onei(j,7)=(-work(2)+three*work(4)                  )*facf1
-          enddo
-        case(10)
-          do j= 1,nbfj
-            do i= 4,9
-              onei(j,i)= onei(j,i)*sqrt5
-            enddo
-            onei(j,10)= onei(j,10)*sqrt15
-          enddo
-! G function
-        case(9)
-          do j= 1,nbfj
-            do i= 1,3
-              work(i)= onei(j,i)
-            enddo
-            do i= 4,9
-              work(i)= onei(j,i)*sqrt7
-            enddo
-            do i= 10,12
-              work(i)= onei(j,i)*sqrt35third
-            enddo
-            do i= 13,15
-              work(i)= onei(j,i)*sqrt35
-            enddo
-            onei(j,1)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
-&                      -work(11)*p24-work(12)*p24)*facg5
-            onei(j,2)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
-            onei(j,3)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
-            onei(j,4)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
-            onei(j,5)=(-work(4)-work(6)+work(15)*six)*facg6
-            onei(j,6)=(work(5)-work(14)*three)*facg2
-            onei(j,7)=(-work(7)+work(13)*three)*facg2
-            onei(j,8)=(work(1)+work(2)-work(10)*six)*facg1
-            onei(j,9)=(work(4)-work(6))*facg7
-          enddo
-        case(15)
-          do j= 1,nbfj
-            do i= 4,9
-              onei(j,i)= onei(j,i)*sqrt7
-            enddo
-            do i= 10,12
-              onei(j,i)= onei(j,i)*sqrt35third
-            enddo
-            do i= 13,15
-              onei(j,i)= onei(j,i)*sqrt35
-            enddo
-          enddo
-      end select
       return
 end
 
@@ -852,20 +644,6 @@ end
                 enddo
               enddo
             enddo
-!            do ii= 1,ncarti
-!              icx= ix(ii,nangij(1))
-!              icy= iy(ii,nangij(1))
-!              icz= iz(ii,nangij(1))
-!              do jj= 1,ncartj
-!                jcx= ix(jj,nangij(2))
-!                jcy= iy(jj,nangij(2))
-!                jcz= iz(jj,nangij(2))
-!                do iroot= 1,nroots
-!                  cintmp(jj,ii)= cintmp(jj,ii) &
-!&                               +fac*cx(jcx,icx,iroot)*cy(jcy,icy,iroot)*cz(jcz,icz,iroot)
-!                enddo
-!              enddo
-!            enddo
             ii= 0
             do ix= nangij(1),0,-1
               do iy= nangij(1)-ix,0,-1
@@ -889,9 +667,7 @@ end
       enddo
 !
       if((nbfij(1) >= 5).or.(nbfij(2) >= 5)) then
-!ishimura
-!       call nrmlz1(cintmp,nbfij(1),nbfij(2),ncarti)
-        call nrmlz2(cintmp,nbfij(1),nbfij(2),ncarti)
+        call nrmlz1(cintmp,nbfij(1),nbfij(2),ncarti)
       endif
       do ii= 1,nbfij(1)
         do jj= 1,nbfij(2)
@@ -1285,23 +1061,6 @@ end
         cint1(4,1)= ctmp(5)*sqrt3
         cint1(5,1)=(ctmp(1)-ctmp(2))*sqrt3h
       endif
-!ishimura
-      if(nbfij(2) == 6)then
-        ctmp(1:6)=cint1(1:6,1)
-        cint1(1,1)=ctmp(1)
-        cint1(2,1)=ctmp(4)
-        cint1(3,1)=ctmp(6)
-        cint1(4,1)=ctmp(2)
-        cint1(5,1)=ctmp(3)
-        cint1(6,1)=ctmp(5)
-      else
-        ctmp(1:5)=cint1(1:5,1)
-        cint1(1,1)=ctmp(3)
-        cint1(2,1)=ctmp(4)
-        cint1(3,1)=ctmp(2)
-        cint1(4,1)=ctmp(5)
-        cint1(5,1)=ctmp(1)
-      endif
 !
       return
 end
@@ -1510,27 +1269,6 @@ end
           cint1(3,i)= ctmp(3,i)-(ctmp(1,i)+ctmp(2,i))*half
           cint1(4,i)= ctmp(5,i)*sqrt3
           cint1(5,i)=(ctmp(1,i)-ctmp(2,i))*sqrt3h
-        enddo
-      endif
-!ishimura
-      if(nbfij(2) == 6)then
-        ctmp(1:6,1:3)=cint1(1:6,1:3)
-        do i= 1,3
-        cint1(1,i)=ctmp(1,i)
-        cint1(2,i)=ctmp(4,i)
-        cint1(3,i)=ctmp(6,i)
-        cint1(4,i)=ctmp(2,i)
-        cint1(5,i)=ctmp(3,i)
-        cint1(6,i)=ctmp(5,i)
-        enddo
-      else
-        ctmp(1:5,1:3)=cint1(1:5,1:3)
-        do i= 1,3
-        cint1(1,i)=ctmp(3,i)
-        cint1(2,i)=ctmp(4,i)
-        cint1(3,i)=ctmp(2,i)
-        cint1(4,i)=ctmp(5,i)
-        cint1(5,i)=ctmp(1,i)
         enddo
       endif
 !
@@ -1952,47 +1690,6 @@ end
           cint1(5,i)=(ctmp2(1,i)-ctmp2(2,i))*sqrt3h
         enddo
       endif
-!ishimura
-      if(nbfij(1) == 6)then
-        ctmp(1:nbfij(2),1:6)=cint1(1:nbfij(2),1:6)
-        do i= 1,nbfij(2)
-        cint1(i,1)=ctmp(i,1)
-        cint1(i,2)=ctmp(i,4)
-        cint1(i,3)=ctmp(i,6)
-        cint1(i,4)=ctmp(i,2)
-        cint1(i,5)=ctmp(i,3)
-        cint1(i,6)=ctmp(i,5)
-        enddo
-      else
-        ctmp(1:nbfij(2),1:5)=cint1(1:nbfij(2),1:5)
-        do i= 1,nbfij(2)
-        cint1(i,1)=ctmp(i,3)
-        cint1(i,2)=ctmp(i,4)
-        cint1(i,3)=ctmp(i,2)
-        cint1(i,4)=ctmp(i,5)
-        cint1(i,5)=ctmp(i,1)
-        enddo
-      endif
-      if(nbfij(2) == 6)then
-        ctmp(1:6,1:nbfij(1))=cint1(1:6,1:nbfij(1))
-        do i= 1,nbfij(1)
-        cint1(1,i)=ctmp(1,i)
-        cint1(2,i)=ctmp(4,i)
-        cint1(3,i)=ctmp(6,i)
-        cint1(4,i)=ctmp(2,i)
-        cint1(5,i)=ctmp(3,i)
-        cint1(6,i)=ctmp(5,i)
-        enddo
-      else
-        ctmp(1:5,1:nbfij(1))=cint1(1:5,1:nbfij(1))
-        do i= 1,nbfij(1)
-        cint1(1,i)=ctmp(3,i)
-        cint1(2,i)=ctmp(4,i)
-        cint1(3,i)=ctmp(2,i)
-        cint1(4,i)=ctmp(5,i)
-        cint1(5,i)=ctmp(1,i)
-        enddo
-      endif
 !
       return
 end
@@ -2069,18 +1766,6 @@ end
             enddo
           enddo
           cij= ci*cj
-!ishimura
-!         do ii= 1,ncarti
-!           isx= ix(ii,nangij(1))
-!           isy= iy(ii,nangij(1))
-!           isz= iz(ii,nangij(1))
-!           do jj= 1,ncartj
-!             jsx= ix(jj,nangij(2))
-!             jsy= iy(jj,nangij(2))
-!             jsz= iz(jj,nangij(2))
-!             sint(jj,ii)= sint(jj,ii)+cij*sx(jsx,isx)*sy(jsy,isy)*sz(jsz,isz)
-!           enddo
-!         enddo
           ii= 0
           do ix= nangij(1),0,-1
             do iy= nangij(1)-ix,0,-1
@@ -2100,23 +1785,16 @@ end
       enddo
 !
       if((nbfij(1) >= 5).or.(nbfij(2) >= 5)) then
-!ishimura
-!       call nrmlz1(sint,nbfij(1),nbfij(2),ncarti)
-        call nrmlz2(sint,nbfij(1),nbfij(2),ncarti)
+        call nrmlz1(sint,nbfij(1),nbfij(2),ncarti)
       endif
 !
       return
 end
 
 
-
-
-
-
-
-!------------------------------------------
-  subroutine nrmlz2(onei,nbfi,nbfj,ncarti)
-!------------------------------------------
+!-------------------------------------------
+  subroutine nrmlz1(onei,nbfi,nbfj,ncarti)
+!-------------------------------------------
 !
 ! Normalize one-electron and overlap integrals
 !
@@ -2159,37 +1837,12 @@ end
             onei(4,i)= work(3)*sqrt3
             onei(5,i)=(work(1)-work(4))*sqrt3h
           enddo
-!ishimura
-          do i= 1,ncarti
-            do j= 1,5
-              work(j)= onei(j,i)
-            enddo
-            onei(1,i)= work(3)
-            onei(2,i)= work(4)
-            onei(3,i)= work(2)
-            onei(4,i)= work(5)
-            onei(5,i)= work(1)
-          enddo
-!
         case(6)
           do i= 1,ncarti
             onei(2,i)= onei(2,i)*sqrt3
             onei(3,i)= onei(3,i)*sqrt3
             onei(5,i)= onei(5,i)*sqrt3
           enddo
-!ishimura
-          do i= 1,ncarti
-            do j= 1,6
-              work(j)= onei(j,i)
-            enddo
-            onei(1,i)=work(1)
-            onei(2,i)=work(4)
-            onei(3,i)=work(6)
-            onei(4,i)=work(2)
-            onei(5,i)=work(3)
-            onei(6,i)=work(5)
-          enddo
-!
 ! F function
         case(7)
           do i= 1,ncarti
@@ -2211,18 +1864,6 @@ end
             onei(6,i)=( work(3)-work(8)                         )*facf2
             onei(7,i)=( work(1)-three*work(4)                   )*facf1
           enddo
-!ishimura
-          do i= 1,ncarti
-            work(1:7)= onei(1:7,i)
-            onei(1,i)= work(4)
-            onei(2,i)= work(5)
-            onei(3,i)= work(3)
-            onei(4,i)= work(6)
-            onei(5,i)= work(2)
-            onei(6,i)= work(7)
-            onei(7,i)= work(1)
-          enddo
-!
         case(10)
           do i= 1,ncarti
             onei(2,i)= onei(2,i)*sqrt5
@@ -2232,20 +1873,6 @@ end
             onei(6,i)= onei(6,i)*sqrt5
             onei(8,i)= onei(8,i)*sqrt5
             onei(9,i)= onei(9,i)*sqrt5
-          enddo
-!ishimura
-          do i= 1,ncarti
-            work(1:10)= onei(1:10,i)
-            onei( 1,i)= work( 1)
-            onei( 2,i)= work( 7)
-            onei( 3,i)= work(10)
-            onei( 4,i)= work( 2)
-            onei( 5,i)= work( 3)
-            onei( 6,i)= work( 4)
-            onei( 7,i)= work( 8)
-            onei( 8,i)= work( 6)
-            onei( 9,i)= work( 9)
-            onei(10,i)= work( 5)
           enddo
 ! G function
         case(9)
@@ -2276,20 +1903,6 @@ end
             onei(8,i)=(work(3)-work(8)*three)*facg2
             onei(9,i)=(work(1)+work(11)-work(4)*six)*facg1
           enddo
-!ishimura
-          do i= 1,ncarti
-            work(1:9)= onei(1:9,i)
-            onei(1,i)= work(5)
-            onei(2,i)= work(6)
-            onei(3,i)= work(4)
-            onei(4,i)= work(7)
-            onei(5,i)= work(3)
-            onei(6,i)= work(8)
-            onei(7,i)= work(2)
-            onei(8,i)= work(9)
-            onei(9,i)= work(1)
-          enddo
-!
         case(15)
           do i= 1,ncarti
             onei( 2,i)= onei( 2,i)*sqrt7
@@ -2305,26 +1918,6 @@ end
             onei(13,i)= onei(13,i)*sqrt35third
             onei(14,i)= onei(14,i)*sqrt7
           enddo
-!ishimura
-          do i= 1,ncarti
-            work(1:15)= onei(1:15,i)
-            onei( 1,i)= work( 1)
-            onei( 2,i)= work(11)
-            onei( 3,i)= work(15)
-            onei( 4,i)= work( 2)
-            onei( 5,i)= work( 3)
-            onei( 6,i)= work( 7)
-            onei( 7,i)= work(12)
-            onei( 8,i)= work(10)
-            onei( 9,i)= work(14)
-            onei(10,i)= work( 4)
-            onei(11,i)= work( 6)
-            onei(12,i)= work(13)
-            onei(13,i)= work( 5)
-            onei(14,i)= work( 8)
-            onei(15,i)= work( 9)
-          enddo
-!
       end select
 !
 ! Ket part
@@ -2342,37 +1935,12 @@ end
             onei(j,4)= work(3)*sqrt3
             onei(j,5)=(work(1)-work(4))*sqrt3h
           enddo
-!ishimura
-          do j= 1,nbfj
-            do i= 1,5
-              work(i)= onei(j,i)
-            enddo
-            onei(j,1)= work(3)
-            onei(j,2)= work(4)
-            onei(j,3)= work(2)
-            onei(j,4)= work(5)
-            onei(j,5)= work(1)
-          enddo
-!
         case(6)
           do j= 1,nbfj
             onei(j,2)= onei(j,2)*sqrt3
             onei(j,3)= onei(j,3)*sqrt3
             onei(j,5)= onei(j,5)*sqrt3
           enddo
-!ishimura
-          do j= 1,nbfj
-            do i= 1,6
-              work(i)= onei(j,i)
-            enddo
-            onei(j,1)=work(1)
-            onei(j,2)=work(4)
-            onei(j,3)=work(6)
-            onei(j,4)=work(2)
-            onei(j,5)=work(3)
-            onei(j,6)=work(5)
-          enddo
-!
 ! F function
         case(7)
           do j= 1,nbfj
@@ -2394,17 +1962,6 @@ end
             onei(j,6)=( work(3)-work(8)                         )*facf2
             onei(j,7)=( work(1)-three*work(4)                   )*facf1
           enddo
-!ishimura
-          do j= 1,nbfj
-            work(1:7)= onei(j,1:7)
-            onei(j,1)= work(4)
-            onei(j,2)= work(5)
-            onei(j,3)= work(3)
-            onei(j,4)= work(6)
-            onei(j,5)= work(2)
-            onei(j,6)= work(7)
-            onei(j,7)= work(1)
-          enddo
         case(10)
           do j= 1,nbfj
             onei(j,2)= onei(j,2)*sqrt5
@@ -2414,19 +1971,6 @@ end
             onei(j,6)= onei(j,6)*sqrt5
             onei(j,8)= onei(j,8)*sqrt5
             onei(j,9)= onei(j,9)*sqrt5
-          enddo
-          do j= 1,nbfj
-            work(1:10)= onei(j,1:10)
-            onei(j, 1)= work( 1)
-            onei(j, 2)= work( 7)
-            onei(j, 3)= work(10)
-            onei(j, 4)= work( 2)
-            onei(j, 5)= work( 3)
-            onei(j, 6)= work( 4)
-            onei(j, 7)= work( 8)
-            onei(j, 8)= work( 6)
-            onei(j, 9)= work( 9)
-            onei(j,10)= work( 5)
           enddo
 ! G function
         case(9)
@@ -2457,20 +2001,6 @@ end
             onei(j,8)=(work(3)-work(8)*three)*facg2
             onei(j,9)=(work(1)+work(11)-work(4)*six)*facg1
           enddo
-!ishimura
-          do j= 1,nbfj
-            work(1:9)= onei(j,1:9)
-            onei(j,1)= work(5)
-            onei(j,2)= work(6)
-            onei(j,3)= work(4)
-            onei(j,4)= work(7)
-            onei(j,5)= work(3)
-            onei(j,6)= work(8)
-            onei(j,7)= work(2)
-            onei(j,8)= work(9)
-            onei(j,9)= work(1)
-          enddo
-!
         case(15)
           do j= 1,nbfj
             onei(j, 2)= onei(j, 2)*sqrt7
@@ -2485,25 +2015,6 @@ end
             onei(j,12)= onei(j,12)*sqrt7
             onei(j,13)= onei(j,13)*sqrt35third
             onei(j,14)= onei(j,14)*sqrt7
-          enddo
-!ishimura
-          do j= 1,nbfj
-            work(1:15)= onei(j,1:15)
-            onei(j, 1)= work( 1)
-            onei(j, 2)= work(11)
-            onei(j, 3)= work(15)
-            onei(j, 4)= work( 2)
-            onei(j, 5)= work( 3)
-            onei(j, 6)= work( 7)
-            onei(j, 7)= work(12)
-            onei(j, 8)= work(10)
-            onei(j, 9)= work(14)
-            onei(j,10)= work( 4)
-            onei(j,11)= work( 6)
-            onei(j,12)= work(13)
-            onei(j,13)= work( 5)
-            onei(j,14)= work( 8)
-            onei(j,15)= work( 9)
           enddo
       end select
       return

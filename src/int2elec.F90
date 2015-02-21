@@ -807,20 +807,6 @@ end
               enddo
             enddo
           enddo
-!ishimura
-          do j= 1,ncartijkl(2)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                work(1:5)= eritmp(l,k,j,1:5)
-                eritmp(l,k,j,1)= work(3)
-                eritmp(l,k,j,2)= work(4)
-                eritmp(l,k,j,3)= work(2)
-                eritmp(l,k,j,4)= work(5)
-                eritmp(l,k,j,5)= work(1)
-              enddo
-            enddo
-          enddo
-!
         elseif(nbfijkl(1) == 6) then
           do j= 1,ncartijkl(2)
             do k= 1,ncartijkl(3)
@@ -828,20 +814,6 @@ end
                 eritmp(l,k,j,2)= eritmp(l,k,j,2)*sqrt3
                 eritmp(l,k,j,3)= eritmp(l,k,j,3)*sqrt3
                 eritmp(l,k,j,5)= eritmp(l,k,j,5)*sqrt3
-              enddo
-            enddo
-          enddo
-!ishimura
-          do j= 1,ncartijkl(2)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                work(1:6)= eritmp(l,k,j,1:6)
-                eritmp(l,k,j,1)= work(1)
-                eritmp(l,k,j,2)= work(4)
-                eritmp(l,k,j,3)= work(6)
-                eritmp(l,k,j,4)= work(2)
-                eritmp(l,k,j,5)= work(3)
-                eritmp(l,k,j,6)= work(5)
               enddo
             enddo
           enddo
@@ -870,22 +842,6 @@ end
               enddo
             enddo
           enddo
-!ishimura
-          do j= 1,ncartijkl(2)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                work(1:7)= eritmp(l,k,j,1:7)
-                eritmp(l,k,j,1)= work(4)
-                eritmp(l,k,j,2)= work(5)
-                eritmp(l,k,j,3)= work(3)
-                eritmp(l,k,j,4)= work(6)
-                eritmp(l,k,j,5)= work(2)
-                eritmp(l,k,j,6)= work(7)
-                eritmp(l,k,j,7)= work(1)
-              enddo
-            enddo
-          enddo
-!
         elseif(nbfijkl(1) == 10) then
           do j= 1,ncartijkl(2)
             do k= 1,ncartijkl(3)
@@ -897,24 +853,6 @@ end
                 eritmp(l,k,j, 6)= eritmp(l,k,j, 6)*sqrt5
                 eritmp(l,k,j, 8)= eritmp(l,k,j, 8)*sqrt5
                 eritmp(l,k,j, 9)= eritmp(l,k,j, 9)*sqrt5
-              enddo
-            enddo
-          enddo
-!ishimura
-          do j= 1,ncartijkl(2)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                work(1:10)= eritmp(l,k,j,1:10)
-                eritmp(l,k,j, 1)= work( 1)
-                eritmp(l,k,j, 2)= work( 7)
-                eritmp(l,k,j, 3)= work(10)
-                eritmp(l,k,j, 4)= work( 2)
-                eritmp(l,k,j, 5)= work( 3)
-                eritmp(l,k,j, 6)= work( 4)
-                eritmp(l,k,j, 7)= work( 8)
-                eritmp(l,k,j, 8)= work( 6)
-                eritmp(l,k,j, 9)= work( 9)
-                eritmp(l,k,j,10)= work( 5)
               enddo
             enddo
           enddo
@@ -951,24 +889,6 @@ end
               enddo
             enddo
           enddo
-!ishimura
-          do j= 1,ncartijkl(2)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                work(1:9)= eritmp(l,k,j,1:9)
-                eritmp(l,k,j,1)= work(5)
-                eritmp(l,k,j,2)= work(6)
-                eritmp(l,k,j,3)= work(4)
-                eritmp(l,k,j,4)= work(7)
-                eritmp(l,k,j,5)= work(3)
-                eritmp(l,k,j,6)= work(8)
-                eritmp(l,k,j,7)= work(2)
-                eritmp(l,k,j,8)= work(9)
-                eritmp(l,k,j,9)= work(1)
-              enddo
-            enddo
-          enddo
-!
         elseif(nbfijkl(1) ==15) then
           do j= 1,ncartijkl(2)
             do k= 1,ncartijkl(3)
@@ -988,30 +908,6 @@ end
               enddo
             enddo
           enddo
-!ishimura
-          do j= 1,ncartijkl(2)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                work(1:15)= eritmp(l,k,j,1:15)
-                eritmp(l,k,j, 1)= work( 1)
-                eritmp(l,k,j, 2)= work(11)
-                eritmp(l,k,j, 3)= work(15)
-                eritmp(l,k,j, 4)= work( 2)
-                eritmp(l,k,j, 5)= work( 3)
-                eritmp(l,k,j, 6)= work( 7)
-                eritmp(l,k,j, 7)= work(12)
-                eritmp(l,k,j, 8)= work(10)
-                eritmp(l,k,j, 9)= work(14)
-                eritmp(l,k,j,10)= work( 4)
-                eritmp(l,k,j,11)= work( 6)
-                eritmp(l,k,j,12)= work(13)
-                eritmp(l,k,j,13)= work( 5)
-                eritmp(l,k,j,14)= work( 8)
-                eritmp(l,k,j,15)= work( 9)
-              enddo
-            enddo
-          enddo
-!
         endif
 !
         if(nbfijkl(2) == 5) then
@@ -1029,20 +925,6 @@ end
               enddo
             enddo
           enddo
-!ishimura
-          do i= 1,nbfijkl(1)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                work(1:5)= eritmp(l,k,1:5,i)
-                eritmp(l,k,1,i)= work(3)
-                eritmp(l,k,2,i)= work(4)
-                eritmp(l,k,3,i)= work(2)
-                eritmp(l,k,4,i)= work(5)
-                eritmp(l,k,5,i)= work(1)
-              enddo
-            enddo
-          enddo
-!
         elseif(nbfijkl(2) == 6) then
           do i= 1,nbfijkl(1)
             do k= 1,ncartijkl(3)
@@ -1050,20 +932,6 @@ end
                 eritmp(l,k,2,i)= eritmp(l,k,2,i)*sqrt3
                 eritmp(l,k,3,i)= eritmp(l,k,3,i)*sqrt3
                 eritmp(l,k,5,i)= eritmp(l,k,5,i)*sqrt3
-              enddo
-            enddo
-          enddo
-!ishimura
-          do i= 1,nbfijkl(1)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                work(1:6)= eritmp(l,k,1:6,i)
-                eritmp(l,k,1,i)= work(1)
-                eritmp(l,k,2,i)= work(4)
-                eritmp(l,k,3,i)= work(6)
-                eritmp(l,k,4,i)= work(2)
-                eritmp(l,k,5,i)= work(3)
-                eritmp(l,k,6,i)= work(5)
               enddo
             enddo
           enddo
@@ -1092,22 +960,6 @@ end
               enddo
             enddo
           enddo
-!ishimura
-          do i= 1,nbfijkl(1)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                work(1:7)= eritmp(l,k,1:7,i)
-                eritmp(l,k,1,i)= work(4)
-                eritmp(l,k,2,i)= work(5)
-                eritmp(l,k,3,i)= work(3)
-                eritmp(l,k,4,i)= work(6)
-                eritmp(l,k,5,i)= work(2)
-                eritmp(l,k,6,i)= work(7)
-                eritmp(l,k,7,i)= work(1)
-              enddo
-            enddo
-          enddo
-!
         elseif(nbfijkl(2) == 10) then
           do i= 1,nbfijkl(1)
             do k= 1,ncartijkl(3)
@@ -1119,24 +971,6 @@ end
                 eritmp(l,k, 6,i)= eritmp(l,k, 6,i)*sqrt5
                 eritmp(l,k, 8,i)= eritmp(l,k, 8,i)*sqrt5
                 eritmp(l,k, 9,i)= eritmp(l,k, 9,i)*sqrt5
-              enddo
-            enddo
-          enddo
-!ishimura
-          do i= 1,nbfijkl(1)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                work(1:10)= eritmp(l,k,1:10,i)
-                eritmp(l,k, 1,i)= work( 1)
-                eritmp(l,k, 2,i)= work( 7)
-                eritmp(l,k, 3,i)= work(10)
-                eritmp(l,k, 4,i)= work( 2)
-                eritmp(l,k, 5,i)= work( 3)
-                eritmp(l,k, 6,i)= work( 4)
-                eritmp(l,k, 7,i)= work( 8)
-                eritmp(l,k, 8,i)= work( 6)
-                eritmp(l,k, 9,i)= work( 9)
-                eritmp(l,k,10,i)= work( 5)
               enddo
             enddo
           enddo
@@ -1173,24 +1007,6 @@ end
               enddo
             enddo
           enddo
-!ishimura
-          do i= 1,nbfijkl(1)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                work(1:9)= eritmp(l,k,1:9,i)
-                eritmp(l,k,1,i)= work(5)
-                eritmp(l,k,2,i)= work(6)
-                eritmp(l,k,3,i)= work(4)
-                eritmp(l,k,4,i)= work(7)
-                eritmp(l,k,5,i)= work(3)
-                eritmp(l,k,6,i)= work(8)
-                eritmp(l,k,7,i)= work(2)
-                eritmp(l,k,8,i)= work(9)
-                eritmp(l,k,9,i)= work(1)
-              enddo
-            enddo
-          enddo
-!
         elseif(nbfijkl(2) == 15) then
           do i= 1,nbfijkl(1)
             do k= 1,ncartijkl(3)
@@ -1210,30 +1026,6 @@ end
               enddo
             enddo
           enddo
-!ishimura
-          do i= 1,nbfijkl(1)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                work(1:15)= eritmp(l,k,1:15,i)
-                eritmp(l,k, 1,i)= work( 1)
-                eritmp(l,k, 2,i)= work(11)
-                eritmp(l,k, 3,i)= work(15)
-                eritmp(l,k, 4,i)= work( 2)
-                eritmp(l,k, 5,i)= work( 3)
-                eritmp(l,k, 6,i)= work( 7)
-                eritmp(l,k, 7,i)= work(12)
-                eritmp(l,k, 8,i)= work(10)
-                eritmp(l,k, 9,i)= work(14)
-                eritmp(l,k,10,i)= work( 4)
-                eritmp(l,k,11,i)= work( 6)
-                eritmp(l,k,12,i)= work(13)
-                eritmp(l,k,13,i)= work( 5)
-                eritmp(l,k,14,i)= work( 8)
-                eritmp(l,k,15,i)= work( 9)
-              enddo
-            enddo
-          enddo
-!
         endif
 !
         if(nbfijkl(3) == 5)then
@@ -1251,20 +1043,6 @@ end
               enddo
             enddo
           enddo
-!ishimura
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do l= 1,ncartijkl(4)
-                work(1:5)= eritmp(l,1:5,j,i)
-                eritmp(l,1,j,i)= work(3)
-                eritmp(l,2,j,i)= work(4)
-                eritmp(l,3,j,i)= work(2)
-                eritmp(l,4,j,i)= work(5)
-                eritmp(l,5,j,i)= work(1)
-              enddo
-            enddo
-          enddo
-!
         elseif(nbfijkl(3) == 6)then
           do i= 1,nbfijkl(1)
             do j= 1,nbfijkl(2)
@@ -1272,20 +1050,6 @@ end
                 eritmp(l,2,j,i)= eritmp(l,2,j,i)*sqrt3
                 eritmp(l,3,j,i)= eritmp(l,3,j,i)*sqrt3
                 eritmp(l,5,j,i)= eritmp(l,5,j,i)*sqrt3
-              enddo
-            enddo
-          enddo
-!ishimura
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do l= 1,ncartijkl(4)
-                work(1:6)= eritmp(l,1:6,j,i)
-                eritmp(l,1,j,i)= work(1)
-                eritmp(l,2,j,i)= work(4)
-                eritmp(l,3,j,i)= work(6)
-                eritmp(l,4,j,i)= work(2)
-                eritmp(l,5,j,i)= work(3)
-                eritmp(l,6,j,i)= work(5)
               enddo
             enddo
           enddo
@@ -1314,22 +1078,6 @@ end
               enddo
             enddo
           enddo
-!ishimura
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do l= 1,ncartijkl(4)
-                work(1:7)= eritmp(l,1:7,j,i)
-                eritmp(l,1,j,i)= work(4)
-                eritmp(l,2,j,i)= work(5)
-                eritmp(l,3,j,i)= work(3)
-                eritmp(l,4,j,i)= work(6)
-                eritmp(l,5,j,i)= work(2)
-                eritmp(l,6,j,i)= work(7)
-                eritmp(l,7,j,i)= work(1)
-              enddo
-            enddo
-          enddo
-!
         elseif(nbfijkl(3) == 10)then
           do i= 1,nbfijkl(1)
             do j= 1,nbfijkl(2)
@@ -1341,24 +1089,6 @@ end
                 eritmp(l, 6,j,i)= eritmp(l, 6,j,i)*sqrt5
                 eritmp(l, 8,j,i)= eritmp(l, 8,j,i)*sqrt5
                 eritmp(l, 9,j,i)= eritmp(l, 9,j,i)*sqrt5
-              enddo
-            enddo
-          enddo
-!ishimura
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do l= 1,ncartijkl(4)
-                work(1:10)= eritmp(l,1:10,j,i)
-                eritmp(l, 1,j,i)= work( 1)
-                eritmp(l, 2,j,i)= work( 7)
-                eritmp(l, 3,j,i)= work(10)
-                eritmp(l, 4,j,i)= work( 2)
-                eritmp(l, 5,j,i)= work( 3)
-                eritmp(l, 6,j,i)= work( 4)
-                eritmp(l, 7,j,i)= work( 8)
-                eritmp(l, 8,j,i)= work( 6)
-                eritmp(l, 9,j,i)= work( 9)
-                eritmp(l,10,j,i)= work( 5)
               enddo
             enddo
           enddo
@@ -1395,24 +1125,6 @@ end
               enddo
             enddo
           enddo
-!ishimura
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do l= 1,ncartijkl(4)
-                work(1:9)= eritmp(l,1:9,j,i)
-                eritmp(l,1,j,i)= work(5)
-                eritmp(l,2,j,i)= work(6)
-                eritmp(l,3,j,i)= work(4)
-                eritmp(l,4,j,i)= work(7)
-                eritmp(l,5,j,i)= work(3)
-                eritmp(l,6,j,i)= work(8)
-                eritmp(l,7,j,i)= work(2)
-                eritmp(l,8,j,i)= work(9)
-                eritmp(l,9,j,i)= work(1)
-              enddo
-            enddo
-          enddo
-!
         elseif(nbfijkl(3) == 15)then
           do i= 1,nbfijkl(1)
             do j= 1,nbfijkl(2)
@@ -1432,30 +1144,6 @@ end
               enddo
             enddo
           enddo
-!ishimura
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do l= 1,ncartijkl(4)
-                work(1:15)= eritmp(l,1:15,j,i)
-                eritmp(l, 1,j,i)= work( 1)
-                eritmp(l, 2,j,i)= work(11)
-                eritmp(l, 3,j,i)= work(15)
-                eritmp(l, 4,j,i)= work( 2)
-                eritmp(l, 5,j,i)= work( 3)
-                eritmp(l, 6,j,i)= work( 7)
-                eritmp(l, 7,j,i)= work(12)
-                eritmp(l, 8,j,i)= work(10)
-                eritmp(l, 9,j,i)= work(14)
-                eritmp(l,10,j,i)= work( 4)
-                eritmp(l,11,j,i)= work( 6)
-                eritmp(l,12,j,i)= work(13)
-                eritmp(l,13,j,i)= work( 5)
-                eritmp(l,14,j,i)= work( 8)
-                eritmp(l,15,j,i)= work( 9)
-              enddo
-            enddo
-          enddo
-!
         endif
 !
         if(nbfijkl(4) <= 3)then
@@ -1483,20 +1171,6 @@ end
               enddo
             enddo
           enddo
-!ishimura
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do k= 1,nbfijkl(3)
-                work(1:5)= twoeri(1:5,k,j,i)
-                twoeri(1,k,j,i)= work(3)
-                twoeri(2,k,j,i)= work(4)
-                twoeri(3,k,j,i)= work(2)
-                twoeri(4,k,j,i)= work(5)
-                twoeri(5,k,j,i)= work(1)
-              enddo
-            enddo
-          enddo
-!
         elseif(nbfijkl(4) == 6)then
           do i= 1,nbfijkl(1)
             do j= 1,nbfijkl(2)
@@ -1507,20 +1181,6 @@ end
                 twoeri(4,k,j,i)= eritmp(4,k,j,i)
                 twoeri(5,k,j,i)= eritmp(5,k,j,i)*sqrt3
                 twoeri(6,k,j,i)= eritmp(6,k,j,i)
-              enddo
-            enddo
-          enddo
-!ishimura
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do k= 1,nbfijkl(3)
-                work(1:6)= twoeri(1:6,k,j,i)
-                twoeri(1,k,j,i)= work(1)
-                twoeri(2,k,j,i)= work(4)
-                twoeri(3,k,j,i)= work(6)
-                twoeri(4,k,j,i)= work(2)
-                twoeri(5,k,j,i)= work(3)
-                twoeri(6,k,j,i)= work(5)
               enddo
             enddo
           enddo
@@ -1549,22 +1209,6 @@ end
               enddo
             enddo
           enddo
-!ishimura
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do k= 1,nbfijkl(3)
-                work(1:7)= twoeri(1:7,k,j,i)
-                twoeri(1,k,j,i)= work(4)
-                twoeri(2,k,j,i)= work(5)
-                twoeri(3,k,j,i)= work(3)
-                twoeri(4,k,j,i)= work(6)
-                twoeri(5,k,j,i)= work(2)
-                twoeri(6,k,j,i)= work(7)
-                twoeri(7,k,j,i)= work(1)
-              enddo
-            enddo
-          enddo
-!
         elseif(nbfijkl(4) == 10)then
           do i= 1,nbfijkl(1)
             do j= 1,nbfijkl(2)
@@ -1579,31 +1223,6 @@ end
                 twoeri( 8,k,j,i)= eritmp( 8,k,j,i)*sqrt5
                 twoeri( 9,k,j,i)= eritmp( 9,k,j,i)*sqrt5
                 twoeri(10,k,j,i)= eritmp(10,k,j,i)
-!               do l= 1,3
-!                 twoeri(l,k,j,i)= eritmp(l,k,j,i)
-!               enddo
-!               do l= 4,9
-!                 twoeri(l,k,j,i)= eritmp(l,k,j,i)*sqrt5
-!               enddo
-!               twoeri(10,k,j,i)= eritmp(10,k,j,i)*sqrt15
-              enddo
-            enddo
-          enddo
-!ishimura
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do k= 1,nbfijkl(3)
-                work(1:10)= twoeri(1:10,k,j,i)
-                twoeri( 1,k,j,i)= work( 1)
-                twoeri( 2,k,j,i)= work( 7)
-                twoeri( 3,k,j,i)= work(10)
-                twoeri( 4,k,j,i)= work( 2)
-                twoeri( 5,k,j,i)= work( 3)
-                twoeri( 6,k,j,i)= work( 4)
-                twoeri( 7,k,j,i)= work( 8)
-                twoeri( 8,k,j,i)= work( 6)
-                twoeri( 9,k,j,i)= work( 9)
-                twoeri(10,k,j,i)= work( 5)
               enddo
             enddo
           enddo
@@ -1640,24 +1259,6 @@ end
               enddo
             enddo
           enddo
-!ishimura
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do k= 1,nbfijkl(3)
-                work(1:9)= twoeri(1:9,k,j,i)
-                twoeri(1,k,j,i)= work(5)
-                twoeri(2,k,j,i)= work(6)
-                twoeri(3,k,j,i)= work(4)
-                twoeri(4,k,j,i)= work(7)
-                twoeri(5,k,j,i)= work(3)
-                twoeri(6,k,j,i)= work(8)
-                twoeri(7,k,j,i)= work(2)
-                twoeri(8,k,j,i)= work(9)
-                twoeri(9,k,j,i)= work(1)
-              enddo
-            enddo
-          enddo
-!
         elseif(nbfijkl(4) == 15)then
           do i= 1,nbfijkl(1)
             do j= 1,nbfijkl(2)
@@ -1680,30 +1281,6 @@ end
               enddo
             enddo
           enddo
-!ishimura
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do k= 1,nbfijkl(3)
-                work(1:15)= twoeri(1:15,k,j,i)
-                twoeri( 1,k,j,i)= work( 1)
-                twoeri( 2,k,j,i)= work(11)
-                twoeri( 3,k,j,i)= work(15)
-                twoeri( 4,k,j,i)= work( 2)
-                twoeri( 5,k,j,i)= work( 3)
-                twoeri( 6,k,j,i)= work( 7)
-                twoeri( 7,k,j,i)= work(12)
-                twoeri( 8,k,j,i)= work(10)
-                twoeri( 9,k,j,i)= work(14)
-                twoeri(10,k,j,i)= work( 4)
-                twoeri(11,k,j,i)= work( 6)
-                twoeri(12,k,j,i)= work(13)
-                twoeri(13,k,j,i)= work( 5)
-                twoeri(14,k,j,i)= work( 8)
-                twoeri(15,k,j,i)= work( 9)
-              enddo
-            enddo
-          enddo
-!
         endif
 !
       return

@@ -189,23 +189,6 @@
         enddo
       endif
 !
-      if(nbfijkl(4) == 6)then
-        work(1:6)=phmdint(1:6,1,1,1)
-        phmdint(1,1,1,1)=work(1)
-        phmdint(2,1,1,1)=work(4)
-        phmdint(3,1,1,1)=work(6)
-        phmdint(4,1,1,1)=work(2)
-        phmdint(5,1,1,1)=work(3)
-        phmdint(6,1,1,1)=work(5)
-      else
-        work(1:5)=phmdint(1:5,1,1,1)
-        phmdint(1,1,1,1)=work(3)
-        phmdint(2,1,1,1)=work(4)
-        phmdint(3,1,1,1)=work(2)
-        phmdint(4,1,1,1)=work(5)
-        phmdint(5,1,1,1)=work(1)
-      endif
-!
       return
 end
 
@@ -458,27 +441,6 @@ end
         enddo
       endif
 !
-      if(nbfijkl(4) == 6)then
-        eri(1:6,1:3)= phmdint(1:6,1:3,1,1)
-        do k=1,3
-          phmdint(1,k,1,1)=eri(1,k)
-          phmdint(2,k,1,1)=eri(4,k)
-          phmdint(3,k,1,1)=eri(6,k)
-          phmdint(4,k,1,1)=eri(2,k)
-          phmdint(5,k,1,1)=eri(3,k)
-          phmdint(6,k,1,1)=eri(5,k)
-        enddo
-      else
-        eri(1:5,1:3)=phmdint(1:5,1:3,1,1)
-        do k=1,3
-          phmdint(1,k,1,1)=eri(3,k)
-          phmdint(2,k,1,1)=eri(4,k)
-          phmdint(3,k,1,1)=eri(2,k)
-          phmdint(4,k,1,1)=eri(5,k)
-          phmdint(5,k,1,1)=eri(1,k)
-        enddo
-      endif
-!
       return
 end
 
@@ -726,27 +688,6 @@ end
             phmdint(l,1,j,1)= eri(1,j)*rot3(1,l)+eri(2,j)*rot3(2,l)+eri(3,j)*rot3(3,l) &
 &                            +eri(4,j)*rot3(4,l)+eri(5,j)*rot3(5,l)+eri(6,j)*rot3(6,l) 
           enddo
-        enddo
-      endif
-!
-      if(nbfijkl(4) == 6)then
-        eri(1:6,1:3)= phmdint(1:6,1,1:3,1)
-        do j=1,3
-          phmdint(1,1,j,1)=eri(1,j)
-          phmdint(2,1,j,1)=eri(4,j)
-          phmdint(3,1,j,1)=eri(6,j)
-          phmdint(4,1,j,1)=eri(2,j)
-          phmdint(5,1,j,1)=eri(3,j)
-          phmdint(6,1,j,1)=eri(5,j)
-        enddo
-      else
-        eri(1:5,1:3)=phmdint(1:5,1,1:3,1)
-        do j=1,3
-          phmdint(1,1,j,1)=eri(3,j)
-          phmdint(2,1,j,1)=eri(4,j)
-          phmdint(3,1,j,1)=eri(2,j)
-          phmdint(4,1,j,1)=eri(5,j)
-          phmdint(5,1,j,1)=eri(1,j)
         enddo
       endif
 !
@@ -1125,47 +1066,6 @@ end
             phmdint(l,k,1,1)= eri(1,k)*rot3(1,l)+eri(2,k)*rot3(2,l)+eri(3,k)*rot3(3,l) &
 &                            +eri(4,k)*rot3(4,l)+eri(5,k)*rot3(5,l)+eri(6,k)*rot3(6,l) 
           enddo
-        enddo
-      endif
-!
-      if(nbfijkl(3) == 6)then
-        do l= 1,nbfijkl(4)
-          work(1:6)= phmdint(l,1:6,1,1)
-          phmdint(l,1,1,1)=work(1)
-          phmdint(l,2,1,1)=work(4)
-          phmdint(l,3,1,1)=work(6)
-          phmdint(l,4,1,1)=work(2)
-          phmdint(l,5,1,1)=work(3)
-          phmdint(l,6,1,1)=work(5)
-        enddo
-      else
-        do l= 1,nbfijkl(4)
-          work(1:5)= phmdint(l,1:5,1,1)
-          phmdint(l,1,1,1)=work(3)
-          phmdint(l,2,1,1)=work(4)
-          phmdint(l,3,1,1)=work(2)
-          phmdint(l,4,1,1)=work(5)
-          phmdint(l,5,1,1)=work(1)
-        enddo
-      endif
-      if(nbfijkl(4) == 6)then
-        do k= 1,nbfijkl(3)
-          work(1:6)= phmdint(1:6,k,1,1)
-          phmdint(1,k,1,1)=work(1)
-          phmdint(2,k,1,1)=work(4)
-          phmdint(3,k,1,1)=work(6)
-          phmdint(4,k,1,1)=work(2)
-          phmdint(5,k,1,1)=work(3)
-          phmdint(6,k,1,1)=work(5)
-        enddo
-      else
-        do k= 1,nbfijkl(3)
-          work(1:5)= phmdint(1:5,k,1,1)
-          phmdint(1,k,1,1)=work(3)
-          phmdint(2,k,1,1)=work(4)
-          phmdint(3,k,1,1)=work(2)
-          phmdint(4,k,1,1)=work(5)
-          phmdint(5,k,1,1)=work(1)
         enddo
       endif
 !
@@ -1573,31 +1473,6 @@ end
         enddo
       endif
 !
-      if(nbfijkl(4) == 6)then
-        eri(1:6,1:3,1:3)= phmdint(1:6,1:3,1:3,1)
-        do j=1,3
-        do k=1,3
-          phmdint(1,k,j,1)=eri(1,k,j)
-          phmdint(2,k,j,1)=eri(4,k,j)
-          phmdint(3,k,j,1)=eri(6,k,j)
-          phmdint(4,k,j,1)=eri(2,k,j)
-          phmdint(5,k,j,1)=eri(3,k,j)
-          phmdint(6,k,j,1)=eri(5,k,j)
-        enddo
-        enddo
-      else
-        eri(1:5,1:3,1:3)=phmdint(1:5,1:3,1:3,1)
-        do j=1,3
-        do k=1,3
-          phmdint(1,k,j,1)=eri(3,k,j)
-          phmdint(2,k,j,1)=eri(4,k,j)
-          phmdint(3,k,j,1)=eri(2,k,j)
-          phmdint(4,k,j,1)=eri(5,k,j)
-          phmdint(5,k,j,1)=eri(1,k,j)
-        enddo
-        enddo
-      endif
-!
       return
 end
 
@@ -1942,47 +1817,6 @@ end
             phmdint(l,1,j,1)= eri(1,j)*rot3(1,l)+eri(2,j)*rot3(2,l)+eri(3,j)*rot3(3,l) &
 &                            +eri(4,j)*rot3(4,l)+eri(5,j)*rot3(5,l)+eri(6,j)*rot3(6,l) 
           enddo
-        enddo
-      endif
-!
-      if(nbfijkl(2) == 6)then
-        do l= 1,nbfijkl(4)
-          work(1:6)= phmdint(l,1,1:6,1)
-          phmdint(l,1,1,1)=work(1)
-          phmdint(l,1,2,1)=work(4)
-          phmdint(l,1,3,1)=work(6)
-          phmdint(l,1,4,1)=work(2)
-          phmdint(l,1,5,1)=work(3)
-          phmdint(l,1,6,1)=work(5)
-        enddo
-      else
-        do l= 1,nbfijkl(4)
-          work(1:5)= phmdint(l,1,1:5,1)
-          phmdint(l,1,1,1)=work(3)
-          phmdint(l,1,2,1)=work(4)
-          phmdint(l,1,3,1)=work(2)
-          phmdint(l,1,4,1)=work(5)
-          phmdint(l,1,5,1)=work(1)
-        enddo
-      endif
-      if(nbfijkl(4) == 6)then
-        do k= 1,nbfijkl(2)
-          work(1:6)= phmdint(1:6,1,k,1)
-          phmdint(1,1,k,1)=work(1)
-          phmdint(2,1,k,1)=work(4)
-          phmdint(3,1,k,1)=work(6)
-          phmdint(4,1,k,1)=work(2)
-          phmdint(5,1,k,1)=work(3)
-          phmdint(6,1,k,1)=work(5)
-        enddo
-      else
-        do k= 1,nbfijkl(2)
-          work(1:5)= phmdint(1:5,1,k,1)
-          phmdint(1,1,k,1)=work(3)
-          phmdint(2,1,k,1)=work(4)
-          phmdint(3,1,k,1)=work(2)
-          phmdint(4,1,k,1)=work(5)
-          phmdint(5,1,k,1)=work(1)
         enddo
       endif
 !
@@ -2374,31 +2208,6 @@ end
 &                              +eri(4,j,i)*rot3(4,l)+eri(5,j,i)*rot3(5,l)+eri(6,j,i)*rot3(6,l)
             enddo
           enddo
-        enddo
-      endif
-!
-      if(nbfijkl(4) == 6)then
-        eri(1:6,1:3,1:3)= phmdint(1:6,1,1:3,1:3)
-        do j=1,3
-        do k=1,3
-          phmdint(1,1,k,j)=eri(1,k,j)
-          phmdint(2,1,k,j)=eri(4,k,j)
-          phmdint(3,1,k,j)=eri(6,k,j)
-          phmdint(4,1,k,j)=eri(2,k,j)
-          phmdint(5,1,k,j)=eri(3,k,j)
-          phmdint(6,1,k,j)=eri(5,k,j)
-        enddo
-        enddo
-      else
-        eri(1:5,1:3,1:3)=phmdint(1:5,1,1:3,1:3)
-        do j=1,3
-        do k=1,3
-          phmdint(1,1,k,j)=eri(3,k,j)
-          phmdint(2,1,k,j)=eri(4,k,j)
-          phmdint(3,1,k,j)=eri(2,k,j)
-          phmdint(4,1,k,j)=eri(5,k,j)
-          phmdint(5,1,k,j)=eri(1,k,j)
-        enddo
         enddo
       endif
 !
@@ -3083,55 +2892,6 @@ end
         enddo
       endif
 !
-      if(nbfijkl(3) == 6)then
-        do j=1,3
-        do l= 1,nbfijkl(4)
-          work(1:6)= phmdint(l,1:6,j,1)
-          phmdint(l,1,j,1)=work(1)
-          phmdint(l,2,j,1)=work(4)
-          phmdint(l,3,j,1)=work(6)
-          phmdint(l,4,j,1)=work(2)
-          phmdint(l,5,j,1)=work(3)
-          phmdint(l,6,j,1)=work(5)
-        enddo
-        enddo
-      else
-        do j=1,3
-        do l= 1,nbfijkl(4)
-          work(1:5)= phmdint(l,1:5,j,1)
-          phmdint(l,1,j,1)=work(3)
-          phmdint(l,2,j,1)=work(4)
-          phmdint(l,3,j,1)=work(2)
-          phmdint(l,4,j,1)=work(5)
-          phmdint(l,5,j,1)=work(1)
-        enddo
-        enddo
-      endif
-      if(nbfijkl(4) == 6)then
-        do j=1,3
-        do k= 1,nbfijkl(3)
-          work(1:6)= phmdint(1:6,k,j,1)
-          phmdint(1,k,j,1)=work(1)
-          phmdint(2,k,j,1)=work(4)
-          phmdint(3,k,j,1)=work(6)
-          phmdint(4,k,j,1)=work(2)
-          phmdint(5,k,j,1)=work(3)
-          phmdint(6,k,j,1)=work(5)
-        enddo
-        enddo
-      else
-        do j=1,3
-        do k= 1,nbfijkl(3)
-          work(1:5)= phmdint(1:5,k,j,1)
-          phmdint(1,k,j,1)=work(3)
-          phmdint(2,k,j,1)=work(4)
-          phmdint(3,k,j,1)=work(2)
-          phmdint(4,k,j,1)=work(5)
-          phmdint(5,k,j,1)=work(1)
-        enddo
-        enddo
-      endif
-!
       return
 end
 
@@ -3777,55 +3537,6 @@ end
 &                              +eri(4,k,j)*rot3(4,l)+eri(5,k,j)*rot3(5,l)+eri(6,k,j)*rot3(6,l)
             enddo
           enddo
-        enddo
-      endif
-!
-      if(nbfijkl(2) == 6)then
-        do j=1,3
-        do l= 1,nbfijkl(4)
-          work(1:6)= phmdint(l,j,1:6,1)
-          phmdint(l,j,1,1)=work(1)
-          phmdint(l,j,2,1)=work(4)
-          phmdint(l,j,3,1)=work(6)
-          phmdint(l,j,4,1)=work(2)
-          phmdint(l,j,5,1)=work(3)
-          phmdint(l,j,6,1)=work(5)
-        enddo
-        enddo
-      else
-        do j=1,3
-        do l= 1,nbfijkl(4)
-          work(1:5)= phmdint(l,j,1:5,1)
-          phmdint(l,j,1,1)=work(3)
-          phmdint(l,j,2,1)=work(4)
-          phmdint(l,j,3,1)=work(2)
-          phmdint(l,j,4,1)=work(5)
-          phmdint(l,j,5,1)=work(1)
-        enddo
-        enddo
-      endif
-      if(nbfijkl(4) == 6)then
-        do j=1,3
-        do k= 1,nbfijkl(2)
-          work(1:6)= phmdint(1:6,j,k,1)
-          phmdint(1,j,k,1)=work(1)
-          phmdint(2,j,k,1)=work(4)
-          phmdint(3,j,k,1)=work(6)
-          phmdint(4,j,k,1)=work(2)
-          phmdint(5,j,k,1)=work(3)
-          phmdint(6,j,k,1)=work(5)
-        enddo
-        enddo
-      else
-        do j=1,3
-        do k= 1,nbfijkl(2)
-          work(1:5)= phmdint(1:5,j,k,1)
-          phmdint(1,j,k,1)=work(3)
-          phmdint(2,j,k,1)=work(4)
-          phmdint(3,j,k,1)=work(2)
-          phmdint(4,j,k,1)=work(5)
-          phmdint(5,j,k,1)=work(1)
-        enddo
         enddo
       endif
 !
@@ -4605,35 +4316,6 @@ end
               enddo
             enddo
           enddo
-        enddo
-      endif
-!
-      if(nbfijkl(4) == 6)then
-        eri(1:6,1:3,1:3,1:3)= phmdint(1:6,1:3,1:3,1:3)
-        do i=1,3
-        do j=1,3
-        do k=1,3
-          phmdint(1,k,j,i)=eri(1,k,j,i)
-          phmdint(2,k,j,i)=eri(4,k,j,i)
-          phmdint(3,k,j,i)=eri(6,k,j,i)
-          phmdint(4,k,j,i)=eri(2,k,j,i)
-          phmdint(5,k,j,i)=eri(3,k,j,i)
-          phmdint(6,k,j,i)=eri(5,k,j,i)
-        enddo
-        enddo
-        enddo
-      else
-        eri(1:5,1:3,1:3,1:3)=phmdint(1:5,1:3,1:3,1:3)
-        do i=1,3
-        do j=1,3
-        do k=1,3
-          phmdint(1,k,j,i)=eri(3,k,j,i)
-          phmdint(2,k,j,i)=eri(4,k,j,i)
-          phmdint(3,k,j,i)=eri(2,k,j,i)
-          phmdint(4,k,j,i)=eri(5,k,j,i)
-          phmdint(5,k,j,i)=eri(1,k,j,i)
-        enddo
-        enddo
         enddo
       endif
 !
@@ -5986,79 +5668,6 @@ end
 &                              +eri(4,k,j)*rot3(4,l)+eri(5,k,j)*rot3(5,l)+eri(6,k,j)*rot3(6,l)
             enddo
           enddo
-        enddo
-      endif
-!
-      if(nbfijkl(2) == 6)then
-        do k= 1,nbfijkl(3)
-        do l= 1,nbfijkl(4)
-          work(1:6)= phmdint(l,k,1:6,1)
-          phmdint(l,k,1,1)=work(1)
-          phmdint(l,k,2,1)=work(4)
-          phmdint(l,k,3,1)=work(6)
-          phmdint(l,k,4,1)=work(2)
-          phmdint(l,k,5,1)=work(3)
-          phmdint(l,k,6,1)=work(5)
-        enddo
-        enddo
-      else
-        do k= 1,nbfijkl(3)
-        do l= 1,nbfijkl(4)
-          work(1:5)= phmdint(l,k,1:5,1)
-          phmdint(l,k,1,1)=work(3)
-          phmdint(l,k,2,1)=work(4)
-          phmdint(l,k,3,1)=work(2)
-          phmdint(l,k,4,1)=work(5)
-          phmdint(l,k,5,1)=work(1)
-        enddo
-        enddo
-      endif
-      if(nbfijkl(3) == 6)then
-        do j= 1,nbfijkl(2)
-        do l= 1,nbfijkl(4)
-          work(1:6)= phmdint(l,1:6,j,1)
-          phmdint(l,1,j,1)=work(1)
-          phmdint(l,2,j,1)=work(4)
-          phmdint(l,3,j,1)=work(6)
-          phmdint(l,4,j,1)=work(2)
-          phmdint(l,5,j,1)=work(3)
-          phmdint(l,6,j,1)=work(5)
-        enddo
-        enddo
-      else
-        do j= 1,nbfijkl(2)
-        do l= 1,nbfijkl(4)
-          work(1:5)= phmdint(l,1:5,j,1)
-          phmdint(l,1,j,1)=work(3)
-          phmdint(l,2,j,1)=work(4)
-          phmdint(l,3,j,1)=work(2)
-          phmdint(l,4,j,1)=work(5)
-          phmdint(l,5,j,1)=work(1)
-        enddo
-        enddo
-      endif
-      if(nbfijkl(4) == 6)then
-        do j= 1,nbfijkl(2)
-        do k= 1,nbfijkl(3)
-          work(1:6)= phmdint(1:6,k,j,1)
-          phmdint(1,k,j,1)=work(1)
-          phmdint(2,k,j,1)=work(4)
-          phmdint(3,k,j,1)=work(6)
-          phmdint(4,k,j,1)=work(2)
-          phmdint(5,k,j,1)=work(3)
-          phmdint(6,k,j,1)=work(5)
-        enddo
-        enddo
-      else
-        do j= 1,nbfijkl(2)
-        do k= 1,nbfijkl(3)
-          work(1:5)= phmdint(1:5,k,j,1)
-          phmdint(1,k,j,1)=work(3)
-          phmdint(2,k,j,1)=work(4)
-          phmdint(3,k,j,1)=work(2)
-          phmdint(4,k,j,1)=work(5)
-          phmdint(5,k,j,1)=work(1)
-        enddo
         enddo
       endif
 !
