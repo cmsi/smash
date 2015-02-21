@@ -1163,12 +1163,12 @@ end
 &       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
 !
       character(len=5) :: anglabel(56)= &
-&     (/'S    ','Px   ','Py   ','Pz   ','Dxx  ','Dyy  ','Dzz  ','Dxy  ','Dxz  ','Dyz  ', &
-&       'D 0  ','D+1  ','D-1  ','D+2  ','D-2  ','Fxxx ','Fyyy ','Fzzz ','Fxxy ','Fxxz ', &
-&       'Fxyy ','Fyyz ','Fxzz ','Fyzz ','Fxyz ','F 0  ','F+1  ','F-1  ','F+2  ','F-2  ', &
-&       'F+3  ','F-3  ','Gxxxx','Gyyyy','Gzzzz','Gxxxy','Gxxxz','Gxyyy','Gyyyz','Gxzzz', &
-&       'Gyzzz','Gxxyy','Gxxzz','Gyyzz','Gxxyz','Gxyyz','Gxyzz','G 0  ','G+1  ','G-1  ', &
-&       'G+2  ','G-2  ','G+3  ','G-3  ','G+4  ','G-4  '/)
+&     (/'S    ','Px   ','Py   ','Pz   ','Dxx  ','Dxy  ','Dxz  ','Dyy  ','Dyz  ','Dzz  ', &
+&       'D-2  ','D-1  ','D0   ','D+1  ','D+2  ','Fxxx ','Fxxy ','Fxxz ','Fxyy ','Fxyz ', &
+&       'Fxzz ','Fyyy ','Fyyz ','Fyzz ','Fzzz ','F-3  ','F-2  ','F-1  ','F0   ','F+1  ', &
+&       'F+2  ','F+3  ','Gxxxx','Gxxxy','Gxxxz','Gxxyy','Gxxyz','Gxxzz','Gxyyy','Gxyyz', &
+&       'Gxyzz','Gxzzz','Gyyyy','Gyyyz','Gyyzz','Gyzzz','Gzzzz','G-4  ','G-3  ','G-2  ', &
+&       'G-1  ','G0   ','G+1  ','G+2  ','G+3  ','G+4  '/)
 !
       if(maxval(mtype(1:nshell)) >= 5) then
         if(master) write(*,'(" Sorry! This program can not display MOs of h functions now.")')
