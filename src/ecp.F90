@@ -371,18 +371,43 @@ end
             do jj= 1,6
               work(jj)= ecptmp(jj,ii)
             enddo
-            ecptmp(1,ii)=(work(3)*two-work(1)-work(2))*half
-            ecptmp(2,ii)= work(5)*sqrt3
-            ecptmp(3,ii)= work(6)*sqrt3
-            ecptmp(4,ii)=(work(1)-work(2))*sqrt3h
-            ecptmp(5,ii)= work(4)*sqrt3
+            ecptmp(1,ii)= work(4)*sqrt3
+            ecptmp(2,ii)= work(6)*sqrt3
+            ecptmp(3,ii)=(work(3)*two-work(1)-work(2))*half
+            ecptmp(4,ii)= work(5)*sqrt3
+            ecptmp(5,ii)=(work(1)-work(2))*sqrt3h
           enddo
+!ishimura
+          do ii= 1,ncarti
+            work(1:5)= ecptmp(1:5,ii)
+            ecptmp(1,ii)= work(3)
+            ecptmp(2,ii)= work(4)
+            ecptmp(3,ii)= work(2)
+            ecptmp(4,ii)= work(5)
+            ecptmp(5,ii)= work(1)
+          enddo
+!
         case(6)
           do ii= 1,ncarti
-            do jj= 4,6
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt3
-            enddo
+            work(1:6)= ecptmp(1:6,ii)
+            ecptmp(1,ii)= work(1)
+            ecptmp(2,ii)= work(4)*sqrt3
+            ecptmp(3,ii)= work(5)*sqrt3
+            ecptmp(4,ii)= work(2)
+            ecptmp(5,ii)= work(6)*sqrt3
+            ecptmp(6,ii)= work(3)
           enddo
+!ishimura
+          do ii= 1,ncarti
+            work(1:6)= ecptmp(1:6,ii)
+            ecptmp(1,ii)=work(1)
+            ecptmp(2,ii)=work(4)
+            ecptmp(3,ii)=work(6)
+            ecptmp(4,ii)=work(2)
+            ecptmp(5,ii)=work(3)
+            ecptmp(6,ii)=work(5)
+          enddo
+!
 ! F function
         case(7)
           do ii= 1,ncarti
@@ -393,21 +418,55 @@ end
               work(jj)= ecptmp(jj,ii)*sqrt5
             enddo
             work(10)= ecptmp(10,ii)*sqrt15
-            ecptmp(1,ii)=( two*work(3)-three*work(5)-three*work(7))*facf4
-            ecptmp(2,ii)=(-work(1)-work(6)+four*work(8)           )*facf3
+            ecptmp(1,ii)=(-work(2)+three*work(4)                  )*facf1
+            ecptmp(2,ii)=  work(10)
             ecptmp(3,ii)=(-work(2)-work(4)+four*work(9)           )*facf3
-            ecptmp(4,ii)=( work(5)-work(7)                        )*facf2
-            ecptmp(5,ii)=  work(10)
-            ecptmp(6,ii)=( work(1)-three*work(6)                  )*facf1
-            ecptmp(7,ii)=(-work(2)+three*work(4)                  )*facf1
+            ecptmp(4,ii)=( two*work(3)-three*work(5)-three*work(7))*facf4
+            ecptmp(5,ii)=(-work(1)-work(6)+four*work(8)           )*facf3
+            ecptmp(6,ii)=( work(5)-work(7)                        )*facf2
+            ecptmp(7,ii)=( work(1)-three*work(6)                  )*facf1
           enddo
+!ishimura
+          do ii= 1,ncarti
+            work(1:7)= ecptmp(1:7,ii)
+            ecptmp(1,ii)= work(4)
+            ecptmp(2,ii)= work(5)
+            ecptmp(3,ii)= work(3)
+            ecptmp(4,ii)= work(6)
+            ecptmp(5,ii)= work(2)
+            ecptmp(6,ii)= work(7)
+            ecptmp(7,ii)= work(1)
+          enddo
+!
         case(10)
           do ii= 1,ncarti
-            do jj= 4,9
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt5
-            enddo
-            ecptmp(10,ii)= ecptmp(10,ii)*sqrt15
+            work(1:10)= ecptmp(1:10,ii)
+            ecptmp( 1,ii)= work( 1)
+            ecptmp( 2,ii)= work( 4)*sqrt5
+            ecptmp( 3,ii)= work( 5)*sqrt5
+            ecptmp( 4,ii)= work( 6)*sqrt5
+            ecptmp( 5,ii)= work(10)*sqrt15
+            ecptmp( 6,ii)= work( 8)*sqrt5
+            ecptmp( 7,ii)= work( 2)
+            ecptmp( 8,ii)= work( 7)*sqrt5
+            ecptmp( 9,ii)= work( 9)*sqrt5
+            ecptmp(10,ii)= work( 3)
           enddo
+!ishimura
+          do ii= 1,ncarti
+            work(1:10)= ecptmp(1:10,ii)
+            ecptmp( 1,ii)= work( 1)
+            ecptmp( 2,ii)= work( 7)
+            ecptmp( 3,ii)= work(10)
+            ecptmp( 4,ii)= work( 2)
+            ecptmp( 5,ii)= work( 3)
+            ecptmp( 6,ii)= work( 4)
+            ecptmp( 7,ii)= work( 8)
+            ecptmp( 8,ii)= work( 6)
+            ecptmp( 9,ii)= work( 9)
+            ecptmp(10,ii)= work( 5)
+          enddo
+!
 ! G function
         case(9)
           do ii= 1,ncarti
@@ -423,29 +482,70 @@ end
             do jj= 13,15
               work(jj)= ecptmp(jj,ii)*sqrt35
             enddo
-            ecptmp(1,ii)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+            ecptmp(1,ii)=(work(4)-work(6))*facg7
+            ecptmp(2,ii)=(-work(7)+work(13)*three)*facg2
+            ecptmp(3,ii)=(-work(4)-work(6)+work(15)*six)*facg6
+            ecptmp(4,ii)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+            ecptmp(5,ii)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
 &                        -work(11)*p24-work(12)*p24)*facg5
-            ecptmp(2,ii)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
-            ecptmp(3,ii)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
-            ecptmp(4,ii)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
-            ecptmp(5,ii)=(-work(4)-work(6)+work(15)*six)*facg6
-            ecptmp(6,ii)=(work(5)-work(14)*three)*facg2
-            ecptmp(7,ii)=(-work(7)+work(13)*three)*facg2
-            ecptmp(8,ii)=(work(1)+work(2)-work(10)*six)*facg1
-            ecptmp(9,ii)=(work(4)-work(6))*facg7
+            ecptmp(6,ii)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+            ecptmp(7,ii)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+            ecptmp(8,ii)=(work(5)-work(14)*three)*facg2
+            ecptmp(9,ii)=(work(1)+work(2)-work(10)*six)*facg1
           enddo
+!ishimura
+          do ii= 1,ncarti
+            work(1:9)= ecptmp(1:9,ii)
+            ecptmp(1,ii)= work(5)
+            ecptmp(2,ii)= work(6)
+            ecptmp(3,ii)= work(4)
+            ecptmp(4,ii)= work(7)
+            ecptmp(5,ii)= work(3)
+            ecptmp(6,ii)= work(8)
+            ecptmp(7,ii)= work(2)
+            ecptmp(8,ii)= work(9)
+            ecptmp(9,ii)= work(1)
+          enddo
+!
         case(15)
           do ii= 1,ncarti
-            do jj= 4,9
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt7
-            enddo
-            do jj= 10,12
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35third
-            enddo
-            do jj= 13,15
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35
-            enddo
+            work(1:15)= ecptmp(1:15,ii)
+            ecptmp( 1,ii)= work( 1)
+            ecptmp( 2,ii)= work( 4)*sqrt7
+            ecptmp( 3,ii)= work( 5)*sqrt7
+            ecptmp( 4,ii)= work(10)*sqrt35third
+            ecptmp( 5,ii)= work(13)*sqrt35
+            ecptmp( 6,ii)= work(11)*sqrt35third
+            ecptmp( 7,ii)= work( 6)*sqrt7
+            ecptmp( 8,ii)= work(14)*sqrt35
+            ecptmp( 9,ii)= work(15)*sqrt35
+            ecptmp(10,ii)= work( 8)*sqrt7
+            ecptmp(11,ii)= work( 2)
+            ecptmp(12,ii)= work( 7)*sqrt7
+            ecptmp(13,ii)= work(12)*sqrt35third
+            ecptmp(14,ii)= work( 9)*sqrt7
+            ecptmp(15,ii)= work( 3)
           enddo
+!
+          do ii= 1,ncarti
+            work(1:15)= ecptmp(1:15,ii)
+            ecptmp( 1,ii)= work( 1)
+            ecptmp( 2,ii)= work(11)
+            ecptmp( 3,ii)= work(15)
+            ecptmp( 4,ii)= work( 2)
+            ecptmp( 5,ii)= work( 3)
+            ecptmp( 6,ii)= work( 7)
+            ecptmp( 7,ii)= work(12)
+            ecptmp( 8,ii)= work(10)
+            ecptmp( 9,ii)= work(14)
+            ecptmp(10,ii)= work( 4)
+            ecptmp(11,ii)= work( 6)
+            ecptmp(12,ii)= work(13)
+            ecptmp(13,ii)= work( 5)
+            ecptmp(14,ii)= work( 8)
+            ecptmp(15,ii)= work( 9)
+          enddo
+!
       end select
 !
 ! Ket part
@@ -457,18 +557,43 @@ end
             do ii= 1,6
               work(ii)= ecptmp(jj,ii)
             enddo
-            ecptmp(jj,1)=(work(3)*two-work(1)-work(2))*half
-            ecptmp(jj,2)= work(5)*sqrt3
-            ecptmp(jj,3)= work(6)*sqrt3
-            ecptmp(jj,4)=(work(1)-work(2))*sqrt3h
-            ecptmp(jj,5)= work(4)*sqrt3
+            ecptmp(jj,1)= work(4)*sqrt3
+            ecptmp(jj,2)= work(6)*sqrt3
+            ecptmp(jj,3)=(work(3)*two-work(1)-work(2))*half
+            ecptmp(jj,4)= work(5)*sqrt3
+            ecptmp(jj,5)=(work(1)-work(2))*sqrt3h
           enddo
+!ishimura
+          do jj= 1,nbfij(2)
+            work(1:5)= ecptmp(jj,1:5)
+            ecptmp(jj,1)= work(3)
+            ecptmp(jj,2)= work(4)
+            ecptmp(jj,3)= work(2)
+            ecptmp(jj,4)= work(5)
+            ecptmp(jj,5)= work(1)
+          enddo
+!
         case(6)
           do jj= 1,nbfij(2)
-            do ii= 4,6
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt3
-            enddo
+            work(1:6)= ecptmp(jj,1:6)
+            ecptmp(jj,1)= work(1)
+            ecptmp(jj,2)= work(4)*sqrt3
+            ecptmp(jj,3)= work(5)*sqrt3
+            ecptmp(jj,4)= work(2)
+            ecptmp(jj,5)= work(6)*sqrt3
+            ecptmp(jj,6)= work(3)
           enddo
+!ishimura
+          do jj= 1,nbfij(2)
+            work(1:6)= ecptmp(jj,1:6)
+            ecptmp(jj,1)=work(1)
+            ecptmp(jj,2)=work(4)
+            ecptmp(jj,3)=work(6)
+            ecptmp(jj,4)=work(2)
+            ecptmp(jj,5)=work(3)
+            ecptmp(jj,6)=work(5)
+          enddo
+!
 ! F function
         case(7)
           do jj= 1,nbfij(2)
@@ -479,21 +604,55 @@ end
               work(ii)= ecptmp(jj,ii)*sqrt5
             enddo
             work(10)= ecptmp(jj,10)*sqrt15
-            ecptmp(jj,1)=( two*work(3)-three*work(5)-three*work(7))*facf4
-            ecptmp(jj,2)=(-work(1)-work(6)+four*work(8)           )*facf3
+            ecptmp(jj,1)=(-work(2)+three*work(4)                  )*facf1
+            ecptmp(jj,2)=  work(10)
             ecptmp(jj,3)=(-work(2)-work(4)+four*work(9)           )*facf3
-            ecptmp(jj,4)=( work(5)-work(7)                        )*facf2
-            ecptmp(jj,5)=  work(10)
-            ecptmp(jj,6)=( work(1)-three*work(6)                  )*facf1
-            ecptmp(jj,7)=(-work(2)+three*work(4)                  )*facf1
+            ecptmp(jj,4)=( two*work(3)-three*work(5)-three*work(7))*facf4
+            ecptmp(jj,5)=(-work(1)-work(6)+four*work(8)           )*facf3
+            ecptmp(jj,6)=( work(5)-work(7)                        )*facf2
+            ecptmp(jj,7)=( work(1)-three*work(6)                  )*facf1
           enddo
+!ishimura
+          do jj= 1,nbfij(2)
+            work(1:7)= ecptmp(jj,1:7)
+            ecptmp(jj,1)= work(4)
+            ecptmp(jj,2)= work(5)
+            ecptmp(jj,3)= work(3)
+            ecptmp(jj,4)= work(6)
+            ecptmp(jj,5)= work(2)
+            ecptmp(jj,6)= work(7)
+            ecptmp(jj,7)= work(1)
+          enddo
+!
         case(10)
           do jj= 1,nbfij(2)
-            do ii= 4,9
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt5
-            enddo
-            ecptmp(jj,10)= ecptmp(jj,10)*sqrt15
+            work(1:10)= ecptmp(jj,1:10)
+            ecptmp(jj, 1)= work( 1)
+            ecptmp(jj, 2)= work( 4)*sqrt5
+            ecptmp(jj, 3)= work( 5)*sqrt5
+            ecptmp(jj, 4)= work( 6)*sqrt5
+            ecptmp(jj, 5)= work(10)*sqrt15
+            ecptmp(jj, 6)= work( 8)*sqrt5
+            ecptmp(jj, 7)= work( 2)
+            ecptmp(jj, 8)= work( 7)*sqrt5
+            ecptmp(jj, 9)= work( 9)*sqrt5
+            ecptmp(jj,10)= work( 3)
           enddo
+!ishimura
+          do jj= 1,nbfij(2)
+            work(1:10)= ecptmp(jj,1:10)
+            ecptmp(jj, 1)= work( 1)
+            ecptmp(jj, 2)= work( 7)
+            ecptmp(jj, 3)= work(10)
+            ecptmp(jj, 4)= work( 2)
+            ecptmp(jj, 5)= work( 3)
+            ecptmp(jj, 6)= work( 4)
+            ecptmp(jj, 7)= work( 8)
+            ecptmp(jj, 8)= work( 6)
+            ecptmp(jj, 9)= work( 9)
+            ecptmp(jj,10)= work( 5)
+          enddo
+!
 ! G function
         case(9)
           do jj= 1,nbfij(2)
@@ -509,29 +668,70 @@ end
             do ii= 13,15
               work(ii)= ecptmp(jj,ii)*sqrt35
             enddo
-            ecptmp(jj,1)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+            ecptmp(jj,1)=(work(4)-work(6))*facg7
+            ecptmp(jj,2)=(-work(7)+work(13)*three)*facg2
+            ecptmp(jj,3)=(-work(4)-work(6)+work(15)*six)*facg6
+            ecptmp(jj,4)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+            ecptmp(jj,5)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
 &                       -work(11)*p24-work(12)*p24)*facg5
-            ecptmp(jj,2)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
-            ecptmp(jj,3)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
-            ecptmp(jj,4)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
-            ecptmp(jj,5)=(-work(4)-work(6)+work(15)*six)*facg6
-            ecptmp(jj,6)=(work(5)-work(14)*three)*facg2
-            ecptmp(jj,7)=(-work(7)+work(13)*three)*facg2
-            ecptmp(jj,8)=(work(1)+work(2)-work(10)*six)*facg1
-            ecptmp(jj,9)=(work(4)-work(6))*facg7
+            ecptmp(jj,6)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+            ecptmp(jj,7)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+            ecptmp(jj,8)=(work(5)-work(14)*three)*facg2
+            ecptmp(jj,9)=(work(1)+work(2)-work(10)*six)*facg1
           enddo
+!ishimura
+          do jj= 1,nbfij(2)
+            work(1:9)= ecptmp(jj,1:9)
+            ecptmp(jj,1)= work(5)
+            ecptmp(jj,2)= work(6)
+            ecptmp(jj,3)= work(4)
+            ecptmp(jj,4)= work(7)
+            ecptmp(jj,5)= work(3)
+            ecptmp(jj,6)= work(8)
+            ecptmp(jj,7)= work(2)
+            ecptmp(jj,8)= work(9)
+            ecptmp(jj,9)= work(1)
+          enddo
+!
         case(15)
           do jj= 1,nbfij(2)
-            do ii= 4,9
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt7
-            enddo
-            do ii= 10,12
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35third
-            enddo
-            do ii= 13,15
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35
-            enddo
+            work(1:15)= ecptmp(jj,1:15)
+            ecptmp(jj, 1)= work( 1)
+            ecptmp(jj, 2)= work( 4)*sqrt7
+            ecptmp(jj, 3)= work( 5)*sqrt7
+            ecptmp(jj, 4)= work(10)*sqrt35third
+            ecptmp(jj, 5)= work(13)*sqrt35
+            ecptmp(jj, 6)= work(11)*sqrt35third
+            ecptmp(jj, 7)= work( 6)*sqrt7
+            ecptmp(jj, 8)= work(14)*sqrt35
+            ecptmp(jj, 9)= work(15)*sqrt35
+            ecptmp(jj,10)= work( 8)*sqrt7
+            ecptmp(jj,11)= work( 2)
+            ecptmp(jj,12)= work( 7)*sqrt7
+            ecptmp(jj,13)= work(12)*sqrt35third
+            ecptmp(jj,14)= work( 9)*sqrt7
+            ecptmp(jj,15)= work( 3)
           enddo
+!ishimura
+          do jj= 1,nbfij(2)
+            work(1:15)= ecptmp(jj,1:15)
+            ecptmp(jj, 1)= work( 1)
+            ecptmp(jj, 2)= work(11)
+            ecptmp(jj, 3)= work(15)
+            ecptmp(jj, 4)= work( 2)
+            ecptmp(jj, 5)= work( 3)
+            ecptmp(jj, 6)= work( 7)
+            ecptmp(jj, 7)= work(12)
+            ecptmp(jj, 8)= work(10)
+            ecptmp(jj, 9)= work(14)
+            ecptmp(jj,10)= work( 4)
+            ecptmp(jj,11)= work( 6)
+            ecptmp(jj,12)= work(13)
+            ecptmp(jj,13)= work( 5)
+            ecptmp(jj,14)= work( 8)
+            ecptmp(jj,15)= work( 9)
+          enddo
+!
       end select
 !
       do ii= 1,nbfij(1)
@@ -836,18 +1036,43 @@ end
             do jj= 1,6
               work(jj)= ecptmp(jj,ii)
             enddo
-            ecptmp(1,ii)=(work(3)*two-work(1)-work(2))*half
-            ecptmp(2,ii)= work(5)*sqrt3
-            ecptmp(3,ii)= work(6)*sqrt3
-            ecptmp(4,ii)=(work(1)-work(2))*sqrt3h
-            ecptmp(5,ii)= work(4)*sqrt3
+            ecptmp(1,ii)= work(4)*sqrt3
+            ecptmp(2,ii)= work(6)*sqrt3
+            ecptmp(3,ii)=(work(3)*two-work(1)-work(2))*half
+            ecptmp(4,ii)= work(5)*sqrt3
+            ecptmp(5,ii)=(work(1)-work(2))*sqrt3h
           enddo
+!ishimura
+          do ii= 1,ncarti
+            work(1:5)= ecptmp(1:5,ii)
+            ecptmp(1,ii)= work(3)
+            ecptmp(2,ii)= work(4)
+            ecptmp(3,ii)= work(2)
+            ecptmp(4,ii)= work(5)
+            ecptmp(5,ii)= work(1)
+          enddo
+!
         case(6)
           do ii= 1,ncarti
-            do jj= 4,6
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt3
-            enddo
+            work(1:6)= ecptmp(1:6,ii)
+            ecptmp(1,ii)= work(1)
+            ecptmp(2,ii)= work(4)*sqrt3
+            ecptmp(3,ii)= work(5)*sqrt3
+            ecptmp(4,ii)= work(2)
+            ecptmp(5,ii)= work(6)*sqrt3
+            ecptmp(6,ii)= work(3)
           enddo
+!ishimura
+          do ii= 1,ncarti
+            work(1:6)= ecptmp(1:6,ii)
+            ecptmp(1,ii)=work(1)
+            ecptmp(2,ii)=work(4)
+            ecptmp(3,ii)=work(6)
+            ecptmp(4,ii)=work(2)
+            ecptmp(5,ii)=work(3)
+            ecptmp(6,ii)=work(5)
+          enddo
+!
 ! F function
         case(7)
           do ii= 1,ncarti
@@ -858,21 +1083,55 @@ end
               work(jj)= ecptmp(jj,ii)*sqrt5
             enddo
             work(10)= ecptmp(10,ii)*sqrt15
-            ecptmp(1,ii)=( two*work(3)-three*work(5)-three*work(7))*facf4
-            ecptmp(2,ii)=(-work(1)-work(6)+four*work(8)           )*facf3
+            ecptmp(1,ii)=(-work(2)+three*work(4)                  )*facf1
+            ecptmp(2,ii)=  work(10)
             ecptmp(3,ii)=(-work(2)-work(4)+four*work(9)           )*facf3
-            ecptmp(4,ii)=( work(5)-work(7)                        )*facf2
-            ecptmp(5,ii)=  work(10)
-            ecptmp(6,ii)=( work(1)-three*work(6)                  )*facf1
-            ecptmp(7,ii)=(-work(2)+three*work(4)                  )*facf1
+            ecptmp(4,ii)=( two*work(3)-three*work(5)-three*work(7))*facf4
+            ecptmp(5,ii)=(-work(1)-work(6)+four*work(8)           )*facf3
+            ecptmp(6,ii)=( work(5)-work(7)                        )*facf2
+            ecptmp(7,ii)=( work(1)-three*work(6)                  )*facf1
           enddo
+!ishimura
+          do ii= 1,ncarti
+            work(1:7)= ecptmp(1:7,ii)
+            ecptmp(1,ii)= work(4)
+            ecptmp(2,ii)= work(5)
+            ecptmp(3,ii)= work(3)
+            ecptmp(4,ii)= work(6)
+            ecptmp(5,ii)= work(2)
+            ecptmp(6,ii)= work(7)
+            ecptmp(7,ii)= work(1)
+          enddo
+!
         case(10)
           do ii= 1,ncarti
-            do jj= 4,9
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt5
-            enddo
-            ecptmp(10,ii)= ecptmp(10,ii)*sqrt15
+            work(1:10)= ecptmp(1:10,ii)
+            ecptmp( 1,ii)= work( 1)
+            ecptmp( 2,ii)= work( 4)*sqrt5
+            ecptmp( 3,ii)= work( 5)*sqrt5
+            ecptmp( 4,ii)= work( 6)*sqrt5
+            ecptmp( 5,ii)= work(10)*sqrt15
+            ecptmp( 6,ii)= work( 8)*sqrt5
+            ecptmp( 7,ii)= work( 2)
+            ecptmp( 8,ii)= work( 7)*sqrt5
+            ecptmp( 9,ii)= work( 9)*sqrt5
+            ecptmp(10,ii)= work( 3)
           enddo
+!ishimura
+          do ii= 1,ncarti
+            work(1:10)= ecptmp(1:10,ii)
+            ecptmp( 1,ii)= work( 1)
+            ecptmp( 2,ii)= work( 7)
+            ecptmp( 3,ii)= work(10)
+            ecptmp( 4,ii)= work( 2)
+            ecptmp( 5,ii)= work( 3)
+            ecptmp( 6,ii)= work( 4)
+            ecptmp( 7,ii)= work( 8)
+            ecptmp( 8,ii)= work( 6)
+            ecptmp( 9,ii)= work( 9)
+            ecptmp(10,ii)= work( 5)
+          enddo
+!
 ! G function
         case(9)
           do ii= 1,ncarti
@@ -888,29 +1147,70 @@ end
             do jj= 13,15
               work(jj)= ecptmp(jj,ii)*sqrt35
             enddo
-            ecptmp(1,ii)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+            ecptmp(1,ii)=(work(4)-work(6))*facg7
+            ecptmp(2,ii)=(-work(7)+work(13)*three)*facg2
+            ecptmp(3,ii)=(-work(4)-work(6)+work(15)*six)*facg6
+            ecptmp(4,ii)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+            ecptmp(5,ii)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
 &                        -work(11)*p24-work(12)*p24)*facg5
-            ecptmp(2,ii)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
-            ecptmp(3,ii)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
-            ecptmp(4,ii)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
-            ecptmp(5,ii)=(-work(4)-work(6)+work(15)*six)*facg6
-            ecptmp(6,ii)=(work(5)-work(14)*three)*facg2
-            ecptmp(7,ii)=(-work(7)+work(13)*three)*facg2
-            ecptmp(8,ii)=(work(1)+work(2)-work(10)*six)*facg1
-            ecptmp(9,ii)=(work(4)-work(6))*facg7
+            ecptmp(6,ii)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+            ecptmp(7,ii)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+            ecptmp(8,ii)=(work(5)-work(14)*three)*facg2
+            ecptmp(9,ii)=(work(1)+work(2)-work(10)*six)*facg1
           enddo
+!ishimura
+          do ii= 1,ncarti
+            work(1:9)= ecptmp(1:9,ii)
+            ecptmp(1,ii)= work(5)
+            ecptmp(2,ii)= work(6)
+            ecptmp(3,ii)= work(4)
+            ecptmp(4,ii)= work(7)
+            ecptmp(5,ii)= work(3)
+            ecptmp(6,ii)= work(8)
+            ecptmp(7,ii)= work(2)
+            ecptmp(8,ii)= work(9)
+            ecptmp(9,ii)= work(1)
+          enddo
+!
         case(15)
           do ii= 1,ncarti
-            do jj= 4,9
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt7
-            enddo
-            do jj= 10,12
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35third
-            enddo
-            do jj= 13,15
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35
-            enddo
+            work(1:15)= ecptmp(1:15,ii)
+            ecptmp( 1,ii)= work( 1)
+            ecptmp( 2,ii)= work( 4)*sqrt7
+            ecptmp( 3,ii)= work( 5)*sqrt7
+            ecptmp( 4,ii)= work(10)*sqrt35third
+            ecptmp( 5,ii)= work(13)*sqrt35
+            ecptmp( 6,ii)= work(11)*sqrt35third
+            ecptmp( 7,ii)= work( 6)*sqrt7
+            ecptmp( 8,ii)= work(14)*sqrt35
+            ecptmp( 9,ii)= work(15)*sqrt35
+            ecptmp(10,ii)= work( 8)*sqrt7
+            ecptmp(11,ii)= work( 2)
+            ecptmp(12,ii)= work( 7)*sqrt7
+            ecptmp(13,ii)= work(12)*sqrt35third
+            ecptmp(14,ii)= work( 9)*sqrt7
+            ecptmp(15,ii)= work( 3)
           enddo
+!
+          do ii= 1,ncarti
+            work(1:15)= ecptmp(1:15,ii)
+            ecptmp( 1,ii)= work( 1)
+            ecptmp( 2,ii)= work(11)
+            ecptmp( 3,ii)= work(15)
+            ecptmp( 4,ii)= work( 2)
+            ecptmp( 5,ii)= work( 3)
+            ecptmp( 6,ii)= work( 7)
+            ecptmp( 7,ii)= work(12)
+            ecptmp( 8,ii)= work(10)
+            ecptmp( 9,ii)= work(14)
+            ecptmp(10,ii)= work( 4)
+            ecptmp(11,ii)= work( 6)
+            ecptmp(12,ii)= work(13)
+            ecptmp(13,ii)= work( 5)
+            ecptmp(14,ii)= work( 8)
+            ecptmp(15,ii)= work( 9)
+          enddo
+!
       end select
 !
 ! Ket part
@@ -922,18 +1222,43 @@ end
             do ii= 1,6
               work(ii)= ecptmp(jj,ii)
             enddo
-            ecptmp(jj,1)=(work(3)*two-work(1)-work(2))*half
-            ecptmp(jj,2)= work(5)*sqrt3
-            ecptmp(jj,3)= work(6)*sqrt3
-            ecptmp(jj,4)=(work(1)-work(2))*sqrt3h
-            ecptmp(jj,5)= work(4)*sqrt3
+            ecptmp(jj,1)= work(4)*sqrt3
+            ecptmp(jj,2)= work(6)*sqrt3
+            ecptmp(jj,3)=(work(3)*two-work(1)-work(2))*half
+            ecptmp(jj,4)= work(5)*sqrt3
+            ecptmp(jj,5)=(work(1)-work(2))*sqrt3h
           enddo
+!ishimura
+          do jj= 1,nbfij(2)
+            work(1:5)= ecptmp(jj,1:5)
+            ecptmp(jj,1)= work(3)
+            ecptmp(jj,2)= work(4)
+            ecptmp(jj,3)= work(2)
+            ecptmp(jj,4)= work(5)
+            ecptmp(jj,5)= work(1)
+          enddo
+!
         case(6)
           do jj= 1,nbfij(2)
-            do ii= 4,6
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt3
-            enddo
+            work(1:6)= ecptmp(jj,1:6)
+            ecptmp(jj,1)= work(1)
+            ecptmp(jj,2)= work(4)*sqrt3
+            ecptmp(jj,3)= work(5)*sqrt3
+            ecptmp(jj,4)= work(2)
+            ecptmp(jj,5)= work(6)*sqrt3
+            ecptmp(jj,6)= work(3)
           enddo
+!ishimura
+          do jj= 1,nbfij(2)
+            work(1:6)= ecptmp(jj,1:6)
+            ecptmp(jj,1)=work(1)
+            ecptmp(jj,2)=work(4)
+            ecptmp(jj,3)=work(6)
+            ecptmp(jj,4)=work(2)
+            ecptmp(jj,5)=work(3)
+            ecptmp(jj,6)=work(5)
+          enddo
+!
 ! F function
         case(7)
           do jj= 1,nbfij(2)
@@ -944,21 +1269,55 @@ end
               work(ii)= ecptmp(jj,ii)*sqrt5
             enddo
             work(10)= ecptmp(jj,10)*sqrt15
-            ecptmp(jj,1)=( two*work(3)-three*work(5)-three*work(7))*facf4
-            ecptmp(jj,2)=(-work(1)-work(6)+four*work(8)           )*facf3
+            ecptmp(jj,1)=(-work(2)+three*work(4)                  )*facf1
+            ecptmp(jj,2)=  work(10)
             ecptmp(jj,3)=(-work(2)-work(4)+four*work(9)           )*facf3
-            ecptmp(jj,4)=( work(5)-work(7)                        )*facf2
-            ecptmp(jj,5)=  work(10)
-            ecptmp(jj,6)=( work(1)-three*work(6)                  )*facf1
-            ecptmp(jj,7)=(-work(2)+three*work(4)                  )*facf1
+            ecptmp(jj,4)=( two*work(3)-three*work(5)-three*work(7))*facf4
+            ecptmp(jj,5)=(-work(1)-work(6)+four*work(8)           )*facf3
+            ecptmp(jj,6)=( work(5)-work(7)                        )*facf2
+            ecptmp(jj,7)=( work(1)-three*work(6)                  )*facf1
           enddo
+!ishimura
+          do jj= 1,nbfij(2)
+            work(1:7)= ecptmp(jj,1:7)
+            ecptmp(jj,1)= work(4)
+            ecptmp(jj,2)= work(5)
+            ecptmp(jj,3)= work(3)
+            ecptmp(jj,4)= work(6)
+            ecptmp(jj,5)= work(2)
+            ecptmp(jj,6)= work(7)
+            ecptmp(jj,7)= work(1)
+          enddo
+!
         case(10)
           do jj= 1,nbfij(2)
-            do ii= 4,9
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt5
-            enddo
-            ecptmp(jj,10)= ecptmp(jj,10)*sqrt15
+            work(1:10)= ecptmp(jj,1:10)
+            ecptmp(jj, 1)= work( 1)
+            ecptmp(jj, 2)= work( 4)*sqrt5
+            ecptmp(jj, 3)= work( 5)*sqrt5
+            ecptmp(jj, 4)= work( 6)*sqrt5
+            ecptmp(jj, 5)= work(10)*sqrt15
+            ecptmp(jj, 6)= work( 8)*sqrt5
+            ecptmp(jj, 7)= work( 2)
+            ecptmp(jj, 8)= work( 7)*sqrt5
+            ecptmp(jj, 9)= work( 9)*sqrt5
+            ecptmp(jj,10)= work( 3)
           enddo
+!ishimura
+          do jj= 1,nbfij(2)
+            work(1:10)= ecptmp(jj,1:10)
+            ecptmp(jj, 1)= work( 1)
+            ecptmp(jj, 2)= work( 7)
+            ecptmp(jj, 3)= work(10)
+            ecptmp(jj, 4)= work( 2)
+            ecptmp(jj, 5)= work( 3)
+            ecptmp(jj, 6)= work( 4)
+            ecptmp(jj, 7)= work( 8)
+            ecptmp(jj, 8)= work( 6)
+            ecptmp(jj, 9)= work( 9)
+            ecptmp(jj,10)= work( 5)
+          enddo
+!
 ! G function
         case(9)
           do jj= 1,nbfij(2)
@@ -974,29 +1333,70 @@ end
             do ii= 13,15
               work(ii)= ecptmp(jj,ii)*sqrt35
             enddo
-            ecptmp(jj,1)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+            ecptmp(jj,1)=(work(4)-work(6))*facg7
+            ecptmp(jj,2)=(-work(7)+work(13)*three)*facg2
+            ecptmp(jj,3)=(-work(4)-work(6)+work(15)*six)*facg6
+            ecptmp(jj,4)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+            ecptmp(jj,5)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
 &                       -work(11)*p24-work(12)*p24)*facg5
-            ecptmp(jj,2)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
-            ecptmp(jj,3)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
-            ecptmp(jj,4)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
-            ecptmp(jj,5)=(-work(4)-work(6)+work(15)*six)*facg6
-            ecptmp(jj,6)=(work(5)-work(14)*three)*facg2
-            ecptmp(jj,7)=(-work(7)+work(13)*three)*facg2
-            ecptmp(jj,8)=(work(1)+work(2)-work(10)*six)*facg1
-            ecptmp(jj,9)=(work(4)-work(6))*facg7
+            ecptmp(jj,6)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+            ecptmp(jj,7)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+            ecptmp(jj,8)=(work(5)-work(14)*three)*facg2
+            ecptmp(jj,9)=(work(1)+work(2)-work(10)*six)*facg1
           enddo
+!ishimura
+          do jj= 1,nbfij(2)
+            work(1:9)= ecptmp(jj,1:9)
+            ecptmp(jj,1)= work(5)
+            ecptmp(jj,2)= work(6)
+            ecptmp(jj,3)= work(4)
+            ecptmp(jj,4)= work(7)
+            ecptmp(jj,5)= work(3)
+            ecptmp(jj,6)= work(8)
+            ecptmp(jj,7)= work(2)
+            ecptmp(jj,8)= work(9)
+            ecptmp(jj,9)= work(1)
+          enddo
+!
         case(15)
           do jj= 1,nbfij(2)
-            do ii= 4,9
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt7
-            enddo
-            do ii= 10,12
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35third
-            enddo
-            do ii= 13,15
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35
-            enddo
+            work(1:15)= ecptmp(jj,1:15)
+            ecptmp(jj, 1)= work( 1)
+            ecptmp(jj, 2)= work( 4)*sqrt7
+            ecptmp(jj, 3)= work( 5)*sqrt7
+            ecptmp(jj, 4)= work(10)*sqrt35third
+            ecptmp(jj, 5)= work(13)*sqrt35
+            ecptmp(jj, 6)= work(11)*sqrt35third
+            ecptmp(jj, 7)= work( 6)*sqrt7
+            ecptmp(jj, 8)= work(14)*sqrt35
+            ecptmp(jj, 9)= work(15)*sqrt35
+            ecptmp(jj,10)= work( 8)*sqrt7
+            ecptmp(jj,11)= work( 2)
+            ecptmp(jj,12)= work( 7)*sqrt7
+            ecptmp(jj,13)= work(12)*sqrt35third
+            ecptmp(jj,14)= work( 9)*sqrt7
+            ecptmp(jj,15)= work( 3)
           enddo
+!ishimura
+          do jj= 1,nbfij(2)
+            work(1:15)= ecptmp(jj,1:15)
+            ecptmp(jj, 1)= work( 1)
+            ecptmp(jj, 2)= work(11)
+            ecptmp(jj, 3)= work(15)
+            ecptmp(jj, 4)= work( 2)
+            ecptmp(jj, 5)= work( 3)
+            ecptmp(jj, 6)= work( 7)
+            ecptmp(jj, 7)= work(12)
+            ecptmp(jj, 8)= work(10)
+            ecptmp(jj, 9)= work(14)
+            ecptmp(jj,10)= work( 4)
+            ecptmp(jj,11)= work( 6)
+            ecptmp(jj,12)= work(13)
+            ecptmp(jj,13)= work( 5)
+            ecptmp(jj,14)= work( 8)
+            ecptmp(jj,15)= work( 9)
+          enddo
+!
       end select
 !
       do ii= 1,nbfij(1)
@@ -1396,18 +1796,43 @@ end
             do jj= 1,6
               work(jj)= ecptmp(jj,ii)
             enddo
-            ecptmp(1,ii)=(work(3)*two-work(1)-work(2))*half
-            ecptmp(2,ii)= work(5)*sqrt3
-            ecptmp(3,ii)= work(6)*sqrt3
-            ecptmp(4,ii)=(work(1)-work(2))*sqrt3h
-            ecptmp(5,ii)= work(4)*sqrt3
+            ecptmp(1,ii)= work(4)*sqrt3
+            ecptmp(2,ii)= work(6)*sqrt3
+            ecptmp(3,ii)=(work(3)*two-work(1)-work(2))*half
+            ecptmp(4,ii)= work(5)*sqrt3
+            ecptmp(5,ii)=(work(1)-work(2))*sqrt3h
           enddo
+!ishimura
+          do ii= 1,ncarti
+            work(1:5)= ecptmp(1:5,ii)
+            ecptmp(1,ii)= work(3)
+            ecptmp(2,ii)= work(4)
+            ecptmp(3,ii)= work(2)
+            ecptmp(4,ii)= work(5)
+            ecptmp(5,ii)= work(1)
+          enddo
+!
         case(6)
           do ii= 1,ncarti
-            do jj= 4,6
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt3
-            enddo
+            work(1:6)= ecptmp(1:6,ii)
+            ecptmp(1,ii)= work(1)
+            ecptmp(2,ii)= work(4)*sqrt3
+            ecptmp(3,ii)= work(5)*sqrt3
+            ecptmp(4,ii)= work(2)
+            ecptmp(5,ii)= work(6)*sqrt3
+            ecptmp(6,ii)= work(3)
           enddo
+!ishimura
+          do ii= 1,ncarti
+            work(1:6)= ecptmp(1:6,ii)
+            ecptmp(1,ii)=work(1)
+            ecptmp(2,ii)=work(4)
+            ecptmp(3,ii)=work(6)
+            ecptmp(4,ii)=work(2)
+            ecptmp(5,ii)=work(3)
+            ecptmp(6,ii)=work(5)
+          enddo
+!
 ! F function
         case(7)
           do ii= 1,ncarti
@@ -1418,21 +1843,55 @@ end
               work(jj)= ecptmp(jj,ii)*sqrt5
             enddo
             work(10)= ecptmp(10,ii)*sqrt15
-            ecptmp(1,ii)=( two*work(3)-three*work(5)-three*work(7))*facf4
-            ecptmp(2,ii)=(-work(1)-work(6)+four*work(8)           )*facf3
+            ecptmp(1,ii)=(-work(2)+three*work(4)                  )*facf1
+            ecptmp(2,ii)=  work(10)
             ecptmp(3,ii)=(-work(2)-work(4)+four*work(9)           )*facf3
-            ecptmp(4,ii)=( work(5)-work(7)                        )*facf2
-            ecptmp(5,ii)=  work(10)
-            ecptmp(6,ii)=( work(1)-three*work(6)                  )*facf1
-            ecptmp(7,ii)=(-work(2)+three*work(4)                  )*facf1
+            ecptmp(4,ii)=( two*work(3)-three*work(5)-three*work(7))*facf4
+            ecptmp(5,ii)=(-work(1)-work(6)+four*work(8)           )*facf3
+            ecptmp(6,ii)=( work(5)-work(7)                        )*facf2
+            ecptmp(7,ii)=( work(1)-three*work(6)                  )*facf1
           enddo
+!ishimura
+          do ii= 1,ncarti
+            work(1:7)= ecptmp(1:7,ii)
+            ecptmp(1,ii)= work(4)
+            ecptmp(2,ii)= work(5)
+            ecptmp(3,ii)= work(3)
+            ecptmp(4,ii)= work(6)
+            ecptmp(5,ii)= work(2)
+            ecptmp(6,ii)= work(7)
+            ecptmp(7,ii)= work(1)
+          enddo
+!
         case(10)
           do ii= 1,ncarti
-            do jj= 4,9
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt5
-            enddo
-            ecptmp(10,ii)= ecptmp(10,ii)*sqrt15
+            work(1:10)= ecptmp(1:10,ii)
+            ecptmp( 1,ii)= work( 1)
+            ecptmp( 2,ii)= work( 4)*sqrt5
+            ecptmp( 3,ii)= work( 5)*sqrt5
+            ecptmp( 4,ii)= work( 6)*sqrt5
+            ecptmp( 5,ii)= work(10)*sqrt15
+            ecptmp( 6,ii)= work( 8)*sqrt5
+            ecptmp( 7,ii)= work( 2)
+            ecptmp( 8,ii)= work( 7)*sqrt5
+            ecptmp( 9,ii)= work( 9)*sqrt5
+            ecptmp(10,ii)= work( 3)
           enddo
+!ishimura
+          do ii= 1,ncarti
+            work(1:10)= ecptmp(1:10,ii)
+            ecptmp( 1,ii)= work( 1)
+            ecptmp( 2,ii)= work( 7)
+            ecptmp( 3,ii)= work(10)
+            ecptmp( 4,ii)= work( 2)
+            ecptmp( 5,ii)= work( 3)
+            ecptmp( 6,ii)= work( 4)
+            ecptmp( 7,ii)= work( 8)
+            ecptmp( 8,ii)= work( 6)
+            ecptmp( 9,ii)= work( 9)
+            ecptmp(10,ii)= work( 5)
+          enddo
+!
 ! G function
         case(9)
           do ii= 1,ncarti
@@ -1448,29 +1907,70 @@ end
             do jj= 13,15
               work(jj)= ecptmp(jj,ii)*sqrt35
             enddo
-            ecptmp(1,ii)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+            ecptmp(1,ii)=(work(4)-work(6))*facg7
+            ecptmp(2,ii)=(-work(7)+work(13)*three)*facg2
+            ecptmp(3,ii)=(-work(4)-work(6)+work(15)*six)*facg6
+            ecptmp(4,ii)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+            ecptmp(5,ii)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
 &                        -work(11)*p24-work(12)*p24)*facg5
-            ecptmp(2,ii)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
-            ecptmp(3,ii)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
-            ecptmp(4,ii)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
-            ecptmp(5,ii)=(-work(4)-work(6)+work(15)*six)*facg6
-            ecptmp(6,ii)=(work(5)-work(14)*three)*facg2
-            ecptmp(7,ii)=(-work(7)+work(13)*three)*facg2
-            ecptmp(8,ii)=(work(1)+work(2)-work(10)*six)*facg1
-            ecptmp(9,ii)=(work(4)-work(6))*facg7
+            ecptmp(6,ii)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+            ecptmp(7,ii)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+            ecptmp(8,ii)=(work(5)-work(14)*three)*facg2
+            ecptmp(9,ii)=(work(1)+work(2)-work(10)*six)*facg1
           enddo
+!ishimura
+          do ii= 1,ncarti
+            work(1:9)= ecptmp(1:9,ii)
+            ecptmp(1,ii)= work(5)
+            ecptmp(2,ii)= work(6)
+            ecptmp(3,ii)= work(4)
+            ecptmp(4,ii)= work(7)
+            ecptmp(5,ii)= work(3)
+            ecptmp(6,ii)= work(8)
+            ecptmp(7,ii)= work(2)
+            ecptmp(8,ii)= work(9)
+            ecptmp(9,ii)= work(1)
+          enddo
+!
         case(15)
           do ii= 1,ncarti
-            do jj= 4,9
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt7
-            enddo
-            do jj= 10,12
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35third
-            enddo
-            do jj= 13,15
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35
-            enddo
+            work(1:15)= ecptmp(1:15,ii)
+            ecptmp( 1,ii)= work( 1)
+            ecptmp( 2,ii)= work( 4)*sqrt7
+            ecptmp( 3,ii)= work( 5)*sqrt7
+            ecptmp( 4,ii)= work(10)*sqrt35third
+            ecptmp( 5,ii)= work(13)*sqrt35
+            ecptmp( 6,ii)= work(11)*sqrt35third
+            ecptmp( 7,ii)= work( 6)*sqrt7
+            ecptmp( 8,ii)= work(14)*sqrt35
+            ecptmp( 9,ii)= work(15)*sqrt35
+            ecptmp(10,ii)= work( 8)*sqrt7
+            ecptmp(11,ii)= work( 2)
+            ecptmp(12,ii)= work( 7)*sqrt7
+            ecptmp(13,ii)= work(12)*sqrt35third
+            ecptmp(14,ii)= work( 9)*sqrt7
+            ecptmp(15,ii)= work( 3)
           enddo
+!
+          do ii= 1,ncarti
+            work(1:15)= ecptmp(1:15,ii)
+            ecptmp( 1,ii)= work( 1)
+            ecptmp( 2,ii)= work(11)
+            ecptmp( 3,ii)= work(15)
+            ecptmp( 4,ii)= work( 2)
+            ecptmp( 5,ii)= work( 3)
+            ecptmp( 6,ii)= work( 7)
+            ecptmp( 7,ii)= work(12)
+            ecptmp( 8,ii)= work(10)
+            ecptmp( 9,ii)= work(14)
+            ecptmp(10,ii)= work( 4)
+            ecptmp(11,ii)= work( 6)
+            ecptmp(12,ii)= work(13)
+            ecptmp(13,ii)= work( 5)
+            ecptmp(14,ii)= work( 8)
+            ecptmp(15,ii)= work( 9)
+          enddo
+!
       end select
 !
 ! Ket part
@@ -1482,18 +1982,43 @@ end
             do ii= 1,6
               work(ii)= ecptmp(jj,ii)
             enddo
-            ecptmp(jj,1)=(work(3)*two-work(1)-work(2))*half
-            ecptmp(jj,2)= work(5)*sqrt3
-            ecptmp(jj,3)= work(6)*sqrt3
-            ecptmp(jj,4)=(work(1)-work(2))*sqrt3h
-            ecptmp(jj,5)= work(4)*sqrt3
+            ecptmp(jj,1)= work(4)*sqrt3
+            ecptmp(jj,2)= work(6)*sqrt3
+            ecptmp(jj,3)=(work(3)*two-work(1)-work(2))*half
+            ecptmp(jj,4)= work(5)*sqrt3
+            ecptmp(jj,5)=(work(1)-work(2))*sqrt3h
           enddo
+!ishimura
+          do jj= 1,nbfij(2)
+            work(1:5)= ecptmp(jj,1:5)
+            ecptmp(jj,1)= work(3)
+            ecptmp(jj,2)= work(4)
+            ecptmp(jj,3)= work(2)
+            ecptmp(jj,4)= work(5)
+            ecptmp(jj,5)= work(1)
+          enddo
+!
         case(6)
           do jj= 1,nbfij(2)
-            do ii= 4,6
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt3
-            enddo
+            work(1:6)= ecptmp(jj,1:6)
+            ecptmp(jj,1)= work(1)
+            ecptmp(jj,2)= work(4)*sqrt3
+            ecptmp(jj,3)= work(5)*sqrt3
+            ecptmp(jj,4)= work(2)
+            ecptmp(jj,5)= work(6)*sqrt3
+            ecptmp(jj,6)= work(3)
           enddo
+!ishimura
+          do jj= 1,nbfij(2)
+            work(1:6)= ecptmp(jj,1:6)
+            ecptmp(jj,1)=work(1)
+            ecptmp(jj,2)=work(4)
+            ecptmp(jj,3)=work(6)
+            ecptmp(jj,4)=work(2)
+            ecptmp(jj,5)=work(3)
+            ecptmp(jj,6)=work(5)
+          enddo
+!
 ! F function
         case(7)
           do jj= 1,nbfij(2)
@@ -1504,21 +2029,55 @@ end
               work(ii)= ecptmp(jj,ii)*sqrt5
             enddo
             work(10)= ecptmp(jj,10)*sqrt15
-            ecptmp(jj,1)=( two*work(3)-three*work(5)-three*work(7))*facf4
-            ecptmp(jj,2)=(-work(1)-work(6)+four*work(8)           )*facf3
+            ecptmp(jj,1)=(-work(2)+three*work(4)                  )*facf1
+            ecptmp(jj,2)=  work(10)
             ecptmp(jj,3)=(-work(2)-work(4)+four*work(9)           )*facf3
-            ecptmp(jj,4)=( work(5)-work(7)                        )*facf2
-            ecptmp(jj,5)=  work(10)
-            ecptmp(jj,6)=( work(1)-three*work(6)                  )*facf1
-            ecptmp(jj,7)=(-work(2)+three*work(4)                  )*facf1
+            ecptmp(jj,4)=( two*work(3)-three*work(5)-three*work(7))*facf4
+            ecptmp(jj,5)=(-work(1)-work(6)+four*work(8)           )*facf3
+            ecptmp(jj,6)=( work(5)-work(7)                        )*facf2
+            ecptmp(jj,7)=( work(1)-three*work(6)                  )*facf1
           enddo
+!ishimura
+          do jj= 1,nbfij(2)
+            work(1:7)= ecptmp(jj,1:7)
+            ecptmp(jj,1)= work(4)
+            ecptmp(jj,2)= work(5)
+            ecptmp(jj,3)= work(3)
+            ecptmp(jj,4)= work(6)
+            ecptmp(jj,5)= work(2)
+            ecptmp(jj,6)= work(7)
+            ecptmp(jj,7)= work(1)
+          enddo
+!
         case(10)
           do jj= 1,nbfij(2)
-            do ii= 4,9
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt5
-            enddo
-            ecptmp(jj,10)= ecptmp(jj,10)*sqrt15
+            work(1:10)= ecptmp(jj,1:10)
+            ecptmp(jj, 1)= work( 1)
+            ecptmp(jj, 2)= work( 4)*sqrt5
+            ecptmp(jj, 3)= work( 5)*sqrt5
+            ecptmp(jj, 4)= work( 6)*sqrt5
+            ecptmp(jj, 5)= work(10)*sqrt15
+            ecptmp(jj, 6)= work( 8)*sqrt5
+            ecptmp(jj, 7)= work( 2)
+            ecptmp(jj, 8)= work( 7)*sqrt5
+            ecptmp(jj, 9)= work( 9)*sqrt5
+            ecptmp(jj,10)= work( 3)
           enddo
+!ishimura
+          do jj= 1,nbfij(2)
+            work(1:10)= ecptmp(jj,1:10)
+            ecptmp(jj, 1)= work( 1)
+            ecptmp(jj, 2)= work( 7)
+            ecptmp(jj, 3)= work(10)
+            ecptmp(jj, 4)= work( 2)
+            ecptmp(jj, 5)= work( 3)
+            ecptmp(jj, 6)= work( 4)
+            ecptmp(jj, 7)= work( 8)
+            ecptmp(jj, 8)= work( 6)
+            ecptmp(jj, 9)= work( 9)
+            ecptmp(jj,10)= work( 5)
+          enddo
+!
 ! G function
         case(9)
           do jj= 1,nbfij(2)
@@ -1534,29 +2093,70 @@ end
             do ii= 13,15
               work(ii)= ecptmp(jj,ii)*sqrt35
             enddo
-            ecptmp(jj,1)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+            ecptmp(jj,1)=(work(4)-work(6))*facg7
+            ecptmp(jj,2)=(-work(7)+work(13)*three)*facg2
+            ecptmp(jj,3)=(-work(4)-work(6)+work(15)*six)*facg6
+            ecptmp(jj,4)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+            ecptmp(jj,5)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
 &                       -work(11)*p24-work(12)*p24)*facg5
-            ecptmp(jj,2)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
-            ecptmp(jj,3)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
-            ecptmp(jj,4)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
-            ecptmp(jj,5)=(-work(4)-work(6)+work(15)*six)*facg6
-            ecptmp(jj,6)=(work(5)-work(14)*three)*facg2
-            ecptmp(jj,7)=(-work(7)+work(13)*three)*facg2
-            ecptmp(jj,8)=(work(1)+work(2)-work(10)*six)*facg1
-            ecptmp(jj,9)=(work(4)-work(6))*facg7
+            ecptmp(jj,6)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+            ecptmp(jj,7)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+            ecptmp(jj,8)=(work(5)-work(14)*three)*facg2
+            ecptmp(jj,9)=(work(1)+work(2)-work(10)*six)*facg1
           enddo
+!ishimura
+          do jj= 1,nbfij(2)
+            work(1:9)= ecptmp(jj,1:9)
+            ecptmp(jj,1)= work(5)
+            ecptmp(jj,2)= work(6)
+            ecptmp(jj,3)= work(4)
+            ecptmp(jj,4)= work(7)
+            ecptmp(jj,5)= work(3)
+            ecptmp(jj,6)= work(8)
+            ecptmp(jj,7)= work(2)
+            ecptmp(jj,8)= work(9)
+            ecptmp(jj,9)= work(1)
+          enddo
+!
         case(15)
           do jj= 1,nbfij(2)
-            do ii= 4,9
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt7
-            enddo
-            do ii= 10,12
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35third
-            enddo
-            do ii= 13,15
-              ecptmp(jj,ii)= ecptmp(jj,ii)*sqrt35
-            enddo
+            work(1:15)= ecptmp(jj,1:15)
+            ecptmp(jj, 1)= work( 1)
+            ecptmp(jj, 2)= work( 4)*sqrt7
+            ecptmp(jj, 3)= work( 5)*sqrt7
+            ecptmp(jj, 4)= work(10)*sqrt35third
+            ecptmp(jj, 5)= work(13)*sqrt35
+            ecptmp(jj, 6)= work(11)*sqrt35third
+            ecptmp(jj, 7)= work( 6)*sqrt7
+            ecptmp(jj, 8)= work(14)*sqrt35
+            ecptmp(jj, 9)= work(15)*sqrt35
+            ecptmp(jj,10)= work( 8)*sqrt7
+            ecptmp(jj,11)= work( 2)
+            ecptmp(jj,12)= work( 7)*sqrt7
+            ecptmp(jj,13)= work(12)*sqrt35third
+            ecptmp(jj,14)= work( 9)*sqrt7
+            ecptmp(jj,15)= work( 3)
           enddo
+!ishimura
+          do jj= 1,nbfij(2)
+            work(1:15)= ecptmp(jj,1:15)
+            ecptmp(jj, 1)= work( 1)
+            ecptmp(jj, 2)= work(11)
+            ecptmp(jj, 3)= work(15)
+            ecptmp(jj, 4)= work( 2)
+            ecptmp(jj, 5)= work( 3)
+            ecptmp(jj, 6)= work( 7)
+            ecptmp(jj, 7)= work(12)
+            ecptmp(jj, 8)= work(10)
+            ecptmp(jj, 9)= work(14)
+            ecptmp(jj,10)= work( 4)
+            ecptmp(jj,11)= work( 6)
+            ecptmp(jj,12)= work(13)
+            ecptmp(jj,13)= work( 5)
+            ecptmp(jj,14)= work( 8)
+            ecptmp(jj,15)= work( 9)
+          enddo
+!
       end select
 !
       do ii= 1,nbfij(1)
