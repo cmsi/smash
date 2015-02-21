@@ -1660,7 +1660,7 @@ end
       use modunit, only : tobohr
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
-      integer :: nao3, nshell3, maxdim, maxfunc(0:6), iter, i, itsub, itdiis
+      integer :: nao3, nshell3, maxdim, maxfunc(0:6), numwork, iter, i, itsub, itdiis
       integer :: itextra, itsoscf, nocca, nvira, noccb, nvirb
       integer :: idis(nproc2,14), isize1, isize2, isize3, iatom
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
@@ -1692,6 +1692,7 @@ end
       noccb= nelecb
       nvirb= nmo-nelecb
       maxdim=maxfunc(maxval(mtype(1:nshell)))
+      numwork= max(nao3*2,(neleca+nelecb)*nao)
 !
 ! Distribute fock and error arrays for DIIS
 !
@@ -1699,9 +1700,9 @@ end
 !
 ! Set arrays
 !
-      call memset(nao3*8+nshell3)
+      call memset(nao3*6+nshell3+numwork)
       allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
-&              dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(nao3*2))
+&              dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(numwork))
       call memset(nao3*2+natom*5+6*natom*natom+2*nrad+4*nleb+natom*nrad*nleb+4*nao &
 &                 +4*nocca+4*noccb)
       allocate(fockda(nao3),fockdb(nao3),rad(natom),atomvec(5*natom*natom), &
@@ -1994,7 +1995,7 @@ end
 !
       deallocate(focka,fockb,fockpreva,fockprevb, &
 &                dmtrxpreva,dmtrxprevb,dmax,work)
-      call memunset(nao3*8+nshell3)
+      call memunset(nao3*6+nshell3+numwork)
       return
 end
 
