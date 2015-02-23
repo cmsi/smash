@@ -194,10 +194,9 @@ end
       use modmolecule, only : natom, coord
       implicit none
       integer,intent(in) :: ish, jsh
-      integer :: ix(21,0:5), iy(21,0:5), iz(21,0:5)
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, nprimi, nprimj, nangi, nangj
       integer :: nbfi, nbfj, iprim, jprim, ncarti, ncartj, i, j, iang, jang, ii, ij
-      integer :: isx, jsx, isy, jsy, isz, jsz, ncart(0:6)
+      integer :: ix, jx, iy, jy, iz, jz, ncart(0:6)
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: ewdmtrx(nao*(nao+1)/2)
       real(8),intent(inout) :: egrad(3,natom)
@@ -206,24 +205,6 @@ end
       real(8) :: xyzint(3), sx(0:7,0:6,2), sy(0:7,0:6,2), sz(0:7,0:6,2)
       real(8) :: dsint(28,28,3)
       data ncart/1,3,6,10,15,21,28/
-      data ix/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             2,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             3,0,0,2,2,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0, &
-&             4,0,0,3,3,1,0,1,0,2,2,0,2,1,1,0,0,0,0,0,0, &
-&             5,0,0,4,4,1,0,1,0,3,3,3,2,1,0,2,1,0,2,2,1/
-      data iy/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,2,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,3,0,1,0,2,2,0,1,1,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,4,0,1,0,3,3,0,1,2,0,2,1,2,1,0,0,0,0,0,0, &
-&             0,5,0,1,0,4,4,0,1,2,1,0,3,3,3,0,1,2,2,1,2/
-      data iz/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,0,2,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,0,3,0,1,0,1,2,2,1,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,0,4,0,1,0,1,3,3,0,2,2,1,1,2,0,0,0,0,0,0, &
-&             0,0,5,0,1,0,1,4,4,0,1,2,0,1,2,3,3,3,1,2,2/
 !
       iatom = locatom(ish)
       jatom = locatom(jsh)
@@ -301,17 +282,21 @@ end
             enddo
           enddo
           cij= ci*cj
-          do i= 1,ncarti
-            isx= ix(i,nangi)
-            isy= iy(i,nangi)
-            isz= iz(i,nangi)
-            do j= 1,ncartj
-              jsx= ix(j,nangj)
-              jsy= iy(j,nangj)
-              jsz= iz(j,nangj)
-              dsint(j,i,1)= dsint(j,i,1)+cij*sx(jsx,isx,2)*sy(jsy,isy,1)*sz(jsz,isz,1)
-              dsint(j,i,2)= dsint(j,i,2)+cij*sx(jsx,isx,1)*sy(jsy,isy,2)*sz(jsz,isz,1)
-              dsint(j,i,3)= dsint(j,i,3)+cij*sx(jsx,isx,1)*sy(jsy,isy,1)*sz(jsz,isz,2)
+          i= 0
+          do ix= nangi,0,-1
+            do iy= nangi-ix,0,-1
+              iz= nangi-ix-iy
+              i= i+1
+              j= 0
+              do jx= nangj,0,-1
+                do jy= nangj-jx,0,-1
+                  jz= nangj-jx-jy
+                  j= j+1
+                  dsint(j,i,1)= dsint(j,i,1)+cij*sx(jx,ix,2)*sy(jy,iy,1)*sz(jz,iz,1)
+                  dsint(j,i,2)= dsint(j,i,2)+cij*sx(jx,ix,1)*sy(jy,iy,2)*sz(jz,iz,1)
+                  dsint(j,i,3)= dsint(j,i,3)+cij*sx(jx,ix,1)*sy(jy,iy,1)*sz(jz,iz,2)
+                enddo
+              enddo
             enddo
           enddo
         enddo
@@ -356,10 +341,9 @@ end
       use modmolecule, only : natom, coord
       implicit none
       integer,intent(in) :: ish, jsh
-      integer :: ix(21,0:5), iy(21,0:5), iz(21,0:5)
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, nprimi, nprimj, nangi, nangj
       integer :: nbfi, nbfj, iprim, jprim, ncarti, ncartj, i, j, iang, jang, ii
-      integer :: isx, jsx, isy, jsy, isz, jsz, ncart(0:6)
+      integer :: ix, jx, iy, jy, iz, jz, ncart(0:6)
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, half=0.5D+00
       real(8),intent(in) :: fulldmtrx(nao,nao)
       real(8),intent(inout) :: egrad(3,natom)
@@ -368,24 +352,6 @@ end
       real(8) :: xyzint(3), sx(0:7,0:8,4), sy(0:7,0:8,4), sz(0:7,0:8,4)
       real(8) :: dtint(28,28,3)
       data ncart/1,3,6,10,15,21,28/
-      data ix/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             2,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             3,0,0,2,2,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0, &
-&             4,0,0,3,3,1,0,1,0,2,2,0,2,1,1,0,0,0,0,0,0, &
-&             5,0,0,4,4,1,0,1,0,3,3,3,2,1,0,2,1,0,2,2,1/
-      data iy/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,2,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,3,0,1,0,2,2,0,1,1,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,4,0,1,0,3,3,0,1,2,0,2,1,2,1,0,0,0,0,0,0, &
-&             0,5,0,1,0,4,4,0,1,2,1,0,3,3,3,0,1,2,2,1,2/
-      data iz/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,0,2,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,0,3,0,1,0,1,2,2,1,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,0,4,0,1,0,1,3,3,0,2,2,1,1,2,0,0,0,0,0,0, &
-&             0,0,5,0,1,0,1,4,4,0,1,2,0,1,2,3,3,3,1,2,2/
 !
       iatom = locatom(ish)
       iloc  = locprim(ish)
@@ -498,23 +464,27 @@ end
           enddo
 !
           cij= ci*cj
-          do i= 1,ncarti
-            isx= ix(i,nangi)
-            isy= iy(i,nangi)
-            isz= iz(i,nangi)
-            do j= 1,ncartj
-              jsx= ix(j,nangj)
-              jsy= iy(j,nangj)
-              jsz= iz(j,nangj)
-              dtint(j,i,1)= dtint(j,i,1)+cij*(sx(jsx,isx,4)*sy(jsy,isy,1)*sz(jsz,isz,1) &
-&                                            +sx(jsx,isx,3)*sy(jsy,isy,2)*sz(jsz,isz,1) &
-&                                            +sx(jsx,isx,3)*sy(jsy,isy,1)*sz(jsz,isz,2)) 
-              dtint(j,i,2)= dtint(j,i,2)+cij*(sx(jsx,isx,2)*sy(jsy,isy,3)*sz(jsz,isz,1) &
-&                                            +sx(jsx,isx,1)*sy(jsy,isy,4)*sz(jsz,isz,1) &
-&                                            +sx(jsx,isx,1)*sy(jsy,isy,3)*sz(jsz,isz,2)) 
-              dtint(j,i,3)= dtint(j,i,3)+cij*(sx(jsx,isx,2)*sy(jsy,isy,1)*sz(jsz,isz,3) &
-&                                            +sx(jsx,isx,1)*sy(jsy,isy,2)*sz(jsz,isz,3) &
-&                                            +sx(jsx,isx,1)*sy(jsy,isy,1)*sz(jsz,isz,4)) 
+          i= 0
+          do ix= nangi,0,-1
+            do iy= nangi-ix,0,-1
+              iz= nangi-ix-iy
+              i= i+1
+              j= 0
+              do jx= nangj,0,-1
+                do jy= nangj-jx,0,-1
+                  jz= nangj-jx-jy
+                  j= j+1
+                  dtint(j,i,1)= dtint(j,i,1)+cij*(sx(jx,ix,4)*sy(jy,iy,1)*sz(jz,iz,1) &
+&                                                +sx(jx,ix,3)*sy(jy,iy,2)*sz(jz,iz,1) &
+&                                                +sx(jx,ix,3)*sy(jy,iy,1)*sz(jz,iz,2)) 
+                  dtint(j,i,2)= dtint(j,i,2)+cij*(sx(jx,ix,2)*sy(jy,iy,3)*sz(jz,iz,1) &
+&                                                +sx(jx,ix,1)*sy(jy,iy,4)*sz(jz,iz,1) &
+&                                                +sx(jx,ix,1)*sy(jy,iy,3)*sz(jz,iz,2)) 
+                  dtint(j,i,3)= dtint(j,i,3)+cij*(sx(jx,ix,2)*sy(jy,iy,1)*sz(jz,iz,3) &
+&                                                +sx(jx,ix,1)*sy(jy,iy,2)*sz(jz,iz,3) &
+&                                                +sx(jx,ix,1)*sy(jy,iy,1)*sz(jz,iz,4)) 
+                enddo
+              enddo
             enddo
           enddo
         enddo
@@ -648,68 +618,68 @@ end
         case (1)
           do i= 1,nbfij(1)
             dcint(1,i,1)= cint1(1,i)          -cint2(1,i)
-            dcint(2,i,1)= cint1(4,i)*sqrtthird
-            dcint(3,i,1)= cint1(5,i)*sqrtthird
-            dcint(1,i,2)= cint1(4,i)*sqrtthird
-            dcint(2,i,2)= cint1(2,i)          -cint2(1,i)
-            dcint(3,i,2)= cint1(6,i)*sqrtthird
-            dcint(1,i,3)= cint1(5,i)*sqrtthird
-            dcint(2,i,3)= cint1(6,i)*sqrtthird
-            dcint(3,i,3)= cint1(3,i)          -cint2(1,i)
+            dcint(2,i,1)= cint1(2,i)*sqrtthird
+            dcint(3,i,1)= cint1(3,i)*sqrtthird
+            dcint(1,i,2)= cint1(2,i)*sqrtthird
+            dcint(2,i,2)= cint1(4,i)          -cint2(1,i)
+            dcint(3,i,2)= cint1(5,i)*sqrtthird
+            dcint(1,i,3)= cint1(3,i)*sqrtthird
+            dcint(2,i,3)= cint1(5,i)*sqrtthird
+            dcint(3,i,3)= cint1(6,i)          -cint2(1,i)
           enddo
         case (2)
           do i= 1,nbfij(1)
             dcint(1,i,1)= cint1( 1,i)           -cint2(1,i)*two
-            dcint(2,i,1)= cint1( 6,i)*sqrtfifth
-            dcint(3,i,1)= cint1( 8,i)*sqrtfifth
-            dcint(4,i,1)= cint1( 4,i)*sqrt3fifth-cint2(2,i)*sqrt3
-            dcint(5,i,1)= cint1( 5,i)*sqrt3fifth-cint2(3,i)*sqrt3
-            dcint(6,i,1)= cint1(10,i)*sqrtfifth
-            dcint(1,i,2)= cint1( 4,i)*sqrtfifth
-            dcint(2,i,2)= cint1( 2,i)           -cint2(2,i)*two
-            dcint(3,i,2)= cint1( 9,i)*sqrtfifth
-            dcint(4,i,2)= cint1( 6,i)*sqrt3fifth-cint2(1,i)*sqrt3
-            dcint(5,i,2)= cint1(10,i)*sqrtfifth
-            dcint(6,i,2)= cint1( 7,i)*sqrt3fifth-cint2(3,i)*sqrt3
-            dcint(1,i,3)= cint1( 5,i)*sqrtfifth
-            dcint(2,i,3)= cint1( 7,i)*sqrtfifth
-            dcint(3,i,3)= cint1( 3,i)           -cint2(3,i)*two
-            dcint(4,i,3)= cint1(10,i)*sqrtfifth
-            dcint(5,i,3)= cint1( 8,i)*sqrt3fifth-cint2(1,i)*sqrt3
-            dcint(6,i,3)= cint1( 9,i)*sqrt3fifth-cint2(2,i)*sqrt3
+            dcint(2,i,1)= cint1( 2,i)*sqrt3fifth-cint2(2,i)*sqrt3
+            dcint(3,i,1)= cint1( 3,i)*sqrt3fifth-cint2(3,i)*sqrt3
+            dcint(4,i,1)= cint1( 4,i)*sqrtfifth
+            dcint(5,i,1)= cint1( 5,i)*sqrtfifth
+            dcint(6,i,1)= cint1( 6,i)*sqrtfifth
+            dcint(1,i,2)= cint1( 2,i)*sqrtfifth
+            dcint(2,i,2)= cint1( 4,i)*sqrt3fifth-cint2(1,i)*sqrt3
+            dcint(3,i,2)= cint1( 5,i)*sqrtfifth
+            dcint(4,i,2)= cint1( 7,i)           -cint2(2,i)*two
+            dcint(5,i,2)= cint1( 8,i)*sqrt3fifth-cint2(3,i)*sqrt3
+            dcint(6,i,2)= cint1( 9,i)*sqrtfifth
+            dcint(1,i,3)= cint1( 3,i)*sqrtfifth
+            dcint(2,i,3)= cint1( 5,i)*sqrtfifth
+            dcint(3,i,3)= cint1( 6,i)*sqrt3fifth-cint2(1,i)*sqrt3
+            dcint(4,i,3)= cint1( 8,i)*sqrtfifth
+            dcint(5,i,3)= cint1( 9,i)*sqrt3fifth-cint2(2,i)*sqrt3
+            dcint(6,i,3)= cint1(10,i)           -cint2(3,i)*two
           enddo
         case (3)
           do i= 1,nbfij(1)
             dcint( 1,i,1)= cint1( 1,i)             -cint2(1,i)*three
-            dcint( 2,i,1)= cint1( 6,i)*sqrtseventh
-            dcint( 3,i,1)= cint1( 8,i)*sqrtseventh
-            dcint( 4,i,1)= cint1( 4,i)*sqrt5seventh-cint2(4,i)*two*sqrt5third
-            dcint( 5,i,1)= cint1( 5,i)*sqrt5seventh-cint2(5,i)*two*sqrt5third
-            dcint( 6,i,1)= cint1(10,i)*sqrt3seventh-cint2(2,i)*sqrt5
-            dcint( 7,i,1)= cint1(14,i)*sqrtseventh
-            dcint( 8,i,1)= cint1(11,i)*sqrt3seventh-cint2(3,i)*sqrt5
-            dcint( 9,i,1)= cint1(15,i)*sqrtseventh
-            dcint(10,i,1)= cint1(13,i)*sqrt3seventh-cint2(6,i)*sqrt5
-            dcint( 1,i,2)= cint1( 4,i)*sqrtseventh
-            dcint( 2,i,2)= cint1( 2,i)             -cint2(2,i)*three
-            dcint( 3,i,2)= cint1( 9,i)*sqrtseventh
-            dcint( 4,i,2)= cint1(10,i)*sqrt3seventh-cint2(1,i)*sqrt5
-            dcint( 5,i,2)= cint1(13,i)*sqrtseventh
-            dcint( 6,i,2)= cint1( 6,i)*sqrt5seventh-cint2(4,i)*two*sqrt5third
-            dcint( 7,i,2)= cint1( 7,i)*sqrt5seventh-cint2(6,i)*two*sqrt5third
-            dcint( 8,i,2)= cint1(15,i)*sqrtseventh
-            dcint( 9,i,2)= cint1(12,i)*sqrt3seventh-cint2(3,i)*sqrt5
-            dcint(10,i,2)= cint1(14,i)*sqrt3seventh-cint2(5,i)*sqrt5
-            dcint( 1,i,3)= cint1( 5,i)*sqrtseventh
-            dcint( 2,i,3)= cint1( 7,i)*sqrtseventh
-            dcint( 3,i,3)= cint1( 3,i)             -cint2(3,i)*three
-            dcint( 4,i,3)= cint1(13,i)*sqrtseventh
-            dcint( 5,i,3)= cint1(11,i)*sqrt3seventh-cint2(1,i)*sqrt5
-            dcint( 6,i,3)= cint1(14,i)*sqrtseventh
-            dcint( 7,i,3)= cint1(12,i)*sqrt3seventh-cint2(2,i)*sqrt5
-            dcint( 8,i,3)= cint1( 8,i)*sqrt5seventh-cint2(5,i)*two*sqrt5third
-            dcint( 9,i,3)= cint1( 9,i)*sqrt5seventh-cint2(6,i)*two*sqrt5third
-            dcint(10,i,3)= cint1(15,i)*sqrt3seventh-cint2(4,i)*sqrt5
+            dcint( 2,i,1)= cint1( 2,i)*sqrt5seventh-cint2(2,i)*two*sqrt5third
+            dcint( 3,i,1)= cint1( 3,i)*sqrt5seventh-cint2(3,i)*two*sqrt5third
+            dcint( 4,i,1)= cint1( 4,i)*sqrt3seventh-cint2(4,i)*sqrt5
+            dcint( 5,i,1)= cint1( 5,i)*sqrt3seventh-cint2(5,i)*sqrt5
+            dcint( 6,i,1)= cint1( 6,i)*sqrt3seventh-cint2(6,i)*sqrt5
+            dcint( 7,i,1)= cint1( 7,i)*sqrtseventh
+            dcint( 8,i,1)= cint1( 8,i)*sqrtseventh
+            dcint( 9,i,1)= cint1( 9,i)*sqrtseventh
+            dcint(10,i,1)= cint1(10,i)*sqrtseventh
+            dcint( 1,i,2)= cint1( 2,i)*sqrtseventh
+            dcint( 2,i,2)= cint1( 4,i)*sqrt3seventh-cint2(1,i)*sqrt5
+            dcint( 3,i,2)= cint1( 5,i)*sqrtseventh
+            dcint( 4,i,2)= cint1( 7,i)*sqrt5seventh-cint2(2,i)*two*sqrt5third
+            dcint( 5,i,2)= cint1( 8,i)*sqrt3seventh-cint2(3,i)*sqrt5
+            dcint( 6,i,2)= cint1( 9,i)*sqrtseventh
+            dcint( 7,i,2)= cint1(11,i)             -cint2(4,i)*three
+            dcint( 8,i,2)= cint1(12,i)*sqrt5seventh-cint2(5,i)*two*sqrt5third
+            dcint( 9,i,2)= cint1(13,i)*sqrt3seventh-cint2(6,i)*sqrt5
+            dcint(10,i,2)= cint1(14,i)*sqrtseventh
+            dcint( 1,i,3)= cint1( 3,i)*sqrtseventh
+            dcint( 2,i,3)= cint1( 5,i)*sqrtseventh
+            dcint( 3,i,3)= cint1( 6,i)*sqrt3seventh-cint2(1,i)*sqrt5
+            dcint( 4,i,3)= cint1( 8,i)*sqrtseventh
+            dcint( 5,i,3)= cint1( 9,i)*sqrt3seventh-cint2(2,i)*sqrt5
+            dcint( 6,i,3)= cint1(10,i)*sqrt5seventh-cint2(3,i)*two*sqrt5third
+            dcint( 7,i,3)= cint1(12,i)*sqrtseventh
+            dcint( 8,i,3)= cint1(13,i)*sqrt3seventh-cint2(4,i)*sqrt5
+            dcint( 9,i,3)= cint1(14,i)*sqrt5seventh-cint2(5,i)*two*sqrt5third
+            dcint(10,i,3)= cint1(15,i)             -cint2(6,i)*three
           enddo
       end select
 !
@@ -720,11 +690,11 @@ end
             do j= 1,6
               work(j)= dcint(j,i,k)
             enddo
-            dcint(1,i,k)=(work(3)*two-work(1)-work(2))*half
+            dcint(1,i,k)= work(2)
             dcint(2,i,k)= work(5)
-            dcint(3,i,k)= work(6)
-            dcint(4,i,k)=(work(1)-work(2))*sqrt3h
-            dcint(5,i,k)= work(4)
+            dcint(3,i,k)=(work(6)*two-work(1)-work(4))*half
+            dcint(4,i,k)= work(3)
+            dcint(5,i,k)=(work(1)-work(4))*sqrt3h
           enddo
         enddo
       elseif(nbfij(2) == 7) then
@@ -733,13 +703,13 @@ end
             do j= 1,10
               work(j)= dcint(j,i,k)
             enddo
-            dcint(1,i,k)=( work(3)*two-work(5)*three-work(7)*three)*facf4
-            dcint(2,i,k)=(-work(1)-work(6)+work(8)*four           )*facf3
-            dcint(3,i,k)=(-work(2)-work(4)+work(9)*four           )*facf3
-            dcint(4,i,k)=( work(5)-work(7)                        )*facf2
-            dcint(5,i,k)=  work(10)
-            dcint(6,i,k)=( work(1)-work(6)*three                  )*facf1
-            dcint(7,i,k)=(-work(2)+work(4)*three                  )*facf1
+            dcint(1,i,k)=(-work(7)+work(2)*three                   )*facf1
+            dcint(2,i,k)=  work(5)
+            dcint(3,i,k)=(-work(7)-work(2)+work(9)*four            )*facf3
+            dcint(4,i,k)=( work(10)*two-work(3)*three-work(8)*three)*facf4
+            dcint(5,i,k)=(-work(1)-work(4)+work(6)*four            )*facf3
+            dcint(6,i,k)=( work(3)-work(8)                         )*facf2
+            dcint(7,i,k)=( work(1)-work(4)*three                   )*facf1
           enddo
         enddo
       endif
@@ -1381,40 +1351,40 @@ end
           r3(10)=r3(10)-ft(3)*pxy*pcxyz(3)
         enddo
         cint1(1,1)= r3( 1)+r2(1)*xyz(1)*two         +r1(1)*xx+r1(4)
-        cint1(2,1)= r3( 6)+r2(4)*xyz(2)*two         +r1(1)*yy+r1(4)
-        cint1(3,1)= r3( 8)+r2(5)*xyz(3)*two         +r1(1)*zz+r1(4)
-        cint1(4,1)= r3( 4)+r2(4)*xyz(1)+r2(1)*xyz(2)+r1(1)*xy
-        cint1(5,1)= r3( 5)+r2(5)*xyz(1)+r2(1)*xyz(3)+r1(1)*xz
-        cint1(6,1)= r3(10)+r2(5)*xyz(2)+r2(4)*xyz(3)+r1(1)*yz
+        cint1(2,1)= r3( 4)+r2(4)*xyz(1)+r2(1)*xyz(2)+r1(1)*xy
+        cint1(3,1)= r3( 5)+r2(5)*xyz(1)+r2(1)*xyz(3)+r1(1)*xz
+        cint1(4,1)= r3( 6)+r2(4)*xyz(2)*two         +r1(1)*yy+r1(4)
+        cint1(5,1)= r3(10)+r2(5)*xyz(2)+r2(4)*xyz(3)+r1(1)*yz
+        cint1(6,1)= r3( 8)+r2(5)*xyz(3)*two         +r1(1)*zz+r1(4)
         cint1(1,2)= r3( 4)+r2(4)*xyz(1)*two         +r1(2)*xx+r1(5)
-        cint1(2,2)= r3( 2)+r2(2)*xyz(2)*two         +r1(2)*yy+r1(5)
-        cint1(3,2)= r3( 9)+r2(6)*xyz(3)*two         +r1(2)*zz+r1(5)
-        cint1(4,2)= r3( 6)+r2(2)*xyz(1)+r2(4)*xyz(2)+r1(2)*xy
-        cint1(5,2)= r3(10)+r2(6)*xyz(1)+r2(4)*xyz(3)+r1(2)*xz
-        cint1(6,2)= r3( 7)+r2(6)*xyz(2)+r2(2)*xyz(3)+r1(2)*yz
+        cint1(2,2)= r3( 6)+r2(2)*xyz(1)+r2(4)*xyz(2)+r1(2)*xy
+        cint1(3,2)= r3(10)+r2(6)*xyz(1)+r2(4)*xyz(3)+r1(2)*xz
+        cint1(4,2)= r3( 2)+r2(2)*xyz(2)*two         +r1(2)*yy+r1(5)
+        cint1(5,2)= r3( 7)+r2(6)*xyz(2)+r2(2)*xyz(3)+r1(2)*yz
+        cint1(6,2)= r3( 9)+r2(6)*xyz(3)*two         +r1(2)*zz+r1(5)
         cint1(1,3)= r3( 5)+r2(5)*xyz(1)*two         +r1(3)*xx+r1(6)
-        cint1(2,3)= r3( 7)+r2(6)*xyz(2)*two         +r1(3)*yy+r1(6)
-        cint1(3,3)= r3( 3)+r2(3)*xyz(3)*two         +r1(3)*zz+r1(6)
-        cint1(4,3)= r3(10)+r2(6)*xyz(1)+r2(5)*xyz(2)+r1(3)*xy
-        cint1(5,3)= r3( 8)+r2(3)*xyz(1)+r2(5)*xyz(3)+r1(3)*xz
-        cint1(6,3)= r3( 9)+r2(3)*xyz(2)+r2(6)*xyz(3)+r1(3)*yz
+        cint1(2,3)= r3(10)+r2(6)*xyz(1)+r2(5)*xyz(2)+r1(3)*xy
+        cint1(3,3)= r3( 8)+r2(3)*xyz(1)+r2(5)*xyz(3)+r1(3)*xz
+        cint1(4,3)= r3( 7)+r2(6)*xyz(2)*two         +r1(3)*yy+r1(6)
+        cint1(5,3)= r3( 9)+r2(3)*xyz(2)+r2(6)*xyz(3)+r1(3)*yz
+        cint1(6,3)= r3( 3)+r2(3)*xyz(3)*two         +r1(3)*zz+r1(6)
 !
         if(nbfij(2) == 6) then
           do k= 1,3
-            cint1(4,k)= cint1(4,k)*sqrt3
+            cint1(2,k)= cint1(2,k)*sqrt3
+            cint1(3,k)= cint1(3,k)*sqrt3
             cint1(5,k)= cint1(5,k)*sqrt3
-            cint1(6,k)= cint1(6,k)*sqrt3
           enddo
         else
           do k= 1,3
             do j= 1,6
               work(j)= cint1(j,k)
             enddo
-            cint1(1,k)=(work(3)*two-work(1)-work(2))*half
+            cint1(1,k)= work(2)*sqrt3
             cint1(2,k)= work(5)*sqrt3
-            cint1(3,k)= work(6)*sqrt3
-            cint1(4,k)=(work(1)-work(2))*sqrt3h
-            cint1(5,k)= work(4)*sqrt3
+            cint1(3,k)=(work(6)*two-work(1)-work(4))*half
+            cint1(4,k)= work(3)*sqrt3
+            cint1(5,k)=(work(1)-work(4))*sqrt3h
           enddo
         endif
         do k= 1,3
@@ -1573,119 +1543,119 @@ end
         enddo
         cint1(1,1,1)=r4( 1)+r3( 1)*xyz(1)+r3(11)*xyz(1)*two+r2( 1)*xx*two+r2( 7)*xx &
 &                   +r2(13)*three+r1(1)*xyz(1)+r1(4)*xyz(1)*two+r1(7)*xx*xyz(1)
-        cint1(2,1,1)=r4(10)+r3( 6)*xyz(1)+r3(14)*xyz(2)*two+r2( 4)*xy*two+r2( 7)*yy &
-&                   +r2(13)+r1(1)*xyz(1)+r1(7)*yy*xyz(1)
-        cint1(3,1,1)=r4(11)+r3( 8)*xyz(1)+r3(15)*xyz(3)*two+r2( 5)*xz*two+r2( 7)*zz &
-&                   +r2(13)+r1(1)*xyz(1)+r1(7)*zz*xyz(1)
-        cint1(4,1,1)=r4( 4)+r3( 4)*xyz(1)+r3(14)*xyz(1)+r3(11)*xyz(2)+r2( 4)*xx &
+        cint1(2,1,1)=r4( 4)+r3( 4)*xyz(1)+r3(14)*xyz(1)+r3(11)*xyz(2)+r2( 4)*xx &
 &                   +r2( 1)*xy+r2( 7)*xy+r2(16)+r1(4)*xyz(2)+r1(7)*xy*xyz(1)
-        cint1(5,1,1)=r4( 5)+r3( 5)*xyz(1)+r3(15)*xyz(1)+r3(11)*xyz(3)+r2( 5)*xx &
+        cint1(3,1,1)=r4( 5)+r3( 5)*xyz(1)+r3(15)*xyz(1)+r3(11)*xyz(3)+r2( 5)*xx &
 &                   +r2( 1)*xz+r2( 7)*xz+r2(17)+r1(4)*xyz(3)+r1(7)*xz*xyz(1)
-        cint1(6,1,1)=r4(13)+r3(10)*xyz(1)+r3(15)*xyz(2)+r3(14)*xyz(3)+r2( 5)*xy &
+        cint1(4,1,1)=r4(10)+r3( 6)*xyz(1)+r3(14)*xyz(2)*two+r2( 4)*xy*two+r2( 7)*yy &
+&                   +r2(13)+r1(1)*xyz(1)+r1(7)*yy*xyz(1)
+        cint1(5,1,1)=r4(13)+r3(10)*xyz(1)+r3(15)*xyz(2)+r3(14)*xyz(3)+r2( 5)*xy &
 &                   +r2( 4)*xz+r2( 7)*yz+r1(7)*yz*xyz(1)
+        cint1(6,1,1)=r4(11)+r3( 8)*xyz(1)+r3(15)*xyz(3)*two+r2( 5)*xz*two+r2( 7)*zz &
+&                   +r2(13)+r1(1)*xyz(1)+r1(7)*zz*xyz(1)
         cint1(1,2,1)=r4( 4)+r3( 1)*xyz(2)+r3(14)*xyz(1)*two+r2( 1)*xy*two+r2(10)*xx &
 &                   +r2(16)+r1(1)*xyz(2)+r1(7)*xx*xyz(2)
-        cint1(2,2,1)=r4( 6)+r3( 6)*xyz(2)+r3(16)*xyz(2)*two+r2( 4)*yy*two+r2(10)*yy &
-&                   +r2(16)*three+r1(1)*xyz(2)+r1(4)*xyz(2)*two+r1(7)*yy*xyz(2)
-        cint1(3,2,1)=r4(15)+r3( 8)*xyz(2)+r3(20)*xyz(3)*two+r2( 5)*yz*two+r2(10)*zz &
-&                   +r2(16)+r1(1)*xyz(2)+r1(7)*zz*xyz(2)
-        cint1(4,2,1)=r4(10)+r3( 4)*xyz(2)+r3(16)*xyz(1)+r3(14)*xyz(2)+r2( 4)*xy &
+        cint1(2,2,1)=r4(10)+r3( 4)*xyz(2)+r3(16)*xyz(1)+r3(14)*xyz(2)+r2( 4)*xy &
 &                   +r2( 1)*yy+r2(10)*xy+r2(13)+r1(4)*xyz(1)+r1(7)*xy*xyz(2)
-        cint1(5,2,1)=r4(13)+r3( 5)*xyz(2)+r3(20)*xyz(1)+r3(14)*xyz(3)+r2( 5)*xy &
+        cint1(3,2,1)=r4(13)+r3( 5)*xyz(2)+r3(20)*xyz(1)+r3(14)*xyz(3)+r2( 5)*xy &
 &                   +r2( 1)*yz+r2(10)*xz+r1(7)*xz*xyz(2)
-        cint1(6,2,1)=r4(14)+r3(10)*xyz(2)+r3(20)*xyz(2)+r3(16)*xyz(3)+r2( 5)*yy &
+        cint1(4,2,1)=r4( 6)+r3( 6)*xyz(2)+r3(16)*xyz(2)*two+r2( 4)*yy*two+r2(10)*yy &
+&                   +r2(16)*three+r1(1)*xyz(2)+r1(4)*xyz(2)*two+r1(7)*yy*xyz(2)
+        cint1(5,2,1)=r4(14)+r3(10)*xyz(2)+r3(20)*xyz(2)+r3(16)*xyz(3)+r2( 5)*yy &
 &                   +r2( 4)*yz+r2(10)*yz+r2(17)+r1(4)*xyz(3)+r1(7)*yz*xyz(2)
+        cint1(6,2,1)=r4(15)+r3( 8)*xyz(2)+r3(20)*xyz(3)*two+r2( 5)*yz*two+r2(10)*zz &
+&                   +r2(16)+r1(1)*xyz(2)+r1(7)*zz*xyz(2)
         cint1(1,3,1)=r4( 5)+r3( 1)*xyz(3)+r3(15)*xyz(1)*two+r2( 1)*xz*two+r2(11)*xx &
 &                   +r2(17)+r1(1)*xyz(3)+r1(7)*xx*xyz(3)
-        cint1(2,3,1)=r4(14)+r3( 6)*xyz(3)+r3(20)*xyz(2)*two+r2( 4)*yz*two+r2(11)*yy &
-&                   +r2(17)+r1(1)*xyz(3)+r1(7)*yy*xyz(3)
-        cint1(3,3,1)=r4( 8)+r3( 8)*xyz(3)+r3(18)*xyz(3)*two+r2( 5)*zz*two+r2(11)*zz &
-&                   +r2(17)*three+r1(1)*xyz(3)+r1(4)*xyz(3)*two+r1(7)*zz*xyz(3)
-        cint1(4,3,1)=r4(13)+r3( 4)*xyz(3)+r3(20)*xyz(1)+r3(15)*xyz(2)+r2( 4)*xz &
+        cint1(2,3,1)=r4(13)+r3( 4)*xyz(3)+r3(20)*xyz(1)+r3(15)*xyz(2)+r2( 4)*xz &
 &                   +r2( 1)*yz+r2(11)*xy+r1(7)*xy*xyz(3)
-        cint1(5,3,1)=r4(11)+r3( 5)*xyz(3)+r3(18)*xyz(1)+r3(15)*xyz(3)+r2( 5)*xz &
+        cint1(3,3,1)=r4(11)+r3( 5)*xyz(3)+r3(18)*xyz(1)+r3(15)*xyz(3)+r2( 5)*xz &
 &                   +r2( 1)*zz+r2(11)*xz+r2(13)+r1(4)*xyz(1)+r1(7)*xz*xyz(3)
-        cint1(6,3,1)=r4(15)+r3(10)*xyz(3)+r3(18)*xyz(2)+r3(20)*xyz(3)+r2( 5)*yz &
+        cint1(4,3,1)=r4(14)+r3( 6)*xyz(3)+r3(20)*xyz(2)*two+r2( 4)*yz*two+r2(11)*yy &
+&                   +r2(17)+r1(1)*xyz(3)+r1(7)*yy*xyz(3)
+        cint1(5,3,1)=r4(15)+r3(10)*xyz(3)+r3(18)*xyz(2)+r3(20)*xyz(3)+r2( 5)*yz &
 &                   +r2( 4)*zz+r2(11)*yz+r2(16)+r1(4)*xyz(2)+r1(7)*yz*xyz(3)
+        cint1(6,3,1)=r4( 8)+r3( 8)*xyz(3)+r3(18)*xyz(3)*two+r2( 5)*zz*two+r2(11)*zz &
+&                   +r2(17)*three+r1(1)*xyz(3)+r1(4)*xyz(3)*two+r1(7)*zz*xyz(3)
         cint1(1,1,2)=r4( 4)+r3( 4)*xyz(1)+r3(14)*xyz(1)*two+r2( 4)*xx*two+r2(10)*xx &
 &                   +r2(16)*three+r1(2)*xyz(1)+r1(5)*xyz(1)*two+r1(8)*xx*xyz(1)
-        cint1(2,1,2)=r4( 6)+r3( 2)*xyz(1)+r3(16)*xyz(2)*two+r2( 2)*xy*two+r2(10)*yy &
-&                   +r2(16)+r1(2)*xyz(1)+r1(8)*yy*xyz(1)
-        cint1(3,1,2)=r4(15)+r3( 9)*xyz(1)+r3(20)*xyz(3)*two+r2( 6)*xz*two+r2(10)*zz &
-&                   +r2(16)+r1(2)*xyz(1)+r1(8)*zz*xyz(1)
-        cint1(4,1,2)=r4(10)+r3( 6)*xyz(1)+r3(16)*xyz(1)+r3(14)*xyz(2)+r2( 2)*xx &
+        cint1(2,1,2)=r4(10)+r3( 6)*xyz(1)+r3(16)*xyz(1)+r3(14)*xyz(2)+r2( 2)*xx &
 &                   +r2( 4)*xy+r2(10)*xy+r2(14)+r1(5)*xyz(2)+r1(8)*xy*xyz(1)
-        cint1(5,1,2)=r4(13)+r3(10)*xyz(1)+r3(20)*xyz(1)+r3(14)*xyz(3)+r2( 6)*xx &
+        cint1(3,1,2)=r4(13)+r3(10)*xyz(1)+r3(20)*xyz(1)+r3(14)*xyz(3)+r2( 6)*xx &
 &                   +r2( 4)*xz+r2(10)*xz+r2(18)+r1(5)*xyz(3)+r1(8)*xz*xyz(1)
-        cint1(6,1,2)=r4(14)+r3( 7)*xyz(1)+r3(20)*xyz(2)+r3(16)*xyz(3)+r2( 6)*xy &
+        cint1(4,1,2)=r4( 6)+r3( 2)*xyz(1)+r3(16)*xyz(2)*two+r2( 2)*xy*two+r2(10)*yy &
+&                   +r2(16)+r1(2)*xyz(1)+r1(8)*yy*xyz(1)
+        cint1(5,1,2)=r4(14)+r3( 7)*xyz(1)+r3(20)*xyz(2)+r3(16)*xyz(3)+r2( 6)*xy &
 &                   +r2( 2)*xz+r2(10)*yz+r1(8)*yz*xyz(1)
+        cint1(6,1,2)=r4(15)+r3( 9)*xyz(1)+r3(20)*xyz(3)*two+r2( 6)*xz*two+r2(10)*zz &
+&                   +r2(16)+r1(2)*xyz(1)+r1(8)*zz*xyz(1)
         cint1(1,2,2)=r4(10)+r3( 4)*xyz(2)+r3(16)*xyz(1)*two+r2( 4)*xy*two+r2( 8)*xx &
 &                   +r2(14)+r1(2)*xyz(2)+r1(8)*xx*xyz(2)
-        cint1(2,2,2)=r4( 2)+r3( 2)*xyz(2)+r3(12)*xyz(2)*two+r2( 2)*yy*two+r2( 8)*yy &
-&                   +r2(14)*three+r1(2)*xyz(2)+r1(5)*xyz(2)*two+r1(8)*yy*xyz(2)
-        cint1(3,2,2)=r4(12)+r3( 9)*xyz(2)+r3(17)*xyz(3)*two+r2( 6)*yz*two+r2( 8)*zz &
-&                   +r2(14)+r1(2)*xyz(2)+r1(8)*zz*xyz(2)
-        cint1(4,2,2)=r4( 6)+r3( 6)*xyz(2)+r3(12)*xyz(1)+r3(16)*xyz(2)+r2( 2)*xy &
+        cint1(2,2,2)=r4( 6)+r3( 6)*xyz(2)+r3(12)*xyz(1)+r3(16)*xyz(2)+r2( 2)*xy &
 &                   +r2( 4)*yy+r2( 8)*xy+r2(16)+r1(5)*xyz(1)+r1(8)*xy*xyz(2)
-        cint1(5,2,2)=r4(14)+r3(10)*xyz(2)+r3(17)*xyz(1)+r3(16)*xyz(3)+r2( 6)*xy &
+        cint1(3,2,2)=r4(14)+r3(10)*xyz(2)+r3(17)*xyz(1)+r3(16)*xyz(3)+r2( 6)*xy &
 &                   +r2( 4)*yz+r2( 8)*xz+r1(8)*xz*xyz(2)
-        cint1(6,2,2)=r4( 7)+r3( 7)*xyz(2)+r3(17)*xyz(2)+r3(12)*xyz(3)+r2( 6)*yy &
+        cint1(4,2,2)=r4( 2)+r3( 2)*xyz(2)+r3(12)*xyz(2)*two+r2( 2)*yy*two+r2( 8)*yy &
+&                   +r2(14)*three+r1(2)*xyz(2)+r1(5)*xyz(2)*two+r1(8)*yy*xyz(2)
+        cint1(5,2,2)=r4( 7)+r3( 7)*xyz(2)+r3(17)*xyz(2)+r3(12)*xyz(3)+r2( 6)*yy &
 &                   +r2( 2)*yz+r2( 8)*yz+r2(18)+r1(5)*xyz(3)+r1(8)*yz*xyz(2)
+        cint1(6,2,2)=r4(12)+r3( 9)*xyz(2)+r3(17)*xyz(3)*two+r2( 6)*yz*two+r2( 8)*zz &
+&                   +r2(14)+r1(2)*xyz(2)+r1(8)*zz*xyz(2)
         cint1(1,3,2)=r4(13)+r3( 4)*xyz(3)+r3(20)*xyz(1)*two+r2( 4)*xz*two+r2(12)*xx &
 &                   +r2(18)+r1(2)*xyz(3)+r1(8)*xx*xyz(3)
-        cint1(2,3,2)=r4( 7)+r3( 2)*xyz(3)+r3(17)*xyz(2)*two+r2( 2)*yz*two+r2(12)*yy &
-&                   +r2(18)+r1(2)*xyz(3)+r1(8)*yy*xyz(3)
-        cint1(3,3,2)=r4( 9)+r3( 9)*xyz(3)+r3(19)*xyz(3)*two+r2( 6)*zz*two+r2(12)*zz &
-&                   +r2(18)*three+r1(2)*xyz(3)+r1(5)*xyz(3)*two+r1(8)*zz*xyz(3)
-        cint1(4,3,2)=r4(14)+r3( 6)*xyz(3)+r3(17)*xyz(1)+r3(20)*xyz(2)+r2( 2)*xz &
+        cint1(2,3,2)=r4(14)+r3( 6)*xyz(3)+r3(17)*xyz(1)+r3(20)*xyz(2)+r2( 2)*xz &
 &                   +r2( 4)*yz+r2(12)*xy+r1(8)*xy*xyz(3)
-        cint1(5,3,2)=r4(15)+r3(10)*xyz(3)+r3(19)*xyz(1)+r3(20)*xyz(3)+r2( 6)*xz &
+        cint1(3,3,2)=r4(15)+r3(10)*xyz(3)+r3(19)*xyz(1)+r3(20)*xyz(3)+r2( 6)*xz &
 &                   +r2( 4)*zz+r2(12)*xz+r2(16)+r1(5)*xyz(1)+r1(8)*xz*xyz(3)
-        cint1(6,3,2)=r4(12)+r3( 7)*xyz(3)+r3(19)*xyz(2)+r3(17)*xyz(3)+r2( 6)*yz &
+        cint1(4,3,2)=r4( 7)+r3( 2)*xyz(3)+r3(17)*xyz(2)*two+r2( 2)*yz*two+r2(12)*yy &
+&                   +r2(18)+r1(2)*xyz(3)+r1(8)*yy*xyz(3)
+        cint1(5,3,2)=r4(12)+r3( 7)*xyz(3)+r3(19)*xyz(2)+r3(17)*xyz(3)+r2( 6)*yz &
 &                   +r2( 2)*zz+r2(12)*yz+r2(14)+r1(5)*xyz(2)+r1(8)*yz*xyz(3)
+        cint1(6,3,2)=r4( 9)+r3( 9)*xyz(3)+r3(19)*xyz(3)*two+r2( 6)*zz*two+r2(12)*zz &
+&                   +r2(18)*three+r1(2)*xyz(3)+r1(5)*xyz(3)*two+r1(8)*zz*xyz(3)
         cint1(1,1,3)=r4( 5)+r3( 5)*xyz(1)+r3(15)*xyz(1)*two+r2( 5)*xx*two+r2(11)*xx &
 &                   +r2(17)*three+r1(3)*xyz(1)+r1(6)*xyz(1)*two+r1(9)*xx*xyz(1)
-        cint1(2,1,3)=r4(14)+r3( 7)*xyz(1)+r3(20)*xyz(2)*two+r2( 6)*xy*two+r2(11)*yy &
-&                   +r2(17)+r1(3)*xyz(1)+r1(9)*yy*xyz(1)
-        cint1(3,1,3)=r4( 8)+r3( 3)*xyz(1)+r3(18)*xyz(3)*two+r2( 3)*xz*two+r2(11)*zz &
-&                   +r2(17)+r1(3)*xyz(1)+r1(9)*zz*xyz(1)
-        cint1(4,1,3)=r4(13)+r3(10)*xyz(1)+r3(20)*xyz(1)+r3(15)*xyz(2)+r2( 6)*xx &
+        cint1(2,1,3)=r4(13)+r3(10)*xyz(1)+r3(20)*xyz(1)+r3(15)*xyz(2)+r2( 6)*xx &
 &                   +r2( 5)*xy+r2(11)*xy+r2(18)+r1(6)*xyz(2)+r1(9)*xy*xyz(1)
-        cint1(5,1,3)=r4(11)+r3( 8)*xyz(1)+r3(18)*xyz(1)+r3(15)*xyz(3)+r2( 3)*xx &
+        cint1(3,1,3)=r4(11)+r3( 8)*xyz(1)+r3(18)*xyz(1)+r3(15)*xyz(3)+r2( 3)*xx &
 &                   +r2( 5)*xz+r2(11)*xz+r2(15)+r1(6)*xyz(3)+r1(9)*xz*xyz(1)
-        cint1(6,1,3)=r4(15)+r3( 9)*xyz(1)+r3(18)*xyz(2)+r3(20)*xyz(3)+r2( 3)*xy &
+        cint1(4,1,3)=r4(14)+r3( 7)*xyz(1)+r3(20)*xyz(2)*two+r2( 6)*xy*two+r2(11)*yy &
+&                   +r2(17)+r1(3)*xyz(1)+r1(9)*yy*xyz(1)
+        cint1(5,1,3)=r4(15)+r3( 9)*xyz(1)+r3(18)*xyz(2)+r3(20)*xyz(3)+r2( 3)*xy &
 &                   +r2( 6)*xz+r2(11)*yz+r1(9)*yz*xyz(1)
+        cint1(6,1,3)=r4( 8)+r3( 3)*xyz(1)+r3(18)*xyz(3)*two+r2( 3)*xz*two+r2(11)*zz &
+&                   +r2(17)+r1(3)*xyz(1)+r1(9)*zz*xyz(1)
         cint1(1,2,3)=r4(13)+r3( 5)*xyz(2)+r3(20)*xyz(1)*two+r2( 5)*xy*two+r2(12)*xx &
 &                   +r2(18)+r1(3)*xyz(2)+r1(9)*xx*xyz(2)
-        cint1(2,2,3)=r4( 7)+r3( 7)*xyz(2)+r3(17)*xyz(2)*two+r2( 6)*yy*two+r2(12)*yy &
-&                   +r2(18)*three+r1(3)*xyz(2)+r1(6)*xyz(2)*two+r1(9)*yy*xyz(2)
-        cint1(3,2,3)=r4( 9)+r3( 3)*xyz(2)+r3(19)*xyz(3)*two+r2( 3)*yz*two+r2(12)*zz &
-&                   +r2(18)+r1(3)*xyz(2)+r1(9)*zz*xyz(2)
-        cint1(4,2,3)=r4(14)+r3(10)*xyz(2)+r3(17)*xyz(1)+r3(20)*xyz(2)+r2( 6)*xy &
+        cint1(2,2,3)=r4(14)+r3(10)*xyz(2)+r3(17)*xyz(1)+r3(20)*xyz(2)+r2( 6)*xy &
 &                   +r2( 5)*yy+r2(12)*xy+r2(17)+r1(6)*xyz(1)+r1(9)*xy*xyz(2)
-        cint1(5,2,3)=r4(15)+r3( 8)*xyz(2)+r3(19)*xyz(1)+r3(20)*xyz(3)+r2( 3)*xy &
+        cint1(3,2,3)=r4(15)+r3( 8)*xyz(2)+r3(19)*xyz(1)+r3(20)*xyz(3)+r2( 3)*xy &
 &                   +r2( 5)*yz+r2(12)*xz+r1(9)*xz*xyz(2)
-        cint1(6,2,3)=r4(12)+r3( 9)*xyz(2)+r3(19)*xyz(2)+r3(17)*xyz(3)+r2( 3)*yy &
+        cint1(4,2,3)=r4( 7)+r3( 7)*xyz(2)+r3(17)*xyz(2)*two+r2( 6)*yy*two+r2(12)*yy &
+&                   +r2(18)*three+r1(3)*xyz(2)+r1(6)*xyz(2)*two+r1(9)*yy*xyz(2)
+        cint1(5,2,3)=r4(12)+r3( 9)*xyz(2)+r3(19)*xyz(2)+r3(17)*xyz(3)+r2( 3)*yy &
 &                   +r2( 6)*yz+r2(12)*yz+r2(15)+r1(6)*xyz(3)+r1(9)*yz*xyz(2)
+        cint1(6,2,3)=r4( 9)+r3( 3)*xyz(2)+r3(19)*xyz(3)*two+r2( 3)*yz*two+r2(12)*zz &
+&                   +r2(18)+r1(3)*xyz(2)+r1(9)*zz*xyz(2)
         cint1(1,3,3)=r4(11)+r3( 5)*xyz(3)+r3(18)*xyz(1)*two+r2( 5)*xz*two+r2( 9)*xx &
 &                   +r2(15)+r1(3)*xyz(3)+r1(9)*xx*xyz(3)
-        cint1(2,3,3)=r4(12)+r3( 7)*xyz(3)+r3(19)*xyz(2)*two+r2( 6)*yz*two+r2( 9)*yy &
-&                   +r2(15)+r1(3)*xyz(3)+r1(9)*yy*xyz(3)
-        cint1(3,3,3)=r4( 3)+r3( 3)*xyz(3)+r3(13)*xyz(3)*two+r2( 3)*zz*two+r2( 9)*zz &
-&                   +r2(15)*three+r1(3)*xyz(3)+r1(6)*xyz(3)*two+r1(9)*zz*xyz(3)
-        cint1(4,3,3)=r4(15)+r3(10)*xyz(3)+r3(19)*xyz(1)+r3(18)*xyz(2)+r2( 6)*xz &
+        cint1(2,3,3)=r4(15)+r3(10)*xyz(3)+r3(19)*xyz(1)+r3(18)*xyz(2)+r2( 6)*xz &
 &                   +r2( 5)*yz+r2( 9)*xy+r1(9)*xy*xyz(3)
-        cint1(5,3,3)=r4( 8)+r3( 8)*xyz(3)+r3(13)*xyz(1)+r3(18)*xyz(3)+r2( 3)*xz &
+        cint1(3,3,3)=r4( 8)+r3( 8)*xyz(3)+r3(13)*xyz(1)+r3(18)*xyz(3)+r2( 3)*xz &
 &                   +r2( 5)*zz+r2( 9)*xz+r2(17)+r1(6)*xyz(1)+r1(9)*xz*xyz(3)
-        cint1(6,3,3)=r4( 9)+r3( 9)*xyz(3)+r3(13)*xyz(2)+r3(19)*xyz(3)+r2( 3)*yz &
+        cint1(4,3,3)=r4(12)+r3( 7)*xyz(3)+r3(19)*xyz(2)*two+r2( 6)*yz*two+r2( 9)*yy &
+&                   +r2(15)+r1(3)*xyz(3)+r1(9)*yy*xyz(3)
+        cint1(5,3,3)=r4( 9)+r3( 9)*xyz(3)+r3(13)*xyz(2)+r3(19)*xyz(3)+r2( 3)*yz &
 &                   +r2( 6)*zz+r2( 9)*yz+r2(18)+r1(6)*xyz(2)+r1(9)*yz*xyz(3)
+        cint1(6,3,3)=r4( 3)+r3( 3)*xyz(3)+r3(13)*xyz(3)*two+r2( 3)*zz*two+r2( 9)*zz &
+&                    +r2(15)*three+r1(3)*xyz(3)+r1(6)*xyz(3)*two+r1(9)*zz*xyz(3)
 !
         if(nbfij(2) == 6) then
           do k= 1,3
             do i= 1,3
-              cint1(4,i,k)= cint1(4,i,k)*sqrt3
+              cint1(2,i,k)= cint1(2,i,k)*sqrt3
+              cint1(3,i,k)= cint1(3,i,k)*sqrt3
               cint1(5,i,k)= cint1(5,i,k)*sqrt3
-              cint1(6,i,k)= cint1(6,i,k)*sqrt3
             enddo
           enddo
         else
@@ -1694,11 +1664,11 @@ end
               do j= 1,6
                 work(j)= cint1(j,i,k)
               enddo
-              cint1(1,i,k)=(work(3)*two-work(1)-work(2))*half
+              cint1(1,i,k)= work(2)*sqrt3
               cint1(2,i,k)= work(5)*sqrt3
-              cint1(3,i,k)= work(6)*sqrt3
-              cint1(4,i,k)=(work(1)-work(2))*sqrt3h
-              cint1(5,i,k)= work(4)*sqrt3
+              cint1(3,i,k)=(work(6)*two-work(1)-work(4))*half
+              cint1(4,i,k)= work(3)*sqrt3
+              cint1(5,i,k)=(work(1)-work(4))*sqrt3h
             enddo
           enddo
         endif
@@ -1925,414 +1895,414 @@ end
 &                   +r3(21)*xx+r3(31)*six+r2( 1)*xxx*two+r2( 7)*xxx*two+r2(13)*xyz(1)*six &
 &                   +r2(19)*xyz(1)*six+r1( 1)*xx*xx+r1( 4)*xx+r1( 7)*xx*four+r1(10)*xx &
 &                   +r1(13)*three
-        cint1(2,1,1)=r5(10)+r4(10)*xyz(1)*two+r4(19)*xyz(2)*two+r3( 6)*xx+r3(14)*xy*four &
-&                   +r3(21)*yy+r3(31)+r3(36)+r2( 4)*xxy*two+r2( 7)*xyy*two+r2(13)*xyz(1)*two &
-&                   +r2(22)*xyz(2)*two+r1( 1)*xx*yy+r1( 4)*xx+r1(10)*yy+r1(13)
-        cint1(3,1,1)=r5(12)+r4(11)*xyz(1)*two+r4(20)*xyz(3)*two+r3( 8)*xx+r3(15)*xz*four &
-&                   +r3(21)*zz+r3(31)+r3(38)+r2( 5)*xxz*two+r2( 7)*xzz*two+r2(13)*xyz(1)*two &
-&                   +r2(23)*xyz(3)*two+r1( 1)*xx*zz+r1( 4)*xx+r1(10)*zz+r1(13)
-        cint1(4,1,1)=r5( 4)+r4( 4)*xyz(1)*two+r4(19)*xyz(1)+r4(16)*xyz(2)+r3( 4)*xx &
+        cint1(2,1,1)=r5( 4)+r4( 4)*xyz(1)*two+r4(19)*xyz(1)+r4(16)*xyz(2)+r3( 4)*xx &
 &                   +r3(14)*xx*two+r3(11)*xy*two+r3(21)*xy+r3(34)*three+r2( 4)*xxx &
 &                   +r2( 1)*xxy+r2( 7)*xxy*two+r2(16)*xyz(1)*two+r2(22)*xyz(1) &
 &                   +r2(19)*xyz(2)*three+r1( 1)*xx*xy+r1( 7)*xy*two+r1(10)*xy
-        cint1(5,1,1)=r5( 5)+r4( 5)*xyz(1)*two+r4(20)*xyz(1)+r4(16)*xyz(3)+r3( 5)*xx &
+        cint1(3,1,1)=r5( 5)+r4( 5)*xyz(1)*two+r4(20)*xyz(1)+r4(16)*xyz(3)+r3( 5)*xx &
 &                   +r3(15)*xx*two+r3(11)*xz*two+r3(21)*xz+r3(35)*three+r2( 5)*xxx &
 &                   +r2( 1)*xxz+r2( 7)*xxz*two+r2(17)*xyz(1)*two+r2(23)*xyz(1) &
 &                   +r2(19)*xyz(3)*three+r1( 1)*xx*xz+r1( 7)*xz*two+r1(10)*xz
-        cint1(6,1,1)=r5(11)+r4(13)*xyz(1)*two+r4(20)*xyz(2)+r4(19)*xyz(3)+r3(10)*xx &
+        cint1(4,1,1)=r5(10)+r4(10)*xyz(1)*two+r4(19)*xyz(2)*two+r3( 6)*xx+r3(14)*xy*four &
+&                   +r3(21)*yy+r3(31)+r3(36)+r2( 4)*xxy*two+r2( 7)*xyy*two+r2(13)*xyz(1)*two &
+&                   +r2(22)*xyz(2)*two+r1( 1)*xx*yy+r1( 4)*xx+r1(10)*yy+r1(13)
+        cint1(5,1,1)=r5(11)+r4(13)*xyz(1)*two+r4(20)*xyz(2)+r4(19)*xyz(3)+r3(10)*xx &
 &                   +r3(15)*xy*two+r3(14)*xz*two+r3(21)*yz+r3(40)+r2( 5)*xxy+r2( 4)*xxz &
 &                   +r2( 7)*xyz2*two+r2(23)*xyz(2)+r2(22)*xyz(3)+r1( 1)*xx*yz+r1(10)*yz
-        cint1(1,2,1)=r5(10)+r4( 4)*xyz(2)*two+r4(25)*xyz(1)*two+r3( 1)*yy+r3(14)*xy*four &
-&                   +r3(26)*xx+r3(31)+r3(36)+r2( 1)*xyy*two+r2(10)*xxy*two+r2(16)*xyz(2)*two &
-&                   +r2(19)*xyz(1)*two+r1( 1)*yy*xx+r1( 4)*yy+r1(10)*xx+r1(13)
-        cint1(2,2,1)=r5( 6)+r4( 6)*xyz(2)*two+r4(21)*xyz(2)*two+r3( 6)*yy+r3(16)*yy*four &
-&                   +r3(26)*yy+r3(36)*six+r2( 4)*yyy*two+r2(10)*yyy*two+r2(16)*xyz(2)*six &
-&                   +r2(22)*xyz(2)*six+r1( 1)*yy*yy+r1( 4)*yy+r1( 7)*yy*four+r1(10)*yy &
-&                   +r1(13)*three
-        cint1(3,2,1)=r5(21)+r4(15)*xyz(2)*two+r4(29)*xyz(3)*two+r3( 8)*yy+r3(20)*yz*four &
-&                   +r3(26)*zz+r3(36)+r3(38)+r2( 5)*yyz*two+r2(10)*yzz*two+r2(16)*xyz(2)*two &
-&                   +r2(23)*xyz(3)*two+r1( 1)*yy*zz+r1( 4)*yy+r1(10)*zz+r1(13)
-        cint1(4,2,1)=r5(13)+r4(10)*xyz(2)*two+r4(21)*xyz(1)+r4(25)*xyz(2)+r3( 4)*yy &
-&                   +r3(16)*xy*two+r3(14)*yy*two+r3(26)*xy+r3(34)*three+r2( 4)*xyy &
-&                   +r2( 1)*yyy+r2(10)*xyy*two+r2(13)*xyz(2)*two+r2(22)*xyz(1)*three &
-&                   +r2(19)*xyz(2)+r1( 1)*yy*xy+r1( 7)*xy*two+r1(10)*xy
-        cint1(5,2,1)=r5(19)+r4(13)*xyz(2)*two+r4(29)*xyz(1)+r4(25)*xyz(3)+r3( 5)*yy &
-&                   +r3(20)*xy*two+r3(14)*yz*two+r3(26)*xz+r3(35)+r2( 5)*xyy+r2( 1)*yyz &
-&                   +r2(10)*xyz2*two+r2(23)*xyz(1)+r2(19)*xyz(3)+r1( 1)*yy*xz+r1(10)*xz
-        cint1(6,2,1)=r5(14)+r4(14)*xyz(2)*two+r4(29)*xyz(2)+r4(21)*xyz(3)+r3(10)*yy &
-&                   +r3(20)*yy*two+r3(16)*yz*two+r3(26)*yz+r3(40)*three+r2( 5)*yyy &
-&                   +r2( 4)*yyz+r2(10)*yyz*two+r2(17)*xyz(2)*two+r2(23)*xyz(2) &
-&                   +r2(22)*xyz(3)*three+r1( 1)*yy*yz+r1( 7)*yz*two+r1(10)*yz
-        cint1(1,3,1)=r5(12)+r4( 5)*xyz(3)*two+r4(26)*xyz(1)*two+r3( 1)*zz+r3(15)*xz*four &
-&                   +r3(28)*xx+r3(31)+r3(38)+r2( 1)*xzz*two+r2(11)*xxz*two+r2(17)*xyz(3)*two &
-&                   +r2(19)*xyz(1)*two+r1( 1)*zz*xx+r1( 4)*zz+r1(10)*xx+r1(13)
-        cint1(2,3,1)=r5(21)+r4(14)*xyz(3)*two+r4(30)*xyz(2)*two+r3( 6)*zz+r3(20)*yz*four &
-&                   +r3(28)*yy+r3(36)+r3(38)+r2( 4)*yzz*two+r2(11)*yyz*two+r2(17)*xyz(3)*two &
-&                   +r2(22)*xyz(2)*two+r1( 1)*zz*yy+r1( 4)*zz+r1(10)*yy+r1(13)
-        cint1(3,3,1)=r5( 8)+r4( 8)*xyz(3)*two+r4(23)*xyz(3)*two+r3( 8)*zz+r3(18)*zz*four &
-&                   +r3(28)*zz+r3(38)*six+r2( 5)*zzz*two+r2(11)*zzz*two+r2(17)*xyz(3)*six &
-&                   +r2(23)*xyz(3)*six+r1( 1)*zz*zz+r1( 4)*zz+r1( 7)*zz*four+r1(10)*zz &
-&                   +r1(13)*three
-        cint1(4,3,1)=r5(20)+r4(13)*xyz(3)*two+r4(30)*xyz(1)+r4(26)*xyz(2)+r3( 4)*zz &
-&                   +r3(20)*xz*two+r3(15)*yz*two+r3(28)*xy+r3(34)+r2( 4)*xzz+r2( 1)*yzz &
-&                   +r2(11)*xyz2*two+r2(22)*xyz(1)+r2(19)*xyz(2)+r1( 1)*zz*xy+r1(10)*xy
-        cint1(5,3,1)=r5(16)+r4(11)*xyz(3)*two+r4(23)*xyz(1)+r4(26)*xyz(3)+r3( 5)*zz &
-&                   +r3(18)*xz*two+r3(15)*zz*two+r3(28)*xz+r3(35)*three+r2( 5)*xzz &
-&                   +r2( 1)*zzz+r2(11)*xzz*two+r2(13)*xyz(3)*two+r2(23)*xyz(1)*three &
-&                   +r2(19)*xyz(3)+r1( 1)*zz*xz+r1( 7)*xz*two+r1(10)*xz
-        cint1(6,3,1)=r5(17)+r4(15)*xyz(3)*two+r4(23)*xyz(2)+r4(30)*xyz(3)+r3(10)*zz &
-&                   +r3(18)*yz*two+r3(20)*zz*two+r3(28)*yz+r3(40)*three+r2( 5)*yzz &
-&                   +r2( 4)*zzz+r2(11)*yzz*two+r2(16)*xyz(3)*two+r2(23)*xyz(2)*three &
-&                   +r2(22)*xyz(3)+r1( 1)*zz*yz+r1( 7)*yz*two+r1(10)*yz
-        cint1(1,4,1)=r5( 4)+r4( 4)*xyz(1)+r4( 1)*xyz(2)+r4(19)*xyz(1)*two+r3( 1)*xy &
+        cint1(6,1,1)=r5(12)+r4(11)*xyz(1)*two+r4(20)*xyz(3)*two+r3( 8)*xx+r3(15)*xz*four &
+&                   +r3(21)*zz+r3(31)+r3(38)+r2( 5)*xxz*two+r2( 7)*xzz*two+r2(13)*xyz(1)*two &
+&                   +r2(23)*xyz(3)*two+r1( 1)*xx*zz+r1( 4)*xx+r1(10)*zz+r1(13)
+        cint1(1,2,1)=r5( 4)+r4( 4)*xyz(1)+r4( 1)*xyz(2)+r4(19)*xyz(1)*two+r3( 1)*xy &
 &                   +r3(14)*xx*two+r3(11)*xy*two+r3(24)*xx+r3(34)*three+r2( 1)*xxy*two &
 &                   +r2(10)*xxx+r2( 7)*xxy+r2(16)*xyz(1)+r2(13)*xyz(2)*three &
 &                   +r2(22)*xyz(1)*two+r1( 1)*xy*xx+r1( 4)*xy+r1( 7)*xy*two
-        cint1(2,4,1)=r5(13)+r4( 6)*xyz(1)+r4(10)*xyz(2)+r4(25)*xyz(2)*two+r3( 6)*xy &
-&                   +r3(16)*xy*two+r3(14)*yy*two+r3(24)*yy+r3(34)*three+r2( 4)*xyy*two &
-&                   +r2(10)*xyy+r2( 7)*yyy+r2(16)*xyz(1)*three+r2(13)*xyz(2) &
-&                   +r2(19)*xyz(2)*two+r1( 1)*xy*yy+r1( 4)*xy+r1( 7)*xy*two
-        cint1(3,4,1)=r5(20)+r4(15)*xyz(1)+r4(11)*xyz(2)+r4(28)*xyz(3)*two+r3( 8)*xy &
-&                   +r3(20)*xz*two+r3(15)*yz*two+r3(24)*zz+r3(34)+r2( 5)*xyz2*two+r2(10)*xzz &
-&                   +r2( 7)*yzz+r2(16)*xyz(1)+r2(13)*xyz(2)+r1( 1)*xy*zz+r1( 4)*xy
-        cint1(4,4,1)=r5(10)+r4(10)*xyz(1)+r4( 4)*xyz(2)+r4(25)*xyz(1)+r4(19)*xyz(2) &
+        cint1(2,2,1)=r5(10)+r4(10)*xyz(1)+r4( 4)*xyz(2)+r4(25)*xyz(1)+r4(19)*xyz(2) &
 &                   +r3( 4)*xy+r3(16)*xx+r3(14)*xy+r3(14)*xy+r3(11)*yy+r3(24)*xy+r3(31) &
 &                   +r3(36)+r2( 4)*xxy+r2( 1)*xyy+r2(10)*xxy+r2( 7)*xyy+r2(13)*xyz(1) &
 &                   +r2(16)*xyz(2)+r2(19)*xyz(1)+r2(22)*xyz(2)+r1( 1)*xy*xy+r1( 7)*xx &
 &                   +r1( 7)*yy+r1(13)
-        cint1(5,4,1)=r5(11)+r4(13)*xyz(1)+r4( 5)*xyz(2)+r4(28)*xyz(1)+r4(19)*xyz(3) &
+        cint1(3,2,1)=r5(11)+r4(13)*xyz(1)+r4( 5)*xyz(2)+r4(28)*xyz(1)+r4(19)*xyz(3) &
 &                   +r3( 5)*xy+r3(20)*xx+r3(14)*xz+r3(15)*xy+r3(11)*yz+r3(24)*xz+r3(40) &
 &                   +r2( 5)*xxy+r2( 1)*xyz2+r2(10)*xxz+r2( 7)*xyz2+r2(17)*xyz(2) &
 &                   +r2(22)*xyz(3)+r1( 1)*xy*xz+r1( 7)*yz
-        cint1(6,4,1)=r5(19)+r4(14)*xyz(1)+r4(13)*xyz(2)+r4(28)*xyz(2)+r4(25)*xyz(3) &
+        cint1(4,2,1)=r5(13)+r4( 6)*xyz(1)+r4(10)*xyz(2)+r4(25)*xyz(2)*two+r3( 6)*xy &
+&                   +r3(16)*xy*two+r3(14)*yy*two+r3(24)*yy+r3(34)*three+r2( 4)*xyy*two &
+&                   +r2(10)*xyy+r2( 7)*yyy+r2(16)*xyz(1)*three+r2(13)*xyz(2) &
+&                   +r2(19)*xyz(2)*two+r1( 1)*xy*yy+r1( 4)*xy+r1( 7)*xy*two
+        cint1(5,2,1)=r5(19)+r4(14)*xyz(1)+r4(13)*xyz(2)+r4(28)*xyz(2)+r4(25)*xyz(3) &
 &                   +r3(10)*xy+r3(20)*xy+r3(16)*xz+r3(15)*yy+r3(14)*yz+r3(24)*yz+r3(35) &
 &                   +r2( 5)*xyy+r2( 4)*xyz2+r2(10)*xyz2+r2( 7)*yyz+r2(17)*xyz(1) &
 &                   +r2(19)*xyz(3)+r1( 1)*xy*yz+r1( 7)*xz
-        cint1(1,5,1)=r5( 5)+r4( 5)*xyz(1)+r4( 1)*xyz(3)+r4(20)*xyz(1)*two+r3( 1)*xz &
+        cint1(6,2,1)=r5(20)+r4(15)*xyz(1)+r4(11)*xyz(2)+r4(28)*xyz(3)*two+r3( 8)*xy &
+&                   +r3(20)*xz*two+r3(15)*yz*two+r3(24)*zz+r3(34)+r2( 5)*xyz2*two+r2(10)*xzz &
+&                   +r2( 7)*yzz+r2(16)*xyz(1)+r2(13)*xyz(2)+r1( 1)*xy*zz+r1( 4)*xy
+        cint1(1,3,1)=r5( 5)+r4( 5)*xyz(1)+r4( 1)*xyz(3)+r4(20)*xyz(1)*two+r3( 1)*xz &
 &                   +r3(15)*xx*two+r3(11)*xz*two+r3(25)*xx+r3(35)*three+r2( 1)*xxz*two &
 &                   +r2(11)*xxx+r2( 7)*xxz+r2(17)*xyz(1)+r2(13)*xyz(3)*three &
 &                   +r2(23)*xyz(1)*two+r1( 1)*xz*xx+r1( 4)*xz+r1( 7)*xz*two
-        cint1(2,5,1)=r5(19)+r4(14)*xyz(1)+r4(10)*xyz(3)+r4(28)*xyz(2)*two+r3( 6)*xz &
-&                   +r3(20)*xy*two+r3(14)*yz*two+r3(25)*yy+r3(35)+r2( 4)*xyz2*two+r2(11)*xyy &
-&                   +r2( 7)*yyz+r2(17)*xyz(1)+r2(13)*xyz(3)+r1( 1)*xz*yy+r1( 4)*xz
-        cint1(3,5,1)=r5(16)+r4( 8)*xyz(1)+r4(11)*xyz(3)+r4(26)*xyz(3)*two+r3( 8)*xz &
-&                   +r3(18)*xz*two+r3(15)*zz*two+r3(25)*zz+r3(35)*three+r2( 5)*xzz*two &
-&                   +r2(11)*xzz+r2( 7)*zzz+r2(17)*xyz(1)*three+r2(13)*xyz(3) &
-&                   +r2(19)*xyz(3)*two+r1( 1)*xz*zz+r1( 4)*xz+r1( 7)*xz*two
-        cint1(4,5,1)=r5(11)+r4(13)*xyz(1)+r4( 4)*xyz(3)+r4(28)*xyz(1)+r4(20)*xyz(2) &
+        cint1(2,3,1)=r5(11)+r4(13)*xyz(1)+r4( 4)*xyz(3)+r4(28)*xyz(1)+r4(20)*xyz(2) &
 &                   +r3( 4)*xz+r3(20)*xx+r3(15)*xy+r3(14)*xz+r3(11)*yz+r3(25)*xy+r3(40) &
 &                   +r2( 4)*xxz+r2( 1)*xyz2+r2(11)*xxy+r2( 7)*xyz2+r2(16)*xyz(3) &
 &                   +r2(23)*xyz(2)+r1( 1)*xz*xy+r1( 7)*yz
-        cint1(5,5,1)=r5(12)+r4(11)*xyz(1)+r4( 5)*xyz(3)+r4(26)*xyz(1)+r4(20)*xyz(3) &
+        cint1(3,3,1)=r5(12)+r4(11)*xyz(1)+r4( 5)*xyz(3)+r4(26)*xyz(1)+r4(20)*xyz(3) &
 &                   +r3( 5)*xz+r3(18)*xx+r3(15)*xz+r3(15)*xz+r3(11)*zz+r3(25)*xz+r3(31) &
 &                   +r3(38)+r2( 5)*xxz+r2( 1)*xzz+r2(11)*xxz+r2( 7)*xzz+r2(13)*xyz(1) &
 &                   +r2(17)*xyz(3)+r2(19)*xyz(1)+r2(23)*xyz(3)+r1( 1)*xz*xz+r1( 7)*xx &
 &                   +r1( 7)*zz+r1(13)
-        cint1(6,5,1)=r5(20)+r4(15)*xyz(1)+r4(13)*xyz(3)+r4(26)*xyz(2)+r4(28)*xyz(3) &
+        cint1(4,3,1)=r5(19)+r4(14)*xyz(1)+r4(10)*xyz(3)+r4(28)*xyz(2)*two+r3( 6)*xz &
+&                   +r3(20)*xy*two+r3(14)*yz*two+r3(25)*yy+r3(35)+r2( 4)*xyz2*two+r2(11)*xyy &
+&                   +r2( 7)*yyz+r2(17)*xyz(1)+r2(13)*xyz(3)+r1( 1)*xz*yy+r1( 4)*xz
+        cint1(5,3,1)=r5(20)+r4(15)*xyz(1)+r4(13)*xyz(3)+r4(26)*xyz(2)+r4(28)*xyz(3) &
 &                   +r3(10)*xz+r3(18)*xy+r3(20)*xz+r3(15)*yz+r3(14)*zz+r3(25)*yz+r3(34) &
 &                   +r2( 5)*xyz2+r2( 4)*xzz+r2(11)*xyz2+r2( 7)*yzz+r2(16)*xyz(1) &
 &                   +r2(19)*xyz(2)+r1( 1)*xz*yz+r1( 7)*xy
-        cint1(1,6,1)=r5(11)+r4( 5)*xyz(2)+r4( 4)*xyz(3)+r4(28)*xyz(1)*two+r3( 1)*yz &
+        cint1(6,3,1)=r5(16)+r4( 8)*xyz(1)+r4(11)*xyz(3)+r4(26)*xyz(3)*two+r3( 8)*xz &
+&                   +r3(18)*xz*two+r3(15)*zz*two+r3(25)*zz+r3(35)*three+r2( 5)*xzz*two &
+&                   +r2(11)*xzz+r2( 7)*zzz+r2(17)*xyz(1)*three+r2(13)*xyz(3) &
+&                   +r2(19)*xyz(3)*two+r1( 1)*xz*zz+r1( 4)*xz+r1( 7)*xz*two
+        cint1(1,4,1)=r5(10)+r4( 4)*xyz(2)*two+r4(25)*xyz(1)*two+r3( 1)*yy+r3(14)*xy*four &
+&                   +r3(26)*xx+r3(31)+r3(36)+r2( 1)*xyy*two+r2(10)*xxy*two+r2(16)*xyz(2)*two &
+&                   +r2(19)*xyz(1)*two+r1( 1)*yy*xx+r1( 4)*yy+r1(10)*xx+r1(13)
+        cint1(2,4,1)=r5(13)+r4(10)*xyz(2)*two+r4(21)*xyz(1)+r4(25)*xyz(2)+r3( 4)*yy &
+&                   +r3(16)*xy*two+r3(14)*yy*two+r3(26)*xy+r3(34)*three+r2( 4)*xyy &
+&                   +r2( 1)*yyy+r2(10)*xyy*two+r2(13)*xyz(2)*two+r2(22)*xyz(1)*three &
+&                   +r2(19)*xyz(2)+r1( 1)*yy*xy+r1( 7)*xy*two+r1(10)*xy
+        cint1(3,4,1)=r5(19)+r4(13)*xyz(2)*two+r4(29)*xyz(1)+r4(25)*xyz(3)+r3( 5)*yy &
+&                   +r3(20)*xy*two+r3(14)*yz*two+r3(26)*xz+r3(35)+r2( 5)*xyy+r2( 1)*yyz &
+&                   +r2(10)*xyz2*two+r2(23)*xyz(1)+r2(19)*xyz(3)+r1( 1)*yy*xz+r1(10)*xz
+        cint1(4,4,1)=r5( 6)+r4( 6)*xyz(2)*two+r4(21)*xyz(2)*two+r3( 6)*yy+r3(16)*yy*four &
+&                   +r3(26)*yy+r3(36)*six+r2( 4)*yyy*two+r2(10)*yyy*two+r2(16)*xyz(2)*six &
+&                   +r2(22)*xyz(2)*six+r1( 1)*yy*yy+r1( 4)*yy+r1( 7)*yy*four+r1(10)*yy &
+&                   +r1(13)*three
+        cint1(5,4,1)=r5(14)+r4(14)*xyz(2)*two+r4(29)*xyz(2)+r4(21)*xyz(3)+r3(10)*yy &
+&                   +r3(20)*yy*two+r3(16)*yz*two+r3(26)*yz+r3(40)*three+r2( 5)*yyy &
+&                   +r2( 4)*yyz+r2(10)*yyz*two+r2(17)*xyz(2)*two+r2(23)*xyz(2) &
+&                   +r2(22)*xyz(3)*three+r1( 1)*yy*yz+r1( 7)*yz*two+r1(10)*yz
+        cint1(6,4,1)=r5(21)+r4(15)*xyz(2)*two+r4(29)*xyz(3)*two+r3( 8)*yy+r3(20)*yz*four &
+&                   +r3(26)*zz+r3(36)+r3(38)+r2( 5)*yyz*two+r2(10)*yzz*two+r2(16)*xyz(2)*two &
+&                   +r2(23)*xyz(3)*two+r1( 1)*yy*zz+r1( 4)*yy+r1(10)*zz+r1(13)
+        cint1(1,5,1)=r5(11)+r4( 5)*xyz(2)+r4( 4)*xyz(3)+r4(28)*xyz(1)*two+r3( 1)*yz &
 &                   +r3(15)*xy*two+r3(14)*xz*two+r3(30)*xx+r3(40)+r2( 1)*xyz2*two &
 &                   +r2(11)*xxy+r2(10)*xxz+r2(17)*xyz(2)+r2(16)*xyz(3)+r1( 1)*yz*xx+r1( 4)*yz
-        cint1(2,6,1)=r5(14)+r4(14)*xyz(2)+r4( 6)*xyz(3)+r4(29)*xyz(2)*two+r3( 6)*yz &
-&                   +r3(20)*yy*two+r3(16)*yz*two+r3(30)*yy+r3(40)*three+r2( 4)*yyz*two &
-&                   +r2(11)*yyy+r2(10)*yyz+r2(17)*xyz(2)+r2(16)*xyz(3)*three+ &
-&                   r2(23)*xyz(2)*two+r1( 1)*yz*yy+r1( 4)*yz+r1( 7)*yz*two
-        cint1(3,6,1)=r5(17)+r4( 8)*xyz(2)+r4(15)*xyz(3)+r4(30)*xyz(3)*two+r3( 8)*yz &
-&                   +r3(18)*yz*two+r3(20)*zz*two+r3(30)*zz+r3(40)*three+r2( 5)*yzz*two &
-&                   +r2(11)*yzz+r2(10)*zzz+r2(17)*xyz(2)*three+r2(16)*xyz(3) &
-&                   +r2(22)*xyz(3)*two+r1( 1)*yz*zz+r1( 4)*yz+r1( 7)*yz*two
-        cint1(4,6,1)=r5(19)+r4(13)*xyz(2)+r4(10)*xyz(3)+r4(29)*xyz(1)+r4(28)*xyz(2) &
+        cint1(2,5,1)=r5(19)+r4(13)*xyz(2)+r4(10)*xyz(3)+r4(29)*xyz(1)+r4(28)*xyz(2) &
 &                   +r3( 4)*yz+r3(20)*xy+r3(15)*yy+r3(16)*xz+r3(14)*yz+r3(30)*xy+r3(35) &
 &                   +r2( 4)*xyz2+r2( 1)*yyz+r2(11)*xyy+r2(10)*xyz2+r2(13)*xyz(3) &
 &                   +r2(23)*xyz(1)+r1( 1)*yz*xy+r1( 7)*xz
-        cint1(5,6,1)=r5(20)+r4(11)*xyz(2)+r4(13)*xyz(3)+r4(30)*xyz(1)+r4(28)*xyz(3) &
+        cint1(3,5,1)=r5(20)+r4(11)*xyz(2)+r4(13)*xyz(3)+r4(30)*xyz(1)+r4(28)*xyz(3) &
 &                   +r3( 5)*yz+r3(18)*xy+r3(15)*yz+r3(20)*xz+r3(14)*zz+r3(30)*xz+r3(34) &
 &                   +r2( 5)*xyz2+r2( 1)*yzz+r2(11)*xyz2+r2(10)*xzz+r2(13)*xyz(2) &
 &                   +r2(22)*xyz(1)+r1( 1)*yz*xz+r1( 7)*xy
-        cint1(6,6,1)=r5(21)+r4(15)*xyz(2)+r4(14)*xyz(3)+r4(30)*xyz(2)+r4(29)*xyz(3) &
+        cint1(4,5,1)=r5(14)+r4(14)*xyz(2)+r4( 6)*xyz(3)+r4(29)*xyz(2)*two+r3( 6)*yz &
+&                   +r3(20)*yy*two+r3(16)*yz*two+r3(30)*yy+r3(40)*three+r2( 4)*yyz*two &
+&                   +r2(11)*yyy+r2(10)*yyz+r2(17)*xyz(2)+r2(16)*xyz(3)*three+ &
+&                   r2(23)*xyz(2)*two+r1( 1)*yz*yy+r1( 4)*yz+r1( 7)*yz*two
+        cint1(5,5,1)=r5(21)+r4(15)*xyz(2)+r4(14)*xyz(3)+r4(30)*xyz(2)+r4(29)*xyz(3) &
 &                   +r3(10)*yz+r3(18)*yy+r3(20)*yz+r3(20)*yz+r3(16)*zz+r3(30)*yz+r3(36) &
 &                   +r3(38)+r2( 5)*yyz+r2( 4)*yzz+r2(11)*yyz+r2(10)*yzz+r2(16)*xyz(2) &
 &                   +r2(17)*xyz(3)+r2(22)*xyz(2)+r2(23)*xyz(3)+r1( 1)*yz*yz+r1( 7)*yy &
 &                   +r1( 7)*zz+r1(13)
+        cint1(6,5,1)=r5(17)+r4( 8)*xyz(2)+r4(15)*xyz(3)+r4(30)*xyz(3)*two+r3( 8)*yz &
+&                   +r3(18)*yz*two+r3(20)*zz*two+r3(30)*zz+r3(40)*three+r2( 5)*yzz*two &
+&                   +r2(11)*yzz+r2(10)*zzz+r2(17)*xyz(2)*three+r2(16)*xyz(3) &
+&                   +r2(22)*xyz(3)*two+r1( 1)*yz*zz+r1( 4)*yz+r1( 7)*yz*two
+        cint1(1,6,1)=r5(12)+r4( 5)*xyz(3)*two+r4(26)*xyz(1)*two+r3( 1)*zz+r3(15)*xz*four &
+&                   +r3(28)*xx+r3(31)+r3(38)+r2( 1)*xzz*two+r2(11)*xxz*two+r2(17)*xyz(3)*two &
+&                   +r2(19)*xyz(1)*two+r1( 1)*zz*xx+r1( 4)*zz+r1(10)*xx+r1(13)
+        cint1(2,6,1)=r5(20)+r4(13)*xyz(3)*two+r4(30)*xyz(1)+r4(26)*xyz(2)+r3( 4)*zz &
+&                   +r3(20)*xz*two+r3(15)*yz*two+r3(28)*xy+r3(34)+r2( 4)*xzz+r2( 1)*yzz &
+&                   +r2(11)*xyz2*two+r2(22)*xyz(1)+r2(19)*xyz(2)+r1( 1)*zz*xy+r1(10)*xy
+        cint1(3,6,1)=r5(16)+r4(11)*xyz(3)*two+r4(23)*xyz(1)+r4(26)*xyz(3)+r3( 5)*zz &
+&                   +r3(18)*xz*two+r3(15)*zz*two+r3(28)*xz+r3(35)*three+r2( 5)*xzz &
+&                   +r2( 1)*zzz+r2(11)*xzz*two+r2(13)*xyz(3)*two+r2(23)*xyz(1)*three &
+&                   +r2(19)*xyz(3)+r1( 1)*zz*xz+r1( 7)*xz*two+r1(10)*xz
+        cint1(4,6,1)=r5(21)+r4(14)*xyz(3)*two+r4(30)*xyz(2)*two+r3( 6)*zz+r3(20)*yz*four &
+&                   +r3(28)*yy+r3(36)+r3(38)+r2( 4)*yzz*two+r2(11)*yyz*two+r2(17)*xyz(3)*two &
+&                   +r2(22)*xyz(2)*two+r1( 1)*zz*yy+r1( 4)*zz+r1(10)*yy+r1(13)
+        cint1(5,6,1)=r5(17)+r4(15)*xyz(3)*two+r4(23)*xyz(2)+r4(30)*xyz(3)+r3(10)*zz &
+&                   +r3(18)*yz*two+r3(20)*zz*two+r3(28)*yz+r3(40)*three+r2( 5)*yzz &
+&                   +r2( 4)*zzz+r2(11)*yzz*two+r2(16)*xyz(3)*two+r2(23)*xyz(2)*three &
+&                   +r2(22)*xyz(3)+r1( 1)*zz*yz+r1( 7)*yz*two+r1(10)*yz
+        cint1(6,6,1)=r5( 8)+r4( 8)*xyz(3)*two+r4(23)*xyz(3)*two+r3( 8)*zz+r3(18)*zz*four &
+&                   +r3(28)*zz+r3(38)*six+r2( 5)*zzz*two+r2(11)*zzz*two+r2(17)*xyz(3)*six &
+&                   +r2(23)*xyz(3)*six+r1( 1)*zz*zz+r1( 4)*zz+r1( 7)*zz*four+r1(10)*zz &
+&                   +r1(13)*three
         cint1(1,1,2)=r5( 4)+r4( 4)*xyz(1)*two+r4(19)*xyz(1)*two+r3( 4)*xx+r3(14)*xx*four &
 &                   +r3(24)*xx+r3(34)*six+r2( 4)*xxx*two+r2(10)*xxx*two+r2(16)*xyz(1)*six &
 &                   +r2(22)*xyz(1)*six+r1( 2)*xx*xx+r1( 5)*xx+r1( 8)*xx*four+r1(11)*xx &
 &                   +r1(14)*three
-        cint1(2,1,2)=r5(13)+r4( 6)*xyz(1)*two+r4(25)*xyz(2)*two+r3( 2)*xx+r3(16)*xy*four &
-&                   +r3(24)*yy+r3(32)+r3(34)+r2( 2)*xxy*two+r2(10)*xyy*two+r2(16)*xyz(1)*two &
-&                   +r2(20)*xyz(2)*two+r1( 2)*xx*yy+r1( 5)*xx+r1(11)*yy+r1(14)
-        cint1(3,1,2)=r5(20)+r4(15)*xyz(1)*two+r4(28)*xyz(3)*two+r3( 9)*xx+r3(20)*xz*four &
-&                   +r3(24)*zz+r3(34)+r3(39)+r2( 6)*xxz*two+r2(10)*xzz*two+r2(16)*xyz(1)*two &
-&                   +r2(24)*xyz(3)*two+r1( 2)*xx*zz+r1( 5)*xx+r1(11)*zz+r1(14)
-        cint1(4,1,2)=r5(10)+r4(10)*xyz(1)*two+r4(25)*xyz(1)+r4(19)*xyz(2)+r3( 6)*xx &
+        cint1(2,1,2)=r5(10)+r4(10)*xyz(1)*two+r4(25)*xyz(1)+r4(19)*xyz(2)+r3( 6)*xx &
 &                   +r3(16)*xx*two+r3(14)*xy*two+r3(24)*xy+r3(36)*three+r2( 2)*xxx &
 &                   +r2( 4)*xxy+r2(10)*xxy*two+r2(14)*xyz(1)*two+r2(20)*xyz(1) &
 &                   +r2(22)*xyz(2)*three+r1( 2)*xx*xy+r1( 8)*xy*two+r1(11)*xy
-        cint1(5,1,2)=r5(11)+r4(13)*xyz(1)*two+r4(28)*xyz(1)+r4(19)*xyz(3)+r3(10)*xx &
+        cint1(3,1,2)=r5(11)+r4(13)*xyz(1)*two+r4(28)*xyz(1)+r4(19)*xyz(3)+r3(10)*xx &
 &                   +r3(20)*xx*two+r3(14)*xz*two+r3(24)*xz+r3(40)*three+r2( 6)*xxx &
 &                   +r2( 4)*xxz+r2(10)*xxz*two+r2(18)*xyz(1)*two+r2(24)*xyz(1) &
 &                   +r2(22)*xyz(3)*three+r1( 2)*xx*xz+r1( 8)*xz*two+r1(11)*xz
-        cint1(6,1,2)=r5(19)+r4(14)*xyz(1)*two+r4(28)*xyz(2)+r4(25)*xyz(3)+r3( 7)*xx &
+        cint1(4,1,2)=r5(13)+r4( 6)*xyz(1)*two+r4(25)*xyz(2)*two+r3( 2)*xx+r3(16)*xy*four &
+&                   +r3(24)*yy+r3(32)+r3(34)+r2( 2)*xxy*two+r2(10)*xyy*two+r2(16)*xyz(1)*two &
+&                   +r2(20)*xyz(2)*two+r1( 2)*xx*yy+r1( 5)*xx+r1(11)*yy+r1(14)
+        cint1(5,1,2)=r5(19)+r4(14)*xyz(1)*two+r4(28)*xyz(2)+r4(25)*xyz(3)+r3( 7)*xx &
 &                   +r3(20)*xy*two+r3(16)*xz*two+r3(24)*yz+r3(37)+r2( 6)*xxy+r2( 2)*xxz &
 &                   +r2(10)*xyz2*two+r2(24)*xyz(2)+r2(20)*xyz(3)+r1( 2)*xx*yz+r1(11)*yz
-        cint1(1,2,2)=r5(13)+r4(10)*xyz(2)*two+r4(21)*xyz(1)*two+r3( 4)*yy+r3(16)*xy*four &
-&                   +r3(22)*xx+r3(32)+r3(34)+r2( 4)*xyy*two+r2( 8)*xxy*two+r2(14)*xyz(2)*two &
-&                   +r2(22)*xyz(1)*two+r1( 2)*yy*xx+r1( 5)*yy+r1(11)*xx+r1(14)
-        cint1(2,2,2)=r5( 2)+r4( 2)*xyz(2)*two+r4(17)*xyz(2)*two+r3( 2)*yy+r3(12)*yy*four &
-&                   +r3(22)*yy+r3(32)*six+r2( 2)*yyy*two+r2( 8)*yyy*two+r2(14)*xyz(2)*six &
-&                   +r2(20)*xyz(2)*six+r1( 2)*yy*yy+r1( 5)*yy+r1( 8)*yy*four+r1(11)*yy &
-&                   +r1(14)*three
-        cint1(3,2,2)=r5(15)+r4(12)*xyz(2)*two+r4(22)*xyz(3)*two+r3( 9)*yy+r3(17)*yz*four &
-&                   +r3(22)*zz+r3(32)+r3(39)+r2( 6)*yyz*two+r2( 8)*yzz*two+r2(14)*xyz(2)*two &
-&                   +r2(24)*xyz(3)*two+r1( 2)*yy*zz+r1( 5)*yy+r1(11)*zz+r1(14)
-        cint1(4,2,2)=r5( 6)+r4( 6)*xyz(2)*two+r4(17)*xyz(1)+r4(21)*xyz(2)+r3( 6)*yy &
-&                   +r3(12)*xy*two+r3(16)*yy*two+r3(22)*xy+r3(36)*three+r2( 2)*xyy &
-&                   +r2( 4)*yyy+r2( 8)*xyy*two+r2(16)*xyz(2)*two+r2(20)*xyz(1)*three &
-&                   +r2(22)*xyz(2)+r1( 2)*yy*xy+r1( 8)*xy*two+r1(11)*xy
-        cint1(5,2,2)=r5(14)+r4(14)*xyz(2)*two+r4(22)*xyz(1)+r4(21)*xyz(3)+r3(10)*yy &
-&                   +r3(17)*xy*two+r3(16)*yz*two+r3(22)*xz+r3(40)+r2( 6)*xyy+r2( 4)*yyz &
-&                   +r2( 8)*xyz2*two+r2(24)*xyz(1)+r2(22)*xyz(3)+r1( 2)*yy*xz+r1(11)*xz
-        cint1(6,2,2)=r5( 7)+r4( 7)*xyz(2)*two+r4(22)*xyz(2)+r4(17)*xyz(3)+r3( 7)*yy &
-&                   +r3(17)*yy*two+r3(12)*yz*two+r3(22)*yz+r3(37)*three+r2( 6)*yyy &
-&                   +r2( 2)*yyz+r2( 8)*yyz*two+r2(18)*xyz(2)*two+r2(24)*xyz(2) &
-&                   +r2(20)*xyz(3)*three+r1( 2)*yy*yz+r1( 8)*yz*two+r1(11)*yz
-        cint1(1,3,2)=r5(20)+r4(13)*xyz(3)*two+r4(30)*xyz(1)*two+r3( 4)*zz+r3(20)*xz*four &
-&                   +r3(29)*xx+r3(34)+r3(39)+r2( 4)*xzz*two+r2(12)*xxz*two+r2(18)*xyz(3)*two &
-&                   +r2(22)*xyz(1)*two+r1( 2)*zz*xx+r1( 5)*zz+r1(11)*xx+r1(14)
-        cint1(2,3,2)=r5(15)+r4( 7)*xyz(3)*two+r4(27)*xyz(2)*two+r3( 2)*zz+r3(17)*yz*four &
-&                   +r3(29)*yy+r3(32)+r3(39)+r2( 2)*yzz*two+r2(12)*yyz*two+r2(18)*xyz(3)*two &
-&                   +r2(20)*xyz(2)*two+r1( 2)*zz*yy+r1( 5)*zz+r1(11)*yy+r1(14)
-        cint1(3,3,2)=r5( 9)+r4( 9)*xyz(3)*two+r4(24)*xyz(3)*two+r3( 9)*zz+r3(19)*zz*four &
-&                   +r3(29)*zz+r3(39)*six+r2( 6)*zzz*two+r2(12)*zzz*two+r2(18)*xyz(3)*six &
-&                   +r2(24)*xyz(3)*six+r1( 2)*zz*zz+r1( 5)*zz+r1( 8)*zz*four+r1(11)*zz &
-&                   +r1(14)*three
-        cint1(4,3,2)=r5(21)+r4(14)*xyz(3)*two+r4(27)*xyz(1)+r4(30)*xyz(2)+r3( 6)*zz &
-&                   +r3(17)*xz*two+r3(20)*yz*two+r3(29)*xy+r3(36)+r2( 2)*xzz+r2( 4)*yzz &
-&                   +r2(12)*xyz2*two+r2(20)*xyz(1)+r2(22)*xyz(2)+r1( 2)*zz*xy+r1(11)*xy
-        cint1(5,3,2)=r5(17)+r4(15)*xyz(3)*two+r4(24)*xyz(1)+r4(30)*xyz(3)+r3(10)*zz &
-&                   +r3(19)*xz*two+r3(20)*zz*two+r3(29)*xz+r3(40)*three+r2( 6)*xzz &
-&                   +r2( 4)*zzz+r2(12)*xzz*two+r2(16)*xyz(3)*two+r2(24)*xyz(1)*three &
-&                   +r2(22)*xyz(3)+r1( 2)*zz*xz+r1( 8)*xz*two+r1(11)*xz
-        cint1(6,3,2)=r5(18)+r4(12)*xyz(3)*two+r4(24)*xyz(2)+r4(27)*xyz(3)+r3( 7)*zz &
-&                   +r3(19)*yz*two+r3(17)*zz*two+r3(29)*yz+r3(37)*three+r2( 6)*yzz &
-&                   +r2( 2)*zzz+r2(12)*yzz*two+r2(14)*xyz(3)*two+r2(24)*xyz(2)*three &
-&                   +r2(20)*xyz(3)+r1( 2)*zz*yz+r1( 8)*yz*two+r1(11)*yz
-        cint1(1,4,2)=r5(10)+r4(10)*xyz(1)+r4( 4)*xyz(2)+r4(25)*xyz(1)*two+r3( 4)*xy &
+        cint1(6,1,2)=r5(20)+r4(15)*xyz(1)*two+r4(28)*xyz(3)*two+r3( 9)*xx+r3(20)*xz*four &
+&                   +r3(24)*zz+r3(34)+r3(39)+r2( 6)*xxz*two+r2(10)*xzz*two+r2(16)*xyz(1)*two &
+&                   +r2(24)*xyz(3)*two+r1( 2)*xx*zz+r1( 5)*xx+r1(11)*zz+r1(14)
+        cint1(1,2,2)=r5(10)+r4(10)*xyz(1)+r4( 4)*xyz(2)+r4(25)*xyz(1)*two+r3( 4)*xy &
 &                   +r3(16)*xx*two+r3(14)*xy*two+r3(26)*xx+r3(36)*three+r2( 4)*xxy*two &
 &                   +r2( 8)*xxx+r2(10)*xxy+r2(14)*xyz(1)+r2(16)*xyz(2)*three &
 &                   +r2(20)*xyz(1)*two+r1( 2)*xy*xx+r1( 5)*xy+r1( 8)*xy*two
-        cint1(2,4,2)=r5( 6)+r4( 2)*xyz(1)+r4( 6)*xyz(2)+r4(21)*xyz(2)*two+r3( 2)*xy &
-&                   +r3(12)*xy*two+r3(16)*yy*two+r3(26)*yy+r3(36)*three+r2( 2)*xyy*two &
-&                   +r2( 8)*xyy+r2(10)*yyy+r2(14)*xyz(1)*three+r2(16)*xyz(2) &
-&                   +r2(22)*xyz(2)*two+r1( 2)*xy*yy+r1( 5)*xy+r1( 8)*xy*two
-        cint1(3,4,2)=r5(21)+r4(12)*xyz(1)+r4(15)*xyz(2)+r4(29)*xyz(3)*two+r3( 9)*xy &
-&                   +r3(17)*xz*two+r3(20)*yz*two+r3(26)*zz+r3(36)+r2( 6)*xyz2*two+r2( 8)*xzz &
-&                   +r2(10)*yzz+r2(14)*xyz(1)+r2(16)*xyz(2)+r1( 2)*xy*zz+r1( 5)*xy
-        cint1(4,4,2)=r5(13)+r4( 6)*xyz(1)+r4(10)*xyz(2)+r4(21)*xyz(1)+r4(25)*xyz(2) &
+        cint1(2,2,2)=r5(13)+r4( 6)*xyz(1)+r4(10)*xyz(2)+r4(21)*xyz(1)+r4(25)*xyz(2) &
 &                   +r3( 6)*xy+r3(12)*xx+r3(16)*xy+r3(16)*xy+r3(14)*yy+r3(26)*xy+r3(32) &
 &                   +r3(34)+r2( 2)*xxy+r2( 4)*xyy+r2( 8)*xxy+r2(10)*xyy+r2(16)*xyz(1) &
 &                   +r2(14)*xyz(2)+r2(22)*xyz(1)+r2(20)*xyz(2)+r1( 2)*xy*xy+r1( 8)*xx &
 &                   +r1( 8)*yy+r1(14)
-        cint1(5,4,2)=r5(19)+r4(14)*xyz(1)+r4(13)*xyz(2)+r4(29)*xyz(1)+r4(25)*xyz(3) &
+        cint1(3,2,2)=r5(19)+r4(14)*xyz(1)+r4(13)*xyz(2)+r4(29)*xyz(1)+r4(25)*xyz(3) &
 &                   +r3(10)*xy+r3(17)*xx+r3(16)*xz+r3(20)*xy+r3(14)*yz+r3(26)*xz+r3(37) &
 &                   +r2( 6)*xxy+r2( 4)*xyz2+r2( 8)*xxz+r2(10)*xyz2+r2(18)*xyz(2)+r2(20)*xyz(3) &
 &                   +r1( 2)*xy*xz+r1( 8)*yz
-        cint1(6,4,2)=r5(14)+r4( 7)*xyz(1)+r4(14)*xyz(2)+r4(29)*xyz(2)+r4(21)*xyz(3) &
+        cint1(4,2,2)=r5( 6)+r4( 2)*xyz(1)+r4( 6)*xyz(2)+r4(21)*xyz(2)*two+r3( 2)*xy &
+&                   +r3(12)*xy*two+r3(16)*yy*two+r3(26)*yy+r3(36)*three+r2( 2)*xyy*two &
+&                   +r2( 8)*xyy+r2(10)*yyy+r2(14)*xyz(1)*three+r2(16)*xyz(2) &
+&                   +r2(22)*xyz(2)*two+r1( 2)*xy*yy+r1( 5)*xy+r1( 8)*xy*two
+        cint1(5,2,2)=r5(14)+r4( 7)*xyz(1)+r4(14)*xyz(2)+r4(29)*xyz(2)+r4(21)*xyz(3) &
 &                   +r3( 7)*xy+r3(17)*xy+r3(12)*xz+r3(20)*yy+r3(16)*yz+r3(26)*yz+r3(40) &
 &                   +r2( 6)*xyy+r2( 2)*xyz2+r2( 8)*xyz2+r2(10)*yyz+r2(18)*xyz(1)+r2(22)*xyz(3) &
 &                   +r1( 2)*xy*yz+r1( 8)*xz
-        cint1(1,5,2)=r5(11)+r4(13)*xyz(1)+r4( 4)*xyz(3)+r4(28)*xyz(1)*two+r3( 4)*xz &
+        cint1(6,2,2)=r5(21)+r4(12)*xyz(1)+r4(15)*xyz(2)+r4(29)*xyz(3)*two+r3( 9)*xy &
+&                   +r3(17)*xz*two+r3(20)*yz*two+r3(26)*zz+r3(36)+r2( 6)*xyz2*two+r2( 8)*xzz &
+&                   +r2(10)*yzz+r2(14)*xyz(1)+r2(16)*xyz(2)+r1( 2)*xy*zz+r1( 5)*xy
+        cint1(1,3,2)=r5(11)+r4(13)*xyz(1)+r4( 4)*xyz(3)+r4(28)*xyz(1)*two+r3( 4)*xz &
 &                   +r3(20)*xx*two+r3(14)*xz*two+r3(30)*xx+r3(40)*three+r2( 4)*xxz*two &
 &                   +r2(12)*xxx+r2(10)*xxz+r2(18)*xyz(1)+r2(16)*xyz(3)*three &
 &                   +r2(24)*xyz(1)*two+r1( 2)*xz*xx+r1( 5)*xz+r1( 8)*xz*two
-        cint1(2,5,2)=r5(14)+r4( 7)*xyz(1)+r4( 6)*xyz(3)+r4(29)*xyz(2)*two+r3( 2)*xz &
-&                   +r3(17)*xy*two+r3(16)*yz*two+r3(30)*yy+r3(40)+r2( 2)*xyz2*two+r2(12)*xyy &
-&                   +r2(10)*yyz+r2(18)*xyz(1)+r2(16)*xyz(3)+r1( 2)*xz*yy+r1( 5)*xz
-        cint1(3,5,2)=r5(17)+r4( 9)*xyz(1)+r4(15)*xyz(3)+r4(30)*xyz(3)*two+r3( 9)*xz &
-&                   +r3(19)*xz*two+r3(20)*zz*two+r3(30)*zz+r3(40)*three+r2( 6)*xzz*two &
-&                   +r2(12)*xzz+r2(10)*zzz+r2(18)*xyz(1)*three+r2(16)*xyz(3) &
-&                   +r2(22)*xyz(3)*two+r1( 2)*xz*zz+r1( 5)*xz+r1( 8)*xz*two
-        cint1(4,5,2)=r5(19)+r4(14)*xyz(1)+r4(10)*xyz(3)+r4(29)*xyz(1)+r4(28)*xyz(2) &
+        cint1(2,3,2)=r5(19)+r4(14)*xyz(1)+r4(10)*xyz(3)+r4(29)*xyz(1)+r4(28)*xyz(2) &
 &                   +r3( 6)*xz+r3(17)*xx+r3(20)*xy+r3(16)*xz+r3(14)*yz+r3(30)*xy+r3(37) &
 &                   +r2( 2)*xxz+r2( 4)*xyz2+r2(12)*xxy+r2(10)*xyz2+r2(14)*xyz(3) &
 &                   +r2(24)*xyz(2)+r1( 2)*xz*xy+r1( 8)*yz
-        cint1(5,5,2)=r5(20)+r4(15)*xyz(1)+r4(13)*xyz(3)+r4(30)*xyz(1)+r4(28)*xyz(3) &
+        cint1(3,3,2)=r5(20)+r4(15)*xyz(1)+r4(13)*xyz(3)+r4(30)*xyz(1)+r4(28)*xyz(3) &
 &                   +r3(10)*xz+r3(19)*xx+r3(20)*xz+r3(20)*xz+r3(14)*zz+r3(30)*xz+r3(34) &
 &                   +r3(39)+r2( 6)*xxz+r2( 4)*xzz+r2(12)*xxz+r2(10)*xzz+r2(16)*xyz(1) &
 &                   +r2(18)*xyz(3)+r2(22)*xyz(1)+r2(24)*xyz(3)+r1( 2)*xz*xz+r1( 8)*xx &
 &                   +r1( 8)*zz+r1(14)
-        cint1(6,5,2)=r5(21)+r4(12)*xyz(1)+r4(14)*xyz(3)+r4(30)*xyz(2)+r4(29)*xyz(3) &
+        cint1(4,3,2)=r5(14)+r4( 7)*xyz(1)+r4( 6)*xyz(3)+r4(29)*xyz(2)*two+r3( 2)*xz &
+&                   +r3(17)*xy*two+r3(16)*yz*two+r3(30)*yy+r3(40)+r2( 2)*xyz2*two+r2(12)*xyy &
+&                   +r2(10)*yyz+r2(18)*xyz(1)+r2(16)*xyz(3)+r1( 2)*xz*yy+r1( 5)*xz
+        cint1(5,3,2)=r5(21)+r4(12)*xyz(1)+r4(14)*xyz(3)+r4(30)*xyz(2)+r4(29)*xyz(3) &
 &                   +r3( 7)*xz+r3(19)*xy+r3(17)*xz+r3(20)*yz+r3(16)*zz+r3(30)*yz+r3(36) &
 &                   +r2( 6)*xyz2+r2( 2)*xzz+r2(12)*xyz2+r2(10)*yzz+r2(14)*xyz(1) &
 &                   +r2(22)*xyz(2)+r1( 2)*xz*yz+r1( 8)*xy
-        cint1(1,6,2)=r5(19)+r4(13)*xyz(2)+r4(10)*xyz(3)+r4(29)*xyz(1)*two+r3( 4)*yz &
+        cint1(6,3,2)=r5(17)+r4( 9)*xyz(1)+r4(15)*xyz(3)+r4(30)*xyz(3)*two+r3( 9)*xz &
+&                   +r3(19)*xz*two+r3(20)*zz*two+r3(30)*zz+r3(40)*three+r2( 6)*xzz*two &
+&                   +r2(12)*xzz+r2(10)*zzz+r2(18)*xyz(1)*three+r2(16)*xyz(3) &
+&                   +r2(22)*xyz(3)*two+r1( 2)*xz*zz+r1( 5)*xz+r1( 8)*xz*two
+        cint1(1,4,2)=r5(13)+r4(10)*xyz(2)*two+r4(21)*xyz(1)*two+r3( 4)*yy+r3(16)*xy*four &
+&                   +r3(22)*xx+r3(32)+r3(34)+r2( 4)*xyy*two+r2( 8)*xxy*two+r2(14)*xyz(2)*two &
+&                   +r2(22)*xyz(1)*two+r1( 2)*yy*xx+r1( 5)*yy+r1(11)*xx+r1(14)
+        cint1(2,4,2)=r5( 6)+r4( 6)*xyz(2)*two+r4(17)*xyz(1)+r4(21)*xyz(2)+r3( 6)*yy &
+&                   +r3(12)*xy*two+r3(16)*yy*two+r3(22)*xy+r3(36)*three+r2( 2)*xyy &
+&                   +r2( 4)*yyy+r2( 8)*xyy*two+r2(16)*xyz(2)*two+r2(20)*xyz(1)*three &
+&                   +r2(22)*xyz(2)+r1( 2)*yy*xy+r1( 8)*xy*two+r1(11)*xy
+        cint1(3,4,2)=r5(14)+r4(14)*xyz(2)*two+r4(22)*xyz(1)+r4(21)*xyz(3)+r3(10)*yy &
+&                   +r3(17)*xy*two+r3(16)*yz*two+r3(22)*xz+r3(40)+r2( 6)*xyy+r2( 4)*yyz &
+&                   +r2( 8)*xyz2*two+r2(24)*xyz(1)+r2(22)*xyz(3)+r1( 2)*yy*xz+r1(11)*xz
+        cint1(4,4,2)=r5( 2)+r4( 2)*xyz(2)*two+r4(17)*xyz(2)*two+r3( 2)*yy+r3(12)*yy*four &
+&                   +r3(22)*yy+r3(32)*six+r2( 2)*yyy*two+r2( 8)*yyy*two+r2(14)*xyz(2)*six &
+&                   +r2(20)*xyz(2)*six+r1( 2)*yy*yy+r1( 5)*yy+r1( 8)*yy*four+r1(11)*yy &
+&                   +r1(14)*three
+        cint1(5,4,2)=r5( 7)+r4( 7)*xyz(2)*two+r4(22)*xyz(2)+r4(17)*xyz(3)+r3( 7)*yy &
+&                   +r3(17)*yy*two+r3(12)*yz*two+r3(22)*yz+r3(37)*three+r2( 6)*yyy &
+&                   +r2( 2)*yyz+r2( 8)*yyz*two+r2(18)*xyz(2)*two+r2(24)*xyz(2) &
+&                   +r2(20)*xyz(3)*three+r1( 2)*yy*yz+r1( 8)*yz*two+r1(11)*yz
+        cint1(6,4,2)=r5(15)+r4(12)*xyz(2)*two+r4(22)*xyz(3)*two+r3( 9)*yy+r3(17)*yz*four &
+&                   +r3(22)*zz+r3(32)+r3(39)+r2( 6)*yyz*two+r2( 8)*yzz*two+r2(14)*xyz(2)*two &
+&                   +r2(24)*xyz(3)*two+r1( 2)*yy*zz+r1( 5)*yy+r1(11)*zz+r1(14)
+        cint1(1,5,2)=r5(19)+r4(13)*xyz(2)+r4(10)*xyz(3)+r4(29)*xyz(1)*two+r3( 4)*yz &
 &                   +r3(20)*xy*two+r3(16)*xz*two+r3(27)*xx+r3(37)+r2( 4)*xyz2*two+r2(12)*xxy &
 &                   +r2( 8)*xxz+r2(18)*xyz(2)+r2(14)*xyz(3)+r1( 2)*yz*xx+r1( 5)*yz
-        cint1(2,6,2)=r5( 7)+r4( 7)*xyz(2)+r4( 2)*xyz(3)+r4(22)*xyz(2)*two+r3( 2)*yz &
-&                   +r3(17)*yy*two+r3(12)*yz*two+r3(27)*yy+r3(37)*three+r2( 2)*yyz*two &
-&                   +r2(12)*yyy+r2( 8)*yyz+r2(18)*xyz(2)+r2(14)*xyz(3)*three &
-&                   +r2(24)*xyz(2)*two+r1( 2)*yz*yy+r1( 5)*yz+r1( 8)*yz*two
-        cint1(3,6,2)=r5(18)+r4( 9)*xyz(2)+r4(12)*xyz(3)+r4(27)*xyz(3)*two+r3( 9)*yz &
-&                   +r3(19)*yz*two+r3(17)*zz*two+r3(27)*zz+r3(37)*three+r2( 6)*yzz*two &
-&                   +r2(12)*yzz+r2( 8)*zzz+r2(18)*xyz(2)*three+r2(14)*xyz(3) &
-&                   +r2(20)*xyz(3)*two+r1( 2)*yz*zz+r1( 5)*yz+r1( 8)*yz*two
-        cint1(4,6,2)=r5(14)+r4(14)*xyz(2)+r4( 6)*xyz(3)+r4(22)*xyz(1)+r4(29)*xyz(2) &
+        cint1(2,5,2)=r5(14)+r4(14)*xyz(2)+r4( 6)*xyz(3)+r4(22)*xyz(1)+r4(29)*xyz(2) &
 &                   +r3( 6)*yz+r3(17)*xy+r3(20)*yy+r3(12)*xz+r3(16)*yz+r3(27)*xy+r3(40) &
 &                   +r2( 2)*xyz2+r2( 4)*yyz+r2(12)*xyy+r2( 8)*xyz2+r2(16)*xyz(3) &
 &                   +r2(24)*xyz(1)+r1( 2)*yz*xy+r1( 8)*xz
-        cint1(5,6,2)=r5(21)+r4(15)*xyz(2)+r4(14)*xyz(3)+r4(27)*xyz(1)+r4(29)*xyz(3) &
+        cint1(3,5,2)=r5(21)+r4(15)*xyz(2)+r4(14)*xyz(3)+r4(27)*xyz(1)+r4(29)*xyz(3) &
 &                   +r3(10)*yz+r3(19)*xy+r3(20)*yz+r3(17)*xz+r3(16)*zz+r3(27)*xz+r3(36) &
 &                   +r2( 6)*xyz2+r2( 4)*yzz+r2(12)*xyz2+r2( 8)*xzz+r2(16)*xyz(2) &
 &                   +r2(20)*xyz(1)+r1( 2)*yz*xz+r1( 8)*xy
-        cint1(6,6,2)=r5(15)+r4(12)*xyz(2)+r4( 7)*xyz(3)+r4(27)*xyz(2)+r4(22)*xyz(3) &
+        cint1(4,5,2)=r5( 7)+r4( 7)*xyz(2)+r4( 2)*xyz(3)+r4(22)*xyz(2)*two+r3( 2)*yz &
+&                   +r3(17)*yy*two+r3(12)*yz*two+r3(27)*yy+r3(37)*three+r2( 2)*yyz*two &
+&                   +r2(12)*yyy+r2( 8)*yyz+r2(18)*xyz(2)+r2(14)*xyz(3)*three &
+&                   +r2(24)*xyz(2)*two+r1( 2)*yz*yy+r1( 5)*yz+r1( 8)*yz*two
+        cint1(5,5,2)=r5(15)+r4(12)*xyz(2)+r4( 7)*xyz(3)+r4(27)*xyz(2)+r4(22)*xyz(3) &
 &                   +r3( 7)*yz+r3(19)*yy+r3(17)*yz+r3(17)*yz+r3(12)*zz+r3(27)*yz+r3(32) &
 &                   +r3(39)+r2( 6)*yyz+r2( 2)*yzz+r2(12)*yyz+r2( 8)*yzz+r2(14)*xyz(2) &
 &                   +r2(18)*xyz(3)+r2(20)*xyz(2)+r2(24)*xyz(3)+r1( 2)*yz*yz+r1( 8)*yy &
 &                   +r1( 8)*zz+r1(14)
+        cint1(6,5,2)=r5(18)+r4( 9)*xyz(2)+r4(12)*xyz(3)+r4(27)*xyz(3)*two+r3( 9)*yz &
+&                   +r3(19)*yz*two+r3(17)*zz*two+r3(27)*zz+r3(37)*three+r2( 6)*yzz*two &
+&                   +r2(12)*yzz+r2( 8)*zzz+r2(18)*xyz(2)*three+r2(14)*xyz(3) &
+&                   +r2(20)*xyz(3)*two+r1( 2)*yz*zz+r1( 5)*yz+r1( 8)*yz*two
+        cint1(1,6,2)=r5(20)+r4(13)*xyz(3)*two+r4(30)*xyz(1)*two+r3( 4)*zz+r3(20)*xz*four &
+&                   +r3(29)*xx+r3(34)+r3(39)+r2( 4)*xzz*two+r2(12)*xxz*two+r2(18)*xyz(3)*two &
+&                   +r2(22)*xyz(1)*two+r1( 2)*zz*xx+r1( 5)*zz+r1(11)*xx+r1(14)
+        cint1(2,6,2)=r5(21)+r4(14)*xyz(3)*two+r4(27)*xyz(1)+r4(30)*xyz(2)+r3( 6)*zz &
+&                   +r3(17)*xz*two+r3(20)*yz*two+r3(29)*xy+r3(36)+r2( 2)*xzz+r2( 4)*yzz &
+&                   +r2(12)*xyz2*two+r2(20)*xyz(1)+r2(22)*xyz(2)+r1( 2)*zz*xy+r1(11)*xy
+        cint1(3,6,2)=r5(17)+r4(15)*xyz(3)*two+r4(24)*xyz(1)+r4(30)*xyz(3)+r3(10)*zz &
+&                   +r3(19)*xz*two+r3(20)*zz*two+r3(29)*xz+r3(40)*three+r2( 6)*xzz &
+&                   +r2( 4)*zzz+r2(12)*xzz*two+r2(16)*xyz(3)*two+r2(24)*xyz(1)*three &
+&                   +r2(22)*xyz(3)+r1( 2)*zz*xz+r1( 8)*xz*two+r1(11)*xz
+        cint1(4,6,2)=r5(15)+r4( 7)*xyz(3)*two+r4(27)*xyz(2)*two+r3( 2)*zz+r3(17)*yz*four &
+&                   +r3(29)*yy+r3(32)+r3(39)+r2( 2)*yzz*two+r2(12)*yyz*two+r2(18)*xyz(3)*two &
+&                   +r2(20)*xyz(2)*two+r1( 2)*zz*yy+r1( 5)*zz+r1(11)*yy+r1(14)
+        cint1(5,6,2)=r5(18)+r4(12)*xyz(3)*two+r4(24)*xyz(2)+r4(27)*xyz(3)+r3( 7)*zz &
+&                   +r3(19)*yz*two+r3(17)*zz*two+r3(29)*yz+r3(37)*three+r2( 6)*yzz &
+&                   +r2( 2)*zzz+r2(12)*yzz*two+r2(14)*xyz(3)*two+r2(24)*xyz(2)*three &
+&                   +r2(20)*xyz(3)+r1( 2)*zz*yz+r1( 8)*yz*two+r1(11)*yz
+        cint1(6,6,2)=r5( 9)+r4( 9)*xyz(3)*two+r4(24)*xyz(3)*two+r3( 9)*zz+r3(19)*zz*four &
+&                   +r3(29)*zz+r3(39)*six+r2( 6)*zzz*two+r2(12)*zzz*two+r2(18)*xyz(3)*six &
+&                   +r2(24)*xyz(3)*six+r1( 2)*zz*zz+r1( 5)*zz+r1( 8)*zz*four+r1(11)*zz &
+&                   +r1(14)*three
         cint1(1,1,3)=r5( 5)+r4( 5)*xyz(1)*two+r4(20)*xyz(1)*two+r3( 5)*xx+r3(15)*xx*four &
 &                   +r3(25)*xx+r3(35)*six+r2( 5)*xxx*two+r2(11)*xxx*two+r2(17)*xyz(1)*six &
 &                   +r2(23)*xyz(1)*six+r1( 3)*xx*xx+r1( 6)*xx+r1( 9)*xx*four+r1(12)*xx &
 &                   +r1(15)*three
-        cint1(2,1,3)=r5(19)+r4(14)*xyz(1)*two+r4(28)*xyz(2)*two+r3( 7)*xx+r3(20)*xy*four &
-&                   +r3(25)*yy+r3(35)+r3(37)+r2( 6)*xxy*two+r2(11)*xyy*two+r2(17)*xyz(1)*two &
-&                   +r2(24)*xyz(2)*two+r1( 3)*xx*yy+r1( 6)*xx+r1(12)*yy+r1(15)
-        cint1(3,1,3)=r5(16)+r4( 8)*xyz(1)*two+r4(26)*xyz(3)*two+r3( 3)*xx+r3(18)*xz*four &
-&                   +r3(25)*zz+r3(33)+r3(35)+r2( 3)*xxz*two+r2(11)*xzz*two+r2(17)*xyz(1)*two &
-&                   +r2(21)*xyz(3)*two+r1( 3)*xx*zz+r1( 6)*xx+r1(12)*zz+r1(15)
-        cint1(4,1,3)=r5(11)+r4(13)*xyz(1)*two+r4(28)*xyz(1)+r4(20)*xyz(2)+r3(10)*xx &
+        cint1(2,1,3)=r5(11)+r4(13)*xyz(1)*two+r4(28)*xyz(1)+r4(20)*xyz(2)+r3(10)*xx &
 &                   +r3(20)*xx*two+r3(15)*xy*two+r3(25)*xy+r3(40)*three+r2( 6)*xxx &
 &                   +r2( 5)*xxy+r2(11)*xxy*two+r2(18)*xyz(1)*two+r2(24)*xyz(1) &
 &                   +r2(23)*xyz(2)*three+r1( 3)*xx*xy+r1( 9)*xy*two+r1(12)*xy
-        cint1(5,1,3)=r5(12)+r4(11)*xyz(1)*two+r4(26)*xyz(1)+r4(20)*xyz(3)+r3( 8)*xx &
+        cint1(3,1,3)=r5(12)+r4(11)*xyz(1)*two+r4(26)*xyz(1)+r4(20)*xyz(3)+r3( 8)*xx &
 &                   +r3(18)*xx*two+r3(15)*xz*two+r3(25)*xz+r3(38)*three+r2( 3)*xxx &
 &                   +r2( 5)*xxz+r2(11)*xxz*two+r2(15)*xyz(1)*two+r2(21)*xyz(1) &
 &                   +r2(23)*xyz(3)*three+r1( 3)*xx*xz+r1( 9)*xz*two+r1(12)*xz
-        cint1(6,1,3)=r5(20)+r4(15)*xyz(1)*two+r4(26)*xyz(2)+r4(28)*xyz(3)+r3( 9)*xx &
+        cint1(4,1,3)=r5(19)+r4(14)*xyz(1)*two+r4(28)*xyz(2)*two+r3( 7)*xx+r3(20)*xy*four &
+&                   +r3(25)*yy+r3(35)+r3(37)+r2( 6)*xxy*two+r2(11)*xyy*two+r2(17)*xyz(1)*two &
+&                   +r2(24)*xyz(2)*two+r1( 3)*xx*yy+r1( 6)*xx+r1(12)*yy+r1(15)
+        cint1(5,1,3)=r5(20)+r4(15)*xyz(1)*two+r4(26)*xyz(2)+r4(28)*xyz(3)+r3( 9)*xx &
 &                   +r3(18)*xy*two+r3(20)*xz*two+r3(25)*yz+r3(39)+r2( 3)*xxy+r2( 6)*xxz &
 &                   +r2(11)*xyz2*two+r2(21)*xyz(2)+r2(24)*xyz(3)+r1( 3)*xx*yz+r1(12)*yz
-        cint1(1,2,3)=r5(19)+r4(13)*xyz(2)*two+r4(29)*xyz(1)*two+r3( 5)*yy+r3(20)*xy*four &
-&                   +r3(27)*xx+r3(35)+r3(37)+r2( 5)*xyy*two+r2(12)*xxy*two+r2(18)*xyz(2)*two &
-&                   +r2(23)*xyz(1)*two+r1( 3)*yy*xx+r1( 6)*yy+r1(12)*xx+r1(15)
-        cint1(2,2,3)=r5( 7)+r4( 7)*xyz(2)*two+r4(22)*xyz(2)*two+r3( 7)*yy+r3(17)*yy*four &
-&                   +r3(27)*yy+r3(37)*six+r2( 6)*yyy*two+r2(12)*yyy*two+r2(18)*xyz(2)*six &
-&                   +r2(24)*xyz(2)*six+r1( 3)*yy*yy+r1( 6)*yy+r1( 9)*yy*four+r1(12)*yy &
-&                   +r1(15)*three
-        cint1(3,2,3)=r5(18)+r4( 9)*xyz(2)*two+r4(27)*xyz(3)*two+r3( 3)*yy+r3(19)*yz*four &
-&                   +r3(27)*zz+r3(33)+r3(37)+r2( 3)*yyz*two+r2(12)*yzz*two+r2(18)*xyz(2)*two &
-&                   +r2(21)*xyz(3)*two+r1( 3)*yy*zz+r1( 6)*yy+r1(12)*zz+r1(15)
-        cint1(4,2,3)=r5(14)+r4(14)*xyz(2)*two+r4(22)*xyz(1)+r4(29)*xyz(2)+r3(10)*yy &
-&                   +r3(17)*xy*two+r3(20)*yy*two+r3(27)*xy+r3(40)*three+r2( 6)*xyy &
-&                   +r2( 5)*yyy+r2(12)*xyy*two+r2(17)*xyz(2)*two+r2(24)*xyz(1)*three &
-&                   +r2(23)*xyz(2)+r1( 3)*yy*xy+r1( 9)*xy*two+r1(12)*xy
-        cint1(5,2,3)=r5(21)+r4(15)*xyz(2)*two+r4(27)*xyz(1)+r4(29)*xyz(3)+r3( 8)*yy &
-&                   +r3(19)*xy*two+r3(20)*yz*two+r3(27)*xz+r3(38)+r2( 3)*xyy+r2( 5)*yyz &
-&                   +r2(12)*xyz2*two+r2(21)*xyz(1)+r2(23)*xyz(3)+r1( 3)*yy*xz+r1(12)*xz
-        cint1(6,2,3)=r5(15)+r4(12)*xyz(2)*two+r4(27)*xyz(2)+r4(22)*xyz(3)+r3( 9)*yy &
-&                   +r3(19)*yy*two+r3(17)*yz*two+r3(27)*yz+r3(39)*three+r2( 3)*yyy &
-&                   +r2( 6)*yyz+r2(12)*yyz*two+r2(15)*xyz(2)*two+r2(21)*xyz(2) &
-&                   +r2(24)*xyz(3)*three+r1( 3)*yy*yz+r1( 9)*yz*two+r1(12)*yz
-        cint1(1,3,3)=r5(16)+r4(11)*xyz(3)*two+r4(23)*xyz(1)*two+r3( 5)*zz+r3(18)*xz*four &
-&                   +r3(23)*xx+r3(33)+r3(35)+r2( 5)*xzz*two+r2( 9)*xxz*two+r2(15)*xyz(3)*two &
-&                   +r2(23)*xyz(1)*two+r1( 3)*zz*xx+r1( 6)*zz+r1(12)*xx+r1(15)
-        cint1(2,3,3)=r5(18)+r4(12)*xyz(3)*two+r4(24)*xyz(2)*two+r3( 7)*zz+r3(19)*yz*four &
-&                   +r3(23)*yy+r3(33)+r3(37)+r2( 6)*yzz*two+r2( 9)*yyz*two+r2(15)*xyz(3)*two &
-&                   +r2(24)*xyz(2)*two+r1( 3)*zz*yy+r1( 6)*zz+r1(12)*yy+r1(15)
-        cint1(3,3,3)=r5( 3)+r4( 3)*xyz(3)*two+r4(18)*xyz(3)*two+r3( 3)*zz+r3(13)*zz*four &
-&                   +r3(23)*zz+r3(33)*six+r2( 3)*zzz*two+r2( 9)*zzz*two+r2(15)*xyz(3)*six &
-&                   +r2(21)*xyz(3)*six+r1( 3)*zz*zz+r1( 6)*zz+r1( 9)*zz*four+r1(12)*zz &
-&                   +r1(15)*three
-        cint1(4,3,3)=r5(17)+r4(15)*xyz(3)*two+r4(24)*xyz(1)+r4(23)*xyz(2)+r3(10)*zz &
-&                   +r3(19)*xz*two+r3(18)*yz*two+r3(23)*xy+r3(40)+r2( 6)*xzz+r2( 5)*yzz &
-&                   +r2( 9)*xyz2*two+r2(24)*xyz(1)+r2(23)*xyz(2)+r1( 3)*zz*xy+r1(12)*xy
-        cint1(5,3,3)=r5( 8)+r4( 8)*xyz(3)*two+r4(18)*xyz(1)+r4(23)*xyz(3)+r3( 8)*zz &
-&                   +r3(13)*xz*two+r3(18)*zz*two+r3(23)*xz+r3(38)*three+r2( 3)*xzz &
-&                   +r2( 5)*zzz+r2( 9)*xzz*two+r2(17)*xyz(3)*two+r2(21)*xyz(1)*three &
-&                   +r2(23)*xyz(3)+r1( 3)*zz*xz+r1( 9)*xz*two+r1(12)*xz
-        cint1(6,3,3)=r5( 9)+r4( 9)*xyz(3)*two+r4(18)*xyz(2)+r4(24)*xyz(3)+r3( 9)*zz &
-&                   +r3(13)*yz*two+r3(19)*zz*two+r3(23)*yz+r3(39)*three+r2( 3)*yzz &
-&                   +r2( 6)*zzz+r2( 9)*yzz*two+r2(18)*xyz(3)*two+r2(21)*xyz(2)*three &
-&                   +r2(24)*xyz(3)+r1( 3)*zz*yz+r1( 9)*yz*two+r1(12)*yz
-        cint1(1,4,3)=r5(11)+r4(13)*xyz(1)+r4( 5)*xyz(2)+r4(28)*xyz(1)*two+r3( 5)*xy &
+        cint1(6,1,3)=r5(16)+r4( 8)*xyz(1)*two+r4(26)*xyz(3)*two+r3( 3)*xx+r3(18)*xz*four &
+&                   +r3(25)*zz+r3(33)+r3(35)+r2( 3)*xxz*two+r2(11)*xzz*two+r2(17)*xyz(1)*two &
+&                   +r2(21)*xyz(3)*two+r1( 3)*xx*zz+r1( 6)*xx+r1(12)*zz+r1(15)
+        cint1(1,2,3)=r5(11)+r4(13)*xyz(1)+r4( 5)*xyz(2)+r4(28)*xyz(1)*two+r3( 5)*xy &
 &                   +r3(20)*xx*two+r3(15)*xy*two+r3(30)*xx+r3(40)*three+r2( 5)*xxy*two &
 &                   +r2(12)*xxx+r2(11)*xxy+r2(18)*xyz(1)+r2(17)*xyz(2)*three &
 &                   +r2(24)*xyz(1)*two+r1( 3)*xy*xx+r1( 6)*xy+r1( 9)*xy*two
-        cint1(2,4,3)=r5(14)+r4( 7)*xyz(1)+r4(14)*xyz(2)+r4(29)*xyz(2)*two+r3( 7)*xy &
-&                   +r3(17)*xy*two+r3(20)*yy*two+r3(30)*yy+r3(40)*three+r2( 6)*xyy*two &
-&                   +r2(12)*xyy+r2(11)*yyy+r2(18)*xyz(1)*three+r2(17)*xyz(2) &
-&                   +r2(23)*xyz(2)*two+r1( 3)*xy*yy+r1( 6)*xy+r1( 9)*xy*two
-        cint1(3,4,3)=r5(17)+r4( 9)*xyz(1)+r4( 8)*xyz(2)+r4(30)*xyz(3)*two+r3( 3)*xy &
-&                   +r3(19)*xz*two+r3(18)*yz*two+r3(30)*zz+r3(40)+r2( 3)*xyz2*two+r2(12)*xzz &
-&                   +r2(11)*yzz+r2(18)*xyz(1)+r2(17)*xyz(2)+r1( 3)*xy*zz+r1( 6)*xy
-        cint1(4,4,3)=r5(19)+r4(14)*xyz(1)+r4(13)*xyz(2)+r4(29)*xyz(1)+r4(28)*xyz(2) &
+        cint1(2,2,3)=r5(19)+r4(14)*xyz(1)+r4(13)*xyz(2)+r4(29)*xyz(1)+r4(28)*xyz(2) &
 &                   +r3(10)*xy+r3(17)*xx+r3(20)*xy+r3(20)*xy+r3(15)*yy+r3(30)*xy+r3(35) &
 &                   +r3(37)+r2( 6)*xxy+r2( 5)*xyy+r2(12)*xxy+r2(11)*xyy+r2(17)*xyz(1) &
 &                   +r2(18)*xyz(2)+r2(23)*xyz(1)+r2(24)*xyz(2)+r1( 3)*xy*xy+r1( 9)*xx &
 &                   +r1( 9)*yy+r1(15)
-        cint1(5,4,3)=r5(20)+r4(15)*xyz(1)+r4(11)*xyz(2)+r4(30)*xyz(1)+r4(28)*xyz(3) &
+        cint1(3,2,3)=r5(20)+r4(15)*xyz(1)+r4(11)*xyz(2)+r4(30)*xyz(1)+r4(28)*xyz(3) &
 &                   +r3( 8)*xy+r3(19)*xx+r3(20)*xz+r3(18)*xy+r3(15)*yz+r3(30)*xz+r3(39) &
 &                   +r2( 3)*xxy+r2( 5)*xyz2+r2(12)*xxz+r2(11)*xyz2+r2(15)*xyz(2) &
 &                   +r2(24)*xyz(3)+r1( 3)*xy*xz+r1( 9)*yz
-        cint1(6,4,3)=r5(21)+r4(12)*xyz(1)+r4(15)*xyz(2)+r4(30)*xyz(2)+r4(29)*xyz(3) &
+        cint1(4,2,3)=r5(14)+r4( 7)*xyz(1)+r4(14)*xyz(2)+r4(29)*xyz(2)*two+r3( 7)*xy &
+&                   +r3(17)*xy*two+r3(20)*yy*two+r3(30)*yy+r3(40)*three+r2( 6)*xyy*two &
+&                   +r2(12)*xyy+r2(11)*yyy+r2(18)*xyz(1)*three+r2(17)*xyz(2) &
+&                   +r2(23)*xyz(2)*two+r1( 3)*xy*yy+r1( 6)*xy+r1( 9)*xy*two
+        cint1(5,2,3)=r5(21)+r4(12)*xyz(1)+r4(15)*xyz(2)+r4(30)*xyz(2)+r4(29)*xyz(3) &
 &                   +r3( 9)*xy+r3(19)*xy+r3(17)*xz+r3(18)*yy+r3(20)*yz+r3(30)*yz+r3(38) &
 &                   +r2( 3)*xyy+r2( 6)*xyz2+r2(12)*xyz2+r2(11)*yyz+r2(15)*xyz(1) &
 &                   +r2(23)*xyz(3)+r1( 3)*xy*yz+r1( 9)*xz
-        cint1(1,5,3)=r5(12)+r4(11)*xyz(1)+r4( 5)*xyz(3)+r4(26)*xyz(1)*two+r3( 5)*xz &
+        cint1(6,2,3)=r5(17)+r4( 9)*xyz(1)+r4( 8)*xyz(2)+r4(30)*xyz(3)*two+r3( 3)*xy &
+&                   +r3(19)*xz*two+r3(18)*yz*two+r3(30)*zz+r3(40)+r2( 3)*xyz2*two+r2(12)*xzz &
+&                   +r2(11)*yzz+r2(18)*xyz(1)+r2(17)*xyz(2)+r1( 3)*xy*zz+r1( 6)*xy
+        cint1(1,3,3)=r5(12)+r4(11)*xyz(1)+r4( 5)*xyz(3)+r4(26)*xyz(1)*two+r3( 5)*xz &
 &                   +r3(18)*xx*two+r3(15)*xz*two+r3(28)*xx+r3(38)*three+r2( 5)*xxz*two &
 &                   +r2( 9)*xxx+r2(11)*xxz+r2(15)*xyz(1)+r2(17)*xyz(3)*three &
 &                   +r2(21)*xyz(1)*two+r1( 3)*xz*xx+r1( 6)*xz+r1( 9)*xz*two
-        cint1(2,5,3)=r5(21)+r4(12)*xyz(1)+r4(14)*xyz(3)+r4(30)*xyz(2)*two+r3( 7)*xz &
-&                   +r3(19)*xy*two+r3(20)*yz*two+r3(28)*yy+r3(38)+r2( 6)*xyz2*two+r2( 9)*xyy &
-&                   +r2(11)*yyz+r2(15)*xyz(1)+r2(17)*xyz(3)+r1( 3)*xz*yy+r1( 6)*xz
-        cint1(3,5,3)=r5( 8)+r4( 3)*xyz(1)+r4( 8)*xyz(3)+r4(23)*xyz(3)*two+r3( 3)*xz &
-&                   +r3(13)*xz*two+r3(18)*zz*two+r3(28)*zz+r3(38)*three+r2( 3)*xzz*two &
-&                   +r2( 9)*xzz+r2(11)*zzz+r2(15)*xyz(1)*three+r2(17)*xyz(3) &
-&                   +r2(23)*xyz(3)*two+r1( 3)*xz*zz+r1( 6)*xz+r1( 9)*xz*two
-        cint1(4,5,3)=r5(20)+r4(15)*xyz(1)+r4(13)*xyz(3)+r4(30)*xyz(1)+r4(26)*xyz(2) &
+        cint1(2,3,3)=r5(20)+r4(15)*xyz(1)+r4(13)*xyz(3)+r4(30)*xyz(1)+r4(26)*xyz(2) &
 &                   +r3(10)*xz+r3(19)*xx+r3(18)*xy+r3(20)*xz+r3(15)*yz+r3(28)*xy+r3(39) &
 &                   +r2( 6)*xxz+r2( 5)*xyz2+r2( 9)*xxy+r2(11)*xyz2+r2(18)*xyz(3) &
 &                   +r2(21)*xyz(2)+r1( 3)*xz*xy+r1( 9)*yz
-        cint1(5,5,3)=r5(16)+r4( 8)*xyz(1)+r4(11)*xyz(3)+r4(23)*xyz(1)+r4(26)*xyz(3) &
+        cint1(3,3,3)=r5(16)+r4( 8)*xyz(1)+r4(11)*xyz(3)+r4(23)*xyz(1)+r4(26)*xyz(3) &
 &                   +r3( 8)*xz+r3(13)*xx+r3(18)*xz+r3(18)*xz+r3(15)*zz+r3(28)*xz+r3(33) &
 &                   +r3(35)+r2( 3)*xxz+r2( 5)*xzz+r2( 9)*xxz+r2(11)*xzz+r2(17)*xyz(1) &
 &                   +r2(15)*xyz(3)+r2(23)*xyz(1)+r2(21)*xyz(3)+r1( 3)*xz*xz+r1( 9)*xx &
 &                   +r1( 9)*zz+r1(15)
-        cint1(6,5,3)=r5(17)+r4( 9)*xyz(1)+r4(15)*xyz(3)+r4(23)*xyz(2)+r4(30)*xyz(3) &
+        cint1(4,3,3)=r5(21)+r4(12)*xyz(1)+r4(14)*xyz(3)+r4(30)*xyz(2)*two+r3( 7)*xz &
+&                   +r3(19)*xy*two+r3(20)*yz*two+r3(28)*yy+r3(38)+r2( 6)*xyz2*two+r2( 9)*xyy &
+&                   +r2(11)*yyz+r2(15)*xyz(1)+r2(17)*xyz(3)+r1( 3)*xz*yy+r1( 6)*xz
+        cint1(5,3,3)=r5(17)+r4( 9)*xyz(1)+r4(15)*xyz(3)+r4(23)*xyz(2)+r4(30)*xyz(3) &
 &                   +r3( 9)*xz+r3(13)*xy+r3(19)*xz+r3(18)*yz+r3(20)*zz+r3(28)*yz+r3(40) &
 &                   +r2( 3)*xyz2+r2( 6)*xzz+r2( 9)*xyz2+r2(11)*yzz+r2(18)*xyz(1)+r2(23)*xyz(2) &
 &                   +r1( 3)*xz*yz+r1( 9)*xy
-        cint1(1,6,3)=r5(20)+r4(11)*xyz(2)+r4(13)*xyz(3)+r4(30)*xyz(1)*two+r3( 5)*yz &
+        cint1(6,3,3)=r5( 8)+r4( 3)*xyz(1)+r4( 8)*xyz(3)+r4(23)*xyz(3)*two+r3( 3)*xz &
+&                   +r3(13)*xz*two+r3(18)*zz*two+r3(28)*zz+r3(38)*three+r2( 3)*xzz*two &
+&                   +r2( 9)*xzz+r2(11)*zzz+r2(15)*xyz(1)*three+r2(17)*xyz(3) &
+&                   +r2(23)*xyz(3)*two+r1( 3)*xz*zz+r1( 6)*xz+r1( 9)*xz*two
+        cint1(1,4,3)=r5(19)+r4(13)*xyz(2)*two+r4(29)*xyz(1)*two+r3( 5)*yy+r3(20)*xy*four &
+&                   +r3(27)*xx+r3(35)+r3(37)+r2( 5)*xyy*two+r2(12)*xxy*two+r2(18)*xyz(2)*two &
+&                   +r2(23)*xyz(1)*two+r1( 3)*yy*xx+r1( 6)*yy+r1(12)*xx+r1(15)
+        cint1(2,4,3)=r5(14)+r4(14)*xyz(2)*two+r4(22)*xyz(1)+r4(29)*xyz(2)+r3(10)*yy &
+&                   +r3(17)*xy*two+r3(20)*yy*two+r3(27)*xy+r3(40)*three+r2( 6)*xyy &
+&                   +r2( 5)*yyy+r2(12)*xyy*two+r2(17)*xyz(2)*two+r2(24)*xyz(1)*three &
+&                   +r2(23)*xyz(2)+r1( 3)*yy*xy+r1( 9)*xy*two+r1(12)*xy
+        cint1(3,4,3)=r5(21)+r4(15)*xyz(2)*two+r4(27)*xyz(1)+r4(29)*xyz(3)+r3( 8)*yy &
+&                   +r3(19)*xy*two+r3(20)*yz*two+r3(27)*xz+r3(38)+r2( 3)*xyy+r2( 5)*yyz &
+&                   +r2(12)*xyz2*two+r2(21)*xyz(1)+r2(23)*xyz(3)+r1( 3)*yy*xz+r1(12)*xz
+        cint1(4,4,3)=r5( 7)+r4( 7)*xyz(2)*two+r4(22)*xyz(2)*two+r3( 7)*yy+r3(17)*yy*four &
+&                   +r3(27)*yy+r3(37)*six+r2( 6)*yyy*two+r2(12)*yyy*two+r2(18)*xyz(2)*six &
+&                   +r2(24)*xyz(2)*six+r1( 3)*yy*yy+r1( 6)*yy+r1( 9)*yy*four+r1(12)*yy &
+&                   +r1(15)*three
+        cint1(5,4,3)=r5(15)+r4(12)*xyz(2)*two+r4(27)*xyz(2)+r4(22)*xyz(3)+r3( 9)*yy &
+&                   +r3(19)*yy*two+r3(17)*yz*two+r3(27)*yz+r3(39)*three+r2( 3)*yyy &
+&                   +r2( 6)*yyz+r2(12)*yyz*two+r2(15)*xyz(2)*two+r2(21)*xyz(2) &
+&                   +r2(24)*xyz(3)*three+r1( 3)*yy*yz+r1( 9)*yz*two+r1(12)*yz
+        cint1(6,4,3)=r5(18)+r4( 9)*xyz(2)*two+r4(27)*xyz(3)*two+r3( 3)*yy+r3(19)*yz*four &
+&                   +r3(27)*zz+r3(33)+r3(37)+r2( 3)*yyz*two+r2(12)*yzz*two+r2(18)*xyz(2)*two &
+&                   +r2(21)*xyz(3)*two+r1( 3)*yy*zz+r1( 6)*yy+r1(12)*zz+r1(15)
+        cint1(1,5,3)=r5(20)+r4(11)*xyz(2)+r4(13)*xyz(3)+r4(30)*xyz(1)*two+r3( 5)*yz &
 &                   +r3(18)*xy*two+r3(20)*xz*two+r3(29)*xx+r3(39)+r2( 5)*xyz2*two+r2( 9)*xxy &
 &                   +r2(12)*xxz+r2(15)*xyz(2)+r2(18)*xyz(3)+r1( 3)*yz*xx+r1( 6)*yz
-        cint1(2,6,3)=r5(15)+r4(12)*xyz(2)+r4( 7)*xyz(3)+r4(27)*xyz(2)*two+r3( 7)*yz &
-&                   +r3(19)*yy*two+r3(17)*yz*two+r3(29)*yy+r3(39)*three+r2( 6)*yyz*two &
-&                   +r2( 9)*yyy+r2(12)*yyz+r2(15)*xyz(2)+r2(18)*xyz(3)*three &
-&                   +r2(21)*xyz(2)*two+r1( 3)*yz*yy+r1( 6)*yz+r1( 9)*yz*two
-        cint1(3,6,3)=r5( 9)+r4( 3)*xyz(2)+r4( 9)*xyz(3)+r4(24)*xyz(3)*two+r3( 3)*yz &
-&                   +r3(13)*yz*two+r3(19)*zz*two+r3(29)*zz+r3(39)*three+r2( 3)*yzz*two &
-&                   +r2( 9)*yzz+r2(12)*zzz+r2(15)*xyz(2)*three+r2(18)*xyz(3) &
-&                   +r2(24)*xyz(3)*two+r1( 3)*yz*zz+r1( 6)*yz+r1( 9)*yz*two
-        cint1(4,6,3)=r5(21)+r4(15)*xyz(2)+r4(14)*xyz(3)+r4(27)*xyz(1)+r4(30)*xyz(2) &
+        cint1(2,5,3)=r5(21)+r4(15)*xyz(2)+r4(14)*xyz(3)+r4(27)*xyz(1)+r4(30)*xyz(2) &
 &                   +r3(10)*yz+r3(19)*xy+r3(18)*yy+r3(17)*xz+r3(20)*yz+r3(29)*xy+r3(38) &
 &                   +r2( 6)*xyz2+r2( 5)*yyz+r2( 9)*xyy+r2(12)*xyz2+r2(17)*xyz(3) &
 &                   +r2(21)*xyz(1)+r1( 3)*yz*xy+r1( 9)*xz
-        cint1(5,6,3)=r5(17)+r4( 8)*xyz(2)+r4(15)*xyz(3)+r4(24)*xyz(1)+r4(30)*xyz(3) &
+        cint1(3,5,3)=r5(17)+r4( 8)*xyz(2)+r4(15)*xyz(3)+r4(24)*xyz(1)+r4(30)*xyz(3) &
 &                   +r3( 8)*yz+r3(13)*xy+r3(18)*yz+r3(19)*xz+r3(20)*zz+r3(29)*xz+r3(40) &
 &                   +r2( 3)*xyz2+r2( 5)*yzz+r2( 9)*xyz2+r2(12)*xzz+r2(17)*xyz(2) &
 &                   +r2(24)*xyz(1)+r1( 3)*yz*xz+r1( 9)*xy
-        cint1(6,6,3)=r5(18)+r4( 9)*xyz(2)+r4(12)*xyz(3)+r4(24)*xyz(2)+r4(27)*xyz(3) &
+        cint1(4,5,3)=r5(15)+r4(12)*xyz(2)+r4( 7)*xyz(3)+r4(27)*xyz(2)*two+r3( 7)*yz &
+&                   +r3(19)*yy*two+r3(17)*yz*two+r3(29)*yy+r3(39)*three+r2( 6)*yyz*two &
+&                   +r2( 9)*yyy+r2(12)*yyz+r2(15)*xyz(2)+r2(18)*xyz(3)*three &
+&                   +r2(21)*xyz(2)*two+r1( 3)*yz*yy+r1( 6)*yz+r1( 9)*yz*two
+        cint1(5,5,3)=r5(18)+r4( 9)*xyz(2)+r4(12)*xyz(3)+r4(24)*xyz(2)+r4(27)*xyz(3) &
 &                   +r3( 9)*yz+r3(13)*yy+r3(19)*yz+r3(19)*yz+r3(17)*zz+r3(29)*yz+r3(33) &
 &                   +r3(37)+r2( 3)*yyz+r2( 6)*yzz+r2( 9)*yyz+r2(12)*yzz+r2(18)*xyz(2) &
 &                   +r2(15)*xyz(3)+r2(24)*xyz(2)+r2(21)*xyz(3)+r1( 3)*yz*yz+r1( 9)*yy &
 &                   +r1( 9)*zz+r1(15)
+        cint1(6,5,3)=r5( 9)+r4( 3)*xyz(2)+r4( 9)*xyz(3)+r4(24)*xyz(3)*two+r3( 3)*yz &
+&                   +r3(13)*yz*two+r3(19)*zz*two+r3(29)*zz+r3(39)*three+r2( 3)*yzz*two &
+&                   +r2( 9)*yzz+r2(12)*zzz+r2(15)*xyz(2)*three+r2(18)*xyz(3) &
+&                   +r2(24)*xyz(3)*two+r1( 3)*yz*zz+r1( 6)*yz+r1( 9)*yz*two
+        cint1(1,6,3)=r5(16)+r4(11)*xyz(3)*two+r4(23)*xyz(1)*two+r3( 5)*zz+r3(18)*xz*four &
+&                   +r3(23)*xx+r3(33)+r3(35)+r2( 5)*xzz*two+r2( 9)*xxz*two+r2(15)*xyz(3)*two &
+&                   +r2(23)*xyz(1)*two+r1( 3)*zz*xx+r1( 6)*zz+r1(12)*xx+r1(15)
+        cint1(2,6,3)=r5(17)+r4(15)*xyz(3)*two+r4(24)*xyz(1)+r4(23)*xyz(2)+r3(10)*zz &
+&                   +r3(19)*xz*two+r3(18)*yz*two+r3(23)*xy+r3(40)+r2( 6)*xzz+r2( 5)*yzz &
+&                   +r2( 9)*xyz2*two+r2(24)*xyz(1)+r2(23)*xyz(2)+r1( 3)*zz*xy+r1(12)*xy
+        cint1(3,6,3)=r5( 8)+r4( 8)*xyz(3)*two+r4(18)*xyz(1)+r4(23)*xyz(3)+r3( 8)*zz &
+&                   +r3(13)*xz*two+r3(18)*zz*two+r3(23)*xz+r3(38)*three+r2( 3)*xzz &
+&                   +r2( 5)*zzz+r2( 9)*xzz*two+r2(17)*xyz(3)*two+r2(21)*xyz(1)*three &
+&                   +r2(23)*xyz(3)+r1( 3)*zz*xz+r1( 9)*xz*two+r1(12)*xz
+        cint1(4,6,3)=r5(18)+r4(12)*xyz(3)*two+r4(24)*xyz(2)*two+r3( 7)*zz+r3(19)*yz*four &
+&                   +r3(23)*yy+r3(33)+r3(37)+r2( 6)*yzz*two+r2( 9)*yyz*two+r2(15)*xyz(3)*two &
+&                   +r2(24)*xyz(2)*two+r1( 3)*zz*yy+r1( 6)*zz+r1(12)*yy+r1(15)
+        cint1(5,6,3)=r5( 9)+r4( 9)*xyz(3)*two+r4(18)*xyz(2)+r4(24)*xyz(3)+r3( 9)*zz &
+&                   +r3(13)*yz*two+r3(19)*zz*two+r3(23)*yz+r3(39)*three+r2( 3)*yzz &
+&                   +r2( 6)*zzz+r2( 9)*yzz*two+r2(18)*xyz(3)*two+r2(21)*xyz(2)*three &
+&                   +r2(24)*xyz(3)+r1( 3)*zz*yz+r1( 9)*yz*two+r1(12)*yz
+        cint1(6,6,3)=r5( 3)+r4( 3)*xyz(3)*two+r4(18)*xyz(3)*two+r3( 3)*zz+r3(13)*zz*four &
+&                   +r3(23)*zz+r3(33)*six+r2( 3)*zzz*two+r2( 9)*zzz*two+r2(15)*xyz(3)*six &
+&                   +r2(21)*xyz(3)*six+r1( 3)*zz*zz+r1( 6)*zz+r1( 9)*zz*four+r1(12)*zz &
+&                   +r1(15)*three
 !
         if(nbfij(1) == 6) then
           do k= 1,3
             do j= 1,6
-              cint1(j,4,k)= cint1(j,4,k)*sqrt3
+              cint1(j,2,k)= cint1(j,2,k)*sqrt3
+              cint1(j,3,k)= cint1(j,3,k)*sqrt3
               cint1(j,5,k)= cint1(j,5,k)*sqrt3
-              cint1(j,6,k)= cint1(j,6,k)*sqrt3
             enddo
           enddo
         else
@@ -2341,20 +2311,20 @@ end
               do i= 1,6
                 work(i)= cint1(j,i,k)
               enddo
-              cint1(j,1,k)=(work(3)*two-work(1)-work(2))*half
+              cint1(j,1,k)= work(2)*sqrt3
               cint1(j,2,k)= work(5)*sqrt3
-              cint1(j,3,k)= work(6)*sqrt3
-              cint1(j,4,k)=(work(1)-work(2))*sqrt3h
-              cint1(j,5,k)= work(4)*sqrt3
+              cint1(j,3,k)=(work(6)*two-work(1)-work(4))*half
+              cint1(j,4,k)= work(3)*sqrt3
+              cint1(j,5,k)=(work(1)-work(4))*sqrt3h
             enddo
           enddo
         endif
         if(nbfij(2) == 6) then
           do k= 1,3
             do i= 1,nbfij(1)
-              cint1(4,i,k)= cint1(4,i,k)*sqrt3
+              cint1(2,i,k)= cint1(2,i,k)*sqrt3
+              cint1(3,i,k)= cint1(3,i,k)*sqrt3
               cint1(5,i,k)= cint1(5,i,k)*sqrt3
-              cint1(6,i,k)= cint1(6,i,k)*sqrt3
             enddo
           enddo
         else
@@ -2363,11 +2333,11 @@ end
               do j= 1,6
                 work(j)= cint1(j,i,k)
               enddo
-              cint1(1,i,k)=(work(3)*two-work(1)-work(2))*half
+              cint1(1,i,k)= work(2)*sqrt3
               cint1(2,i,k)= work(5)*sqrt3
-              cint1(3,i,k)= work(6)*sqrt3
-              cint1(4,i,k)=(work(1)-work(2))*sqrt3h
-              cint1(5,i,k)= work(4)*sqrt3
+              cint1(3,i,k)=(work(6)*two-work(1)-work(4))*half
+              cint1(4,i,k)= work(3)*sqrt3
+              cint1(5,i,k)=(work(1)-work(4))*sqrt3h
             enddo
           enddo
         endif
@@ -2405,9 +2375,8 @@ end
 !
       implicit none
       integer,intent(in) :: nprimij(2), nangij(2), nbfij(2), locbfij(2), natom, nao, mxprsh
-      integer :: ix(21,0:5), iy(21,0:5), iz(21,0:5)
       integer :: nroots, ncart(0:6), ncarti, ncartj, i, j, k, iprim, jprim, iatom, iroot
-      integer :: iang, jang, icx, icy, icz, jcx, jcy, jcz
+      integer :: iang, jang, ix, iy, iz, jx, jy, jz
       real(8),parameter :: sqrtpi2=1.128379167095513D+00 !2.0/sqrt(pi)
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00, two=2.0D+00, three=3.0D+00
       real(8),parameter :: four=4.0D+00, six=6.0D+00, eight=8.0D+00, p24=24.0D+00 
@@ -2436,24 +2405,6 @@ end
       real(8) :: dcint1(28,28,3), work(28)
       logical,intent(in) :: iandj
       data ncart /1,3,6,10,15,21,28/
-      data ix/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             2,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             3,0,0,2,2,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0, &
-&             4,0,0,3,3,1,0,1,0,2,2,0,2,1,1,0,0,0,0,0,0, &
-&             5,0,0,4,4,1,0,1,0,3,3,3,2,1,0,2,1,0,2,2,1/
-      data iy/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,2,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,3,0,1,0,2,2,0,1,1,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,4,0,1,0,3,3,0,1,2,0,2,1,2,1,0,0,0,0,0,0, &
-&             0,5,0,1,0,4,4,0,1,2,1,0,3,3,3,0,1,2,2,1,2/
-      data iz/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,0,2,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,0,3,0,1,0,1,2,2,1,0,0,0,0,0,0,0,0,0,0,0, &
-&             0,0,4,0,1,0,1,3,3,0,2,2,1,1,2,0,0,0,0,0,0, &
-&             0,0,5,0,1,0,1,4,4,0,1,2,0,1,2,3,3,3,1,2,2/
 !
       nroots=(nangij(1)+nangij(2)+1)/2+1
       ncarti= ncart(nangij(1))
@@ -2512,21 +2463,25 @@ end
                 enddo
               enddo
             enddo
-            do i= 1,ncarti
-              icx= ix(i,nangij(1))
-              icy= iy(i,nangij(1))
-              icz= iz(i,nangij(1))
-              do j= 1,ncartj
-                jcx= ix(j,nangij(2))
-                jcy= iy(j,nangij(2))
-                jcz= iz(j,nangij(2))
-                do iroot= 1,nroots
-                  dcint1(j,i,1)= dcint1(j,i,1) &
-&                               +fac*cx(jcx,icx,iroot,2)*cy(jcy,icy,iroot,1)*cz(jcz,icz,iroot,1)
-                  dcint1(j,i,2)= dcint1(j,i,2) &
-&                               +fac*cx(jcx,icx,iroot,1)*cy(jcy,icy,iroot,2)*cz(jcz,icz,iroot,1)
-                  dcint1(j,i,3)= dcint1(j,i,3) &
-&                               +fac*cx(jcx,icx,iroot,1)*cy(jcy,icy,iroot,1)*cz(jcz,icz,iroot,2)
+            i= 0
+            do ix= nangij(1),0,-1
+              do iy= nangij(1)-ix,0,-1
+                iz= nangij(1)-ix-iy
+                i= i+1
+                j= 0
+                do jx= nangij(2),0,-1
+                  do jy= nangij(2)-jx,0,-1
+                    jz= nangij(2)-jx-jy
+                    j= j+1
+                    do iroot= 1,nroots
+                      dcint1(j,i,1)= dcint1(j,i,1) &
+&                                   +fac*cx(jx,ix,iroot,2)*cy(jy,iy,iroot,1)*cz(jz,iz,iroot,1)
+                      dcint1(j,i,2)= dcint1(j,i,2) &
+&                                   +fac*cx(jx,ix,iroot,1)*cy(jy,iy,iroot,2)*cz(jz,iz,iroot,1)
+                      dcint1(j,i,3)= dcint1(j,i,3) &
+&                                   +fac*cx(jx,ix,iroot,1)*cy(jy,iy,iroot,1)*cz(jz,iz,iroot,2)
+                    enddo
+                  enddo
                 enddo
               enddo
             enddo
@@ -2543,48 +2498,54 @@ end
                 do i= 1,6
                   work(i)= dcint1(j,i,k)
                 enddo
-                dcint1(j,1,k)=(work(3)*two-work(1)-work(2))*half
+                dcint1(j,1,k)= work(2)*sqrt3
                 dcint1(j,2,k)= work(5)*sqrt3
-                dcint1(j,3,k)= work(6)*sqrt3
-                dcint1(j,4,k)=(work(1)-work(2))*sqrt3h
-                dcint1(j,5,k)= work(4)*sqrt3
+                dcint1(j,3,k)=(work(6)*two-work(1)-work(4))*half
+                dcint1(j,4,k)= work(3)*sqrt3
+                dcint1(j,5,k)=(work(1)-work(4))*sqrt3h
               enddo
             enddo
           case(6)
             do k= 1,3
               do j= 1,ncartj
-                dcint1(j,4,k)= dcint1(j,4,k)*sqrt3
+                dcint1(j,2,k)= dcint1(j,2,k)*sqrt3
+                dcint1(j,3,k)= dcint1(j,3,k)*sqrt3
                 dcint1(j,5,k)= dcint1(j,5,k)*sqrt3
-                dcint1(j,6,k)= dcint1(j,6,k)*sqrt3
               enddo
             enddo
 ! F function
           case(7)
             do k= 1,3
               do j= 1,ncartj
-                do i= 1,3
-                  work(i)= dcint1(j,i,k)
-                enddo
-                do i= 4,9
-                  work(i)= dcint1(j,i,k)*sqrt5
-                enddo
-                work(10)= dcint1(j,10,k)*sqrt15
-                dcint1(j,1,k)=( two*work(3)-three*work(5)-three*work(7))*facf4
-                dcint1(j,2,k)=(-work(1)-work(6)+four*work(8)           )*facf3
-                dcint1(j,3,k)=(-work(2)-work(4)+four*work(9)           )*facf3
-                dcint1(j,4,k)=( work(5)-work(7)                        )*facf2
-                dcint1(j,5,k)=  work(10)
-                dcint1(j,6,k)=( work(1)-three*work(6)                  )*facf1
-                dcint1(j,7,k)=(-work(2)+three*work(4)                  )*facf1
+                work( 1)= dcint1(j, 1,k)
+                work( 2)= dcint1(j, 2,k)*sqrt5
+                work( 3)= dcint1(j, 3,k)*sqrt5
+                work( 4)= dcint1(j, 4,k)*sqrt5
+                work( 5)= dcint1(j, 5,k)*sqrt15
+                work( 6)= dcint1(j, 6,k)*sqrt5
+                work( 7)= dcint1(j, 7,k)
+                work( 8)= dcint1(j, 8,k)*sqrt5
+                work( 9)= dcint1(j, 9,k)*sqrt5
+                work(10)= dcint1(j,10,k)
+                dcint1(j,1,k)=(-work(7)+three*work(2)                   )*facf1
+                dcint1(j,2,k)=  work(5)
+                dcint1(j,3,k)=(-work(7)-work(2)+four*work(9)            )*facf3
+                dcint1(j,4,k)=( two*work(10)-three*work(3)-three*work(8))*facf4
+                dcint1(j,5,k)=(-work(1)-work(4)+four*work(6)            )*facf3
+                dcint1(j,6,k)=( work(3)-work(8)                         )*facf2
+                dcint1(j,7,k)=( work(1)-three*work(4)                   )*facf1
               enddo
             enddo
           case(10)
             do k= 1,3
               do j= 1,ncartj
-                do i= 4,9
-                  dcint1(j,i,k)= dcint1(j,i,k)*sqrt5
-                enddo
-                dcint1(j,10,k)= dcint1(j,10,k)*sqrt15
+                dcint1(j,2,k)= dcint1(j,2,k)*sqrt5
+                dcint1(j,3,k)= dcint1(j,3,k)*sqrt5
+                dcint1(j,4,k)= dcint1(j,4,k)*sqrt5
+                dcint1(j,5,k)= dcint1(j,5,k)*sqrt15
+                dcint1(j,6,k)= dcint1(j,6,k)*sqrt5
+                dcint1(j,8,k)= dcint1(j,8,k)*sqrt5
+                dcint1(j,9,k)= dcint1(j,9,k)*sqrt5
               enddo
             enddo
 ! G function
@@ -2641,48 +2602,54 @@ end
                 do j= 1,6
                   work(j)= dcint1(j,i,k)
                 enddo
-                dcint1(1,i,k)=(work(3)*two-work(1)-work(2))*half
+                dcint1(1,i,k)= work(2)*sqrt3
                 dcint1(2,i,k)= work(5)*sqrt3
-                dcint1(3,i,k)= work(6)*sqrt3
-                dcint1(4,i,k)=(work(1)-work(2))*sqrt3h
-                dcint1(5,i,k)= work(4)*sqrt3
+                dcint1(3,i,k)=(work(6)*two-work(1)-work(4))*half
+                dcint1(4,i,k)= work(3)*sqrt3
+                dcint1(5,i,k)=(work(1)-work(4))*sqrt3h
               enddo
             enddo
           case(6)
             do k= 1,3
               do i= 1,nbfij(1)
-                dcint1(4,i,k)= dcint1(4,i,k)*sqrt3
+                dcint1(2,i,k)= dcint1(2,i,k)*sqrt3
+                dcint1(3,i,k)= dcint1(3,i,k)*sqrt3
                 dcint1(5,i,k)= dcint1(5,i,k)*sqrt3
-                dcint1(6,i,k)= dcint1(6,i,k)*sqrt3
               enddo
             enddo
 ! F function
           case(7)
             do k= 1,3
               do i= 1,nbfij(1)
-                do j= 1,3
-                  work(j)= dcint1(j,i,k)
-                enddo
-                do j= 4,9
-                  work(j)= dcint1(j,i,k)*sqrt5
-                enddo
-                work(10)= dcint1(10,i,k)*sqrt15
-                dcint1(1,i,k)=( two*work(3)-three*work(5)-three*work(7))*facf4
-                dcint1(2,i,k)=(-work(1)-work(6)+four*work(8)           )*facf3
-                dcint1(3,i,k)=(-work(2)-work(4)+four*work(9)           )*facf3
-                dcint1(4,i,k)=( work(5)-work(7)                        )*facf2
-                dcint1(5,i,k)=  work(10)
-                dcint1(6,i,k)=( work(1)-three*work(6)                  )*facf1
-                dcint1(7,i,k)=(-work(2)+three*work(4)                  )*facf1
+                work( 1)= dcint1( 1,i,k)
+                work( 2)= dcint1( 2,i,k)*sqrt5
+                work( 3)= dcint1( 3,i,k)*sqrt5
+                work( 4)= dcint1( 4,i,k)*sqrt5
+                work( 5)= dcint1( 5,i,k)*sqrt15
+                work( 6)= dcint1( 6,i,k)*sqrt5
+                work( 7)= dcint1( 7,i,k)
+                work( 8)= dcint1( 8,i,k)*sqrt5
+                work( 9)= dcint1( 9,i,k)*sqrt5
+                work(10)= dcint1(10,i,k)
+                dcint1(1,i,k)=(-work(7)+three*work(2)                   )*facf1
+                dcint1(2,i,k)=  work(5)
+                dcint1(3,i,k)=(-work(7)-work(2)+four*work(9)            )*facf3
+                dcint1(4,i,k)=( two*work(10)-three*work(3)-three*work(8))*facf4
+                dcint1(5,i,k)=(-work(1)-work(4)+four*work(6)            )*facf3
+                dcint1(6,i,k)=( work(3)-work(8)                         )*facf2
+                dcint1(7,i,k)=( work(1)-three*work(4)                   )*facf1
               enddo
             enddo
           case(10)
             do k= 1,3
               do i= 1,nbfij(1)
-                do j= 4,9
-                  dcint1(j,i,k)= dcint1(j,i,k)*sqrt5
-                enddo
-                dcint1(10,i,k)= dcint1(10,i,k)*sqrt15
+                dcint1(2,i,k)= dcint1(2,i,k)*sqrt5
+                dcint1(3,i,k)= dcint1(3,i,k)*sqrt5
+                dcint1(4,i,k)= dcint1(4,i,k)*sqrt5
+                dcint1(5,i,k)= dcint1(5,i,k)*sqrt15
+                dcint1(6,i,k)= dcint1(6,i,k)*sqrt5
+                dcint1(8,i,k)= dcint1(8,i,k)*sqrt5
+                dcint1(9,i,k)= dcint1(9,i,k)*sqrt5
               enddo
             enddo
 ! G function
