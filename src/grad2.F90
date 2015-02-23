@@ -196,14 +196,14 @@ end
             do j= 1,nbfijkl(2)
               do k= 1,nbfijkl(3)
                 dtwoeri(1,k,j,i,1)= twoeri(1,k,j,i)
-                dtwoeri(2,k,j,i,1)= twoeri(4,k,j,i)*sqrtthird
-                dtwoeri(3,k,j,i,1)= twoeri(5,k,j,i)*sqrtthird
-                dtwoeri(1,k,j,i,2)= twoeri(4,k,j,i)*sqrtthird
-                dtwoeri(2,k,j,i,2)= twoeri(2,k,j,i)
-                dtwoeri(3,k,j,i,2)= twoeri(6,k,j,i)*sqrtthird
-                dtwoeri(1,k,j,i,3)= twoeri(5,k,j,i)*sqrtthird
-                dtwoeri(2,k,j,i,3)= twoeri(6,k,j,i)*sqrtthird
-                dtwoeri(3,k,j,i,3)= twoeri(3,k,j,i)
+                dtwoeri(2,k,j,i,1)= twoeri(2,k,j,i)*sqrtthird
+                dtwoeri(3,k,j,i,1)= twoeri(3,k,j,i)*sqrtthird
+                dtwoeri(1,k,j,i,2)= twoeri(2,k,j,i)*sqrtthird
+                dtwoeri(2,k,j,i,2)= twoeri(4,k,j,i)
+                dtwoeri(3,k,j,i,2)= twoeri(5,k,j,i)*sqrtthird
+                dtwoeri(1,k,j,i,3)= twoeri(3,k,j,i)*sqrtthird
+                dtwoeri(2,k,j,i,3)= twoeri(5,k,j,i)*sqrtthird
+                dtwoeri(3,k,j,i,3)= twoeri(6,k,j,i)
               enddo
             enddo
           enddo
@@ -212,23 +212,23 @@ end
             do j= 1,nbfijkl(2)
               do k= 1,nbfijkl(3)
                 dtwoeri(1,k,j,i,1)= twoeri( 1,k,j,i)
-                dtwoeri(2,k,j,i,1)= twoeri( 6,k,j,i)*sqrtfifth
-                dtwoeri(3,k,j,i,1)= twoeri( 8,k,j,i)*sqrtfifth
-                dtwoeri(4,k,j,i,1)= twoeri( 4,k,j,i)*sqrt3fifth
-                dtwoeri(5,k,j,i,1)= twoeri( 5,k,j,i)*sqrt3fifth
-                dtwoeri(6,k,j,i,1)= twoeri(10,k,j,i)*sqrtfifth
-                dtwoeri(1,k,j,i,2)= twoeri( 4,k,j,i)*sqrtfifth
-                dtwoeri(2,k,j,i,2)= twoeri( 2,k,j,i)
-                dtwoeri(3,k,j,i,2)= twoeri( 9,k,j,i)*sqrtfifth
-                dtwoeri(4,k,j,i,2)= twoeri( 6,k,j,i)*sqrt3fifth
-                dtwoeri(5,k,j,i,2)= twoeri(10,k,j,i)*sqrtfifth
-                dtwoeri(6,k,j,i,2)= twoeri( 7,k,j,i)*sqrt3fifth
-                dtwoeri(1,k,j,i,3)= twoeri( 5,k,j,i)*sqrtfifth
-                dtwoeri(2,k,j,i,3)= twoeri( 7,k,j,i)*sqrtfifth
-                dtwoeri(3,k,j,i,3)= twoeri( 3,k,j,i)
-                dtwoeri(4,k,j,i,3)= twoeri(10,k,j,i)*sqrtfifth
-                dtwoeri(5,k,j,i,3)= twoeri( 8,k,j,i)*sqrt3fifth
-                dtwoeri(6,k,j,i,3)= twoeri( 9,k,j,i)*sqrt3fifth
+                dtwoeri(2,k,j,i,1)= twoeri( 2,k,j,i)*sqrt3fifth
+                dtwoeri(3,k,j,i,1)= twoeri( 3,k,j,i)*sqrt3fifth
+                dtwoeri(4,k,j,i,1)= twoeri( 4,k,j,i)*sqrtfifth
+                dtwoeri(5,k,j,i,1)= twoeri( 5,k,j,i)*sqrtfifth
+                dtwoeri(6,k,j,i,1)= twoeri( 6,k,j,i)*sqrtfifth
+                dtwoeri(1,k,j,i,2)= twoeri( 2,k,j,i)*sqrtfifth
+                dtwoeri(2,k,j,i,2)= twoeri( 4,k,j,i)*sqrt3fifth
+                dtwoeri(3,k,j,i,2)= twoeri( 5,k,j,i)*sqrtfifth
+                dtwoeri(4,k,j,i,2)= twoeri( 7,k,j,i)
+                dtwoeri(5,k,j,i,2)= twoeri( 8,k,j,i)*sqrt3fifth
+                dtwoeri(6,k,j,i,2)= twoeri( 9,k,j,i)*sqrtfifth
+                dtwoeri(1,k,j,i,3)= twoeri( 3,k,j,i)*sqrtfifth
+                dtwoeri(2,k,j,i,3)= twoeri( 5,k,j,i)*sqrtfifth
+                dtwoeri(3,k,j,i,3)= twoeri( 6,k,j,i)*sqrt3fifth
+                dtwoeri(4,k,j,i,3)= twoeri( 8,k,j,i)*sqrtfifth
+                dtwoeri(5,k,j,i,3)= twoeri( 9,k,j,i)*sqrt3fifth
+                dtwoeri(6,k,j,i,3)= twoeri(10,k,j,i)
               enddo
             enddo
           enddo
@@ -237,35 +237,35 @@ end
             do j= 1,nbfijkl(2)
               do k= 1,nbfijkl(3)
                 dtwoeri( 1,k,j,i,1)= twoeri( 1,k,j,i)
-                dtwoeri( 2,k,j,i,1)= twoeri( 6,k,j,i)*sqrtseventh
-                dtwoeri( 3,k,j,i,1)= twoeri( 8,k,j,i)*sqrtseventh
-                dtwoeri( 4,k,j,i,1)= twoeri( 4,k,j,i)*sqrt5seventh
-                dtwoeri( 5,k,j,i,1)= twoeri( 5,k,j,i)*sqrt5seventh
-                dtwoeri( 6,k,j,i,1)= twoeri(10,k,j,i)*sqrt3seventh
-                dtwoeri( 7,k,j,i,1)= twoeri(14,k,j,i)*sqrtseventh
-                dtwoeri( 8,k,j,i,1)= twoeri(11,k,j,i)*sqrt3seventh
-                dtwoeri( 9,k,j,i,1)= twoeri(15,k,j,i)*sqrtseventh
-                dtwoeri(10,k,j,i,1)= twoeri(13,k,j,i)*sqrt3seventh
-                dtwoeri( 1,k,j,i,2)= twoeri( 4,k,j,i)*sqrtseventh
-                dtwoeri( 2,k,j,i,2)= twoeri( 2,k,j,i)
-                dtwoeri( 3,k,j,i,2)= twoeri( 9,k,j,i)*sqrtseventh
-                dtwoeri( 4,k,j,i,2)= twoeri(10,k,j,i)*sqrt3seventh
-                dtwoeri( 5,k,j,i,2)= twoeri(13,k,j,i)*sqrtseventh
-                dtwoeri( 6,k,j,i,2)= twoeri( 6,k,j,i)*sqrt5seventh
-                dtwoeri( 7,k,j,i,2)= twoeri( 7,k,j,i)*sqrt5seventh
-                dtwoeri( 8,k,j,i,2)= twoeri(15,k,j,i)*sqrtseventh
-                dtwoeri( 9,k,j,i,2)= twoeri(12,k,j,i)*sqrt3seventh
-                dtwoeri(10,k,j,i,2)= twoeri(14,k,j,i)*sqrt3seventh
-                dtwoeri( 1,k,j,i,3)= twoeri( 5,k,j,i)*sqrtseventh
-                dtwoeri( 2,k,j,i,3)= twoeri( 7,k,j,i)*sqrtseventh
-                dtwoeri( 3,k,j,i,3)= twoeri( 3,k,j,i)
-                dtwoeri( 4,k,j,i,3)= twoeri(13,k,j,i)*sqrtseventh
-                dtwoeri( 5,k,j,i,3)= twoeri(11,k,j,i)*sqrt3seventh
-                dtwoeri( 6,k,j,i,3)= twoeri(14,k,j,i)*sqrtseventh
-                dtwoeri( 7,k,j,i,3)= twoeri(12,k,j,i)*sqrt3seventh
-                dtwoeri( 8,k,j,i,3)= twoeri( 8,k,j,i)*sqrt5seventh
-                dtwoeri( 9,k,j,i,3)= twoeri( 9,k,j,i)*sqrt5seventh
-                dtwoeri(10,k,j,i,3)= twoeri(15,k,j,i)*sqrt3seventh
+                dtwoeri( 2,k,j,i,1)= twoeri( 2,k,j,i)*sqrt5seventh
+                dtwoeri( 3,k,j,i,1)= twoeri( 3,k,j,i)*sqrt5seventh
+                dtwoeri( 4,k,j,i,1)= twoeri( 4,k,j,i)*sqrt3seventh
+                dtwoeri( 5,k,j,i,1)= twoeri( 5,k,j,i)*sqrt3seventh
+                dtwoeri( 6,k,j,i,1)= twoeri( 6,k,j,i)*sqrt3seventh
+                dtwoeri( 7,k,j,i,1)= twoeri( 7,k,j,i)*sqrtseventh
+                dtwoeri( 8,k,j,i,1)= twoeri( 8,k,j,i)*sqrtseventh
+                dtwoeri( 9,k,j,i,1)= twoeri( 9,k,j,i)*sqrtseventh
+                dtwoeri(10,k,j,i,1)= twoeri(10,k,j,i)*sqrtseventh
+                dtwoeri( 1,k,j,i,2)= twoeri( 2,k,j,i)*sqrtseventh
+                dtwoeri( 2,k,j,i,2)= twoeri( 4,k,j,i)*sqrt3seventh
+                dtwoeri( 3,k,j,i,2)= twoeri( 5,k,j,i)*sqrtseventh
+                dtwoeri( 4,k,j,i,2)= twoeri( 7,k,j,i)*sqrt5seventh
+                dtwoeri( 5,k,j,i,2)= twoeri( 8,k,j,i)*sqrt3seventh
+                dtwoeri( 6,k,j,i,2)= twoeri( 9,k,j,i)*sqrtseventh
+                dtwoeri( 7,k,j,i,2)= twoeri(11,k,j,i)
+                dtwoeri( 8,k,j,i,2)= twoeri(12,k,j,i)*sqrt5seventh
+                dtwoeri( 9,k,j,i,2)= twoeri(13,k,j,i)*sqrt3seventh
+                dtwoeri(10,k,j,i,2)= twoeri(14,k,j,i)*sqrtseventh
+                dtwoeri( 1,k,j,i,3)= twoeri( 3,k,j,i)*sqrtseventh
+                dtwoeri( 2,k,j,i,3)= twoeri( 5,k,j,i)*sqrtseventh
+                dtwoeri( 3,k,j,i,3)= twoeri( 6,k,j,i)*sqrt3seventh
+                dtwoeri( 4,k,j,i,3)= twoeri( 8,k,j,i)*sqrtseventh
+                dtwoeri( 5,k,j,i,3)= twoeri( 9,k,j,i)*sqrt3seventh
+                dtwoeri( 6,k,j,i,3)= twoeri(10,k,j,i)*sqrt5seventh
+                dtwoeri( 7,k,j,i,3)= twoeri(12,k,j,i)*sqrtseventh
+                dtwoeri( 8,k,j,i,3)= twoeri(13,k,j,i)*sqrt3seventh
+                dtwoeri( 9,k,j,i,3)= twoeri(14,k,j,i)*sqrt5seventh
+                dtwoeri(10,k,j,i,3)= twoeri(15,k,j,i)
               enddo
             enddo
           enddo
@@ -302,14 +302,14 @@ end
               do j= 1,nbfijkl(2)
                 do k= 1,nbfijkl(3)
                   dtwoeri(1,k,j,i,1)= dtwoeri(1,k,j,i,1)-twoeri(1,k,j,i)*two
-                  dtwoeri(4,k,j,i,1)= dtwoeri(4,k,j,i,1)-twoeri(2,k,j,i)*sqrt3
-                  dtwoeri(5,k,j,i,1)= dtwoeri(5,k,j,i,1)-twoeri(3,k,j,i)*sqrt3
-                  dtwoeri(2,k,j,i,2)= dtwoeri(2,k,j,i,2)-twoeri(2,k,j,i)*two
-                  dtwoeri(4,k,j,i,2)= dtwoeri(4,k,j,i,2)-twoeri(1,k,j,i)*sqrt3
-                  dtwoeri(6,k,j,i,2)= dtwoeri(6,k,j,i,2)-twoeri(3,k,j,i)*sqrt3
-                  dtwoeri(3,k,j,i,3)= dtwoeri(3,k,j,i,3)-twoeri(3,k,j,i)*two
-                  dtwoeri(5,k,j,i,3)= dtwoeri(5,k,j,i,3)-twoeri(1,k,j,i)*sqrt3
-                  dtwoeri(6,k,j,i,3)= dtwoeri(6,k,j,i,3)-twoeri(2,k,j,i)*sqrt3
+                  dtwoeri(2,k,j,i,1)= dtwoeri(2,k,j,i,1)-twoeri(2,k,j,i)*sqrt3
+                  dtwoeri(3,k,j,i,1)= dtwoeri(3,k,j,i,1)-twoeri(3,k,j,i)*sqrt3
+                  dtwoeri(2,k,j,i,2)= dtwoeri(2,k,j,i,2)-twoeri(1,k,j,i)*sqrt3
+                  dtwoeri(4,k,j,i,2)= dtwoeri(4,k,j,i,2)-twoeri(2,k,j,i)*two
+                  dtwoeri(5,k,j,i,2)= dtwoeri(5,k,j,i,2)-twoeri(3,k,j,i)*sqrt3
+                  dtwoeri(3,k,j,i,3)= dtwoeri(3,k,j,i,3)-twoeri(1,k,j,i)*sqrt3
+                  dtwoeri(5,k,j,i,3)= dtwoeri(5,k,j,i,3)-twoeri(2,k,j,i)*sqrt3
+                  dtwoeri(6,k,j,i,3)= dtwoeri(6,k,j,i,3)-twoeri(3,k,j,i)*two
                 enddo
               enddo
             enddo
@@ -321,11 +321,11 @@ end
                       do l= 1,6
                         work(l)= dtwoeri(l,k,j,i,ider)
                       enddo
-                      dtwoeri(1,k,j,i,ider)=(work(3)*two-work(1)-work(2))*half
+                      dtwoeri(1,k,j,i,ider)= work(2)
                       dtwoeri(2,k,j,i,ider)= work(5)
-                      dtwoeri(3,k,j,i,ider)= work(6)
-                      dtwoeri(4,k,j,i,ider)=(work(1)-work(2))*sqrt3h
-                      dtwoeri(5,k,j,i,ider)= work(4)
+                      dtwoeri(3,k,j,i,ider)=(work(6)*two-work(1)-work(4))*half
+                      dtwoeri(4,k,j,i,ider)= work(3)
+                      dtwoeri(5,k,j,i,ider)=(work(1)-work(4))*sqrt3h
                     enddo
                   enddo
                 enddo
@@ -336,23 +336,23 @@ end
               do j= 1,nbfijkl(2)
                 do k= 1,nbfijkl(3)
                   dtwoeri( 1,k,j,i,1)= dtwoeri( 1,k,j,i,1)-twoeri(1,k,j,i)*three
-                  dtwoeri( 4,k,j,i,1)= dtwoeri( 4,k,j,i,1)-twoeri(4,k,j,i)*two*sqrt5third
-                  dtwoeri( 5,k,j,i,1)= dtwoeri( 5,k,j,i,1)-twoeri(5,k,j,i)*two*sqrt5third
-                  dtwoeri( 6,k,j,i,1)= dtwoeri( 6,k,j,i,1)-twoeri(2,k,j,i)*sqrt5
-                  dtwoeri( 8,k,j,i,1)= dtwoeri( 8,k,j,i,1)-twoeri(3,k,j,i)*sqrt5
-                  dtwoeri(10,k,j,i,1)= dtwoeri(10,k,j,i,1)-twoeri(6,k,j,i)*sqrt5
-                  dtwoeri( 2,k,j,i,2)= dtwoeri( 2,k,j,i,2)-twoeri(2,k,j,i)*three
-                  dtwoeri( 4,k,j,i,2)= dtwoeri( 4,k,j,i,2)-twoeri(1,k,j,i)*sqrt5
-                  dtwoeri( 6,k,j,i,2)= dtwoeri( 6,k,j,i,2)-twoeri(4,k,j,i)*two*sqrt5third
-                  dtwoeri( 7,k,j,i,2)= dtwoeri( 7,k,j,i,2)-twoeri(6,k,j,i)*two*sqrt5third
-                  dtwoeri( 9,k,j,i,2)= dtwoeri( 9,k,j,i,2)-twoeri(3,k,j,i)*sqrt5
-                  dtwoeri(10,k,j,i,2)= dtwoeri(10,k,j,i,2)-twoeri(5,k,j,i)*sqrt5
-                  dtwoeri( 3,k,j,i,3)= dtwoeri( 3,k,j,i,3)-twoeri(3,k,j,i)*three
-                  dtwoeri( 5,k,j,i,3)= dtwoeri( 5,k,j,i,3)-twoeri(1,k,j,i)*sqrt5
-                  dtwoeri( 7,k,j,i,3)= dtwoeri( 7,k,j,i,3)-twoeri(2,k,j,i)*sqrt5
-                  dtwoeri( 8,k,j,i,3)= dtwoeri( 8,k,j,i,3)-twoeri(5,k,j,i)*two*sqrt5third
-                  dtwoeri( 9,k,j,i,3)= dtwoeri( 9,k,j,i,3)-twoeri(6,k,j,i)*two*sqrt5third
-                  dtwoeri(10,k,j,i,3)= dtwoeri(10,k,j,i,3)-twoeri(4,k,j,i)*sqrt5
+                  dtwoeri( 2,k,j,i,1)= dtwoeri( 2,k,j,i,1)-twoeri(2,k,j,i)*two*sqrt5third
+                  dtwoeri( 3,k,j,i,1)= dtwoeri( 3,k,j,i,1)-twoeri(3,k,j,i)*two*sqrt5third
+                  dtwoeri( 4,k,j,i,1)= dtwoeri( 4,k,j,i,1)-twoeri(4,k,j,i)*sqrt5
+                  dtwoeri( 5,k,j,i,1)= dtwoeri( 5,k,j,i,1)-twoeri(5,k,j,i)*sqrt5
+                  dtwoeri( 6,k,j,i,1)= dtwoeri( 6,k,j,i,1)-twoeri(6,k,j,i)*sqrt5
+                  dtwoeri( 2,k,j,i,2)= dtwoeri( 2,k,j,i,2)-twoeri(1,k,j,i)*sqrt5
+                  dtwoeri( 4,k,j,i,2)= dtwoeri( 4,k,j,i,2)-twoeri(2,k,j,i)*two*sqrt5third
+                  dtwoeri( 5,k,j,i,2)= dtwoeri( 5,k,j,i,2)-twoeri(3,k,j,i)*sqrt5
+                  dtwoeri( 7,k,j,i,2)= dtwoeri( 7,k,j,i,2)-twoeri(4,k,j,i)*three
+                  dtwoeri( 8,k,j,i,2)= dtwoeri( 8,k,j,i,2)-twoeri(5,k,j,i)*two*sqrt5third
+                  dtwoeri( 9,k,j,i,2)= dtwoeri( 9,k,j,i,2)-twoeri(6,k,j,i)*sqrt5
+                  dtwoeri( 3,k,j,i,3)= dtwoeri( 3,k,j,i,3)-twoeri(1,k,j,i)*sqrt5
+                  dtwoeri( 5,k,j,i,3)= dtwoeri( 5,k,j,i,3)-twoeri(2,k,j,i)*sqrt5
+                  dtwoeri( 6,k,j,i,3)= dtwoeri( 6,k,j,i,3)-twoeri(3,k,j,i)*two*sqrt5third
+                  dtwoeri( 8,k,j,i,3)= dtwoeri( 8,k,j,i,3)-twoeri(4,k,j,i)*sqrt5
+                  dtwoeri( 9,k,j,i,3)= dtwoeri( 9,k,j,i,3)-twoeri(5,k,j,i)*two*sqrt5third
+                  dtwoeri(10,k,j,i,3)= dtwoeri(10,k,j,i,3)-twoeri(6,k,j,i)*three
                 enddo
               enddo
             enddo
@@ -364,13 +364,13 @@ end
                       do l= 1,10
                         work(l)= dtwoeri(l,k,j,i,ider)
                       enddo
-                      dtwoeri(1,k,j,i,ider)=( work(3)*two-work(5)*three-work(7)*three)*facf4
-                      dtwoeri(2,k,j,i,ider)=(-work(1)-work(6)+work(8)*four           )*facf3
-                      dtwoeri(3,k,j,i,ider)=(-work(2)-work(4)+work(9)*four           )*facf3
-                      dtwoeri(4,k,j,i,ider)=( work(5)-work(7)                        )*facf2
-                      dtwoeri(5,k,j,i,ider)=  work(10)
-                      dtwoeri(6,k,j,i,ider)=( work(1)-work(6)*three                  )*facf1
-                      dtwoeri(7,k,j,i,ider)=(-work(2)+work(4)*three                  )*facf1
+                      dtwoeri(1,k,j,i,ider)=(-work(7)+work(2)*three                   )*facf1
+                      dtwoeri(2,k,j,i,ider)=  work(5)
+                      dtwoeri(3,k,j,i,ider)=(-work(7)-work(2)+work(9)*four            )*facf3
+                      dtwoeri(4,k,j,i,ider)=( work(10)*two-work(3)*three-work(8)*three)*facf4
+                      dtwoeri(5,k,j,i,ider)=(-work(1)-work(4)+work(6)*four            )*facf3
+                      dtwoeri(6,k,j,i,ider)=( work(3)-work(8)                         )*facf2
+                      dtwoeri(7,k,j,i,ider)=( work(1)-work(4)*three                   )*facf1
                     enddo
                   enddo
                 enddo
@@ -425,14 +425,14 @@ end
             do j= 1,nbfijkl(2)
               do l= 1,nbfijkl(4)
                 dtwoeri(l,1,j,i,1)= twoeri(l,1,j,i)
-                dtwoeri(l,2,j,i,1)= twoeri(l,4,j,i)*sqrtthird
-                dtwoeri(l,3,j,i,1)= twoeri(l,5,j,i)*sqrtthird
-                dtwoeri(l,1,j,i,2)= twoeri(l,4,j,i)*sqrtthird
-                dtwoeri(l,2,j,i,2)= twoeri(l,2,j,i)
-                dtwoeri(l,3,j,i,2)= twoeri(l,6,j,i)*sqrtthird
-                dtwoeri(l,1,j,i,3)= twoeri(l,5,j,i)*sqrtthird
-                dtwoeri(l,2,j,i,3)= twoeri(l,6,j,i)*sqrtthird
-                dtwoeri(l,3,j,i,3)= twoeri(l,3,j,i)
+                dtwoeri(l,2,j,i,1)= twoeri(l,2,j,i)*sqrtthird
+                dtwoeri(l,3,j,i,1)= twoeri(l,3,j,i)*sqrtthird
+                dtwoeri(l,1,j,i,2)= twoeri(l,2,j,i)*sqrtthird
+                dtwoeri(l,2,j,i,2)= twoeri(l,4,j,i)
+                dtwoeri(l,3,j,i,2)= twoeri(l,5,j,i)*sqrtthird
+                dtwoeri(l,1,j,i,3)= twoeri(l,3,j,i)*sqrtthird
+                dtwoeri(l,2,j,i,3)= twoeri(l,5,j,i)*sqrtthird
+                dtwoeri(l,3,j,i,3)= twoeri(l,6,j,i)
               enddo
             enddo
           enddo
@@ -441,23 +441,23 @@ end
             do j= 1,nbfijkl(2)
               do l= 1,nbfijkl(4)
                 dtwoeri(l,1,j,i,1)= twoeri(l, 1,j,i)
-                dtwoeri(l,2,j,i,1)= twoeri(l, 6,j,i)*sqrtfifth
-                dtwoeri(l,3,j,i,1)= twoeri(l, 8,j,i)*sqrtfifth
-                dtwoeri(l,4,j,i,1)= twoeri(l, 4,j,i)*sqrt3fifth
-                dtwoeri(l,5,j,i,1)= twoeri(l, 5,j,i)*sqrt3fifth
-                dtwoeri(l,6,j,i,1)= twoeri(l,10,j,i)*sqrtfifth
-                dtwoeri(l,1,j,i,2)= twoeri(l, 4,j,i)*sqrtfifth
-                dtwoeri(l,2,j,i,2)= twoeri(l, 2,j,i)
-                dtwoeri(l,3,j,i,2)= twoeri(l, 9,j,i)*sqrtfifth
-                dtwoeri(l,4,j,i,2)= twoeri(l, 6,j,i)*sqrt3fifth
-                dtwoeri(l,5,j,i,2)= twoeri(l,10,j,i)*sqrtfifth
-                dtwoeri(l,6,j,i,2)= twoeri(l, 7,j,i)*sqrt3fifth
-                dtwoeri(l,1,j,i,3)= twoeri(l, 5,j,i)*sqrtfifth
-                dtwoeri(l,2,j,i,3)= twoeri(l, 7,j,i)*sqrtfifth
-                dtwoeri(l,3,j,i,3)= twoeri(l, 3,j,i)
-                dtwoeri(l,4,j,i,3)= twoeri(l,10,j,i)*sqrtfifth
-                dtwoeri(l,5,j,i,3)= twoeri(l, 8,j,i)*sqrt3fifth
-                dtwoeri(l,6,j,i,3)= twoeri(l, 9,j,i)*sqrt3fifth
+                dtwoeri(l,2,j,i,1)= twoeri(l, 2,j,i)*sqrt3fifth
+                dtwoeri(l,3,j,i,1)= twoeri(l, 3,j,i)*sqrt3fifth
+                dtwoeri(l,4,j,i,1)= twoeri(l, 4,j,i)*sqrtfifth
+                dtwoeri(l,5,j,i,1)= twoeri(l, 5,j,i)*sqrtfifth
+                dtwoeri(l,6,j,i,1)= twoeri(l, 6,j,i)*sqrtfifth
+                dtwoeri(l,1,j,i,2)= twoeri(l, 2,j,i)*sqrtfifth
+                dtwoeri(l,2,j,i,2)= twoeri(l, 4,j,i)*sqrt3fifth
+                dtwoeri(l,3,j,i,2)= twoeri(l, 5,j,i)*sqrtfifth
+                dtwoeri(l,4,j,i,2)= twoeri(l, 7,j,i)
+                dtwoeri(l,5,j,i,2)= twoeri(l, 8,j,i)*sqrt3fifth
+                dtwoeri(l,6,j,i,2)= twoeri(l, 9,j,i)*sqrtfifth
+                dtwoeri(l,1,j,i,3)= twoeri(l, 3,j,i)*sqrtfifth
+                dtwoeri(l,2,j,i,3)= twoeri(l, 5,j,i)*sqrtfifth
+                dtwoeri(l,3,j,i,3)= twoeri(l, 6,j,i)*sqrt3fifth
+                dtwoeri(l,4,j,i,3)= twoeri(l, 8,j,i)*sqrtfifth
+                dtwoeri(l,5,j,i,3)= twoeri(l, 9,j,i)*sqrt3fifth
+                dtwoeri(l,6,j,i,3)= twoeri(l,10,j,i)
               enddo
             enddo
           enddo
@@ -466,35 +466,35 @@ end
             do j= 1,nbfijkl(2)
               do l= 1,nbfijkl(4)
                 dtwoeri(l, 1,j,i,1)= twoeri(l, 1,j,i)
-                dtwoeri(l, 2,j,i,1)= twoeri(l, 6,j,i)*sqrtseventh
-                dtwoeri(l, 3,j,i,1)= twoeri(l, 8,j,i)*sqrtseventh
-                dtwoeri(l, 4,j,i,1)= twoeri(l, 4,j,i)*sqrt5seventh
-                dtwoeri(l, 5,j,i,1)= twoeri(l, 5,j,i)*sqrt5seventh
-                dtwoeri(l, 6,j,i,1)= twoeri(l,10,j,i)*sqrt3seventh
-                dtwoeri(l, 7,j,i,1)= twoeri(l,14,j,i)*sqrtseventh
-                dtwoeri(l, 8,j,i,1)= twoeri(l,11,j,i)*sqrt3seventh
-                dtwoeri(l, 9,j,i,1)= twoeri(l,15,j,i)*sqrtseventh
-                dtwoeri(l,10,j,i,1)= twoeri(l,13,j,i)*sqrt3seventh
-                dtwoeri(l, 1,j,i,2)= twoeri(l, 4,j,i)*sqrtseventh
-                dtwoeri(l, 2,j,i,2)= twoeri(l, 2,j,i)
-                dtwoeri(l, 3,j,i,2)= twoeri(l, 9,j,i)*sqrtseventh
-                dtwoeri(l, 4,j,i,2)= twoeri(l,10,j,i)*sqrt3seventh
-                dtwoeri(l, 5,j,i,2)= twoeri(l,13,j,i)*sqrtseventh
-                dtwoeri(l, 6,j,i,2)= twoeri(l, 6,j,i)*sqrt5seventh
-                dtwoeri(l, 7,j,i,2)= twoeri(l, 7,j,i)*sqrt5seventh
-                dtwoeri(l, 8,j,i,2)= twoeri(l,15,j,i)*sqrtseventh
-                dtwoeri(l, 9,j,i,2)= twoeri(l,12,j,i)*sqrt3seventh
-                dtwoeri(l,10,j,i,2)= twoeri(l,14,j,i)*sqrt3seventh
-                dtwoeri(l, 1,j,i,3)= twoeri(l, 5,j,i)*sqrtseventh
-                dtwoeri(l, 2,j,i,3)= twoeri(l, 7,j,i)*sqrtseventh
-                dtwoeri(l, 3,j,i,3)= twoeri(l, 3,j,i)
-                dtwoeri(l, 4,j,i,3)= twoeri(l,13,j,i)*sqrtseventh
-                dtwoeri(l, 5,j,i,3)= twoeri(l,11,j,i)*sqrt3seventh
-                dtwoeri(l, 6,j,i,3)= twoeri(l,14,j,i)*sqrtseventh
-                dtwoeri(l, 7,j,i,3)= twoeri(l,12,j,i)*sqrt3seventh
-                dtwoeri(l, 8,j,i,3)= twoeri(l, 8,j,i)*sqrt5seventh
-                dtwoeri(l, 9,j,i,3)= twoeri(l, 9,j,i)*sqrt5seventh
-                dtwoeri(l,10,j,i,3)= twoeri(l,15,j,i)*sqrt3seventh
+                dtwoeri(l, 2,j,i,1)= twoeri(l, 2,j,i)*sqrt5seventh
+                dtwoeri(l, 3,j,i,1)= twoeri(l, 3,j,i)*sqrt5seventh
+                dtwoeri(l, 4,j,i,1)= twoeri(l, 4,j,i)*sqrt3seventh
+                dtwoeri(l, 5,j,i,1)= twoeri(l, 5,j,i)*sqrt3seventh
+                dtwoeri(l, 6,j,i,1)= twoeri(l, 6,j,i)*sqrt3seventh
+                dtwoeri(l, 7,j,i,1)= twoeri(l, 7,j,i)*sqrtseventh
+                dtwoeri(l, 8,j,i,1)= twoeri(l, 8,j,i)*sqrtseventh
+                dtwoeri(l, 9,j,i,1)= twoeri(l, 9,j,i)*sqrtseventh
+                dtwoeri(l,10,j,i,1)= twoeri(l,10,j,i)*sqrtseventh
+                dtwoeri(l, 1,j,i,2)= twoeri(l, 2,j,i)*sqrtseventh
+                dtwoeri(l, 2,j,i,2)= twoeri(l, 4,j,i)*sqrt3seventh
+                dtwoeri(l, 3,j,i,2)= twoeri(l, 5,j,i)*sqrtseventh
+                dtwoeri(l, 4,j,i,2)= twoeri(l, 7,j,i)*sqrt5seventh
+                dtwoeri(l, 5,j,i,2)= twoeri(l, 8,j,i)*sqrt3seventh
+                dtwoeri(l, 6,j,i,2)= twoeri(l, 9,j,i)*sqrtseventh
+                dtwoeri(l, 7,j,i,2)= twoeri(l,11,j,i)
+                dtwoeri(l, 8,j,i,2)= twoeri(l,12,j,i)*sqrt5seventh
+                dtwoeri(l, 9,j,i,2)= twoeri(l,13,j,i)*sqrt3seventh
+                dtwoeri(l,10,j,i,2)= twoeri(l,14,j,i)*sqrtseventh
+                dtwoeri(l, 1,j,i,3)= twoeri(l, 3,j,i)*sqrtseventh
+                dtwoeri(l, 2,j,i,3)= twoeri(l, 5,j,i)*sqrtseventh
+                dtwoeri(l, 3,j,i,3)= twoeri(l, 6,j,i)*sqrt3seventh
+                dtwoeri(l, 4,j,i,3)= twoeri(l, 8,j,i)*sqrtseventh
+                dtwoeri(l, 5,j,i,3)= twoeri(l, 9,j,i)*sqrt3seventh
+                dtwoeri(l, 6,j,i,3)= twoeri(l,10,j,i)*sqrt5seventh
+                dtwoeri(l, 7,j,i,3)= twoeri(l,12,j,i)*sqrtseventh
+                dtwoeri(l, 8,j,i,3)= twoeri(l,13,j,i)*sqrt3seventh
+                dtwoeri(l, 9,j,i,3)= twoeri(l,14,j,i)*sqrt5seventh
+                dtwoeri(l,10,j,i,3)= twoeri(l,15,j,i)
               enddo
             enddo
           enddo
@@ -531,14 +531,14 @@ end
               do j= 1,nbfijkl(2)
                 do l= 1,nbfijkl(4)
                   dtwoeri(l,1,j,i,1)= dtwoeri(l,1,j,i,1)-twoeri(l,1,j,i)*two
-                  dtwoeri(l,4,j,i,1)= dtwoeri(l,4,j,i,1)-twoeri(l,2,j,i)*sqrt3
-                  dtwoeri(l,5,j,i,1)= dtwoeri(l,5,j,i,1)-twoeri(l,3,j,i)*sqrt3
-                  dtwoeri(l,2,j,i,2)= dtwoeri(l,2,j,i,2)-twoeri(l,2,j,i)*two
-                  dtwoeri(l,4,j,i,2)= dtwoeri(l,4,j,i,2)-twoeri(l,1,j,i)*sqrt3
-                  dtwoeri(l,6,j,i,2)= dtwoeri(l,6,j,i,2)-twoeri(l,3,j,i)*sqrt3
-                  dtwoeri(l,3,j,i,3)= dtwoeri(l,3,j,i,3)-twoeri(l,3,j,i)*two
-                  dtwoeri(l,5,j,i,3)= dtwoeri(l,5,j,i,3)-twoeri(l,1,j,i)*sqrt3
-                  dtwoeri(l,6,j,i,3)= dtwoeri(l,6,j,i,3)-twoeri(l,2,j,i)*sqrt3
+                  dtwoeri(l,2,j,i,1)= dtwoeri(l,2,j,i,1)-twoeri(l,2,j,i)*sqrt3
+                  dtwoeri(l,3,j,i,1)= dtwoeri(l,3,j,i,1)-twoeri(l,3,j,i)*sqrt3
+                  dtwoeri(l,2,j,i,2)= dtwoeri(l,2,j,i,2)-twoeri(l,1,j,i)*sqrt3
+                  dtwoeri(l,4,j,i,2)= dtwoeri(l,4,j,i,2)-twoeri(l,2,j,i)*two
+                  dtwoeri(l,5,j,i,2)= dtwoeri(l,5,j,i,2)-twoeri(l,3,j,i)*sqrt3
+                  dtwoeri(l,3,j,i,3)= dtwoeri(l,3,j,i,3)-twoeri(l,1,j,i)*sqrt3
+                  dtwoeri(l,5,j,i,3)= dtwoeri(l,5,j,i,3)-twoeri(l,2,j,i)*sqrt3
+                  dtwoeri(l,6,j,i,3)= dtwoeri(l,6,j,i,3)-twoeri(l,3,j,i)*two
                 enddo
               enddo
             enddo
@@ -550,11 +550,11 @@ end
                       do k= 1,6
                         work(k)= dtwoeri(l,k,j,i,ider)
                       enddo
-                      dtwoeri(l,1,j,i,ider)=(work(3)*two-work(1)-work(2))*half
+                      dtwoeri(l,1,j,i,ider)= work(2)
                       dtwoeri(l,2,j,i,ider)= work(5)
-                      dtwoeri(l,3,j,i,ider)= work(6)
-                      dtwoeri(l,4,j,i,ider)=(work(1)-work(2))*sqrt3h
-                      dtwoeri(l,5,j,i,ider)= work(4)
+                      dtwoeri(l,3,j,i,ider)=(work(6)*two-work(1)-work(4))*half
+                      dtwoeri(l,4,j,i,ider)= work(3)
+                      dtwoeri(l,5,j,i,ider)=(work(1)-work(4))*sqrt3h
                     enddo
                   enddo
                 enddo
@@ -565,23 +565,23 @@ end
               do j= 1,nbfijkl(2)
                 do l= 1,nbfijkl(4)
                   dtwoeri(l, 1,j,i,1)= dtwoeri(l, 1,j,i,1)-twoeri(l,1,j,i)*three
-                  dtwoeri(l, 4,j,i,1)= dtwoeri(l, 4,j,i,1)-twoeri(l,4,j,i)*two*sqrt5third
-                  dtwoeri(l, 5,j,i,1)= dtwoeri(l, 5,j,i,1)-twoeri(l,5,j,i)*two*sqrt5third
-                  dtwoeri(l, 6,j,i,1)= dtwoeri(l, 6,j,i,1)-twoeri(l,2,j,i)*sqrt5
-                  dtwoeri(l, 8,j,i,1)= dtwoeri(l, 8,j,i,1)-twoeri(l,3,j,i)*sqrt5
-                  dtwoeri(l,10,j,i,1)= dtwoeri(l,10,j,i,1)-twoeri(l,6,j,i)*sqrt5
-                  dtwoeri(l, 2,j,i,2)= dtwoeri(l, 2,j,i,2)-twoeri(l,2,j,i)*three
-                  dtwoeri(l, 4,j,i,2)= dtwoeri(l, 4,j,i,2)-twoeri(l,1,j,i)*sqrt5
-                  dtwoeri(l, 6,j,i,2)= dtwoeri(l, 6,j,i,2)-twoeri(l,4,j,i)*two*sqrt5third
-                  dtwoeri(l, 7,j,i,2)= dtwoeri(l, 7,j,i,2)-twoeri(l,6,j,i)*two*sqrt5third
-                  dtwoeri(l, 9,j,i,2)= dtwoeri(l, 9,j,i,2)-twoeri(l,3,j,i)*sqrt5
-                  dtwoeri(l,10,j,i,2)= dtwoeri(l,10,j,i,2)-twoeri(l,5,j,i)*sqrt5
-                  dtwoeri(l, 3,j,i,3)= dtwoeri(l, 3,j,i,3)-twoeri(l,3,j,i)*three
-                  dtwoeri(l, 5,j,i,3)= dtwoeri(l, 5,j,i,3)-twoeri(l,1,j,i)*sqrt5
-                  dtwoeri(l, 7,j,i,3)= dtwoeri(l, 7,j,i,3)-twoeri(l,2,j,i)*sqrt5
-                  dtwoeri(l, 8,j,i,3)= dtwoeri(l, 8,j,i,3)-twoeri(l,5,j,i)*two*sqrt5third
-                  dtwoeri(l, 9,j,i,3)= dtwoeri(l, 9,j,i,3)-twoeri(l,6,j,i)*two*sqrt5third
-                  dtwoeri(l,10,j,i,3)= dtwoeri(l,10,j,i,3)-twoeri(l,4,j,i)*sqrt5
+                  dtwoeri(l, 2,j,i,1)= dtwoeri(l, 2,j,i,1)-twoeri(l,2,j,i)*two*sqrt5third
+                  dtwoeri(l, 3,j,i,1)= dtwoeri(l, 3,j,i,1)-twoeri(l,3,j,i)*two*sqrt5third
+                  dtwoeri(l, 4,j,i,1)= dtwoeri(l, 4,j,i,1)-twoeri(l,4,j,i)*sqrt5
+                  dtwoeri(l, 5,j,i,1)= dtwoeri(l, 5,j,i,1)-twoeri(l,5,j,i)*sqrt5
+                  dtwoeri(l, 6,j,i,1)= dtwoeri(l, 6,j,i,1)-twoeri(l,6,j,i)*sqrt5
+                  dtwoeri(l, 2,j,i,2)= dtwoeri(l, 2,j,i,2)-twoeri(l,1,j,i)*sqrt5
+                  dtwoeri(l, 4,j,i,2)= dtwoeri(l, 4,j,i,2)-twoeri(l,2,j,i)*two*sqrt5third
+                  dtwoeri(l, 5,j,i,2)= dtwoeri(l, 5,j,i,2)-twoeri(l,3,j,i)*sqrt5
+                  dtwoeri(l, 7,j,i,2)= dtwoeri(l, 7,j,i,2)-twoeri(l,4,j,i)*three
+                  dtwoeri(l, 8,j,i,2)= dtwoeri(l, 8,j,i,2)-twoeri(l,5,j,i)*two*sqrt5third
+                  dtwoeri(l, 9,j,i,2)= dtwoeri(l, 9,j,i,2)-twoeri(l,6,j,i)*sqrt5
+                  dtwoeri(l, 3,j,i,3)= dtwoeri(l, 3,j,i,3)-twoeri(l,1,j,i)*sqrt5
+                  dtwoeri(l, 5,j,i,3)= dtwoeri(l, 5,j,i,3)-twoeri(l,2,j,i)*sqrt5
+                  dtwoeri(l, 6,j,i,3)= dtwoeri(l, 6,j,i,3)-twoeri(l,3,j,i)*two*sqrt5third
+                  dtwoeri(l, 8,j,i,3)= dtwoeri(l, 8,j,i,3)-twoeri(l,4,j,i)*sqrt5
+                  dtwoeri(l, 9,j,i,3)= dtwoeri(l, 9,j,i,3)-twoeri(l,5,j,i)*two*sqrt5third
+                  dtwoeri(l,10,j,i,3)= dtwoeri(l,10,j,i,3)-twoeri(l,6,j,i)*three
                 enddo
               enddo
             enddo
@@ -593,13 +593,13 @@ end
                       do k= 1,10
                         work(k)= dtwoeri(l,k,j,i,ider)
                       enddo
-                      dtwoeri(l,1,j,i,ider)=( work(3)*two-work(5)*three-work(7)*three)*facf4
-                      dtwoeri(l,2,j,i,ider)=(-work(1)-work(6)+work(8)*four           )*facf3
-                      dtwoeri(l,3,j,i,ider)=(-work(2)-work(4)+work(9)*four           )*facf3
-                      dtwoeri(l,4,j,i,ider)=( work(5)-work(7)                        )*facf2
-                      dtwoeri(l,5,j,i,ider)=  work(10)
-                      dtwoeri(l,6,j,i,ider)=( work(1)-work(6)*three                  )*facf1
-                      dtwoeri(l,7,j,i,ider)=(-work(2)+work(4)*three                  )*facf1
+                      dtwoeri(l,1,j,i,ider)=(-work(7)+work(2)*three                   )*facf1
+                      dtwoeri(l,2,j,i,ider)=  work(5)
+                      dtwoeri(l,3,j,i,ider)=(-work(7)-work(2)+work(9)*four            )*facf3
+                      dtwoeri(l,4,j,i,ider)=( work(10)*two-work(3)*three-work(8)*three)*facf4
+                      dtwoeri(l,5,j,i,ider)=(-work(1)-work(4)+work(6)*four            )*facf3
+                      dtwoeri(l,6,j,i,ider)=( work(3)-work(8)                         )*facf2
+                      dtwoeri(l,7,j,i,ider)=( work(1)-work(4)*three                   )*facf1
                     enddo
                   enddo
                 enddo
@@ -654,14 +654,14 @@ end
             do k= 1,nbfijkl(3)
               do l= 1,nbfijkl(4)
                 dtwoeri(l,k,1,i,1)= twoeri(l,k,1,i)
-                dtwoeri(l,k,2,i,1)= twoeri(l,k,4,i)*sqrtthird
-                dtwoeri(l,k,3,i,1)= twoeri(l,k,5,i)*sqrtthird
-                dtwoeri(l,k,1,i,2)= twoeri(l,k,4,i)*sqrtthird
-                dtwoeri(l,k,2,i,2)= twoeri(l,k,2,i)
-                dtwoeri(l,k,3,i,2)= twoeri(l,k,6,i)*sqrtthird
-                dtwoeri(l,k,1,i,3)= twoeri(l,k,5,i)*sqrtthird
-                dtwoeri(l,k,2,i,3)= twoeri(l,k,6,i)*sqrtthird
-                dtwoeri(l,k,3,i,3)= twoeri(l,k,3,i)
+                dtwoeri(l,k,2,i,1)= twoeri(l,k,2,i)*sqrtthird
+                dtwoeri(l,k,3,i,1)= twoeri(l,k,3,i)*sqrtthird
+                dtwoeri(l,k,1,i,2)= twoeri(l,k,2,i)*sqrtthird
+                dtwoeri(l,k,2,i,2)= twoeri(l,k,4,i)
+                dtwoeri(l,k,3,i,2)= twoeri(l,k,5,i)*sqrtthird
+                dtwoeri(l,k,1,i,3)= twoeri(l,k,3,i)*sqrtthird
+                dtwoeri(l,k,2,i,3)= twoeri(l,k,5,i)*sqrtthird
+                dtwoeri(l,k,3,i,3)= twoeri(l,k,6,i)
               enddo
             enddo
           enddo
@@ -670,23 +670,23 @@ end
             do k= 1,nbfijkl(3)
               do l= 1,nbfijkl(4)
                 dtwoeri(l,k,1,i,1)= twoeri(l,k, 1,i)
-                dtwoeri(l,k,2,i,1)= twoeri(l,k, 6,i)*sqrtfifth
-                dtwoeri(l,k,3,i,1)= twoeri(l,k, 8,i)*sqrtfifth
-                dtwoeri(l,k,4,i,1)= twoeri(l,k, 4,i)*sqrt3fifth
-                dtwoeri(l,k,5,i,1)= twoeri(l,k, 5,i)*sqrt3fifth
-                dtwoeri(l,k,6,i,1)= twoeri(l,k,10,i)*sqrtfifth
-                dtwoeri(l,k,1,i,2)= twoeri(l,k, 4,i)*sqrtfifth
-                dtwoeri(l,k,2,i,2)= twoeri(l,k, 2,i)
-                dtwoeri(l,k,3,i,2)= twoeri(l,k, 9,i)*sqrtfifth
-                dtwoeri(l,k,4,i,2)= twoeri(l,k, 6,i)*sqrt3fifth
-                dtwoeri(l,k,5,i,2)= twoeri(l,k,10,i)*sqrtfifth
-                dtwoeri(l,k,6,i,2)= twoeri(l,k, 7,i)*sqrt3fifth
-                dtwoeri(l,k,1,i,3)= twoeri(l,k, 5,i)*sqrtfifth
-                dtwoeri(l,k,2,i,3)= twoeri(l,k, 7,i)*sqrtfifth
-                dtwoeri(l,k,3,i,3)= twoeri(l,k, 3,i)
-                dtwoeri(l,k,4,i,3)= twoeri(l,k,10,i)*sqrtfifth
-                dtwoeri(l,k,5,i,3)= twoeri(l,k, 8,i)*sqrt3fifth
-                dtwoeri(l,k,6,i,3)= twoeri(l,k, 9,i)*sqrt3fifth
+                dtwoeri(l,k,2,i,1)= twoeri(l,k, 2,i)*sqrt3fifth
+                dtwoeri(l,k,3,i,1)= twoeri(l,k, 3,i)*sqrt3fifth
+                dtwoeri(l,k,4,i,1)= twoeri(l,k, 4,i)*sqrtfifth
+                dtwoeri(l,k,5,i,1)= twoeri(l,k, 5,i)*sqrtfifth
+                dtwoeri(l,k,6,i,1)= twoeri(l,k, 6,i)*sqrtfifth
+                dtwoeri(l,k,1,i,2)= twoeri(l,k, 2,i)*sqrtfifth
+                dtwoeri(l,k,2,i,2)= twoeri(l,k, 4,i)*sqrt3fifth
+                dtwoeri(l,k,3,i,2)= twoeri(l,k, 5,i)*sqrtfifth
+                dtwoeri(l,k,4,i,2)= twoeri(l,k, 7,i)
+                dtwoeri(l,k,5,i,2)= twoeri(l,k, 8,i)*sqrt3fifth
+                dtwoeri(l,k,6,i,2)= twoeri(l,k, 9,i)*sqrtfifth
+                dtwoeri(l,k,1,i,3)= twoeri(l,k, 3,i)*sqrtfifth
+                dtwoeri(l,k,2,i,3)= twoeri(l,k, 5,i)*sqrtfifth
+                dtwoeri(l,k,3,i,3)= twoeri(l,k, 6,i)*sqrt3fifth
+                dtwoeri(l,k,4,i,3)= twoeri(l,k, 8,i)*sqrtfifth
+                dtwoeri(l,k,5,i,3)= twoeri(l,k, 9,i)*sqrt3fifth
+                dtwoeri(l,k,6,i,3)= twoeri(l,k,10,i)
               enddo
             enddo
           enddo
@@ -695,35 +695,35 @@ end
             do k= 1,nbfijkl(3)
               do l= 1,nbfijkl(4)
                 dtwoeri(l,k, 1,i,1)= twoeri(l,k, 1,i)
-                dtwoeri(l,k, 2,i,1)= twoeri(l,k, 6,i)*sqrtseventh
-                dtwoeri(l,k, 3,i,1)= twoeri(l,k, 8,i)*sqrtseventh
-                dtwoeri(l,k, 4,i,1)= twoeri(l,k, 4,i)*sqrt5seventh
-                dtwoeri(l,k, 5,i,1)= twoeri(l,k, 5,i)*sqrt5seventh
-                dtwoeri(l,k, 6,i,1)= twoeri(l,k,10,i)*sqrt3seventh
-                dtwoeri(l,k, 7,i,1)= twoeri(l,k,14,i)*sqrtseventh
-                dtwoeri(l,k, 8,i,1)= twoeri(l,k,11,i)*sqrt3seventh
-                dtwoeri(l,k, 9,i,1)= twoeri(l,k,15,i)*sqrtseventh
-                dtwoeri(l,k,10,i,1)= twoeri(l,k,13,i)*sqrt3seventh
-                dtwoeri(l,k, 1,i,2)= twoeri(l,k, 4,i)*sqrtseventh
-                dtwoeri(l,k, 2,i,2)= twoeri(l,k, 2,i)
-                dtwoeri(l,k, 3,i,2)= twoeri(l,k, 9,i)*sqrtseventh
-                dtwoeri(l,k, 4,i,2)= twoeri(l,k,10,i)*sqrt3seventh
-                dtwoeri(l,k, 5,i,2)= twoeri(l,k,13,i)*sqrtseventh
-                dtwoeri(l,k, 6,i,2)= twoeri(l,k, 6,i)*sqrt5seventh
-                dtwoeri(l,k, 7,i,2)= twoeri(l,k, 7,i)*sqrt5seventh
-                dtwoeri(l,k, 8,i,2)= twoeri(l,k,15,i)*sqrtseventh
-                dtwoeri(l,k, 9,i,2)= twoeri(l,k,12,i)*sqrt3seventh
-                dtwoeri(l,k,10,i,2)= twoeri(l,k,14,i)*sqrt3seventh
-                dtwoeri(l,k, 1,i,3)= twoeri(l,k, 5,i)*sqrtseventh
-                dtwoeri(l,k, 2,i,3)= twoeri(l,k, 7,i)*sqrtseventh
-                dtwoeri(l,k, 3,i,3)= twoeri(l,k, 3,i)
-                dtwoeri(l,k, 4,i,3)= twoeri(l,k,13,i)*sqrtseventh
-                dtwoeri(l,k, 5,i,3)= twoeri(l,k,11,i)*sqrt3seventh
-                dtwoeri(l,k, 6,i,3)= twoeri(l,k,14,i)*sqrtseventh
-                dtwoeri(l,k, 7,i,3)= twoeri(l,k,12,i)*sqrt3seventh
-                dtwoeri(l,k, 8,i,3)= twoeri(l,k, 8,i)*sqrt5seventh
-                dtwoeri(l,k, 9,i,3)= twoeri(l,k, 9,i)*sqrt5seventh
-                dtwoeri(l,k,10,i,3)= twoeri(l,k,15,i)*sqrt3seventh
+                dtwoeri(l,k, 2,i,1)= twoeri(l,k, 2,i)*sqrt5seventh
+                dtwoeri(l,k, 3,i,1)= twoeri(l,k, 3,i)*sqrt5seventh
+                dtwoeri(l,k, 4,i,1)= twoeri(l,k, 4,i)*sqrt3seventh
+                dtwoeri(l,k, 5,i,1)= twoeri(l,k, 5,i)*sqrt3seventh
+                dtwoeri(l,k, 6,i,1)= twoeri(l,k, 6,i)*sqrt3seventh
+                dtwoeri(l,k, 7,i,1)= twoeri(l,k, 7,i)*sqrtseventh
+                dtwoeri(l,k, 8,i,1)= twoeri(l,k, 8,i)*sqrtseventh
+                dtwoeri(l,k, 9,i,1)= twoeri(l,k, 9,i)*sqrtseventh
+                dtwoeri(l,k,10,i,1)= twoeri(l,k,10,i)*sqrtseventh
+                dtwoeri(l,k, 1,i,2)= twoeri(l,k, 2,i)*sqrtseventh
+                dtwoeri(l,k, 2,i,2)= twoeri(l,k, 4,i)*sqrt3seventh
+                dtwoeri(l,k, 3,i,2)= twoeri(l,k, 5,i)*sqrtseventh
+                dtwoeri(l,k, 4,i,2)= twoeri(l,k, 7,i)*sqrt5seventh
+                dtwoeri(l,k, 5,i,2)= twoeri(l,k, 8,i)*sqrt3seventh
+                dtwoeri(l,k, 6,i,2)= twoeri(l,k, 9,i)*sqrtseventh
+                dtwoeri(l,k, 7,i,2)= twoeri(l,k,11,i)
+                dtwoeri(l,k, 8,i,2)= twoeri(l,k,12,i)*sqrt5seventh
+                dtwoeri(l,k, 9,i,2)= twoeri(l,k,13,i)*sqrt3seventh
+                dtwoeri(l,k,10,i,2)= twoeri(l,k,14,i)*sqrtseventh
+                dtwoeri(l,k, 1,i,3)= twoeri(l,k, 3,i)*sqrtseventh
+                dtwoeri(l,k, 2,i,3)= twoeri(l,k, 5,i)*sqrtseventh
+                dtwoeri(l,k, 3,i,3)= twoeri(l,k, 6,i)*sqrt3seventh
+                dtwoeri(l,k, 4,i,3)= twoeri(l,k, 8,i)*sqrtseventh
+                dtwoeri(l,k, 5,i,3)= twoeri(l,k, 9,i)*sqrt3seventh
+                dtwoeri(l,k, 6,i,3)= twoeri(l,k,10,i)*sqrt5seventh
+                dtwoeri(l,k, 7,i,3)= twoeri(l,k,12,i)*sqrtseventh
+                dtwoeri(l,k, 8,i,3)= twoeri(l,k,13,i)*sqrt3seventh
+                dtwoeri(l,k, 9,i,3)= twoeri(l,k,14,i)*sqrt5seventh
+                dtwoeri(l,k,10,i,3)= twoeri(l,k,15,i)
               enddo
             enddo
           enddo
@@ -760,14 +760,14 @@ end
               do k= 1,nbfijkl(3)
                 do l= 1,nbfijkl(4)
                   dtwoeri(l,k,1,i,1)= dtwoeri(l,k,1,i,1)-twoeri(l,k,1,i)*two
-                  dtwoeri(l,k,4,i,1)= dtwoeri(l,k,4,i,1)-twoeri(l,k,2,i)*sqrt3
-                  dtwoeri(l,k,5,i,1)= dtwoeri(l,k,5,i,1)-twoeri(l,k,3,i)*sqrt3
-                  dtwoeri(l,k,2,i,2)= dtwoeri(l,k,2,i,2)-twoeri(l,k,2,i)*two
-                  dtwoeri(l,k,4,i,2)= dtwoeri(l,k,4,i,2)-twoeri(l,k,1,i)*sqrt3
-                  dtwoeri(l,k,6,i,2)= dtwoeri(l,k,6,i,2)-twoeri(l,k,3,i)*sqrt3
-                  dtwoeri(l,k,3,i,3)= dtwoeri(l,k,3,i,3)-twoeri(l,k,3,i)*two
-                  dtwoeri(l,k,5,i,3)= dtwoeri(l,k,5,i,3)-twoeri(l,k,1,i)*sqrt3
-                  dtwoeri(l,k,6,i,3)= dtwoeri(l,k,6,i,3)-twoeri(l,k,2,i)*sqrt3
+                  dtwoeri(l,k,2,i,1)= dtwoeri(l,k,2,i,1)-twoeri(l,k,2,i)*sqrt3
+                  dtwoeri(l,k,3,i,1)= dtwoeri(l,k,3,i,1)-twoeri(l,k,3,i)*sqrt3
+                  dtwoeri(l,k,2,i,2)= dtwoeri(l,k,2,i,2)-twoeri(l,k,1,i)*sqrt3
+                  dtwoeri(l,k,4,i,2)= dtwoeri(l,k,4,i,2)-twoeri(l,k,2,i)*two
+                  dtwoeri(l,k,5,i,2)= dtwoeri(l,k,5,i,2)-twoeri(l,k,3,i)*sqrt3
+                  dtwoeri(l,k,3,i,3)= dtwoeri(l,k,3,i,3)-twoeri(l,k,1,i)*sqrt3
+                  dtwoeri(l,k,5,i,3)= dtwoeri(l,k,5,i,3)-twoeri(l,k,2,i)*sqrt3
+                  dtwoeri(l,k,6,i,3)= dtwoeri(l,k,6,i,3)-twoeri(l,k,3,i)*two
                 enddo
               enddo
             enddo
@@ -779,11 +779,11 @@ end
                       do j= 1,6
                         work(j)= dtwoeri(l,k,j,i,ider)
                       enddo
-                      dtwoeri(l,k,1,i,ider)=(work(3)*two-work(1)-work(2))*half
+                      dtwoeri(l,k,1,i,ider)= work(2)
                       dtwoeri(l,k,2,i,ider)= work(5)
-                      dtwoeri(l,k,3,i,ider)= work(6)
-                      dtwoeri(l,k,4,i,ider)=(work(1)-work(2))*sqrt3h
-                      dtwoeri(l,k,5,i,ider)= work(4)
+                      dtwoeri(l,k,3,i,ider)=(work(6)*two-work(1)-work(4))*half
+                      dtwoeri(l,k,4,i,ider)= work(3)
+                      dtwoeri(l,k,5,i,ider)=(work(1)-work(4))*sqrt3h
                     enddo
                   enddo
                 enddo
@@ -794,23 +794,23 @@ end
               do k= 1,nbfijkl(3)
                 do l= 1,nbfijkl(4)
                   dtwoeri(l,k, 1,i,1)= dtwoeri(l,k, 1,i,1)-twoeri(l,k,1,i)*three
-                  dtwoeri(l,k, 4,i,1)= dtwoeri(l,k, 4,i,1)-twoeri(l,k,4,i)*two*sqrt5third
-                  dtwoeri(l,k, 5,i,1)= dtwoeri(l,k, 5,i,1)-twoeri(l,k,5,i)*two*sqrt5third
-                  dtwoeri(l,k, 6,i,1)= dtwoeri(l,k, 6,i,1)-twoeri(l,k,2,i)*sqrt5
-                  dtwoeri(l,k, 8,i,1)= dtwoeri(l,k, 8,i,1)-twoeri(l,k,3,i)*sqrt5
-                  dtwoeri(l,k,10,i,1)= dtwoeri(l,k,10,i,1)-twoeri(l,k,6,i)*sqrt5
-                  dtwoeri(l,k, 2,i,2)= dtwoeri(l,k, 2,i,2)-twoeri(l,k,2,i)*three
-                  dtwoeri(l,k, 4,i,2)= dtwoeri(l,k, 4,i,2)-twoeri(l,k,1,i)*sqrt5
-                  dtwoeri(l,k, 6,i,2)= dtwoeri(l,k, 6,i,2)-twoeri(l,k,4,i)*two*sqrt5third
-                  dtwoeri(l,k, 7,i,2)= dtwoeri(l,k, 7,i,2)-twoeri(l,k,6,i)*two*sqrt5third
-                  dtwoeri(l,k, 9,i,2)= dtwoeri(l,k, 9,i,2)-twoeri(l,k,3,i)*sqrt5
-                  dtwoeri(l,k,10,i,2)= dtwoeri(l,k,10,i,2)-twoeri(l,k,5,i)*sqrt5
-                  dtwoeri(l,k, 3,i,3)= dtwoeri(l,k, 3,i,3)-twoeri(l,k,3,i)*three
-                  dtwoeri(l,k, 5,i,3)= dtwoeri(l,k, 5,i,3)-twoeri(l,k,1,i)*sqrt5
-                  dtwoeri(l,k, 7,i,3)= dtwoeri(l,k, 7,i,3)-twoeri(l,k,2,i)*sqrt5
-                  dtwoeri(l,k, 8,i,3)= dtwoeri(l,k, 8,i,3)-twoeri(l,k,5,i)*two*sqrt5third
-                  dtwoeri(l,k, 9,i,3)= dtwoeri(l,k, 9,i,3)-twoeri(l,k,6,i)*two*sqrt5third
-                  dtwoeri(l,k,10,i,3)= dtwoeri(l,k,10,i,3)-twoeri(l,k,4,i)*sqrt5
+                  dtwoeri(l,k, 2,i,1)= dtwoeri(l,k, 2,i,1)-twoeri(l,k,2,i)*two*sqrt5third
+                  dtwoeri(l,k, 3,i,1)= dtwoeri(l,k, 3,i,1)-twoeri(l,k,3,i)*two*sqrt5third
+                  dtwoeri(l,k, 4,i,1)= dtwoeri(l,k, 4,i,1)-twoeri(l,k,4,i)*sqrt5
+                  dtwoeri(l,k, 5,i,1)= dtwoeri(l,k, 5,i,1)-twoeri(l,k,5,i)*sqrt5
+                  dtwoeri(l,k, 6,i,1)= dtwoeri(l,k, 6,i,1)-twoeri(l,k,6,i)*sqrt5
+                  dtwoeri(l,k, 2,i,2)= dtwoeri(l,k, 2,i,2)-twoeri(l,k,1,i)*sqrt5
+                  dtwoeri(l,k, 4,i,2)= dtwoeri(l,k, 4,i,2)-twoeri(l,k,2,i)*two*sqrt5third
+                  dtwoeri(l,k, 5,i,2)= dtwoeri(l,k, 5,i,2)-twoeri(l,k,3,i)*sqrt5
+                  dtwoeri(l,k, 7,i,2)= dtwoeri(l,k, 7,i,2)-twoeri(l,k,4,i)*three
+                  dtwoeri(l,k, 8,i,2)= dtwoeri(l,k, 8,i,2)-twoeri(l,k,5,i)*two*sqrt5third
+                  dtwoeri(l,k, 9,i,2)= dtwoeri(l,k, 9,i,2)-twoeri(l,k,6,i)*sqrt5
+                  dtwoeri(l,k, 3,i,3)= dtwoeri(l,k, 3,i,3)-twoeri(l,k,1,i)*sqrt5
+                  dtwoeri(l,k, 5,i,3)= dtwoeri(l,k, 5,i,3)-twoeri(l,k,2,i)*sqrt5
+                  dtwoeri(l,k, 6,i,3)= dtwoeri(l,k, 6,i,3)-twoeri(l,k,3,i)*two*sqrt5third
+                  dtwoeri(l,k, 8,i,3)= dtwoeri(l,k, 8,i,3)-twoeri(l,k,4,i)*sqrt5
+                  dtwoeri(l,k, 9,i,3)= dtwoeri(l,k, 9,i,3)-twoeri(l,k,5,i)*two*sqrt5third
+                  dtwoeri(l,k,10,i,3)= dtwoeri(l,k,10,i,3)-twoeri(l,k,6,i)*three
                 enddo
               enddo
             enddo
@@ -822,13 +822,13 @@ end
                       do j= 1,10
                         work(j)= dtwoeri(l,k,j,i,ider)
                       enddo
-                      dtwoeri(l,k,1,i,ider)=( work(3)*two-work(5)*three-work(7)*three)*facf4
-                      dtwoeri(l,k,2,i,ider)=(-work(1)-work(6)+work(8)*four           )*facf3
-                      dtwoeri(l,k,3,i,ider)=(-work(2)-work(4)+work(9)*four           )*facf3
-                      dtwoeri(l,k,4,i,ider)=( work(5)-work(7)                        )*facf2
-                      dtwoeri(l,k,5,i,ider)=  work(10)
-                      dtwoeri(l,k,6,i,ider)=( work(1)-work(6)*three                  )*facf1
-                      dtwoeri(l,k,7,i,ider)=(-work(2)+work(4)*three                  )*facf1
+                      dtwoeri(l,k,1,i,ider)=(-work(7)+work(2)*three                   )*facf1
+                      dtwoeri(l,k,2,i,ider)=  work(5)
+                      dtwoeri(l,k,3,i,ider)=(-work(7)-work(2)+work(9)*four            )*facf3
+                      dtwoeri(l,k,4,i,ider)=( work(10)*two-work(3)*three-work(8)*three)*facf4
+                      dtwoeri(l,k,5,i,ider)=(-work(1)-work(4)+work(6)*four            )*facf3
+                      dtwoeri(l,k,6,i,ider)=( work(3)-work(8)                         )*facf2
+                      dtwoeri(l,k,7,i,ider)=( work(1)-work(4)*three                   )*facf1
                     enddo
                   enddo
                 enddo
@@ -837,11 +837,7 @@ end
         end select
       endif
 !
-!     nangijkl(2)= mtype(jsh)
       nbfijkl(2) = mbf(jsh)
-!     do j= 1,nprimijkl(2)
-!       coijkl(j,2)= coeff(jloc+j)
-!     enddo
       do i= 1,nbfijkl(1)
         do j= 1,nbfijkl(2)
           do k= 1,nbfijkl(3)
