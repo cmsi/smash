@@ -531,7 +531,8 @@ end
           natom= 0
           do ii= 1,mxatom
             read(input,'(a)',end=100) line
-            read(line,*,end=100) atomin(ii),(coord(jj,ii),jj=1,3)
+            if(len_trim(line) == 0) exit
+            read(line,*,err=9997,end=9997) atomin(ii),(coord(jj,ii),jj=1,3)
             natom= natom+1
           enddo
 100       continue
@@ -600,6 +601,8 @@ end
 9999  write(*,'(" Error! Keyword GEOM is not found.")')
       call iabort
 9998  write(*,'(" Error! Geometry cannot be read from checkpoint file.")')
+      call iabort
+9997  write(*,'(" Error! Format of molecular geometry is incorrect.")')
       call iabort
 !
 end
@@ -742,12 +745,13 @@ end
             if(symbol /= 'SP') then
               do kprim= 1,numprim 
                 iprim= iprim+1
-                read(input,*,err=9998) exgen(iprim), coeffgen(iprim)
+                read(input,*,end=9998,err=9998) exgen(iprim), coeffgen(iprim)
               enddo
             else
               do kprim= 1,numprim 
                 iprim= iprim+1
-                read(input,*,err=9998) exgen(iprim), coeffgen(iprim), coeffgen(iprim+numprim)
+                read(input,*,end=9998,err=9998) exgen(iprim), coeffgen(iprim), &
+&                                                             coeffgen(iprim+numprim)
                 exgen(iprim+numprim)= exgen(iprim)
               enddo
               ishell= ishell+1
