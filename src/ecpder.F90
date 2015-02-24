@@ -195,68 +195,68 @@ end
           case (1)
             do i= 1,nbfij(1)
               decpint(1,i,1)= ecpint1(1,i)          -ecpint2(1,i)
-              decpint(2,i,1)= ecpint1(4,i)*sqrtthird
-              decpint(3,i,1)= ecpint1(5,i)*sqrtthird
-              decpint(1,i,2)= ecpint1(4,i)*sqrtthird
-              decpint(2,i,2)= ecpint1(2,i)          -ecpint2(1,i)
-              decpint(3,i,2)= ecpint1(6,i)*sqrtthird
-              decpint(1,i,3)= ecpint1(5,i)*sqrtthird
-              decpint(2,i,3)= ecpint1(6,i)*sqrtthird
-              decpint(3,i,3)= ecpint1(3,i)          -ecpint2(1,i)
+              decpint(2,i,1)= ecpint1(2,i)*sqrtthird
+              decpint(3,i,1)= ecpint1(3,i)*sqrtthird
+              decpint(1,i,2)= ecpint1(2,i)*sqrtthird
+              decpint(2,i,2)= ecpint1(4,i)          -ecpint2(1,i)
+              decpint(3,i,2)= ecpint1(5,i)*sqrtthird
+              decpint(1,i,3)= ecpint1(3,i)*sqrtthird
+              decpint(2,i,3)= ecpint1(5,i)*sqrtthird
+              decpint(3,i,3)= ecpint1(6,i)          -ecpint2(1,i)
             enddo
           case (2)
             do i= 1,nbfij(1)
               decpint(1,i,1)= ecpint1( 1,i)           -ecpint2(1,i)*two
-              decpint(2,i,1)= ecpint1( 6,i)*sqrtfifth
-              decpint(3,i,1)= ecpint1( 8,i)*sqrtfifth
-              decpint(4,i,1)= ecpint1( 4,i)*sqrt3fifth-ecpint2(2,i)*sqrt3
-              decpint(5,i,1)= ecpint1( 5,i)*sqrt3fifth-ecpint2(3,i)*sqrt3
-              decpint(6,i,1)= ecpint1(10,i)*sqrtfifth
-              decpint(1,i,2)= ecpint1( 4,i)*sqrtfifth
-              decpint(2,i,2)= ecpint1( 2,i)           -ecpint2(2,i)*two
-              decpint(3,i,2)= ecpint1( 9,i)*sqrtfifth
-              decpint(4,i,2)= ecpint1( 6,i)*sqrt3fifth-ecpint2(1,i)*sqrt3
-              decpint(5,i,2)= ecpint1(10,i)*sqrtfifth
-              decpint(6,i,2)= ecpint1( 7,i)*sqrt3fifth-ecpint2(3,i)*sqrt3
-              decpint(1,i,3)= ecpint1( 5,i)*sqrtfifth
-              decpint(2,i,3)= ecpint1( 7,i)*sqrtfifth
-              decpint(3,i,3)= ecpint1( 3,i)           -ecpint2(3,i)*two
-              decpint(4,i,3)= ecpint1(10,i)*sqrtfifth
-              decpint(5,i,3)= ecpint1( 8,i)*sqrt3fifth-ecpint2(1,i)*sqrt3
-              decpint(6,i,3)= ecpint1( 9,i)*sqrt3fifth-ecpint2(2,i)*sqrt3
+              decpint(2,i,1)= ecpint1( 2,i)*sqrt3fifth-ecpint2(2,i)*sqrt3
+              decpint(3,i,1)= ecpint1( 3,i)*sqrt3fifth-ecpint2(3,i)*sqrt3
+              decpint(4,i,1)= ecpint1( 4,i)*sqrtfifth
+              decpint(5,i,1)= ecpint1( 5,i)*sqrtfifth
+              decpint(6,i,1)= ecpint1( 6,i)*sqrtfifth
+              decpint(1,i,2)= ecpint1( 2,i)*sqrtfifth
+              decpint(2,i,2)= ecpint1( 4,i)*sqrt3fifth-ecpint2(1,i)*sqrt3
+              decpint(3,i,2)= ecpint1( 5,i)*sqrtfifth
+              decpint(4,i,2)= ecpint1( 7,i)           -ecpint2(2,i)*two
+              decpint(5,i,2)= ecpint1( 8,i)*sqrt3fifth-ecpint2(3,i)*sqrt3
+              decpint(6,i,2)= ecpint1( 9,i)*sqrtfifth
+              decpint(1,i,3)= ecpint1( 3,i)*sqrtfifth
+              decpint(2,i,3)= ecpint1( 5,i)*sqrtfifth
+              decpint(3,i,3)= ecpint1( 6,i)*sqrt3fifth-ecpint2(1,i)*sqrt3
+              decpint(4,i,3)= ecpint1( 8,i)*sqrtfifth
+              decpint(5,i,3)= ecpint1( 9,i)*sqrt3fifth-ecpint2(2,i)*sqrt3
+              decpint(6,i,3)= ecpint1(10,i)           -ecpint2(3,i)*two
             enddo
           case (3)
             do i= 1,nbfij(1)
               decpint( 1,i,1)= ecpint1( 1,i)             -ecpint2(1,i)*three
-              decpint( 2,i,1)= ecpint1( 6,i)*sqrtseventh
-              decpint( 3,i,1)= ecpint1( 8,i)*sqrtseventh
-              decpint( 4,i,1)= ecpint1( 4,i)*sqrt5seventh-ecpint2(4,i)*two*sqrt5third
-              decpint( 5,i,1)= ecpint1( 5,i)*sqrt5seventh-ecpint2(5,i)*two*sqrt5third
-              decpint( 6,i,1)= ecpint1(10,i)*sqrt3seventh-ecpint2(2,i)*sqrt5
-              decpint( 7,i,1)= ecpint1(14,i)*sqrtseventh
-              decpint( 8,i,1)= ecpint1(11,i)*sqrt3seventh-ecpint2(3,i)*sqrt5
-              decpint( 9,i,1)= ecpint1(15,i)*sqrtseventh
-              decpint(10,i,1)= ecpint1(13,i)*sqrt3seventh-ecpint2(6,i)*sqrt5
-              decpint( 1,i,2)= ecpint1( 4,i)*sqrtseventh
-              decpint( 2,i,2)= ecpint1( 2,i)             -ecpint2(2,i)*three
-              decpint( 3,i,2)= ecpint1( 9,i)*sqrtseventh
-              decpint( 4,i,2)= ecpint1(10,i)*sqrt3seventh-ecpint2(1,i)*sqrt5
-              decpint( 5,i,2)= ecpint1(13,i)*sqrtseventh
-              decpint( 6,i,2)= ecpint1( 6,i)*sqrt5seventh-ecpint2(4,i)*two*sqrt5third
-              decpint( 7,i,2)= ecpint1( 7,i)*sqrt5seventh-ecpint2(6,i)*two*sqrt5third
-              decpint( 8,i,2)= ecpint1(15,i)*sqrtseventh
-              decpint( 9,i,2)= ecpint1(12,i)*sqrt3seventh-ecpint2(3,i)*sqrt5
-              decpint(10,i,2)= ecpint1(14,i)*sqrt3seventh-ecpint2(5,i)*sqrt5
-              decpint( 1,i,3)= ecpint1( 5,i)*sqrtseventh
-              decpint( 2,i,3)= ecpint1( 7,i)*sqrtseventh
-              decpint( 3,i,3)= ecpint1( 3,i)             -ecpint2(3,i)*three
-              decpint( 4,i,3)= ecpint1(13,i)*sqrtseventh
-              decpint( 5,i,3)= ecpint1(11,i)*sqrt3seventh-ecpint2(1,i)*sqrt5
-              decpint( 6,i,3)= ecpint1(14,i)*sqrtseventh
-              decpint( 7,i,3)= ecpint1(12,i)*sqrt3seventh-ecpint2(2,i)*sqrt5
-              decpint( 8,i,3)= ecpint1( 8,i)*sqrt5seventh-ecpint2(5,i)*two*sqrt5third
-              decpint( 9,i,3)= ecpint1( 9,i)*sqrt5seventh-ecpint2(6,i)*two*sqrt5third
-              decpint(10,i,3)= ecpint1(15,i)*sqrt3seventh-ecpint2(4,i)*sqrt5
+              decpint( 2,i,1)= ecpint1( 2,i)*sqrt5seventh-ecpint2(2,i)*two*sqrt5third
+              decpint( 3,i,1)= ecpint1( 3,i)*sqrt5seventh-ecpint2(3,i)*two*sqrt5third
+              decpint( 4,i,1)= ecpint1( 4,i)*sqrt3seventh-ecpint2(4,i)*sqrt5
+              decpint( 5,i,1)= ecpint1( 5,i)*sqrt3seventh-ecpint2(5,i)*sqrt5
+              decpint( 6,i,1)= ecpint1( 6,i)*sqrt3seventh-ecpint2(6,i)*sqrt5
+              decpint( 7,i,1)= ecpint1( 7,i)*sqrtseventh
+              decpint( 8,i,1)= ecpint1( 8,i)*sqrtseventh
+              decpint( 9,i,1)= ecpint1( 9,i)*sqrtseventh
+              decpint(10,i,1)= ecpint1(10,i)*sqrtseventh
+              decpint( 1,i,2)= ecpint1( 2,i)*sqrtseventh
+              decpint( 2,i,2)= ecpint1( 4,i)*sqrt3seventh-ecpint2(1,i)*sqrt5
+              decpint( 3,i,2)= ecpint1( 5,i)*sqrtseventh
+              decpint( 4,i,2)= ecpint1( 7,i)*sqrt5seventh-ecpint2(2,i)*two*sqrt5third
+              decpint( 5,i,2)= ecpint1( 8,i)*sqrt3seventh-ecpint2(3,i)*sqrt5
+              decpint( 6,i,2)= ecpint1( 9,i)*sqrtseventh
+              decpint( 7,i,2)= ecpint1(11,i)             -ecpint2(4,i)*three
+              decpint( 8,i,2)= ecpint1(12,i)*sqrt5seventh-ecpint2(5,i)*two*sqrt5third
+              decpint( 9,i,2)= ecpint1(13,i)*sqrt3seventh-ecpint2(6,i)*sqrt5
+              decpint(10,i,2)= ecpint1(14,i)*sqrtseventh
+              decpint( 1,i,3)= ecpint1( 3,i)*sqrtseventh
+              decpint( 2,i,3)= ecpint1( 5,i)*sqrtseventh
+              decpint( 3,i,3)= ecpint1( 6,i)*sqrt3seventh-ecpint2(1,i)*sqrt5
+              decpint( 4,i,3)= ecpint1( 8,i)*sqrtseventh
+              decpint( 5,i,3)= ecpint1( 9,i)*sqrt3seventh-ecpint2(2,i)*sqrt5
+              decpint( 6,i,3)= ecpint1(10,i)*sqrt5seventh-ecpint2(3,i)*two*sqrt5third
+              decpint( 7,i,3)= ecpint1(12,i)*sqrtseventh
+              decpint( 8,i,3)= ecpint1(13,i)*sqrt3seventh-ecpint2(4,i)*sqrt5
+              decpint( 9,i,3)= ecpint1(14,i)*sqrt5seventh-ecpint2(5,i)*two*sqrt5third
+              decpint(10,i,3)= ecpint1(15,i)             -ecpint2(6,i)*three
             enddo
         end select
 !
@@ -267,11 +267,11 @@ end
               do j= 1,6
                 work(j)= decpint(j,i,k)
               enddo
-              decpint(1,i,k)=(work(3)*two-work(1)-work(2))*half
+              decpint(1,i,k)= work(2)
               decpint(2,i,k)= work(5)
-              decpint(3,i,k)= work(6)
-              decpint(4,i,k)=(work(1)-work(2))*sqrt3h
-              decpint(5,i,k)= work(4)
+              decpint(3,i,k)=(work(6)*two-work(1)-work(4))*half
+              decpint(4,i,k)= work(3)
+              decpint(5,i,k)=(work(1)-work(4))*sqrt3h
             enddo
           enddo
         elseif(nbfij(2) == 7) then
@@ -280,13 +280,13 @@ end
               do j= 1,10
                 work(j)= decpint(j,i,k)
               enddo
-              decpint(1,i,k)=( work(3)*two-work(5)*three-work(7)*three)*facf4
-              decpint(2,i,k)=(-work(1)-work(6)+work(8)*four           )*facf3
-              decpint(3,i,k)=(-work(2)-work(4)+work(9)*four           )*facf3
-              decpint(4,i,k)=( work(5)-work(7)                        )*facf2
-              decpint(5,i,k)=  work(10)
-              decpint(6,i,k)=( work(1)-work(6)*three                  )*facf1
-              decpint(7,i,k)=(-work(2)+work(4)*three                  )*facf1
+              decpint(1,i,k)=(-work(7)+work(2)*three                   )*facf1
+              decpint(2,i,k)=  work(5)
+              decpint(3,i,k)=(-work(7)-work(2)+work(9)*four            )*facf3
+              decpint(4,i,k)=( work(10)*two-work(3)*three-work(8)*three)*facf4
+              decpint(5,i,k)=(-work(1)-work(4)+work(6)*four            )*facf3
+              decpint(6,i,k)=( work(3)-work(8)                         )*facf2
+              decpint(7,i,k)=( work(1)-work(4)*three                   )*facf1
             enddo
           enddo
         endif
