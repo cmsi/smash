@@ -1842,3 +1842,130 @@ end
 !
       return
 end
+
+
+!--------------------------------
+  subroutine gcheckreorder(cmo)
+!--------------------------------
+!
+! Reorder guess molecular orbitals
+!
+      use modguess, only : locbf_g, mbf_g, mtype_g, nao_g, nmo_g, nshell_g
+      implicit none
+      integer :: ish, iloc, imo, iao
+      real(8),intent(inout) :: cmo(nao_g,nao_g)
+      real(8) :: work(28)
+!
+!ishimura
+      do ish= 1,nshell_g
+        if(mtype_g(ish) >= 2) then
+          iloc= locbf_g(ish)
+          select case (mbf_g(ish))
+            case(5)
+              do imo= 1,nmo_g
+                do iao= 1,5
+                  work(iao)= cmo(iloc+iao,imo)
+                enddo
+                cmo(iloc+1,imo)= work(5)
+                cmo(iloc+2,imo)= work(3)
+                cmo(iloc+3,imo)= work(1)
+                cmo(iloc+4,imo)= work(2)
+                cmo(iloc+5,imo)= work(4)
+              enddo
+            case(6)
+              do imo= 1,nmo_g
+                do iao= 1,6
+                  work(iao)= cmo(iloc+iao,imo)
+                enddo
+                cmo(iloc+1,imo)= work(1)
+                cmo(iloc+2,imo)= work(4)
+                cmo(iloc+3,imo)= work(5)
+                cmo(iloc+4,imo)= work(2)
+                cmo(iloc+5,imo)= work(6)
+                cmo(iloc+6,imo)= work(3)
+              enddo
+            case(7)
+              do imo= 1,nmo_g
+                do iao= 1,7
+                  work(iao)= cmo(iloc+iao,imo)
+                enddo
+                cmo(iloc+1,imo)= work(7)
+                cmo(iloc+2,imo)= work(5)
+                cmo(iloc+3,imo)= work(3)
+                cmo(iloc+4,imo)= work(1)
+                cmo(iloc+5,imo)= work(2)
+                cmo(iloc+6,imo)= work(4)
+                cmo(iloc+7,imo)= work(6)
+              enddo
+            case(10)
+              do imo= 1,nmo_g
+                do iao= 1,10
+                  work(iao)= cmo(iloc+iao,imo)
+                enddo
+                cmo(iloc+ 1,imo)= work( 1)
+                cmo(iloc+ 2,imo)= work( 4)
+                cmo(iloc+ 3,imo)= work( 5)
+                cmo(iloc+ 4,imo)= work( 6)
+                cmo(iloc+ 5,imo)= work(10)
+                cmo(iloc+ 6,imo)= work( 8)
+                cmo(iloc+ 7,imo)= work( 2)
+                cmo(iloc+ 8,imo)= work( 7)
+                cmo(iloc+ 9,imo)= work( 9)
+                cmo(iloc+10,imo)= work( 3)
+              enddo
+            case(9)
+              do imo= 1,nmo_g
+                do iao= 1,9
+                  work(iao)= cmo(iloc+iao,imo)
+                enddo
+                cmo(iloc+1,imo)= work(9)
+                cmo(iloc+2,imo)= work(7)
+                cmo(iloc+3,imo)= work(5)
+                cmo(iloc+4,imo)= work(3)
+                cmo(iloc+5,imo)= work(1)
+                cmo(iloc+6,imo)= work(2)
+                cmo(iloc+7,imo)= work(4)
+                cmo(iloc+8,imo)= work(6)
+                cmo(iloc+9,imo)= work(8)
+              enddo
+            case(15)
+              do imo= 1,nmo_g
+                do iao= 1,15
+                  work(iao)= cmo(iloc+iao,imo)
+                enddo
+                cmo(iloc+ 1,imo)= work( 1)
+                cmo(iloc+ 2,imo)= work( 4)
+                cmo(iloc+ 3,imo)= work( 5)
+                cmo(iloc+ 4,imo)= work(10)
+                cmo(iloc+ 5,imo)= work(13)
+                cmo(iloc+ 6,imo)= work(11)
+                cmo(iloc+ 7,imo)= work( 6)
+                cmo(iloc+ 8,imo)= work(14)
+                cmo(iloc+ 9,imo)= work(15)
+                cmo(iloc+10,imo)= work( 8)
+                cmo(iloc+11,imo)= work( 2)
+                cmo(iloc+12,imo)= work( 7)
+                cmo(iloc+13,imo)= work(12)
+                cmo(iloc+14,imo)= work( 9)
+                cmo(iloc+15,imo)= work( 3)
+              enddo
+            case default
+              write(*,'(" Error! Subroutine gcheckreorder supports up to g functions.")')
+              call iabort
+          end select
+        endif
+      enddo
+!
+      return
+end
+
+
+
+
+
+
+
+
+
+
+

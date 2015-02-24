@@ -924,8 +924,12 @@ end
       integer :: ii, jj
       real(8),intent(out) :: cmoa_g(nao_g,nao_g), cmob_g(nao_g,nao_g)
       character(len=16),intent(in) :: scftype_g
+      character(len=16) :: checkversion
 !
       if(master) then
+        rewind(icheck)
+        read(icheck) checkversion
+        read(icheck)
         read(icheck)
         read(icheck)
         read(icheck)
@@ -952,6 +956,11 @@ end
         if((scftype == 'UHF').and.(scftype_g == 'UHF')) then
           read(icheck)
           read(icheck)((cmob_g(jj,ii),jj=1,nao_g),ii=1,nmo_g)
+        endif
+! Interchange the order of basis functions in cmoa_g and cmob_g
+        if(checkversion(1:2) == "1.") then
+          call gcheckreorder(cmoa_g)
+          if((scftype == 'UHF').and.(scftype_g == 'UHF')) call gcheckreorder(cmob_g)
         endif
       endif
 !

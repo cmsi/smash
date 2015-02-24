@@ -2552,42 +2552,48 @@ end
         case(9)
           do k= 1,3
             do j= 1,ncartj
-              do i= 1,3
-                work(i)= dcint1(j,i,k)
-              enddo
-              do i= 4,9
-                work(i)= dcint1(j,i,k)*sqrt7
-              enddo
-              do i= 10,12
-                work(i)= dcint1(j,i,k)*sqrt35third
-              enddo
-              do i= 13,15
-                work(i)= dcint1(j,i,k)*sqrt35
-              enddo
-              dcint1(j,1,k)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
-&                           -work(11)*p24-work(12)*p24)*facg5
-              dcint1(j,2,k)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
-              dcint1(j,3,k)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
-              dcint1(j,4,k)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
-              dcint1(j,5,k)=(-work(4)-work(6)+work(15)*six)*facg6
-              dcint1(j,6,k)=(work(5)-work(14)*three)*facg2
-              dcint1(j,7,k)=(-work(7)+work(13)*three)*facg2
-              dcint1(j,8,k)=(work(1)+work(2)-work(10)*six)*facg1
-              dcint1(j,9,k)=(work(4)-work(6))*facg7
+              work( 1)= dcint1(j, 1,k)
+              work( 2)= dcint1(j, 2,k)*sqrt7
+              work( 3)= dcint1(j, 3,k)*sqrt7
+              work( 4)= dcint1(j, 4,k)*sqrt35third
+              work( 5)= dcint1(j, 5,k)*sqrt35
+              work( 6)= dcint1(j, 6,k)*sqrt35third
+              work( 7)= dcint1(j, 7,k)*sqrt7
+              work( 8)= dcint1(j, 8,k)*sqrt35
+              work( 9)= dcint1(j, 9,k)*sqrt35
+              work(10)= dcint1(j,10,k)*sqrt7
+              work(11)= dcint1(j,11,k)
+              work(12)= dcint1(j,12,k)*sqrt7
+              work(13)= dcint1(j,13,k)*sqrt35third
+              work(14)= dcint1(j,14,k)*sqrt7
+              work(15)= dcint1(j,15,k)
+              dcint1(j,1,k)=(work(2)-work(7))*facg7
+              dcint1(j,2,k)=(-work(12)+work(5)*three)*facg2
+              dcint1(j,3,k)=(-work(2)-work(7)+work(9)*six)*facg6
+              dcint1(j,4,k)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
+              dcint1(j,5,k)=(work(1)*three+work(11)*three+work(15)*eight+work(4)*six &
+&                           -work(6)*p24-work(13)*p24)*facg5
+              dcint1(j,6,k)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
+              dcint1(j,7,k)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg3
+              dcint1(j,8,k)=(work(3)-work(8)*three)*facg2
+              dcint1(j,9,k)=(work(1)+work(11)-work(4)*six)*facg1
             enddo
           enddo
         case(15)
           do k= 1,3
             do j= 1,ncartj
-              do i= 4,9
-                dcint1(j,i,k)= dcint1(j,i,k)*sqrt7
-              enddo
-              do i= 10,12
-                dcint1(j,i,k)= dcint1(j,i,k)*sqrt35third
-              enddo
-              do i= 13,15
-                dcint1(j,i,k)= dcint1(j,i,k)*sqrt35
-              enddo
+              dcint1(j, 2,k)= dcint1(j, 2,k)*sqrt7
+              dcint1(j, 3,k)= dcint1(j, 3,k)*sqrt7
+              dcint1(j, 4,k)= dcint1(j, 4,k)*sqrt35third
+              dcint1(j, 5,k)= dcint1(j, 5,k)*sqrt35
+              dcint1(j, 6,k)= dcint1(j, 6,k)*sqrt35third
+              dcint1(j, 7,k)= dcint1(j, 7,k)*sqrt7
+              dcint1(j, 8,k)= dcint1(j, 8,k)*sqrt35
+              dcint1(j, 9,k)= dcint1(j, 9,k)*sqrt35
+              dcint1(j,10,k)= dcint1(j,10,k)*sqrt7
+              dcint1(j,12,k)= dcint1(j,12,k)*sqrt7
+              dcint1(j,13,k)= dcint1(j,13,k)*sqrt35third
+              dcint1(j,14,k)= dcint1(j,14,k)*sqrt7
             enddo
           enddo
         end select
@@ -2656,42 +2662,48 @@ end
         case(9)
           do k= 1,3
             do i= 1,nbfij(1)
-              do j= 1,3
-                work(j)= dcint1(j,i,k)
-              enddo
-              do j= 4,9
-                work(j)= dcint1(j,i,k)*sqrt7
-              enddo
-              do j= 10,12
-                work(j)= dcint1(j,i,k)*sqrt35third
-              enddo
-              do j= 13,15
-                work(j)= dcint1(j,i,k)*sqrt35
-              enddo
-              dcint1(1,i,k)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
-&                           -work(11)*p24-work(12)*p24)*facg5
-              dcint1(2,i,k)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
-              dcint1(3,i,k)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
-              dcint1(4,i,k)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
-              dcint1(5,i,k)=(-work(4)-work(6)+work(15)*six)*facg6
-              dcint1(6,i,k)=(work(5)-work(14)*three)*facg2
-              dcint1(7,i,k)=(-work(7)+work(13)*three)*facg2
-              dcint1(8,i,k)=(work(1)+work(2)-work(10)*six)*facg1
-              dcint1(9,i,k)=(work(4)-work(6))*facg7
+              work( 1)= dcint1( 1,i,k)
+              work( 2)= dcint1( 2,i,k)*sqrt7
+              work( 3)= dcint1( 3,i,k)*sqrt7
+              work( 4)= dcint1( 4,i,k)*sqrt35third
+              work( 5)= dcint1( 5,i,k)*sqrt35
+              work( 6)= dcint1( 6,i,k)*sqrt35third
+              work( 7)= dcint1( 7,i,k)*sqrt7
+              work( 8)= dcint1( 8,i,k)*sqrt35
+              work( 9)= dcint1( 9,i,k)*sqrt35
+              work(10)= dcint1(10,i,k)*sqrt7
+              work(11)= dcint1(11,i,k)
+              work(12)= dcint1(12,i,k)*sqrt7
+              work(13)= dcint1(13,i,k)*sqrt35third
+              work(14)= dcint1(14,i,k)*sqrt7
+              work(15)= dcint1(15,i,k)
+              dcint1(1,i,k)=(work(2)-work(7))*facg7
+              dcint1(2,i,k)=(-work(12)+work(5)*three)*facg2
+              dcint1(3,i,k)=(-work(2)-work(7)+work(9)*six)*facg6
+              dcint1(4,i,k)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
+              dcint1(5,i,k)=(work(1)*three+work(11)*three+work(15)*eight+work(4)*six &
+&                           -work(6)*p24-work(13)*p24)*facg5
+              dcint1(6,i,k)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
+              dcint1(7,i,k)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg3
+              dcint1(8,i,k)=(work(3)-work(8)*three)*facg2
+              dcint1(9,i,k)=(work(1)+work(11)-work(4)*six)*facg1
             enddo
           enddo
         case(15)
           do k= 1,3
             do i= 1,nbfij(1)
-              do j= 4,9
-                dcint1(j,i,k)= dcint1(j,i,k)*sqrt7
-              enddo
-              do j= 10,12
-                dcint1(j,i,k)= dcint1(j,i,k)*sqrt35third
-              enddo
-              do j= 13,15
-                dcint1(j,i,k)= dcint1(j,i,k)*sqrt35
-              enddo
+              dcint1( 2,i,k)= dcint1( 2,i,k)*sqrt7
+              dcint1( 3,i,k)= dcint1( 3,i,k)*sqrt7
+              dcint1( 4,i,k)= dcint1( 4,i,k)*sqrt35third
+              dcint1( 5,i,k)= dcint1( 5,i,k)*sqrt35
+              dcint1( 6,i,k)= dcint1( 6,i,k)*sqrt35third
+              dcint1( 7,i,k)= dcint1( 7,i,k)*sqrt7
+              dcint1( 8,i,k)= dcint1( 8,i,k)*sqrt35
+              dcint1( 9,i,k)= dcint1( 9,i,k)*sqrt35
+              dcint1(10,i,k)= dcint1(10,i,k)*sqrt7
+              dcint1(12,i,k)= dcint1(12,i,k)*sqrt7
+              dcint1(13,i,k)= dcint1(13,i,k)*sqrt35third
+              dcint1(14,i,k)= dcint1(14,i,k)*sqrt7
             enddo
           enddo
         end select
