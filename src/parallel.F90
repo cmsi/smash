@@ -37,9 +37,9 @@
 end
 
 
-!--------------------------------------------
-  subroutine para_comm_size(nproc,mpi_comm)
-!--------------------------------------------
+!-----------------------------------------------
+  subroutine para_comm_size(nproc,mpi_comm_in)
+!-----------------------------------------------
 !
 ! Return the number of processes in mpi_comm
 !
@@ -52,10 +52,10 @@ end
       implicit none
       integer(selected_int_kind(18)) :: mpi_comm4, nproc4, ierr
 #endif
-      integer,intent(in) :: mpi_comm
+      integer,intent(in) :: mpi_comm_in
       integer,intent(out) :: nproc
 !
-      mpi_comm4= mpi_comm
+      mpi_comm4= mpi_comm_in
       call mpi_comm_size(mpi_comm4,nproc4,ierr)
       nproc= nproc4
 #endif
@@ -63,9 +63,9 @@ end
 end
 
 
-!---------------------------------------------
-  subroutine para_comm_rank(myrank,mpi_comm)
-!---------------------------------------------
+!------------------------------------------------
+  subroutine para_comm_rank(myrank,mpi_comm_in)
+!------------------------------------------------
 !
 ! Return the MPI rank in mpi_comm
 !
@@ -78,10 +78,10 @@ end
       implicit none
       integer(selected_int_kind(18)) :: mpi_comm4, myrank4, ierr
 #endif
-      integer,intent(in) :: mpi_comm
+      integer,intent(in) :: mpi_comm_in
       integer,intent(out) :: myrank
 !
-      mpi_comm4= mpi_comm
+      mpi_comm4= mpi_comm_in
       call mpi_comm_rank(mpi_comm4,myrank4,ierr)
       myrank= myrank4
 #endif
@@ -152,9 +152,9 @@ end
 end
 
 
-!--------------------------------------------------
-  subroutine para_bcastr(buff,num,irank,mpi_comm)
-!--------------------------------------------------
+!-----------------------------------------------------
+  subroutine para_bcastr(buff,num,irank,mpi_comm_in)
+!-----------------------------------------------------
 !
 ! Broadcast real(8) data
 !
@@ -168,12 +168,12 @@ end
       include "mpif.h"
       integer(selected_int_kind(18)) :: num4, irank4, mpi_comm4, ierr
 #endif
-      integer,intent(in) :: num, irank, mpi_comm
+      integer,intent(in) :: num, irank, mpi_comm_in
       real(8),intent(inout) :: buff(*)
 !
       num4= num
       irank4= irank
-      mpi_comm4= mpi_comm
+      mpi_comm4= mpi_comm_in
 !
       call mpi_bcast(buff,num4,mpi_real8,irank4,mpi_comm4,ierr)
 #endif
@@ -181,9 +181,9 @@ end
 end
 
 
-!---------------------------------------------------
-  subroutine para_bcasti(ibuff,num,irank,mpi_comm)
-!---------------------------------------------------
+!------------------------------------------------------
+  subroutine para_bcasti(ibuff,num,irank,mpi_comm_in)
+!------------------------------------------------------
 !
 ! Broadcast integer data
 !
@@ -199,13 +199,13 @@ end
       include "mpif.h"
       integer(selected_int_kind(18)) :: num4, irank4, mpi_comm4, ierr
 #endif
-      integer,intent(in) :: num, irank, mpi_comm
+      integer,intent(in) :: num, irank, mpi_comm_in
       integer,intent(inout) :: ibuff(*)
       integer :: isize
 !
       num4= num
       irank4= irank
-      mpi_comm4= mpi_comm
+      mpi_comm4= mpi_comm_in
 !
       call checkintsize(isize)
       if(isize == 4) then
@@ -218,9 +218,9 @@ end
 end
 
 
-!--------------------------------------------------
-  subroutine para_bcastc(buff,num,irank,mpi_comm)
-!--------------------------------------------------
+!-----------------------------------------------------
+  subroutine para_bcastc(buff,num,irank,mpi_comm_in)
+!-----------------------------------------------------
 !
 ! Broadcast character data
 !
@@ -234,12 +234,12 @@ end
       include "mpif.h"
       integer(selected_int_kind(18)) :: num4, irank4, mpi_comm4, ierr
 #endif
-      integer,intent(in) :: num, irank, mpi_comm
+      integer,intent(in) :: num, irank, mpi_comm_in
       character(*),intent(inout) :: buff(*)
 !
       num4= num
       irank4= irank
-      mpi_comm4= mpi_comm
+      mpi_comm4= mpi_comm_in
 !
       call mpi_bcast(buff,num4,mpi_character,irank4,mpi_comm4,ierr)
 #endif
@@ -247,9 +247,9 @@ end
 end
 
 
-!--------------------------------------------------
-  subroutine para_bcastl(buff,num,irank,mpi_comm)
-!--------------------------------------------------
+!-----------------------------------------------------
+  subroutine para_bcastl(buff,num,irank,mpi_comm_in)
+!-----------------------------------------------------
 !
 ! Broadcast logical data
 !
@@ -257,19 +257,19 @@ end
 #ifndef ILP64
       use mpi
       implicit none
-      integer,intent(in) :: num, irank, mpi_comm
+      integer,intent(in) :: num, irank, mpi_comm_in
       integer(selected_int_kind(9)) :: num4, irank4, mpi_comm4, ierr, itmp(num)
 #else
       implicit none
       include "mpif.h"
-      integer,intent(in) :: num, irank, mpi_comm
+      integer,intent(in) :: num, irank, mpi_comm_in
       integer(selected_int_kind(18)) :: num4, irank4, mpi_comm4, ierr
       integer(selected_int_kind(9)) :: itmp(num)
 #endif
       integer :: ii, myrank
       logical,intent(inout) :: buff(*)
 !
-      call para_comm_rank(myrank,mpi_comm)
+      call para_comm_rank(myrank,mpi_comm_in)
 !
       if(irank == myrank) then
         do ii= 1,num
@@ -283,7 +283,7 @@ end
 !
       num4= num
       irank4= irank
-      mpi_comm4= mpi_comm
+      mpi_comm4= mpi_comm_in
 !
       call mpi_bcast(itmp,num4,mpi_integer4,irank4,mpi_comm4,ierr)
 !
@@ -299,9 +299,9 @@ end
 end
 
 
-!-------------------------------------------------------
-  subroutine para_allreducer(sbuff,rbuff,num,mpi_comm)
-!-------------------------------------------------------
+!----------------------------------------------------------
+  subroutine para_allreducer(sbuff,rbuff,num,mpi_comm_in)
+!----------------------------------------------------------
 !
 ! Accumulate real(8) values from all processes and 
 ! distributes the result back to all processes in mpi_comm
@@ -316,16 +316,16 @@ end
       include "mpif.h"
       integer(selected_int_kind(18)) :: num4, mpi_comm4, ierr
 #endif
-      integer,intent(in) :: num, mpi_comm
+      integer,intent(in) :: num, mpi_comm_in
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out) :: rbuff(*)
 !
       num4= num
-      mpi_comm4= mpi_comm
+      mpi_comm4= mpi_comm_in
       call mpi_allreduce(sbuff,rbuff,num4,mpi_real8,MPI_SUM,mpi_comm4,ierr)
 #else
       implicit none
-      integer,intent(in) :: num, mpi_comm
+      integer,intent(in) :: num, mpi_comm_in
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out) :: rbuff(*)
 !
@@ -335,9 +335,9 @@ end
 end
 
 
-!-------------------------------------------------------
-  subroutine para_allreducei(sbuff,rbuff,num,mpi_comm)
-!-------------------------------------------------------
+!----------------------------------------------------------
+  subroutine para_allreducei(sbuff,rbuff,num,mpi_comm_in)
+!----------------------------------------------------------
 !
 ! Accumulate integer values from all processes and 
 ! distributes the result back to all processes in mpi_comm
@@ -354,13 +354,13 @@ end
       include "mpif.h"
       integer(selected_int_kind(18)) :: num4, mpi_comm4, ierr
 #endif
-      integer,intent(in) :: num, mpi_comm
+      integer,intent(in) :: num, mpi_comm_in
       integer,intent(in) :: sbuff(*)
       integer,intent(out) :: rbuff(*)
       integer :: isize
 !
       num4= num
-      mpi_comm4= mpi_comm
+      mpi_comm4= mpi_comm_in
 !
       call checkintsize(isize)
       if(isize == 4) then
@@ -370,7 +370,7 @@ end
       endif
 #else
       implicit none
-      integer,intent(in) :: num, mpi_comm
+      integer,intent(in) :: num, mpi_comm_in
       integer,intent(in) :: sbuff(*)
       integer,intent(out) :: rbuff(*)
       integer ii
@@ -383,9 +383,9 @@ end
 end
 
 
-!--------------------------------------------------------------------------
-  subroutine para_allgathervr(sbuff,num,rbuff,idisa,idisb,nproc,mpi_comm)
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------
+  subroutine para_allgathervr(sbuff,num,rbuff,idisa,idisb,nproc,mpi_comm_in)
+!-----------------------------------------------------------------------------
 !
 ! Gather data from all tasks and deliver the combined data to all tasks in mpi_comm
 !
@@ -393,12 +393,12 @@ end
 #ifndef ILP64
       use mpi
       implicit none
-      integer,intent(in) :: num, nproc, idisa(nproc), idisb(nproc), mpi_comm
+      integer,intent(in) :: num, nproc, idisa(nproc), idisb(nproc), mpi_comm_in
       integer(selected_int_kind(9)) :: num4, idisa4(nproc), idisb4(nproc), mpi_comm4, ierr
 #else
       implicit none
       include "mpif.h"
-      integer,intent(in) :: num, nproc, idisa(nproc), idisb(nproc), mpi_comm
+      integer,intent(in) :: num, nproc, idisa(nproc), idisb(nproc), mpi_comm_in
       integer(selected_int_kind(18)) :: num4, idisa4(nproc), idisb4(nproc), mpi_comm4, ierr
 #endif
       real(8),intent(in) :: sbuff(*)
@@ -406,7 +406,7 @@ end
       integer :: ii
 !
       num4= num
-      mpi_comm4= mpi_comm
+      mpi_comm4= mpi_comm_in
       do ii= 1,nproc
         idisa4(ii)= idisa(ii)
         idisb4(ii)= idisb(ii)
@@ -414,7 +414,7 @@ end
       call mpi_allgatherv(sbuff,num4,mpi_real8,rbuff,idisa4,idisb4,mpi_real8,mpi_comm4,ierr)
 #else
       implicit none
-      integer,intent(in) :: num, nproc, idisa(nproc), idisb(nproc), mpi_comm
+      integer,intent(in) :: num, nproc, idisa(nproc), idisb(nproc), mpi_comm_in
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out):: rbuff(*)
 !
@@ -425,9 +425,9 @@ end
 end
 
 
-!--------------------------------------------------------------------------------------
-  subroutine para_sendrecvr(sbuff,nums,idest,ntags,rbuff,numr,isource,ntagr,mpi_comm)
-!--------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+  subroutine para_sendrecvr(sbuff,nums,idest,ntags,rbuff,numr,isource,ntagr,mpi_comm_in)
+!-----------------------------------------------------------------------------------------
 !
 ! Send and receive real(8) data
 !
@@ -435,13 +435,13 @@ end
 #ifndef ILP64
       use mpi
       implicit none
-      integer,intent(in) :: nums, idest, ntags, numr, isource, ntagr, mpi_comm
+      integer,intent(in) :: nums, idest, ntags, numr, isource, ntagr, mpi_comm_in
       integer(selected_int_kind(9)) :: nums4, idest4, ntags4, numr4, isource4, ntagr4
       integer(selected_int_kind(9)) :: mpi_comm4, ierr, STATUS(MPI_STATUS_SIZE)
 #else
       implicit none
       include "mpif.h"
-      integer,intent(in) :: nums, idest, ntags, numr, isource, ntagr, mpi_comm
+      integer,intent(in) :: nums, idest, ntags, numr, isource, ntagr, mpi_comm_in
       integer(selected_int_kind(18)) :: nums4, idest4, ntags4, numr4, isource4, ntagr4
       integer(selected_int_kind(18)) :: mpi_comm4, ierr, STATUS(MPI_STATUS_SIZE)
 #endif
@@ -454,12 +454,12 @@ end
       numr4= numr
       isource4= isource
       ntagr4 = ntagr
-      mpi_comm4= mpi_comm
+      mpi_comm4= mpi_comm_in
       call mpi_sendrecv(sbuff,nums4,MPI_DOUBLE_PRECISION,idest4,ntags4, &
 &                       rbuff,numr4,MPI_DOUBLE_PRECISION,isource4,ntagr4,mpi_comm4,STATUS,ierr)
 #else
       implicit none
-      integer,intent(in) :: nums, idest, ntags, numr, isource, ntagr, mpi_comm
+      integer,intent(in) :: nums, idest, ntags, numr, isource, ntagr, mpi_comm_in
       real(8),intent(in) :: sbuff(*)
       real(8),intent(out) :: rbuff(*)
 !
