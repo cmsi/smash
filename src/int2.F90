@@ -92,7 +92,6 @@ end
 !       xinttmp (Work array)
 !
       use modbasis, only : nshell, mtype, mbf
-      use modthresh, only : cutint2, threshex
       implicit none
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ish, jsh, nbfi, nbfj, i, j, ii, ij
@@ -100,10 +99,6 @@ end
       real(8),intent(out) :: xint(nshell*(nshell+1)/2)
       real(8),intent(out) :: xinttmp(nshell*(nshell+1)/2)
       real(8) :: twoeri(maxdim,maxdim,maxdim,maxdim), xintmax, cutsave, val
-!
-      cutsave= cutint2
-      cutint2= cutint2*cutint2
-      threshex=threshex*two
 !
       xinttmp(:)= zero
 !
@@ -131,7 +126,5 @@ end
 !
       call para_allreducer(xinttmp,xint,nshell*(nshell+1)/2,mpi_comm)
 !
-      cutint2= cutsave
-      threshex=threshex*half
       return
 end
