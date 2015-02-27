@@ -1031,9 +1031,10 @@ end
 !
 ! Trace(Db*S*Da*S)
 !
-      ij= 0
       s2= zero
+!$OMP parallel do private(ij) reduction(+:s2)
       do i= 1,nao
+        ij= i*(i-1)/2
         do j= 1,i-1
           ij= ij+1
            s2= s2+dmtrxb(ij)*work2(j,i)
@@ -1041,6 +1042,7 @@ end
         ij= ij+1
         s2= s2+dmtrxb(ij)*work2(i,i)*half
       enddo
+!$OMP end parallel do
       s2= s2*two
 !
       sz= half*(neleca-nelecb)
