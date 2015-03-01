@@ -32,7 +32,7 @@
 !
       call dgemm('N','T',ndim,ndim,neleca,two,cmo,ndim,cmo,ndim,zero,work,ndim)
 !
-!$OMP parallel do private(ij)
+!$OMP parallel do schedule(static,1) private(ij)
       do i= 1,ndim
         ij= i*(i-1)/2
         do j= 1,i
@@ -70,7 +70,7 @@ end
 !
       call dgemm('N','T',ndim,ndim,neleca,one,cmoa,ndim,cmoa,ndim,zero,work,ndim)
 !
-!$OMP parallel do private(ij)
+!$OMP parallel do schedule(static,1) private(ij)
       do i= 1,ndim
         ij= i*(i-1)/2
         do j= 1,i
@@ -84,7 +84,7 @@ end
       if(nelecb /= 0)then
         call dgemm('N','T',ndim,ndim,nelecb,one,cmob,ndim,cmob,ndim,zero,work,ndim)
 !
-!$OMP parallel do private(ij)
+!$OMP parallel do schedule(static,1) private(ij)
         do i= 1,ndim
           ij= i*(i-1)/2
           do j= 1,i
@@ -257,6 +257,7 @@ end
         fock(ii)= fock(ii)+fockprev(ii)
         fockprev(ii)= fock(ii)
       enddo
+!$OMP end parallel do
       return
 end
 
@@ -414,6 +415,7 @@ end
 ! Next calculation should be parallelized.
 !
       errmax= zero
+!$OMP parallel do private(diff) reduction(max:errmax)
       do i= 1,nmo
         do j= 1,i
           diff= work1(j,i)-work1(i,j)
@@ -422,6 +424,7 @@ end
           if(abs(diff) > errmax) errmax= abs(diff)
         enddo
       enddo
+!$OMP end parallel do
 !
       if(nmo /= nao) then
         do i= 1,nmo
