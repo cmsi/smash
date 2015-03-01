@@ -167,7 +167,7 @@ end
       real(8) :: exij, fac1, fac2
       real(8) :: factor(0:6)=(/1.0D+0,1.0D+0,3.0D+0,15.0D+0,105.0D+0,945.0D+0,10395.0D+0/)
 !
-! Normalize primitive functions
+! Multiply normalization factor to each primitive function
 !
       iloc= locprim(ishell)
       nprimi= mprim(ishell)
