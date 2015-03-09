@@ -18,7 +18,6 @@
 !
 ! Read input data and open checkpoint file if necessary
 !
-      use modparallel, only : master, parallel
       use modiofile, only : input, check, maxline
       use modbasis, only : basis, spher
       use modmolecule, only : numatomic, natom, coord, znuc, neleca, nelecb, charge, multi
@@ -34,7 +33,7 @@
       use modecp, only : ecp, flagecp
       implicit none
       integer,intent(in) :: mpi_comm
-      integer :: ii, ilen, intarray(9), info
+      integer :: myrank, ii, ilen, intarray(9), info
       real(8) :: realarray(13)
       character(len=254) :: line
       character(len=16) :: chararray(7), mem=''
@@ -45,7 +44,9 @@
       namelist /opt/ nopt, optconv, cartesian
       namelist /dft/ nrad, nleb, bqrad
 !
-      if(master) then
+      call para_comm_rank(myrank,mpi_comm)
+
+      if(myrank == 0) then
         do ii= 1,maxline
           read(5,'(a)',end=100) line
           line=adjustl(line)
@@ -131,90 +132,88 @@
       if(ecp =='NONE') ecp = ''
       if(ecp /= '') flagecp=.true.
 !
-      if(parallel) then
-        if(master) then
-          chararray(1)= method
-          chararray(2)= runtype
-          chararray(3)= basis
-          chararray(4)= scftype
-          chararray(5)= memory
-          chararray(6)= guess
-          chararray(7)= ecp
-          realarray( 1)= charge
-          realarray( 2)= cutint2
-          realarray( 3)= dconv
-          realarray( 4)= optconv
-          realarray( 5)= bqrad(1)
-          realarray( 6)= bqrad(2)
-          realarray( 7)= bqrad(3)
-          realarray( 8)= bqrad(4)
-          realarray( 9)= bqrad(5)
-          realarray(10)= bqrad(6)
-          realarray(11)= bqrad(7)
-          realarray(12)= bqrad(8)
-          realarray(13)= bqrad(9)
-          intarray(1)= natom
-          intarray(2)= multi
-          intarray(3)= iprint
-          intarray(4)= maxiter
-          intarray(5)= maxdiis
-          intarray(6)= maxsoscf
-          intarray(7)= nopt
-          intarray(8)= nrad
-          intarray(9)= nleb
-          logarray(1)= spher
-          logarray(2)= diis
-          logarray(3)= bohr
-          logarray(4)= flagecp
-          logarray(5)= cartesian
-        endif
-!
-        call para_bcastc(chararray,16*7,0,mpi_comm)
-        call para_bcastc(check,64,0,mpi_comm)
-        call para_bcastr(realarray,13,0,mpi_comm)
-        call para_bcasti(intarray,9,0,mpi_comm)
-        call para_bcastl(logarray,5,0,mpi_comm)
-!
-        natom= intarray(1)
-!
-        call para_bcasti(numatomic,natom,0,mpi_comm)
-        call para_bcastr(coord(1,1),natom*3,0,mpi_comm)
-        call para_bcastr(znuc,natom,0,mpi_comm)
-!
-        method  = chararray(1)
-        runtype = chararray(2)
-        basis   = chararray(3)
-        scftype = chararray(4)
-        memory  = chararray(5)
-        guess   = chararray(6)
-        ecp     = chararray(7)
-        charge  = realarray( 1)
-        cutint2 = realarray( 2)
-        dconv   = realarray( 3)
-        optconv = realarray( 4)
-        bqrad(1)= realarray( 5)
-        bqrad(2)= realarray( 6)
-        bqrad(3)= realarray( 7)
-        bqrad(4)= realarray( 8)
-        bqrad(5)= realarray( 9)
-        bqrad(6)= realarray(10)
-        bqrad(7)= realarray(11)
-        bqrad(8)= realarray(12)
-        bqrad(9)= realarray(13)
-        multi   = intarray(2)
-        iprint  = intarray(3)
-        maxiter = intarray(4)
-        maxdiis = intarray(5)
-        maxsoscf= intarray(6)
-        nopt    = intarray(7)
-        nrad    = intarray(8)
-        nleb    = intarray(9)
-        spher   = logarray(1)
-        diis    = logarray(2)
-        bohr    = logarray(3)
-        flagecp = logarray(4)
-        cartesian=logarray(5)
+      if(myrank == 0) then
+        chararray(1)= method
+        chararray(2)= runtype
+        chararray(3)= basis
+        chararray(4)= scftype
+        chararray(5)= memory
+        chararray(6)= guess
+        chararray(7)= ecp
+        realarray( 1)= charge
+        realarray( 2)= cutint2
+        realarray( 3)= dconv
+        realarray( 4)= optconv
+        realarray( 5)= bqrad(1)
+        realarray( 6)= bqrad(2)
+        realarray( 7)= bqrad(3)
+        realarray( 8)= bqrad(4)
+        realarray( 9)= bqrad(5)
+        realarray(10)= bqrad(6)
+        realarray(11)= bqrad(7)
+        realarray(12)= bqrad(8)
+        realarray(13)= bqrad(9)
+        intarray(1)= natom
+        intarray(2)= multi
+        intarray(3)= iprint
+        intarray(4)= maxiter
+        intarray(5)= maxdiis
+        intarray(6)= maxsoscf
+        intarray(7)= nopt
+        intarray(8)= nrad
+        intarray(9)= nleb
+        logarray(1)= spher
+        logarray(2)= diis
+        logarray(3)= bohr
+        logarray(4)= flagecp
+        logarray(5)= cartesian
       endif
+!
+      call para_bcastc(chararray,16*7,0,mpi_comm)
+      call para_bcastc(check,64,0,mpi_comm)
+      call para_bcastr(realarray,13,0,mpi_comm)
+      call para_bcasti(intarray,9,0,mpi_comm)
+      call para_bcastl(logarray,5,0,mpi_comm)
+!
+      natom= intarray(1)
+!
+      call para_bcasti(numatomic,natom,0,mpi_comm)
+      call para_bcastr(coord(1,1),natom*3,0,mpi_comm)
+      call para_bcastr(znuc,natom,0,mpi_comm)
+!
+      method  = chararray(1)
+      runtype = chararray(2)
+      basis   = chararray(3)
+      scftype = chararray(4)
+      memory  = chararray(5)
+      guess   = chararray(6)
+      ecp     = chararray(7)
+      charge  = realarray( 1)
+      cutint2 = realarray( 2)
+      dconv   = realarray( 3)
+      optconv = realarray( 4)
+      bqrad(1)= realarray( 5)
+      bqrad(2)= realarray( 6)
+      bqrad(3)= realarray( 7)
+      bqrad(4)= realarray( 8)
+      bqrad(5)= realarray( 9)
+      bqrad(6)= realarray(10)
+      bqrad(7)= realarray(11)
+      bqrad(8)= realarray(12)
+      bqrad(9)= realarray(13)
+      multi   = intarray(2)
+      iprint  = intarray(3)
+      maxiter = intarray(4)
+      maxdiis = intarray(5)
+      maxsoscf= intarray(6)
+      nopt    = intarray(7)
+      nrad    = intarray(8)
+      nleb    = intarray(9)
+      spher   = logarray(1)
+      diis    = logarray(2)
+      bohr    = logarray(3)
+      flagecp = logarray(4)
+      cartesian=logarray(5)
 !
       return
 end

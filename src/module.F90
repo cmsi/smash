@@ -51,7 +51,7 @@ end
 !---------------------
       implicit none
       integer :: nproc1, myrank1, nproc2, myrank2, mpi_comm1, mpi_comm2
-      logical :: master, parallel
+      logical :: master
 !
       interface checkintsize
         subroutine checkintsize4(isize)

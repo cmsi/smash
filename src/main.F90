@@ -133,7 +133,7 @@ end program main
 !
 ! Set computational data and machine information
 !
-      use modparallel, only : master, parallel, nproc1, nproc2, myrank1, myrank2, &
+      use modparallel, only : master, nproc1, nproc2, myrank1, myrank2, &
 &                             mpi_comm1, mpi_comm2
       use modiofile, only : check
       use modwarn, only : nwarn
@@ -153,10 +153,7 @@ end program main
 !
 ! Initialize valuables for parallelization
 !
-      nproc1  = 1
-      myrank1 = 0
       master = .true.
-      parallel = .false.
 !
 ! Start MPI parallelization and set mpi_comm1=MPI_COMM_WORLD
 !
@@ -170,7 +167,6 @@ end program main
 !
       if(nproc1.gt.1) then
         master =(myrank1 == 0)
-        parallel = .true.
       endif
 !
       nwarn  = 0

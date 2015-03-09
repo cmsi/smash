@@ -58,6 +58,11 @@ end
       mpi_comm4= mpi_commin
       call mpi_comm_size(mpi_comm4,nproc4,ierr)
       nproc= nproc4
+#else
+      integer,intent(in) :: mpi_commin
+      integer,intent(out) :: nproc
+!
+      nproc= 1
 #endif
       return
 end
@@ -84,6 +89,11 @@ end
       mpi_comm4= mpi_commin
       call mpi_comm_rank(mpi_comm4,myrank4,ierr)
       myrank= myrank4
+#else
+      integer,intent(in) :: mpi_commin
+      integer,intent(out) :: myrank
+!
+      myrank= 0
 #endif
       return
 end
