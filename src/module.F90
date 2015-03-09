@@ -169,10 +169,10 @@ end
       integer :: locprim(mxshell+1), locbf(mxshell+1), locatom(mxshell)
       integer :: mprim(mxshell),  mbf(mxshell), mtype(mxshell)
       integer :: locgenprim(mxshell+1), mgenprim(mxshell), mgentype(mxshell)
-      integer :: locgenshell(-5:112), ngenshell(-5:112)
+      integer :: locgenshell(-9:112), ngenshell(-9:112)
       real(8) :: ex(mxprim), coeff(mxprim), coeffinp(mxprim)
       real(8) :: exgen(mxprim), coeffgen(mxprim)
-      character(len=16) :: basis, atombasis(-5:112)
+      character(len=16) :: basis, atombasis(-9:112)
       logical :: spher
 end
 
@@ -273,7 +273,7 @@ end
 !----------------
       implicit none
       integer :: idft, nrad, nleb
-      real(8) :: hfexchange, bqrad(5)
+      real(8) :: hfexchange, bqrad(9)
 end
 
 
@@ -286,9 +286,10 @@ end
 !                 
 !
       implicit none
-      real(8) :: atomrad(-5:112)
+      real(8) :: atomrad(-9:112)
       data atomrad/ &
-&     1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 0.00D+00, &
+&     1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, &
+&     0.00D+00, &
 &     0.53D+00, 0.46D+00, 1.33D+00, 1.02D+00, 0.85D+00, 0.75D+00, 0.71D+00, 0.63D+00, 0.64D+00, &
 &     0.67D+00, 1.55D+00, 1.39D+00, 1.26D+00, 1.16D+00, 1.11D+00, 1.03D+00, 0.99D+00, 0.96D+00, &
 &     1.96D+00, 1.71D+00, 1.48D+00, 1.36D+00, 1.34D+00, 1.22D+00, 1.19D+00, 1.16D+00, 1.11D+00, &
@@ -326,12 +327,12 @@ end
       integer,parameter :: lfunc=16, nterm1=625291, nterm2=26841
       integer :: maxangecp(mxatom), izcore(mxatom)=0, mtypeecp(mxprim)
       integer :: locecp(0:5,mxatom), mprimecp(0:5,mxatom)
-      integer :: maxgenangecp(-5:112), izgencore(-5:112), mgentypeecp(mxprim)
-      integer :: locgenecp(0:5,-5:112), mgenprimecp(0:5,-5:112)
+      integer :: maxgenangecp(-9:112), izgencore(-9:112), mgentypeecp(mxprim)
+      integer :: locgenecp(0:5,-9:112), mgenprimecp(0:5,-9:112)
       integer :: lmf(122), lmx(581), lmy(581), lmz(581), nbfirst(0:7), nx(84), ny(84), nz(84)
       real(8) :: execp(mxprim), coeffecp(mxprim), zlm(581)
       real(8) :: exgenecp(mxprim), coeffgenecp(mxprim)
-      character(lfunc) :: ecp, atomecp(-5:112)
+      character(lfunc) :: ecp, atomecp(-9:112)
       logical :: flagecp
       data lmf/1, 2,3,4, 5,7,8,10,11, 12,14,16,18,20,22,23, 25,28,30,34,36,39,41,43,45,&
 &              47,50,53,57,61,64,67,70,72,76,78, 81,85,88,94,98,104,107,111,114,117,121,125,128,&

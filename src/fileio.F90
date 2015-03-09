@@ -35,7 +35,7 @@
       implicit none
       integer,intent(in) :: mpi_comm
       integer :: ii, ilen, intarray(9), info
-      real(8) :: realarray(9)
+      real(8) :: realarray(13)
       character(len=254) :: line
       character(len=16) :: chararray(7), mem=''
       logical :: logarray(5)
@@ -140,15 +140,19 @@
           chararray(5)= memory
           chararray(6)= guess
           chararray(7)= ecp
-          realarray(1)= charge
-          realarray(2)= cutint2
-          realarray(3)= dconv
-          realarray(4)= optconv
-          realarray(5)= bqrad(1)
-          realarray(6)= bqrad(2)
-          realarray(7)= bqrad(3)
-          realarray(8)= bqrad(4)
-          realarray(9)= bqrad(5)
+          realarray( 1)= charge
+          realarray( 2)= cutint2
+          realarray( 3)= dconv
+          realarray( 4)= optconv
+          realarray( 5)= bqrad(1)
+          realarray( 6)= bqrad(2)
+          realarray( 7)= bqrad(3)
+          realarray( 8)= bqrad(4)
+          realarray( 9)= bqrad(5)
+          realarray(10)= bqrad(6)
+          realarray(11)= bqrad(7)
+          realarray(12)= bqrad(8)
+          realarray(13)= bqrad(9)
           intarray(1)= natom
           intarray(2)= multi
           intarray(3)= iprint
@@ -167,7 +171,7 @@
 !
         call para_bcastc(chararray,16*7,0,mpi_comm)
         call para_bcastc(check,64,0,mpi_comm)
-        call para_bcastr(realarray,9,0,mpi_comm)
+        call para_bcastr(realarray,13,0,mpi_comm)
         call para_bcasti(intarray,9,0,mpi_comm)
         call para_bcastl(logarray,5,0,mpi_comm)
 !
@@ -184,15 +188,19 @@
         memory  = chararray(5)
         guess   = chararray(6)
         ecp     = chararray(7)
-        charge  = realarray(1)
-        cutint2 = realarray(2)
-        dconv   = realarray(3)
-        optconv = realarray(4)
-        bqrad(1)= realarray(5)
-        bqrad(2)= realarray(6)
-        bqrad(3)= realarray(7)
-        bqrad(4)= realarray(8)
-        bqrad(5)= realarray(9)
+        charge  = realarray( 1)
+        cutint2 = realarray( 2)
+        dconv   = realarray( 3)
+        optconv = realarray( 4)
+        bqrad(1)= realarray( 5)
+        bqrad(2)= realarray( 6)
+        bqrad(3)= realarray( 7)
+        bqrad(4)= realarray( 8)
+        bqrad(5)= realarray( 9)
+        bqrad(6)= realarray(10)
+        bqrad(7)= realarray(11)
+        bqrad(8)= realarray(12)
+        bqrad(9)= realarray(13)
         multi   = intarray(2)
         iprint  = intarray(3)
         maxiter = intarray(4)
@@ -223,8 +231,8 @@ end
       use modunit, only : toang
       implicit none
       integer :: i, j
-      character(len=3) :: table(-5:112)= &
-&     (/'Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+      character(len=3) :: table(-9:112)= &
+&     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
 &       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
 &       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
@@ -259,10 +267,10 @@ end
       use modbasis, only : nshell, nao, nprim, ex, coeffinp, locprim, locatom, mprim, mtype
       use modprint, only : iprint
       implicit none
-      integer :: iatom, ishell, iloc, iprim, jatomcheck(-5:112)=0
+      integer :: iatom, ishell, iloc, iprim, jatomcheck(-9:112)=0
       logical :: second
-      character(len=3) :: table(-5:112)= &
-&     (/'Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+      character(len=3) :: table(-9:112)= &
+&     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
 &       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
 &       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
@@ -324,10 +332,10 @@ end
       use modecp, only : maxangecp, mtypeecp, locecp, mprimecp, execp, coeffecp, izcore
       use modprint, only : iprint
       implicit none
-      integer :: iatom, ll, jprim, jloc, k, nprim, jatomcheck(-5:112)=0
+      integer :: iatom, ll, jprim, jloc, k, nprim, jatomcheck(-9:112)=0
       character(len=7) :: tblecp
-      character(len=3) :: table(-5:112)= &
-&     (/'Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+      character(len=3) :: table(-9:112)= &
+&     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
 &       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
 &       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
@@ -493,8 +501,8 @@ end
       character(len=16) :: cdummy
       character(len=254) :: line
       character(len=3) :: atomin(mxatom)
-      character(len=3) :: table1(-5:112)= &
-&     (/'BQ5','BQ4','BQ3','BQ2','BQ ','X  ',&
+      character(len=3) :: table1(-9:112)= &
+&     (/'BQ9','BQ8','BQ7','BQ6','BQ5','BQ4','BQ3','BQ2','BQ ','X  ',&
 &       'H  ','HE ','LI ','BE ','B  ','C  ','N  ','O  ','F  ','NE ','NA ','MG ','AL ','SI ','P  ',&
 &       'S  ','CL ','AR ','K  ','CA ','SC ','TI ','V  ','CR ','MN ','FE ','CO ','NI ','CU ','ZN ',&
 &       'GA ','GE ','AS ','SE ','BR ','KR ','RB ','SR ','Y  ','ZR ','NB ','MO ','TC ','RU ','RH ',&
@@ -503,8 +511,8 @@ end
 &       'OS ','IR ','PT ','AU ','HG ','TL ','PB ','BI ','PO ','AT ','RN ','FR ','RA ','AC ','TH ',&
 &       'PA ','U  ','NP ','PU ','AM ','CM ','BK ','CF ','ES ','FM ','MD ','NO ','LR ','RF ','DB ',&
 &       'SG ','BH ','HS ','MT ','UUN','UUU','UUB'/)
-      character(len=3) :: table2(-5:112)= &
-&     (/'-5 ','-4 ','-3 ','-2 ','-1 ','0  ',&
+      character(len=3) :: table2(-9:112)= &
+&     (/'-9 ','-8 ','-7 ','-6 ','-5 ','-4 ','-3 ','-2 ','-1 ','0  ',&
 &       '1  ','2  ','3  ','4  ','5  ','6  ','7  ','8  ','9  ','10 ','11 ','12 ','13 ','14 ','15 ',&
 &       '16 ','17 ','18 ','19 ','20 ','21 ','22 ','23 ','24 ','25 ','26 ','27 ','28 ','29 ','30 ',&
 &       '31 ','32 ','33 ','34 ','35 ','36 ','37 ','38 ','39 ','40 ','41 ','42 ','43 ','44 ','45 ',&
@@ -538,7 +546,7 @@ end
 100       continue
           do ii= 1,natom
             if(atomin(ii) == 'BQ1') atomin(ii)= 'BQ'
-            do jj= -5,112
+            do jj= -9,112
               if((atomin(ii) == table1(jj)).or.(atomin(ii) == table2(jj))) then
                 numatomic(ii)= jj
                 if(jj > 0) then
@@ -647,12 +655,12 @@ end
       use modbasis, only : exgen, coeffgen, locgenprim, mgenprim, mgentype, locgenshell, &
 &                          ngenshell, atombasis
       implicit none
-      integer :: ii, jj, iprim, ishell, ll, ielem(-5:112), nelem, kprim, numprim, natomshell
-      character(len=3) :: element(-5:112)
+      integer :: ii, jj, iprim, ishell, ll, ielem(-9:112), nelem, kprim, numprim, natomshell
+      character(len=3) :: element(-9:112)
       character(len=100) :: line
       character(len=16) :: symbol
-      character(len=3) :: table(-5:112)= &
-&     (/'BQ5','BQ4','BQ3','BQ2','BQ ','X  ',&
+      character(len=3) :: table(-9:112)= &
+&     (/'BQ9','BQ8','BQ7','BQ6','BQ5','BQ4','BQ3','BQ2','BQ ','X  ',&
 &       'H  ','HE ','LI ','BE ','B  ','C  ','N  ','O  ','F  ','NE ','NA ','MG ','AL ','SI ','P  ',&
 &       'S  ','CL ','AR ','K  ','CA ','SC ','TI ','V  ','CR ','MN ','FE ','CO ','NI ','CU ','ZN ',&
 &       'GA ','GE ','AS ','SE ','BR ','KR ','RB ','SR ','Y  ','ZR ','NB ','MO ','TC ','RU ','RH ',&
@@ -678,7 +686,7 @@ end
           endif
         enddo
 !
-        do ll= -5,112
+        do ll= -9,112
           line=''
           read(input,'(a)',end=300)line
           if(len_trim(line) == 0) exit
@@ -686,16 +694,16 @@ end
 !
 ! Read elements
 !
-          read(line,*,end=100)(element(ii),ii=-5,112)
+          read(line,*,end=100)(element(ii),ii=-9,112)
  100      continue
           nelem= 0
 !
 ! Check elements
 !
-          do ii= -5,112
+          do ii= -9,112
             if((element(ii) == '0').or.(element(ii) == '')) exit
             if(element(ii) == 'BQ1') element(ii)= 'BQ'
-            do jj= -5,112
+            do jj= -9,112
               if(element(ii) == table(jj)) then
                 ielem(ii)= jj
                 nelem= nelem+1
@@ -711,7 +719,7 @@ end
 ! Read basis functions
 !
           natomshell= 0
-          do ii= -5,nelem-6
+          do ii= -9,nelem-10
             locgenshell(ielem(ii))= ishell
           enddo
           do jj= 1,maxline
@@ -763,7 +771,7 @@ end
             cycle
 !
  200        if(symbol(1:2) == '**') then
-              do ii= -5,nelem-6
+              do ii= -9,nelem-10
                 ngenshell(ielem(ii))= natomshell
               enddo
               exit
@@ -771,7 +779,7 @@ end
               write(*,'(" Error! End of basis functions is not found.")')
               call iabort
             endif
-            do ii= -5,nelem-6
+            do ii= -9,nelem-10
               atombasis(ielem(ii))= symbol
             enddo
           enddo
@@ -996,12 +1004,12 @@ end
       use modecp, only : exgenecp, coeffgenecp, maxgenangecp, izgencore, mgentypeecp, &
 &                        locgenecp, mgenprimecp, atomecp
       implicit none
-      integer :: ii, jj, iprim, ll, ielem(-5:112), nelem, jprim, numprim, lmax, ielec, iang
-      character(len=3) :: element(-5:112)
+      integer :: ii, jj, iprim, ll, ielem(-9:112), nelem, jprim, numprim, lmax, ielec, iang
+      character(len=3) :: element(-9:112)
       character(len=100) :: line
       character(len=16) :: symbol
-      character(len=3) :: table(-5:112)= &
-&     (/'BQ5','BQ4','BQ3','BQ2','BQ ','X  ',&
+      character(len=3) :: table(-9:112)= &
+&     (/'BQ9','BQ8','BQ7','BQ6','BQ5','BQ4','BQ3','BQ2','BQ ','X  ',&
 &       'H  ','HE ','LI ','BE ','B  ','C  ','N  ','O  ','F  ','NE ','NA ','MG ','AL ','SI ','P  ',&
 &       'S  ','CL ','AR ','K  ','CA ','SC ','TI ','V  ','CR ','MN ','FE ','CO ','NI ','CU ','ZN ',&
 &       'GA ','GE ','AS ','SE ','BR ','KR ','RB ','SR ','Y  ','ZR ','NB ','MO ','TC ','RU ','RH ',&
@@ -1026,7 +1034,7 @@ end
           endif
         enddo
 !
-        do ll= -5,112
+        do ll= -9,112
           line=''
           read(input,'(a)',end=300)line
           if(len_trim(line) == 0) exit
@@ -1034,15 +1042,15 @@ end
 !
 ! Read elements
 !
-          read(line,*,end=100)(element(ii),ii=-5,112)
+          read(line,*,end=100)(element(ii),ii=-9,112)
  100      nelem= 0
 !
 ! Check elements
 !
-          do ii= -5,112
+          do ii= -9,112
             if((element(ii) == '0').or.(element(ii) == '')) exit
             if(element(ii) == 'BQ1') element(ii)= 'BQ'
-            do jj= -5,112
+            do jj= -9,112
               if(element(ii) == table(jj)) then
                 ielem(ii)= jj
                 nelem= nelem+1
@@ -1064,14 +1072,14 @@ end
           symbol= ''
           read(input,'(a)',err=200,end=200) line
           read(line,*,end=200) symbol,lmax,ielec
-          do ii= -5,nelem-6
+          do ii= -9,nelem-10
             maxgenangecp(ielem(ii))= lmax
             izgencore(ielem(ii))= ielec
           enddo
           do iang= 0,lmax
             read(input,*)line
             read(input,*,err=9998,end=9998)numprim
-            do ii= -5,nelem-6
+            do ii= -9,nelem-10
               locgenecp(iang,ielem(ii))= iprim
               mgenprimecp(iang,ielem(ii))= numprim
             enddo
@@ -1083,7 +1091,7 @@ end
           cycle
 !
  200      if(symbol == 'LANL2DZ') then
-            do ii= -5,nelem-6
+            do ii= -9,nelem-10
               atomecp(ielem(ii))= symbol
             enddo
             cycle
@@ -1164,8 +1172,8 @@ end
       real(8),intent(in) :: cmo(nao,nao), eigen(nmo)
       character(len=8) :: atomlabel(mxao)
       character(len=5) :: bflabel(mxao)
-      character(len=3) :: table(-5:112)= &
-&     (/'Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+      character(len=3) :: table(-9:112)= &
+&     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
 &       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
 &       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&

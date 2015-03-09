@@ -583,8 +583,8 @@ end
                 iao= iao+1
                 energy(iao)= row6(15,numatomic(iatom))
               enddo
-! Bq5 - X
-            case(-5:0)
+! Bq9 - X
+            case(-9:0)
 !
             case default
               write(*,'(" Error! This program supports up to Rn in huckelip.")')
@@ -780,8 +780,8 @@ end
                   enddo
                 endif
               endif
-! Bq5 - X
-            case(-5:0)
+! Bq9 - X
+            case(-9:0)
             case default
               write(*,'(" Error! This program supports up to Rn in huckelip.")')
               call iabort
@@ -975,8 +975,8 @@ end
                   enddo
                 endif
               endif
-! Bq5 - X
-            case(-5:0)
+! Bq9 - X
+            case(-9:0)
             case default
               write(*,'(" Error! This program supports up to Rn in huckelip.")')
               call iabort

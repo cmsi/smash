@@ -1489,13 +1489,11 @@ end
       use modjob, only : method
       use modwarn, only : nwarn
       implicit none
-      integer :: maxelem
+      integer :: ii, maxelem
 !
-      atomrad(-1)= bqrad(1)
-      atomrad(-2)= bqrad(2)
-      atomrad(-3)= bqrad(3)
-      atomrad(-4)= bqrad(4)
-      atomrad(-5)= bqrad(5)
+      do ii= 1,9
+        atomrad(-ii)= bqrad(ii)
+      enddo
 !
       select case(method)
         case('B3LYP')

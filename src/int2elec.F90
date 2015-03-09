@@ -1,4 +1,4 @@
-! Copyright 2014  Kazuya Ishimura
+! Copyright 2014-2015  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -42,12 +42,14 @@
 !
         call int2phmd(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
 &                     mxprsh,threshex)
-      else
+      elseif((nangijkl(1)<=4).and.(nangijkl(2)<=4).and.(nangijkl(3)<=4).and.(nangijkl(4)<=4)) then
 !
 ! Rys quadrature scheme
 !
         call int2rys(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
 &                    mxprsh,threshex)
+      else
+        write(*,'(" Error! Subroutine int2elec supports up to g function.")')
       endif
 !
       return

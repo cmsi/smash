@@ -427,8 +427,8 @@ end
 !
       real(8) :: work(natom3,natom3),eigen(natom3),work2(natom3,natom3),work3(natom3,natom3)
 !
-      character(len=3) :: table(-5:112)= &
-&     (/'Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+      character(len=3) :: table(-9:112)= &
+&     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
 &       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
 &       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
 &       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
