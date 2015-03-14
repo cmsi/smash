@@ -88,7 +88,7 @@
 !
 ! Calculate initial density matrix
 !
-        call calcdmtrx(cmo,dmtrx,work,nao,neleca)
+      call calcdmtrx(cmo,dmtrx,work,nao,neleca)
 !
 ! Set 1-electron Hamiltonian
 !

@@ -272,7 +272,7 @@ end
       use modguess, only : guess
       use modprint, only : iprint
       use modscf, only : dconv
-      use modthresh, only : cutint2
+      use modthresh, only : cutint2, threshover
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
@@ -310,7 +310,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,nproc2,myrank2,mpi_comm2)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2)
 !
 ! Calculate initial MOs
 !
@@ -403,6 +403,7 @@ end
       use modenergy, only : enuc
       use modmolecule, only : nmo
       use modjob, only : method
+      use modthresh, only : threshover
       use moddft, only : idft
       use modguess, only : guess
       use modprint, only : iprint
@@ -442,7 +443,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,nproc2,myrank2,mpi_comm2)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2)
 !
 ! Calculate initial MOs
 !
@@ -535,7 +536,7 @@ end
       use modguess, only : guess
       use modprint, only : iprint
       use modscf, only : dconv
-      use modthresh, only : cutint2
+      use modthresh, only : cutint2, threshover
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
@@ -575,7 +576,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,nproc2,myrank2,mpi_comm2)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2)
 !
 ! Calculate initial MOs
 !
@@ -691,6 +692,7 @@ end
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom
       use modjob, only : method
+      use modthresh, only : threshover
       use moddft, only : idft
       use modguess, only : guess
       use modprint, only : iprint
@@ -732,7 +734,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,nproc2,myrank2,mpi_comm2)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2)
 !
 ! Calculate initial MOs
 !
@@ -858,7 +860,7 @@ end
       use modguess, only : guess
       use modprint, only : iprint
       use modscf, only : dconv
-      use modthresh, only : cutint2
+      use modthresh, only : cutint2, threshover
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer,allocatable :: iredun(:)
@@ -948,7 +950,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
         call fullmtrx(smtrx,work,nao)
-        call mtrxcanoninv(ortho,overinv,work,nao,nmo,nproc2,myrank2,mpi_comm2)
+        call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2)
 !
 ! Calculate initial MOs
 !
@@ -1144,6 +1146,7 @@ end
       use modwarn, only : nwarn
       use modjob, only : method
       use moddft, only : idft
+      use modthresh, only : threshover
       use modguess, only : guess
       use modprint, only : iprint
       implicit none
@@ -1234,7 +1237,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
         call fullmtrx(smtrx,work,nao)
-        call mtrxcanoninv(ortho,overinv,work,nao,nmo,nproc2,myrank2,mpi_comm2)
+        call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2)
 !
 ! Calculate initial MOs
 !

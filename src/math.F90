@@ -36,21 +36,21 @@
 end
 
 
-!------------------------------------------------------------------------------
-  subroutine mtrxcanon(ortho,overlap,eigen,ndim,newdim,nproc,myrank,mpi_comm)
-!------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+  subroutine mtrxcanon(ortho,overlap,eigen,ndim,newdim,threshover,nproc,myrank,mpi_comm)
+!-----------------------------------------------------------------------------------------
 !
 ! Calculate canonicalization matrix
 !
 ! The ortho matrix satisfiles (Ortho)-daggar * S * (Ortho) = I
 ! where S is the overlap matrix.
 !
-      use modthresh, only : threshover
       implicit none
       integer,intent(in) :: ndim, nproc, myrank, mpi_comm
       integer,intent(out) :: newdim
       integer :: i, j, icount
       real(8),parameter :: one=1.0D+00
+      real(8),intent(in) :: threshover
       real(8),intent(inout) :: overlap(ndim,ndim)
       real(8),intent(out) :: ortho(ndim,ndim), eigen(ndim)
       real(8) :: ecanon
@@ -208,21 +208,21 @@ end
 end
 
 
-!-----------------------------------------------------------------------------------
-  subroutine mtrxcanoninv(ortho,overinv,overlap,ndim,newdim,nproc,myrank,mpi_comm)
-!-----------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------------
+  subroutine mtrxcanoninv(ortho,overinv,overlap,ndim,newdim,threshover,nproc,myrank,mpi_comm)
+!----------------------------------------------------------------------------------------------
 !
 ! Calculate canonicalization matrix and inverse matrix of overlap
 !
 ! The ortho matrix satisfiles (Ortho)-daggar * S * (Ortho) = I
 ! where S is the overlap matrix.
 !
-      use modthresh, only : threshover
       implicit none
       integer,intent(in) :: ndim, nproc, myrank, mpi_comm
       integer,intent(out) :: newdim
       integer :: i, j, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(in) :: threshover
       real(8),intent(out) :: ortho(ndim,ndim), overinv(ndim,ndim)
       real(8),intent(inout) :: overlap(ndim,ndim)
       real(8),allocatable :: eigen(:), ecanon(:)
