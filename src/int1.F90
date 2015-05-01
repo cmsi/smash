@@ -112,7 +112,7 @@ end
 !
       if((nangij(1) > 4).or.(nangij(2) > 4))then
         write(*,'(" Error! This program supports up to g function in calcintst1c")')
-        call iabort
+        call exit
       endif
 !
 ! Overlap and kinetic integrals
@@ -432,7 +432,7 @@ end
       else
         if((nangij(1) > 4).or.(nangij(2) > 4))then
           write(*,'(" Error! This program supports up to g function in calcint1c")')
-          call iabort
+          call exit
         endif
 !
         call int1rys(cint,exij,coij,coordij,coord,znuc,natom, &
