@@ -377,6 +377,14 @@ end
 !
       call calcrmulliken(dmtrx,smtrx)
 !
+! Calculate dipole moment
+!
+      call memset(nao3*6)
+      allocate(work(nao3*6))
+      call calcrdipole(work,work(nao3*3+1),dmtrx,nproc1,myrank1,mpi_comm1)
+      deallocate(work)
+      call memunset(nao3*6)
+!
 ! Write checkpoint file
 !
       if(master.and.(check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo)

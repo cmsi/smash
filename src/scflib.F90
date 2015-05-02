@@ -1200,3 +1200,65 @@ end
 !
       return
 end
+
+
+!------------------------------------------------------------------
+  subroutine calcrdipole(dipmat,work,dmtrx,nproc,myrank,mpi_comm)
+!------------------------------------------------------------------
+!
+! Driver of dipole moment calculation for closed-shell
+!
+      use modparallel, only : master
+      use modbasis, only : nao
+      use modunit, only : todebye
+      use modmolecule, only : natom, coord, znuc
+      implicit none
+      integer,intent(in) :: nproc, myrank, mpi_comm
+      integer :: iatom
+      real(8),parameter :: zero=0.0D+00
+      real(8),intent(in) :: dmtrx((nao*(nao+1))/2)
+      real(8),intent(out) :: dipmat((nao*(nao+1))/2,3), work((nao*(nao+1))/2,3)
+      real(8) :: dipcenter(3), xdip, ydip, zdip, totaldip, tridot
+      real(8) :: xdipplus, ydipplus, zdipplus, xdipminus, ydipminus, zdipminus
+!
+! Nuclear part
+!
+      xdipplus= zero
+      ydipplus= zero
+      zdipplus= zero
+!
+      do iatom= 1,natom
+        xdipplus= xdipplus+coord(1,iatom)*znuc(iatom)
+        ydipplus= ydipplus+coord(2,iatom)*znuc(iatom)
+        zdipplus= zdipplus+coord(3,iatom)*znuc(iatom)
+      enddo
+!
+! Electron part
+!
+      dipcenter(:)= zero
+!
+      call calcmatdipole(dipmat,work,dipcenter,nproc,myrank,mpi_comm)
+!
+      xdipminus=-tridot(dmtrx,dipmat(1,1),nao)
+      ydipminus=-tridot(dmtrx,dipmat(1,2),nao)
+      zdipminus=-tridot(dmtrx,dipmat(1,3),nao)
+!
+! Sum Nuclear and Electron parts
+!
+      xdip=(xdipplus+xdipminus)*todebye
+      ydip=(ydipplus+ydipminus)*todebye
+      zdip=(zdipplus+zdipminus)*todebye
+      totaldip= sqrt(xdip*xdip+ydip*ydip+zdip*zdip)
+!
+      if(master) then
+        write(*,'("  ----------------------------------------------")')
+        write(*,'("                   Dipole Momemt")')
+        write(*,'("         X          Y          Z       Total")')
+        write(*,'("  ----------------------------------------------")')
+        write(*,'(2x,4f11.4)')xdip, ydip, zdip, totaldip
+        write(*,'("  ----------------------------------------------",/)')
+      endif
+!
+      return
+end
+
