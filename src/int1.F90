@@ -112,7 +112,7 @@ end
 !
       if((nangij(1) > 4).or.(nangij(2) > 4))then
         write(*,'(" Error! This program supports up to g function in calcintst1c")')
-        call iabort
+        call exit
       endif
 !
 ! Overlap and kinetic integrals
@@ -381,6 +381,126 @@ end
 end
 
 
+!----------------------------------------------------------
+  subroutine ghquadd(xyzint,expgh,xyzpijk,iang,jang,kang)
+!----------------------------------------------------------
+!
+! Calculate Gauss-Hermite quadrature for dipole moment
+!
+      implicit none
+      integer,intent(in) :: iang, jang, kang
+      integer :: minh(12)= (/1,2,4, 7,11,16,22,29,37,46,56,67/)
+      integer :: maxh(12)= (/1,3,6,10,15,21,28,36,45,55,66,78/)
+      integer :: nroot, ijk, i, j
+      real(8),parameter :: zero=0.0D+00
+      real(8),intent(in) :: expgh, xyzpijk(3,3)
+      real(8),intent(out) :: xyzint(3)
+      real(8) :: hnode(78), hweight(78)
+      real(8) :: ghxyz(3), exnode, pxyz(3)
+      data hnode/ &
+&       0.0000000000000000D+00,-0.7071067811865476D+00, 0.7071067811865476D+00, &
+&      -0.1224744871391589D+01, 0.0000000000000000D+00, 0.1224744871391589D+01, &
+&      -0.1650680123885785D+01,-0.5246476232752903D+00, 0.5246476232752903D+00, &
+&       0.1650680123885785D+01,-0.2020182870456086D+01,-0.9585724646138185D+00, &
+&       0.0000000000000000D+00, 0.9585724646138185D+00, 0.2020182870456086D+01, &
+&      -0.2350604973674492D+01,-0.1335849074013697D+01,-0.4360774119276165D+00, &
+&       0.4360774119276165D+00, 0.1335849074013697D+01, 0.2350604973674492D+01, &
+&      -0.2651961356835233D+01,-0.1673551628767471D+01,-0.8162878828589647D+00, &
+&       0.0000000000000000D+00, 0.8162878828589647D+00, 0.1673551628767471D+01, &
+&       0.2651961356835233D+01,-0.2930637420257244D+01,-0.1981656756695843D+01, &
+&      -0.1157193712446780D+01,-0.3811869902073221D+00, 0.3811869902073221D+00, &
+&       0.1157193712446780D+01, 0.1981656756695843D+01, 0.2930637420257244D+01, &
+&      -0.3190993201781528D+01,-0.2266580584531843D+01,-0.1468553289216668D+01, &
+&      -0.7235510187528376D+00, 0.0000000000000000D+00, 0.7235510187528376D+00, &
+&       0.1468553289216668D+01, 0.2266580584531843D+01, 0.3190993201781528D+01, &
+&      -0.3436159118837737D+01,-0.2532731674232790D+01,-0.1756683649299882D+01, &
+&      -0.1036610829789514D+01,-0.3429013272237046D+00, 0.3429013272237046D+00, &
+&       0.1036610829789514D+01, 0.1756683649299882D+01, 0.2532731674232790D+01, &
+&       0.3436159118837737D+01,-0.3668470846559583D+01,-0.2783290099781652D+01, &
+&      -0.2025948015825755D+01,-0.1326557084494933D+01,-0.6568095668820998D+00, &
+&       0.0000000000000000D+00, 0.6568095668820998D+00, 0.1326557084494933D+01, &
+&       0.2025948015825755D+01, 0.2783290099781652D+01, 0.3668470846559583D+01, &
+&      -0.3889724897869782D+01,-0.3020637025120890D+01,-0.2279507080501060D+01, &
+&      -0.1597682635152605D+01,-0.9477883912401637D+00,-0.3142403762543591D+00, &
+&       0.3142403762543591D+00, 0.9477883912401637D+00, 0.1597682635152605D+01, &
+&       0.2279507080501060D+01, 0.3020637025120890D+01, 0.3889724897869782D+01/
+      data hweight/ &
+&       0.1772453850905516D+01, 0.8862269254527581D+00, 0.8862269254527581D+00, &
+&       0.2954089751509194D+00, 0.1181635900603677D+01, 0.2954089751509194D+00, &
+&       0.8131283544724517D-01, 0.8049140900055128D+00, 0.8049140900055128D+00, &
+&       0.8131283544724517D-01, 0.1995324205904591D-01, 0.3936193231522412D+00, &
+&       0.9453087204829419D+00, 0.3936193231522412D+00, 0.1995324205904591D-01, &
+&       0.4530009905508846D-02, 0.1570673203228566D+00, 0.7246295952243925D+00, &
+&       0.7246295952243925D+00, 0.1570673203228566D+00, 0.4530009905508846D-02, &
+&       0.9717812450995191D-03, 0.5451558281912703D-01, 0.4256072526101278D+00, &
+&       0.8102646175568073D+00, 0.4256072526101278D+00, 0.5451558281912703D-01, &
+&       0.9717812450995191D-03, 0.1996040722113676D-03, 0.1707798300741347D-01, &
+&       0.2078023258148919D+00, 0.6611470125582413D+00, 0.6611470125582413D+00, &
+&       0.2078023258148919D+00, 0.1707798300741347D-01, 0.1996040722113676D-03, &
+&       0.3960697726326439D-04, 0.4943624275536947D-02, 0.8847452739437657D-01, &
+&       0.4326515590025558D+00, 0.7202352156060510D+00, 0.4326515590025558D+00, &
+&       0.8847452739437657D-01, 0.4943624275536947D-02, 0.3960697726326439D-04, &
+&       0.7640432855232621D-05, 0.1343645746781233D-02, 0.3387439445548106D-01, &
+&       0.2401386110823147D+00, 0.6108626337353258D+00, 0.6108626337353258D+00, &
+&       0.2401386110823147D+00, 0.3387439445548106D-01, 0.1343645746781233D-02, &
+&       0.7640432855232621D-05, 0.1439560393714258D-05, 0.3468194663233455D-03, &
+&       0.1191139544491153D-01, 0.1172278751677085D+00, 0.4293597523561250D+00, &
+&       0.6547592869145918D+00, 0.4293597523561250D+00, 0.1172278751677085D+00, &
+&       0.1191139544491153D-01, 0.3468194663233455D-03, 0.1439560393714258D-05, &
+&       0.2658551684356306D-06, 0.8573687043587876D-04, 0.3905390584629067D-02, &
+&       0.5160798561588394D-01, 0.2604923102641611D+00, 0.5701352362624796D+00, &
+&       0.5701352362624796D+00, 0.2604923102641611D+00, 0.5160798561588394D-01, &
+&       0.3905390584629067D-02, 0.8573687043587876D-04, 0.2658551684356306D-06/
+!
+      do i= 1,3
+        xyzint(i)= zero
+      enddo
+!
+      nroot=(iang+jang+kang)/2+1
+      do ijk= minh(nroot),maxh(nroot)
+        do i= 1,3
+          ghxyz(i)= hweight(ijk)
+        enddo
+        exnode= hnode(ijk)*expgh
+        if(iang >= 1) then
+          do i= 1,3
+            pxyz(i)= exnode+xyzpijk(i,1)
+          enddo
+          do i= 1,iang
+            do j= 1,3
+              ghxyz(j)= ghxyz(j)*pxyz(j)
+            enddo
+          enddo
+        endif
+        if(jang >= 1) then
+          do i= 1,3
+            pxyz(i)= exnode+xyzpijk(i,2)
+          enddo
+          do i= 1,jang
+            do j= 1,3
+              ghxyz(j)= ghxyz(j)*pxyz(j)
+            enddo
+          enddo
+        endif
+        if(kang >= 1) then
+          do i= 1,3
+            pxyz(i)= exnode+xyzpijk(i,3)
+          enddo
+          do i= 1,kang
+            do j= 1,3
+              ghxyz(j)= ghxyz(j)*pxyz(j)
+            enddo
+          enddo
+        endif
+        do i= 1,3
+        xyzint(i)= xyzint(i)+ghxyz(i)
+        enddo
+      enddo
+      return
+end
+
+
+
 !------------------------------------------
   subroutine calcint1c(hmat,ish,jsh,len1)
 !------------------------------------------
@@ -432,7 +552,7 @@ end
       else
         if((nangij(1) > 4).or.(nangij(2) > 4))then
           write(*,'(" Error! This program supports up to g function in calcint1c")')
-          call iabort
+          call exit
         endif
 !
         call int1rys(cint,exij,coij,coordij,coord,znuc,natom, &
@@ -1728,7 +1848,7 @@ end
       sint(1:ncartj,1:ncarti)= zero
 !
       if((nangij(1) > 4).or.(nangij(2) > 4))then
-        write(*,'(" Error! This program supports up to g function in intst")')
+        write(*,'(" Error! This program supports up to g function in ints")')
         call abort
       endif
 !
@@ -1737,7 +1857,7 @@ end
       enddo
       rij= xyzij(1)*xyzij(1)+xyzij(2)*xyzij(2)+xyzij(3)*xyzij(3)
 !
-! Calculate overlap and kinetic integrals for each primitive
+! Calculate overlap integrals for each primitive
 !
       do iprim= 1,nprimij(1)
         exi= exij(iprim,1)
@@ -1787,6 +1907,232 @@ end
       if((nbfij(1) >= 5).or.(nbfij(2) >= 5)) then
         call nrmlz1(sint,nbfij(1),nbfij(2),ncarti)
       endif
+!
+      return
+end
+
+
+!------------------------------------------------------------------------
+  subroutine calcmatdipole(dipmat,work,dipcenter,nproc,myrank,mpi_comm)
+!------------------------------------------------------------------------
+!
+! Driver of dipole moment matrix calculation
+!
+! In  : dipcenter (Dipole moment center)
+! Out : dipmat    (One electron Hamiltonian matrix)
+!       work      (Overlap integral matrix)
+!
+      use modbasis, only : nao, nshell, mtype
+      implicit none
+      integer,intent(in) :: nproc, myrank, mpi_comm
+      integer :: ish, jsh, num, maxfunc(0:6), maxbasis, maxdim
+      real(8),parameter :: zero=0.0D+00
+      real(8),intent(in) :: dipcenter(3)
+      real(8),intent(out) :: dipmat((nao*(nao+1))/2*3), work((nao*(nao+1))/2*3)
+      data maxfunc/1,3,6,10,15,21,28/
+!
+      maxbasis= maxval(mtype(1:nshell))
+      maxdim= maxfunc(maxbasis)
+!
+      num=(nao*(nao+1))/2*3
+      work(:)= zero
+!
+!$OMP parallel
+      do ish= nshell-myrank,1,-nproc
+!$OMP do
+        do jsh= 1,ish
+          call calcintdipole(work,dipcenter,ish,jsh,maxdim)
+        enddo
+!$OMP enddo
+      enddo
+!$OMP end parallel
+!
+      call para_allreducer(work,dipmat,num,mpi_comm)
+!
+      return
+end
+
+
+!----------------------------------------------------------
+  subroutine calcintdipole(dipmat,dipcenter,ish,jsh,len1)
+!----------------------------------------------------------
+!
+! Driver of dipole moment integrals (j|r|i)
+!
+      use modparam, only : mxprsh
+      use modmolecule, only : natom, coord, znuc
+      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
+      use modthresh, only : threshex
+      implicit none
+      integer,intent(in) :: ish, jsh, len1
+      integer :: nangij(2), nprimij(2), nbfij(2), iatom, jatom
+      integer :: iloc, jloc, ilocbf, jlocbf, iprim, jprim, i, j, ii, ij, maxj
+      real(8),intent(in) :: dipcenter(3)
+      real(8),intent(inout) :: dipmat((nao*(nao+1))/2,3)
+      real(8) :: exij(mxprsh,2), coij(mxprsh,2), coordijk(3,3)
+      real(8) :: dipint(len1,len1,3)
+      logical :: iandj
+!
+      iandj=(ish == jsh)
+      nangij(1)= mtype(ish)
+      nangij(2)= mtype(jsh)
+      nprimij(1)= mprim(ish)
+      nprimij(2)= mprim(jsh)
+      nbfij(1)  = mbf(ish)
+      nbfij(2)  = mbf(jsh)
+      iatom = locatom(ish)
+      iloc  = locprim(ish)
+      ilocbf= locbf(ish)
+      jatom = locatom(jsh)
+      jloc  = locprim(jsh)
+      jlocbf= locbf(jsh)
+      do i= 1,3
+        coordijk(i,1)= coord(i,iatom)
+        coordijk(i,2)= coord(i,jatom)
+        coordijk(i,3)= dipcenter(i)
+      enddo
+      do iprim= 1,nprimij(1)
+        exij(iprim,1)= ex(iloc+iprim)
+        coij(iprim,1)= coeff(iloc+iprim)
+      enddo
+      do jprim= 1,nprimij(2)
+        exij(jprim,2)= ex(jloc+jprim)
+        coij(jprim,2)= coeff(jloc+jprim)
+      enddo
+!
+      if((nangij(1) > 4).or.(nangij(2) > 4))then
+        write(*,'(" Error! This program supports up to g function in calcintst1c")')
+        call exit
+      endif
+!
+! Dipole moment integrals
+!
+      call intdipole(dipint,exij,coij,coordijk,nprimij,nangij,nbfij,len1,mxprsh,threshex)
+!
+      maxj= nbfij(2)
+      do i= 1,nbfij(1)
+        if(iandj) maxj= i
+        ii= ilocbf+i
+        ij= ii*(ii-1)/2+jlocbf
+        do j= 1,maxj
+          dipmat(ij+j,1)= dipint(j,i,1)
+          dipmat(ij+j,2)= dipint(j,i,2)
+          dipmat(ij+j,3)= dipint(j,i,3)
+        enddo
+      enddo
+!
+      return
+end
+
+
+!--------------------------------------------------------------------------------------------
+  subroutine intdipole(dipint,exij,coij,coordijk,nprimij,nangij,nbfij,len1,mxprsh,threshex)
+!--------------------------------------------------------------------------------------------
+!
+! Calculate dipole integrals
+!
+! In : exij     (Exponents of basis functions)
+!      coij     (Coefficients of basis functions)
+!      coordijk (x,y,z coordinates of basis functions and dipole center)
+!      nprimij  (Numbers of primitive functions)
+!      nangij   (Degrees of angular momentum)
+!      nbfij    (Numbers of basis functions)
+!      len1     (Dimension of dipint array)
+!      mxprsh   (Size of primitive fuction array)
+!      threshex (Threshold of exponential calculation)
+! Out: dipint(len1,len1,3) (Dipole integrals)
+!
+      implicit none
+      integer,intent(in) :: nprimij(2), nangij(2), nbfij(2), mxprsh, len1
+      integer :: ncarti, ncartj, iprim, jprim, ii, jj, iang, jang, kang
+      integer :: ncart(0:6), ix, iy, iz, jx, jy, jz
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, half=0.5D+00
+      real(8),intent(in) :: exij(mxprsh,2), coij(mxprsh,2), coordijk(3,3), threshex
+      real(8),intent(out) :: dipint(len1,len1,3)
+      real(8) :: xyzij(3), rij, rij2, fac, exi, exj, ci, cj
+      real(8) :: ex1, ex2, ex3, xyzpijk(3,3), cij
+      real(8) :: xyzint(3), dipx(0:6,0:6,0:1), dipy(0:6,0:6,0:1), dipz(0:6,0:6,0:1)
+      real(8) :: diptmp(28,28,3)
+      data ncart /1,3,6,10,15,21,28/
+!
+      ncarti= ncart(nangij(1))
+      ncartj= ncart(nangij(2))
+      diptmp(1:ncartj,1:ncarti,1:3)= zero
+!
+      if((nangij(1) > 4).or.(nangij(2) > 4))then
+        write(*,'(" Error! This program supports up to g function in intdipole")')
+        call abort
+      endif
+!
+      do ii= 1,3
+        xyzij(ii)= coordijk(ii,1)-coordijk(ii,2)
+      enddo
+      rij= xyzij(1)*xyzij(1)+xyzij(2)*xyzij(2)+xyzij(3)*xyzij(3)
+!
+! Calculate dipole integrals for each primitive
+!
+      do iprim= 1,nprimij(1)
+        exi= exij(iprim,1)
+        ci = coij(iprim,1)
+        do jprim= 1,nprimij(2)
+          exj= exij(jprim,2)
+          ex1= exi+exj
+          ex2= one/ex1
+          rij2=rij*exi*exj*ex2
+          if(rij2 > threshex) cycle
+          ex3= sqrt(ex2)
+          fac= exp(-rij2)
+          do ii= 1,3
+            xyzpijk(ii,1)=-exj*xyzij(ii)*ex2
+            xyzpijk(ii,2)= exi*xyzij(ii)*ex2
+            xyzpijk(ii,3)=(exi*coordijk(ii,1)+exj*coordijk(ii,2))*ex2-coordijk(ii,3)
+          enddo
+          cj = coij(jprim,2)*fac
+!
+          do iang= 0,nangij(1)
+            do jang= 0,nangij(2)
+              do kang= 0,1
+                call ghquadd(xyzint,ex3,xyzpijk,iang,jang,kang)
+                dipx(jang,iang,kang)= xyzint(1)*ex3
+                dipy(jang,iang,kang)= xyzint(2)*ex3
+                dipz(jang,iang,kang)= xyzint(3)*ex3
+              enddo
+            enddo
+          enddo
+          cij= ci*cj
+          ii= 0
+          do ix= nangij(1),0,-1
+            do iy= nangij(1)-ix,0,-1
+              iz= nangij(1)-ix-iy
+              ii= ii+1
+              jj= 0
+              do jx= nangij(2),0,-1
+                do jy= nangij(2)-jx,0,-1
+                  jz= nangij(2)-jx-jy
+                  jj= jj+1
+                  diptmp(jj,ii,1)= diptmp(jj,ii,1)+cij*dipx(jx,ix,1)*dipy(jy,iy,0)*dipz(jz,iz,0)
+                  diptmp(jj,ii,2)= diptmp(jj,ii,2)+cij*dipx(jx,ix,0)*dipy(jy,iy,1)*dipz(jz,iz,0)
+                  diptmp(jj,ii,3)= diptmp(jj,ii,3)+cij*dipx(jx,ix,0)*dipy(jy,iy,0)*dipz(jz,iz,1)
+                enddo
+              enddo
+            enddo
+          enddo
+        enddo
+      enddo
+!
+      if((nbfij(1) >= 5).or.(nbfij(2) >= 5)) then
+        call nrmlz1(diptmp(1,1,1),nbfij(1),nbfij(2),ncarti)
+        call nrmlz1(diptmp(1,1,2),nbfij(1),nbfij(2),ncarti)
+        call nrmlz1(diptmp(1,1,3),nbfij(1),nbfij(2),ncarti)
+      endif
+!
+      do ii= 1,nbfij(1)
+        do jj= 1,nbfij(2)
+          dipint(jj,ii,1)= diptmp(jj,ii,1)
+          dipint(jj,ii,2)= diptmp(jj,ii,2)
+          dipint(jj,ii,3)= diptmp(jj,ii,3)
+        enddo
+      enddo
 !
       return
 end
