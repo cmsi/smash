@@ -394,6 +394,7 @@ end
       deallocate(h1mtrx,smtrx,tmtrx,cmo,ortho,dmtrx, &
 &                xint,energymo)
       call memunset(nao3*4+nao2*2+nshell3+nao)
+      call tstamp(1)
       return
 end
 
@@ -512,6 +513,14 @@ end
 ! Calculate Mulliken charge
 !
       call calcumulliken(dmtrxa,dmtrxb,smtrx)
+!
+! Calculate dipole moment
+!
+      call memset(nao3*6)
+      allocate(work(nao3*6))
+      call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1)
+      deallocate(work)
+      call memunset(nao3*6)
 !
 ! Write checkpoint file
 !
@@ -671,6 +680,14 @@ end
 ! Calculate Mulliken charge
 !
       call calcrmulliken(dmtrx,smtrx)
+!
+! Calculate dipole moment
+!
+      call memset(nao3*6)
+      allocate(work(nao3*6))
+      call calcrdipole(work,work(nao3*3+1),dmtrx,nproc1,myrank1,mpi_comm1)
+      deallocate(work)
+      call memunset(nao3*6)
 !
 ! Write checkpoint file
 !
@@ -832,6 +849,14 @@ end
 ! Calculate Mulliken charge
 !
       call calcumulliken(dmtrxa,dmtrxb,smtrx)
+!
+! Calculate dipole moment
+!
+      call memset(nao3*6)
+      allocate(work(nao3*6))
+      call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1)
+      deallocate(work)
+      call memunset(nao3*6)
 !
 ! Write checkpoint file
 !
@@ -1093,6 +1118,14 @@ end
 ! Calculate Mulliken charge
 !
       call calcrmulliken(dmtrx,smtrx)
+!
+! Calculate dipole moment
+!
+      call memset(nao3*6)
+      allocate(work(nao3,6))
+      call calcrdipole(work,work(1,4),dmtrx,nproc1,myrank1,mpi_comm1)
+      deallocate(work)
+      call memunset(nao3*6)
 !
 ! Write optimized geometry
 !
@@ -1382,6 +1415,14 @@ end
 ! Calculate Mulliken charge
 !
       call calcumulliken(dmtrxa,dmtrxb,smtrx)
+!
+! Calculate dipole moment
+!
+      call memset(nao3*6)
+      allocate(work(nao3,6))
+      call calcudipole(work,work(1,4),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1)
+      deallocate(work)
+      call memunset(nao3*6)
 !
 ! Write optimized geometry
 !
