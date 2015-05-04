@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !
-! Cube file generator for SMASH
+! Vtk file generator for SMASH
 !
 !------------------
   module modparam
@@ -25,7 +25,6 @@
       integer,parameter :: mxatom=1000
       integer,parameter :: mxshell=5000
       integer,parameter :: mxprim=20000
-      integer,parameter :: mxgridz=2000
 end module
 
 
@@ -42,39 +41,33 @@ end module
 
 
 !------------------------
-  program cube_generator
+  program vtk_generator
 !------------------------
       use modparam
       use modbasis
       implicit none
-      integer,parameter :: numperang=5
+      integer,parameter :: numperang=4
       integer :: ii, jj, kk, ilen, monum, maxxyz(3), minxyz(3), lenxyz(3), numxyz(3)
-      integer :: natom, nmo, neleca, nelecb, multi, iatom, numatomic(mxatom)
-      real(8),parameter :: space=0.20D+00, zero=0.0D+00, thresh=1.0D-15
+      integer :: natom, nmo, neleca, nelecb, multi
+      real(8),parameter :: space=0.25D+00, zero=0.0D+00, thresh=1.0D-15
       real(8),parameter :: toang= 0.5291772108D+00
       real(8) :: xyzmax(3), xyzmin(3), xx, yy, zz
-      real(8) :: coord(3,mxatom), znuc(mxatom), charge, orbital(mxgridz)
+      real(8) :: coord(3,mxatom), charge, orbital
       real(8),allocatable :: cmoa(:,:), cmob(:,:), dmtrxa(:), dmtrxb(:)
-      character(len=64) :: filecheck, filecube, viewtype, moarg
+      character(len=64) :: filecheck, filevtk, viewtype, moarg
       character(len=16) :: checkversion, scftype, method, runtype
 !
       call getarg(1,filecheck)
-      call getarg(2,filecube)
+      call getarg(2,filevtk)
       call getarg(3,viewtype)
       ilen= len_trim(viewtype)
       call low2up(viewtype,ilen)
 
 !
       open(unit=10,file=filecheck,form='unformatted',err=9999)
-      open(unit=20,file=filecube,form='formatted')
+      open(unit=20,file=filevtk,form='formatted')
 !
       read(10) checkversion
-!
-      if(checkversion(1:2) =='1.') then
-        write(*,'(" Error! This cube_generator supports SMASH version 2.0 or later.")')
-        stop
-      endif
-!
       read(10,err=9998) scftype, natom, nao, nmo, nshell, nprim, neleca, nelecb,  &
 &                       method, runtype, charge, multi
 !
@@ -124,11 +117,13 @@ end module
       endif
 !
       read(10)
-      read(10) (numatomic(ii),ii=1,natom)
+      read(10)
       read(10)
       read(10)((coord(jj,ii),jj=1,3),ii=1,natom)
-      read(10)
-      read(10) (znuc(ii),ii=1,natom)
+      if(checkversion(1:2) /= "1.") then
+        read(10)
+        read(10)
+      endif
       read(10)
       read(10) (ex(ii),ii=1,nprim)
       read(10)
@@ -179,58 +174,83 @@ end module
       do ii= 1,3
         xyzmax(ii)= maxval(coord(ii,1:natom))
         xyzmin(ii)= minval(coord(ii,1:natom))
-        maxxyz(ii)= nint(xyzmax(ii))+6
-        minxyz(ii)= nint(xyzmin(ii))-6
+        maxxyz(ii)= nint(xyzmax(ii)*toang)+5
+        minxyz(ii)= nint(xyzmin(ii)*toang)-5
         lenxyz(ii)= maxxyz(ii)-minxyz(ii)
         numxyz(ii)= lenxyz(ii)*numperang+1
       enddo
 !
-      if(numxyz(3) > mxgridz) then
-        write(*,'(" Error! The number of z grid points exceeds mxgridz.")')
-        stop
-      endif
+! Write header of vtk file
 !
-! Write header of cube file
-!
-      write(20,'(" MO=",a16)') moarg
-      write(20,'(" MO coefficients")')
-      write(20,'(i5,3f12.6,i5)')-natom,(dble(minxyz(ii)),ii=1,3),1
-      write(20,'(i5,3f12.6)')numxyz(1),space,zero,zero
-      write(20,'(i5,3f12.6)')numxyz(2),zero,space,zero
-      write(20,'(i5,3f12.6)')numxyz(3),zero,zero,space
-      do iatom= 1,natom
-        write(20,'(i5,4f12.6)')numatomic(iatom),znuc(iatom),(coord(ii,iatom),ii=1,3)
-      enddo
-      write(20,'(2i5)')1,monum
+      write(20,'("# vtk DataFile Version 3.0")')
+      write(20,'("vtk output")')
+      write(20,'("ASCII")')
+      write(20,'("DATASET STRUCTURED_POINTS")')
+      write(20,'("DIMENSIONS",3i5)') (numxyz(ii),ii=1,3)
+      write(20,'("ORIGIN ",3i5)')  (minxyz(ii),ii=1,3)
+      write(20,'("SPACING ",3f5.2)') space, space, space
+      write(20,'("POINT_DATA ",i9)') numxyz(1)*numxyz(2)*numxyz(3)
+      write(20,'("SCALARS scalars float")')
+      write(20,'("LOOKUP_TABLE default")')
 !
 ! Write grid data
 !
-      if((viewtype == 'MO').or.(viewtype == 'MOA')) then
-        do ii= 1,numxyz(1)
-          xx= minxyz(1)+(ii-1)*space
-          do jj= 1,numxyz(2)
-            yy= minxyz(2)+(jj-1)*space
-            do kk= 1,numxyz(3)
-              zz= minxyz(3)+(kk-1)*space
-              call calcorbital(orbital(kk),cmoa,coord,xx,yy,zz,monum)
-              if(abs(orbital(kk)) < thresh) orbital(kk)= zero
+      if(checkversion(1:2) == "1.") then
+        if((viewtype == 'MO').or.(viewtype == 'MOA')) then
+          do kk= 1,numxyz(3)
+            zz= minxyz(3)+(kk-1)*space
+            do jj= 1,numxyz(2)
+              yy= minxyz(2)+(jj-1)*space
+              do ii= 1,numxyz(1)
+                xx= minxyz(1)+(ii-1)*space
+                call calcorbital(orbital,cmoa,coord,xx,yy,zz,monum)
+                if(abs(orbital) < thresh) orbital= zero
+                write(20,'(e16.10)')orbital
+              enddo
             enddo
-            write(20,'(1p6e13.5)')(orbital(kk),kk=1,numxyz(3))
           enddo
-        enddo
-      elseif(viewtype == 'MOB') then
-        do ii= 1,numxyz(1)
-          xx= minxyz(1)+(ii-1)*space
-          do jj= 1,numxyz(2)
-            yy= minxyz(2)+(jj-1)*space
-            do kk= 1,numxyz(3)
-              zz= minxyz(3)+(kk-1)*space
-              call calcorbital(orbital(kk),cmob,coord,xx,yy,zz,monum)
-              if(abs(orbital(kk)) < thresh) orbital(kk)= zero
+        elseif(viewtype == 'MOB') then
+          do kk= 1,numxyz(3)
+            zz= minxyz(3)+(kk-1)*space
+            do jj= 1,numxyz(2)
+              yy= minxyz(2)+(jj-1)*space
+              do ii= 1,numxyz(1)
+                xx= minxyz(1)+(ii-1)*space
+                call calcorbital(orbital,cmob,coord,xx,yy,zz,monum)
+                if(abs(orbital) < thresh) orbital= zero
+                write(20,'(e16.10)')orbital
+              enddo
             enddo
-            write(20,'(1p6e13.5)')(orbital(kk),kk=1,numxyz(3))
           enddo
-        enddo
+        endif
+      else
+        if((viewtype == 'MO').or.(viewtype == 'MOA')) then
+          do kk= 1,numxyz(3)
+            zz= minxyz(3)+(kk-1)*space
+            do jj= 1,numxyz(2)
+              yy= minxyz(2)+(jj-1)*space
+              do ii= 1,numxyz(1)
+                xx= minxyz(1)+(ii-1)*space
+                call calcorbital2(orbital,cmoa,coord,xx,yy,zz,monum)
+                if(abs(orbital) < thresh) orbital= zero
+                write(20,'(e16.10)')orbital
+              enddo
+            enddo
+          enddo
+        elseif(viewtype == 'MOB') then
+          do kk= 1,numxyz(3)
+            zz= minxyz(3)+(kk-1)*space
+            do jj= 1,numxyz(2)
+              yy= minxyz(2)+(jj-1)*space
+              do ii= 1,numxyz(1)
+                xx= minxyz(1)+(ii-1)*space
+                call calcorbital2(orbital,cmob,coord,xx,yy,zz,monum)
+                if(abs(orbital) < thresh) orbital= zero
+                write(20,'(e16.10)')orbital
+              enddo
+            enddo
+          enddo
+        endif
       endif
 
       close(10)
@@ -241,10 +261,9 @@ end module
       stop
  9998 write(*,'(" Error! Reading checkpoint file.")')
       write(*,'(" Please check the integer sizes and endianness of smash", &
-&               " and cube-generator.")')
+&               " and vtk-generator.")')
       stop
  9997 write(*,'(" Error! MO number from the command line is not correct.")')
-      stop
 !
   100 continue
 end
@@ -342,14 +361,15 @@ end
 end
 
 
-!--------------------------------------------------------------------
-  subroutine calcorbital(orbital,cmo,coord,xbohr,ybohr,zbohr,monum)
-!--------------------------------------------------------------------
+!-----------------------------------------------------------
+  subroutine calcorbital(orbital,cmo,coord,xx,yy,zz,monum)
+!-----------------------------------------------------------
       use modparam
       use modbasis
       implicit none
       integer,intent(in) :: monum
       integer :: ish, ii, iatom, numprim, numbf, ibf, iprim
+      real(8),parameter :: tobohr= 1.889726125D+00
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, two=2.0D+00, three=3.0D+00, four=4.0D+00
       real(8),parameter :: six=6.0D+00, eight=8.0D+00, p24=24.0D+00
       real(8),parameter :: sqrt3=1.73205080756888D+00, sqrt3h=8.660254037844386D-01
@@ -369,12 +389,247 @@ end
       real(8),parameter :: facg6=0.18742611911532351D+00 ! 1/sqrt(196/5-24/sqrt(5))
       real(8),parameter :: facg7=1.11803398874989484D+00 ! 1/sqrt(4/5)
       real(8),intent(in) :: cmo(nao,nao), coord(3,mxatom)
-      real(8),intent(in) :: xbohr, ybohr, zbohr
+      real(8),intent(in) :: xx, yy, zz
       real(8),intent(out) :: orbital
-      real(8) :: rr, xval, yval, zval, valbasis(28), work(28), expval
+      real(8) :: xbohr, ybohr, zbohr, rr, xval, yval, zval, valbasis(28), work(28), expval
 !
       orbital= zero
 !
+      xbohr= xx*tobohr
+      ybohr= yy*tobohr
+      zbohr= zz*tobohr
+      do ish= 1,nshell
+        iatom= locatom(ish)
+        numprim= mprim(ish)
+        numbf  = mbf(ish)
+        ibf    = locbf(ish)
+        rr=(xbohr-coord(1,iatom))**2+(ybohr-coord(2,iatom))**2+(zbohr-coord(3,iatom))**2
+        xval= xbohr-coord(1,iatom)
+        yval= ybohr-coord(2,iatom)
+        zval= zbohr-coord(3,iatom)
+        select case(numbf)
+          case(1)
+            valbasis(1)= zero
+            do iprim= locprim(ish)+1,locprim(ish)+numprim
+              valbasis(1)= valbasis(1)+exp(-ex(iprim)*rr)*coeff(iprim)
+            enddo
+            orbital= orbital+valbasis(1)*cmo(ibf+1,monum)
+          case(3)
+            valbasis(1:3)= zero
+            do iprim= locprim(ish)+1,locprim(ish)+numprim
+              expval= exp(-ex(iprim)*rr)*coeff(iprim)
+              valbasis(1)= valbasis(1)+xval*expval
+              valbasis(2)= valbasis(2)+yval*expval
+              valbasis(3)= valbasis(3)+zval*expval
+            enddo
+            orbital= orbital+valbasis(1)*cmo(ibf+1,monum)
+            orbital= orbital+valbasis(2)*cmo(ibf+2,monum)
+            orbital= orbital+valbasis(3)*cmo(ibf+3,monum)
+          case(5)
+            work(1:6)= zero
+            do iprim= locprim(ish)+1,locprim(ish)+numprim
+              expval= exp(-ex(iprim)*rr)*coeff(iprim)
+              work(1)= work(1)+(xval**2)*expval
+              work(2)= work(2)+(yval**2)*expval
+              work(3)= work(3)+(zval**2)*expval
+              work(4)= work(4)+xval*yval*expval
+              work(5)= work(5)+xval*zval*expval
+              work(6)= work(6)+yval*zval*expval
+            enddo
+            valbasis(1)=(work(3)*two-work(1)-work(2))*half
+            valbasis(2)= work(5)*sqrt3
+            valbasis(3)= work(6)*sqrt3
+            valbasis(4)=(work(1)-work(2))*sqrt3h
+            valbasis(5)= work(4)*sqrt3
+            do ii= 1,5
+              orbital= orbital+valbasis(ii)*cmo(ibf+ii,monum)
+            enddo
+          case(6)
+            valbasis(1:6)= zero
+            do iprim= locprim(ish)+1,locprim(ish)+numprim
+              expval= exp(-ex(iprim)*rr)*coeff(iprim)
+              valbasis(1)= valbasis(1)+(xval**2)*expval
+              valbasis(2)= valbasis(2)+(yval**2)*expval
+              valbasis(3)= valbasis(3)+(zval**2)*expval
+              valbasis(4)= valbasis(4)+sqrt3*xval*yval*expval
+              valbasis(5)= valbasis(5)+sqrt3*xval*zval*expval
+              valbasis(6)= valbasis(6)+sqrt3*yval*zval*expval
+            enddo
+            do ii= 1,6
+              orbital= orbital+valbasis(ii)*cmo(ibf+ii,monum)
+            enddo
+          case(7)
+            work(1:10)= zero
+            do iprim= locprim(ish)+1,locprim(ish)+numprim
+              expval= exp(-ex(iprim)*rr)*coeff(iprim)
+              work( 1)= work( 1)+xval*xval*xval*expval
+              work( 2)= work( 2)+yval*yval*yval*expval
+              work( 3)= work( 3)+zval*zval*zval*expval
+              work( 4)= work( 4)+xval*xval*yval*expval
+              work( 5)= work( 5)+xval*xval*zval*expval
+              work( 6)= work( 6)+xval*yval*yval*expval
+              work( 7)= work( 7)+yval*yval*zval*expval
+              work( 8)= work( 8)+xval*zval*zval*expval
+              work( 9)= work( 9)+yval*zval*zval*expval
+              work(10)= work(10)+xval*yval*zval*expval
+            enddo
+            do ii= 4,9
+              work(ii)= work(ii)*sqrt5
+            enddo
+            work(10)= work(10)*sqrt15
+            valbasis(1)=( work(3)*two-work(5)*three-work(7)*three)*facf4
+            valbasis(2)=(-work(1)-work(6)+work(8)*four           )*facf3
+            valbasis(3)=(-work(2)-work(4)+work(9)*four           )*facf3
+            valbasis(4)=( work(5)-work(7)                        )*facf2
+            valbasis(5)=  work(10)
+            valbasis(6)=( work(1)-work(6)*three                  )*facf1
+            valbasis(7)=(-work(2)+work(4)*three                  )*facf1
+            do ii= 1,7
+              orbital= orbital+valbasis(ii)*cmo(ibf+ii,monum)
+            enddo
+          case(10)
+            valbasis(1:10)= zero
+            do iprim= locprim(ish)+1,locprim(ish)+numprim
+              expval= exp(-ex(iprim)*rr)*coeff(iprim)
+              valbasis( 1)= valbasis( 1)+xval*xval*xval*expval
+              valbasis( 2)= valbasis( 2)+yval*yval*yval*expval
+              valbasis( 3)= valbasis( 3)+zval*zval*zval*expval
+              valbasis( 4)= valbasis( 4)+xval*xval*yval*expval
+              valbasis( 5)= valbasis( 5)+xval*xval*zval*expval
+              valbasis( 6)= valbasis( 6)+xval*yval*yval*expval
+              valbasis( 7)= valbasis( 7)+yval*yval*zval*expval
+              valbasis( 8)= valbasis( 8)+xval*zval*zval*expval
+              valbasis( 9)= valbasis( 9)+yval*zval*zval*expval
+              valbasis(10)= valbasis(10)+xval*yval*zval*expval
+            enddo
+            do ii= 4,9
+              valbasis(ii)= valbasis(ii)*sqrt5
+            enddo
+            valbasis(10)= valbasis(10)*sqrt15
+            do ii= 1,10
+              orbital= orbital+valbasis(ii)*cmo(ibf+ii,monum)
+            enddo
+          case(9)
+            work(1:15)= zero
+            do iprim= locprim(ish)+1,locprim(ish)+numprim
+              expval= exp(-ex(iprim)*rr)*coeff(iprim)
+              work( 1)= work( 1)+xval*xval*xval*xval*expval
+              work( 2)= work( 2)+yval*yval*yval*yval*expval
+              work( 3)= work( 3)+zval*zval*zval*zval*expval
+              work( 4)= work( 4)+xval*xval*xval*yval*expval
+              work( 5)= work( 5)+xval*xval*xval*zval*expval
+              work( 6)= work( 6)+xval*yval*yval*yval*expval
+              work( 7)= work( 7)+yval*yval*yval*zval*expval
+              work( 8)= work( 8)+xval*zval*zval*zval*expval
+              work( 9)= work( 9)+yval*zval*zval*zval*expval
+              work(10)= work(10)+xval*xval*yval*yval*expval
+              work(11)= work(11)+xval*xval*zval*zval*expval
+              work(12)= work(12)+yval*yval*zval*zval*expval
+              work(13)= work(13)+xval*xval*yval*zval*expval
+              work(14)= work(14)+xval*yval*yval*zval*expval
+              work(15)= work(15)+xval*yval*zval*zval*expval
+              do ii= 4,9
+                work(ii)= work(ii)*sqrt7
+              enddo
+              do ii= 10,12
+                work(ii)= work(ii)*sqrt35third
+              enddo
+              do ii= 13,15
+                work(ii)= work(ii)*sqrt35
+              enddo
+              valbasis(1)=(work(1)*three+work(2)*three+work(3)*eight+work(10)*six &
+&                         -work(11)*p24-work(12)*p24)*facg5
+              valbasis(2)=(-work(5)*three+work(8)*four-work(14)*three)*facg4
+              valbasis(3)=(-work(7)*three+work(9)*four-work(13)*three)*facg4
+              valbasis(4)=(-work(1)+work(2)+work(11)*six-work(12)*six)*facg3
+              valbasis(5)=(-work(4)-work(6)+work(15)*six)*facg6
+              valbasis(6)=(work(5)-work(14)*three)*facg2
+              valbasis(7)=(-work(7)+work(13)*three)*facg2
+              valbasis(8)=(work(1)+work(2)-work(10)*six)*facg1
+              valbasis(9)=(work(4)-work(6))*facg7
+            enddo
+            do ii= 1,9
+              orbital= orbital+valbasis(ii)*cmo(ibf+ii,monum)
+            enddo
+          case(15)
+            valbasis(1:15)= zero
+            do iprim= locprim(ish)+1,locprim(ish)+numprim
+              expval= exp(-ex(iprim)*rr)*coeff(iprim)
+              valbasis( 1)= valbasis( 1)+xval*xval*xval*xval*expval
+              valbasis( 2)= valbasis( 2)+yval*yval*yval*yval*expval
+              valbasis( 3)= valbasis( 3)+zval*zval*zval*zval*expval
+              valbasis( 4)= valbasis( 4)+xval*xval*xval*yval*expval
+              valbasis( 5)= valbasis( 5)+xval*xval*xval*zval*expval
+              valbasis( 6)= valbasis( 6)+xval*yval*yval*yval*expval
+              valbasis( 7)= valbasis( 7)+yval*yval*yval*zval*expval
+              valbasis( 8)= valbasis( 8)+xval*zval*zval*zval*expval
+              valbasis( 9)= valbasis( 9)+yval*zval*zval*zval*expval
+              valbasis(10)= valbasis(10)+xval*xval*yval*yval*expval
+              valbasis(11)= valbasis(11)+xval*xval*zval*zval*expval
+              valbasis(12)= valbasis(12)+yval*yval*zval*zval*expval
+              valbasis(13)= valbasis(13)+xval*xval*yval*zval*expval
+              valbasis(14)= valbasis(14)+xval*yval*yval*zval*expval
+              valbasis(15)= valbasis(15)+xval*yval*zval*zval*expval
+              do ii= 4,9
+                valbasis(ii)= valbasis(ii)*sqrt7
+              enddo
+              do ii= 10,12
+                valbasis(ii)= valbasis(ii)*sqrt35third
+              enddo
+              do ii= 13,15
+                valbasis(ii)= valbasis(ii)*sqrt35
+              enddo
+            enddo
+            do ii= 1,15
+              orbital= orbital+valbasis(ii)*cmo(ibf+ii,monum)
+            enddo
+          case default
+            write(*,'(" Error! This program supports up to g function.")')
+            stop
+        end select
+      enddo
+!
+      return
+end
+
+
+!---------------------------------------------------------------------
+  subroutine calcorbital2(orbital,cmo,coord,xx,yy,zz,monum)
+!---------------------------------------------------------------------
+      use modparam
+      use modbasis
+      implicit none
+      integer,intent(in) :: monum
+      integer :: ish, ii, iatom, numprim, numbf, ibf, iprim
+      real(8),parameter :: tobohr= 1.889726125D+00
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00, two=2.0D+00, three=3.0D+00, four=4.0D+00
+      real(8),parameter :: six=6.0D+00, eight=8.0D+00, p24=24.0D+00
+      real(8),parameter :: sqrt3=1.73205080756888D+00, sqrt3h=8.660254037844386D-01
+      real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
+      real(8),parameter :: sqrt7=2.645751311064590D+00, sqrt35=5.916079783099616D+00
+      real(8),parameter :: sqrt35third=3.415650255319866D+00
+      real(8),parameter :: facf1=0.36969351199675831D+00 ! 1/sqrt(10-6/sqrt(5))
+      real(8),parameter :: facf2=0.86602540378443865D+00 ! 1/sqrt(4/3)
+      real(8),parameter :: facf3=0.28116020334310144D+00 ! 1/sqrt(46/3-6/sqrt(5))
+      real(8),parameter :: facf4=0.24065403274177409D+00 ! 1/sqrt(28-24/sqrt(5))
+      real(8),parameter :: facg1=0.19440164201192295D+00 ! 1/sqrt(1336/35-8sqrt(15/7))
+      real(8),parameter :: facg2=0.36969351199675831D+00 ! 1/sqrt(10-6/sqrt(5)
+      real(8),parameter :: facg3=0.15721262982485929D+00 ! 1/sqrt(1774/35-8sqrt(15/7)-8sqrt(3/35))
+      real(8),parameter :: facg4=0.24313189758394717D+00 ! 1/sqrt(98/5-6/sqrt(5))
+      real(8),parameter :: facg5=3.20603188768051639D-02
+!                                                 ! 1/sqrt(51512/35-984sqrt(5/21)-102/sqrt(105))
+      real(8),parameter :: facg6=0.18742611911532351D+00 ! 1/sqrt(196/5-24/sqrt(5))
+      real(8),parameter :: facg7=1.11803398874989484D+00 ! 1/sqrt(4/5)
+      real(8),intent(in) :: cmo(nao,nao), coord(3,mxatom)
+      real(8),intent(in) :: xx, yy, zz
+      real(8),intent(out) :: orbital
+      real(8) :: xbohr, ybohr, zbohr, rr, xval, yval, zval, valbasis(28), work(28), expval
+!
+      orbital= zero
+!
+      xbohr= xx*tobohr
+      ybohr= yy*tobohr
+      zbohr= zz*tobohr
       do ish= 1,nshell
         iatom= locatom(ish)
         numprim= mprim(ish)
@@ -542,8 +797,3 @@ end
 !
       return
 end
-
-
-
-
-
