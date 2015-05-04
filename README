@@ -1,5 +1,5 @@
   ===========================
-      SMASH version 1.2.0
+      SMASH version 2.0.0
   ===========================
 
   About SMASH
@@ -39,7 +39,7 @@
 
   Visualization
   -------------
-  A vtk file generator is included in the vtk/ directory.
+  Vtk and cube file generators are included in the visual/ directory.
 
   Contact
   -------
