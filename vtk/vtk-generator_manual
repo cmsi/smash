@@ -1,6 +1,6 @@
   SMASH VTK-GENERATOR
   -------------------
-  The vtk-generator in SMASH visualizes MOs from its checkpoint file.
+  The vtk-generator in SMASH generates a vtk file to visualize MOs from a checkpoint file.
 
   INSTALLATION
   ------------

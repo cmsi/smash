@@ -1,5 +1,14 @@
+PROG= vtk-generator cube-generator
 F90 = ifort
 OPT = -openmp -i8 -xHOST
 
-smash : vtk-generator.F90
+all : $(PROG)
+
+vtk-generator : 
 	$(F90) -o vtk-generator $(OPT) vtk-generator.F90
+
+cube-generator : 
+	$(F90) -o cube-generator $(OPT) cube-generator.F90
+
+clean:
+	rm -f vtk-generator cube-generator *.mod 

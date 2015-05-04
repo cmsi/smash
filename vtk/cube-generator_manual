@@ -1,0 +1,29 @@
+  SMASH CUBE-GENERATOR
+  --------------------
+  The cube-generator in SMASH generates a Gaussian cube file from a checkpoint file.
+
+  INSTALLATION
+  ------------
+  To compile the cube-generator, use the Makefile in the same directory.
+  Make sure that the integer sizes and endianness of SMASH and
+  cube-generator are correct.
+
+    $ make
+
+  HOW TO USE CUBE-GENERATOR
+  -------------------------
+  In a SMASH calculation, create a checkpoint file
+  (See Input format 2.2 in doc/User_manual).
+  The cube-generator requires four argments.
+    1. checkpoint file
+       Name of the checkpoint file.
+    2. cube file
+       Name of the cube file to be generated.
+    3. MO type
+       Type of MO to be visualized.
+       MO or MOA : Alpha MO
+       MOB       : Beta MO
+    4. MO number
+       HOMO, LUMO, or integer.
+
+    ex) $ ./cube-generator methane.check methane-homo.cube MO HOMO

@@ -807,10 +807,10 @@ end
       use modparam, only : mxao, mxshell, mxprim
       implicit none
       integer :: idummy, ii
-      character(len=16) :: cdummy
+      character(len=16) :: checkversion, cdummy
 !
       rewind(icheck)
-      read(icheck,err=9999)
+      read(icheck,err=9999) checkversion
       read(icheck) cdummy, idummy, nao, idummy, nshell, nprim
 !
       write(*,'(" Basis set is read from checkpoint file.")')
@@ -831,6 +831,10 @@ end
       read(icheck)
       read(icheck)
       read(icheck)
+      if(checkversion(1:2) /= "1.") then
+        read(icheck)
+        read(icheck)
+      endif
       read(icheck)
       read(icheck) (ex(ii),ii=1,nprim)
       read(icheck)
@@ -941,6 +945,10 @@ end
         read(icheck)
         read(icheck)
         read(icheck) ((coord_g(jj,ii),jj=1,3),ii=1,natom)
+        if(checkversion(1:2) /= "1.") then
+          read(icheck)
+          read(icheck)
+        endif
         read(icheck)
         read(icheck) (ex_g(ii),ii=1,nprim_g)
         read(icheck)
@@ -1296,7 +1304,7 @@ end
 !
       use modiofile, only : icheck, version
       use modparallel, only : master
-      use modmolecule, only : numatomic, natom, coord, nmo, neleca, nelecb, charge, multi
+      use modmolecule, only : numatomic, natom, coord, nmo, neleca, nelecb, charge, multi, znuc
       use modjob, only : method, runtype, scftype
       use modbasis, only : nshell, nao, nprim, ex, coeffinp, locprim, locbf, locatom, &
 &                          mprim, mbf, mtype
@@ -1319,6 +1327,10 @@ end
       datatype= 'coord'
       write(icheck) datatype
       write(icheck)((coord(jj,ii),jj=1,3),ii=1,natom)
+!
+      datatype= 'znuc'
+      write(icheck) datatype
+      write(icheck)(znuc(ii),ii=1,natom)
 !
       datatype= 'ex'
       write(icheck) datatype
