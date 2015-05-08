@@ -28,8 +28,8 @@
       use modenergy, only : enuc, escf, escfe, emp2, escsmp2
       implicit none
       integer,intent(in) :: nproc, myrank, mpi_comm
-      integer :: ncore, ncorecalc, maxdim, nocc, nvir, nao2, ndis, iproc, icount, icountao
-      integer :: icountsh, idis(8,0:nproc-1), maxsize, ish, jsh, ishs, jshs, msize, mlsize
+      integer :: ncore, ncorecalc, maxdim, nocc, nvir, nao2, iproc, icount
+      integer :: idis(4,0:nproc-1), maxsize, ish, jsh, msize, mlsize
       real(8),parameter :: zero=0.0D+00, three=3.0D+00, p12=1.2D+00
       real(8),intent(in) :: cmo(nao,nao), energymo(nmo), xint(nshell*(nshell+1)/2)
       real(8),allocatable :: trint2(:), cmowrk(:), trint1a(:), trint1b(:)
@@ -55,69 +55,44 @@
         write(*,'(" ----------------------------------------------",/)')
       endif
 !
-      ndis= nao2/nproc
       icount= 0
-      icountao= 0
-      icountsh= 0
-      idis= 0
-      ishs= 1
-      jshs= 1
+      idis(:,:)= 0
+      ish= 1
+      jsh= 1
+!
+! Calculate distributed AO indices
 !
       do iproc= 0,nproc-1
-        idis(1,iproc)= ishs
-        idis(2,iproc)= jshs
-        jshs= jshs+1
-        if(jshs > ishs) then
-          ishs= ishs+1
-          jshs= 1
+        idis(1,iproc)= ish
+        idis(2,iproc)= jsh
+        jsh= jsh+1
+        if(jsh > nshell) then
+          ish= ish+1
+          jsh= 1
         endif
       enddo
 !
       iproc= 0
-      do ish= 1,nshell
-        do jsh= 1,ish
-          idis(3,iproc)= idis(3,iproc)+mbf(ish)*mbf(jsh)
-          idis(4,iproc)= idis(4,iproc)+1
-          iproc= iproc+1
-          if(iproc == nproc) iproc= 0
+      if(nproc /= 1) then
+        do ish= 1,nshell
+          do jsh= 1,nshell
+            idis(3,iproc)= idis(3,iproc)+mbf(ish)*mbf(jsh)
+            idis(4,iproc)= idis(4,iproc)+1
+            icount= icount+1
+            if(mod(icount,nproc) == 0) then
+              iproc= iproc+2
+            else
+              iproc= iproc+1
+            endif
+            if(iproc >= nproc) iproc= iproc-nproc
+          enddo
         enddo
-      enddo
-!ishimura
-      ishs=1
-      jshs=2
-      do jproc=iproc,nproc-1
-        idis(5,jproc)= ishs
-        idis(6,jproc)= jshs
-        jshs= jshs+1
-        if(jshs > nshell) then
-          ishs= ishs+1
-          jshs= ishs+1
-        endif
-      enddo
-      do jproc=0,iproc-1
-        idis(5,jproc)= ishs
-        idis(6,jproc)= jshs
-        jshs= jshs+1
-        if(jshs > nshell) then
-          ishs= ishs+1
-          jshs= ishs+1
-        endif
-      enddo
-
-      do ish= 1,nshell
-        do jsh= ish+1,nshell
-          idis(7,iproc)= idis(7,iproc)+mbf(ish)*mbf(jsh)
-          idis(8,iproc)= idis(8,iproc)+1
-          iproc= iproc+1
-          if(iproc == nproc) iproc= 0
-        enddo
-      enddo
+      else
+        idis(3,iproc)= nao*nao
+        idis(4,iproc)= nshell*nshell
+      endif
 !
-      ishs=0
-      do iproc=0,nproc-1
-        ishs=max(idis(3,iproc)+idis(7,iproc),ishs)
-      enddo
-      maxsize= ishs
+      maxsize= maxval(idis(3,0:nproc-1))
       call memset(maxsize*nocc*(nocc+1)/2)
       allocate(trint2(maxsize*nocc*(nocc+1)/2))
       call memset(nao*nocc+nocc*maxdim**3)
@@ -126,15 +101,17 @@
       call memrest(msize)
       mlsize= msize/(nocc*nao)
       if(mlsize > maxsize) then
-         mlsize= maxsize
+        mlsize= maxsize
       elseif(mlsize < maxdim*maxdim) then
-         mlsize= maxdim*maxdim
+        mlsize= maxdim*maxdim
       endif
       call memset(mlsize*nocc*nao)
       allocate(trint1b(mlsize*nocc*nao))
 !
-      call mp2trans1(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
-&                    mlsize,nocc,maxdim,idis,nproc,myrank)
+! AO intengral generation and first and second integral transformations
+!
+      call mp2trans12(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
+&                     mlsize,nocc,maxdim,idis,nproc,myrank)
 !
       deallocate(trint1b)
       call memunset(mlsize*nocc*nao)
@@ -144,8 +121,10 @@
       call memset(2*nao2)
       allocate(trint3(nao2),trint4(nao2))
 !
-      call mp2trans2(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,nocc,nvir,ncore, &
-&                    idis,nproc,myrank,mpi_comm)
+! Third and fourth integral transformations and MP2 energy calculation
+!
+      call mp2trans34(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,nocc,nvir,ncore, &
+&                     idis,nproc,myrank,mpi_comm)
 !
       deallocate(trint3,trint4)
       call memunset(2*nao2)
@@ -192,10 +171,10 @@ end
 end
 
 
-!--------------------------------------------------------------------
-  subroutine mp2trans1(cmoocc,cmowrk,trint1a,trint1b,trint2,xint, &
-&                      mlsize,nocc,maxdim,idis,nproc,myrank)
-!--------------------------------------------------------------------
+!---------------------------------------------------------------------
+  subroutine mp2trans12(cmoocc,cmowrk,trint1a,trint1b,trint2,xint, &
+&                       mlsize,nocc,maxdim,idis,nproc,myrank)
+!---------------------------------------------------------------------
 !
 ! Driver of AO intengral generation and first and second integral transformations
 !
@@ -214,13 +193,13 @@ end
       use modthresh, only : cutint2
       use modprint, only : iprint
       implicit none
-      integer,intent(in) :: maxdim, mlsize, nocc, nproc, myrank, idis(8,0:nproc-1)
-      integer :: ish, ksh, mlcount, mlstart, numshell, ii
+      integer,intent(in) :: maxdim, mlsize, nocc, nproc, myrank, idis(4,0:nproc-1)
+      integer :: ish, ksh, mlcount, mlstart, numshell, ii, jcount
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmoocc(nao,nocc), xint(nshell*(nshell+1)/2)
       real(8),intent(out) :: cmowrk(nocc,nao), trint1a(nocc,maxdim,maxdim**2)
       real(8),intent(out) :: trint1b(mlsize*nocc*nao)
-      real(8),intent(out) :: trint2((idis(3,myrank)+idis(7,myrank))*nocc*(nocc+1)/2)
+      real(8),intent(out) :: trint2(idis(3,myrank)*nocc*(nocc+1)/2)
 !ishimura
       real(8) :: t1,t2,t3,tr1=0.0D0,tr2=0.0D0
 !
@@ -228,6 +207,7 @@ end
 !
       ish= idis(1,myrank)
       ksh= idis(2,myrank)
+      jcount= 0
       mlcount= 0
       mlstart= 1
       do numshell= 1,idis(4,myrank)
@@ -241,70 +221,40 @@ end
         call cpu_time(t2)
         mlcount= mlcount+mbf(ish)*mbf(ksh)
         if(numshell == idis(4,myrank)) then
+!
+! Second integral transformation
+!
           call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis,nproc,myrank)
             mlstart= mlstart+mlcount
             mlcount= 0
         else
-          ksh= ksh+nproc
-          if(ksh > ish) then
-            do ii= 1,nshell
-              ksh= ksh-ish
+          if(nproc /= 1) then
+            if(jcount == myrank) then
+              ksh= ksh+2*nproc-1
+            else
+              ksh= ksh+nproc-1
+            endif
+            jcount= jcount+1
+            if(jcount == nproc) jcount= 0
+!  
+            if(ksh > nshell) then
+              do ii= 1,nshell
+                ksh= ksh-nshell
+                ish= ish+1
+                if(ksh <= nshell) exit
+              enddo
+            endif
+          else
+            ksh= ksh+1
+            if(ksh > nshell) then
+              ksh= 1
               ish= ish+1
-              if(ksh <= ish) exit
-            enddo
+            endif
           endif
-!         ksh= ksh+1
-!         if(ksh == nshell+1) then
-!           ish= ish+1
-!           ksh= 1
-!         endif
-          if(mlcount+mbf(ish)*mbf(ksh) > mlsize) then
 !
 ! Second integral transformation
 !
-            call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis,nproc,myrank)
-            mlstart= mlstart+mlcount
-            mlcount= 0
-          endif
-        endif
-!ishimura
-        call cpu_time(t3)
-        tr1=tr1+t2-t1
-        tr2=tr2+t3-t2
-      enddo
-!ishimura
-      ish= idis(5,myrank)
-      ksh= idis(6,myrank)
-      do numshell= 1,idis(8,myrank)
-!ishimura
-        call cpu_time(t1)
-!
-! AO intengral generation and first integral transformation
-!
-        call transmoint1(trint1a,trint1b,cmowrk,xint,ish,ksh,maxdim,nocc,mlcount,mlsize)
-!ishimura
-        call cpu_time(t2)
-        mlcount= mlcount+mbf(ish)*mbf(ksh)
-        if(numshell == idis(8,myrank)) then
-          call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis,nproc,myrank)
-        else
-          ksh= ksh+nproc
-          if(ksh > nshell) then
-            do ii= 1,nshell
-              ish= ish+1
-              ksh= ksh-nshell+ish
-              if(ksh <= nshell) exit
-            enddo
-          endif
-!         ksh= ksh+1
-!         if(ksh == nshell+1) then
-!           ish= ish+1
-!           ksh= 1
-!         endif
           if(mlcount+mbf(ish)*mbf(ksh) > mlsize) then
-!
-! Second integral transformation
-!
             call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis,nproc,myrank)
             mlstart= mlstart+mlcount
             mlcount= 0
@@ -323,10 +273,10 @@ end
 end
 
 
-!-----------------------------------------------------------------------------------------
-  subroutine mp2trans2(cmovir,energymo,trint2,trint3,trint4,emp2st,nocc,nvir,ncore, &
-&                      idis,nproc,myrank,mpi_comm)
-!-----------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------
+  subroutine mp2trans34(cmovir,energymo,trint2,trint3,trint4,emp2st,nocc,nvir,ncore, &
+&                       idis,nproc,myrank,mpi_comm)
+!---------------------------------------------------------------------------------------
 !
 ! Driver of third and fourth integral transformations and MP2 energy calculation
 !
@@ -342,17 +292,17 @@ end
       use modbasis, only : nao
       use modmolecule, only : nmo
       implicit none
-      integer,intent(in) :: nocc, nvir, ncore, nproc, myrank, mpi_comm, idis(8,0:nproc-1)
+      integer,intent(in) :: nocc, nvir, ncore, nproc, myrank, mpi_comm, idis(4,0:nproc-1)
       integer :: numrecv, iproc, irecv(0:nproc-1), nocc2, ncycle, icycle, myij
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmovir(nao*nvir), energymo(nmo)
-      real(8),intent(in) :: trint2((idis(3,myrank)+idis(7,myrank)),nocc*(nocc+1)/2)
+      real(8),intent(in) :: trint2(idis(3,myrank),nocc*(nocc+1)/2)
       real(8),intent(out) :: trint3(nao*nao), trint4(nao*nao), emp2st(2)
 !
       numrecv= 1
       do iproc= 0,nproc-1
         irecv(iproc)= numrecv
-        numrecv= numrecv+idis(3,iproc)+idis(7,iproc)
+        numrecv= numrecv+idis(3,iproc)
       enddo
       nocc2= nocc*(nocc+1)/2
       ncycle=(nocc2-1)/nproc+1
@@ -414,7 +364,8 @@ end
       nbfk= mbf(ksh)
       nbfik= nbfi*nbfk
 !
-!$OMP parallel do schedule(dynamic,1) private(twoeri,trint1a,ij,kl,ik,ii,nbfj,nbfl,locbfj,locbfl,jloc,lloc)
+!$OMP parallel do schedule(dynamic,1) &
+!$OMP private(twoeri,trint1a,ij,kl,ik,ii,nbfj,nbfl,locbfj,locbfl,jloc,lloc)
       do lsh= 1,nshell
         nbfl  = mbf(lsh)
         locbfl= locbf(lsh)
@@ -499,16 +450,16 @@ end
 !
       use modbasis, only : nao
       implicit none
-      integer,intent(in) :: nocc, mlcount, mlstart, mlsize, nproc, myrank, idis(8,0:nproc-1)
+      integer,intent(in) :: nocc, mlcount, mlstart, mlsize, nproc, myrank, idis(4,0:nproc-1)
       integer :: imo, ijmo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: trint1b(nao,nocc,mlsize), cmoocc(nao,nocc)
-      real(8),intent(inout) :: trint2((idis(3,myrank)+idis(7,myrank)),nocc*(nocc+1)/2)
+      real(8),intent(inout) :: trint2(idis(3,myrank),nocc*(nocc+1)/2)
 !
       do imo= 1,nocc
         ijmo=imo*(imo-1)/2+1
         call dgemm('T','N',mlcount,imo,nao,one,trint1b(1,imo,1),nao*nocc,cmoocc,nao,zero,&
-&                  trint2(mlstart,ijmo),idis(3,myrank)+idis(7,myrank))
+&                  trint2(mlstart,ijmo),idis(3,myrank))
       enddo
       return
 end
@@ -532,10 +483,10 @@ end
       use modbasis, only : nao, nshell, mbf, locbf
       implicit none
       integer,intent(in) :: icycle, nproc, myrank, mpi_comm, irecv(0:nproc-1)
-      integer,intent(in) :: nocc2, idis(8,0:nproc-1)
+      integer,intent(in) :: nocc2, idis(4,0:nproc-1)
       integer :: iproc, jproc, ijstart, myij, ij, nsend, nrecv, ish, ksh, nbfi, nbfk
-      integer :: locbfi, locbfk, i, k, ik, num, ii
-      real(8),intent(in) :: trint2(idis(3,myrank)+idis(7,myrank),nocc2)
+      integer :: locbfi, locbfk, i, k, ik, num, ii, jcount
+      real(8),intent(in) :: trint2(idis(3,myrank),nocc2)
       real(8),intent(out) :: trint3(nao*nao), trint4(nao,nao)
 !
       jproc= myrank
@@ -547,8 +498,8 @@ end
       do iproc= myrank+1,nproc-1
         jproc= jproc-1
         if(jproc < 0) jproc= nproc-1
-        nsend= idis(3,myrank)+idis(7,myrank)
-        nrecv= idis(3,jproc)+idis(7,jproc)
+        nsend= idis(3,myrank)
+        nrecv= idis(3,jproc)
         ij= ijstart+iproc
         if(ij > nocc2) then
           nsend= 0
@@ -562,8 +513,8 @@ end
       do iproc= 0, myrank-1
         jproc= jproc-1
         if(jproc < 0) jproc= nproc-1
-        nsend= idis(3,myrank)+idis(7,myrank)
-        nrecv= idis(3,jproc)+idis(7,jproc)
+        nsend= idis(3,myrank)
+        nrecv= idis(3,jproc)
         ij= ijstart+iproc
         if(ij > nocc2) then
           nsend= 0
@@ -574,7 +525,7 @@ end
 &                           trint3(irecv(jproc)),nrecv,jproc,jproc,mpi_comm)
       enddo
 !
-      nsend= idis(3,myrank)+idis(7,myrank)
+      nsend= idis(3,myrank)
       if(myij <= nocc2) call dcopy(nsend,trint2(1,myij),1,trint3(irecv(myrank)),1)
 !
 ! Reorder of received data
@@ -584,6 +535,7 @@ end
         do iproc= 0,nproc-1
           ish= idis(1,iproc)
           ksh= idis(2,iproc)
+          jcount= 0
           do num= 1,idis(4,iproc)
             nbfi= mbf(ish)
             nbfk= mbf(ksh)
@@ -595,57 +547,34 @@ end
                 trint4(locbfk+k,locbfi+i)= trint3(ik)
               enddo
             enddo
-            ksh= ksh+nproc
-            if(ksh > ish) then
-              do ii= 1,nshell
-                ksh= ksh-ish
+!
+            if(nproc /= 1) then
+              if(jcount == iproc) then
+                ksh= ksh+2*nproc-1
+              else
+                ksh= ksh+nproc-1
+              endif
+!
+              if(ksh > nshell) then
+                do ii= 1,nshell
+                  ksh= ksh-nshell
+                  ish= ish+1
+                  if(ksh <= nshell) exit
+                enddo
+              endif
+!
+              jcount= jcount+1
+              if(jcount == nproc) jcount= 0
+            else
+              ksh= ksh+1
+              if(ksh > nshell) then
+                ksh= 1
                 ish= ish+1
-                if(ksh <= ish) exit
-              enddo
-            endif
-          enddo
-
-          ish= idis(5,iproc)
-          ksh= idis(6,iproc)
-          do num= 1,idis(8,iproc)
-            nbfi= mbf(ish)
-            nbfk= mbf(ksh)
-            locbfi= locbf(ish)
-            locbfk= locbf(ksh)
-            do i= 1,nbfi
-              do k= 1,nbfk
-                ik= ik+1
-                trint4(locbfk+k,locbfi+i)= trint3(ik)
-              enddo
-            enddo
-            ksh= ksh+nproc
-            if(ksh > nshell) then
-              do ii= 1,nshell
-                ish= ish+1
-                ksh= ksh-nshell+ish
-                if(ksh <= nshell) exit
-              enddo
+              endif
             endif
           enddo
         enddo
-
-!!$OMP parallel do private(nbfi,nbfk,locbfi,locbfk,ik)
-!        do ish= 1,nshell
-!          nbfi= mbf(ish)
-!          locbfi= locbf(ish)
-!          ik= locbfi*nao
-!          do ksh= 1,nshell
-!            nbfk= mbf(ksh)
-!            locbfk= locbf(ksh)
-!            do i= 1,nbfi
-!              do k= 1,nbfk
-!                ik= ik+1
-!                trint4(locbfk+k,locbfi+i)= trint3(ik)
-!              enddo
-!            enddo
-!          enddo
-!        enddo
-!!$OMP end parallel do
+!
       endif
       return
 end
