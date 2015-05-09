@@ -94,28 +94,24 @@
       maxsize= maxval(idis(3,0:nproc-1))
       call memset(maxsize*nocc*(nocc+1)/2)
       allocate(trint2(maxsize*nocc*(nocc+1)/2))
-      call memset(nao*nocc+nocc*maxdim**3)
-      allocate(cmowrk(nao*nocc),trint1a(nocc*maxdim**3))
 !
       call memrest(msize)
-      mlsize= msize/(nocc*nao)
+      mlsize=(msize-nao*nocc-nocc*maxdim**3)/(nocc*nao)
       if(mlsize > maxsize) then
         mlsize= maxsize
       elseif(mlsize < maxdim*maxdim) then
         mlsize= maxdim*maxdim
       endif
-      call memset(mlsize*nocc*nao)
-      allocate(trint1b(mlsize*nocc*nao))
+      call memset(nao*nocc+nocc*maxdim**3+mlsize*nocc*nao)
+      allocate(cmowrk(nao*nocc),trint1a(nocc*maxdim**3),trint1b(mlsize*nocc*nao))
 !
 ! AO intengral generation and first and second integral transformations
 !
       call mp2trans12(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
 &                     mlsize,nocc,maxdim,idis,nproc,myrank)
 !
-      deallocate(trint1b)
-      call memunset(mlsize*nocc*nao)
-      deallocate(cmowrk,trint1a)
-      call memunset(nao*nocc+nocc*maxdim**3)
+      deallocate(cmowrk,trint1a,trint1b)
+      call memunset(nao*nocc+nocc*maxdim**3+mlsize*nocc*nao)
 !
       call memset(2*nao2)
       allocate(trint3(nao2),trint4(nao2))
@@ -190,79 +186,73 @@ end
 !       
       use modbasis, only : nshell, nao, mbf, locbf
       use modthresh, only : cutint2
-      use modprint, only : iprint
       implicit none
       integer,intent(in) :: maxdim, mlsize, nocc, nproc, myrank, idis(4,0:nproc-1)
-      integer :: ish, ksh, ishnew, kshnew, mlcount, mlstart, mlshell, numshell, ii, jcount
-      integer :: jcountnew
+      integer :: ish, ksh, ish1, ksh1, mlcount, mlstart, mlshell, numshell, ii, jcount
+      integer :: jcount1
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmoocc(nao,nocc), xint(nshell*(nshell+1)/2)
       real(8),intent(out) :: cmowrk(nocc,nao), trint1a(nocc,maxdim,maxdim**2)
       real(8),intent(out) :: trint1b(mlsize*nocc*nao)
       real(8),intent(out) :: trint2(idis(3,myrank)*nocc*(nocc+1)/2)
-!ishimura
-      real(8) :: t1,t2,t3,tr1=0.0D0,tr2=0.0D0
 !
       cmowrk=transpose(cmoocc)
 !
       ish= idis(1,myrank)
       ksh= idis(2,myrank)
-      ishnew= ish
-      kshnew= ksh
+      ish1= ish
+      ksh1= ksh
       jcount= 0
-      jcountnew= 0
+      jcount1= 0
       mlcount= 0
       mlstart= 1
       mlshell=0
       do numshell= 1,idis(4,myrank)
         mlshell= mlshell+1
-        mlcount= mlcount+mbf(ishnew)*mbf(kshnew)
+        mlcount= mlcount+mbf(ish)*mbf(ksh)
         if(numshell == idis(4,myrank)) then
 !
 ! AO intengral generation and first integral transformation
 !
-          call transmoint1(trint1a,trint1b,cmowrk,xint,ish,ksh,maxdim,nocc,jcount, &
+          call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,nocc,jcount1, &
 &                          mlshell,mlsize,nproc,myrank)
 !
 ! Second integral transformation
 !
           call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis,nproc,myrank)
         else
-          if(jcountnew == myrank) then
-            kshnew= kshnew+2*nproc-1
+          if(jcount == myrank) then
+            ksh= ksh+2*nproc-1
           else
-            kshnew= kshnew+nproc-1
+            ksh= ksh+nproc-1
           endif
-          jcountnew= jcountnew+1
-          if(jcountnew == nproc) jcountnew= 0
+          jcount= jcount+1
+          if(jcount == nproc) jcount= 0
 !
-          if(kshnew > nshell) then
+          if(ksh > nshell) then
             do ii= 1,nshell
-              kshnew= kshnew-nshell
-              ishnew= ishnew+1
-              if(kshnew <= nshell) exit
+              ksh= ksh-nshell
+              ish= ish+1
+              if(ksh <= nshell) exit
             enddo
           endif
-          if(mlcount+mbf(ishnew)*mbf(kshnew) > mlsize) then
-            call transmoint1(trint1a,trint1b,cmowrk,xint,ish,ksh,maxdim,nocc,jcount, &
+          if(mlcount+mbf(ish)*mbf(ksh) > mlsize) then
+            call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,nocc,jcount1, &
 &                            mlshell,mlsize,nproc,myrank)
             call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis,nproc,myrank)
             mlstart= mlstart+mlcount
             mlshell= 0
             mlcount= 0
-            jcount= jcountnew
-            ish= ishnew
-            ksh= kshnew
+            jcount1= jcount
+            ish1= ish
+            ksh1= ksh
           endif
         endif
-!       call cpu_time(t3)
-!       tr1=tr1+t2-t1
-!       tr2=tr2+t3-t2
       enddo
 !
-      if(iprint >= 3) then
-        write(*,'("Time for Tr1=",f9.3,"  Time for Tr2=",f9.3,i3)')tr1,tr2,myrank
-      endif
+!     if(iprint >= 3) then
+!       write(*,'("Time for Tr1=",f9.3,"  Time for Tr2=",f9.3,i3)')tr1,tr2,myrank
+!     endif
       return
 end
 
@@ -336,14 +326,14 @@ end
 !
 ! In  : cmowrk  (Transposed MO coefficient matrix)
 !       xint    (Exchange integral matrix)
-!       ish,lsh (Basis shell indices)
 !       maxdim  (Maximum size of basis functions in a shell)
 !       nocc    (Number of active occupied MOs)
 !       jcount  (Counter of basis shell pair)
 !       mlshell (Number of shell pairs)
 !       mlsize  (Size of trint1b)
 ! Out : trint1b (First-transformed integrals, [s,i,ml])
-! Work: trint1a (First-transformed integrals, [i,s,ml])
+!       trint1a (First-transformed integrals, [i,s,ml])
+! Inout : ish,ksh (Basis shell indices)
 !
       use modbasis, only : nao, nshell, mbf, locbf
       use modthresh, only : cutint2
@@ -381,7 +371,7 @@ end
       enddo
 !
 !$OMP parallel do schedule(dynamic,1) collapse(2) private(ish,ksh,mlcount,nbfi,nbfk,nbfl, &
-!$OMP nbfik,locbfl,trint1a,twoeri,kl,nbfj,locbfj,ij,ii,ik,jloc,lloc)
+!$OMP nbfik,locbfl,trint1a,kl,nbfj,locbfj,ij,twoeri,ii,ik,jloc,lloc)
       do ml= 1,mlshell
         do lsh= 1,nshell
           ish= mlindex(1,ml)
@@ -574,30 +564,20 @@ end
               enddo
             enddo
 !
-            if(nproc /= 1) then
-              if(jcount == iproc) then
-                ksh= ksh+2*nproc-1
-              else
-                ksh= ksh+nproc-1
-              endif
-!
-              if(ksh > nshell) then
-                do ii= 1,nshell
-                  ksh= ksh-nshell
-                  ish= ish+1
-                  if(ksh <= nshell) exit
-                enddo
-              endif
-!
-              jcount= jcount+1
-              if(jcount == nproc) jcount= 0
+            if(jcount == iproc) then
+              ksh= ksh+2*nproc-1
             else
-              ksh= ksh+1
-              if(ksh > nshell) then
-                ksh= 1
-                ish= ish+1
-              endif
+              ksh= ksh+nproc-1
             endif
+            if(ksh > nshell) then
+              do ii= 1,nshell
+                ksh= ksh-nshell
+                ish= ish+1
+                if(ksh <= nshell) exit
+              enddo
+            endif
+            jcount= jcount+1
+            if(jcount == nproc) jcount= 0
           enddo
         enddo
 !
