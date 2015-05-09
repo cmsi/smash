@@ -1,4 +1,4 @@
-! Copyright 2014  Kazuya Ishimura
+! Copyright 2014-2015  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@
       real(8),allocatable :: trint2(:), cmowrk(:), trint1a(:), trint1b(:)
       real(8),allocatable :: trint3(:), trint4(:)
       real(8) :: emp2st(2), emp2stsum(2)
-      integer :: jproc
 !
       ncore= ncorecalc()
       emp2= zero
@@ -194,7 +193,8 @@ end
       use modprint, only : iprint
       implicit none
       integer,intent(in) :: maxdim, mlsize, nocc, nproc, myrank, idis(4,0:nproc-1)
-      integer :: ish, ksh, mlcount, mlstart, numshell, ii, jcount
+      integer :: ish, ksh, ishnew, kshnew, mlcount, mlstart, mlshell, numshell, ii, jcount
+      integer :: jcountnew
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmoocc(nao,nocc), xint(nshell*(nshell+1)/2)
       real(8),intent(out) :: cmowrk(nocc,nao), trint1a(nocc,maxdim,maxdim**2)
@@ -207,63 +207,57 @@ end
 !
       ish= idis(1,myrank)
       ksh= idis(2,myrank)
+      ishnew= ish
+      kshnew= ksh
       jcount= 0
+      jcountnew= 0
       mlcount= 0
       mlstart= 1
+      mlshell=0
       do numshell= 1,idis(4,myrank)
-!ishimura
-        call cpu_time(t1)
+        mlshell= mlshell+1
+        mlcount= mlcount+mbf(ishnew)*mbf(kshnew)
+        if(numshell == idis(4,myrank)) then
 !
 ! AO intengral generation and first integral transformation
 !
-        call transmoint1(trint1a,trint1b,cmowrk,xint,ish,ksh,maxdim,nocc,mlcount,mlsize)
-!ishimura
-        call cpu_time(t2)
-        mlcount= mlcount+mbf(ish)*mbf(ksh)
-        if(numshell == idis(4,myrank)) then
+          call transmoint1(trint1a,trint1b,cmowrk,xint,ish,ksh,maxdim,nocc,jcount, &
+&                          mlshell,mlsize,nproc,myrank)
 !
 ! Second integral transformation
 !
           call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis,nproc,myrank)
-            mlstart= mlstart+mlcount
-            mlcount= 0
         else
-          if(nproc /= 1) then
-            if(jcount == myrank) then
-              ksh= ksh+2*nproc-1
-            else
-              ksh= ksh+nproc-1
-            endif
-            jcount= jcount+1
-            if(jcount == nproc) jcount= 0
-!  
-            if(ksh > nshell) then
-              do ii= 1,nshell
-                ksh= ksh-nshell
-                ish= ish+1
-                if(ksh <= nshell) exit
-              enddo
-            endif
+          if(jcountnew == myrank) then
+            kshnew= kshnew+2*nproc-1
           else
-            ksh= ksh+1
-            if(ksh > nshell) then
-              ksh= 1
-              ish= ish+1
-            endif
+            kshnew= kshnew+nproc-1
           endif
+          jcountnew= jcountnew+1
+          if(jcountnew == nproc) jcountnew= 0
 !
-! Second integral transformation
-!
-          if(mlcount+mbf(ish)*mbf(ksh) > mlsize) then
+          if(kshnew > nshell) then
+            do ii= 1,nshell
+              kshnew= kshnew-nshell
+              ishnew= ishnew+1
+              if(kshnew <= nshell) exit
+            enddo
+          endif
+          if(mlcount+mbf(ishnew)*mbf(kshnew) > mlsize) then
+            call transmoint1(trint1a,trint1b,cmowrk,xint,ish,ksh,maxdim,nocc,jcount, &
+&                            mlshell,mlsize,nproc,myrank)
             call transmoint2(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis,nproc,myrank)
             mlstart= mlstart+mlcount
+            mlshell= 0
             mlcount= 0
+            jcount= jcountnew
+            ish= ishnew
+            ksh= kshnew
           endif
         endif
-!ishimura
-        call cpu_time(t3)
-        tr1=tr1+t2-t1
-        tr2=tr2+t3-t2
+!       call cpu_time(t3)
+!       tr1=tr1+t2-t1
+!       tr2=tr2+t3-t2
       enddo
 !
       if(iprint >= 3) then
@@ -332,9 +326,10 @@ end
 end
 
 
-!-----------------------------------------------------------------------------------------
-  subroutine transmoint1(trint1a,trint1b,cmowrk,xint,ish,ksh,maxdim,nocc,mlcount,mlsize)
-!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------
+  subroutine transmoint1(trint1a,trint1b,cmowrk,xint,ish,ksh,maxdim,nocc,jcount, &
+&                        mlshell,mlsize,nproc,myrank)
+!-----------------------------------------------------------------------------------
 !
 ! AO intengral generation and first-quarter integral transformation
 !    (mn|ls) -> (mi|ls)
@@ -344,7 +339,8 @@ end
 !       ish,lsh (Basis shell indices)
 !       maxdim  (Maximum size of basis functions in a shell)
 !       nocc    (Number of active occupied MOs)
-!       mlcount (Start index of transformed AOs)
+!       jcount  (Counter of basis shell pair)
+!       mlshell (Number of shell pairs)
 !       mlsize  (Size of trint1b)
 ! Out : trint1b (First-transformed integrals, [s,i,ml])
 ! Work: trint1a (First-transformed integrals, [i,s,ml])
@@ -352,81 +348,111 @@ end
       use modbasis, only : nao, nshell, mbf, locbf
       use modthresh, only : cutint2
       implicit none
-      integer,intent(in) :: ish, ksh, maxdim, nocc, mlcount, mlsize
-      integer :: nbfi, nbfj, nbfk, nbfl, nbfik, locbfj, locbfl, jsh, lsh, ik, i, j, k, l
-      integer :: imo, kl, ij, ii, jloc, lloc
+      integer,intent(in) :: maxdim, nocc, mlshell, mlsize, nproc, myrank
+      integer,intent(inout) :: ish, ksh, jcount
+      integer :: mlcount, ml, mlindex(3,mlshell), jsh, lsh, nbfi, nbfj, nbfk, nbfl
+      integer :: nbfik, locbfj, locbfl, moi, i, j, k, l, ik, kl, ij, ii, jloc, lloc
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmowrk(nocc,nao), xint(nshell*(nshell+1)/2)
       real(8),intent(out) :: trint1a(nocc,maxdim,maxdim*maxdim), trint1b(nao,nocc,mlsize)
       real(8) :: twoeri(maxdim,maxdim,maxdim,maxdim)
 !
-      nbfi= mbf(ish)
-      nbfk= mbf(ksh)
-      nbfik= nbfi*nbfk
+      mlcount= 0
+      do ml= 1,mlshell
+        mlindex(1,ml)= ish
+        mlindex(2,ml)= ksh
+        mlindex(3,ml)= mlcount
+        mlcount= mlcount+mbf(ish)*mbf(ksh)
+        if(jcount == myrank) then
+          ksh= ksh+2*nproc-1
+        else
+          ksh= ksh+nproc-1
+        endif
+        jcount= jcount+1
+        if(jcount == nproc) jcount= 0
 !
-!$OMP parallel do schedule(dynamic,1) &
-!$OMP private(twoeri,trint1a,ij,kl,ik,ii,nbfj,nbfl,locbfj,locbfl,jloc,lloc)
-      do lsh= 1,nshell
-        nbfl  = mbf(lsh)
-        locbfl= locbf(lsh)
-        do ik= 1,nbfik
-          do l= 1,nbfl
-            do imo= 1,nocc
-              trint1a(imo,l,ik)= zero
+        if(ksh > nshell) then
+          do ii= 1,nshell
+            ksh= ksh-nshell
+            ish= ish+1
+            if(ksh <= nshell) exit
+          enddo
+        endif
+      enddo
+!
+!$OMP parallel do schedule(dynamic,1) collapse(2) private(ish,ksh,mlcount,nbfi,nbfk,nbfl, &
+!$OMP nbfik,locbfl,trint1a,twoeri,kl,nbfj,locbfj,ij,ii,ik,jloc,lloc)
+      do ml= 1,mlshell
+        do lsh= 1,nshell
+          ish= mlindex(1,ml)
+          ksh= mlindex(2,ml)
+          mlcount= mlindex(3,ml)
+          nbfi= mbf(ish)
+          nbfk= mbf(ksh)
+          nbfl= mbf(lsh)
+          nbfik= nbfi*nbfk
+          locbfl= locbf(lsh)
+          do ik= 1,nbfik
+            do l= 1,nbfl
+              do moi= 1,nocc
+                trint1a(moi,l,ik)= zero
+              enddo
             enddo
           enddo
-        enddo
-        if(ksh >= lsh) then
-          kl= ksh*(ksh-1)/2+lsh
-        else
-          kl= lsh*(lsh-1)/2+ksh
-        endif
-!
-        do jsh= 1,nshell
-          nbfj  = mbf(jsh)
-          locbfj= locbf(jsh)
-          if(ish >= jsh) then
-            ij= ish*(ish-1)/2+jsh
+          if(ksh >= lsh) then
+            kl= ksh*(ksh-1)/2+lsh
           else
-            ij= jsh*(jsh-1)/2+ish
+            kl= lsh*(lsh-1)/2+ksh
           endif
+!
+          do jsh= 1,nshell
+            nbfj  = mbf(jsh)
+            locbfj= locbf(jsh)
+            if(ish >= jsh) then
+              ij= ish*(ish-1)/2+jsh
+            else
+              ij= jsh*(jsh-1)/2+ish
+            endif
 !
 ! AO integral calculation
 !
-          if(xint(ij)*xint(kl) < cutint2) cycle
-          call calc2eri(twoeri,ksh,lsh,ish,jsh,maxdim)
+            if(xint(ij)*xint(kl) < cutint2) cycle
+            call calc2eri(twoeri,ksh,lsh,ish,jsh,maxdim)
 !
 ! First integral transformation
 !
-          do i= 1,nbfi
-            ii=(i-1)*nbfk
-            do k= 1,nbfk
-              ik= ii+k
-              do l= 1,nbfl
-                do j= 1,nbfj
-                  jloc= locbfj+j
-                  if(abs(twoeri(j,i,l,k)) < cutint2) cycle
-                  do imo= 1,nocc
-                    trint1a(imo,l,ik)= trint1a(imo,l,ik)+twoeri(j,i,l,k)*cmowrk(imo,jloc)
+            do i= 1,nbfi
+              ii=(i-1)*nbfk
+              do k= 1,nbfk
+                ik= ii+k
+                do l= 1,nbfl
+                  do j= 1,nbfj
+                    jloc= locbfj+j
+                    if(abs(twoeri(j,i,l,k)) < cutint2) cycle
+                    do moi= 1,nocc
+                      trint1a(moi,l,ik)= trint1a(moi,l,ik)+twoeri(j,i,l,k)*cmowrk(moi,jloc)
+                    enddo
                   enddo
                 enddo
               enddo
             enddo
           enddo
-        enddo
 !
 ! Reorder of first-transformed integrals
 !
-        do ik= 1,nbfik
-          do l= 1,nbfl
-            lloc= locbfl+l
-            do imo= 1,nocc
-              trint1b(lloc,imo,mlcount+ik)= trint1a(imo,l,ik)
+          do ik= 1,nbfik
+            do l= 1,nbfl
+              lloc= locbfl+l
+              do moi= 1,nocc
+                trint1b(lloc,moi,mlcount+ik)= trint1a(moi,l,ik)
+              enddo
             enddo
           enddo
+!
         enddo
       enddo
 !$OMP end parallel do
+!
       return
 end
 !
@@ -451,15 +477,15 @@ end
       use modbasis, only : nao
       implicit none
       integer,intent(in) :: nocc, mlcount, mlstart, mlsize, nproc, myrank, idis(4,0:nproc-1)
-      integer :: imo, ijmo
+      integer :: moi, moij
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: trint1b(nao,nocc,mlsize), cmoocc(nao,nocc)
       real(8),intent(inout) :: trint2(idis(3,myrank),nocc*(nocc+1)/2)
 !
-      do imo= 1,nocc
-        ijmo=imo*(imo-1)/2+1
-        call dgemm('T','N',mlcount,imo,nao,one,trint1b(1,imo,1),nao*nocc,cmoocc,nao,zero,&
-&                  trint2(mlstart,ijmo),idis(3,myrank))
+      do moi= 1,nocc
+        moij=moi*(moi-1)/2+1
+        call dgemm('T','N',mlcount,moi,nao,one,trint1b(1,moi,1),nao*nocc,cmoocc,nao,zero,&
+&                  trint2(mlstart,moij),idis(3,myrank))
       enddo
       return
 end
