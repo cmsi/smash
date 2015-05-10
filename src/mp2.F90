@@ -28,8 +28,9 @@
       use modenergy, only : enuc, escf, escfe, emp2, escsmp2
       implicit none
       integer,intent(in) :: nproc, myrank, mpi_comm
-      integer :: ncore, ncorecalc, maxdim, nocc, nvir, nao2, iproc, icount
-      integer :: idis(4,0:nproc-1), maxsize, ish, jsh, msize, mlsize
+      integer :: ncore, ncorecalc, maxdim, nocc, nvir, nao2, nocc3, iproc, icount
+      integer :: idis(4,0:nproc-1), maxsize, ish, jsh, msize, mlsize, memneed
+      integer :: numocc3, npass, ipass
       real(8),parameter :: zero=0.0D+00, three=3.0D+00, p12=1.2D+00
       real(8),intent(in) :: cmo(nao,nao), energymo(nmo), xint(nshell*(nshell+1)/2)
       real(8),allocatable :: trint2(:), cmowrk(:), trint1a(:), trint1b(:)
@@ -43,6 +44,7 @@
       nocc= neleca-ncore
       nvir= nmo-neleca
       nao2= nao*nao
+      nocc3= nocc*(nocc+1)/2
 !
       if(master) then
         write(*,'(" ----------------------------------------------")')
@@ -51,7 +53,7 @@
         write(*,'("     Number of basis shells            =",i5)')nshell
         write(*,'("     Number of correlated occupied MOs =",i5)')nocc
         write(*,'("     Number of virtual MOs             =",i5)')nvir
-        write(*,'(" ----------------------------------------------",/)')
+        write(*,'(" ----------------------------------------------")')
       endif
 !
       icount= 0
@@ -90,41 +92,110 @@
         idis(3,iproc)= nao*nao
         idis(4,iproc)= nshell*nshell
       endif
-!
       maxsize= maxval(idis(3,0:nproc-1))
-      call memset(maxsize*nocc*(nocc+1)/2)
-      allocate(trint2(maxsize*nocc*(nocc+1)/2))
+!
+! Check available memory size and judge the number of passes
 !
       call memrest(msize)
-      mlsize=(msize-nao*nocc-nocc*maxdim**3)/(nocc*nao)
-      if(mlsize > maxsize) then
-        mlsize= maxsize
-      elseif(mlsize < maxdim*maxdim) then
-        mlsize= maxdim*maxdim
+      memneed= max(nao*nocc+nocc*maxdim**3+nocc*nao*maxdim**2,nao*nao*2)
+      numocc3=(msize-memneed)/maxsize
+      if(numocc3 <= 0) then
+        if(master) then
+          call memset(maxsize+memneed)
+          call iabort
+        endif
+      elseif(numocc3 >= nocc3) then
+!
+! Single pass
+!
+        if(master) then
+          write(*,'(" == Single pass calculation ==")')
+          write(*,'("    Start first and second transformations")')
+        endif
+        call memset(maxsize*nocc3)
+        allocate(trint2(maxsize*nocc3))
+!  
+        call memrest(msize)
+        mlsize=(msize-nao*nocc-nocc*maxdim**3)/(nocc*nao)
+        if(mlsize > maxsize) then
+          mlsize= maxsize
+        elseif(mlsize < maxdim*maxdim) then
+          mlsize= maxdim*maxdim
+        endif
+        call memset(nao*nocc+nocc*maxdim**3+mlsize*nocc*nao)
+        allocate(cmowrk(nao*nocc),trint1a(nocc*maxdim**3),trint1b(mlsize*nocc*nao))
+!
+!   AO intengral generation and first and second integral transformations
+!
+        call mp2trans12(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
+&                       mlsize,nocc,maxdim,idis,nproc,myrank)
+!
+        deallocate(cmowrk,trint1a,trint1b)
+        call memunset(nao*nocc+nocc*maxdim**3+mlsize*nocc*nao)
+!
+        call memset(2*nao2)
+        allocate(trint3(nao2),trint4(nao2))
+!
+!   Third and fourth integral transformations and MP2 energy calculation
+!
+        if(master) write(*,'("    Start third and fourth transformations")')
+        call mp2trans34(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,nocc,nvir,ncore, &
+&                       idis,nproc,myrank,mpi_comm)
+!
+        deallocate(trint3,trint4)
+        call memunset(2*nao2)
+        deallocate(trint2)
+        call memunset(maxsize*nocc3)
+      else
+!
+! Multiple pass
+!
+        npass= nocc3/numocc3
+        numocc3=(nocc3-1)/npass+1
+        if(master) then
+          write(*,'(" == Multiple pass calculation ==")')
+          write(*,'("    Number of passes :",i5)')npass
+        endif
+!
+        call memset(maxsize*numocc3)
+        allocate(trint2(maxsize*numocc3))
+!
+        call memrest(msize)
+        mlsize=(msize-nao*nocc-nocc*maxdim**3)/(nocc*nao)
+        if(mlsize > maxsize) then
+          mlsize= maxsize
+        elseif(mlsize < maxdim*maxdim) then
+          mlsize= maxdim*maxdim
+        endif
+!
+        do ipass= 1,npass
+          call memset(nao*nocc+nocc*maxdim**3+mlsize*nocc*nao)
+          allocate(cmowrk(nao*nocc),trint1a(nocc*maxdim**3),trint1b(mlsize*nocc*nao))
+!
+!   AO intengral generation and first and second integral transformations
+!
+        if(master) write(*,'("    Start first and second transformations of Pass",i5)')ipass
+!?          call mp2trans12m(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
+!?&                          mlsize,nocc,numocc3,maxdim,idis,nproc,myrank)
+!
+          deallocate(cmowrk,trint1a,trint1b)
+          call memunset(nao*nocc+nocc*maxdim**3+mlsize*nocc*nao)
+!
+          call memset(2*nao2)
+          allocate(trint3(nao2),trint4(nao2))
+!
+!   Third and fourth integral transformations and MP2 energy calculation
+!
+        if(master) write(*,'("    Start third and fourth transformations of Pass",i5)')ipass
+!?          call mp2trans34m(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,nocc,nvir,ncore, &
+!?&                          idis,nproc,myrank,mpi_comm)
+!
+          deallocate(trint3,trint4)
+          call memunset(2*nao2)
+          deallocate(trint2)
+          call memunset(maxsize*nocc3)
+        enddo
       endif
-      call memset(nao*nocc+nocc*maxdim**3+mlsize*nocc*nao)
-      allocate(cmowrk(nao*nocc),trint1a(nocc*maxdim**3),trint1b(mlsize*nocc*nao))
-!
-! AO intengral generation and first and second integral transformations
-!
-      call mp2trans12(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
-&                     mlsize,nocc,maxdim,idis,nproc,myrank)
-!
-      deallocate(cmowrk,trint1a,trint1b)
-      call memunset(nao*nocc+nocc*maxdim**3+mlsize*nocc*nao)
-!
-      call memset(2*nao2)
-      allocate(trint3(nao2),trint4(nao2))
-!
-! Third and fourth integral transformations and MP2 energy calculation
-!
-      call mp2trans34(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,nocc,nvir,ncore, &
-&                     idis,nproc,myrank,mpi_comm)
-!
-      deallocate(trint3,trint4)
-      call memunset(2*nao2)
-      deallocate(trint2)
-      call memunset(maxsize*nocc*(nocc+1)/2)
 !
       call para_allreducer(emp2st,emp2stsum,2,mpi_comm)
       emp2= emp2stsum(1)+emp2stsum(2)

@@ -18,7 +18,7 @@
 !
 ! Set maximum memory size
 !
-      use modmemory, only : memmax, memory, mem
+      use modmemory, only : memmax, memory
       implicit none
       integer :: lock, locm, locg, loct, locb
 !
@@ -126,10 +126,10 @@ end
 ! Check available memory size
 !
       use modmemory, only : memmax, memused
-      use modwarn, only : nwarn
       implicit none
       integer,intent(out) :: msize
 !
       msize= memmax-memused
       return
 end
+
