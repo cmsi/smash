@@ -29,12 +29,10 @@
       implicit none
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ncore, ncorecalc, maxdim, nocc, nvir, nao2, nocc3, iproc, icount
-      integer :: idis(4,0:nproc-1), maxsize, ish, jsh, msize, mlsize, memneed
-      integer :: numocc3, npass, ipass
+      integer :: idis(4,0:nproc-1), maxsize, ish, jsh, msize, memneed
+      integer :: numocc3, npass
       real(8),parameter :: zero=0.0D+00, three=3.0D+00, p12=1.2D+00
       real(8),intent(in) :: cmo(nao,nao), energymo(nmo), xint(nshell*(nshell+1)/2)
-      real(8),allocatable :: trint2(:), cmowrk(:), trint1a(:), trint1b(:)
-      real(8),allocatable :: trint3(:), trint4(:)
       real(8) :: emp2st(2), emp2stsum(2)
 !
       ncore= ncorecalc()
@@ -99,102 +97,31 @@
       call memrest(msize)
       memneed= max(nao*nocc+nocc*maxdim**3+nocc*nao*maxdim**2,nao*nao*2)
       numocc3=(msize-memneed)/maxsize
+!
       if(numocc3 <= 0) then
         if(master) then
           call memset(maxsize+memneed)
           call iabort
         endif
-      elseif(numocc3 >= nocc3) then
 !
 ! Single pass
 !
-        if(master) then
-          write(*,'(" == Single pass calculation ==")')
-          write(*,'("    Start first and second transformations")')
-        endif
-        call memset(maxsize*nocc3)
-        allocate(trint2(maxsize*nocc3))
-!  
-        call memrest(msize)
-        mlsize=(msize-nao*nocc-nocc*maxdim**3)/(nocc*nao)
-        if(mlsize > maxsize) then
-          mlsize= maxsize
-        elseif(mlsize < maxdim*maxdim) then
-          mlsize= maxdim*maxdim
-        endif
-        call memset(nao*nocc+nocc*maxdim**3+mlsize*nocc*nao)
-        allocate(cmowrk(nao*nocc),trint1a(nocc*maxdim**3),trint1b(mlsize*nocc*nao))
-!
-!   AO intengral generation and first and second integral transformations
-!
-        call mp2trans12(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
-&                       mlsize,nocc,maxdim,idis,nproc,myrank)
-!
-        deallocate(cmowrk,trint1a,trint1b)
-        call memunset(nao*nocc+nocc*maxdim**3+mlsize*nocc*nao)
-!
-        call memset(2*nao2)
-        allocate(trint3(nao2),trint4(nao2))
-!
-!   Third and fourth integral transformations and MP2 energy calculation
-!
-        if(master) write(*,'("    Start third and fourth transformations")')
-        call mp2trans34(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,nocc,nvir,ncore, &
-&                       idis,nproc,myrank,mpi_comm)
-!
-        deallocate(trint3,trint4)
-        call memunset(2*nao2)
-        deallocate(trint2)
-        call memunset(maxsize*nocc3)
-      else
+      elseif(numocc3 >= nocc3) then
+        if(master) write(*,'(" == Single pass calculation ==")')
+        call mp2single(emp2st,cmo,energymo,xint,nocc,nvir,ncore,maxsize,maxdim,idis, &
+&                      nproc,myrank,mpi_comm)
 !
 ! Multiple pass
 !
-        npass= nocc3/numocc3
+      else
+        npass=(nocc3-1)/numocc3+1
         numocc3=(nocc3-1)/npass+1
         if(master) then
           write(*,'(" == Multiple pass calculation ==")')
           write(*,'("    Number of passes :",i5)')npass
         endif
-!
-        call memset(maxsize*numocc3)
-        allocate(trint2(maxsize*numocc3))
-!
-        call memrest(msize)
-        mlsize=(msize-nao*nocc-nocc*maxdim**3)/(nocc*nao)
-        if(mlsize > maxsize) then
-          mlsize= maxsize
-        elseif(mlsize < maxdim*maxdim) then
-          mlsize= maxdim*maxdim
-        endif
-!
-        do ipass= 1,npass
-          call memset(nao*nocc+nocc*maxdim**3+mlsize*nocc*nao)
-          allocate(cmowrk(nao*nocc),trint1a(nocc*maxdim**3),trint1b(mlsize*nocc*nao))
-!
-!   AO intengral generation and first and second integral transformations
-!
-        if(master) write(*,'("    Start first and second transformations of Pass",i5)')ipass
-!?          call mp2trans12m(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
-!?&                          mlsize,nocc,numocc3,maxdim,idis,nproc,myrank)
-!
-          deallocate(cmowrk,trint1a,trint1b)
-          call memunset(nao*nocc+nocc*maxdim**3+mlsize*nocc*nao)
-!
-          call memset(2*nao2)
-          allocate(trint3(nao2),trint4(nao2))
-!
-!   Third and fourth integral transformations and MP2 energy calculation
-!
-        if(master) write(*,'("    Start third and fourth transformations of Pass",i5)')ipass
-!?          call mp2trans34m(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,nocc,nvir,ncore, &
-!?&                          idis,nproc,myrank,mpi_comm)
-!
-          deallocate(trint3,trint4)
-          call memunset(2*nao2)
-          deallocate(trint2)
-          call memunset(maxsize*nocc3)
-        enddo
+        call mp2multi(emp2st,cmo,energymo,xint,nocc,nvir,ncore,maxsize,maxdim,idis, &
+&                     npass,numocc3,nproc,myrank,mpi_comm)
       endif
 !
       call para_allreducer(emp2st,emp2stsum,2,mpi_comm)
@@ -237,12 +164,202 @@ end
 end
 
 
+!---------------------------------------------------------------------------------------
+  subroutine mp2single(emp2st,cmo,energymo,xint,nocc,nvir,ncore,maxsize,maxdim,idis, &
+&                      nproc,myrank,mpi_comm)
+!---------------------------------------------------------------------------------------
+!
+! Driver of single pass MP2 energy calculation
+!
+! In  : cmo     (MO coefficient matrix)
+!       energymo(MO energies)
+!       xint    (Exchange integral matrix)
+!       nocc    (Number of active occupied MOs)
+!       nvir    (Number of active virtual MOs)
+!       ncore   (Number of core occupied MOs)
+!       maxsize (Maximum size of basis function pairs)
+!       maxdim  (Maximum size of basis functions in a shell)
+!       idis    (Information for parallelization)
+! Out : emp2st  (Partial MP2 energies)
+!
+      use modparallel, only : master
+      use modbasis, only : nshell, nao
+      use modmolecule, only : neleca, nmo
+      implicit none
+      integer,intent(in) :: nocc, nvir, ncore, maxsize, maxdim, nproc, myrank, mpi_comm
+      integer,intent(in) :: idis(4,0:nproc-1)
+      integer :: nocc3, nao2, msize, mlsize
+      real(8),intent(in) :: cmo(nao,nao), energymo(nmo), xint(nshell*(nshell+1)/2)
+      real(8),intent(inout) :: emp2st(2)
+      real(8),allocatable :: trint2(:), cmowrk(:), trint1a(:), trint1b(:)
+      real(8),allocatable :: trint3(:), trint4(:)
+!
+      nocc3= nocc*(nocc+1)/2
+      nao2 = nao*nao
+!
+      call memset(maxsize*nocc3)
+      allocate(trint2(maxsize*nocc3))
+      call memrest(msize)
+      mlsize=(msize-nao*nocc-nocc*maxdim**3)/(nocc*nao)
+      if(mlsize > maxsize) then
+        mlsize= maxsize
+      elseif(mlsize < maxdim*maxdim) then
+        mlsize= maxdim*maxdim
+      endif
+      call memset(nao*nocc+nocc*maxdim**3+mlsize*nocc*nao)
+      allocate(cmowrk(nao*nocc),trint1a(nocc*maxdim**3),trint1b(mlsize*nocc*nao))
+!
+! AO intengral generation and first and second integral transformations
+!
+      if(master) write(*,'("    Start first and second integral transformations")')
+      call mp2trans12(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
+&                     mlsize,nocc,maxdim,idis,nproc,myrank)
+!
+      deallocate(cmowrk,trint1a,trint1b)
+      call memunset(nao*nocc+nocc*maxdim**3+mlsize*nocc*nao)
+!
+      call memset(2*nao2)
+      allocate(trint3(nao2),trint4(nao2))
+!
+! Third and fourth integral transformations and MP2 energy calculation
+!
+      if(master) write(*,'("    Start third and fourth integral transformations")')
+      call mp2trans34(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,nocc,nvir,ncore, &
+&                     idis,nproc,myrank,mpi_comm)
+!
+      deallocate(trint3,trint4)
+      call memunset(2*nao2)
+      deallocate(trint2)
+      call memunset(maxsize*nocc3)
+!
+      return
+end
+
+
+!---------------------------------------------------------------------------------------
+  subroutine mp2multi(emp2st,cmo,energymo,xint,nocc,nvir,ncore,maxsize,maxdim,idis, &
+&                     npass,numocc3,nproc,myrank,mpi_comm)
+!---------------------------------------------------------------------------------------
+!
+! Driver of single pass MP2 energy calculation
+!
+! In  : cmo     (MO coefficient matrix)
+!       energymo(MO energies)
+!       xint    (Exchange integral matrix)
+!       nocc    (Number of active occupied MOs)
+!       nvir    (Number of active virtual MOs)
+!       ncore   (Number of core occupied MOs)
+!       maxsize (Maximum size of basis function pairs)
+!       maxdim  (Maximum size of basis functions in a shell)
+!       idis    (Information for parallelization)
+!       npass   (Number of passes)
+!       numocc3 (Number of active occupied MO pairs per pass)
+! Out : emp2st  (Partial MP2 energies)
+!
+      use modparallel, only : master
+      use modbasis, only : nshell, nao
+      use modmolecule, only : neleca, nmo
+      implicit none
+      integer,intent(in) :: nocc, nvir, ncore, maxsize, maxdim, nproc, myrank, mpi_comm
+      integer,intent(in) :: idis(4,0:nproc-1), npass, numocc3
+      integer :: nocc3, nao2, msize, mlsize, ijindex(4,npass), icount, ipass, moi, moj, numij
+      real(8),intent(in) :: cmo(nao,nao), energymo(nmo), xint(nshell*(nshell+1)/2)
+      real(8),intent(inout) :: emp2st(2)
+      real(8),allocatable :: trint2(:), cmowrk(:), trint1a(:), trint1b(:)
+      real(8),allocatable :: trint3(:), trint4(:)
+!
+      nocc3= nocc*(nocc+1)/2
+      nao2 = nao*nao
+      icount= 0
+      ipass= 1
+!
+! ijindex(1,*): first moi
+! ijindex(2,*): first moj
+! ijindex(3,*): last moi
+! ijindex(4,*): last moj
+!
+      do moi= 1,nocc
+        do moj= 1,moi
+          icount=icount+1
+          if(icount == numocc3) then
+            ijindex(3,ipass)= moi
+            ijindex(4,ipass)= moj
+            icount= 0
+            ipass= ipass+1
+          endif
+        enddo
+      enddo
+      ijindex(3,npass)=nocc
+      ijindex(4,npass)=nocc
+      ijindex(1,1)=1
+      ijindex(2,1)=1
+      do ipass=2,npass
+        moi= ijindex(3,ipass-1)
+        moj= ijindex(4,ipass-1)+1
+        if(moj > moi) then
+          moi= moi+1
+          moj= 1
+        endif
+        ijindex(1,ipass)=moi
+        ijindex(2,ipass)=moj
+      enddo
+!
+      call memset(maxsize*numocc3)
+      allocate(trint2(maxsize*numocc3))
+      call memrest(msize)
+      mlsize=(msize-nao*nocc-nocc*maxdim**3)/(nocc*nao)
+      if(mlsize > maxsize) then
+        mlsize= maxsize
+      elseif(mlsize < maxdim*maxdim) then
+        mlsize= maxdim*maxdim
+      endif
+!
+!
+! Start multiple pass
+!
+      numij= numocc3
+      do ipass= 1,npass
+        if(ipass == npass) numij= nocc3-(npass-1)*numocc3
+        call memset(nao*nocc+nocc*maxdim**3+mlsize*nocc*nao)
+        allocate(cmowrk(nao*nocc),trint1a(nocc*maxdim**3),trint1b(mlsize*nocc*nao))
+!
+! AO intengral generation and first and second integral transformations
+!
+        if(master) &
+&         write(*,'("    Start first and second integral transformations of Pass",i5)')ipass
+        call mp2trans12m(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
+&                        mlsize,nocc,maxdim,idis,numij,ijindex(1,ipass),nproc,myrank)
+!
+        deallocate(cmowrk,trint1a,trint1b)
+        call memunset(nao*nocc+nocc*maxdim**3+mlsize*nocc*nao)
+!
+        call memset(2*nao2)
+        allocate(trint3(nao2),trint4(nao2))
+!
+! Third and fourth integral transformations and MP2 energy calculation
+!
+        if(master) &
+&         write(*,'("    Start third and fourth integral transformations of Pass",i5)')ipass
+        call mp2trans34m(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,nvir,ncore, &
+&                        idis,numij,ijindex(1,ipass),nproc,myrank,mpi_comm)
+!
+        deallocate(trint3,trint4)
+        call memunset(2*nao2)
+      enddo
+      deallocate(trint2)
+      call memunset(maxsize*numocc3)
+!
+      return
+end
+
+
 !---------------------------------------------------------------------
   subroutine mp2trans12(cmoocc,cmowrk,trint1a,trint1b,trint2,xint, &
 &                       mlsize,nocc,maxdim,idis,nproc,myrank)
 !---------------------------------------------------------------------
 !
 ! Driver of AO intengral generation and first and second integral transformations
+! for single pass
 !
 ! In  : cmoocc  (MO coefficient matrix)
 !       xint    (Exchange integral matrix)
@@ -348,7 +465,7 @@ end
       use modmolecule, only : nmo
       implicit none
       integer,intent(in) :: nocc, nvir, ncore, nproc, myrank, mpi_comm, idis(4,0:nproc-1)
-      integer :: numrecv, iproc, irecv(0:nproc-1), nocc2, ncycle, icycle, myij
+      integer :: numrecv, iproc, irecv(0:nproc-1), nocc3, ncycle, icycle, myij
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmovir(nao*nvir), energymo(nmo)
       real(8),intent(in) :: trint2(idis(3,myrank),nocc*(nocc+1)/2)
@@ -359,15 +476,15 @@ end
         irecv(iproc)= numrecv
         numrecv= numrecv+idis(3,iproc)
       enddo
-      nocc2= nocc*(nocc+1)/2
-      ncycle=(nocc2-1)/nproc+1
+      nocc3= nocc*(nocc+1)/2
+      ncycle=(nocc3-1)/nproc+1
 !
       do icycle= 1,ncycle    
-        call mp2int_sendrecv(trint2,trint3,trint4,icycle,irecv,nocc2, &
+        call mp2int_sendrecv(trint2,trint3,trint4,icycle,irecv,nocc3, &
 &                            idis,nproc,myrank,mpi_comm)
 !
         myij=(icycle-1)*nproc+1+myrank
-        if(myij > nocc2) cycle
+        if(myij > nocc3) cycle
 !
 ! Third integral transformation
 !   (mi|lj) trint4[l,m] -> (ai|lj) trint3[l,a]
@@ -403,7 +520,7 @@ end
 !       mlshell (Number of shell pairs)
 !       mlsize  (Size of trint1b)
 ! Out : trint1b (First-transformed integrals, [s,i,ml])
-!       trint1a (First-transformed integrals, [i,s,ml])
+! Work: trint1a (First-transformed integrals, [i,s,ml])
 ! Inout : ish,ksh (Basis shell indices)
 !
       use modbasis, only : nao, nshell, mbf, locbf
@@ -553,7 +670,7 @@ end
 
 
 !------------------------------------------------------------------------
-  subroutine mp2int_sendrecv(trint2,trint3,trint4,icycle,irecv,nocc2, &
+  subroutine mp2int_sendrecv(trint2,trint3,trint4,icycle,irecv,numij, &
 &                            idis,nproc,myrank,mpi_comm)
 !------------------------------------------------------------------------
 !
@@ -562,7 +679,7 @@ end
 ! In  : trint2  (Second-transformed integrals)
 !       icycle  (Mp2trans2 cycle number)
 !       irecv   (Numbers of receiving data)
-!       nocc2   (nocc*(nocc+1)/2, nocc:Number of active occupied MOs)
+!       numij   (Number of active occupied MOs)
 !       idis    (Information for parallelization)
 ! Out : trint4  (Second-transformed integrals, [l,m])
 ! Work: trint3  (Receiving data)
@@ -570,10 +687,10 @@ end
       use modbasis, only : nao, nshell, mbf, locbf
       implicit none
       integer,intent(in) :: icycle, nproc, myrank, mpi_comm, irecv(0:nproc-1)
-      integer,intent(in) :: nocc2, idis(4,0:nproc-1)
+      integer,intent(in) :: numij, idis(4,0:nproc-1)
       integer :: iproc, jproc, ijstart, myij, ij, nsend, nrecv, ish, ksh, nbfi, nbfk
       integer :: locbfi, locbfk, i, k, ik, num, ii, jcount
-      real(8),intent(in) :: trint2(idis(3,myrank),nocc2)
+      real(8),intent(in) :: trint2(idis(3,myrank),numij)
       real(8),intent(out) :: trint3(nao*nao), trint4(nao,nao)
 !
       jproc= myrank
@@ -588,11 +705,11 @@ end
         nsend= idis(3,myrank)
         nrecv= idis(3,jproc)
         ij= ijstart+iproc
-        if(ij > nocc2) then
+        if(ij > numij) then
           nsend= 0
           ij   = 1
         endif
-        if(myij > nocc2) nrecv=0
+        if(myij > numij) nrecv=0
         call para_sendrecvr(trint2(1,ij),nsend,iproc,myrank, &
 &                           trint3(irecv(jproc)),nrecv,jproc,jproc,mpi_comm)
       enddo
@@ -603,21 +720,21 @@ end
         nsend= idis(3,myrank)
         nrecv= idis(3,jproc)
         ij= ijstart+iproc
-        if(ij > nocc2) then
+        if(ij > numij) then
           nsend= 0
           ij   = 1
         endif
-        if(myij > nocc2) nrecv=0
+        if(myij > numij) nrecv=0
         call para_sendrecvr(trint2(1,ij),nsend,iproc,myrank, &
 &                           trint3(irecv(jproc)),nrecv,jproc,jproc,mpi_comm)
       enddo
 !
       nsend= idis(3,myrank)
-      if(myij <= nocc2) call dcopy(nsend,trint2(1,myij),1,trint3(irecv(myrank)),1)
+      if(myij <= numij) call dcopy(nsend,trint2(1,myij),1,trint3(irecv(myrank)),1)
 !
 ! Reorder of received data
 !
-      if(myij <= nocc2) then
+      if(myij <= numij) then
         ik= 0
         do iproc= 0,nproc-1
           ish= idis(1,iproc)
@@ -651,7 +768,6 @@ end
             if(jcount == nproc) jcount= 0
           enddo
         enddo
-!
       endif
       return
 end
@@ -715,4 +831,274 @@ end
 end
 
 
+!-----------------------------------------------------------------------------
+  subroutine mp2trans12m(cmoocc,cmowrk,trint1a,trint1b,trint2,xint, &
+&                        mlsize,nocc,maxdim,idis,numij,ijindex,nproc,myrank)
+!-----------------------------------------------------------------------------
+!
+! Driver of AO intengral generation and first and second integral transformations
+! for multiple pass
+!
+! In  : cmoocc  (MO coefficient matrix)
+!       xint    (Exchange integral matrix)
+!       mlsize  (Block size of first-transformed integrals)
+!       nocc    (Number of active occupied MOs)
+!       maxdim  (Maximum size of basis functions in a shell)
+!       idis    (Information for parallelization)
+!       numij   (Number of active occupied MO pairs)
+!       ijindex (First and last indices of active occupied MO pairs)
+! Out : trint2  (Second-transformed integrals)
+! Work: cmowrk  (Transposed MO coefficient matrix)
+!       trint1a (First-transformed integrals)
+!       trint1b (First-transformed integrals)
+!       
+      use modbasis, only : nshell, nao, mbf, locbf
+      use modthresh, only : cutint2
+      implicit none
+      integer,intent(in) :: maxdim, mlsize, nocc, nproc, myrank, idis(4,0:nproc-1)
+      integer,intent(in) :: numij, ijindex(4)
+      integer :: ish, ksh, ish1, ksh1, mlcount, mlstart, mlshell, numshell, ii, jj, jcount
+      integer :: jcount1, numi
+      real(8),parameter :: zero=0.0D+00
+      real(8),intent(in) :: cmoocc(nao,nocc), xint(nshell*(nshell+1)/2)
+      real(8),intent(out) :: cmowrk(ijindex(3)-ijindex(1)+1,nao)
+      real(8),intent(out) :: trint1a(nocc,maxdim,maxdim**2)
+      real(8),intent(out) :: trint1b(mlsize*nocc*nao)
+      real(8),intent(out) :: trint2(idis(3,myrank)*numij)
+!
+      numi= ijindex(3)-ijindex(1)+1
+!$OMP parallel do
+      do ii= 1,numi
+        do jj= 1,nao
+          cmowrk(ii,jj)= cmoocc(jj,ijindex(1)+ii-1)
+        enddo
+      enddo
+!$OMP end parallel do
+!
+      ish= idis(1,myrank)
+      ksh= idis(2,myrank)
+      ish1= ish
+      ksh1= ksh
+      jcount= 0
+      jcount1= 0
+      mlcount= 0
+      mlstart= 1
+      mlshell=0
+      do numshell= 1,idis(4,myrank)
+        mlshell= mlshell+1
+        mlcount= mlcount+mbf(ish)*mbf(ksh)
+        if(numshell == idis(4,myrank)) then
+!
+! AO intengral generation and first integral transformation
+!
+          call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,numi,jcount1, &
+&                          mlshell,mlsize,nproc,myrank)
+!
+! Second integral transformation
+!
+          call transmoint2m(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis, &
+&                           numij,ijindex,nproc,myrank)
+        else
+          if(jcount == myrank) then
+            ksh= ksh+2*nproc-1
+          else
+            ksh= ksh+nproc-1
+          endif
+          jcount= jcount+1
+          if(jcount == nproc) jcount= 0
+!
+          if(ksh > nshell) then
+            do ii= 1,nshell
+              ksh= ksh-nshell
+              ish= ish+1
+              if(ksh <= nshell) exit
+            enddo
+          endif
+          if(mlcount+mbf(ish)*mbf(ksh) > mlsize) then
+            call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,numi,jcount1, &
+&                            mlshell,mlsize,nproc,myrank)
+            call transmoint2m(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis, &
+&                             numij,ijindex,nproc,myrank)
+            mlstart= mlstart+mlcount
+            mlshell= 0
+            mlcount= 0
+            jcount1= jcount
+            ish1= ish
+            ksh1= ksh
+          endif
+        endif
+      enddo
+!
+!     if(iprint >= 3) then
+!       write(*,'("Time for Tr1=",f9.3,"  Time for Tr2=",f9.3,i3)')tr1,tr2,myrank
+!     endif
+      return
+end
 
+
+!---------------------------------------------------------------------------------------
+  subroutine mp2trans34m(cmovir,energymo,trint2,trint3,trint4,emp2st,nvir,ncore, &
+&                        idis,numij,ijindex,nproc,myrank,mpi_comm)
+!---------------------------------------------------------------------------------------
+!
+! Driver of third and fourth integral transformations and MP2 energy calculation
+!
+! In  : cmovir  (MO coefficient matrix)
+!       energymo(MO energies)
+!       trint2  (Second-transformed integrals)
+!       nvir    (Number of virtual MOs)
+!       idis    (Information for parallelization)
+!       numij   (Number of active occupied MO pairs)
+!       ijindex (First and last indices of active occupied MO pairs)
+! Work: trint3  (Third-transformed integrals)
+!       trint4  (Fourth-transformed integrals)
+!
+      use modbasis, only : nao
+      use modmolecule, only : nmo
+      implicit none
+      integer,intent(in) :: nvir, ncore, nproc, myrank, mpi_comm, idis(4,0:nproc-1)
+      integer,intent(in) :: numij, ijindex(4)
+      integer :: numrecv, iproc, irecv(0:nproc-1), ncycle, icycle, myij
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(in) :: cmovir(nao*nvir), energymo(nmo)
+      real(8),intent(in) :: trint2(idis(3,myrank),numij)
+      real(8),intent(out) :: trint3(nao*nao), trint4(nao*nao), emp2st(2)
+!
+      numrecv= 1
+      do iproc= 0,nproc-1
+        irecv(iproc)= numrecv
+        numrecv= numrecv+idis(3,iproc)
+      enddo
+      ncycle=(numij-1)/nproc+1
+!
+      do icycle= 1,ncycle    
+        call mp2int_sendrecv(trint2,trint3,trint4,icycle,irecv,numij, &
+&                            idis,nproc,myrank,mpi_comm)
+!
+        myij=(icycle-1)*nproc+1+myrank
+        if(myij > numij) cycle
+!
+! Third integral transformation
+!   (mi|lj) trint4[l,m] -> (ai|lj) trint3[l,a]
+!
+        call dgemm('N','N',nao,nvir,nao,one,trint4,nao,cmovir,nao,zero,trint3,nao)
+!
+! Fourth integral transformation
+!   (ai|lj) trint3[l,a] -> (ai|bj) trint4[b,a]
+!
+        call dgemm('T','N',nvir,nvir,nao,one,cmovir,nao,trint3,nao,zero,trint4,nvir)
+!
+! MP2 energy calculation
+!
+        call calcrmp2energym(trint4,energymo,emp2st,nvir,ncore,icycle,ijindex,nproc,myrank)
+      enddo
+      return
+end
+
+
+!------------------------------------------------------------------------------------
+  subroutine transmoint2m(trint2,trint1b,cmoocc,nocc,mlcount,mlstart,mlsize,idis, &
+&                         numij,ijindex,nproc,myrank)
+!------------------------------------------------------------------------------------
+!
+! Second-quarter integral transformation for multiple pass
+!    (mi|ls) -> (mi|lj)
+!
+! In  : trint1b (First-transformed integrals, [s,i,ml])
+!       cmoocc  (MO coefficient matrix)
+!       nocc    (Number of active occupied MOs)
+!       mlcount (Number of transformed AOs)
+!       mlstart (First index of trint2)
+!       mlsize  (Size of trint1b)
+!       idis    (Information for parallelization)
+!       numij   (Number of active occupied MO pairs)
+!       ijindex (First and last indices of active occupied MO pairs)
+! Out : trint2  (Second-transformed integrals, [ml,ij])
+!
+      use modbasis, only : nao
+      implicit none
+      integer,intent(in) :: nocc, mlcount, mlstart, mlsize, nproc, myrank, idis(4,0:nproc-1)
+      integer,intent(in) :: numij, ijindex(4)
+      integer :: numi, moij, moi, mojf, numj
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(in) :: trint1b(nao,ijindex(3)-ijindex(1)+1,mlsize), cmoocc(nao,nocc)
+      real(8),intent(inout) :: trint2(idis(3,myrank),numij)
+!
+      numi= ijindex(3)-ijindex(1)+1
+      moij= 1
+      do moi= ijindex(1),ijindex(3)
+        mojf= 1
+        numj= moi
+        if(moi == ijindex(1)) then
+          mojf= ijindex(2)
+          numj= moi-mojf+1
+        endif
+        if(moi == ijindex(3)) then
+          numj= ijindex(4)-mojf+1
+        endif
+        call dgemm('T','N',mlcount,numj,nao,one,trint1b(1,moi-ijindex(1)+1,1),nao*numi, &
+&                  cmoocc(1,mojf),nao,zero,trint2(mlstart,moij),idis(3,myrank))
+        moij= moij+numj
+      enddo
+!
+      return
+end
+
+
+!--------------------------------------------------------------------------------------------
+  subroutine calcrmp2energym(trint4,energymo,emp2st,nvir,ncore,icycle,ijindex,nproc,myrank)
+!--------------------------------------------------------------------------------------------
+!
+! Calculate MP2 energy
+!
+! In  : trint4   (MO integrals, [b,a])
+!       energymo (MO energies)
+!       nvir     (Number of virtual MOs)
+!       icycle   (Mp2trans2 cycle number)
+!       ijindex  (First and last indices of active occupied MO pairs)
+! Out : emp2st   (Partial MP2 energy)
+!
+      use modmolecule, only : neleca, nmo
+      implicit none
+      integer,intent(in) :: nvir, ncore, icycle, ijindex(4), nproc, myrank
+      integer :: moi, moj, ii, moa, mob
+      real(8),parameter:: zero=0.0D+00, one=1.0D+00, two=2.0D+00
+      real(8),intent(in) :: trint4(nvir,nvir), energymo(nmo)
+      real(8),intent(inout) :: emp2st(2)
+      real(8) :: eij, eija, eijab, etmp(2)
+!
+! Calculate occupied MOs i and j
+!
+      moi= ijindex(1)
+      moj=(icycle-1)*nproc+1+myrank+ijindex(2)-1
+      do ii= ijindex(1),ijindex(3)
+        if(moi < moj) then
+          moj= moj-moi
+          moi= moi+1
+        endif
+      enddo
+!
+! Calculate MP2 energy
+!
+      eij= energymo(moi+ncore)+energymo(moj+ncore)
+      etmp(:)= zero
+!$OMP parallel do private(eija,eijab) reduction(+:etmp)
+      do moa= 1,nvir
+        eija= eij-energymo(moa+neleca)
+        do mob= 1,nvir
+          eijab= one/(eija-energymo(mob+neleca))
+          etmp(1)= etmp(1)+trint4(mob,moa)*trint4(mob,moa)*eijab
+          etmp(2)= etmp(2)+trint4(mob,moa)*(trint4(mob,moa)-trint4(moa,mob))*eijab
+        enddo
+      enddo
+!$OMP end parallel do
+!
+      if(moi /= moj) then
+        emp2st(1)= emp2st(1)+etmp(1)*two
+        emp2st(2)= emp2st(2)+etmp(2)*two
+      else
+        emp2st(1)= emp2st(1)+etmp(1)
+        emp2st(2)= emp2st(2)+etmp(2)
+      endif
+      return
+end
