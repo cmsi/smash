@@ -159,7 +159,7 @@ end
 !
       call formhuckel(hmo,eigen)
 !
-! Diagonalize canonicalized matrix
+! Diagonalize extended Huckel matrix
 !
       call diag('V','U',nao_g,hmo,nao_g,eigen,nproc,myrank,mpi_comm)
 !
@@ -200,7 +200,7 @@ end
 !
       call formhuckelcore(hmo,eigen)
 !
-! Diagonalize canonicalized matrix
+! Diagonalize extended Huckel matrix
 !
       call diag('V','U',nao_gcore,hmo,nao_gcore,eigen,nproc,myrank,mpi_comm)
 !
