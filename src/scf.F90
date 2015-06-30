@@ -310,68 +310,80 @@ end
       use modthresh, only : cutint2
       implicit none
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
-      integer :: ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
-      integer :: ii, jj, kk, kstart
-      integer(8) :: ncount, icount
+      integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
+      integer :: ii, jj, kk, kstart, ishcheck
+      integer(8) :: ncount, icount(nshell)
       real(8),parameter :: zero=0.0D+00, four=4.0D+00
       real(8),intent(in) :: dmtrx(nao*(nao+1)/2), dmax(nshell*(nshell+1)/2)
       real(8),intent(in) :: xint(nshell*(nshell+1)/2)
       real(8),intent(out) :: focktotal(nao*(nao+1)/2), fock(nao*(nao+1)/2)
       real(8) :: xijkl, denmax, twoeri(maxdim**4), denmax1
-      integer :: last, ltmp(nshell),lnum,ll
+      integer :: last, ltmp(nshell), lnum, ll
 !
       fock(:)= zero
 !
       ncount= 0
       ncount= ncount+(2*nshell**3+3*nshell**2+nshell)/6+myrank
+      do ish= 1,nshell
+        icount(ish)= ncount-(2*ish*ish*ish-3*ish*ish+ish)/6
+      enddo
+!
+      ish= nshell
+      ii= ish*(ish-1)/2
 !
 !$OMP parallel do schedule(dynamic,1) &
-!$OMP private(jsh,ksh,lsh,ij,kl,ik,il,jk,jl,xijkl,denmax1,denmax,twoeri,ii,jj,kk, &
-!$OMP icount,kstart,last,ltmp,lnum,ll) reduction(+:fock)
-      do ish= nshell,1,-1
-        ii= ish*(ish-1)/2
-        icount=ncount-(2*ish*ish*ish-3*ish*ish+ish)/6
-        do jsh= 1,ish
-          ij= ii+jsh
-          jj= jsh*(jsh-1)/2
-          kstart=mod(icount-ish*(jsh-1),nproc)+1
-          do ksh= kstart,ish,nproc
-            kk= ksh*(ksh-1)/2
-            ik= ii+ksh
-            jk= jj+ksh
-            if(jsh.lt.ksh) jk= kk+jsh
-            denmax1=max(four*dmax(ij),dmax(ik),dmax(jk))
-            last= ksh
-            if(ish == ksh) last= jsh
-            ll=min(jsh,ksh)
-            lnum=0
-!           do lsh= 1,ksh
-            do lsh= 1,ll
-              kl= kk+lsh
-              il= ii+lsh
-              jl= jj+lsh
-              xijkl=xint(ij)*xint(kl)
-              denmax=max(denmax1,four*dmax(kl),dmax(il),dmax(jl))
-              if(xijkl*denmax.ge.cutint2) then
-                lnum=lnum+1
-                ltmp(lnum)=lsh
-              endif
-            enddo
-            do lsh= ll+1,last
-              kl= kk+lsh
-              il= ii+lsh
-              jl= lsh*(lsh-1)/2+jsh
-              xijkl=xint(ij)*xint(kl)
-              denmax=max(denmax1,four*dmax(kl),dmax(il),dmax(jl))
-              if(xijkl*denmax.ge.cutint2) then
-                lnum=lnum+1
-                ltmp(lnum)=lsh
-              endif
-            enddo
-            do lsh= 1,lnum
-              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
-              call rfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
-            enddo
+!$OMP private(ijsh,jsh,ksh,lsh,ij,kl,ik,il,jk,jl,xijkl,denmax1,denmax,twoeri,jj,kk, &
+!$OMP kstart,last,ltmp,lnum,ll) firstprivate(ish,ii) reduction(+:fock)
+      do ijsh= nshell*(nshell+1)/2,1,-1
+        do ishcheck=1,nshell
+          if(ijsh > ii) then
+            jsh= ijsh-ii
+            exit
+          else
+            ish= ish-1
+            ii= ish*(ish-1)/2
+          endif
+        enddo
+!
+        ij= ii+jsh
+        jj= jsh*(jsh-1)/2
+        kstart=mod(icount(ish)-ish*(jsh-1),nproc)+1
+        do ksh= kstart,ish,nproc
+          kk= ksh*(ksh-1)/2
+          ik= ii+ksh
+          jk= jj+ksh
+          if(jsh.lt.ksh) jk= kk+jsh
+          denmax1=max(four*dmax(ij),dmax(ik),dmax(jk))
+          last= ksh
+          if(ish == ksh) last= jsh
+          ll=min(jsh,ksh)
+          lnum=0
+!         do lsh= 1,ksh
+          do lsh= 1,ll
+            kl= kk+lsh
+            il= ii+lsh
+            jl= jj+lsh
+            xijkl=xint(ij)*xint(kl)
+            denmax=max(denmax1,four*dmax(kl),dmax(il),dmax(jl))
+            if(xijkl*denmax.ge.cutint2) then
+              lnum=lnum+1
+              ltmp(lnum)=lsh
+            endif
+          enddo
+          do lsh= ll+1,last
+            kl= kk+lsh
+            il= ii+lsh
+            jl= lsh*(lsh-1)/2+jsh
+            xijkl=xint(ij)*xint(kl)
+            denmax=max(denmax1,four*dmax(kl),dmax(il),dmax(jl))
+            if(xijkl*denmax.ge.cutint2) then
+              lnum=lnum+1
+              ltmp(lnum)=lsh
+            endif
+          enddo
+          do lsh= 1,lnum
+            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
+            call rfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
           enddo
         enddo
       enddo
@@ -540,67 +552,80 @@ end
       use modthresh, only : cutint2
       implicit none
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
-      integer :: ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
-      integer :: ii, jj, kk, kstart
-      integer(8) :: ncount, icount
+      integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
+      integer :: ii, jj, kk, kstart, ishcheck
+      integer(8) :: ncount, icount(nshell)
       real(8),parameter :: zero=0.0D+00, four=4.0D+00
       real(8),intent(in) :: dmtrx(nao*(nao+1)/2), dmax(nshell*(nshell+1)/2)
       real(8),intent(in) :: xint(nshell*(nshell+1)/2), hfexchange
       real(8),intent(out) :: focktotal(nao*(nao+1)/2), fock(nao*(nao+1)/2)
-      real(8) :: xijkl, denmax, twoeri(maxdim**4),denmax1
+      real(8) :: xijkl, denmax, twoeri(maxdim**4), denmax1
       integer :: last, ltmp(nshell), lnum, ll
 !
       fock(:)= zero
 !
-      ncount=(2*nshell**3+3*nshell**2+nshell)/6+myrank
+      ncount= 0
+      ncount= ncount+(2*nshell**3+3*nshell**2+nshell)/6+myrank
+      do ish= 1,nshell
+        icount(ish)= ncount-(2*ish*ish*ish-3*ish*ish+ish)/6
+      enddo
+!
+      ish= nshell
+      ii= ish*(ish-1)/2
 !
 !$OMP parallel do schedule(dynamic,1) &
-!$OMP private(jsh,ksh,lsh,ij,kl,ik,il,jk,jl,xijkl,denmax1,denmax,twoeri,ii,jj,kk, &
-!$OMP icount,kstart,last,ltmp,lnum,ll) reduction(+:fock)
-      do ish= nshell,1,-1
-        ii= ish*(ish-1)/2
-        icount=ncount-(2*ish*ish*ish-3*ish*ish+ish)/6
-        do jsh= 1,ish
-          ij= ii+jsh
-          jj= jsh*(jsh-1)/2
-          kstart=mod(icount-ish*(jsh-1),nproc)+1
-          do ksh= kstart,ish,nproc
-            kk= ksh*(ksh-1)/2
-            ik= ii+ksh
-            jk= jj+ksh
-            if(jsh.lt.ksh) jk= kk+jsh
-            denmax1=max(four*dmax(ij),dmax(ik),dmax(jk))
-            last= ksh
-            if(ish == ksh) last= jsh
-            ll=min(jsh,ksh)
-            lnum=0
-!           do lsh= 1,ksh
-            do lsh= 1,ll
-              kl= kk+lsh
-              il= ii+lsh
-              jl= jj+lsh
-              xijkl=xint(ij)*xint(kl)
-              denmax=max(denmax1,four*dmax(kl),dmax(il),dmax(jl))
-              if(xijkl*denmax.ge.cutint2) then
-                lnum=lnum+1
-                ltmp(lnum)=lsh
-              endif
-            enddo
-            do lsh= ll+1,last
-              kl= kk+lsh
-              il= ii+lsh
-              jl= lsh*(lsh-1)/2+jsh
-              xijkl=xint(ij)*xint(kl)
-              denmax=max(denmax1,four*dmax(kl),dmax(il),dmax(jl))
-              if(xijkl*denmax.ge.cutint2) then
-                lnum=lnum+1
-                ltmp(lnum)=lsh
-              endif
-            enddo
-            do lsh= 1,lnum
-              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
-              call rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,hfexchange)
-            enddo
+!$OMP private(ijsh,jsh,ksh,lsh,ij,kl,ik,il,jk,jl,xijkl,denmax1,denmax,twoeri,jj,kk, &
+!$OMP kstart,last,ltmp,lnum,ll) firstprivate(ish,ii) reduction(+:fock)
+      do ijsh= nshell*(nshell+1)/2,1,-1
+        do ishcheck=1,nshell
+          if(ijsh > ii) then
+            jsh= ijsh-ii
+            exit
+          else
+            ish= ish-1
+            ii= ish*(ish-1)/2
+          endif
+        enddo
+!
+        ij= ii+jsh
+        jj= jsh*(jsh-1)/2
+        kstart=mod(icount(ish)-ish*(jsh-1),nproc)+1
+        do ksh= kstart,ish,nproc
+          kk= ksh*(ksh-1)/2
+          ik= ii+ksh
+          jk= jj+ksh
+          if(jsh.lt.ksh) jk= kk+jsh
+          denmax1=max(four*dmax(ij),dmax(ik),dmax(jk))
+          last= ksh
+          if(ish == ksh) last= jsh
+          ll=min(jsh,ksh)
+          lnum=0
+!         do lsh= 1,ksh
+          do lsh= 1,ll
+            kl= kk+lsh
+            il= ii+lsh
+            jl= jj+lsh
+            xijkl=xint(ij)*xint(kl)
+            denmax=max(denmax1,four*dmax(kl),dmax(il),dmax(jl))
+            if(xijkl*denmax.ge.cutint2) then
+              lnum=lnum+1
+              ltmp(lnum)=lsh
+            endif
+          enddo
+          do lsh= ll+1,last
+            kl= kk+lsh
+            il= ii+lsh
+            jl= lsh*(lsh-1)/2+jsh
+            xijkl=xint(ij)*xint(kl)
+            denmax=max(denmax1,four*dmax(kl),dmax(il),dmax(jl))
+            if(xijkl*denmax.ge.cutint2) then
+              lnum=lnum+1
+              ltmp(lnum)=lsh
+            endif
+          enddo
+          do lsh= 1,lnum
+            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
+            call rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,hfexchange)
           enddo
         enddo
       enddo
@@ -1389,68 +1414,81 @@ end
       use modthresh, only : cutint2
       implicit none
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
-      integer :: ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
-      integer :: ii, jj, kk, kstart
-      integer(8) :: ncount, icount
+      integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
+      integer :: ii, jj, kk, kstart, ishcheck
+      integer(8) :: ncount, icount(nshell)
       real(8),parameter :: zero=0.0D+00, four=4.0D+00
       real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
       real(8),intent(in) :: dmax(nshell*(nshell+1)/2), xint(nshell*(nshell+1)/2)
       real(8),intent(out) :: fock1(nao*(nao+1)/2), fock2(nao*(nao+1)/2), fock3(nao*(nao+1)/2)
       real(8) :: xijkl, denmax, twoeri(maxdim**4), denmax1
-      integer :: last, ltmp(nshell),lnum,ll
+      integer :: last, ltmp(nshell), lnum, ll
 !
       fock2(:)= zero
       fock3(:)= zero
+!
       ncount= 0
       ncount= ncount+(2*nshell**3+3*nshell**2+nshell)/6+myrank
+      do ish= 1,nshell
+        icount(ish)= ncount-(2*ish*ish*ish-3*ish*ish+ish)/6
+      enddo
+!
+      ish= nshell
+      ii= ish*(ish-1)/2
 !
 !$OMP parallel do schedule(dynamic,1) &
-!$OMP private(jsh,ksh,lsh,ij,kl,ik,il,jk,jl,xijkl,denmax1,denmax,twoeri,ii,jj,kk, &
-!$OMP icount,kstart,last,ltmp,lnum,ll) reduction(+:fock2,fock3)
-      do ish= nshell,1,-1
-        ii= ish*(ish-1)/2
-        icount=ncount-(2*ish*ish*ish-3*ish*ish+ish)/6
-        do jsh= 1,ish
-          ij= ii+jsh
-          jj= jsh*(jsh-1)/2
-          kstart=mod(icount-ish*(jsh-1),nproc)+1
-          do ksh= kstart,ish,nproc
-            kk= ksh*(ksh-1)/2
-            ik= ii+ksh
-            jk= jj+ksh
-            if(jsh.lt.ksh) jk= kk+jsh
-            denmax1=max(four*dmax(ij),dmax(ik),dmax(jk))
-            last= ksh
-            if(ish == ksh) last= jsh
-            ll=min(jsh,ksh)
-            lnum=0
-!           do lsh= 1,ksh
-            do lsh= 1,ll
-              kl= kk+lsh
-              il= ii+lsh
-              jl= jj+lsh
-              xijkl=xint(ij)*xint(kl)
-              denmax=max(denmax1,four*dmax(kl),dmax(il),dmax(jl))
-              if(xijkl*denmax.ge.cutint2) then
-                lnum=lnum+1
-                ltmp(lnum)=lsh
-              endif
-            enddo
-            do lsh= ll+1,last
-              kl= kk+lsh
-              il= ii+lsh
-              jl= lsh*(lsh-1)/2+jsh
-              xijkl=xint(ij)*xint(kl)
-              denmax=max(denmax1,four*dmax(kl),dmax(il),dmax(jl))
-              if(xijkl*denmax.ge.cutint2) then
-                lnum=lnum+1
-                ltmp(lnum)=lsh
-              endif
-            enddo
-            do lsh= 1,lnum
-              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
-              call ufockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
-            enddo
+!$OMP private(ijsh,jsh,ksh,lsh,ij,kl,ik,il,jk,jl,xijkl,denmax1,denmax,twoeri,jj,kk, &
+!$OMP kstart,last,ltmp,lnum,ll) firstprivate(ish,ii) reduction(+:fock2,fock3)
+      do ijsh= nshell*(nshell+1)/2,1,-1
+        do ishcheck=1,nshell
+          if(ijsh > ii) then
+            jsh= ijsh-ii
+            exit
+          else
+            ish= ish-1
+            ii= ish*(ish-1)/2
+          endif
+        enddo
+!
+        ij= ii+jsh
+        jj= jsh*(jsh-1)/2
+        kstart=mod(icount(ish)-ish*(jsh-1),nproc)+1
+        do ksh= kstart,ish,nproc
+          kk= ksh*(ksh-1)/2
+          ik= ii+ksh
+          jk= jj+ksh
+          if(jsh.lt.ksh) jk= kk+jsh
+          denmax1=max(four*dmax(ij),dmax(ik),dmax(jk))
+          last= ksh
+          if(ish == ksh) last= jsh
+          ll=min(jsh,ksh)
+          lnum=0
+!         do lsh= 1,ksh
+          do lsh= 1,ll
+            kl= kk+lsh
+            il= ii+lsh
+            jl= jj+lsh
+            xijkl=xint(ij)*xint(kl)
+            denmax=max(denmax1,four*dmax(kl),dmax(il),dmax(jl))
+            if(xijkl*denmax.ge.cutint2) then
+              lnum=lnum+1
+              ltmp(lnum)=lsh
+            endif
+          enddo
+          do lsh= ll+1,last
+            kl= kk+lsh
+            il= ii+lsh
+            jl= lsh*(lsh-1)/2+jsh
+            xijkl=xint(ij)*xint(kl)
+            denmax=max(denmax1,four*dmax(kl),dmax(il),dmax(jl))
+            if(xijkl*denmax.ge.cutint2) then
+              lnum=lnum+1
+              ltmp(lnum)=lsh
+            endif
+          enddo
+          do lsh= 1,lnum
+            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
+            call ufockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
           enddo
         enddo
       enddo
@@ -2017,69 +2055,82 @@ end
       use modthresh, only : cutint2
       implicit none
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
-      integer :: ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
-      integer :: ii, jj, kk, kstart
-      integer(8) :: ncount, icount
+      integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
+      integer :: ii, jj, kk, kstart, ishcheck
+      integer(8) :: ncount, icount(nshell)
       real(8),parameter :: zero=0.0D+00, four=4.0D+00
       real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
       real(8),intent(in) :: dmax(nshell*(nshell+1)/2), xint(nshell*(nshell+1)/2), hfexchange
       real(8),intent(out) :: fock1(nao*(nao+1)/2), fock2(nao*(nao+1)/2), fock3(nao*(nao+1)/2)
-      real(8) :: xijkl, denmax, twoeri(maxdim**4),denmax1
+      real(8) :: xijkl, denmax, twoeri(maxdim**4), denmax1
       integer :: last, ltmp(nshell), lnum, ll
 !
       fock2(:)= zero
       fock3(:)= zero
 !
-      ncount=(2*nshell**3+3*nshell**2+nshell)/6+myrank
+      ncount= 0
+      ncount= ncount+(2*nshell**3+3*nshell**2+nshell)/6+myrank
+      do ish= 1,nshell
+        icount(ish)= ncount-(2*ish*ish*ish-3*ish*ish+ish)/6
+      enddo
+!
+      ish= nshell
+      ii= ish*(ish-1)/2
 !
 !$OMP parallel do schedule(dynamic,1) &
-!$OMP private(jsh,ksh,lsh,ij,kl,ik,il,jk,jl,xijkl,denmax1,denmax,twoeri,ii,jj,kk, &
-!$OMP icount,kstart,last,ltmp,lnum,ll) reduction(+:fock2,fock3)
-      do ish= nshell,1,-1
-        ii= ish*(ish-1)/2
-        icount=ncount-(2*ish*ish*ish-3*ish*ish+ish)/6
-        do jsh= 1,ish
-          ij= ii+jsh
-          jj= jsh*(jsh-1)/2
-          kstart=mod(icount-ish*(jsh-1),nproc)+1
-          do ksh= kstart,ish,nproc
-            kk= ksh*(ksh-1)/2
-            ik= ii+ksh
-            jk= jj+ksh
-            if(jsh.lt.ksh) jk= kk+jsh
-            denmax1=max(four*dmax(ij),dmax(ik),dmax(jk))
-            last= ksh
-            if(ish == ksh) last= jsh
-            ll=min(jsh,ksh)
-            lnum=0
-!           do lsh= 1,ksh
-            do lsh= 1,ll
-              kl= kk+lsh
-              il= ii+lsh
-              jl= jj+lsh
-              xijkl=xint(ij)*xint(kl)
-              denmax=max(denmax1,four*dmax(kl),dmax(il),dmax(jl))
-              if(xijkl*denmax.ge.cutint2) then
-                lnum=lnum+1
-                ltmp(lnum)=lsh
-              endif
-            enddo
-            do lsh= ll+1,last
-              kl= kk+lsh
-              il= ii+lsh
-              jl= lsh*(lsh-1)/2+jsh
-              xijkl=xint(ij)*xint(kl)
-              denmax=max(denmax1,four*dmax(kl),dmax(il),dmax(jl))
-              if(xijkl*denmax.ge.cutint2) then
-                lnum=lnum+1
-                ltmp(lnum)=lsh
-              endif
-            enddo
-            do lsh= 1,lnum
-              call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
-              call udftfockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim, &
-&                              hfexchange)
-            enddo
+!$OMP private(ijsh,jsh,ksh,lsh,ij,kl,ik,il,jk,jl,xijkl,denmax1,denmax,twoeri,jj,kk, &
+!$OMP kstart,last,ltmp,lnum,ll) firstprivate(ish,ii) reduction(+:fock2,fock3)
+      do ijsh= nshell*(nshell+1)/2,1,-1
+        do ishcheck=1,nshell
+          if(ijsh > ii) then
+            jsh= ijsh-ii
+            exit
+          else
+            ish= ish-1
+            ii= ish*(ish-1)/2
+          endif
+        enddo
+!
+        ij= ii+jsh
+        jj= jsh*(jsh-1)/2
+        kstart=mod(icount(ish)-ish*(jsh-1),nproc)+1
+        do ksh= kstart,ish,nproc
+          kk= ksh*(ksh-1)/2
+          ik= ii+ksh
+          jk= jj+ksh
+          if(jsh.lt.ksh) jk= kk+jsh
+          denmax1=max(four*dmax(ij),dmax(ik),dmax(jk))
+          last= ksh
+          if(ish == ksh) last= jsh
+          ll=min(jsh,ksh)
+          lnum=0
+!         do lsh= 1,ksh
+          do lsh= 1,ll
+            kl= kk+lsh
+            il= ii+lsh
+            jl= jj+lsh
+            xijkl=xint(ij)*xint(kl)
+            denmax=max(denmax1,four*dmax(kl),dmax(il),dmax(jl))
+            if(xijkl*denmax.ge.cutint2) then
+              lnum=lnum+1
+              ltmp(lnum)=lsh
+            endif
+          enddo
+          do lsh= ll+1,last
+            kl= kk+lsh
+            il= ii+lsh
+            jl= lsh*(lsh-1)/2+jsh
+            xijkl=xint(ij)*xint(kl)
+            denmax=max(denmax1,four*dmax(kl),dmax(il),dmax(jl))
+            if(xijkl*denmax.ge.cutint2) then
+              lnum=lnum+1
+              ltmp(lnum)=lsh
+            endif
+          enddo
+          do lsh= 1,lnum
+            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
+            call udftfockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim, &
+&                            hfexchange)
           enddo
         enddo
       enddo
