@@ -31,9 +31,9 @@
       use modmolecule, only : natom
       implicit none
       integer,intent(in) :: maxdim, nproc, myrank, itype
-      integer :: ish, jsh, ksh, lsh, ij, kl
-      integer :: ii, kk, kstart
-      integer(8) :: ncount, icount
+      integer :: ijsh, ish, jsh, ksh, lsh, ij, kl
+      integer :: ii, kk, kstart, ishcheck
+      integer(8) :: ncount, icount(nshell)
       real(8),parameter :: zero=0.0D+00, four=4.0D+00
       real(8),intent(in) :: fulldmtrx1(nao,nao), fulldmtrx2(nao,nao)
       real(8),intent(in) :: xint(nshell*(nshell+1)/2), hfexchange
@@ -43,31 +43,45 @@
       real(8) :: pdmax
 !
       egrad2(:)= zero
-      ncount=(2*nshell**3+3*nshell**2+nshell)/6+myrank
+!
+      ncount= 0
+      ncount= ncount+(2*nshell**3+3*nshell**2+nshell)/6+myrank
+      do ish= 1,nshell
+        icount(ish)= ncount-(2*ish*ish*ish-3*ish*ish+ish)/6
+      enddo
+!
+      ish= nshell
+      ii= ish*(ish-1)/2
 !
 !$OMP parallel do schedule(dynamic,1) &
-!$OMP private(ish,jsh,ksh,lsh,ij,kl,xijkl,twoeri,dtwoeri,pdmtrx,pdmax,ii,kk,icount,kstart) &
-!$OMP reduction(+:egrad2)
-      do ish= nshell,1,-1
-        ii= ish*(ish-1)/2
-        icount=ncount-(2*ish*ish*ish-3*ish*ish+ish)/6
-        do jsh= 1,ish
-          ij= ii+jsh
-          kstart=mod(icount-ish*(jsh-1),nproc)+1
- kloop:   do ksh= kstart,ish,nproc
-            kk= ksh*(ksh-1)/2
-            do lsh= 1,ksh
-              kl= kk+lsh
-              if(kl.gt.ij) exit kloop
-              xijkl=xint(ij)*xint(kl)
-              if(xijkl.lt.cutint2) cycle
-              call calcpdmtrx(fulldmtrx1,fulldmtrx2,pdmtrx,pdmax,hfexchange, &
-&                             ish,jsh,ksh,lsh,maxdim,itype)
-              if((xijkl*pdmax).lt.cutint2) cycle
-              call calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim)
-            enddo
-          enddo kloop
+!$OMP private(ijsh,jsh,ksh,lsh,ij,kl,xijkl,twoeri,dtwoeri,pdmtrx,pdmax,kk,kstart) &
+!$OMP firstprivate(ish,ii) reduction(+:egrad2)
+      do ijsh= nshell*(nshell+1)/2,1,-1
+        do ishcheck=1,nshell
+          if(ijsh > ii) then
+            jsh= ijsh-ii
+            exit
+          else
+            ish= ish-1
+            ii= ish*(ish-1)/2
+          endif
         enddo
+!
+        ij= ii+jsh
+        kstart=mod(icount(ish)-ish*(jsh-1),nproc)+1
+ kloop: do ksh= kstart,ish,nproc
+          kk= ksh*(ksh-1)/2
+          do lsh= 1,ksh
+            kl= kk+lsh
+            if(kl.gt.ij) exit kloop
+            xijkl=xint(ij)*xint(kl)
+            if(xijkl.lt.cutint2) cycle
+            call calcpdmtrx(fulldmtrx1,fulldmtrx2,pdmtrx,pdmax,hfexchange, &
+&                           ish,jsh,ksh,lsh,maxdim,itype)
+            if((xijkl*pdmax).lt.cutint2) cycle
+            call calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim)
+          enddo
+        enddo kloop
       enddo
 !$OMP end parallel do
 !
