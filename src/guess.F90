@@ -44,6 +44,12 @@
         if(master) write(*,*)
         if(scftype == 'UHF') call dcopy(nao*nao,cmoa,1,cmob,1)
 !
+      elseif(guess == 'DFTB') then
+        if(master) write(*,'("   Guess MOs are generated using DFTB orbitals.")')
+        call dftbguess(cmoa,overinv,nproc2,myrank2,mpi_comm2)
+        if(master) write(*,*)
+        if(scftype == 'UHF') call dcopy(nao*nao,cmoa,1,cmob,1)
+!
       elseif(guess == 'UPDATE') then
         call updatemo(cmoa,overinv,nproc2,myrank2,mpi_comm2)
         if(scftype == 'UHF') call dcopy(nao*nao,cmoa,1,cmob,1)
@@ -276,6 +282,7 @@ end
 !              (2: Huckel calculation for core orbitals)
 ! Out : energy (ionization potential)
 !
+      use modparallel, only : master
       use modmolecule, only : natom, numatomic
       use modguess, only : nao_g, spher_g
       use modecp, only : flagecp, izcore
@@ -587,7 +594,7 @@ end
             case(-9:0)
 !
             case default
-              write(*,'(" Error! This program supports up to Rn in huckelip.")')
+              if(master) write(*,'(" Error! This program supports up to Rn in huckelip.")')
               call iabort
           end select
         enddo
@@ -783,7 +790,7 @@ end
 ! Bq9 - X
             case(-9:0)
             case default
-              write(*,'(" Error! This program supports up to Rn in huckelip.")')
+              if(master) write(*,'(" Error! This program supports up to Rn in huckelip.")')
               call iabort
           end select
         enddo
@@ -978,7 +985,7 @@ end
 ! Bq9 - X
             case(-9:0)
             case default
-              write(*,'(" Error! This program supports up to Rn in huckelip.")')
+              if(master) write(*,'(" Error! This program supports up to Rn in huckelip.")')
               call iabort
           end select
         enddo
@@ -1960,12 +1967,752 @@ end
 end
 
 
+!----------------------------------------------------------
+  subroutine dftbguess(cmo,overinv,nproc,myrank,mpi_comm)
+!----------------------------------------------------------
+!
+! Calculate initial guess MOs by extended Huckel
+!
+! In  : overinv (overlap integral inverse matrix)
+! Out : cmo     (initial guess orbitals)
+!
+      use modguess, only : nao_g, spher_g, coord_g, nmo_g
+      use modbasis, only : nao
+      use modmolecule, only : coord, natom
+      implicit none
+      integer,intent(in) :: nproc, myrank, mpi_comm
+      integer :: i, j, nao_g2, nao_g3
+      real(8),intent(in):: overinv(nao*nao)
+      real(8),intent(out):: cmo(nao*nao)
+      real(8),allocatable :: hmo(:), overlap(:), work1(:), work2(:), eigen(:)
+!
+! Set basis functions
+!
+      spher_g=.true.
+      call setbasis_g(1)
+!
+! Set coordinate
+!
+      do i= 1,natom
+        do j= 1,3
+          coord_g(j,i)=coord(j,i)
+        enddo
+      enddo
+!
+! Set required arrays
+!
+      nao_g2= nao_g*nao_g
+      nao_g3= max(nao,nao_g)*nao_g
+      call memset(2*nao_g2+2*nao_g3+nao_g)
+      allocate(hmo(nao_g2),overlap(nao_g3),work1(nao_g3),work2(nao_g2),eigen(nao_g))
+!
+! Calculate Extended Huckel method
+!
+      call calcdftb(hmo,overlap,work1,work2,eigen,nproc,myrank,mpi_comm)
+!
+! Calculate overlap integrals between input basis and Huckel basis
+!
+      call calcover2(overlap,work1,nproc,myrank,mpi_comm)
+!
+! Project orbitals from Huckel to SCF
+!
+      call projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,nproc,myrank,mpi_comm)
+      deallocate(hmo,overlap,work1,work2,eigen)
+      call memunset(2*nao_g2+2*nao*nao_g+nao_g)
+      return
+end
 
 
+!-----------------------------------------------------------------------------
+  subroutine calcdftb(dftbmo,overlap,ortho,work,eigen,nproc,myrank,mpi_comm)
+!-----------------------------------------------------------------------------
+!
+! Driver of DFTB calculation
+!
+!
+! Out : dftbmo (DFTB MOs)
+!       overlap,ortho,work,eigen (work space)
+!
+      use modparallel, only : master
+      use modguess, only : nao_g, nmo_g, spher_g, coord_g, nshell_v
+      use modthresh, only : threshover
+      use modmolecule, only : coord, natom, neleca, nelecb
+      implicit none
+      integer,parameter :: maxiter=1000
+      integer,intent(in) :: nproc, myrank, mpi_comm
+      integer :: ii, jj, nelecdftb(2), iter
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(out) :: dftbmo(nao_g,nao_g), overlap(nao_g,nao_g)
+      real(8),intent(out) :: ortho(nao_g,nao_g), work(nao_g,nao_g), eigen(nao_g)
+      real(8),allocatable :: dftb0(:), dftb1(:), gamma12(:), uhub(:), qmulliken(:,:)
+      real(8) :: qmax
+!
+! Set basis functions
+!
+      spher_g=.true.
+      call setbasis_g(1)
+!
+! Set coordinate
+!
+      do ii= 1,natom
+        do jj= 1,3
+          coord_g(jj,ii)=coord(jj,ii)
+        enddo
+      enddo
+!
+      call memset(2*nao_g*nao_g+nshell_v*nshell_v+3*nshell_v)
+      allocate(dftb0(nao_g*nao_g),dftb1(nao_g*nao_g),gamma12(nshell_v*nshell_v), &
+&              uhub(nshell_v),qmulliken(nshell_v,2))
+!
+! Calculate overlap integrals
+! (guess basis)x(guess basis)
+!
+      call calcover1(overlap)
+      do ii= 1,nao_g
+        do jj= 1,ii
+          work(jj,ii)= overlap(jj,ii)
+        enddo
+      enddo
+!
+! Calculate orthogonalization matrix
+!
+      call mtrxcanon(ortho,work,eigen,nao_g,nmo_g,threshover,nproc,myrank,mpi_comm)
+!
+! Set parameters
+!
+      call huckelip(eigen,1)
+      call dftbip(eigen,uhub)
+      nelecdftb(1)= neleca
+      nelecdftb(2)= nelecb
+!
+! Calculate core Hamiltonian matrix for DFTB
+!
+      dftb0=zero
+      call formdftb0(dftb0,overlap,eigen)
+!
+! Calculate gamma12 calculation for DFTB
+!
+      call calcgamma12(gamma12,uhub)
+!
+! Set initial Mulliken charge
+!
+      qmulliken(1:nshell_v,1)= zero
+!
+      do iter= 1,maxiter
+        dftb1(:)= dftb0(:)
+!
+! Calculate Hamiltonian matrix for DFTB
+!
+        call formdftb1(dftb1,overlap,qmulliken,gamma12)
+!
+! Diagonalize Hamiltonian matrix
+!
+        call canonicalize(dftb1,ortho,work,nao_g,nmo_g)
+        call diag('V','U',nmo_g,dftb1,nao_g,eigen,nproc,myrank,mpi_comm)
+        call dgemm('N','N',nao_g,nmo_g,nmo_g,one,ortho,nao_g,dftb1,nao_g,zero,dftbmo,nao_g)
+!
+! Calculate new Mulliken charge
+!
+        qmulliken(1:nshell_v,2)= qmulliken(1:nshell_v,1)
+        call calcdftbmulliken(overlap,dftbmo,work,qmulliken,nelecdftb)
+        call diffqmulliken(qmulliken,qmax)
+        if(qmax < 1.0D-4) exit
+        if(iter == maxiter) then
+          if(master) write(*,'(" Error! DFTB calculation did not converge.")')
+          call iabort
+        endif
+      enddo
+!
+      return
+end
 
 
+!---------------------------------------------
+  subroutine formdftb0(dftb0,overlap,energy)
+!---------------------------------------------
+!
+! Form charge independent DFTB matrix elements
+!
+      use modparam, only : mxprsh
+      use modguess, only : nao_v, nshell_v, nao_g, locprim_g, locbf_g, locatom_g, mprim_g, &
+&                          mbf_g, mtype_g, ex_g, coeff_g, coord_g
+      use modthresh, only : threshex
+      use modmolecule, only : numatomic, natom, znuc
+      implicit none
+      integer,parameter :: len1=5
+      integer :: ii, jj, ish, jsh, iprim, jprim, nangij(2), nprimij(2), nbfij(2)
+      integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf
+      real(8),parameter :: zero=0.0D+00, factor=0.875D+00, fdown=0.05D+00
+      real(8),intent(in) :: overlap(nao_g,nao_g), energy(nao_g)
+      real(8),intent(out) :: dftb0(nao_g,nao_g)
+      real(8) :: coordij(3,2), exij(mxprsh,2), coij(mxprsh,2), znucdftb(2)
+      real(8) :: sint(len1,len1), tint(len1,len1), cint(len1,len1)
+      real(8) :: znucvalence(86)= &
+&     (/ 1.0D+00, 2.0D+00, 1.0D+00, 2.0D+00, 3.0D+00, 4.0D+00, 5.0D+00, 6.0D+00, 7.0D+00,&
+&        8.0D+00, 1.0D+00, 2.0D+00, 3.0D+00, 4.0D+00, 5.0D+00, 6.0D+00, 7.0D+00, 8.0D+00,&
+&        1.0D+00, 2.0D+00, 3.0D+00, 4.0D+00, 5.0D+00, 6.0D+00, 7.0D+00, 8.0D+00, 9.0D+00,&
+&        1.0D+01, 1.1D+01, 1.2D+01, 3.0D+00, 4.0D+00, 5.0D+00, 6.0D+00, 7.0D+00, 8.0D+00,&
+&        1.0D+00, 2.0D+00, 3.0D+00, 4.0D+00, 5.0D+00, 6.0D+00, 7.0D+00, 8.0D+00, 9.0D+00,&
+&        1.0D+01, 1.1D+01, 1.2D+01, 3.0D+00, 4.0D+00, 5.0D+00, 6.0D+00, 7.0D+00, 8.0D+00,&
+&        1.0D+00, 2.0D+00, 3.0D+00, 4.0D+00, 5.0D+00, 6.0D+00, 7.0D+00, 8.0D+00, 9.0D+00,&
+&        1.0D+01, 1.1D+01, 1.2D+01, 1.3D+01, 1.4D+01, 1.5D+01, 1.6D+01, 3.0D+00, 4.0D+00,&
+&        5.0D+00, 6.0D+00, 7.0D+00, 8.0D+00, 9.0D+00, 1.0D+01, 1.1D+01, 1.2D+01, 3.0D+00,&
+&        4.0D+00, 5.0D+00, 6.0D+00, 7.0D+00, 8.0D+00/)
+!
+! Diagonal elements
+!
+      do ii= 1,nao_g
+        dftb0(ii,ii)= energy(ii)
+      enddo
+!
+! Off-diagonal elements of valence functions
+!
+!$OMP parallel do schedule(static,1) private(nangij,nprimij,nbfij,iatom,iloc,ilocbf,coordij, &
+!$OMP exij,coij,znucdftb,jatom,jloc,jlocbf,sint,tint,cint)
+      do ish= 1,nshell_v
+        nangij(1)= mtype_g(ish)
+        nprimij(1)= mprim_g(ish)
+        nbfij(1)  = mbf_g(ish)
+        iatom = locatom_g(ish)
+        iloc  = locprim_g(ish)
+        ilocbf= locbf_g(ish)
+        do ii= 1,3
+          coordij(ii,1)= coord_g(ii,iatom)
+        enddo
+        do iprim= 1,nprimij(1)
+          exij(iprim,1)= ex_g(iloc+iprim)
+          coij(iprim,1)= coeff_g(iloc+iprim)
+        enddo
+        znucdftb(1)= znucvalence(numatomic(iatom))
+!
+        do jsh= 1,ish-1
+          jatom = locatom_g(jsh)
+          if(iatom /= jatom) then
+            nangij(2)= mtype_g(jsh)
+            nprimij(2)= mprim_g(jsh)
+            nbfij(2)  = mbf_g(jsh)
+            jloc  = locprim_g(jsh)
+            jlocbf= locbf_g(jsh)
+            do ii= 1,3
+              coordij(ii,2)= coord_g(ii,jatom)
+            enddo
+            do jprim= 1,nprimij(2)
+              exij(jprim,2)= ex_g(jloc+jprim)
+              coij(jprim,2)= coeff_g(jloc+jprim)
+            enddo
+!
+! Overlap and kinetic integrals
+!
+            call intst(sint,tint,exij,coij,coordij, &
+&                      nprimij,nangij,nbfij,len1,mxprsh,threshex)
+!
+! 1-electron Coulomb integrals
+!
+            znucdftb(2)= znucvalence(numatomic(jatom))
+            if((nangij(1) <= 2).and.(nangij(2) <= 2)) then
+              call int1cmd(cint,exij,coij,coordij,coordij,znucdftb,2, &
+&                          nprimij,nangij,nbfij,len1,mxprsh,threshex)
+            else
+              call int1rys(cint,exij,coij,coordij,coordij,znucdftb,2, &
+&                          nprimij,nangij,nbfij,len1,mxprsh,threshex)
+            endif
+!
+! Add kinetic and Coulomb integrals
+!
+            if((nangij(1) <= 1).and.(nangij(2) <= 1))then
+              do ii= 1,nbfij(1)
+                do jj= 1,nbfij(2)
+                  dftb0(jlocbf+jj,ilocbf+ii)= tint(jj,ii)+cint(jj,ii)
+                enddo
+              enddo
+            else
+              do ii= 1,nbfij(1)
+                do jj= 1,nbfij(2)
+!ishimura
+! Scale-down the nuclear attraction term
+!
+                  dftb0(jlocbf+jj,ilocbf+ii)= tint(jj,ii)+cint(jj,ii)*0.1D0
+                enddo
+              enddo
+            endif
+          endif
+        enddo
+      enddo
+!$OMP end parallel do
+!
+! Off-diagonal elements of core functions
+!
+!$OMP parallel do schedule(static,1)
+      do ii= nao_v+1,nao_g
+        do jj= 1,ii-1
+          dftb0(jj,ii)= factor*fdown*overlap(jj,ii)*(energy(ii)+energy(jj))
+        enddo
+      enddo
+!$OMP end parallel do
+!
+      return
+end
 
 
+!--------------------------------------------------------
+  subroutine formdftb1(dftb1,overlap,qmulliken,gamma12)
+!--------------------------------------------------------
+!
+! Form charge dependent DFTB matrix elements
+!
+      use modguess, only : nao_g, locbf_g, mbf_g, nshell_v
+      implicit none
+      integer :: ish, jsh, ksh, nbfi, nbfj, ilocbf, jlocbf, ii, jj
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00
+      real(8),intent(in) :: overlap(nao_g,nao_g), qmulliken(nshell_v), gamma12(nshell_v,nshell_v)
+      real(8),intent(inout) :: dftb1(nao_g,*)
+      real(8) :: cterm
+!
+!$OMP parallel do schedule(static,1) private(nbfi,ilocbf,nbfj,jlocbf,cterm)
+      do ish= 1,nshell_v
+        nbfi  = mbf_g(ish)
+        ilocbf= locbf_g(ish)
+        do jsh= 1,ish
+          nbfj  = mbf_g(jsh)
+          jlocbf= locbf_g(jsh)
+          cterm= zero
+          do ksh= 1,nshell_v
+            cterm= cterm+(gamma12(ksh,ish)+gamma12(ksh,jsh))*qmulliken(ksh)
+          enddo
+          do ii= 1,nbfi
+            do jj= 1,nbfj
+              dftb1(jlocbf+jj,ilocbf+ii)= dftb1(jlocbf+jj,ilocbf+ii) &
+&                                        +half*cterm*overlap(jlocbf+jj,ilocbf+ii)
+            enddo
+          enddo
+        enddo
+      enddo
+!
+      return
+end
 
 
+!---------------------------------------
+  subroutine calcgamma12(gamma12,uhub)
+!---------------------------------------
+!
+! Driver of gamma12 calculation for DFTB
+!
+      use modguess, only : coord_g, locatom_g, nshell_v
+      use modmolecule, only : numatomic
+      implicit none
+      integer :: iatom, jatom, ish, jsh
+      real(8),intent(in) :: uhub(nshell_v)
+      real(8),intent(out) :: gamma12(nshell_v,nshell_v)
+      real(8) :: rr
+      logical :: hbondi, hbondij
+!
+!$OMP parallel do schedule(static,1) private(iatom,hbondi,jatom,rr,hbondij)
+      do ish= 1,nshell_v
+        iatom= locatom_g(ish)
+        hbondi=(numatomic(iatom) == 1)
+        do jsh= 1,ish
+          jatom= locatom_g(jsh)
+          rr= sqrt((coord_g(1,iatom)-coord_g(1,jatom))**2+(coord_g(2,iatom)-coord_g(2,jatom))**2 &
+&                 +(coord_g(3,iatom)-coord_g(3,jatom))**2)
+          hbondij= hbondi.or.(numatomic(jatom) == 1)
+          call dftbgamma(gamma12(jsh,ish),uhub(ish),uhub(jsh),rr,hbondij)
+          gamma12(ish,jsh)= gamma12(jsh,ish)
+        enddo
+      enddo
+!
+      return
+end
+
+
+!--------------------------------------------------------------------
+  subroutine calcdftbmulliken(overlap,cmo,work,qmulliken,nelecdftb)
+!--------------------------------------------------------------------
+!
+! Calculate Mulliken population for DFTB
+!
+      use modguess, only : nao_g, nshell_v, locbf_g, mbf_g, mtype_g, locatom_g
+      use modmolecule, only : natom, numatomic
+      implicit none
+      integer,intent(in) :: nelecdftb(2)
+      integer :: ii, jj, ish, locbfi
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
+      real(8),intent(in) :: overlap(nao_g,nao_g), cmo(nao_g,nao_g)
+      real(8),intent(out) :: work(nao_g,nao_g), qmulliken(nshell_v)
+      real(8) :: grossorb(nao_g)
+      real(8) :: znucshell(0:2,84)
+      data znucshell/ &
+&          1.0D+0, 0.0D+0, 0.0D+0,  2.0D+0, 0.0D+0, 0.0D+0,  1.0D+0, 0.0D+0, 0.0D+0, &
+&          2.0D+0, 0.0D+0, 0.0D+0,  2.0D+0, 1.0D+0, 0.0D+0,  2.0D+0, 2.0D+0, 0.0D+0, &
+&          2.0D+0, 3.0D+0, 0.0D+0,  2.0D+0, 4.0D+0, 0.0D+0,  2.0D+0, 5.0D+0, 0.0D+0, &
+&          2.0D+0, 6.0D+0, 0.0D+0,  1.0D+0, 0.0D+0, 0.0D+0,  2.0D+0, 0.0D+0, 0.0D+0, &
+&          2.0D+0, 1.0D+0, 0.0D+0,  2.0D+0, 2.0D+0, 0.0D+0,  2.0D+0, 3.0D+0, 0.0D+0, &
+&          2.0D+0, 4.0D+0, 0.0D+0,  2.0D+0, 5.0D+0, 0.0D+0,  2.0D+0, 6.0D+0, 0.0D+0, &
+&          1.0D+0, 0.0D+0, 0.0D+0,  2.0D+0, 0.0D+0, 0.0D+0,  2.0D+0, 0.0D+0, 1.0D+0, &
+&          2.0D+0, 0.0D+0, 2.0D+0,  2.0D+0, 0.0D+0, 3.0D+0,  1.0D+0, 0.0D+0, 5.0D+0, &
+&          2.0D+0, 0.0D+0, 5.0D+0,  2.0D+0, 0.0D+0, 6.0D+0,  2.0D+0, 0.0D+0, 7.0D+0, &
+&          1.0D+0, 0.0D+0, 9.0D+0,  1.0D+0, 0.0D+0, 1.0D+1,  2.0D+0, 0.0D+0, 1.0D+1, &
+&          2.0D+0, 1.0D+0, 0.0D+0,  2.0D+0, 2.0D+0, 0.0D+0,  2.0D+0, 3.0D+0, 0.0D+0, &
+&          2.0D+0, 4.0D+0, 0.0D+0,  2.0D+0, 5.0D+0, 0.0D+0,  2.0D+0, 6.0D+0, 0.0D+0, &
+&          1.0D+0, 0.0D+0, 0.0D+0,  2.0D+0, 0.0D+0, 0.0D+0,  2.0D+0, 0.0D+0, 1.0D+0, &
+&          2.0D+0, 0.0D+0, 2.0D+0,  2.0D+0, 0.0D+0, 3.0D+0,  2.0D+0, 0.0D+0, 4.0D+0, &
+&          2.0D+0, 0.0D+0, 5.0D+0,  1.0D+0, 0.0D+0, 7.0D+0,  1.0D+0, 0.0D+0, 8.0D+0, &
+&          1.0D+0, 0.0D+0, 9.0D+0,  1.0D+0, 0.0D+0, 1.0D+1,  2.0D+0, 0.0D+0, 1.0D+1, &
+&          2.0D+0, 1.0D+0, 0.0D+0,  2.0D+0, 2.0D+0, 0.0D+0,  2.0D+0, 3.0D+0, 0.0D+0, &
+&          2.0D+0, 4.0D+0, 0.0D+0,  2.0D+0, 5.0D+0, 0.0D+0,  2.0D+0, 6.0D+0, 0.0D+0, &
+&          1.0D+0, 0.0D+0, 0.0D+0,  2.0D+0, 0.0D+0, 0.0D+0,  0.0D+0, 0.0D+0, 0.0D+0, &
+&          0.0D+0, 0.0D+0, 0.0D+0,  0.0D+0, 0.0D+0, 0.0D+0,  0.0D+0, 0.0D+0, 0.0D+0, &
+&          0.0D+0, 0.0D+0, 0.0D+0,  0.0D+0, 0.0D+0, 0.0D+0,  0.0D+0, 0.0D+0, 0.0D+0, &
+&          0.0D+0, 0.0D+0, 0.0D+0,  0.0D+0, 0.0D+0, 0.0D+0,  0.0D+0, 0.0D+0, 0.0D+0, &
+&          0.0D+0, 0.0D+0, 0.0D+0,  0.0D+0, 0.0D+0, 0.0D+0,  0.0D+0, 0.0D+0, 0.0D+0, &
+&          0.0D+0, 0.0D+0, 0.0D+0,  2.0D+0, 0.0D+0, 1.0D+0,  2.0D+0, 0.0D+0, 2.0D+0, &
+&          2.0D+0, 0.0D+0, 3.0D+0,  2.0D+0, 0.0D+0, 4.0D+0,  2.0D+0, 0.0D+0, 5.0D+0, &
+&          2.0D+0, 0.0D+0, 6.0D+0,  2.0D+0, 0.0D+0, 7.0D+0,  2.0D+0, 0.0D+0, 8.0D+0, &
+&          1.0D+0, 0.0D+0, 1.0D+1,  2.0D+0, 0.0D+0, 1.0D+1,  2.0D+0, 1.0D+0, 0.0D+0, &
+&          2.0D+0, 2.0D+0, 0.0D+0,  2.0D+0, 3.0D+0, 0.0D+0,  2.0D+0, 4.0D+0, 0.0D+0/
+!
+      grossorb(:)= zero
+      qmulliken(:)= zero
+!
+      if(nelecdftb(1) == nelecdftb(2)) then
+!
+! Calculate Gross orbital population
+!
+        call dgemm('N','T',nao_g,nao_g,nelecdftb(1),two,cmo,nao_g,cmo,nao_g,zero,work,nao_g)
+!$OMP parallel do schedule(static,1) reduction(+:grossorb)
+        do ii= 1,nao_g
+          do jj= 1,ii-1
+            grossorb(ii)= grossorb(ii)+work(jj,ii)*overlap(jj,ii)
+            grossorb(jj)= grossorb(jj)+work(jj,ii)*overlap(jj,ii)
+          enddo
+          grossorb(ii)= grossorb(ii)+work(ii,ii)*overlap(ii,ii)
+        enddo
+!
+! Calculate Gross atom population
+!
+        do ish= 1,nshell_v
+          locbfi= locbf_g(ish)
+          do ii= 1,mbf_g(ish)
+            qmulliken(ish)= qmulliken(ish)+grossorb(locbfi+ii)
+          enddo
+        enddo
+        do ish= 1,nshell_v
+          qmulliken(ish)= qmulliken(ish)-znucshell(mtype_g(ish),numatomic(locatom_g(ish)))
+        enddo
+      else
+        write(*,'(" Error! DFTB for open-shell has not been implemented yet!")')
+        call iabort
+      endif
+!
+      return
+end
+
+
+!-------------------------------------------
+  subroutine diffqmulliken(qmulliken,qmax)
+!-------------------------------------------
+!
+! Calculate maximum absolute change of Mulliken charge
+!
+      use modguess, only : nshell_v
+      implicit none
+      integer :: ishell
+      real(8),parameter :: zero=0.0D+00
+      real(8),intent(in) :: qmulliken(nshell_v,2)
+      real(8),intent(out) :: qmax
+      real(8) :: qtmp
+!
+      qmax= zero
+      do ishell= 1,nshell_v
+        qtmp= qmulliken(ishell,2)-qmulliken(ishell,1)
+        if(abs(qtmp) > qmax) qmax= abs(qtmp)
+      enddo
+!
+      return
+end
+
+
+!-----------------------------------------------------
+  subroutine dftbgamma(gammaab,uhuba,uhubb,rr,hbond)
+!-----------------------------------------------------
+!
+! Calculate gamma value for DFTB
+!
+      implicit none
+      real(8),parameter :: one=1.0D+00, half=0.5D+00, three=3.0D+00, nine=9.0D+00
+      real(8),parameter :: p16=1.6D+00, p33=3.3D+01, p48=4.8D+01
+      real(8),parameter :: factau=3.2D+00, facg=0.3125D+00, gthresh=1.0D-05
+      real(8),intent(in) :: uhuba, uhubb, rr
+      real(8),intent(out) :: gammaab
+      real(8) :: taua, taub, denom, tautmp, tauavg, coeffhbond, rrinv, tmp, saa
+      real(8) :: taua2, taub2, taua4, taub4, denom2, sab, sba
+      logical,intent(in) :: hbond
+!
+      taua= factau*uhuba
+      taub= factau*uhubb
+      denom= one/(taua+taub)
+      tautmp= taua*taub*denom
+      tauavg= p16*tautmp*(one+tautmp*denom)
+      if(hbond) then
+        coeffhbond= exp(-((uhuba+uhubb)*half)**4*rr*rr)
+      else
+        coeffhbond= one
+      endif
+!
+      if(rr < gthresh) then
+        gammaab = facg*tauavg
+      else
+        rrinv= one/rr
+        if(abs(taua-taub) < gthresh) then
+          tmp= tauavg*rr
+          saa= exp(-tmp)*rrinv*(one+(p33+(nine+tmp)*tmp)*tmp/p48)
+          gammaab= rrinv-coeffhbond*saa
+        else
+          taua2= taua*taua
+          taub2= taub*taub
+          taua4= taua2*taua2
+          taub4= taub2*taub2
+          denom= one/(taua2-taub2)
+          denom2= denom*denom
+          sab= exp(-taua*rr)*taub4*denom2*(half*taua-(taub2-three*taua2)*denom*rrinv)
+          sba= exp(-taub*rr)*taua4*denom2*(half*taub+(taua2-three*taub2)*denom*rrinv)
+          gammaab= rrinv-coeffhbond*(sab+sba)
+        endif
+      endif
+!
+      return
+end
+
+
+!---------------------------------
+  subroutine dftbip(energy,uhub)
+!---------------------------------
+!
+! Set valence ionization potentials for DFTB
+!
+      use modparallel, only : master
+      use modmolecule, only : natom, numatomic
+      use modguess, only : nao_g, nshell_v
+      implicit none
+      integer :: iao, iatom, i, ishell
+      real(8),intent(inout) :: energy(nao_g), uhub(nshell_v)
+      real(8) :: dftbips(84)= &
+&     (/-0.238603D+0, -0.579318D+0, -0.105624D+0, -0.206152D+0, -0.347026D+0, -0.505337D+0,&
+&       -0.682915D+0, -0.880592D+0, -1.098828D+0, -1.337930D+0, -0.100836D+0, -0.172918D+0,&
+&       -0.284903D+0, -0.397349D+0, -0.513346D+0, -0.634144D+0, -0.760399D+0, -0.892514D+0,&
+&       -0.085219D+0, -0.138404D+0, -0.153708D+0, -0.164133D+0, -0.172774D+0, -0.147221D+0,&
+&       -0.187649D+0, -0.194440D+0, -0.200975D+0, -0.165046D+0, -0.169347D+0, -0.219658D+0,&
+&       -0.328789D+0, -0.431044D+0, -0.532564D+0, -0.635202D+0, -0.739820D+0, -0.846921D+0,&
+&       -0.081999D+0, -0.129570D+0, -0.150723D+0, -0.163093D+0, -0.172061D+0, -0.179215D+0,&
+&       -0.185260D+0, -0.155713D+0, -0.157939D+0, -0.159936D+0, -0.161777D+0, -0.207892D+0,&
+&       -0.301650D+0, -0.387547D+0, -0.471377D+0, -0.555062D+0, -0.639523D+0, -0.725297D+0,&
+&       -0.076658D+0, -0.118676D+0, -0.135171D+0,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,&
+&        0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,&
+&        0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     , -0.171078D+0, -0.187557D+0,&
+&       -0.199813D+0, -0.209733D+0, -0.218183D+0, -0.225640D+0, -0.232400D+0, -0.238659D+0,&
+&       -0.211421D+0, -0.250189D+0, -0.350442D+0, -0.442037D+0, -0.531518D+0, -0.620946D+0/)
+      real(8) :: uhubs(84)= &
+&     (/ 0.419731D+0,  0.742961D+0,  0.174131D+0,  0.270796D+0,  0.333879D+0,  0.399218D+0,&
+&        0.464356D+0,  0.528922D+0,  0.592918D+0,  0.656414D+0,  0.165505D+0,  0.224983D+0,&
+&        0.261285D+0,  0.300005D+0,  0.338175D+0,  0.375610D+0,  0.412418D+0,  0.448703D+0,&
+&        0.136368D+0,  0.177196D+0,  0.189558D+0,  0.201341D+0,  0.211913D+0,  0.200284D+0,&
+&        0.230740D+0,  0.239398D+0,  0.247710D+0,  0.235429D+0,  0.243169D+0,  0.271212D+0,&
+&        0.279898D+0,  0.304342D+0,  0.330013D+0,  0.355433D+0,  0.380376D+0,  0.404852D+0,&
+&        0.130512D+0,  0.164724D+0,  0.176814D+0,  0.189428D+0,  0.200280D+0,  0.209759D+0,&
+&        0.218221D+0,  0.212289D+0,  0.219321D+0,  0.225725D+0,  0.231628D+0,  0.251776D+0,&
+&        0.257192D+0,  0.275163D+0,  0.294185D+0,  0.313028D+0,  0.331460D+0,  0.349484D+0,&
+&        0.120590D+0,  0.149382D+0,  0.160718D+0,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,&
+&        0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,&
+&        0.0D+0     ,  0.0D+0     ,  0.0D+00    ,  0.0D+0     ,  0.187365D+0,  0.200526D+0,&
+&        0.212539D+0,  0.223288D+0,  0.233028D+0,  0.241981D+0,  0.250317D+0,  0.258165D+0,&
+&        0.255962D+0,  0.272767D+0,  0.267448D+0,  0.280804D+0,  0.296301D+0,  0.311976D+0/)
+      real(8) :: dftbipp(3:84)= &
+      (/                            -0.040054D+0, -0.074172D+0, -0.132547D+0, -0.194236D+0,&
+&       -0.260544D+0, -0.331865D+0, -0.408337D+0, -0.490009D+0, -0.027320D+0, -0.048877D+0,&
+&       -0.099666D+0, -0.149976D+0, -0.202363D+0, -0.257553D+0, -0.315848D+0, -0.377389D+0,&
+&       -0.029573D+0, -0.051543D+0, -0.053913D+0, -0.053877D+0, -0.053055D+0, -0.036319D+0,&
+&       -0.050354D+0, -0.048699D+0, -0.046909D+0, -0.027659D+0, -0.025621D+0, -0.040997D+0,&
+&       -0.094773D+0, -0.143136D+0, -0.190887D+0, -0.239256D+0, -0.288792D+0, -0.339778D+0,&
+&       -0.027523D+0, -0.047197D+0, -0.052925D+0, -0.053976D+0, -0.053629D+0, -0.052675D+0,&
+&       -0.051408D+0, -0.033507D+0, -0.031248D+0, -0.029100D+0, -0.027061D+0, -0.043481D+0,&
+&       -0.092539D+0, -0.135732D+0, -0.177383D+0, -0.218721D+0, -0.260330D+0, -0.302522D+0,&
+&       -0.027142D+0, -0.045680D+0, -0.049659D+0,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,&
+&        0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,&
+&        0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     , -0.049388D+0, -0.051266D+0,&
+&       -0.051078D+0, -0.049978D+0, -0.048416D+0, -0.046602D+0, -0.044644D+0, -0.042604D+0,&
+&       -0.028258D+0, -0.038408D+0, -0.087069D+0, -0.128479D+0, -0.167900D+0, -0.206503D+0/) 
+      real(8) :: uhubp(3:84)= &
+      (/                             0.131681D+0,  0.224651D+0,  0.296157D+0,  0.364696D+0,&
+&        0.430903D+0,  0.495405D+0,  0.558631D+0,  0.620878D+0,  0.087777D+0,  0.150727D+0,&
+&        0.203216D+0,  0.247841D+0,  0.289262D+0,  0.328724D+0,  0.366885D+0,  0.404106D+0,&
+&        0.081938D+0,  0.128252D+0,  0.137969D+0,  0.144515D+0,  0.149029D+0,  0.123012D+0,&
+&        0.155087D+0,  0.156593D+0,  0.157219D+0,  0.106180D+0,  0.097312D+0,  0.153852D+0,&
+&        0.205025D+0,  0.240251D+0,  0.271613D+0,  0.300507D+0,  0.327745D+0,  0.353804D+0,&
+&        0.073660D+0,  0.115222D+0,  0.127903D+0,  0.136205D+0,  0.141661D+0,  0.145599D+0,&
+&        0.148561D+0,  0.117901D+0,  0.113146D+0,  0.107666D+0,  0.099994D+0,  0.150506D+0,&
+&        0.189913D+0,  0.217398D+0,  0.241589D+0,  0.263623D+0,  0.284168D+0,  0.303641D+0,&
+&        0.069450D+0,  0.105176D+0,  0.115479D+0,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,&
+&        0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,&
+&        0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.126480D+0,  0.135605D+0,&
+&        0.141193D+0,  0.144425D+0,  0.146247D+0,  0.146335D+0,  0.145121D+0,  0.143184D+0,&
+&        0.090767D+0,  0.134398D+0,  0.185496D+0,  0.209811D+0,  0.231243D+0,  0.250546D+0/)
+      real(8) :: dftbipd(21:84)= &
+      (/                            -0.118911D+0, -0.156603D+0, -0.189894D+0, -0.107113D+0,&
+&       -0.248949D+0, -0.275927D+0, -0.301635D+0, -0.170792D+0, -0.185263D+0, -0.372826D+0,&
+&        0.043096D+0,  0.062123D+0,  0.078654D+0,  0.104896D+0,  0.126121D+0,  0.140945D+0,&
+&        0.030672D+0, -0.041363D+0, -0.092562D+0, -0.132380D+0, -0.170468D+0, -0.207857D+0,&
+&       -0.244973D+0, -0.191289D+0, -0.218418D+0, -0.245882D+0, -0.273681D+0, -0.431379D+0,&
+&        0.135383D+0,  0.125834D+0,  0.118556D+0,  0.114419D+0,  0.112860D+0,  0.111715D+0,&
+&       -0.007997D+0, -0.074037D+0, -0.113716D+0,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,&
+&        0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,&
+&        0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     , -0.064434D+0, -0.098991D+0,&
+&       -0.132163D+0, -0.164874D+0, -0.197477D+0, -0.230140D+0, -0.262953D+0, -0.295967D+0,&
+&       -0.252966D+0, -0.362705D+0,  0.081292D+0,  0.072602D+0,  0.073863D+0,  0.081795D+0/)
+      real(8) :: uhubd(21:84)= &
+&     (/                             0.322610D+0,  0.351019D+0,  0.376535D+0,  0.312190D+0,&
+&        0.422038D+0,  0.442914D+0,  0.462884D+0,  0.401436D+0,  0.420670D+0,  0.518772D+0,&
+&        0.051561D+0,  0.101337D+0,  0.127856D+0,  0.165858D+0,  0.189059D+0,  0.200972D+0,&
+&        0.180808D+0,  0.234583D+0,  0.239393D+0,  0.269067D+0,  0.294607D+0,  0.317562D+0,&
+&        0.338742D+0,  0.329726D+0,  0.350167D+0,  0.369605D+0,  0.388238D+0,  0.430023D+0,&
+&        0.156519D+0,  0.171708D+0,  0.184848D+0,  0.195946D+0,  0.206534D+0,  0.211949D+0,&
+&        0.159261D+0,  0.199559D+0,  0.220941D+0,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,&
+&        0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,&
+&        0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.0D+0     ,  0.220882D+0,  0.249246D+0,&
+&        0.273105D+0,  0.294154D+0,  0.313288D+0,  0.331031D+0,  0.347715D+0,  0.363569D+0,&
+&        0.361156D+0,  0.393392D+0,  0.119520D+0,  0.128603D+0,  0.142210D+0,  0.158136D+0/)
+!
+      iao= 0
+      ishell= 0
+      do iatom= 1,natom
+        select case(numatomic(iatom))
+! H - He
+            case(1:2)
+              iao= iao+1
+              energy(iao)= dftbips(numatomic(iatom))
+              ishell= ishell+1
+              uhub(ishell)= uhubs(numatomic(iatom))
+! Li - Ar
+            case(3:18)
+              iao= iao+1
+              energy(iao)= dftbips(numatomic(iatom))
+              do i= 1,3
+                iao= iao+1
+                energy(iao)= dftbipp(numatomic(iatom))
+              enddo
+              ishell= ishell+1
+              uhub(ishell)= uhubs(numatomic(iatom))
+              ishell= ishell+1
+              uhub(ishell)= uhubp(numatomic(iatom))
+! K  - Ca, Ga - Kr
+            case(19:20,31:36)
+              iao= iao+1
+              energy(iao)= dftbips(numatomic(iatom))
+              do i= 1,3
+                iao= iao+1
+                energy(iao)= dftbipp(numatomic(iatom))
+              enddo
+              ishell= ishell+1
+              uhub(ishell)= uhubs(numatomic(iatom))
+              ishell= ishell+1
+              uhub(ishell)= uhubp(numatomic(iatom))
+! Sc - Zn
+            case(21:30)
+              iao= iao+1
+              energy(iao)= dftbips(numatomic(iatom))
+              do i= 1,3
+                iao= iao+1
+                energy(iao)= dftbipp(numatomic(iatom))
+              enddo
+              do i= 1,5
+                iao= iao+1
+                energy(iao)= dftbipd(numatomic(iatom))
+              enddo
+              ishell= ishell+1
+              uhub(ishell)= uhubs(numatomic(iatom))
+              ishell= ishell+1
+              uhub(ishell)= uhubp(numatomic(iatom))
+              ishell= ishell+1
+              uhub(ishell)= uhubd(numatomic(iatom))
+! Rb - Sr, In - Xe
+            case(37:38,49:54)
+              iao= iao+1
+              energy(iao)= dftbips(numatomic(iatom))
+              do i= 1,3
+                iao= iao+1
+                energy(iao)= dftbipp(numatomic(iatom))
+              enddo
+              ishell= ishell+1
+              uhub(ishell)= uhubs(numatomic(iatom))
+              ishell= ishell+1
+              uhub(ishell)= uhubp(numatomic(iatom))
+! Y  - Cd
+            case(39:48)
+              iao= iao+1
+              energy(iao)= dftbips(numatomic(iatom))
+              do i= 1,3
+                iao= iao+1
+                energy(iao)= dftbipp(numatomic(iatom))
+              enddo
+              do i= 1,5
+                iao= iao+1
+                energy(iao)= dftbipd(numatomic(iatom))
+              enddo
+              ishell= ishell+1
+              uhub(ishell)= uhubs(numatomic(iatom))
+              ishell= ishell+1
+              uhub(ishell)= uhubp(numatomic(iatom))
+              ishell= ishell+1
+              uhub(ishell)= uhubd(numatomic(iatom))
+! Cs - Ba
+            case(55:56)
+              iao= iao+1
+              energy(iao)= dftbips(numatomic(iatom))
+              ishell= ishell+1
+              uhub(ishell)= uhubs(numatomic(iatom))
+! La
+! no d function in bshuzmini6_g
+!           case(57)
+!             iao= iao+1
+!             energy(iao)= dftbips(numatomic(iatom))
+!             do i= 1,5
+!               iao= iao+1
+!               energy(iao)= dftbipd(numatomic(iatom))
+!             enddo
+!             ishell= ishell+1
+!             uhub(ishell)= uhubs(numatomic(iatom))
+!             ishell= ishell+1
+!             uhub(ishell)= uhubd(numatomic(iatom))
+! Lu - Hg
+            case(71:80)
+              iao= iao+1
+              energy(iao)= dftbips(numatomic(iatom))
+              do i= 1,5
+                iao= iao+1
+                energy(iao)= dftbipd(numatomic(iatom))
+              enddo
+              ishell= ishell+1
+              uhub(ishell)= uhubs(numatomic(iatom))
+              ishell= ishell+1
+              uhub(ishell)= uhubd(numatomic(iatom))
+! Tl - Po
+            case(81:84)
+              iao= iao+1
+              energy(iao)= dftbips(numatomic(iatom))
+              do i= 1,3
+                iao= iao+1
+                energy(iao)= dftbipp(numatomic(iatom))
+              enddo
+              ishell= ishell+1
+              uhub(ishell)= uhubs(numatomic(iatom))
+              ishell= ishell+1
+              uhub(ishell)= uhubp(numatomic(iatom))
+!
+            case default
+              if(master) write(*,'(" Error! This program supports H-La and Lu-Po in dftbip.")')
+              call iabort
+        end select
+      enddo
+!
+      return
+end
 
