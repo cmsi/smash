@@ -116,6 +116,7 @@ end
 ! threshatm   : threshold for distance of atoms
 ! cutint2     : threshold for two-electron integrals
 ! threshsoscf : threshold for second-order SCF
+! threshqc    : threshold for quadratically convergent SCF
 ! threshweight: threshold for weight at a grid point
 ! threshrho   : threshold for density at a grid point
 ! threshdfock : threshold for functional at a grid point
@@ -123,7 +124,7 @@ end
       implicit none
       real(8) :: threshex=30.0D+00, threshover=1.0D-06
       real(8) :: threshatm=2.0D-01, thresherr=0.6D+00
-      real(8) :: cutint2, threshsoscf
+      real(8) :: cutint2, threshsoscf, threshqc
       real(8) :: threshweight=1.0D-08, threshrho=1.0D-07, threshdfock=1.0D-06
       real(8) :: threshdftao=1.0D-04
 end
@@ -263,9 +264,10 @@ end
 ! These valuables are for SCF calculations.
 !
       implicit none
-      integer :: maxiter, maxdiis, maxsoscf
+      integer :: maxiter, maxdiis, maxsoscf, maxqc
       real(8) :: dconv
-      logical :: fdiff, diis, extrap
+      logical :: fdiff, extrap
+      character(len=16) :: scfconv
 end
 
 

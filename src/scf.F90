@@ -30,14 +30,14 @@
       use modparallel, only : master
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nmo
-      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, diis, extrap
+      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
-      use modthresh, only : threshsoscf, cutint2, threshex, threshover, thresherr
+      use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, thresherr
       use modprint, only : iprint
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, i, itsub, itdiis
-      integer :: itextra, itsoscf, nocc, nvir
+      integer :: itextra, itsoscf, itqc, nocc, nvir
       integer :: idis(nproc2,14), isize1, isize2, isize3
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
       real(8),parameter :: small=1.0D-10
@@ -47,9 +47,10 @@
       real(8),allocatable :: fock(:), fockprev(:), dmtrxprev(:), dmax(:), work(:)
       real(8),allocatable :: fockdiis(:), errdiis(:), diismtrx(:), work2(:)
       real(8),allocatable :: hstart(:), sograd(:,:), sodisp(:), sovecy(:)
+      real(8),allocatable :: qcvec(:), qcmat(:), qcmatsave(:), qceigen(:), qcgmn(:)
       real(8) :: escfprev, diffmax, tridot, deltae, errmax, sogradmax, sodispmax
       real(8) :: time1, time2, time3, time4
-      logical :: convsoscf
+      logical :: convsoscf, convqc
       data maxfunc/1,3,6,10,15,21,28/
 !
       nao2= nao*nao
@@ -65,26 +66,41 @@
 !
 ! Set arrays
 !
-      call memset(nao2+nao3*3+nshell3)
-      allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2))
-!
       isize1= max(idis(myrank2+1,3),idis(myrank2+1,7)*nao,maxdiis)
       isize2= idis(myrank2+1,3)
       isize3= idis(myrank2+1,5)
-      call memset(isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2)
-      allocate(fockdiis(isize3*maxdiis), errdiis(isize2*maxdiis), &
-&              diismtrx(maxdiis*(maxdiis+1)/2), work2(isize1))
-      if(.not.diis) then
-       call memset(nocc*nvir*3*maxsoscf)
-       allocate(hstart(nocc*nvir),sograd(nocc*nvir,maxsoscf),sodisp(nocc*nvir*maxsoscf), &
-&               sovecy(nocc*nvir*(maxsoscf-1)))
-      endif
+      select case(scfconv)
+        case('DIIS')
+          call memset(nao2+nao3*3+nshell3+isize3*maxdiis+isize1+isize2*maxdiis+ &
+&                     maxdiis*(maxdiis+1)/2)
+          allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
+&                  fockdiis(isize3*maxdiis), errdiis(isize2*maxdiis), &
+&                  diismtrx(maxdiis*(maxdiis+1)/2),work2(isize1))
+        case('SOSCF')
+          call memset(nao2+nao3*3+nshell3+nocc*nvir*3*maxsoscf+isize1)
+          allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
+                   hstart(nocc*nvir),sograd(nocc*nvir,maxsoscf),sodisp(nocc*nvir*maxsoscf), &
+&                  sovecy(nocc*nvir*(maxsoscf-1)),work2(isize1))
+        case('QC')
+          call memset(nao2*2+nao3*2+nshell3+(nocc*nvir+1)*(maxqc+1)*2+maxqc*maxqc+ &
+&                     maxqc*(maxqc+1)/2+maxqc)
+          allocate(fock(nao2),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
+                   qcvec((nocc*nvir+1)*(maxqc+1)*2),qcmat(maxqc*maxqc),qcmatsave(maxqc*(maxqc+1)/2),&
+&                  qceigen(maxqc),qcgmn(nao3),work2(nao2))
+        case default
+          if(master) then
+            write(*,'(" SCFConv=",a12,"is not supported.")') 
+            call iabort
+          endif
+      end select
 !
       escfprev= zero
       itdiis =0
       itextra=0
       itsoscf=0
+      itqc   =0
       convsoscf=.false.
+      convqc=.false.
 !
 ! Calculate initial density matrix
 !
@@ -103,22 +119,28 @@
         write(*,'(1x,74("-"))')
         write(*,'("   Hartree-Fock calculation")')
         write(*,'(1x,74("-"))')
-        write(*,'("   DIIS = ",l1,",   SOSCF = ",l1)')diis,.not.diis
-        write(*,'("   Dconv      =",1p,d9.2,",  MaxIter    = ",i9  ,",  ThreshSOSCF=",d9.2)') &
-&                    dconv, maxiter, threshsoscf
+        write(*,'("   SCFConv    =",1x,a10)') scfconv
+        write(*,'("   Dconv      =",1p,d9.2,",  MaxIter    = ",i9  ,",  MaxQC      =",i9  )') &
+&                    dconv, maxiter, maxqc
         write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   = ",d9.2,",  ThreshOver =",d9.2)') &
 &                    cutint2, threshex, threshover
+        write(*,'("   ThreshSOSCF=",1p,d9.2,",  ThreshQC   = ",d9.2)')                        &
+&                    threshsoscf, threshqc
         write(*,'(1x,74("-"))')
         write(*,'(" ====================")')
         write(*,'("    SCF Iteration")')
         write(*,'(" ====================")')
-        if(diis) then
-          write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
-&                      "Delta Density     DIIS Error")')
-        else
-          write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
-&                      "Delta Density    Orbital Grad")')
-        endif
+        select case(scfconv)
+          case('DIIS')
+            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+&                     "Delta Density     DIIS Error")')
+          case('SOSCF')
+            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+&                     "Delta Density    Orbital Grad")')
+          case('QC')
+            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+&                     "Delta Density")')
+        end select
       endif
 !
 ! Start SCF iteration
@@ -150,85 +172,107 @@
         deltae = escf-escfprev
         escfprev= escf
 !
-        if(diis) then
+        select case(scfconv)
 !
 ! DIIS interpolation
 !
-          call calcdiiserr(fock,dmtrxprev,overlap,ortho,cmo,work,work2,errmax,nao,nmo, &
-&                          idis,nproc2,myrank2,mpi_comm2)
-          if(((itdiis /= 0).or.(errmax <= thresherr)).and.(errmax > small))then
-            itdiis= itdiis+1
-            call calcrdiis(fock,errdiis,fockdiis,diismtrx,cmo,work2,itdiis,nao,maxdiis, &
-&                          idis,nproc2,myrank2,mpi_comm2)
-          endif
+          case('DIIS')
+            call calcdiiserr(fock,dmtrxprev,overlap,ortho,cmo,work,work2,errmax,nao,nmo, &
+&                            idis,nproc2,myrank2,mpi_comm2)
+            if(((itdiis /= 0).or.(errmax <= thresherr)).and.(errmax > small))then
+              itdiis= itdiis+1
+              call calcrdiis(fock,errdiis,fockdiis,diismtrx,cmo,work2,itdiis,nao,maxdiis, &
+&                            idis,nproc2,myrank2,mpi_comm2)
+            endif
 !
 ! Extrapolate Fock matrix
 !
-          if(extrap.and.itdiis == 0) &
-&           call fockextrap(fock,fockdiis,work,cmo,dmtrx,itextra,nao,maxdiis, &
-&                           idis,nproc2,myrank2,mpi_comm2)
+            if(extrap.and.itdiis == 0) &
+&             call fockextrap(fock,fockdiis,work,cmo,dmtrx,itextra,nao,maxdiis, &
+&                             idis,nproc2,myrank2,mpi_comm2)
 !
 ! Diagonalize Fock matrix
 !
-          call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
-        else
+            call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
 !
 ! Approximated Second-order SCF method
 !
-          if((itsoscf == 0).or.(convsoscf)) then
-            call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
-            sogradmax= zero
-            itsoscf= itsoscf+1
-          else
-            call expand(fock,work,nao)
-            call soscfgrad(work,work2,sograd(1,itsoscf),cmo,nocc,nvir,sogradmax,nao, &
-&                          idis,nproc2,myrank2,mpi_comm2,1)
-            if(sogradmax <= threshsoscf) then
-              if(itsoscf == 1) call soscfinith(hstart,eigen,nocc,nvir,nao)
-              call soscfnewh(hstart,sograd,sodisp,sovecy,nocc,nvir,itsoscf,maxsoscf,sodispmax)
-              call soscfupdate(cmo,sodisp,work,work2,nocc,nvir,itsoscf,maxsoscf, &
-&                              nao,nmo,sodispmax,idis,nproc2,myrank2,mpi_comm2)
+          case('SOSCF')
+            if((itsoscf == 0).or.(convsoscf)) then
+              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+              sogradmax= zero
               itsoscf= itsoscf+1
             else
-              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+              call expand(fock,work,nao)
+              call soscfgrad(work,work2,sograd(1,itsoscf),cmo,nocc,nvir,sogradmax,nao, &
+&                            idis,nproc2,myrank2,mpi_comm2,1)
+              if(sogradmax <= threshsoscf) then
+                if(itsoscf == 1) call soscfinith(hstart,eigen,nocc,nvir,nao)
+                call soscfnewh(hstart,sograd,sodisp,sovecy,nocc,nvir,itsoscf,maxsoscf,sodispmax)
+                call soscfupdate(cmo,sodisp,work,work2,nocc,nvir,itsoscf,maxsoscf, &
+&                                nao,nmo,sodispmax,idis,nproc2,myrank2,mpi_comm2)
+                itsoscf= itsoscf+1
+              else
+                call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+              endif
             endif
-          endif
-        endif
+!
+! Quadratically convergent SCF method
+!
+          case('QC')
+            if((itqc == 0).or.(convqc)) then
+              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+              itqc= itqc+1
+            else
+              call rhfqc(fock,cmo,dmax,qcgmn,qcvec,work,qcmat,qcmatsave,qceigen,overlap,xint,work2, &
+&                        nao,nmo,nocc,nvir,nshell,maxdim,maxqc,threshqc,idis,nproc2,myrank2,mpi_comm2)
+              itqc= itqc+1
+            endif
+        end select
         call cpu_time(time3)
 !
 ! Copy previous density matrix and calculate new density matrix
 !
         call calcdmtrx(cmo,dmtrx,work,nao,neleca)
         call ddiff(dmtrx,dmtrxprev,work,nao3,diffmax)
-        if(diis) then
-          if(extrap.and.(itdiis==0)) then
-            itsub= itextra
-          else
-            itsub= itdiis
-          endif
-        else
-          itsub= itsoscf
-        endif
-        if(master) then
-          if(diis) then
-            write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,errmax
-          else
-            write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,sogradmax
-          endif
-        endif
+!
+        select case(scfconv)
+          case('DIIS')
+            if(extrap.and.(itdiis==0)) then
+              itsub= itextra
+            else
+              itsub= itdiis
+            endif
+            if(master) &
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,errmax
+          case('SOSCF')
+            itsub= itsoscf
+            if(master) &
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,sogradmax
+          case('QC')
+            itsub= itqc
+            if(master) &
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,escf,deltae,diffmax
+        end select
 !
 ! Check SCF convergence
 !
-        if(diis) then
-          if(diffmax.lt.dconv) exit
-          if(itdiis >= maxdiis) itdiis= 0
-        else
-          if((diffmax.lt.dconv).and.(convsoscf)) exit
-          if((diffmax.lt.dconv).and.(itsoscf==1)) exit
-          if((diffmax.lt.dconv).and.(.not.convsoscf)) convsoscf=.true.
-          if(itsoscf >= maxsoscf) itsoscf= 0
-        endif
-        if(iter.eq.maxiter) then
+        select case(scfconv)
+          case('DIIS')
+            if(diffmax < dconv) exit
+            if(itdiis >= maxdiis) itdiis= 0
+          case('SOSCF')
+            if((diffmax < dconv).and.(convsoscf)) exit
+            if((diffmax < dconv).and.(itsoscf == 1)) exit
+            if((diffmax < dconv).and.(.not.convsoscf)) convsoscf=.true.
+            if(itsoscf >= maxsoscf) itsoscf= 0
+          case('QC')
+            if((diffmax < dconv).and.(convqc)) exit
+            if((diffmax < dconv).and.(itqc == 1)) exit
+            if((diffmax < dconv).and.(.not.convqc)) convqc=.true.
+        end select
+!
+        if(iter == maxiter) then
           if(master) then
             write(*,'(" SCF did not converge.")')
             call iabort
@@ -249,14 +293,26 @@
 !
 ! Unset arrays
 !
-      if(.not.diis) then
-       call memunset(nocc*nvir*3*maxsoscf)
-       deallocate(hstart,sograd,sodisp,sovecy)
-      endif
-      deallocate(fockdiis,errdiis,diismtrx,work2)
-      call memunset(isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2)
-      deallocate(fock,fockprev,dmtrxprev,dmax,work)
-      call memunset(nao2+nao3*3+nshell3)
+      select case(scfconv)
+        case('DIIS')
+          call memunset(nao2+nao3*3+nshell3+isize3*maxdiis+isize1+isize2*maxdiis+ &
+&                       maxdiis*(maxdiis+1)/2)
+          deallocate(fock,fockprev,dmtrxprev,dmax,work, &
+&                    fockdiis,errdiis, &
+&                    diismtrx,work2)
+        case('SOSCF')
+          call memunset(nao2+nao3*3+nshell3+nocc*nvir*3*maxsoscf+isize1)
+          deallocate(fock,fockprev,dmtrxprev,dmax,work, &
+                     hstart,sograd,sodisp, &
+&                    sovecy,work2)
+        case('QC')
+          call memunset(nao2*2+nao3*2+nshell3+(nocc*nvir+1)*(maxqc+1)*2+maxqc*maxqc+ &
+&                       maxqc*(maxqc+1)/2+maxqc)
+          deallocate(fock,fockprev,dmtrxprev,dmax,work, &
+                     qcvec,qcmat,qcmatsave,&
+&                    qceigen,qcgmn,work2)
+      end select
+!
       return
 end
 
@@ -805,7 +861,7 @@ end
       use modatom, only : atomrad
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nmo, natom, numatomic
-      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, diis, extrap
+      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
       use modthresh, only : threshsoscf, cutint2, threshex, threshover, thresherr, &
 &                           threshrho, threshdfock
@@ -858,7 +914,7 @@ end
       call memset(isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2)
       allocate(fockdiis(isize3*maxdiis), errdiis(isize2*maxdiis), &
 &              diismtrx(maxdiis*(maxdiis+1)/2), work2(isize1))
-      if(.not.diis) then
+      if(scfconv == 'SOSCF') then
        call memset(nocc*nvir*3*maxsoscf)
        allocate(hstart(nocc*nvir),sograd(nocc*nvir,maxsoscf),sodisp(nocc*nvir*maxsoscf), &
 &               sovecy(nocc*nvir*(maxsoscf-1)))
@@ -897,7 +953,7 @@ end
         write(*,'(1x,74("-"))')
         write(*,'("   DFT calculation")')
         write(*,'(1x,74("-"))')
-        write(*,'("   DIIS = ",l1,",   SOSCF = ",l1)')diis,.not.diis
+        write(*,'("   SCFConv    =",1x,a10)') scfconv
         write(*,'("   Dconv      =",1p,d9.2,",  MaxIter    = ",i9  ,",  ThreshSOSCF=",d9.2)') &
 &                    dconv, maxiter, threshsoscf
         write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   = ",d9.2,",  ThreshOver =",d9.2)') &
@@ -909,7 +965,7 @@ end
         write(*,'(" ====================")')
         write(*,'("    SCF Iteration")')
         write(*,'(" ====================")')
-        if(diis) then
+        if(scfconv == 'DIIS') then
           write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
 &                      "Delta Density     DIIS Error")')
         else
@@ -958,7 +1014,7 @@ end
 !
         call daxpy(nao3,one,fockd,1,fock,1)
 !
-        if(diis) then
+        if(scfconv == 'DIIS') then
 !
 ! DIIS interpolation
 !
@@ -1008,7 +1064,7 @@ end
 !
         call calcdmtrx(cmo,dmtrx,work,nao,neleca)
         call ddiff(dmtrx,dmtrxprev,work,nao3,diffmax)
-        if(diis) then
+        if(scfconv == 'DIIS') then
           if(extrap.and.(itdiis==0)) then
             itsub= itextra
           else
@@ -1018,7 +1074,7 @@ end
           itsub= itsoscf
         endif
         if(master) then
-          if(diis) then
+          if(scfconv == 'DIIS') then
             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,errmax
           else
             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,sogradmax
@@ -1027,7 +1083,7 @@ end
 !
 ! Check SCF convergence
 !
-        if(diis) then
+        if(scfconv == 'DIIS') then
           if(diffmax.lt.dconv) exit
           if(itdiis >= maxdiis) itdiis= 0
         else
@@ -1059,7 +1115,7 @@ end
 !
 ! Unset arrays
 !
-      if(.not.diis) then
+      if(scfconv == 'SOSCF') then
        call memunset(nocc*nvir*3*maxsoscf)
        deallocate(hstart,sograd,sodisp,sovecy)
       endif
@@ -1094,7 +1150,7 @@ end
       use modparallel, only : master
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nelecb, nmo
-      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, diis, extrap
+      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
       use modthresh, only : threshsoscf, cutint2, threshex, threshover, thresherr
       use modprint, only : iprint
@@ -1146,7 +1202,7 @@ end
       call memset(isize3*maxdiis*2+isize1+isize2*maxdiis*2+maxdiis*(maxdiis+1)/2)
       allocate(fockdiisa(isize3*maxdiis),fockdiisb(isize3*maxdiis),errdiisa(isize2*maxdiis),&
 &              errdiisb(isize2*maxdiis),diismtrx(maxdiis*(maxdiis+1)/2),work2(isize1))
-      if(.not.diis) then
+      if(scfconv == 'SOSCF') then
        call memset(nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf)
        allocate(hstarta(nocca*nvira),hstartb(noccb*nvirb), &
 &               sograda(nocca*nvira,maxsoscf),sogradb(noccb*nvirb,maxsoscf), &
@@ -1179,7 +1235,7 @@ end
         write(*,'(1x,74("-"))')
         write(*,'("   Unrestricted Hartree-Fock calculation")')
         write(*,'(1x,74("-"))')
-        write(*,'("   DIIS = ",l1,",   SOSCF = ",l1)')diis,.not.diis
+        write(*,'("   SCFConv    =",1x,a10)') scfconv
         write(*,'("   Dconv      =",1p,d9.2,",  MaxIter    = ",i9  ,",  ThreshSOSCF=",d9.2)') &
 &                    dconv, maxiter, threshsoscf
         write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   = ",d9.2,",  ThreshOver =",d9.2)') &
@@ -1188,7 +1244,7 @@ end
         write(*,'(" ====================")')
         write(*,'("    SCF Iteration")')
         write(*,'(" ====================")')
-        if(diis) then
+        if(scfconv == 'DIIS') then
           write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
 &                      "Delta Density     DIIS Error")')
         else
@@ -1230,7 +1286,7 @@ end
         deltae = escf-escfprev
         escfprev= escf
 !
-        if(diis) then
+        if(scfconv == 'DIIS') then
 !
 ! DIIS interpolation
 !
@@ -1307,7 +1363,7 @@ end
         call ddiff(dmtrxa,dmtrxpreva,work(1),nao3,diffmaxa)
         call ddiff(dmtrxb,dmtrxprevb,work(nao3+1),nao3,diffmaxb)
         diffmax= diffmaxa+diffmaxb
-        if(diis) then
+        if(scfconv == 'DIIS') then
           if(extrap.and.(itdiis==0)) then
             itsub= itextra
           else
@@ -1317,7 +1373,7 @@ end
           itsub= itsoscf
         endif
         if(master) then
-          if(diis) then
+          if(scfconv == 'DIIS') then
             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,errmax
           else
             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,sogradmax
@@ -1326,7 +1382,7 @@ end
 !
 ! Check SCF convergence
 !
-        if(diis) then
+        if(scfconv == 'DIIS') then
           if(diffmax.lt.dconv) exit
           if(itdiis >= maxdiis) itdiis= 0
         else
@@ -1358,7 +1414,7 @@ end
 !
 ! Unset arrays
 !
-      if(.not.diis) then
+      if(scfconv == 'SOSCF') then
        call memunset(nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf)
        deallocate(hstarta,hstartb, &
 &                 sograda,sogradb, &
@@ -1690,7 +1746,7 @@ end
       use modatom, only : atomrad
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nelecb, nmo, natom, numatomic
-      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, diis, extrap
+      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
       use modthresh, only : threshsoscf, cutint2, threshex, threshover, thresherr, &
 &                           threshrho, threshdfock
@@ -1754,7 +1810,7 @@ end
       call memset(isize3*maxdiis*2+isize1+isize2*maxdiis*2+maxdiis*(maxdiis+1)/2)
       allocate(fockdiisa(isize3*maxdiis),fockdiisb(isize3*maxdiis),errdiisa(isize2*maxdiis),&
 &              errdiisb(isize2*maxdiis),diismtrx(maxdiis*(maxdiis+1)/2),work2(isize1))
-      if(.not.diis) then
+      if(scfconv == 'SOSCF') then
        call memset(nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf)
        allocate(hstarta(nocca*nvira),hstartb(noccb*nvirb), &
 &               sograda(nocca*nvira,maxsoscf),sogradb(noccb*nvirb,maxsoscf), &
@@ -1797,7 +1853,7 @@ end
         write(*,'(1x,74("-"))')
         write(*,'("   Unrestricted DFT calculation")')
         write(*,'(1x,74("-"))')
-        write(*,'("   DIIS = ",l1,",   SOSCF = ",l1)')diis,.not.diis
+        write(*,'("   SCFConv    =",1x,a10)') scfconv
         write(*,'("   Dconv      =",1p,d9.2,",  MaxIter    = ",i9  ,",  ThreshSOSCF=",d9.2)') &
 &                    dconv, maxiter, threshsoscf
         write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   = ",d9.2,",  ThreshOver =",d9.2)') &
@@ -1809,7 +1865,7 @@ end
         write(*,'(" ====================")')
         write(*,'("    SCF Iteration")')
         write(*,'(" ====================")')
-        if(diis) then
+        if(scfconv == 'DIIS') then
           write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
 &                      "Delta Density     DIIS Error")')
         else
@@ -1863,7 +1919,7 @@ end
         call daxpy(nao3,one,fockda,1,focka,1)
         call daxpy(nao3,one,fockdb,1,fockb,1)
 !
-        if(diis) then
+        if(scfconv == 'DIIS') then
 !
 ! DIIS interpolation
 !
@@ -1940,7 +1996,7 @@ end
         call ddiff(dmtrxa,dmtrxpreva,work(1),nao3,diffmaxa)
         call ddiff(dmtrxb,dmtrxprevb,work(nao3+1),nao3,diffmaxb)
         diffmax= diffmaxa+diffmaxb
-        if(diis) then
+        if(scfconv == 'DIIS') then
           if(extrap.and.(itdiis==0)) then
             itsub= itextra
           else
@@ -1950,7 +2006,7 @@ end
           itsub= itsoscf
         endif
         if(master) then
-          if(diis) then
+          if(scfconv == 'DIIS') then
             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,errmax
           else
             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,sogradmax
@@ -1959,7 +2015,7 @@ end
 !
 ! Check SCF convergence
 !
-        if(diis) then
+        if(scfconv == 'DIIS') then
           if(diffmax.lt.dconv) exit
           if(itdiis >= maxdiis) itdiis= 0
         else
@@ -1993,7 +2049,7 @@ end
 !
 ! Unset arrays
 !
-      if(.not.diis) then
+      if(scfconv == 'SOSCF') then
        call memunset(nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf)
        deallocate(hstarta,hstartb, &
 &                 sograda,sogradb, &

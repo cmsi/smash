@@ -142,8 +142,8 @@ end program main
       use modprint, only : iprint
       use modunit, only : bohr
       use modbasis, only : spher, basis
-      use modscf, only : maxiter, dconv, fdiff, diis, maxdiis, maxsoscf, extrap
-      use modthresh, only : cutint2, threshsoscf
+      use modscf, only : maxiter, dconv, fdiff, scfconv, maxdiis, maxsoscf, maxqc, extrap
+      use modthresh, only : cutint2, threshsoscf, threshqc
       use moddft, only : idft, nrad, nleb, bqrad
       use modopt, only : nopt, optconv, cartesian
       use modecp, only : ecp, flagecp
@@ -177,12 +177,14 @@ end program main
       maxiter= 100
       maxdiis= 20
       maxsoscf= 20
+      maxqc   = 20
       fdiff  =.true.
-      diis =.true.
+      scfconv='DIIS'
       extrap =.false.
       cutint2= 1.0d-12
-      threshsoscf= 0.25d0
-      dconv  = 5.0d-6
+      threshsoscf= 0.25D+00
+      threshqc   = 1.0D-05
+      dconv  = 5.0D-06
       idft   = 0
       nrad   = 96
       nleb   = 302
@@ -195,7 +197,7 @@ end program main
       cartesian=.false.
       multi  = 1
       charge = 0.0D+00
-      bqrad(:)=1.06D+00
+      bqrad(:)=1.0D+00
 !
       flagecp= .false.
       scftype='RHF'

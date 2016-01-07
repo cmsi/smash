@@ -23,24 +23,24 @@
       use modmolecule, only : numatomic, natom, coord, znuc, neleca, nelecb, charge, multi
       use modjob, only : method, runtype, scftype
       use modmemory, only : memory
-      use modthresh, only : cutint2
+      use modthresh, only : cutint2, threshsoscf, threshqc
       use modguess, only : guess
       use modprint, only : iprint
-      use modscf, only : diis, maxiter, dconv, maxdiis, maxsoscf
+      use modscf, only : scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc
       use modopt, only : nopt, optconv, cartesian
       use modunit, only : bohr
       use moddft, only : nrad, nleb, bqrad
       use modecp, only : ecp, flagecp
       implicit none
       integer,intent(in) :: mpi_comm
-      integer :: myrank, ii, ilen, intarray(9), info
-      real(8) :: realarray(13)
+      integer :: myrank, ii, ilen, intarray(10), info
+      real(8) :: realarray(15)
       character(len=254) :: line
-      character(len=16) :: chararray(7), mem=''
+      character(len=16) :: chararray(8), mem=''
       logical :: logarray(5)
       namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp
       namelist /control/ cutint2, spher, guess, iprint, bohr, check
-      namelist /scf/ diis, maxiter, dconv, maxdiis, maxsoscf
+      namelist /scf/ scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, threshsoscf, threshqc
       namelist /opt/ nopt, optconv, cartesian
       namelist /dft/ nrad, nleb, bqrad
 !
@@ -140,40 +140,43 @@
         chararray(5)= memory
         chararray(6)= guess
         chararray(7)= ecp
+        chararray(8)= scfconv
         realarray( 1)= charge
         realarray( 2)= cutint2
         realarray( 3)= dconv
         realarray( 4)= optconv
-        realarray( 5)= bqrad(1)
-        realarray( 6)= bqrad(2)
-        realarray( 7)= bqrad(3)
-        realarray( 8)= bqrad(4)
-        realarray( 9)= bqrad(5)
-        realarray(10)= bqrad(6)
-        realarray(11)= bqrad(7)
-        realarray(12)= bqrad(8)
-        realarray(13)= bqrad(9)
-        intarray(1)= natom
-        intarray(2)= multi
-        intarray(3)= iprint
-        intarray(4)= maxiter
-        intarray(5)= maxdiis
-        intarray(6)= maxsoscf
-        intarray(7)= nopt
-        intarray(8)= nrad
-        intarray(9)= nleb
+        realarray( 5)= threshsoscf
+        realarray( 6)= threshqc
+        realarray( 7)= bqrad(1)
+        realarray( 8)= bqrad(2)
+        realarray( 9)= bqrad(3)
+        realarray(10)= bqrad(4)
+        realarray(11)= bqrad(5)
+        realarray(12)= bqrad(6)
+        realarray(13)= bqrad(7)
+        realarray(14)= bqrad(8)
+        realarray(15)= bqrad(9)
+        intarray( 1)= natom
+        intarray( 2)= multi
+        intarray( 3)= iprint
+        intarray( 4)= maxiter
+        intarray( 5)= maxdiis
+        intarray( 6)= maxsoscf
+        intarray( 7)= maxqc
+        intarray( 8)= nopt
+        intarray( 9)= nrad
+        intarray(10)= nleb
         logarray(1)= spher
-        logarray(2)= diis
-        logarray(3)= bohr
-        logarray(4)= flagecp
-        logarray(5)= cartesian
+        logarray(2)= bohr
+        logarray(3)= flagecp
+        logarray(4)= cartesian
       endif
 !
-      call para_bcastc(chararray,16*7,0,mpi_comm)
+      call para_bcastc(chararray,16*8,0,mpi_comm)
       call para_bcastc(check,64,0,mpi_comm)
-      call para_bcastr(realarray,13,0,mpi_comm)
-      call para_bcasti(intarray,9,0,mpi_comm)
-      call para_bcastl(logarray,5,0,mpi_comm)
+      call para_bcastr(realarray,15,0,mpi_comm)
+      call para_bcasti(intarray,10,0,mpi_comm)
+      call para_bcastl(logarray,4,0,mpi_comm)
 !
       natom= intarray(1)
 !
@@ -188,32 +191,35 @@
       memory  = chararray(5)
       guess   = chararray(6)
       ecp     = chararray(7)
+      scfconv = chararray(8)
       charge  = realarray( 1)
       cutint2 = realarray( 2)
       dconv   = realarray( 3)
       optconv = realarray( 4)
-      bqrad(1)= realarray( 5)
-      bqrad(2)= realarray( 6)
-      bqrad(3)= realarray( 7)
-      bqrad(4)= realarray( 8)
-      bqrad(5)= realarray( 9)
-      bqrad(6)= realarray(10)
-      bqrad(7)= realarray(11)
-      bqrad(8)= realarray(12)
-      bqrad(9)= realarray(13)
-      multi   = intarray(2)
-      iprint  = intarray(3)
-      maxiter = intarray(4)
-      maxdiis = intarray(5)
-      maxsoscf= intarray(6)
-      nopt    = intarray(7)
-      nrad    = intarray(8)
-      nleb    = intarray(9)
+      threshsoscf= realarray( 5)
+      threshqc= realarray( 6)
+      bqrad(1)= realarray( 7)
+      bqrad(2)= realarray( 8)
+      bqrad(3)= realarray( 9)
+      bqrad(4)= realarray(10)
+      bqrad(5)= realarray(11)
+      bqrad(6)= realarray(12)
+      bqrad(7)= realarray(13)
+      bqrad(8)= realarray(14)
+      bqrad(9)= realarray(15)
+      multi   = intarray( 2)
+      iprint  = intarray( 3)
+      maxiter = intarray( 4)
+      maxdiis = intarray( 5)
+      maxsoscf= intarray( 6)
+      maxqc   = intarray( 7)
+      nopt    = intarray( 8)
+      nrad    = intarray( 9)
+      nleb    = intarray(10)
       spher   = logarray(1)
-      diis    = logarray(2)
-      bohr    = logarray(3)
-      flagecp = logarray(4)
-      cartesian=logarray(5)
+      bohr    = logarray(2)
+      flagecp = logarray(3)
+      cartesian=logarray(4)
 !
       return
 end
