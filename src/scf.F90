@@ -156,9 +156,6 @@
         call cpu_time(time1)
         call formrfock(fock,work,dmtrx,dmax,xint,maxdim,nproc1,myrank1,mpi_comm1)
         call dscal(nao3,half,fock,1)
-        do i= 1,nao
-          fock(i*(i+1)/2)= fock(i*(i+1)/2)*two
-        enddo
         call cpu_time(time2)
 !
 ! Form full Fock matrix
@@ -369,7 +366,7 @@ end
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart, ishcheck
       integer(8) :: ncount, icount(nshell)
-      real(8),parameter :: zero=0.0D+00, four=4.0D+00
+      real(8),parameter :: zero=0.0D+00, two=2.0D+00, four=4.0D+00
       real(8),intent(in) :: dmtrx(nao*(nao+1)/2), dmax(nshell*(nshell+1)/2)
       real(8),intent(in) :: xint(nshell*(nshell+1)/2)
       real(8),intent(out) :: focktotal(nao*(nao+1)/2), fock(nao*(nao+1)/2)
@@ -444,6 +441,10 @@ end
         enddo
       enddo
 !$OMP end parallel do
+!
+      do ii= 1,nao
+        fock(ii*(ii+1)/2)= fock(ii*(ii+1)/2)*two
+      enddo
 !
       call para_allreducer(fock,focktotal,nao*(nao+1)/2,mpi_comm)
       return
@@ -611,7 +612,7 @@ end
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart, ishcheck
       integer(8) :: ncount, icount(nshell)
-      real(8),parameter :: zero=0.0D+00, four=4.0D+00
+      real(8),parameter :: zero=0.0D+00, two=2.0D+00, four=4.0D+00
       real(8),intent(in) :: dmtrx(nao*(nao+1)/2), dmax(nshell*(nshell+1)/2)
       real(8),intent(in) :: xint(nshell*(nshell+1)/2), hfexchange
       real(8),intent(out) :: focktotal(nao*(nao+1)/2), fock(nao*(nao+1)/2)
@@ -686,6 +687,10 @@ end
         enddo
       enddo
 !$OMP end parallel do
+!
+      do ii= 1,nao
+        fock(ii*(ii+1)/2)= fock(ii*(ii+1)/2)*two
+      enddo
 !
       call para_allreducer(fock,focktotal,nao*(nao+1)/2,mpi_comm)
       return
@@ -994,9 +999,6 @@ end
         call formrdftfock(fock,work,dmtrx,dmax,xint,maxdim,hfexchange, &
 &                         nproc1,myrank1,mpi_comm1)
         call dscal(nao3,half,fock,1)
-        do i= 1,nao
-          fock(i*(i+1)/2)= fock(i*(i+1)/2)*two
-        enddo
         call cpu_time(time2)
 !
 ! Form Fock matrix
@@ -1267,10 +1269,6 @@ end
         call formufock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,nproc1,myrank1,mpi_comm1)
         call dscal(nao3,half,focka,1)
         call dscal(nao3,half,fockb,1)
-        do i= 1,nao
-          focka(i*(i+1)/2)= focka(i*(i+1)/2)*two
-          fockb(i*(i+1)/2)= fockb(i*(i+1)/2)*two
-        enddo
         call cpu_time(time2)
 !
 ! Form full Fock matrix
@@ -1473,7 +1471,7 @@ end
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart, ishcheck
       integer(8) :: ncount, icount(nshell)
-      real(8),parameter :: zero=0.0D+00, four=4.0D+00
+      real(8),parameter :: zero=0.0D+00, two=2.0D+00, four=4.0D+00
       real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
       real(8),intent(in) :: dmax(nshell*(nshell+1)/2), xint(nshell*(nshell+1)/2)
       real(8),intent(out) :: fock1(nao*(nao+1)/2), fock2(nao*(nao+1)/2), fock3(nao*(nao+1)/2)
@@ -1549,6 +1547,11 @@ end
         enddo
       enddo
 !$OMP end parallel do
+!
+      do ii= 1,nao
+        fock2(ii*(ii+1)/2)= fock2(ii*(ii+1)/2)*two
+        fock3(ii*(ii+1)/2)= fock3(ii*(ii+1)/2)*two
+      enddo
 !
       call para_allreducer(fock2,fock1,nao*(nao+1)/2,mpi_comm)
       call para_allreducer(fock3,fock2,nao*(nao+1)/2,mpi_comm)
@@ -1895,10 +1898,6 @@ end
 &                         nproc1,myrank1,mpi_comm1)
         call dscal(nao3,half,focka,1)
         call dscal(nao3,half,fockb,1)
-        do i= 1,nao
-          focka(i*(i+1)/2)= focka(i*(i+1)/2)*two
-          fockb(i*(i+1)/2)= fockb(i*(i+1)/2)*two
-        enddo
         call cpu_time(time2)
 !
 ! Form Fock matrix
@@ -2039,12 +2038,12 @@ end
       enddo
 !
       if(master) then
-        write(*,'(" -----------------------------------------")')
+        write(*,'(" -----------------------------------------------------------")')
         write(*,'("    SCF Converged.")')
         write(*,'("    DFT Energy = ",f17.9," a.u.")')escf
         write(*,'("    Exchange + Correlation energy = ",f17.9," a.u.")')edft
         write(*,'("    Number of electrons           = ",f17.9)')totalelec
-        write(*,'(" -----------------------------------------"/)')
+        write(*,'(" -----------------------------------------------------------")')
       endif
 !
 ! Unset arrays
@@ -2114,7 +2113,7 @@ end
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart, ishcheck
       integer(8) :: ncount, icount(nshell)
-      real(8),parameter :: zero=0.0D+00, four=4.0D+00
+      real(8),parameter :: zero=0.0D+00, two=2.0D+00, four=4.0D+00
       real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
       real(8),intent(in) :: dmax(nshell*(nshell+1)/2), xint(nshell*(nshell+1)/2), hfexchange
       real(8),intent(out) :: fock1(nao*(nao+1)/2), fock2(nao*(nao+1)/2), fock3(nao*(nao+1)/2)
@@ -2191,6 +2190,11 @@ end
         enddo
       enddo
 !$OMP end parallel do
+!
+      do ii= 1,nao
+        fock2(ii*(ii+1)/2)= fock2(ii*(ii+1)/2)*two
+        fock3(ii*(ii+1)/2)= fock3(ii*(ii+1)/2)*two
+      enddo
 !
       call para_allreducer(fock2,fock1,nao*(nao+1)/2,mpi_comm)
       call para_allreducer(fock3,fock2,nao*(nao+1)/2,mpi_comm)
