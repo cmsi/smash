@@ -1570,7 +1570,7 @@ end
 !
 ! Calculate orbital rotation matrix
 !
-!$OMP parallel
+!$OMP parallel private(rotqc)
 !$OMP do
       do jj= 1,nocc*nvir+1
         qcvec(jj,1,1)= qcvec(jj,1,1)*qcmat(1,1)
@@ -1583,18 +1583,17 @@ end
         enddo
 !$OMP end do
       enddo
-!$OMP end parallel
 !
       tmp= one/qcvec(1,1,1)
-!$OMP parallel do
+!$OMP do
       do jj= 2,nocc*nvir+1
         qcvec(jj,1,1)= qcvec(jj,1,1)*tmp
       enddo
-!$OMP end parallel do
+!$OMP end do
 !
 ! Rotate occupied MOs
 !
-!$OMP parallel do collapse(2) private(rotqc)
+!$OMP do collapse(2)
       do ii= 1,nocc
         do jj= 1,nvir
           rotqc= qcvec((jj-1)*nocc+ii+1,1,1)
@@ -1603,7 +1602,8 @@ end
           enddo
         enddo
       enddo
-!$OMP end parallel do
+!$OMP end do
+!$OMP end parallel
 !
 ! Schmidt orthonormalization of new occupied MOs
 !
