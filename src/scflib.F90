@@ -1607,31 +1607,53 @@ end
 !
 ! Schmidt orthonormalization of new occupied MOs
 !
-
-      call expand(overlap,work,nao)
+      ij= 0
+      do ii= 1,nao
+        do jj= 1,ii
+          ij= ij+1
+          work(jj,ii)= overlap(ij)
+          work(ii,jj)= overlap(ij)
+        enddo
+      enddo
+!
+!$OMP parallel private(tmp)
       do ii= 1,nmo
-        call dsymv('U',nao,one,work,nao,cmo(1,ii),1,zero,qcwork(1,ii),1)
+!       call dsymv('U',nao,one,work,nao,cmo(1,ii),1,zero,qcwork(1,ii),1)
+!$OMP do
+        do jj= 1,nao
+          qcwork(jj,1)= zero
+          do kk= 1,nao
+            qcwork(jj,1)= qcwork(jj,1)+work(kk,jj)*cmo(kk,ii)
+          enddo
+        enddo
+!$OMP end do
         tmp= zero
         do kk= 1,nao
-          tmp= tmp+qcwork(kk,ii)*cmo(kk,ii)
+          tmp= tmp+qcwork(kk,1)*cmo(kk,ii)
         enddo
+!$OMP barrier
         tmp= one/sqrt(tmp)
+!$OMP do
         do kk= 1,nao
           cmo(kk,ii)= cmo(kk,ii)*tmp
-          qcwork(kk,ii)= qcwork(kk,ii)*tmp
+          qcwork(kk,1)= qcwork(kk,1)*tmp
         enddo
+!$OMP end do
         if(ii == nmo) cycle
 !
+!$OMP do
         do jj= ii+1,nmo
           tmp= zero
           do kk= 1,nao
-            tmp= tmp-qcwork(kk,ii)*cmo(kk,jj)
+            tmp= tmp-qcwork(kk,1)*cmo(kk,jj)
           enddo
           do kk= 1,nao
             cmo(kk,jj)= cmo(kk,jj)+tmp*cmo(kk,ii)
           enddo
         enddo
+!$OMP end do
       enddo
+!$OMP end parallel
 !
       return
 end
