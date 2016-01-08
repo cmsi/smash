@@ -1508,20 +1508,26 @@ end
         if(qcnorm < threshqc) exit
 !
         qcvec(1,itdav+1,1)=-qcvec(1,itdav+1,1)/qceigen(1)
-        ij= 1
+        qcnorm= zero
+!$OMP parallel do private(ij) reduction(+:qcnorm)
         do ii= 1,nvir
+          ij=(ii-1)*nocc+1
           do jj= 1,nocc
-            ij= ij+1
-            qcvec(ij,itdav+1,1)= qcvec(ij,itdav+1,1)/(fock(ii+nocc,ii+nocc)-fock(jj,jj)-qceigen(1))
+            qcvec(ij+jj,itdav+1,1)= qcvec(ij+jj,itdav+1,1)/ &
+&                                  (fock(ii+nocc,ii+nocc)-fock(jj,jj)-qceigen(1))
+            qcnorm= qcnorm+qcvec(ij+jj,itdav+1,1)*qcvec(ij+jj,itdav+1,1)
           enddo
         enddo
+!$OMP end parallel do
 !
 ! Normalization of new vector
 !
-        tmp= one/sqrt(ddot(nocc*nvir+1,qcvec(1,itdav+1,1),1,qcvec(1,itdav+1,1),1))
+        qcnorm= one/sqrt(qcnorm)
+!$OMP parallel do
         do ii= 1,nocc*nvir+1
-          qcvec(ii,itdav+1,1)= qcvec(ii,itdav+1,1)*tmp
+          qcvec(ii,itdav+1,1)= qcvec(ii,itdav+1,1)*qcnorm
         enddo
+!$OMP end parallel do
 !
 ! Schmidt orthogonalization
 !
