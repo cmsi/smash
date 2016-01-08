@@ -222,7 +222,7 @@
               itqc= itqc+1
             else
               call rhfqc(fock,cmo,dmax,qcgmn,qcvec,work,qcmat,qcmatsave,qceigen,overlap,xint,work2, &
-&                        nao,nmo,nocc,nvir,nshell,maxdim,maxqc,threshqc,idis,nproc2,myrank2,mpi_comm2)
+&                        nao,nmo,nocc,nvir,nshell,maxdim,maxqc,threshqc,nproc2,myrank2,mpi_comm2)
               itqc= itqc+1
             endif
         end select
