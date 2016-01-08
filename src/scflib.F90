@@ -1594,6 +1594,7 @@ end
 !
 ! Rotate occupied MOs
 !
+!$OMP parallel do collapse(2) private(rotqc)
       do ii= 1,nocc
         do jj= 1,nvir
           rotqc= qcvec((jj-1)*nocc+ii+1,1,1)
@@ -1602,6 +1603,7 @@ end
           enddo
         enddo
       enddo
+!$OMP end parallel do
 !
 ! Schmidt orthonormalization of new occupied MOs
 !
