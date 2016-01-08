@@ -1459,13 +1459,21 @@ end
 !
 ! Calculate small matrix <b|A|b>
 !
+        qceigen(:)= zero
+!$OMP parallel reduction(+:qceigen)
+        do ii= 1,itdav
+!$OMP do
+          do jj= 1,nocc*nvir+1
+            qceigen(ii)= qceigen(ii)+qcvec(jj,ii,1)*qcvec(jj,itdav,2)
+          enddo
+!$OMP end do
+        enddo
+!$OMP end parallel
+!
         istart= itdav*(itdav-1)/2
         do ii= 1,itdav
-          do jj= 1,nocc*nvir+1
-            qcmatsave(istart+ii)= qcmatsave(istart+ii)+qcvec(jj,ii,1)*qcvec(jj,itdav,2)
-          enddo
+          qcmatsave(istart+ii)= qceigen(ii)
         enddo
-!
         icount= 0
         do ii= 1,itdav
           do jj= 1,ii
@@ -1480,14 +1488,18 @@ end
 !
 ! Form correction vector
 !
-        qcvec(:,itdav+1,1)= zero
-        do ii= 1,itdav
-          do jj= 1,nocc*nvir+1
+        qcnorm= zero
+!$OMP parallel do reduction(+:qcnorm)
+        do jj= 1,nocc*nvir+1
+          qcvec(jj,itdav+1,1)= zero
+          do ii= 1,itdav
             qcvec(jj,itdav+1,1)= qcvec(jj,itdav+1,1) &
 &                               +qcmat(ii,1)*(qcvec(jj,ii,2)-qceigen(1)*qcvec(jj,ii,1))
           enddo
+          qcnorm= qcnorm+qcvec(jj,itdav+1,1)*qcvec(jj,itdav+1,1)
         enddo
-        qcnorm= sqrt(ddot(nocc*nvir+1,qcvec(1,itdav+1,1),1,qcvec(1,itdav+1,1),1))
+!$OMP end parallel do
+        qcnorm= sqrt(qcnorm)
 !
         if(master) write(*,'(5x,"QC Cycle ",i2," : Norm = ",1p,d10.3)') itdav-1, qcnorm
 !
