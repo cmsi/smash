@@ -1570,19 +1570,27 @@ end
 !
 ! Calculate orbital rotation matrix
 !
+!$OMP parallel
+!$OMP do
       do jj= 1,nocc*nvir+1
         qcvec(jj,1,1)= qcvec(jj,1,1)*qcmat(1,1)
       enddo
+!$OMP end do
       do ii= 2,itdav
+!$OMP do
         do jj= 1,nocc*nvir+1
           qcvec(jj,1,1)= qcvec(jj,1,1)+qcvec(jj,ii,1)*qcmat(ii,1)
         enddo
+!$OMP end do
       enddo
+!$OMP end parallel
 !
       tmp= one/qcvec(1,1,1)
+!$OMP parallel do
       do jj= 2,nocc*nvir+1
         qcvec(jj,1,1)= qcvec(jj,1,1)*tmp
       enddo
+!$OMP end parallel do
 !
 ! Rotate occupied MOs
 !
