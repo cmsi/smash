@@ -1362,7 +1362,7 @@ end
 
 !------------------------------------------------------------------------------------
   subroutine rhfqc(fock,cmo,qcrmax,qcgmn,qcvec,qcwork,qcmat,qcmatsave,qceigen,overlap,xint,work, &
-&                  nao,nmo,nocc,nvir,nshell,maxdim,maxqc,threshqc,idis,nproc,myrank,mpi_comm)
+&                  nao,nmo,nocc,nvir,nshell,maxdim,maxqc,threshqc,nproc,myrank,mpi_comm)
 !------------------------------------------------------------------------------------
 !
 ! Driver of Davidson diagonalization for quadratically convergent of RHF
@@ -1370,7 +1370,7 @@ end
       use modparallel, only : master
       implicit none
       integer,intent(in) :: nao, nmo, nocc, nvir, nshell, maxdim, maxqc
-      integer,intent(in) :: nproc, myrank, mpi_comm, idis(nproc,14)
+      integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: itdav, ii, ij, jj, ia, ib, istart, icount, kk
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: overlap(nao*(nao+1)/2), xint(nshell*(nshell+1)/2), threshqc
@@ -1396,6 +1396,7 @@ end
       qcvec(1,2,1)= zero
 !
       qcnorm= zero
+!$OMP parallel do private(ij) reduction(+:qcnorm)
       do ii= 1,nvir
         ij=(ii-1)*nocc+1
         do jj= 1,nocc
@@ -1405,6 +1406,7 @@ end
         enddo
       enddo
       qcnorm= one/sqrt(qcnorm)
+!$OMP parallel do
       do ii= 2,nocc*nvir+1
         qcvec(ii,2,1)= qcvec(ii,2,1)*qcnorm
       enddo
@@ -1428,6 +1430,7 @@ end
 ! Add Fock matrix element contribution
 !
         tmp= zero
+!!!$OMP parallel do private(ij) reduction(+:tmp)
         do ii= 1,nvir
           ij=(ii-1)*nocc+1
           do jj= 1,nocc
