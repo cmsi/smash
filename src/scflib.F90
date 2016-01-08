@@ -1430,13 +1430,14 @@ end
 ! Add Fock matrix element contribution
 !
         tmp= zero
-!!!$OMP parallel do private(ij) reduction(+:tmp)
+!$OMP parallel do private(ij) reduction(+:tmp)
         do ii= 1,nvir
           ij=(ii-1)*nocc+1
           do jj= 1,nocc
             tmp= tmp+fock(jj,ii+nocc)*qcvec(ij+jj,itdav,1)
           enddo
         enddo
+!$OMP end parallel do
         qcvec(1,itdav,2)= tmp
 !
         do ii= 1,nvir
