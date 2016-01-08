@@ -1532,14 +1532,17 @@ end
 ! Schmidt orthogonalization
 !
         do ii= 1,itdav
-!         if(mod(j,nproc).ne.myrank)cycle
           tmp= zero
+!$OMP parallel do reduction(+:tmp)
           do jj= 1,nocc*nvir+1
             tmp= tmp-qcvec(jj,ii,1)*qcvec(jj,itdav+1,1)
           enddo
+!$OMP end parallel do
+!$OMP parallel do
           do jj= 1,nocc*nvir+1
             qcvec(jj,itdav+1,1)= qcvec(jj,itdav+1,1)+tmp*qcvec(jj,ii,1)
           enddo
+!$OMP end parallel do
         enddo
 !
 ! Renormalization of new vector
@@ -1557,9 +1560,11 @@ end
         endif
 !
         qcnorm= one/qcnorm
+!$OMP parallel do
         do ii= 1,nocc*nvir+1
           qcvec(ii,itdav+1,1)= qcvec(ii,itdav+1,1)*qcnorm
         enddo
+!$OMP end parallel do
       enddo
 ! End of Davidson diagonalization
 !
