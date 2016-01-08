@@ -1435,17 +1435,11 @@ end
           ij=(ii-1)*nocc+1
           do jj= 1,nocc
             tmp= tmp+fock(jj,ii+nocc)*qcvec(ij+jj,itdav,1)
+            qcvec(ij+jj,itdav,2)= qcvec(ij+jj,itdav,2)+fock(jj,ii+nocc)*qcvec(1,itdav,1)
           enddo
         enddo
 !$OMP end parallel do
         qcvec(1,itdav,2)= tmp
-!
-        do ii= 1,nvir
-          ij=(ii-1)*nocc+1
-          do jj= 1,nocc
-            qcvec(ij+jj,itdav,2)= qcvec(ij+jj,itdav,2)+fock(jj,ii+nocc)*qcvec(1,itdav,1)
-          enddo
-        enddo
 !
         do ii= 1,nocc
           do ia= 1,nvir
