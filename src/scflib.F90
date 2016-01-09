@@ -1436,9 +1436,9 @@ end
 !$OMP do
         do ia= 1,nvir
           kk=(ia-1)*nocc+1
-          do jj= 1,nocc
-            tmp= tmp+fock(jj,ia+nocc)*qcvec(kk+jj,itdav,1)
-            qcvec(kk+jj,itdav,2)= qcvec(kk+jj,itdav,2)+fock(jj,ia+nocc)*qcvec(1,itdav,1)
+          do ii= 1,nocc
+            tmp= tmp+fock(ii,ia+nocc)*qcvec(kk+ii,itdav,1)
+            qcvec(kk+ii,itdav,2)= qcvec(kk+ii,itdav,2)+fock(ii,ia+nocc)*qcvec(1,itdav,1)
           enddo
         enddo
 !$OMP end do
@@ -1510,24 +1510,13 @@ end
         if(qcnorm < threshqc) exit
 !
         qcvec(1,itdav+1,1)=-qcvec(1,itdav+1,1)/qceigen(1)
-        qcnorm= zero
-!$OMP parallel do private(ij) reduction(+:qcnorm)
+!$OMP parallel do private(ij)
         do ii= 1,nvir
           ij=(ii-1)*nocc+1
           do jj= 1,nocc
             qcvec(ij+jj,itdav+1,1)= qcvec(ij+jj,itdav+1,1)/ &
 &                                  (fock(ii+nocc,ii+nocc)-fock(jj,jj)-qceigen(1))
-            qcnorm= qcnorm+qcvec(ij+jj,itdav+1,1)*qcvec(ij+jj,itdav+1,1)
           enddo
-        enddo
-!$OMP end parallel do
-!
-! Normalization of new vector
-!
-        qcnorm= one/sqrt(qcnorm)
-!$OMP parallel do
-        do ii= 1,nocc*nvir+1
-          qcvec(ii,itdav+1,1)= qcvec(ii,itdav+1,1)*qcnorm
         enddo
 !$OMP end parallel do
 !
