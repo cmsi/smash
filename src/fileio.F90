@@ -66,7 +66,10 @@
               line="&"//trim(line)//" /"
               call addapos(line,'GUESS=',6)
               call addapos(line,'CHECK=',6)
-            case('SCF','OPT','DFT')
+            case('SCF')
+              line="&"//trim(line)//" /"
+              call addapos(line,'SCFCONV=',8)
+            case('OPT','DFT')
               line="&"//trim(line)//" /"
           end select
           ilen=len_trim(line)
