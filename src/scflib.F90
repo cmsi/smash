@@ -1405,11 +1405,13 @@ end
           qcnorm= qcnorm+fock(jj,ii+nocc)*fock(jj,ii+nocc)
         enddo
       enddo
+!$OMP end parallel do
       qcnorm= one/sqrt(qcnorm)
 !$OMP parallel do
       do ii= 2,nocc*nvir+1
         qcvec(ii,2,1)= qcvec(ii,2,1)*qcnorm
       enddo
+!$OMP end parallel do
 !
 ! Start Davidson diagonalization
 !
@@ -1430,18 +1432,17 @@ end
 ! Add Fock matrix element contribution
 !
         tmp= zero
-!$OMP parallel do private(ij) reduction(+:tmp)
-        do ii= 1,nvir
-          ij=(ii-1)*nocc+1
+!$OMP parallel private(kk) reduction(+:tmp)
+!$OMP do
+        do ia= 1,nvir
+          kk=(ia-1)*nocc+1
           do jj= 1,nocc
-            tmp= tmp+fock(jj,ii+nocc)*qcvec(ij+jj,itdav,1)
-            qcvec(ij+jj,itdav,2)= qcvec(ij+jj,itdav,2)+fock(jj,ii+nocc)*qcvec(1,itdav,1)
+            tmp= tmp+fock(jj,ia+nocc)*qcvec(kk+jj,itdav,1)
+            qcvec(kk+jj,itdav,2)= qcvec(kk+jj,itdav,2)+fock(jj,ia+nocc)*qcvec(1,itdav,1)
           enddo
         enddo
-!$OMP end parallel do
-        qcvec(1,itdav,2)= tmp
-!
-!$OMP parallel do collapse(2) private(kk)
+!$OMP end do
+!$OMP do collapse(2)
         do ia= 1,nvir
           do ii= 1,nocc
             kk= (ia-1)*nocc+ii+1
@@ -1454,6 +1455,9 @@ end
             enddo
           enddo
         enddo
+!$OMP end do
+!$OMP end parallel
+        qcvec(1,itdav,2)= tmp
 !
 ! Calculate small matrix <b|A|b>
 !
