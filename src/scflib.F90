@@ -1361,8 +1361,9 @@ end
 
 
 !------------------------------------------------------------------------------------
-  subroutine rhfqc(fock,cmo,qcrmax,qcgmn,qcvec,qcwork,qcmat,qcmatsave,qceigen,overlap,xint,work, &
-&                  nao,nmo,nocc,nvir,nshell,maxdim,maxqc,threshqc,nproc,myrank,mpi_comm)
+  subroutine rhfqc(fock,cmo,qcrmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
+&                  qcwork,work,nao,nmo,nocc,nvir,nshell,maxdim,maxqc,threshqc, &
+&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
 !------------------------------------------------------------------------------------
 !
 ! Driver of Davidson diagonalization for quadratically convergent of RHF
@@ -1370,11 +1371,12 @@ end
       use modparallel, only : master
       implicit none
       integer,intent(in) :: nao, nmo, nocc, nvir, nshell, maxdim, maxqc
-      integer,intent(in) :: nproc, myrank, mpi_comm
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: itdav, ii, ij, jj, kk, ia, ib, istart, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: overlap(nao*(nao+1)/2), xint(nshell*(nshell+1)/2), threshqc
-      real(8),intent(out) :: qcvec(nocc*nvir+1,maxqc+1,2), qcrmax(nshell*(nshell+1)/2), qcwork(nao,nao), qcmat(maxqc,maxqc)
+      real(8),intent(out) :: qcvec(nocc*nvir+1,maxqc+1,2), qcrmax(nshell*(nshell+1)/2)
+      real(8),intent(out) :: qcwork(nao,nao), qcmat(maxqc,maxqc)
       real(8),intent(out) :: qcmatsave(maxqc*(maxqc+1)/2), qceigen(maxqc), work(nao,nao)
       real(8),intent(inout) :: fock(nao,nao), cmo(nao,nao)
       real(8),intent(inout) :: qcgmn(nao*(nao+1)/2)
@@ -1420,8 +1422,8 @@ end
 ! Calculate Gmn
 !
         call calcqcrmn(qcwork,qcvec,cmo,work,nao,nocc,nvir,itdav,maxqc)
-        call calcrdmax(qcwork,qcrmax,work,nproc,myrank,mpi_comm)
-        call formrfock(qcgmn,work,qcwork,qcrmax,xint,maxdim,nproc,myrank,mpi_comm)
+        call calcrdmax(qcwork,qcrmax,work,nproc2,myrank2,mpi_comm2)
+        call formrfock(qcgmn,work,qcwork,qcrmax,xint,maxdim,nproc1,myrank1,mpi_comm1)
 !
 ! Add two-electron integral contribution
 !
@@ -1477,7 +1479,7 @@ end
 !
 ! Diagonalize small matrix
 !
-        call diag('V','U',itdav,qcmat,maxqc,qceigen,nproc,myrank,mpi_comm)
+        call diag('V','U',itdav,qcmat,maxqc,qceigen,nproc2,myrank2,mpi_comm2)
 !
 ! Form correction vector
 !
@@ -1515,16 +1517,12 @@ end
 !
         do ii= 1,itdav
           tmp= zero
-!$OMP parallel do reduction(+:tmp)
           do jj= 1,nocc*nvir+1
             tmp= tmp-qcvec(jj,ii,1)*qcvec(jj,itdav+1,1)
           enddo
-!$OMP end parallel do
-!$OMP parallel do
           do jj= 1,nocc*nvir+1
             qcvec(jj,itdav+1,1)= qcvec(jj,itdav+1,1)+tmp*qcvec(jj,ii,1)
           enddo
-!$OMP end parallel do
         enddo
 !
 ! Renormalization of new vector
@@ -1553,7 +1551,7 @@ end
 !
 ! Calculate orbital rotation matrix
 !
-!$OMP parallel private(rotqc)
+!$OMP parallel private(rotqc,tmp)
 !$OMP do
       do jj= 1,nocc*nvir+1
         qcvec(jj,1,1)= qcvec(jj,1,1)*qcmat(1,1)
@@ -1576,7 +1574,7 @@ end
 !
 ! Rotate occupied MOs
 !
-!$OMP do collapse(2)
+!$OMP do
       do ii= 1,nocc
         do jj= 1,nvir
           rotqc= qcvec((jj-1)*nocc+ii+1,1,1)
@@ -1590,16 +1588,17 @@ end
 !
 ! Schmidt orthonormalization of new occupied MOs
 !
-      ij= 0
+!$OMP parallel private(ij,tmp)
+!$OMP do
       do ii= 1,nao
+        ij= ii*(ii-1)/2
         do jj= 1,ii
-          ij= ij+1
-          work(jj,ii)= overlap(ij)
-          work(ii,jj)= overlap(ij)
+          work(jj,ii)= overlap(ij+jj)
+          work(ii,jj)= overlap(ij+jj)
         enddo
       enddo
+!$OMP end do
 !
-!$OMP parallel private(tmp)
       do ii= 1,nmo
 !$OMP do
         do jj= 1,nao

@@ -221,8 +221,9 @@
               call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
               itqc= itqc+1
             else
-              call rhfqc(fock,cmo,dmax,qcgmn,qcvec,work,qcmat,qcmatsave,qceigen,overlap,xint,work2, &
-&                        nao,nmo,nocc,nvir,nshell,maxdim,maxqc,threshqc,nproc2,myrank2,mpi_comm2)
+              call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
+&                        work,work2,nao,nmo,nocc,nvir,nshell,maxdim,maxqc,threshqc, &
+&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
               itqc= itqc+1
             endif
         end select
