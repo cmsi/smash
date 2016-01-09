@@ -1371,7 +1371,7 @@ end
       implicit none
       integer,intent(in) :: nao, nmo, nocc, nvir, nshell, maxdim, maxqc
       integer,intent(in) :: nproc, myrank, mpi_comm
-      integer :: itdav, ii, ij, jj, ia, ib, istart, icount, kk
+      integer :: itdav, ii, ij, jj, kk, ia, ib, istart, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: overlap(nao*(nao+1)/2), xint(nshell*(nshell+1)/2), threshqc
       real(8),intent(out) :: qcvec(nocc*nvir+1,maxqc+1,2), qcrmax(nshell*(nshell+1)/2), qcwork(nao,nao), qcmat(maxqc,maxqc)
@@ -1441,18 +1441,16 @@ end
 !$OMP end parallel do
         qcvec(1,itdav,2)= tmp
 !
-        do ii= 1,nocc
-          do ia= 1,nvir
-            do ib= 1,nvir
-              qcvec((ia-1)*nocc+ii+1,itdav,2)= qcvec((ia-1)*nocc+ii+1,itdav,2)+fock(ib+nocc,ia+nocc)*qcvec((ib-1)*nocc+ii+1,itdav,1)
-            enddo
-          enddo
-        enddo
-!
+!$OMP parallel do collapse(2) private(kk)
         do ia= 1,nvir
           do ii= 1,nocc
+            kk= (ia-1)*nocc+ii+1
+            do ib= 1,nvir
+              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+fock(ib+nocc,ia+nocc) &
+&                                                 *qcvec((ib-1)*nocc+ii+1,itdav,1)
+            enddo
             do ij= 1,nocc
-              qcvec((ia-1)*nocc+ii+1,itdav,2)= qcvec((ia-1)*nocc+ii+1,itdav,2)-fock(ii,ij)*qcvec((ia-1)*nocc+ij+1,itdav,1)
+              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)-fock(ij,ii)*qcvec((ia-1)*nocc+ij+1,itdav,1)
             enddo
           enddo
         enddo
