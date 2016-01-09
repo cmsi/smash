@@ -1432,20 +1432,12 @@ end
 ! Add Fock matrix element contribution
 !
         tmp= zero
-!$OMP parallel private(kk) reduction(+:tmp)
-!$OMP do
-        do ia= 1,nvir
-          kk=(ia-1)*nocc+1
-          do ii= 1,nocc
-            tmp= tmp+fock(ii,ia+nocc)*qcvec(kk+ii,itdav,1)
-            qcvec(kk+ii,itdav,2)= qcvec(kk+ii,itdav,2)+fock(ii,ia+nocc)*qcvec(1,itdav,1)
-          enddo
-        enddo
-!$OMP end do
-!$OMP do collapse(2)
+!$OMP parallel do collapse(2) private(kk) reduction(+:tmp)
         do ia= 1,nvir
           do ii= 1,nocc
             kk= (ia-1)*nocc+ii+1
+            tmp= tmp+fock(ii,ia+nocc)*qcvec(kk,itdav,1)
+            qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+fock(ii,ia+nocc)*qcvec(1,itdav,1)
             do ib= 1,nvir
               qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+fock(ib+nocc,ia+nocc) &
 &                                                 *qcvec((ib-1)*nocc+ii+1,itdav,1)
@@ -1455,8 +1447,7 @@ end
             enddo
           enddo
         enddo
-!$OMP end do
-!$OMP end parallel
+!$OMP end parallel do
         qcvec(1,itdav,2)= tmp
 !
 ! Calculate small matrix <b|A|b>
