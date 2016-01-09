@@ -1566,6 +1566,7 @@ end
         enddo
 !$OMP end parallel do
       enddo
+!
 ! End of Davidson diagonalization
 !
 ! Calculate orbital rotation matrix
@@ -1618,7 +1619,6 @@ end
 !
 !$OMP parallel private(tmp)
       do ii= 1,nmo
-!       call dsymv('U',nao,one,work,nao,cmo(1,ii),1,zero,qcwork(1,ii),1)
 !$OMP do
         do jj= 1,nao
           qcwork(jj,1)= zero
@@ -1631,8 +1631,8 @@ end
         do kk= 1,nao
           tmp= tmp+qcwork(kk,1)*cmo(kk,ii)
         enddo
-!$OMP barrier
         tmp= one/sqrt(tmp)
+!$OMP barrier
 !$OMP do
         do kk= 1,nao
           cmo(kk,ii)= cmo(kk,ii)*tmp
