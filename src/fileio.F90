@@ -1444,7 +1444,7 @@ end
               read(input,'(a)',end=100) line
               read(line,*,end=100) iatom, znew
               znuc(iatom)= znew
-              write(*,'("   Charge of Atom ",i5,"     ",f6.2)')iatom, znew
+              write(*,'("   Charge of Atom ",i5,"     ",f7.3)')iatom, znew
             enddo
  100        write(*,*)
           endif
