@@ -1580,8 +1580,11 @@ end
         if(qcnorm < threshqc) exit
 !
         if(itdav ==(maxqc)) then
-          if(master) write(*,'(" Error! Number of iteration for Quadratically convergent ",&
-&                              "method exceeds maxqc=",i3,".")') maxqc
+          if(master) then
+            write(*,'(" Error! Number of iteration for Quadratically convergent ",&
+&                     "method exceeds maxqc=",i3,".")') maxqc
+            write(*,'(" Set larger value for maxqc in scf section.")')
+          endif
           call iabort
         endif
 !
@@ -1915,8 +1918,11 @@ end
         if(qcnorm < threshqc) exit
 !
         if(itdav ==(maxqc)) then
-          if(master) write(*,'(" Error! Number of iteration for Quadratically convergent ",&
-&                              "method exceeds maxqc=",i3,".")') maxqc
+          if(master) then
+            write(*,'(" Error! Number of iteration for Quadratically convergent ",&
+&                     "method exceeds maxqc=",i3,".")') maxqc
+            write(*,'(" Set larger value for maxqc in scf section.")')
+          endif
           call iabort
         endif
 !
