@@ -1360,6 +1360,52 @@ end
 end
 
 
+!------------------------------------------------------------------------------------------
+  subroutine calcqcurmn(qcrmna,qcrmnb,qcvec,cmoa,cmob,work,nao,nocca,noccb,nvira,nvirb, &
+&                       itdav,maxqc)
+!------------------------------------------------------------------------------------------
+!
+! Calculate Rmn for quadratically convergent method of UHF
+!
+      implicit none
+      integer,intent(in) :: nao, nocca, noccb, nvira, nvirb, itdav, maxqc
+      integer :: ii, jj, ij
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(in) :: qcvec(nocca*nvira+noccb*nvirb+1,maxqc+1,2)
+      real(8),intent(in) :: cmoa(nao,nao), cmob(nao,nao)
+      real(8),intent(out) :: qcrmna(nao*nao), qcrmnb(nao*nao), work(nao,nao)
+!
+      call dgemm('N','N',nao,nvira,nocca,one,cmoa,nao,qcvec(2,itdav,1),nocca,zero,qcrmna,nao)
+      call dgemm('N','T',nao,nao,nvira,one,qcrmna,nao,cmoa(1,nocca+1),nao,zero,work,nao)
+!
+      ij= 0
+!$OMP parallel do private(ij)
+      do ii= 1,nao
+        ij= ii*(ii-1)/2
+        do jj= 1,ii
+          qcrmna(ij+jj)= work(jj,ii)+work(ii,jj)
+        enddo
+      enddo
+!$OMP end parallel do
+!
+      call dgemm('N','N',nao,nvirb,noccb,one,cmob,nao,qcvec(nocca*nvira+2,itdav,1),noccb,zero, &
+&                qcrmnb,nao)
+      call dgemm('N','T',nao,nao,nvirb,one,qcrmnb,nao,cmob(1,noccb+1),nao,zero,work,nao)
+!
+      ij= 0
+!$OMP parallel do private(ij)
+      do ii= 1,nao
+        ij= ii*(ii-1)/2
+        do jj= 1,ii
+          qcrmnb(ij+jj)= work(jj,ii)+work(ii,jj)
+        enddo
+      enddo
+!$OMP end parallel do
+!
+      return
+end
+
+
 !------------------------------------------------------------------------------------
   subroutine rhfqc(fock,cmo,qcrmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
 &                  qcwork,work,nao,nmo,nocc,nvir,nshell,maxdim,maxqc,threshqc, &
@@ -1635,6 +1681,621 @@ end
 !$OMP end do
       enddo
 !$OMP end parallel
+!
+      return
+end
+
+
+!-----------------------------------------------------------------------------------------
+  subroutine uhfqc(focka,fockb,cmoa,cmob,qcrmax,qcgmna,qcgmnb,qcvec, &
+&                  qcmat,qcmatsave,qceigen,overlap,xint, &
+&                  qcworka,qcworkb,work,nao,nmo,nocca,noccb,nvira,nvirb,nshell,maxdim, &
+&                  maxqc,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+!-----------------------------------------------------------------------------------------
+!
+! Driver of Davidson diagonalization for quadratically convergent of UHF
+!
+      use modparallel, only : master
+      implicit none
+      integer,intent(in) :: nao, nmo, nocca, noccb, nvira, nvirb, nshell, maxdim, maxqc
+      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
+      integer :: itdav, ii, ij, jj, kk, ia, ib, istart, icount
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(in) :: overlap(nao*(nao+1)/2), xint(nshell*(nshell+1)/2), threshqc
+      real(8),intent(inout) :: qcrmax(nshell*(nshell+1)/2)
+      real(8),intent(inout) :: qcgmna(nao*(nao+1)/2), qcgmnb(nao*(nao+1)/2)
+      real(8),intent(inout) :: qcvec(nocca*nvira+noccb*nvirb+1,maxqc+1,2)
+      real(8),intent(inout) :: qcmat(maxqc,maxqc), qcmatsave(maxqc*(maxqc+1)/2)
+      real(8),intent(inout) :: qceigen(maxqc)
+      real(8),intent(inout) :: qcworka(nao,nao), qcworkb(nao,nao), work(nao,nao)
+      real(8),intent(inout) :: focka(nao,nao),fockb(nao,nao), cmoa(nao,nao), cmob(nao,nao)
+      real(8) :: tmp, tmpa, tmpb, qcnorm, ddot, rotqc
+!
+      qcmatsave(:)= zero
+!
+! Calculate Fock matrix in MO basis
+!
+      call expand(focka,qcworka,nao)
+      call dsymm('L','U',nao,nmo,one,qcworka,nao,cmoa,nao,zero,work,nao)
+      call dgemm('T','N',nmo,nmo,nao,one,cmoa,nao,work,nao,zero,focka,nao)
+      call expand(fockb,qcworka,nao)
+      call dsymm('L','U',nao,nmo,one,qcworka,nao,cmob,nao,zero,work,nao)
+      call dgemm('T','N',nmo,nmo,nao,one,cmob,nao,work,nao,zero,fockb,nao)
+!
+! Calculate initial (first and second) qc vector
+!
+      qcvec(1,1,1)= one
+      qcvec(2:nocca*nvira+noccb*nvirb+1,1,1)= zero
+      qcvec(1,1,2)= zero
+      qcvec(1,2,1)= zero
+!
+      qcnorm= zero
+!$OMP parallel private(ij) reduction(+:qcnorm)
+!$OMP do
+      do ii= 1,nvira
+        ij=(ii-1)*nocca+1
+        do jj= 1,nocca
+          qcvec(ij+jj,1,2)= focka(jj,ii+nocca)
+          qcvec(ij+jj,2,1)= focka(jj,ii+nocca)
+          qcnorm= qcnorm+focka(jj,ii+nocca)*focka(jj,ii+nocca)
+        enddo
+      enddo
+!$OMP end do
+!$OMP do
+      do ii= 1,nvirb
+        ij=(ii-1)*noccb+nocca*nvira+1
+        do jj= 1,noccb
+          qcvec(ij+jj,1,2)= fockb(jj,ii+noccb)
+          qcvec(ij+jj,2,1)= fockb(jj,ii+noccb)
+          qcnorm= qcnorm+fockb(jj,ii+noccb)*fockb(jj,ii+noccb)
+        enddo
+      enddo
+!$OMP end do
+!$OMP end parallel
+      qcnorm= one/sqrt(qcnorm)
+!$OMP parallel do
+      do ii= 2,nocca*nvira+noccb*nvirb+1
+        qcvec(ii,2,1)= qcvec(ii,2,1)*qcnorm
+      enddo
+!$OMP end parallel do
+
+!
+! Start Davidson diagonalization
+!
+      do itdav= 2,maxqc
+!
+! Calculate Gmn
+!
+        call calcqcurmn(qcworka,qcworkb,qcvec,cmoa,cmob,work,nao,nocca,noccb,nvira,nvirb, &
+&                       itdav,maxqc)
+        call calcudmax(qcworka,qcworkb,qcrmax,work,nproc2,myrank2,mpi_comm2)
+        call calcqcugmn(qcgmna,qcgmnb,work,qcworka,qcworkb,qcrmax,xint,maxdim,nao,nshell, &
+&                       nproc1,myrank1,mpi_comm1)
+!
+! Add two-electron integral contribution
+!
+        call expand(qcgmna,qcworka,nao)
+        call dsymm('L','U',nao,nvira,one,qcworka,nao,cmoa(1,nocca+1),nao,zero,work,nao)
+        call dgemm('T','N',nocca,nvira,nao,one,cmoa,nao,work,nao,zero,qcvec(2,itdav,2),nocca)
+        call expand(qcgmnb,qcworka,nao)
+        call dsymm('L','U',nao,nvirb,one,qcworka,nao,cmob(1,noccb+1),nao,zero,work,nao)
+        call dgemm('T','N',noccb,nvirb,nao,one,cmob,nao,work,nao,zero, &
+&                  qcvec(nocca*nvira+2,itdav,2),noccb)
+!
+! Add Fock matrix element contribution
+!
+        tmp= zero
+!$OMP parallel private(kk) reduction(+:tmp)
+!$OMP do collapse(2)
+        do ia= 1,nvira
+          do ii= 1,nocca
+            kk= (ia-1)*nocca+ii+1
+            tmp= tmp+focka(ii,ia+nocca)*qcvec(kk,itdav,1)
+            qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+focka(ii,ia+nocca)*qcvec(1,itdav,1)
+            do ib= 1,nvira
+              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+focka(ib+nocca,ia+nocca) &
+&                                                 *qcvec((ib-1)*nocca+ii+1,itdav,1)
+            enddo
+            do ij= 1,nocca
+              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)-focka(ij,ii)*qcvec((ia-1)*nocca+ij+1,itdav,1)
+            enddo
+          enddo
+        enddo
+!$OMP end do
+!$OMP do collapse(2)
+        do ia= 1,nvirb
+          do ii= 1,noccb
+            kk= (ia-1)*noccb+ii+nocca*nvira+1
+            tmp= tmp+fockb(ii,ia+noccb)*qcvec(kk,itdav,1)
+            qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+fockb(ii,ia+noccb)*qcvec(1,itdav,1)
+            do ib= 1,nvirb
+              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+fockb(ib+noccb,ia+noccb) &
+&                                                 *qcvec((ib-1)*noccb+ii+nocca*nvira+1,itdav,1)
+            enddo
+            do ij= 1,noccb
+              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)-fockb(ij,ii) &
+&                                                 *qcvec((ia-1)*noccb+ij+nocca*nvira+1,itdav,1)
+            enddo
+          enddo
+        enddo
+!$OMP end do
+!$OMP end parallel
+        qcvec(1,itdav,2)= tmp
+!
+! Calculate small matrix <b|A|b>
+!
+        qceigen(:)= zero
+!$OMP parallel reduction(+:qceigen)
+        do ii= 1,itdav
+!$OMP do
+          do jj= 1,nocca*nvira+noccb*nvirb+1
+            qceigen(ii)= qceigen(ii)+qcvec(jj,ii,1)*qcvec(jj,itdav,2)
+          enddo
+!$OMP end do
+        enddo
+!$OMP end parallel
+!
+        istart= itdav*(itdav-1)/2
+        do ii= 1,itdav
+          qcmatsave(istart+ii)= qceigen(ii)
+        enddo
+        icount= 0
+        do ii= 1,itdav
+          do jj= 1,ii
+            icount= icount+1
+            qcmat(jj,ii)= qcmatsave(icount)
+          enddo
+        enddo
+!
+! Diagonalize small matrix
+!
+        call diag('V','U',itdav,qcmat,maxqc,qceigen,nproc2,myrank2,mpi_comm2)
+!
+! Form correction vector
+!
+        qcnorm= zero
+!$OMP parallel do reduction(+:qcnorm)
+        do jj= 1,nocca*nvira+noccb*nvirb+1
+          qcvec(jj,itdav+1,1)= zero
+          do ii= 1,itdav
+            qcvec(jj,itdav+1,1)= qcvec(jj,itdav+1,1) &
+&                               +qcmat(ii,1)*(qcvec(jj,ii,2)-qceigen(1)*qcvec(jj,ii,1))
+          enddo
+          qcnorm= qcnorm+qcvec(jj,itdav+1,1)*qcvec(jj,itdav+1,1)
+        enddo
+!$OMP end parallel do
+        qcnorm= sqrt(qcnorm)
+!
+        if(master) write(*,'(5x,"QC Cycle ",i2," : Norm = ",1p,d10.3)') itdav-1, qcnorm
+!
+! Check convergence
+!
+        if(qcnorm < threshqc) exit
+!
+        qcvec(1,itdav+1,1)=-qcvec(1,itdav+1,1)/qceigen(1)
+!$OMP parallel private(ij)
+!$OMP do
+        do ii= 1,nvira
+          ij=(ii-1)*nocca+1
+          do jj= 1,nocca
+            qcvec(ij+jj,itdav+1,1)= qcvec(ij+jj,itdav+1,1)/ &
+&                                  (focka(ii+nocca,ii+nocca)-focka(jj,jj)-qceigen(1))
+          enddo
+        enddo
+!$OMP end do
+!$OMP do
+        do ii= 1,nvirb
+          ij=(ii-1)*noccb+nocca*nvira+1
+          do jj= 1,noccb
+            qcvec(ij+jj,itdav+1,1)= qcvec(ij+jj,itdav+1,1)/ &
+&                                  (fockb(ii+noccb,ii+noccb)-fockb(jj,jj)-qceigen(1))
+          enddo
+        enddo
+!$OMP end do
+!$OMP end parallel
+!
+! Schmidt orthogonalization
+!
+        do ii= 1,itdav
+          tmp= zero
+          do jj= 1,nocca*nvira+noccb*nvirb+1
+            tmp= tmp-qcvec(jj,ii,1)*qcvec(jj,itdav+1,1)
+          enddo
+          do jj= 1,nocca*nvira+noccb*nvirb+1
+            qcvec(jj,itdav+1,1)= qcvec(jj,itdav+1,1)+tmp*qcvec(jj,ii,1)
+          enddo
+        enddo
+!
+! Renormalization of new vector
+!
+        qcnorm= sqrt(ddot(nocca*nvira+noccb*nvirb+1,qcvec(1,itdav+1,1),1,qcvec(1,itdav+1,1),1))
+!
+! Check convergence
+!
+        if(qcnorm < threshqc) exit
+!
+        if(itdav ==(maxqc)) then
+          if(master) write(*,'(" Error! Number of iteration for Quadratically convergent ",&
+&                              "method exceeds maxqc=",i3,".")') maxqc
+          call iabort
+        endif
+!
+        qcnorm= one/qcnorm
+!$OMP parallel do
+        do ii= 1,nocca*nvira+noccb*nvirb+1
+          qcvec(ii,itdav+1,1)= qcvec(ii,itdav+1,1)*qcnorm
+        enddo
+!$OMP end parallel do
+      enddo
+!
+! End of Davidson diagonalization
+!
+! Calculate orbital rotation matrix
+!
+!$OMP parallel private(rotqc,tmp)
+!$OMP do
+      do jj= 1,nocca*nvira+noccb*nvirb+1
+        qcvec(jj,1,1)= qcvec(jj,1,1)*qcmat(1,1)
+      enddo
+!$OMP end do
+      do ii= 2,itdav
+!$OMP do
+        do jj= 1,nocca*nvira+noccb*nvirb+1
+          qcvec(jj,1,1)= qcvec(jj,1,1)+qcvec(jj,ii,1)*qcmat(ii,1)
+        enddo
+!$OMP end do
+      enddo
+!
+      tmp= one/qcvec(1,1,1)
+!$OMP do
+      do jj= 2,nocca*nvira+noccb*nvirb+1
+        qcvec(jj,1,1)= qcvec(jj,1,1)*tmp
+      enddo
+!$OMP end do
+!
+! Rotate occupied MOs
+!
+!$OMP do
+      do ii= 1,nocca
+        do jj= 1,nvira
+          rotqc= qcvec((jj-1)*nocca+ii+1,1,1)
+          do kk= 1,nao
+            cmoa(kk,ii)= cmoa(kk,ii)+rotqc*cmoa(kk,jj+nocca)
+          enddo
+        enddo
+      enddo
+!$OMP end do
+!$OMP do
+      do ii= 1,noccb
+        do jj= 1,nvirb
+          rotqc= qcvec((jj-1)*noccb+ii+nocca*nvira+1,1,1)
+          do kk= 1,nao
+            cmob(kk,ii)= cmob(kk,ii)+rotqc*cmob(kk,jj+noccb)
+          enddo
+        enddo
+      enddo
+!$OMP end do
+!$OMP end parallel
+!
+! Schmidt orthonormalization of new occupied MOs
+!
+!$OMP parallel private(ij,tmpa,tmpb)
+!$OMP do
+      do ii= 1,nao
+        ij= ii*(ii-1)/2
+        do jj= 1,ii
+          work(jj,ii)= overlap(ij+jj)
+          work(ii,jj)= overlap(ij+jj)
+        enddo
+      enddo
+!$OMP end do
+!
+      do ii= 1,nmo
+!$OMP do
+        do jj= 1,nao
+          qcworka(jj,1)= zero
+          qcworkb(jj,1)= zero
+          do kk= 1,nao
+            qcworka(jj,1)= qcworka(jj,1)+work(kk,jj)*cmoa(kk,ii)
+            qcworkb(jj,1)= qcworkb(jj,1)+work(kk,jj)*cmob(kk,ii)
+          enddo
+        enddo
+!$OMP end do
+        tmpa= zero
+        tmpb= zero
+        do kk= 1,nao
+          tmpa= tmpa+qcworka(kk,1)*cmoa(kk,ii)
+          tmpb= tmpb+qcworkb(kk,1)*cmob(kk,ii)
+        enddo
+        tmpa= one/sqrt(tmpa)
+        tmpb= one/sqrt(tmpb)
+!$OMP barrier
+!$OMP do
+        do kk= 1,nao
+          cmoa(kk,ii)= cmoa(kk,ii)*tmpa
+          cmob(kk,ii)= cmob(kk,ii)*tmpb
+          qcworka(kk,1)= qcworka(kk,1)*tmpa
+          qcworkb(kk,1)= qcworkb(kk,1)*tmpb
+        enddo
+!$OMP end do
+        if(ii == nmo) cycle
+!
+!$OMP do
+        do jj= ii+1,nmo
+          tmpa= zero
+          tmpb= zero
+          do kk= 1,nao
+            tmpa= tmpa-qcworka(kk,1)*cmoa(kk,jj)
+            tmpb= tmpb-qcworkb(kk,1)*cmob(kk,jj)
+          enddo
+          do kk= 1,nao
+            cmoa(kk,jj)= cmoa(kk,jj)+tmpa*cmoa(kk,ii)
+            cmob(kk,jj)= cmob(kk,jj)+tmpb*cmob(kk,ii)
+          enddo
+        enddo
+!$OMP end do
+      enddo
+!$OMP end parallel
+!
+      return
+end
+
+
+!---------------------------------------------------------------------------------
+  subroutine calcqcugmn(gmn1,gmn2,gmn3,rmna,rmnb,rmtrx,xint,maxdim,nao,nshell, &
+&                       nproc,myrank,mpi_comm)
+!---------------------------------------------------------------------------------
+!
+! Driver of Gmn matrix formation from two-electron intgrals
+!
+      use modthresh, only : cutint2
+      implicit none
+      integer,intent(in) :: nshell, nao, maxdim, nproc, myrank, mpi_comm
+      integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
+      integer :: ii, jj, kk, kstart, ishcheck
+      integer(8) :: ncount, icount(nshell)
+      real(8),parameter :: zero=0.0D+00, two=2.0D+00
+      real(8),intent(in) :: rmna(nao*(nao+1)/2), rmnb(nao*(nao+1)/2)
+      real(8),intent(in) :: rmtrx(nshell*(nshell+1)/2), xint(nshell*(nshell+1)/2)
+      real(8),intent(out) :: gmn1(nao*(nao+1)/2), gmn2(nao*(nao+1)/2), gmn3(nao*(nao+1)/2)
+      real(8) :: xijkl, rmax, twoeri(maxdim**4), rmax1
+      integer :: last, ltmp(nshell), lnum, ll
+!
+      gmn2(:)= zero
+      gmn3(:)= zero
+!
+      ncount= 0
+      ncount= ncount+(2*nshell**3+3*nshell**2+nshell)/6+myrank
+      do ish= 1,nshell
+        icount(ish)= ncount-(2*ish*ish*ish-3*ish*ish+ish)/6
+      enddo
+!
+      ish= nshell
+      ii= ish*(ish-1)/2
+!
+!$OMP parallel do schedule(dynamic,1) &
+!$OMP private(ijsh,jsh,ksh,lsh,ij,kl,ik,il,jk,jl,xijkl,rmax1,rmax,twoeri,jj,kk, &
+!$OMP kstart,last,ltmp,lnum,ll) firstprivate(ish,ii) reduction(+:gmn2,gmn3)
+      do ijsh= nshell*(nshell+1)/2,1,-1
+        do ishcheck=1,nshell
+          if(ijsh > ii) then
+            jsh= ijsh-ii
+            exit
+          else
+            ish= ish-1
+            ii= ish*(ish-1)/2
+          endif
+        enddo
+!
+        ij= ii+jsh
+        jj= jsh*(jsh-1)/2
+        kstart=mod(icount(ish)-ish*(jsh-1),nproc)+1
+        do ksh= kstart,ish,nproc
+          kk= ksh*(ksh-1)/2
+          ik= ii+ksh
+          jk= jj+ksh
+          if(jsh.lt.ksh) jk= kk+jsh
+          rmax1=max(two*rmtrx(ij),rmtrx(ik),rmtrx(jk))
+          last= ksh
+          if(ish == ksh) last= jsh
+          ll=min(jsh,ksh)
+          lnum=0
+!         do lsh= 1,ksh
+          do lsh= 1,ll
+            kl= kk+lsh
+            il= ii+lsh
+            jl= jj+lsh
+            xijkl=xint(ij)*xint(kl)
+            rmax=max(rmax1,two*rmtrx(kl),rmtrx(il),rmtrx(jl))
+            if(xijkl*rmax.ge.cutint2) then
+              lnum=lnum+1
+              ltmp(lnum)=lsh
+            endif
+          enddo
+          do lsh= ll+1,last
+            kl= kk+lsh
+            il= ii+lsh
+            jl= lsh*(lsh-1)/2+jsh
+            xijkl=xint(ij)*xint(kl)
+            rmax=max(rmax1,two*rmtrx(kl),rmtrx(il),rmtrx(jl))
+            if(xijkl*rmax.ge.cutint2) then
+              lnum=lnum+1
+              ltmp(lnum)=lsh
+            endif
+          enddo
+          do lsh= 1,lnum
+            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
+            call ugmneri(gmn2,gmn3,rmna,rmnb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
+          enddo
+        enddo
+      enddo
+!$OMP end parallel do
+!
+      do ii= 1,nao
+        gmn2(ii*(ii+1)/2)= gmn2(ii*(ii+1)/2)*two
+        gmn3(ii*(ii+1)/2)= gmn3(ii*(ii+1)/2)*two
+      enddo
+!
+      call para_allreducer(gmn2,gmn1,nao*(nao+1)/2,mpi_comm)
+      call para_allreducer(gmn3,gmn2,nao*(nao+1)/2,mpi_comm)
+      return
+end
+
+
+!------------------------------------------------------------------------
+  subroutine ugmneri(gmna,gmnb,rmna,rmnb,twoeri,ish,jsh,ksh,lsh,maxdim)
+!------------------------------------------------------------------------
+!
+! Form Gmn matrix from two-electron intgrals
+!
+      use modbasis, only : nshell, nao, mbf, locbf
+      use modthresh, only : cutint2
+      implicit none
+      integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
+      integer :: nbfi, nbfj, nbfk, nbfl
+      integer :: locbfi, locbfj, locbfk, locbfl, jmax, lmax, i, j, k, l, ij, kl
+      integer :: nij, nkl, nik, nil, njk, njl
+      integer :: iloc, jloc, kloc, lloc, iloc2, jloc2, kloc2, lloc2, kloc0, jloc0
+      real(8),parameter :: half=0.5D+00, two=2.0D+00
+      real(8),intent(in) :: rmna(nao*(nao+1)/2), rmnb(nao*(nao+1)/2)
+      real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim)
+      real(8),intent(inout) :: gmna(nao*(nao+1)/2), gmnb(nao*(nao+1)/2)
+      real(8) :: val, val2
+      logical :: ieqj, keql, ieqk, jeql, ikandjl, ijorkl
+!
+      nbfi = mbf(ish)
+      nbfj = mbf(jsh)
+      nbfk = mbf(ksh)
+      nbfl = mbf(lsh)
+      locbfi= locbf(ish)
+      locbfj= locbf(jsh)
+      locbfk= locbf(ksh)
+      locbfl= locbf(lsh)
+!
+      ieqj= ish.eq.jsh
+      keql= ksh.eq.lsh
+      ieqk= ish.eq.ksh
+      jeql= jsh.eq.lsh
+      ikandjl= ieqk.and.jeql
+      ijorkl= ieqj.or.keql
+      jmax= nbfj
+      lmax= nbfl
+      ij= 0
+      jloc0= locbfj*(locbfj-1)/2
+      kloc0= locbfk*(locbfk-1)/2
+!
+      if(.not.ieqk)then
+        do i= 1,nbfi
+          iloc= locbfi+i
+          iloc2= iloc*(iloc-1)/2
+          jloc2= jloc0
+          if(ieqj) jmax= i
+          do j= 1,jmax
+            jloc= locbfj+j
+            jloc2= jloc2+jloc-1
+            kloc2= kloc0
+            nij= iloc2+jloc
+            do k= 1,nbfk
+              kloc= locbfk+k
+              kloc2= kloc2+kloc-1
+              nik= iloc2+kloc
+              njk= jloc2+kloc
+              if(jloc.lt.kloc) njk= kloc2+jloc
+              if(keql) lmax= k
+              do l= 1,lmax
+                val= twoeri(l,k,j,i)
+                if(abs(val).lt.cutint2) cycle
+                lloc= locbfl+l
+                nkl= kloc2+lloc
+                nil= iloc2+lloc
+                njl= jloc2+lloc
+                if(jloc.lt.lloc) njl= lloc*(lloc-1)/2+jloc
+                if(ijorkl) then
+                  if(iloc.eq.jloc) val= val*half
+                  if(kloc.eq.lloc) val= val*half
+                endif
+                val2= val*two
+                gmna(nij)= gmna(nij)+val2*rmna(nkl)+val2*rmnb(nkl)
+                gmna(nkl)= gmna(nkl)+val2*rmna(nij)+val2*rmnb(nij)
+                gmna(nik)= gmna(nik)-val *rmna(njl)
+                gmna(nil)= gmna(nil)-val *rmna(njk)
+                gmna(njk)= gmna(njk)-val *rmna(nil)
+                gmna(njl)= gmna(njl)-val *rmna(nik)
+                gmnb(nij)= gmnb(nij)+val2*rmnb(nkl)+val2*rmna(nkl)
+                gmnb(nkl)= gmnb(nkl)+val2*rmnb(nij)+val2*rmna(nij)
+                gmnb(nik)= gmnb(nik)-val *rmnb(njl)
+                gmnb(nil)= gmnb(nil)-val *rmnb(njk)
+                gmnb(njk)= gmnb(njk)-val *rmnb(nil)
+                gmnb(njl)= gmnb(njl)-val *rmnb(nik)
+              enddo
+            enddo
+          enddo
+        enddo
+      else
+        do i= 1,nbfi
+          iloc= locbfi+i
+          iloc2= iloc*(iloc-1)/2
+          jloc2= jloc0
+          if(ieqj) jmax= i
+          do j= 1,jmax
+            jloc= locbfj+j
+            jloc2= jloc2+jloc-1
+            kloc2= kloc0
+            ij= ij+1
+            kl= 0
+     kloop: do k= 1,nbfk
+              kloc= locbfk+k
+              kloc2= kloc2+kloc-1
+              if(keql) lmax= k
+              do l= 1,lmax
+                kl= kl+1
+                if(ikandjl.and.kl.gt.ij) exit kloop
+                val= twoeri(l,k,j,i)
+                if(abs(val).lt.cutint2) cycle
+                lloc= locbfl+l
+                nij= iloc2+jloc
+                nkl= kloc2+lloc
+                nik= iloc2+kloc
+                nil= iloc2+lloc
+                njk= jloc2+kloc
+                njl= jloc2+lloc
+                if(jloc.lt.kloc) njk= kloc2+jloc
+                if(jloc.lt.lloc) njl= lloc*(lloc-1)/2+jloc
+                if(iloc.lt.kloc) then
+                  lloc2= lloc*(lloc-1)/2
+                  nij= kloc2+lloc
+                  nkl= iloc2+jloc
+                  nik= kloc2+iloc
+                  nil= kloc2+jloc
+                  njk= lloc2+iloc
+                  njl= lloc2+jloc
+                  if(lloc.lt.iloc) njk= iloc2+lloc
+                  if(lloc.lt.jloc) njl= jloc2+lloc
+                elseif(iloc.eq.kloc.and.jloc.eq.lloc) then
+                  val= val*half
+                endif
+                if(ijorkl) then
+                  if(iloc.eq.jloc) val= val*half
+                  if(kloc.eq.lloc) val= val*half
+                endif
+                val2= val*two
+                gmna(nij)= gmna(nij)+val2*rmna(nkl)+val2*rmnb(nkl)
+                gmna(nkl)= gmna(nkl)+val2*rmna(nij)+val2*rmnb(nij)
+                gmna(nik)= gmna(nik)-val *rmna(njl)
+                gmna(nil)= gmna(nil)-val *rmna(njk)
+                gmna(njk)= gmna(njk)-val *rmna(nil)
+                gmna(njl)= gmna(njl)-val *rmna(nik)
+                gmnb(nij)= gmnb(nij)+val2*rmnb(nkl)+val2*rmna(nkl)
+                gmnb(nkl)= gmnb(nkl)+val2*rmnb(nij)+val2*rmna(nij)
+                gmnb(nik)= gmnb(nik)-val *rmnb(njl)
+                gmnb(nil)= gmnb(nil)-val *rmnb(njk)
+                gmnb(njk)= gmnb(njk)-val *rmnb(nil)
+                gmnb(njl)= gmnb(njl)-val *rmnb(nik)
+              enddo
+            enddo kloop
+          enddo
+        enddo
+      endif
 !
       return
 end
