@@ -867,16 +867,16 @@ end
       use modatom, only : atomrad
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nmo, natom, numatomic
-      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, scfconv, extrap
+      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
-      use modthresh, only : threshsoscf, cutint2, threshex, threshover, thresherr, &
+      use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, thresherr, &
 &                           threshrho, threshdfock
       use modprint, only : iprint
       use modunit, only : tobohr
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
-      integer :: itextra, itsoscf, nocc, nvir
+      integer :: itextra, itsoscf, itqc, nocc, nvir
       integer :: idis(nproc2,14), isize1, isize2, isize3, iatom
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
       real(8),parameter :: small=1.0D-10
@@ -891,7 +891,7 @@ end
       real(8) :: escfprev, diffmax, tridot, deltae, errmax, sogradmax, sodispmax
       real(8) :: edft, totalelec
       real(8) :: time1, time2, time3, time4
-      logical :: convsoscf
+      logical :: convsoscf, convqc
       data maxfunc/1,3,6,10,15,21,28/
 !
       nao2= nao*nao
@@ -907,24 +907,28 @@ end
 !
 ! Set arrays
 !
-      call memset(nao2+nao3*3+nshell3)
-      allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2))
-      call memset(nao3+natom*5+6*natom*natom+2*nrad+4*nleb+natom*nrad*nleb+4*nao+4*nocc)
-      allocate(fockd(nao3),rad(natom),atomvec(5*natom*natom),surface(natom*natom), &
-&              radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb),xyzpt(3*natom), &
-&              rsqrd(natom),vao(4*nao),vmo(4*nocc))
-!
       isize1= max(idis(myrank2+1,3),idis(myrank2+1,7)*nao,3*natom,nao,maxdiis)
       isize2= idis(myrank2+1,3)
       isize3=idis(myrank2+1,5)
-      call memset(isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2)
-      allocate(fockdiis(isize3*maxdiis), errdiis(isize2*maxdiis), &
-&              diismtrx(maxdiis*(maxdiis+1)/2), work2(isize1))
-      if(scfconv == 'SOSCF') then
-       call memset(nocc*nvir*3*maxsoscf)
-       allocate(hstart(nocc*nvir),sograd(nocc*nvir,maxsoscf),sodisp(nocc*nvir*maxsoscf), &
-&               sovecy(nocc*nvir*(maxsoscf-1)))
-      endif
+      select case(scfconv)
+        case('DIIS')
+          call memset(nao2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
+&                    +nao*4+nocc*4+isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2)
+          allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
+&                  fockd(nao3),rad(natom),atomvec(5*natom*natom),surface(natom*natom), &
+&                  radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb),xyzpt(3*natom), &
+&                  rsqrd(natom),vao(4*nao),vmo(4*nocc),fockdiis(isize3*maxdiis), &
+&                  errdiis(isize2*maxdiis),diismtrx(maxdiis*(maxdiis+1)/2),work2(isize1))
+        case('SOSCF')
+          call memset(nao2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
+&                    +nao*4+nocc*4+isize1+nocc*nvir*3*maxsoscf)
+          allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
+&                  fockd(nao3),rad(natom),atomvec(5*natom*natom),surface(natom*natom), &
+&                  radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb),xyzpt(3*natom), &
+&                  rsqrd(natom),vao(4*nao),vmo(4*nocc),work2(isize1), &
+&                  hstart(nocc*nvir),sograd(nocc*nvir,maxsoscf),sodisp(nocc*nvir*maxsoscf), &
+&                  sovecy(nocc*nvir*(maxsoscf-1)))
+      end select
 !
       escfprev= zero
       itdiis =0
@@ -944,7 +948,7 @@ end
 !
 ! Calculate initial density matrix
 !
-        call calcdmtrx(cmo,dmtrx,work,nao,neleca)
+      call calcdmtrx(cmo,dmtrx,work,nao,neleca)
 !
 ! Set 1-electron Hamiltonian
 !
@@ -971,13 +975,17 @@ end
         write(*,'(" ====================")')
         write(*,'("    SCF Iteration")')
         write(*,'(" ====================")')
-        if(scfconv == 'DIIS') then
-          write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
-&                      "Delta Density     DIIS Error")')
-        else
-          write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
-&                      "Delta Density    Orbital Grad")')
-        endif
+        select case(scfconv)
+          case('DIIS')
+            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+&                     "Delta Density     DIIS Error")')
+          case('SOSCF')
+            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+&                     "Delta Density    Orbital Grad")')
+          case('QC')
+            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+&                     "Delta Density")')
+        end select
       endif
 !
 ! Start SCF iteration
@@ -1017,85 +1025,95 @@ end
 !
         call daxpy(nao3,one,fockd,1,fock,1)
 !
-        if(scfconv == 'DIIS') then
+        select case(scfconv)
 !
 ! DIIS interpolation
 !
-          call calcdiiserr(fock,dmtrxprev,overlap,ortho,cmo,work,work2,errmax,nao,nmo, &
-&                          idis,nproc2,myrank2,mpi_comm2)
-          if(((itdiis /= 0).or.(errmax <= thresherr)).and.(errmax > small))then
-            itdiis= itdiis+1
-            call calcrdiis(fock,errdiis,fockdiis,diismtrx,cmo,work2,itdiis,nao,maxdiis, &
-&                          idis,nproc2,myrank2,mpi_comm2)
-          endif
+          case('DIIS')
+            call calcdiiserr(fock,dmtrxprev,overlap,ortho,cmo,work,work2,errmax,nao,nmo, &
+&                            idis,nproc2,myrank2,mpi_comm2)
+            if(((itdiis /= 0).or.(errmax <= thresherr)).and.(errmax > small))then
+              itdiis= itdiis+1
+              call calcrdiis(fock,errdiis,fockdiis,diismtrx,cmo,work2,itdiis,nao,maxdiis, &
+&                            idis,nproc2,myrank2,mpi_comm2)
+            endif
 !
 ! Extrapolate Fock matrix
 !
-          if(extrap.and.itdiis == 0) &
-&           call fockextrap(fock,fockdiis,work,cmo,dmtrx,itextra,nao,maxdiis, &
-&                           idis,nproc2,myrank2,mpi_comm2)
+            if(extrap.and.itdiis == 0) &
+&             call fockextrap(fock,fockdiis,work,cmo,dmtrx,itextra,nao,maxdiis, &
+&                             idis,nproc2,myrank2,mpi_comm2)
 !
 ! Diagonalize Fock matrix
 !
-          call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
-        else
+            call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+          case('SOSCF')
 !
 ! Approximated Second-order SCF method
 !
-          if((itsoscf == 0).or.(convsoscf)) then
-            call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
-            sogradmax= zero
-            itsoscf= itsoscf+1
-          else
-            call expand(fock,work,nao)
-            call soscfgrad(work,work2,sograd(1,itsoscf),cmo,nocc,nvir,sogradmax,nao, &
-&                          idis,nproc2,myrank2,mpi_comm2,1)
-            if(sogradmax <= threshsoscf) then
-              if(itsoscf == 1) call soscfinith(hstart,eigen,nocc,nvir,nao)
-              call soscfnewh(hstart,sograd,sodisp,sovecy,nocc,nvir,itsoscf,maxsoscf,sodispmax)
-              call soscfupdate(cmo,sodisp,work,work2,nocc,nvir,itsoscf,maxsoscf, &
-&                              nao,nmo,sodispmax,idis,nproc2,myrank2,mpi_comm2)
+            if((itsoscf == 0).or.(convsoscf)) then
+              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+              sogradmax= zero
               itsoscf= itsoscf+1
             else
-              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+              call expand(fock,work,nao)
+              call soscfgrad(work,work2,sograd(1,itsoscf),cmo,nocc,nvir,sogradmax,nao, &
+&                            idis,nproc2,myrank2,mpi_comm2,1)
+              if(sogradmax <= threshsoscf) then
+                if(itsoscf == 1) call soscfinith(hstart,eigen,nocc,nvir,nao)
+                call soscfnewh(hstart,sograd,sodisp,sovecy,nocc,nvir,itsoscf,maxsoscf,sodispmax)
+                call soscfupdate(cmo,sodisp,work,work2,nocc,nvir,itsoscf,maxsoscf, &
+&                                nao,nmo,sodispmax,idis,nproc2,myrank2,mpi_comm2)
+                itsoscf= itsoscf+1
+              else
+                call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+              endif
             endif
-          endif
-        endif
+!ishimura-QC
+        end select
         call cpu_time(time3)
 !
 ! Copy previous density matrix and calculate new density matrix
 !
         call calcdmtrx(cmo,dmtrx,work,nao,neleca)
         call ddiff(dmtrx,dmtrxprev,work,nao3,diffmax)
-        if(scfconv == 'DIIS') then
-          if(extrap.and.(itdiis==0)) then
-            itsub= itextra
-          else
-            itsub= itdiis
-          endif
-        else
-          itsub= itsoscf
-        endif
-        if(master) then
-          if(scfconv == 'DIIS') then
-            write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,errmax
-          else
-            write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,sogradmax
-          endif
-        endif
+        select case(scfconv)
+          case('DIIS')
+            if(extrap.and.(itdiis==0)) then
+              itsub= itextra
+            else
+              itsub= itdiis
+            endif
+            if(master) &
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,errmax
+          case('SOSCF')
+            itsub= itsoscf
+            if(master) &
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,sogradmax
+          case('QC')
+            itsub= itqc
+            if(master) &
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,escf,deltae,diffmax
+        end select
 !
 ! Check SCF convergence
 !
-        if(scfconv == 'DIIS') then
-          if(diffmax.lt.dconv) exit
-          if(itdiis >= maxdiis) itdiis= 0
-        else
-          if((diffmax.lt.dconv).and.(convsoscf)) exit
-          if((diffmax.lt.dconv).and.(itsoscf==1)) exit
-          if((diffmax.lt.dconv).and.(.not.convsoscf)) convsoscf=.true.
-          if(itsoscf >= maxsoscf) itsoscf= 0
-        endif
-        if(iter.eq.maxiter) then
+        select case(scfconv)
+          case('DIIS')
+            if(diffmax < dconv) exit
+            if(itdiis >= maxdiis) itdiis= 0
+          case('SOSCF')
+            if((diffmax < dconv).and.(convsoscf)) exit
+            if((diffmax < dconv).and.(itsoscf == 1)) exit
+            if((diffmax < dconv).and.(.not.convsoscf)) convsoscf=.true.
+            if(itsoscf >= maxsoscf) itsoscf= 0
+          case('QC')
+            if((diffmax < dconv).and.(convqc)) exit
+            if((diffmax < dconv).and.(itqc == 1)) exit
+            if((diffmax < dconv).and.(.not.convqc)) convqc=.true.
+        end select
+!
+        if(iter == maxiter) then
           if(master) then
             write(*,'(" SCF did not converge.")')
             call iabort
@@ -1118,16 +1136,26 @@ end
 !
 ! Unset arrays
 !
-      if(scfconv == 'SOSCF') then
-       call memunset(nocc*nvir*3*maxsoscf)
-       deallocate(hstart,sograd,sodisp,sovecy)
-      endif
-      deallocate(fockd,rad,atomvec,surface,radpt,angpt,ptweight,xyzpt,rsqrd,vao,vmo)
-      call memunset(nao3+natom*5+6*natom*natom+2*nrad+4*nleb+natom*nrad*nleb+4*nao+4*nocc)
-      deallocate(fockdiis,errdiis,diismtrx,work2)
-      call memunset(isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2)
-      deallocate(fock,fockprev,dmtrxprev,dmax,work)
-      call memunset(nao2+nao3*3+nshell3)
+      select case(scfconv)
+        case('DIIS')
+          deallocate(fock,fockprev,dmtrxprev,dmax,work, &
+&                    fockd,rad,atomvec,surface, &
+&                    radpt,angpt,ptweight,xyzpt, &
+&                    rsqrd,vao,vmo,fockdiis, &
+&                    errdiis,diismtrx,work2)
+          call memunset(nao2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
+&                      +nao*4+nocc*4+isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2)
+        case('SOSCF')
+          deallocate(fock,fockprev,dmtrxprev,dmax,work, &
+&                    fockd,rad,atomvec,surface, &
+&                    radpt,angpt,ptweight,xyzpt, &
+&                    rsqrd,vao,vmo,work2, &
+&                    hstart,sograd,sodisp, &
+&                    sovecy)
+          call memunset(nao2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
+&                      +nao*4+nocc*4+isize1+nocc*nvir*3*maxsoscf)
+      end select
+!
       return
 end
 
@@ -1893,7 +1921,7 @@ end
 !
 ! Calculate initial density matrix
 !
-        call calcudmtrx(cmoa,cmob,dmtrxa,dmtrxb,work,nao,neleca,nelecb)
+      call calcudmtrx(cmoa,cmob,dmtrxa,dmtrxb,work,nao,neleca,nelecb)
 !
 ! Set 1-electron Hamiltonian
 !
