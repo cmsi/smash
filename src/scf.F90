@@ -888,6 +888,7 @@ end
       real(8),allocatable :: hstart(:), sograd(:,:), sodisp(:), sovecy(:)
       real(8),allocatable :: fockd(:), rad(:), atomvec(:), surface(:),  radpt(:), angpt(:)
       real(8),allocatable :: ptweight(:), xyzpt(:), rsqrd(:), vao(:), vmo(:)
+      real(8),allocatable :: qcvec(:), qcmat(:), qcmatsave(:), qceigen(:), qcgmn(:)
       real(8) :: escfprev, diffmax, tridot, deltae, errmax, sogradmax, sodispmax
       real(8) :: edft, totalelec
       real(8) :: time1, time2, time3, time4
@@ -928,6 +929,15 @@ end
 &                  rsqrd(natom),vao(4*nao),vmo(4*nocc),work2(isize1), &
 &                  hstart(nocc*nvir),sograd(nocc*nvir,maxsoscf),sodisp(nocc*nvir*maxsoscf), &
 &                  sovecy(nocc*nvir*(maxsoscf-1)))
+        case ('QC')
+          call memset(nao2+nao3*5+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
+&                    +nao*4+nocc*4+isize1+(nocc*nvir+1)*(maxqc+1)*2+maxqc*(maxqc*3+1)/2+maxqc)
+          allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
+&                  fockd(nao3),rad(natom),atomvec(5*natom*natom),surface(natom*natom), &
+&                  radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb),xyzpt(3*natom), &
+&                  rsqrd(natom),vao(4*nao),vmo(4*nocc),work2(isize1), &
+&                  qcvec((nocc*nvir+1)*(maxqc+1)*2),qcmat(maxqc*maxqc), &
+&                  qcmatsave(maxqc*(maxqc+1)/2),qceigen(maxqc),qcgmn(nao3))
         case default
           if(master) then
             write(*,'(" SCFConv=",a12,"is not supported.")')
@@ -939,6 +949,7 @@ end
       itdiis =0
       itextra=0
       itsoscf=0
+      itqc   =0
       convsoscf=.false.
 !
 ! Calculate DFT information
@@ -1159,6 +1170,15 @@ end
 &                    sovecy)
           call memunset(nao2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
 &                      +nao*4+nocc*4+isize1+nocc*nvir*3*maxsoscf)
+        case('QC')
+          deallocate(fock,fockprev,dmtrxprev,dmax,work, &
+&                    fockd,rad,atomvec,surface, &
+&                    radpt,angpt,ptweight,xyzpt, &
+&                    rsqrd,vao,vmo,work2, &
+&                    qcvec,qcmat, &
+&                    qcmatsave,qceigen,qcgmn)
+          call memunset(nao2+nao3*5+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
+&                      +nao*4+nocc*4+isize1+(nocc*nvir+1)*(maxqc+1)*2+maxqc*(maxqc*3+1)/2+maxqc)
       end select
 !
       return
