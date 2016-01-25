@@ -878,7 +878,7 @@ end
       integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
       integer :: itextra, itsoscf, itqc, nocc, nvir
       integer :: idis(nproc2,14), isize1, isize2, isize3, iatom
-      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
       real(8),parameter :: small=1.0D-10
       real(8),intent(in) :: h1mtrx(nao*(nao+1)/2), ortho(nao*nao), overlap(nao*(nao+1)/2)
       real(8),intent(out) :: dmtrx(nao*(nao+1)/2), xint(nshell*(nshell+1)/2), eigen(nao)
@@ -1229,7 +1229,7 @@ end
       integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
       integer :: itextra, itsoscf, itqc, nocca, nvira, noccb, nvirb
       integer :: idis(nproc2,14), isize1, isize2, isize3
-      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
       real(8),parameter :: small=1.0D-10
       real(8),intent(in) :: h1mtrx(nao*(nao+1)/2), ortho(nao*nao), overlap(nao*(nao+1)/2)
       real(8),intent(out) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
