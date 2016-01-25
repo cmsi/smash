@@ -1406,11 +1406,11 @@ end
 end
 
 
-!------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------------
   subroutine rhfqc(fock,cmo,qcrmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
-&                  qcwork,work,nao,nmo,nocc,nvir,nshell,maxdim,maxqc,threshqc, &
+&                  qcwork,work,hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,maxqc,threshqc, &
 &                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
-!------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------------
 !
 ! Driver of Davidson diagonalization for quadratically convergent of RHF
 !
@@ -1420,7 +1420,8 @@ end
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: itdav, ii, ij, jj, kk, ia, ib, istart, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
-      real(8),intent(in) :: overlap(nao*(nao+1)/2), xint(nshell*(nshell+1)/2), threshqc
+      real(8),intent(in) :: overlap(nao*(nao+1)/2), xint(nshell*(nshell+1)/2)
+      real(8),intent(in) :: hfexchange, threshqc
       real(8),intent(out) :: qcvec(nocc*nvir+1,maxqc+1,2), qcrmax(nshell*(nshell+1)/2)
       real(8),intent(out) :: qcwork(nao,nao), qcmat(maxqc,maxqc)
       real(8),intent(out) :: qcmatsave(maxqc*(maxqc+1)/2), qceigen(maxqc), work(nao,nao)
@@ -1469,7 +1470,8 @@ end
 !
         call calcqcrmn(qcwork,qcvec,cmo,work,nao,nocc,nvir,itdav,maxqc)
         call calcrdmax(qcwork,qcrmax,work,nproc2,myrank2,mpi_comm2)
-        call formrfock(qcgmn,work,qcwork,qcrmax,xint,maxdim,nproc1,myrank1,mpi_comm1)
+        call formrdftfock(qcgmn,work,qcwork,qcrmax,xint,maxdim,hfexchange, &
+&                         nproc1,myrank1,mpi_comm1)
 !
 ! Add two-electron integral contribution
 !

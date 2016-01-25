@@ -39,7 +39,7 @@
       integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
       integer :: itextra, itsoscf, itqc, nocc, nvir
       integer :: idis(nproc2,14), isize1, isize2, isize3
-      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
       real(8),parameter :: small=1.0D-10
       real(8),intent(in) :: h1mtrx(nao*(nao+1)/2), ortho(nao*nao), overlap(nao*(nao+1)/2)
       real(8),intent(out) :: dmtrx(nao*(nao+1)/2), xint(nshell*(nshell+1)/2), eigen(nao)
@@ -222,7 +222,7 @@
               itqc= itqc+1
             else
               call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
-&                        work,work2,nao,nmo,nocc,nvir,nshell,maxdim,maxqc,threshqc, &
+&                        work,work2,one,nao,nmo,nocc,nvir,nshell,maxdim,maxqc,threshqc, &
 &                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
               itqc= itqc+1
             endif
@@ -930,9 +930,10 @@ end
 &                  hstart(nocc*nvir),sograd(nocc*nvir,maxsoscf),sodisp(nocc*nvir*maxsoscf), &
 &                  sovecy(nocc*nvir*(maxsoscf-1)))
         case ('QC')
-          call memset(nao2+nao3*5+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
+          isize1= max(isize1,nao2)
+          call memset(nao2*2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
 &                    +nao*4+nocc*4+isize1+(nocc*nvir+1)*(maxqc+1)*2+maxqc*(maxqc*3+1)/2+maxqc)
-          allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
+          allocate(fock(nao2),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
 &                  fockd(nao3),rad(natom),atomvec(5*natom*natom),surface(natom*natom), &
 &                  radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb),xyzpt(3*natom), &
 &                  rsqrd(natom),vao(4*nao),vmo(4*nocc),work2(isize1), &
@@ -1085,7 +1086,19 @@ end
                 call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
               endif
             endif
-!ishimura-QC
+!
+! Quadratically convergent SCF method
+!
+          case('QC')
+            if((itqc == 0).or.(convqc)) then
+              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+              itqc= itqc+1
+            else
+              call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
+&                        work,work2,hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,maxqc,threshqc, &
+&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+              itqc= itqc+1
+            endif
         end select
         call cpu_time(time3)
 !
@@ -1093,6 +1106,7 @@ end
 !
         call calcdmtrx(cmo,dmtrx,work,nao,neleca)
         call ddiff(dmtrx,dmtrxprev,work,nao3,diffmax)
+!
         select case(scfconv)
           case('DIIS')
             if(extrap.and.(itdiis==0)) then
@@ -1177,7 +1191,7 @@ end
 &                    rsqrd,vao,vmo,work2, &
 &                    qcvec,qcmat, &
 &                    qcmatsave,qceigen,qcgmn)
-          call memunset(nao2+nao3*5+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
+          call memunset(nao2*2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
 &                      +nao*4+nocc*4+isize1+(nocc*nvir+1)*(maxqc+1)*2+maxqc*(maxqc*3+1)/2+maxqc)
       end select
 !
