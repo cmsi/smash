@@ -1691,12 +1691,12 @@ end
 end
 
 
-!-----------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------------
   subroutine uhfqc(focka,fockb,cmoa,cmob,qcrmax,qcgmna,qcgmnb,qcvec, &
 &                  qcmat,qcmatsave,qceigen,overlap,xint, &
-&                  qcworka,qcworkb,work,nao,nmo,nocca,noccb,nvira,nvirb,nshell,maxdim, &
-&                  maxqc,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
-!-----------------------------------------------------------------------------------------
+&                  qcworka,qcworkb,work,hfexchange,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
+&                  maxdim,maxqc,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+!---------------------------------------------------------------------------------------------
 !
 ! Driver of Davidson diagonalization for quadratically convergent of UHF
 !
@@ -1706,7 +1706,8 @@ end
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: itdav, ii, ij, jj, kk, ia, ib, istart, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
-      real(8),intent(in) :: overlap(nao*(nao+1)/2), xint(nshell*(nshell+1)/2), threshqc
+      real(8),intent(in) :: overlap(nao*(nao+1)/2), xint(nshell*(nshell+1)/2)
+      real(8),intent(in) :: hfexchange, threshqc
       real(8),intent(inout) :: qcrmax(nshell*(nshell+1)/2)
       real(8),intent(inout) :: qcgmna(nao*(nao+1)/2), qcgmnb(nao*(nao+1)/2)
       real(8),intent(inout) :: qcvec(nocca*nvira+noccb*nvirb+1,maxqc+1,2)
@@ -1774,8 +1775,8 @@ end
         call calcqcurmn(qcworka,qcworkb,qcvec,cmoa,cmob,work,nao,nocca,noccb,nvira,nvirb, &
 &                       itdav,maxqc)
         call calcudmax(qcworka,qcworkb,qcrmax,work,nproc2,myrank2,mpi_comm2)
-        call calcqcugmn(qcgmna,qcgmnb,work,qcworka,qcworkb,qcrmax,xint,maxdim,nao,nshell, &
-&                       nproc1,myrank1,mpi_comm1)
+        call calcqcugmn(qcgmna,qcgmnb,work,qcworka,qcworkb,qcrmax,xint,hfexchange,maxdim, &
+&                       nao,nshell,nproc1,myrank1,mpi_comm1)
 !
 ! Add two-electron integral contribution
 !
@@ -2050,8 +2051,8 @@ end
 
 
 !---------------------------------------------------------------------------------
-  subroutine calcqcugmn(gmn1,gmn2,gmn3,rmna,rmnb,rmtrx,xint,maxdim,nao,nshell, &
-&                       nproc,myrank,mpi_comm)
+  subroutine calcqcugmn(gmn1,gmn2,gmn3,rmna,rmnb,rmtrx,xint,hfexchange,maxdim, &
+&                       nao,nshell,nproc,myrank,mpi_comm)
 !---------------------------------------------------------------------------------
 !
 ! Driver of Gmn matrix formation from two-electron intgrals
@@ -2065,6 +2066,7 @@ end
       real(8),parameter :: zero=0.0D+00, two=2.0D+00
       real(8),intent(in) :: rmna(nao*(nao+1)/2), rmnb(nao*(nao+1)/2)
       real(8),intent(in) :: rmtrx(nshell*(nshell+1)/2), xint(nshell*(nshell+1)/2)
+      real(8),intent(in) :: hfexchange
       real(8),intent(out) :: gmn1(nao*(nao+1)/2), gmn2(nao*(nao+1)/2), gmn3(nao*(nao+1)/2)
       real(8) :: xijkl, rmax, twoeri(maxdim**4), rmax1
       integer :: last, ltmp(nshell), lnum, ll
@@ -2133,7 +2135,7 @@ end
           enddo
           do lsh= 1,lnum
             call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
-            call ugmneri(gmn2,gmn3,rmna,rmnb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
+            call ugmneri(gmn2,gmn3,rmna,rmnb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,hfexchange)
           enddo
         enddo
       enddo
@@ -2150,9 +2152,9 @@ end
 end
 
 
-!------------------------------------------------------------------------
-  subroutine ugmneri(gmna,gmnb,rmna,rmnb,twoeri,ish,jsh,ksh,lsh,maxdim)
-!------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------
+  subroutine ugmneri(gmna,gmnb,rmna,rmnb,twoeri,ish,jsh,ksh,lsh,maxdim,hfexchange)
+!-----------------------------------------------------------------------------------
 !
 ! Form Gmn matrix from two-electron intgrals
 !
@@ -2166,7 +2168,7 @@ end
       integer :: iloc, jloc, kloc, lloc, iloc2, jloc2, kloc2, lloc2, kloc0, jloc0
       real(8),parameter :: half=0.5D+00, two=2.0D+00
       real(8),intent(in) :: rmna(nao*(nao+1)/2), rmnb(nao*(nao+1)/2)
-      real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim)
+      real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim), hfexchange
       real(8),intent(inout) :: gmna(nao*(nao+1)/2), gmnb(nao*(nao+1)/2)
       real(8) :: val, val2
       logical :: ieqj, keql, ieqk, jeql, ikandjl, ijorkl
@@ -2223,6 +2225,7 @@ end
                   if(kloc.eq.lloc) val= val*half
                 endif
                 val2= val*two
+                val = val*hfexchange
                 gmna(nij)= gmna(nij)+val2*rmna(nkl)+val2*rmnb(nkl)
                 gmna(nkl)= gmna(nkl)+val2*rmna(nij)+val2*rmnb(nij)
                 gmna(nik)= gmna(nik)-val *rmna(njl)
@@ -2287,6 +2290,7 @@ end
                   if(kloc.eq.lloc) val= val*half
                 endif
                 val2= val*two
+                val = val*hfexchange
                 gmna(nij)= gmna(nij)+val2*rmna(nkl)+val2*rmnb(nkl)
                 gmna(nkl)= gmna(nkl)+val2*rmna(nij)+val2*rmnb(nij)
                 gmna(nik)= gmna(nik)-val *rmna(njl)

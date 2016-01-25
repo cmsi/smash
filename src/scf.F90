@@ -1460,8 +1460,8 @@ end
             else
               call uhfqc(focka,fockb,cmoa,cmob,dmax,qcgmna,qcgmnb,qcvec, &
 &                        qcmat,qcmatsave,qceigen,overlap,xint, &
-&                        work,work2,work3,nao,nmo,nocca,noccb,nvira,nvirb,nshell,maxdim, &
-&                        maxqc,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                        work,work2,work3,one,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
+&                        maxdim,maxqc,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
               itqc= itqc+1
             endif
         end select
@@ -1875,9 +1875,9 @@ end
       use modatom, only : atomrad
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nelecb, nmo, natom, numatomic
-      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, scfconv, extrap
+      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
-      use modthresh, only : threshsoscf, cutint2, threshex, threshover, thresherr, &
+      use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, thresherr, &
 &                           threshrho, threshdfock
       use modprint, only : iprint
       use modunit, only : tobohr
@@ -1886,7 +1886,7 @@ end
       integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), numwork, iter, itsub, itdiis
       integer :: itextra, itsoscf, itqc, nocca, nvira, noccb, nvirb
       integer :: idis(nproc2,14), isize1, isize2, isize3, iatom
-      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
       real(8),parameter :: small=1.0D-10
       real(8),intent(in) :: h1mtrx(nao*(nao+1)/2), ortho(nao*nao), overlap(nao*(nao+1)/2)
       real(8),intent(out) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
@@ -1901,6 +1901,8 @@ end
       real(8),allocatable :: fockda(:), fockdb(:), rad(:), atomvec(:), surface(:)
       real(8),allocatable :: radpt(:), angpt(:), ptweight(:), xyzpt(:), rsqrd(:)
       real(8),allocatable :: vao(:), vmoa(:), vmob(:)
+      real(8),allocatable :: qcvec(:), qcmat(:), qcmatsave(:), qceigen(:)
+      real(8),allocatable :: qcgmna(:), qcgmnb(:)
       real(8) :: escfprev, diffmax, diffmaxa, diffmaxb, tridot, deltae
       real(8) :: errmax, errmaxa, errmaxb, sogradmax, sogradmaxa, sogradmaxb, sodispmax
       real(8) :: s2, sz, edft, totalelec
@@ -1955,7 +1957,19 @@ end
 &                  sograda(nocca*nvira,maxsoscf),sogradb(noccb*nvirb,maxsoscf), &
 &                  sodispa(nocca*nvira*maxsoscf),sodispb(noccb*nvirb*maxsoscf), &
 &                  sovecya(nocca*nvira*(maxsoscf-1)),sovecyb(noccb*nvirb*(maxsoscf-1)))
-!ishimura-qc
+        case('QC')
+          isize1= max(isize1,nao2)
+          call memset(nao2*3+nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
+&                    +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1 &
+&                    +(nocca*nvira+noccb*nvirb+1)*(maxqc+1)*2+maxqc*(maxqc*3+1)/2+maxqc)
+          allocate(focka(nao2),fockb(nao2),fockpreva(nao3),fockprevb(nao3), &
+&                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(numwork), &
+&                  fockda(nao3),fockdb(nao3),rad(natom),atomvec(5*natom*natom), &
+&                  surface(natom*natom),radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb), &
+&                  xyzpt(3*natom),rsqrd(natom),vao(4*nao),vmoa(4*nocca),vmob(4*noccb), &
+&                  qcvec((nocca*nvira+noccb*nvirb+1)*(maxqc+1)*2), &
+&                  qcmat(maxqc*maxqc),qcmatsave(maxqc*(maxqc+1)/2),qceigen(maxqc),&
+&                  qcgmna(nao3),qcgmnb(nao3),work2(isize1),work3(nao2))
         case default
           if(master) then
             write(*,'(" SCFConv=",a12,"is not supported.")')
@@ -1967,7 +1981,9 @@ end
       itdiis =0
       itextra=0
       itsoscf=0
+      itqc   =0
       convsoscf=.false.
+      convqc   =.false.
 !
 ! Calculate DFT information
 !
@@ -2133,7 +2149,21 @@ end
                 call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
               endif
             endif
-!ishimura-qc
+!
+! Quadratically convergent SCF method
+!
+          case('QC')
+            if((itqc == 0).or.(convqc)) then
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+              itqc= itqc+1
+            else
+              call uhfqc(focka,fockb,cmoa,cmob,dmax,qcgmna,qcgmnb,qcvec, &
+&                        qcmat,qcmatsave,qceigen,overlap,xint, &
+&                        work,work2,work3,hfexchange,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
+&                        maxdim,maxqc,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+              itqc= itqc+1
+            endif
         end select
         call cpu_time(time3)
 !
@@ -2143,6 +2173,7 @@ end
         call ddiff(dmtrxa,dmtrxpreva,work(1),nao3,diffmaxa)
         call ddiff(dmtrxb,dmtrxprevb,work(nao3+1),nao3,diffmaxb)
         diffmax= diffmaxa+diffmaxb
+!
         select case(scfconv)
           case('DIIS')
             if(extrap.and.(itdiis==0)) then
@@ -2243,7 +2274,18 @@ end
           call memunset(nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
 &                      +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1+idis(myrank2+1,3) &
 &                      +nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf)
-!ishimura-qc
+        case('QC')
+          deallocate(focka,fockb,fockpreva,fockprevb, &
+&                    dmtrxpreva,dmtrxprevb,dmax,work, &
+&                    fockda,fockdb,rad,atomvec, &
+&                    surface,radpt,angpt,ptweight, &
+&                    xyzpt,rsqrd,vao,vmoa,vmob, &
+&                    qcvec, &
+&                    qcmat,qcmatsave,qceigen,&
+&                    qcgmna,qcgmnb,work2,work3)
+          call memunset(nao2*3+nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
+&                      +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1 &
+&                      +(nocca*nvira+noccb*nvirb+1)*(maxqc+1)*2+maxqc*(maxqc*3+1)/2+maxqc)
       end select
       return
 end
