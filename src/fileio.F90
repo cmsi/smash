@@ -550,6 +550,11 @@ end
             if(len_trim(line) == 0) exit
             read(line,*,err=9997,end=9997) atomin(ii),(coord(jj,ii),jj=1,3)
             natom= natom+1
+            if(ii == mxatom) then
+              write(*,'(" Error! Number of atoms exceeds mxatom=",i6,".")')mxatom
+              write(*,'(" Increase mxatom in src/module.F90 and make again.",/)')
+              call iabort
+            endif
           enddo
 100       continue
           do ii= 1,natom
