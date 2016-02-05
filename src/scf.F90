@@ -952,6 +952,7 @@ end
       itsoscf=0
       itqc   =0
       convsoscf=.false.
+      convqc=.false.
 !
 ! Calculate DFT information
 !
