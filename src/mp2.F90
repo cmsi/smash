@@ -52,7 +52,7 @@
         write(*,'("     Number of basis functions         =",i5)')nao
         write(*,'("     Number of basis shells            =",i5)')nshell
         write(*,'("     Number of correlated occupied MOs =",i5)')noac
-        write(*,'("     Number of virtual MOs             =",i5)')nvac
+        write(*,'("     Number of active virtual MOs      =",i5)')nvac
         write(*,'(" ----------------------------------------------")')
       endif
 !
