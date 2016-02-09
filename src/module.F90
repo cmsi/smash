@@ -280,6 +280,14 @@ end
 end
 
 
+!----------------
+  module modmp2
+!----------------
+      implicit none
+      integer :: ncore, nvfz
+end
+
+
 !-----------------
   module modatom
 !-----------------

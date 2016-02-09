@@ -26,27 +26,30 @@
       use modbasis, only : nshell, nao, mbf
       use modmolecule, only : neleca, nmo
       use modenergy, only : enuc, escf, escfe, emp2, escsmp2
+      use modmp2, only : ncore, nvfz
       implicit none
       integer,intent(in) :: nproc, myrank, mpi_comm
-      integer :: ncore, ncorecalc, maxdim, nocc, nvir, nao2, nocc3, iproc, icount
+      integer :: maxdim, nocc, nvir, nao2, nocc3, iproc, icount
       integer :: idis(4,0:nproc-1), maxsize, ish, jsh, msize, memneed
       integer :: numocc3, npass
       real(8),parameter :: zero=0.0D+00, three=3.0D+00, p12=1.2D+00
       real(8),intent(in) :: cmo(nao,nao), energymo(nmo), xint(nshell*(nshell+1)/2)
       real(8) :: emp2st(2), emp2stsum(2)
 !
-      ncore= ncorecalc()
       emp2= zero
       emp2st(:)= zero
       maxdim=maxval(mbf(1:nshell))
       nocc= neleca-ncore
-      nvir= nmo-neleca
+      nvir= nmo-neleca-nvfz
       nao2= nao*nao
       nocc3= nocc*(nocc+1)/2
 !
       if(master) then
         write(*,'(" ----------------------------------------------")')
         write(*,'("   MP2 calculation ")')
+        write(*,'(" ----------------------------------------------")')
+        write(*,'("     Ncore=",i4,",   Nvfz=",i4)')ncore,nvfz
+        write(*,'(" ----------------------------------------------")')
         write(*,'("     Number of basis functions         =",i5)')nao
         write(*,'("     Number of basis shells            =",i5)')nshell
         write(*,'("     Number of correlated occupied MOs =",i5)')nocc

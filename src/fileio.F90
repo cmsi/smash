@@ -31,9 +31,10 @@
       use modunit, only : bohr
       use moddft, only : nrad, nleb, bqrad
       use modecp, only : ecp, flagecp
+      use modmp2, only : ncore, nvfz
       implicit none
       integer,intent(in) :: mpi_comm
-      integer :: myrank, ii, ilen, intarray(10), info
+      integer :: myrank, ii, ilen, intarray(12), info
       real(8) :: realarray(15)
       character(len=254) :: line
       character(len=16) :: chararray(8), mem=''
@@ -43,6 +44,7 @@
       namelist /scf/ scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, threshsoscf, threshqc
       namelist /opt/ nopt, optconv, cartesian
       namelist /dft/ nrad, nleb, bqrad
+      namelist /mp2/ ncore, nvfz
 !
       call para_comm_rank(myrank,mpi_comm)
 
@@ -69,7 +71,7 @@
             case('SCF')
               line="&"//trim(line)//" /"
               call addapos(line,'SCFCONV=',8)
-            case('OPT','DFT')
+            case('OPT','DFT','MP2')
               line="&"//trim(line)//" /"
           end select
           ilen=len_trim(line)
@@ -117,6 +119,13 @@
         read(input,nml=dft,end=150,iostat=info)
 150     if(info > 0) then
           write(*,'(" Error was found in dft line of input file!")')
+          call iabort
+        endif
+!
+        rewind(input)
+        read(input,nml=mp2,end=160,iostat=info)
+160     if(info > 0) then
+          write(*,'(" Error was found in mp2 line of input file!")')
           call iabort
         endif
 !
@@ -169,6 +178,8 @@
         intarray( 8)= nopt
         intarray( 9)= nrad
         intarray(10)= nleb
+        intarray(11)= ncore
+        intarray(12)= nvfz
         logarray(1)= spher
         logarray(2)= bohr
         logarray(3)= flagecp
@@ -178,7 +189,7 @@
       call para_bcastc(chararray,16*8,0,mpi_comm)
       call para_bcastc(check,64,0,mpi_comm)
       call para_bcastr(realarray,15,0,mpi_comm)
-      call para_bcasti(intarray,10,0,mpi_comm)
+      call para_bcasti(intarray,12,0,mpi_comm)
       call para_bcastl(logarray,4,0,mpi_comm)
 !
       natom= intarray(1)
@@ -219,6 +230,8 @@
       nopt    = intarray( 8)
       nrad    = intarray( 9)
       nleb    = intarray(10)
+      ncore   = intarray(11)
+      nvfz    = intarray(12)
       spher   = logarray(1)
       bohr    = logarray(2)
       flagecp = logarray(3)

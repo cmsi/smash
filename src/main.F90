@@ -69,6 +69,10 @@
 !
       call setdft
 !
+! Set functional information and adjust the number of DFT grids
+!
+      call setmp2
+!
 ! Write input data
 !
       call writecondition
@@ -149,6 +153,7 @@ end program main
       use modecp, only : ecp, flagecp
       use modjob, only : scftype, runtype, method
       use modmolecule, only : multi, charge
+      use modmp2, only : ncore, nvfz
       implicit none
 !
 ! Initialize valuables for parallelization
@@ -198,6 +203,8 @@ end program main
       multi  = 1
       charge = 0.0D+00
       bqrad(:)=1.0D+00
+      ncore= -1
+      nvfz= 0
 !
       flagecp= .false.
       scftype='RHF'
@@ -631,6 +638,10 @@ end
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
+     elseif(method == 'MP2') then
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
+&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+        call tstamp(1)
       else
         if(master) then
           write(*,'(" Error! This program does not support method= ",a16,".")')method
@@ -649,6 +660,9 @@ end
         call calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
       elseif(idft >= 1) then
         call calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
+!ishimura
+      elseif(method == 'MP2') then
+        call calcgradrmp2(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
       else
         if(master) then
           write(*,'(" Error! This program does not support method= ",a16,".")')method
@@ -1566,3 +1580,18 @@ end
       return
 end
 
+
+!--------------------
+  subroutine setmp2
+!--------------------
+!
+! Set MP2 information
+!
+      use modmp2, only : ncore
+      implicit none
+      integer :: ncorecalc
+!
+      if(ncore == -1) ncore= ncorecalc()
+!
+      return
+end
