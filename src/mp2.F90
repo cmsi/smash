@@ -365,17 +365,16 @@ end
 !
 ! In  : cmoocc  (MO coefficient matrix)
 !       xint    (Exchange integral matrix)
-!       mlsize  (Block size of first-transformed integrals)
+!       mlsize  (Block size of first transformed integrals)
 !       noac    (Number of active occupied MOs)
 !       maxdim  (Maximum size of basis functions in a shell)
 !       idis    (Information for parallelization)
-! Out : trint2  (Second-transformed integrals)
+! Out : trint2  (Second transformed integrals)
 ! Work: cmowrk  (Transposed MO coefficient matrix)
-!       trint1a (First-transformed integrals)
-!       trint1b (First-transformed integrals)
+!       trint1a (First transformed integrals)
+!       trint1b (First transformed integrals)
 !       
-      use modbasis, only : nshell, nao, mbf, locbf
-      use modthresh, only : cutint2
+      use modbasis, only : nshell, nao, mbf
       implicit none
       integer,intent(in) :: maxdim, mlsize, noac, nproc, myrank, idis(4,0:nproc-1)
       integer :: ish, ksh, ish1, ksh1, mlcount, mlstart, mlshell, numshell, ii, jcount
@@ -456,12 +455,12 @@ end
 !
 ! In  : cmovir  (MO coefficient matrix)
 !       energymo(MO energies)
-!       trint2  (Second-transformed integrals)
+!       trint2  (Second transformed integrals)
 !       noac    (Number of active occupied MOs)
 !       nvac    (Number of virtual MOs)
 !       idis    (Information for parallelization)
-! Work: trint3  (Third-transformed integrals)
-!       trint4  (Fourth-transformed integrals)
+! Work: trint3  (Third transformed integrals)
+!       trint4  (Fourth transformed integrals)
 !
       use modbasis, only : nao
       use modmolecule, only : nmo
@@ -507,7 +506,7 @@ end
 
 
 !-----------------------------------------------------------------------------------
-  subroutine transmoint1(trint1a,trint1b,cmowrk,xint,ish,ksh,maxdim,noac,jcount, &
+  subroutine transmoint1(trint1a,trint1b,cmowrk,xint,ish,ksh,maxdim,numi,jcount, &
 &                        mlshell,mlsize,nproc,myrank)
 !-----------------------------------------------------------------------------------
 !
@@ -517,24 +516,24 @@ end
 ! In  : cmowrk  (Transposed MO coefficient matrix)
 !       xint    (Exchange integral matrix)
 !       maxdim  (Maximum size of basis functions in a shell)
-!       noac    (Number of active occupied MOs)
+!       numi    (Number of active occupied MOs)
 !       jcount  (Counter of basis shell pair)
 !       mlshell (Number of shell pairs)
 !       mlsize  (Size of trint1b)
-! Out : trint1b (First-transformed integrals, [s,i,ml])
-! Work: trint1a (First-transformed integrals, [i,s,ml])
+! Out : trint1b (First transformed integrals, [s,i,ml])
+! Work: trint1a (First transformed integrals, [i,s,ml])
 ! Inout : ish,ksh (Basis shell indices)
 !
       use modbasis, only : nao, nshell, mbf, locbf
       use modthresh, only : cutint2
       implicit none
-      integer,intent(in) :: maxdim, noac, mlshell, mlsize, nproc, myrank
+      integer,intent(in) :: maxdim, numi, mlshell, mlsize, nproc, myrank
       integer,intent(inout) :: ish, ksh, jcount
       integer :: mlcount, ml, mlindex(3,mlshell), jsh, lsh, nbfi, nbfj, nbfk, nbfl
       integer :: nbfik, locbfj, locbfl, moi, i, j, k, l, ik, kl, ij, ii, jloc, lloc
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: cmowrk(noac,nao), xint(nshell*(nshell+1)/2)
-      real(8),intent(out) :: trint1a(noac,maxdim,maxdim*maxdim), trint1b(nao,noac,mlsize)
+      real(8),intent(in) :: cmowrk(numi,nao), xint(nshell*(nshell+1)/2)
+      real(8),intent(out) :: trint1a(numi,maxdim,maxdim*maxdim), trint1b(nao,numi,mlsize)
       real(8) :: twoeri(maxdim,maxdim,maxdim,maxdim)
 !
       mlcount= 0
@@ -574,7 +573,7 @@ end
           locbfl= locbf(lsh)
           do ik= 1,nbfik
             do l= 1,nbfl
-              do moi= 1,noac
+              do moi= 1,numi
                 trint1a(moi,l,ik)= zero
               enddo
             enddo
@@ -609,7 +608,7 @@ end
                   do j= 1,nbfj
                     jloc= locbfj+j
                     if(abs(twoeri(j,i,l,k)) < cutint2) cycle
-                    do moi= 1,noac
+                    do moi= 1,numi
                       trint1a(moi,l,ik)= trint1a(moi,l,ik)+twoeri(j,i,l,k)*cmowrk(moi,jloc)
                     enddo
                   enddo
@@ -618,12 +617,12 @@ end
             enddo
           enddo
 !
-! Reorder of first-transformed integrals
+! Reorder of first transformed integrals
 !
           do ik= 1,nbfik
             do l= 1,nbfl
               lloc= locbfl+l
-              do moi= 1,noac
+              do moi= 1,numi
                 trint1b(lloc,moi,mlcount+ik)= trint1a(moi,l,ik)
               enddo
             enddo
@@ -645,14 +644,14 @@ end
 ! Second-quarter integral transformation
 !    (mi|ls) -> (mi|lj)
 !
-! In  : trint1b (First-transformed integrals, [s,i,ml])
+! In  : trint1b (First transformed integrals, [s,i,ml])
 !       cmoocc  (MO coefficient matrix)
 !       noac    (Number of active occupied MOs)
 !       mlcount (Number of transformed AOs)
 !       mlstart (First index of trint2)
 !       mlsize  (Size of trint1b)
 !       idis    (Information for parallelization)
-! Out : trint2  (Second-transformed integrals, [ml,ij])
+! Out : trint2  (Second transformed integrals, [ml,ij])
 !
       use modbasis, only : nao
       implicit none
@@ -676,14 +675,14 @@ end
 &                            idis,nproc,myrank,mpi_comm)
 !------------------------------------------------------------------------
 !
-! Send and Receive second-transformed integrals (mi|lj)
+! Send and Receive second transformed integrals (mi|lj)
 !
-! In  : trint2  (Second-transformed integrals)
+! In  : trint2  (Second transformed integrals)
 !       icycle  (Mp2trans2 cycle number)
 !       irecv   (Numbers of receiving data)
 !       numij   (Number of active occupied MOs)
 !       idis    (Information for parallelization)
-! Out : trint4  (Second-transformed integrals, [l,m])
+! Out : trint4  (Second transformed integrals, [l,m])
 ! Work: trint3  (Receiving data)
 !
       use modbasis, only : nao, nshell, mbf, locbf
@@ -699,7 +698,7 @@ end
       ijstart=(icycle-1)*nproc+1
       myij= ijstart+myrank
 !
-! Send and receive second-transformed integrals
+! Send and receive second transformed integrals
 !
       do iproc= myrank+1,nproc-1
         jproc= jproc-1
@@ -843,19 +842,18 @@ end
 !
 ! In  : cmoocc  (MO coefficient matrix)
 !       xint    (Exchange integral matrix)
-!       mlsize  (Block size of first-transformed integrals)
+!       mlsize  (Block size of first transformed integrals)
 !       noac    (Number of active occupied MOs)
 !       maxdim  (Maximum size of basis functions in a shell)
 !       idis    (Information for parallelization)
 !       numij   (Number of active occupied MO pairs)
 !       ijindex (First and last indices of active occupied MO pairs)
-! Out : trint2  (Second-transformed integrals)
+! Out : trint2  (Second transformed integrals)
 ! Work: cmowrk  (Transposed MO coefficient matrix)
-!       trint1a (First-transformed integrals)
-!       trint1b (First-transformed integrals)
+!       trint1a (First transformed integrals)
+!       trint1b (First transformed integrals)
 !       
-      use modbasis, only : nshell, nao, mbf, locbf
-      use modthresh, only : cutint2
+      use modbasis, only : nshell, nao, mbf
       implicit none
       integer,intent(in) :: maxdim, mlsize, noac, nproc, myrank, idis(4,0:nproc-1)
       integer,intent(in) :: numij, ijindex(4)
@@ -947,13 +945,13 @@ end
 !
 ! In  : cmovir  (MO coefficient matrix)
 !       energymo(MO energies)
-!       trint2  (Second-transformed integrals)
+!       trint2  (Second transformed integrals)
 !       nvac    (Number of virtual MOs)
 !       idis    (Information for parallelization)
 !       numij   (Number of active occupied MO pairs)
 !       ijindex (First and last indices of active occupied MO pairs)
-! Work: trint3  (Third-transformed integrals)
-!       trint4  (Fourth-transformed integrals)
+! Work: trint3  (Third transformed integrals)
+!       trint4  (Fourth transformed integrals)
 !
       use modbasis, only : nao
       use modmolecule, only : nmo
@@ -1006,7 +1004,7 @@ end
 ! Second-quarter integral transformation for multiple pass
 !    (mi|ls) -> (mi|lj)
 !
-! In  : trint1b (First-transformed integrals, [s,i,ml])
+! In  : trint1b (First transformed integrals, [s,i,ml])
 !       cmoocc  (MO coefficient matrix)
 !       noac    (Number of active occupied MOs)
 !       mlcount (Number of transformed AOs)
@@ -1015,7 +1013,7 @@ end
 !       idis    (Information for parallelization)
 !       numij   (Number of active occupied MO pairs)
 !       ijindex (First and last indices of active occupied MO pairs)
-! Out : trint2  (Second-transformed integrals, [ml,ij])
+! Out : trint2  (Second transformed integrals, [ml,ij])
 !
       use modbasis, only : nao
       implicit none
