@@ -31,10 +31,10 @@
       use modunit, only : bohr
       use moddft, only : nrad, nleb, bqrad
       use modecp, only : ecp, flagecp
-      use modmp2, only : ncore, nvfz
+      use modmp2, only : ncore, nvfz, maxmp2diis, maxmp2iter
       implicit none
       integer,intent(in) :: mpi_comm
-      integer :: myrank, ii, ilen, intarray(12), info
+      integer :: myrank, ii, ilen, intarray(14), info
       real(8) :: realarray(15)
       character(len=254) :: line
       character(len=16) :: chararray(8), mem=''
@@ -44,7 +44,7 @@
       namelist /scf/ scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, threshsoscf, threshqc
       namelist /opt/ nopt, optconv, cartesian
       namelist /dft/ nrad, nleb, bqrad
-      namelist /mp2/ ncore, nvfz
+      namelist /mp2/ ncore, nvfz, maxmp2diis, maxmp2iter
 !
       call para_comm_rank(myrank,mpi_comm)
 
@@ -180,6 +180,8 @@
         intarray(10)= nleb
         intarray(11)= ncore
         intarray(12)= nvfz
+        intarray(13)= maxmp2diis
+        intarray(14)= maxmp2iter
         logarray(1)= spher
         logarray(2)= bohr
         logarray(3)= flagecp
@@ -189,7 +191,7 @@
       call para_bcastc(chararray,16*8,0,mpi_comm)
       call para_bcastc(check,64,0,mpi_comm)
       call para_bcastr(realarray,15,0,mpi_comm)
-      call para_bcasti(intarray,12,0,mpi_comm)
+      call para_bcasti(intarray,14,0,mpi_comm)
       call para_bcastl(logarray,4,0,mpi_comm)
 !
       natom= intarray(1)
@@ -232,6 +234,8 @@
       nleb    = intarray(10)
       ncore   = intarray(11)
       nvfz    = intarray(12)
+      maxmp2diis= intarray(13)
+      maxmp2iter= intarray(14)
       spher   = logarray(1)
       bohr    = logarray(2)
       flagecp = logarray(3)

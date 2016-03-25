@@ -30,7 +30,7 @@
       implicit none
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: maxdim, noac, nvac, noac3, iproc, icount
-      integer :: idis(4,0:nproc-1), maxsize, ish, jsh, msize, memneed
+      integer :: idis(0:nproc-1,4), maxsize, ish, jsh, msize, memneed
       integer :: numocc3, npass
       real(8),parameter :: zero=0.0D+00, three=3.0D+00, p12=1.2D+00
       real(8),intent(in) :: cmo(nao,nao), energymo(nmo), xint(nshell*(nshell+1)/2)
@@ -64,8 +64,8 @@
 ! Calculate distributed AO indices
 !
       do iproc= 0,nproc-1
-        idis(1,iproc)= ish
-        idis(2,iproc)= jsh
+        idis(iproc,1)= ish
+        idis(iproc,2)= jsh
         jsh= jsh+1
         if(jsh > nshell) then
           ish= ish+1
@@ -77,8 +77,8 @@
       if(nproc /= 1) then
         do ish= 1,nshell
           do jsh= 1,nshell
-            idis(3,iproc)= idis(3,iproc)+mbf(ish)*mbf(jsh)
-            idis(4,iproc)= idis(4,iproc)+1
+            idis(iproc,3)= idis(iproc,3)+mbf(ish)*mbf(jsh)
+            idis(iproc,4)= idis(iproc,4)+1
             icount= icount+1
             if(mod(icount,nproc) == 0) then
               iproc= iproc+2
@@ -89,10 +89,10 @@
           enddo
         enddo
       else
-        idis(3,iproc)= nao*nao
-        idis(4,iproc)= nshell*nshell
+        idis(iproc,3)= nao*nao
+        idis(iproc,4)= nshell*nshell
       endif
-      maxsize= maxval(idis(3,0:nproc-1))
+      maxsize= maxval(idis(0:nproc-1,3))
 !
 ! Check available memory size and judge the number of passes
 !
@@ -189,7 +189,7 @@ end
       use modmolecule, only : neleca, nmo
       implicit none
       integer,intent(in) :: noac, nvac, ncore, maxsize, maxdim, nproc, myrank, mpi_comm
-      integer,intent(in) :: idis(4,0:nproc-1)
+      integer,intent(in) :: idis(0:nproc-1,4)
       integer :: noac3, nao2, msize, mlsize
       real(8),intent(in) :: cmo(nao,nao), energymo(nmo), xint(nshell*(nshell+1)/2)
       real(8),intent(inout) :: emp2st(2)
@@ -263,7 +263,7 @@ end
       use modmolecule, only : neleca, nmo
       implicit none
       integer,intent(in) :: noac, nvac, ncore, maxsize, maxdim, nproc, myrank, mpi_comm
-      integer,intent(in) :: idis(4,0:nproc-1), npass, numocc3
+      integer,intent(in) :: idis(0:nproc-1,4), npass, numocc3
       integer :: noac3, nao2, msize, mlsize, ijindex(4,npass), icount, ipass, moi, moj, numij
       real(8),intent(in) :: cmo(nao,nao), energymo(nmo), xint(nshell*(nshell+1)/2)
       real(8),intent(inout) :: emp2st(2)
@@ -376,19 +376,19 @@ end
 !       
       use modbasis, only : nshell, nao, mbf
       implicit none
-      integer,intent(in) :: maxdim, mlsize, noac, nproc, myrank, idis(4,0:nproc-1)
+      integer,intent(in) :: maxdim, mlsize, noac, nproc, myrank, idis(0:nproc-1,4)
       integer :: ish, ksh, ish1, ksh1, mlcount, mlstart, mlshell, numshell, ii, jcount
       integer :: jcount1
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmoocc(nao,noac), xint(nshell*(nshell+1)/2)
       real(8),intent(out) :: cmowrk(noac,nao), trint1a(noac,maxdim,maxdim**2)
       real(8),intent(out) :: trint1b(mlsize*noac*nao)
-      real(8),intent(out) :: trint2(idis(3,myrank)*noac*(noac+1)/2)
+      real(8),intent(out) :: trint2(idis(myrank,3)*noac*(noac+1)/2)
 !
       cmowrk=transpose(cmoocc)
 !
-      ish= idis(1,myrank)
-      ksh= idis(2,myrank)
+      ish= idis(myrank,1)
+      ksh= idis(myrank,2)
       ish1= ish
       ksh1= ksh
       jcount= 0
@@ -396,10 +396,10 @@ end
       mlcount= 0
       mlstart= 1
       mlshell=0
-      do numshell= 1,idis(4,myrank)
+      do numshell= 1,idis(myrank,4)
         mlshell= mlshell+1
         mlcount= mlcount+mbf(ish)*mbf(ksh)
-        if(numshell == idis(4,myrank)) then
+        if(numshell == idis(myrank,4)) then
 !
 ! AO intengral generation and first integral transformation
 !
@@ -465,17 +465,17 @@ end
       use modbasis, only : nao
       use modmolecule, only : nmo
       implicit none
-      integer,intent(in) :: noac, nvac, ncore, nproc, myrank, mpi_comm, idis(4,0:nproc-1)
+      integer,intent(in) :: noac, nvac, ncore, nproc, myrank, mpi_comm, idis(0:nproc-1,4)
       integer :: numrecv, iproc, irecv(0:nproc-1), noac3, ncycle, icycle, myij
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmovir(nao*nvac), energymo(nmo)
-      real(8),intent(in) :: trint2(idis(3,myrank),noac*(noac+1)/2)
+      real(8),intent(in) :: trint2(idis(myrank,3),noac*(noac+1)/2)
       real(8),intent(out) :: trint3(nao*nao), trint4(nao*nao), emp2st(2)
 !
       numrecv= 1
       do iproc= 0,nproc-1
         irecv(iproc)= numrecv
-        numrecv= numrecv+idis(3,iproc)
+        numrecv= numrecv+idis(iproc,3)
       enddo
       noac3= noac*(noac+1)/2
       ncycle=(noac3-1)/nproc+1
@@ -655,16 +655,16 @@ end
 !
       use modbasis, only : nao
       implicit none
-      integer,intent(in) :: noac, mlcount, mlstart, mlsize, nproc, myrank, idis(4,0:nproc-1)
+      integer,intent(in) :: noac, mlcount, mlstart, mlsize, nproc, myrank, idis(0:nproc-1,4)
       integer :: moi, moij
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: trint1b(nao,noac,mlsize), cmoocc(nao,noac)
-      real(8),intent(inout) :: trint2(idis(3,myrank),noac*(noac+1)/2)
+      real(8),intent(inout) :: trint2(idis(myrank,3),noac*(noac+1)/2)
 !
       do moi= 1,noac
         moij=moi*(moi-1)/2+1
         call dgemm('T','N',mlcount,moi,nao,one,trint1b(1,moi,1),nao*noac,cmoocc,nao,zero,&
-&                  trint2(mlstart,moij),idis(3,myrank))
+&                  trint2(mlstart,moij),idis(myrank,3))
       enddo
       return
 end
@@ -688,10 +688,10 @@ end
       use modbasis, only : nao, nshell, mbf, locbf
       implicit none
       integer,intent(in) :: icycle, nproc, myrank, mpi_comm, irecv(0:nproc-1)
-      integer,intent(in) :: numij, idis(4,0:nproc-1)
+      integer,intent(in) :: numij, idis(0:nproc-1,4)
       integer :: iproc, jproc, ijstart, myij, ij, nsend, nrecv, ish, ksh, nbfi, nbfk
       integer :: locbfi, locbfk, i, k, ik, num, ii, jcount
-      real(8),intent(in) :: trint2(idis(3,myrank),numij)
+      real(8),intent(in) :: trint2(idis(myrank,3),numij)
       real(8),intent(out) :: trint3(nao*nao), trint4(nao,nao)
 !
       jproc= myrank
@@ -703,8 +703,8 @@ end
       do iproc= myrank+1,nproc-1
         jproc= jproc-1
         if(jproc < 0) jproc= nproc-1
-        nsend= idis(3,myrank)
-        nrecv= idis(3,jproc)
+        nsend= idis(myrank,3)
+        nrecv= idis(jproc,3)
         ij= ijstart+iproc
         if(ij > numij) then
           nsend= 0
@@ -718,8 +718,8 @@ end
       do iproc= 0, myrank-1
         jproc= jproc-1
         if(jproc < 0) jproc= nproc-1
-        nsend= idis(3,myrank)
-        nrecv= idis(3,jproc)
+        nsend= idis(myrank,3)
+        nrecv= idis(jproc,3)
         ij= ijstart+iproc
         if(ij > numij) then
           nsend= 0
@@ -730,7 +730,7 @@ end
 &                           trint3(irecv(jproc)),nrecv,jproc,jproc,mpi_comm)
       enddo
 !
-      nsend= idis(3,myrank)
+      nsend= idis(myrank,3)
       if(myij <= numij) call dcopy(nsend,trint2(1,myij),1,trint3(irecv(myrank)),1)
 !
 ! Reorder of received data
@@ -738,10 +738,10 @@ end
       if(myij <= numij) then
         ik= 0
         do iproc= 0,nproc-1
-          ish= idis(1,iproc)
-          ksh= idis(2,iproc)
+          ish= idis(iproc,1)
+          ksh= idis(iproc,2)
           jcount= 0
-          do num= 1,idis(4,iproc)
+          do num= 1,idis(iproc,4)
             nbfi= mbf(ish)
             nbfk= mbf(ksh)
             locbfi= locbf(ish)
@@ -855,7 +855,7 @@ end
 !       
       use modbasis, only : nshell, nao, mbf
       implicit none
-      integer,intent(in) :: maxdim, mlsize, noac, nproc, myrank, idis(4,0:nproc-1)
+      integer,intent(in) :: maxdim, mlsize, noac, nproc, myrank, idis(0:nproc-1,4)
       integer,intent(in) :: numij, ijindex(4)
       integer :: ish, ksh, ish1, ksh1, mlcount, mlstart, mlshell, numshell, ii, jj, jcount
       integer :: jcount1, numi
@@ -864,7 +864,7 @@ end
       real(8),intent(out) :: cmowrk(ijindex(3)-ijindex(1)+1,nao)
       real(8),intent(out) :: trint1a(noac,maxdim,maxdim**2)
       real(8),intent(out) :: trint1b(mlsize*noac*nao)
-      real(8),intent(out) :: trint2(idis(3,myrank)*numij)
+      real(8),intent(out) :: trint2(idis(myrank,3)*numij)
 !
       numi= ijindex(3)-ijindex(1)+1
 !$OMP parallel do
@@ -875,8 +875,8 @@ end
       enddo
 !$OMP end parallel do
 !
-      ish= idis(1,myrank)
-      ksh= idis(2,myrank)
+      ish= idis(myrank,1)
+      ksh= idis(myrank,2)
       ish1= ish
       ksh1= ksh
       jcount= 0
@@ -884,10 +884,10 @@ end
       mlcount= 0
       mlstart= 1
       mlshell=0
-      do numshell= 1,idis(4,myrank)
+      do numshell= 1,idis(myrank,4)
         mlshell= mlshell+1
         mlcount= mlcount+mbf(ish)*mbf(ksh)
-        if(numshell == idis(4,myrank)) then
+        if(numshell == idis(myrank,4)) then
 !
 ! AO intengral generation and first integral transformation
 !
@@ -956,18 +956,18 @@ end
       use modbasis, only : nao
       use modmolecule, only : nmo
       implicit none
-      integer,intent(in) :: nvac, ncore, nproc, myrank, mpi_comm, idis(4,0:nproc-1)
+      integer,intent(in) :: nvac, ncore, nproc, myrank, mpi_comm, idis(0:nproc-1,4)
       integer,intent(in) :: numij, ijindex(4)
       integer :: numrecv, iproc, irecv(0:nproc-1), ncycle, icycle, myij
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmovir(nao*nvac), energymo(nmo)
-      real(8),intent(in) :: trint2(idis(3,myrank),numij)
+      real(8),intent(in) :: trint2(idis(myrank,3),numij)
       real(8),intent(out) :: trint3(nao*nao), trint4(nao*nao), emp2st(2)
 !
       numrecv= 1
       do iproc= 0,nproc-1
         irecv(iproc)= numrecv
-        numrecv= numrecv+idis(3,iproc)
+        numrecv= numrecv+idis(iproc,3)
       enddo
       ncycle=(numij-1)/nproc+1
 !
@@ -1017,12 +1017,12 @@ end
 !
       use modbasis, only : nao
       implicit none
-      integer,intent(in) :: noac, mlcount, mlstart, mlsize, nproc, myrank, idis(4,0:nproc-1)
+      integer,intent(in) :: noac, mlcount, mlstart, mlsize, nproc, myrank, idis(0:nproc-1,4)
       integer,intent(in) :: numij, ijindex(4)
       integer :: numi, moij, moi, mojf, numj
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: trint1b(nao,ijindex(3)-ijindex(1)+1,mlsize), cmoocc(nao,noac)
-      real(8),intent(inout) :: trint2(idis(3,myrank),numij)
+      real(8),intent(inout) :: trint2(idis(myrank,3),numij)
 !
       numi= ijindex(3)-ijindex(1)+1
       moij= 1
@@ -1037,7 +1037,7 @@ end
           numj= ijindex(4)-mojf+1
         endif
         call dgemm('T','N',mlcount,numj,nao,one,trint1b(1,moi-ijindex(1)+1,1),nao*numi, &
-&                  cmoocc(1,mojf),nao,zero,trint2(mlstart,moij),idis(3,myrank))
+&                  cmoocc(1,mojf),nao,zero,trint2(mlstart,moij),idis(myrank,3))
         moij= moij+numj
       enddo
 !

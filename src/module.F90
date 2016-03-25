@@ -120,13 +120,14 @@ end
 ! threshweight: threshold for weight at a grid point
 ! threshrho   : threshold for density at a grid point
 ! threshdfock : threshold for functional at a grid point
+! threshmp2cphf : threshold for MP2-CPHF
 !
       implicit none
       real(8) :: threshex=30.0D+00, threshover=1.0D-06
       real(8) :: threshatm=2.0D-01, thresherr=0.6D+00
       real(8) :: cutint2, threshsoscf, threshqc
       real(8) :: threshweight=1.0D-08, threshrho=1.0D-07, threshdfock=1.0D-06
-      real(8) :: threshdftao=1.0D-04
+      real(8) :: threshdftao=1.0D-04, threshmp2cphf=1.0D-10
 end
 
 
@@ -284,7 +285,7 @@ end
   module modmp2
 !----------------
       implicit none
-      integer :: ncore, nvfz
+      integer :: ncore, nvfz, maxmp2diis, maxmp2iter
 end
 
 

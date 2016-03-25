@@ -153,7 +153,7 @@ end program main
       use modecp, only : ecp, flagecp
       use modjob, only : scftype, runtype, method
       use modmolecule, only : multi, charge
-      use modmp2, only : ncore, nvfz
+      use modmp2, only : ncore, nvfz, maxmp2diis, maxmp2iter
       implicit none
 !
 ! Initialize valuables for parallelization
@@ -205,6 +205,8 @@ end program main
       bqrad(:)=1.0D+00
       ncore= -1
       nvfz= 0
+      maxmp2diis= 20
+      maxmp2iter= 100
 !
       flagecp= .false.
       scftype='RHF'
