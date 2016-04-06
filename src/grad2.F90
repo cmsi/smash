@@ -19,8 +19,12 @@
 !
 ! Main driver of derivatives for two-electron integrals
 !
-! In    : fulldmtrx1(Full alpha density matrix (itype=1), Full alpha+beta (itype=2))
-!         fulldmtrx2(Full alpha density matrix (itype=1), Full alpha-beta (itype=2))
+! In    : fulldmtrx1(Full alpha density matrix (itype=1)
+!                    Full alpha+beta (itype=2)
+!                    Full HF alpha density matrix (itype=3))
+!         fulldmtrx2(Full alpha density matrix (itype=1)
+!                    Full alpha-beta (itype=2)
+!                    Full MP2 alpha density matrix (itype=3))
 !         maxdim    (Maximum dimension of twoeri and dtwoeri)
 !         hfexchange(Hartree-Fock exchange scaling factor)
 !         itype     (1:RHF, 2:UHF)
@@ -920,54 +924,79 @@ end
       if(ksh == lsh) factor= factor*half
       if((ish == ksh).and.(jsh == lsh)) factor= factor*half
 !
-! Closed-shell
+! HF closed-shell
 !
-      if(itype == 1) then
+      select case(itype)
+        case(1)
 !
 ! 4*(4*Dij*Dkl-Dil*Djk-Dik*Djl)
 !
-        do i= 1,nbfijkl(1)
-          ii= ilocbf+i
-          do j= 1,nbfijkl(2)
-            jj= jlocbf+j
-            do k= 1,nbfijkl(3)
-              kk= klocbf+k
-              do l= 1,nbfijkl(4)
-                ll= llocbf+l
-                pdmtrx(l,k,j,i)= factor*(four*fulldmtrx1(jj,ii)*fulldmtrx1(ll,kk) &
-&                                 -hfexchange*fulldmtrx1(kk,ii)*fulldmtrx1(ll,jj) &
-&                                 -hfexchange*fulldmtrx1(ll,ii)*fulldmtrx1(kk,jj))
-                if(pdmax < abs(pdmtrx(l,k,j,i))) pdmax= abs(pdmtrx(l,k,j,i))
+          do i= 1,nbfijkl(1)
+            ii= ilocbf+i
+            do j= 1,nbfijkl(2)
+              jj= jlocbf+j
+              do k= 1,nbfijkl(3)
+                kk= klocbf+k
+                do l= 1,nbfijkl(4)
+                  ll= llocbf+l
+                  pdmtrx(l,k,j,i)= factor*(four*fulldmtrx1(jj,ii)*fulldmtrx1(ll,kk) &
+&                                   -hfexchange*fulldmtrx1(kk,ii)*fulldmtrx1(ll,jj) &
+&                                   -hfexchange*fulldmtrx1(ll,ii)*fulldmtrx1(kk,jj))
+                  if(pdmax < abs(pdmtrx(l,k,j,i))) pdmax= abs(pdmtrx(l,k,j,i))
+                enddo
               enddo
             enddo
           enddo
-        enddo
 !
-! Open-shell
+! HF open-shell
 !
-      elseif(itype == 2) then
+        case(2)
 !
 ! 4*Dija*Dkla+4*Dijb*Dklb+8*Dija*Dklb-2*Dika*Djla-2*Dila*Djka-2*Dikb*Djlb-2*Dilb*Djkb
 !
-        do i= 1,nbfijkl(1)
-          ii= ilocbf+i
-          do j= 1,nbfijkl(2)
-            jj= jlocbf+j
-            do k= 1,nbfijkl(3)
-              kk= klocbf+k
-              do l= 1,nbfijkl(4)
-                ll= llocbf+l
-                pdmtrx(l,k,j,i)= factor*(four*fulldmtrx1(jj,ii)*fulldmtrx1(ll,kk) &
-&                                 -hfexchange*fulldmtrx1(kk,ii)*fulldmtrx1(ll,jj) &
-&                                 -hfexchange*fulldmtrx1(ll,ii)*fulldmtrx1(kk,jj) &
-&                                 -hfexchange*fulldmtrx2(kk,ii)*fulldmtrx2(ll,jj) &
-&                                 -hfexchange*fulldmtrx2(ll,ii)*fulldmtrx2(kk,jj))
-                if(pdmax < abs(pdmtrx(l,k,j,i))) pdmax= abs(pdmtrx(l,k,j,i))
+          do i= 1,nbfijkl(1)
+            ii= ilocbf+i
+            do j= 1,nbfijkl(2)
+              jj= jlocbf+j
+              do k= 1,nbfijkl(3)
+                kk= klocbf+k
+                do l= 1,nbfijkl(4)
+                  ll= llocbf+l
+                  pdmtrx(l,k,j,i)= factor*(four*fulldmtrx1(jj,ii)*fulldmtrx1(ll,kk) &
+&                                   -hfexchange*fulldmtrx1(kk,ii)*fulldmtrx1(ll,jj) &
+&                                   -hfexchange*fulldmtrx1(ll,ii)*fulldmtrx1(kk,jj) &
+&                                   -hfexchange*fulldmtrx2(kk,ii)*fulldmtrx2(ll,jj) &
+&                                   -hfexchange*fulldmtrx2(ll,ii)*fulldmtrx2(kk,jj))
+                  if(pdmax < abs(pdmtrx(l,k,j,i))) pdmax= abs(pdmtrx(l,k,j,i))
+                enddo
               enddo
             enddo
           enddo
-        enddo
-      endif
+!
+! MP2 closed-shell
+!
+        case(3)
+          do i= 1,nbfijkl(1)
+            ii= ilocbf+i
+            do j= 1,nbfijkl(2)
+              jj= jlocbf+j
+              do k= 1,nbfijkl(3)
+                kk= klocbf+k
+                do l= 1,nbfijkl(4)
+                  ll= llocbf+l
+                  pdmtrx(l,k,j,i)= factor &
+&                                 *(four*((fulldmtrx1(jj,ii)+fulldmtrx2(jj,ii))*fulldmtrx1(ll,kk) &
+&                                         +fulldmtrx1(jj,ii)*fulldmtrx2(ll,kk)) &
+&                                       -((fulldmtrx1(kk,ii)+fulldmtrx2(kk,ii))*fulldmtrx1(ll,jj) &
+&                                        +(fulldmtrx1(ll,ii)+fulldmtrx2(ll,ii))*fulldmtrx1(kk,jj) &
+&                                         +fulldmtrx1(kk,ii)*fulldmtrx2(ll,jj) &
+&                                         +fulldmtrx1(ll,ii)*fulldmtrx2(kk,jj)))
+                  if(pdmax < abs(pdmtrx(l,k,j,i))) pdmax= abs(pdmtrx(l,k,j,i))
+                enddo
+              enddo
+            enddo
+          enddo
+      end select
 !
       return
 end

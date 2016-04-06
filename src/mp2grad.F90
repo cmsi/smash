@@ -16,7 +16,7 @@
   subroutine calcgradrmp2(cmo,energymo,xint,egrad,nproc,myrank,mpi_comm)
 !-------------------------------------------------------------------------
 !
-! Main driver of MP2 energy gradient calculation
+! Main driver of closed-shell MP2 energy gradient calculation
 !
 ! In  : cmo     (MO coefficient matrix)
 !       energymo(MO energies)
@@ -25,23 +25,35 @@
 !
       use modparallel, only : master
       use modbasis, only : nao, nshell, mbf, mtype
-      use modmolecule, only : nmo, natom, neleca
+      use modmolecule, only : nmo, natom, neleca, numatomic
       use modenergy, only : escf, emp2, escsmp2
-      use modmp2, only : ncore, nvfz
+      use modmp2, only : ncore, nvfz, maxmp2diis
       implicit none
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: maxfunc(0:7), maxdim, maxgraddim, nocc, nvir, noac, nvac, icount, ish, jsh
-      integer :: idis(0:nproc-1,8), iproc, nvac2, numab, numov, maxsize, numirecv, memall, mem12
-      integer :: memij, msize, memneed, numi, npass
+      integer :: idis(0:nproc-1,8), iproc, nvac2, numab, numov, maxsize, numirecv
+      integer :: nocc2, nocc3, nvir2, nao2, nao3, mem1, mem2, mem2i, mem3, mem3i, mem4, mem5
+      integer :: mem5i, mem6, memmin345, memmin16, msize, memmin3, memmin4, memmin5
+      integer :: numi3, numi4, numi5, numi, npass, ii, jj
       real(8),parameter :: zero=0.0D+00, three=3.0D+00, p12=1.2D+00
       real(8),intent(in) :: cmo(nao,nao), energymo(nao), xint(nshell*(nshell+1)/2)
-      real(8),intent(out) :: egrad(3*natom)
+      real(8),intent(out) :: egrad(3,natom)
       real(8) :: emp2st(2), emp2stsum(2), egradtmp(3*natom)
+      character(len=3) :: table(-9:112)= &
+&     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+&       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
+&       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
+&       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
+&       'Pm ','Sm ','Eu ','Gd ','Tb ','Dy ','Ho ','Er ','Tm ','Yb ','Lu ','Hf ','Ta ','W  ','Re ',&
+&       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
+&       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
+&       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
       data maxfunc/1,3,6,10,15,21,28,36/
 !
       emp2= zero
       emp2st(:)= zero
-      egrad(:)= zero
+      egrad(:,:)= zero
       egradtmp(:)= zero
       maxdim= maxfunc(maxval(mtype(1:nshell)))
       maxgraddim= maxfunc(maxval(mtype(1:nshell))+1)
@@ -127,24 +139,49 @@
         endif
       enddo
 !
-! Check available memory size and judge the number of passes
+! Check available memory size and decide the number of passes
 !
       maxsize= maxval(idis(0:nproc-1,3))
       numirecv= nproc/noac
       if(mod(nproc,noac) /= 0) numirecv= numirecv+2
 !
-      memall= nvir*(nvir+1)+nocc*(nocc+1)+nocc*nvac+nocc*nvir
-      mem12= noac*nao+maxdim**3+nao*maxdim**2
-      memij= 2*nao*nao+nocc*nvac+2*numab*noac*numirecv+2*nproc*maxdim+numab
+      nocc2= nocc*nocc
+      nocc3= nocc*(nocc+1)/2
+      nvir2= nvir*nvir
+      nao2= nao*nao
+      nao3= nao*(nao+1)/2
+      mem1= nocc2+nvir2+nocc*nvac+nocc*nvir+nao2
+      mem2= nocc3+nvir2
+      mem2i=maxsize*nocc
+      mem3= nao*noac
+      mem3i= maxdim**3+nao*maxdim**2
+      mem4= 2*nproc*maxsize+nao2+nocc*nvac+2*numab*noac*numirecv+2*numab
+      mem5= 2*nao2
+      mem5i= maxdim**3+nao
+      mem6= 2*nocc*nvir+2*nao3+nshell*(nshell+1)/2+2*numov*maxmp2diis &
+&          +maxmp2diis*(maxmp2diis+1)/2+2*nao2
+!
+      memmin345=max(mem3+mem3i,mem4,mem5+mem5i)
+      memmin16= max(mem1+mem2+mem2i+memmin345,mem1+mem6)
+!
       call memrest(msize)
-      memneed= max(mem12+memall,memij+memall)
-      numi=(msize-memneed)/(maxsize*noac)
-!ishimura
+      if((msize < memmin16).and.master) then
+        call memset(memmin16)
+        call iabort
+      endif
+!
+      memmin3= msize-(mem1+mem2+mem3)
+      memmin4= msize-(mem1+mem2+mem4)
+      memmin5= msize-(mem1+mem2+mem5)
+      numi3= memmin3/(mem2i+mem3i)
+      numi4= memmin4/(mem2i)
+      numi5= memmin5/(mem2i+mem5i)
+      numi= min(numi3,numi4,numi5)
       if(numi > noac) numi= noac
 !
       if(numi <= 0) then
         if(master) then
-          call memset(maxsize+memneed)
+          write(*,'(" Error! Available memory size for MP2 is small!")')
           call iabort
         endif
       else
@@ -173,6 +210,17 @@
       endif
 !
       call para_allreducer(egradtmp,egrad,3*natom,mpi_comm)
+!
+      if(master) then
+        write(*,'(" ----------------------------------------------------")')
+        write(*,'("          Gradient (Hartree/Bohr)")')
+        write(*,'("  Atom            X             Y             Z")')
+        write(*,'(" ----------------------------------------------------")')
+        do ii= 1,natom
+          write(*,'(3x,a3,3x,3f14.7)')table(numatomic(ii)),(egrad(jj,ii),jj=1,3)
+        enddo
+        write(*,'(" ----------------------------------------------------")')
+      endif
 !
       return
 end
@@ -215,7 +263,7 @@ end
       integer,intent(in) :: nocc, noac, nvir, nvac, ncore, nvfz, maxsize, maxdim, maxgraddim
       integer,intent(in) :: nproc, myrank, mpi_comm, idis(0:nproc-1,8), npass
       integer,intent(in) :: numi, numab, numirecv
-      integer :: nao2, nao3, nocc3, nvir2, numitrans, ipass, msize, mlsize, istart
+      integer :: nao2, nao3, nocc2, nocc3, nvir2, numitrans, ipass, msize, mlsize, istart
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmo(nao,nao), energymo(nmo), xint(nshell*(nshell+1)/2)
       real(8),intent(inout) :: emp2st(2), egrad(3*natom), egradtmp(3*natom)
@@ -230,12 +278,14 @@ end
 !
       nao2= nao*nao
       nao3= nao*(nao+1)/2
+      nocc2= nocc*nocc
       nocc3= nocc*(nocc+1)/2
       nvir2= nvir*nvir
       numitrans= numi
-!
-      call memset(nocc3+nvir2+nocc*nvac+nocc*nvir+nao2)
-      allocate(wij(nocc3),wab(nvir2),wai(nocc*nvac),xlai(nocc*nvir),pmn(nao2))
+! mem1
+      call memset(nocc2+nvir2+nocc*nvac+nocc*nvir+nao2)
+      allocate(wij(nocc2),wab(nvir2),wai(nocc*nvac),xlai(nocc*nvir),pmn(nao2))
+! mem2
       call memset(maxsize*nocc*numi+nocc3+nvir2)
       allocate(trint2(maxsize*noac*numi),trint2core(maxsize*ncore*numi),pij(nocc3),pab(nvir2))
 !
@@ -262,6 +312,7 @@ end
 !
 ! AO intengral generation and first and second integral transformations
 !
+! mem3
         call memset(nao*noac+numi*maxdim**3+mlsize*nao*numi)
         allocate(cmowrk(nao*noac),trint1a(numi*maxdim**3),trint1b(mlsize*nao*numi))
 !
@@ -272,10 +323,13 @@ end
 !
         deallocate(cmowrk,trint1a,trint1b)
         call memunset(nao*noac+numi*maxdim**3+mlsize*nao*numi)
+!ishimura
+call tstamp(1)
 !
 ! Third and fourth integral transformations, and
 ! MP2 energy, Pij, Pab, Wij[I], Wab[I], Wai[I](=Lai3), Tijab half back-transformation calculations
 !
+! mem4
         call memset(2*nproc*maxsize+nao2+nocc*nvac+2*numab*noac*numirecv+2*numab)
         allocate(xaibj(nproc*maxsize),xaikj(nocc*nvac),tijab(nao2),recvint(2*numab*noac*numirecv), &
 &                sendint(2*numab),recvt(nproc*maxsize),storet(noac*maxsize))
@@ -288,10 +342,13 @@ end
         deallocate(xaibj,xaikj,tijab,recvint, &
 &                  sendint,recvt,storet)
         call memunset(2*nproc*maxsize+nao2+nocc*nvac+2*numab*noac*numirecv+2*numab)
+!ishimura
+call tstamp(1)
 !
 ! Second-half back-transformation (tnsml), and
-! Lai1,2,4, tnsml*(mn|ls)', Wij[II], and Wab[II] calculations
+! Lai1,2,4, tnsml*(mn|ls)', PiJ, Wij[II], and Wab[II] calculations
 !
+! mem5
         call memset(numi*maxdim**3+nao*numi+2*nao2)
         allocate(tisml(numi*maxdim**3),xlmi(nao*numi),xlmn(nao2),work1(nao2))
 !
@@ -306,12 +363,14 @@ end
         endif
 !
         deallocate(tisml,xlmi,xlmn,work1)
-        call memunset(numi*maxdim**3+2*nao*numi+nao2)
+        call memunset(numi*maxdim**3+nao*numi+2*nao2)
+!ishimura
+call tstamp(1)
       enddo
 !
       deallocate(trint2,trint2core,pij,pab)
       call memunset(maxsize*nocc*numi+nocc3+nvir2)
-!
+! mem6
       call memset(2*nocc*nvir+2*nao3+nshell*(nshell+1)/2+2*idis(myrank,7)*maxmp2diis &
 &                 +maxmp2diis*(maxmp2diis+1)/2+2*nao2)
       allocate(pai(nocc*nvir),paiprev(nocc*nvir),pls(nao3),pmax(nshell*(nshell+1)/2), &
@@ -323,16 +382,22 @@ end
 !
       call mp2gradcphf(pai,xlai,cmo,xint,energymo,paiprev,pls,pmax,paifock,errdiis,paidiis, &
 &                      diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm)
+!ishimura
+call tstamp(1)
 !
 ! Calculate Wij[III] and Wai[II]
 !
       call mp2gradwij3(wij,wai,pmn,pai,paifock,cmo,energymo,xint,pls,pmax,work1,work2, &
-&                      nocc,nvir,maxdim,nproc,myrank,mpi_comm)
+&                      nocc,nvir,nvac,maxdim,nproc,myrank,mpi_comm)
+!ishimura
+call tstamp(1)
 !
 ! Calculate integral derivatives and their MP2 energy gradient
 !
-      call mp2graddint(egrad,egradtmp,pmn,wij,wab,wai,xint,cmo,work1,work2, &
+      call mp2graddint(egrad,egradtmp,pmn,wij,wab,wai,xint,cmo,energymo,pls,work1,work2, &
 &                      nocc,nvir,maxgraddim,nproc,myrank,mpi_comm)
+!ishimura
+call tstamp(1)
 !
       deallocate(pai,paiprev,pls,pmax, &
 &                paifock,errdiis, &
@@ -406,7 +471,7 @@ end
         mlcount= mlcount+mbf(ish)*mbf(ksh)
         if(numshell == idis(myrank,4)) then
 !
-! AO intengral generation and first integral transformation
+! AO integral generation and first integral transformation
 !
           call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,numitrans,jcount1, &
 &                          mlshell,mlsize,nproc,myrank)
@@ -548,7 +613,7 @@ end
       real(8),intent(out) :: recvt(nproc*maxsize), storet(noac*maxsize)
       real(8),intent(inout) :: emp2st(2), trint2(idis(myrank,3),noac,numitrans)
       real(8),intent(inout) :: trint2core(idis(myrank,3),ncore,numitrans)
-      real(8),intent(inout) :: pij(nocc*(nocc+1)/2), pab(nvir*nvir), wij(nocc*(nocc+1)/2)
+      real(8),intent(inout) :: pij(nocc*(nocc+1)/2), pab(nvir*nvir), wij(nocc,nocc)
       real(8),intent(inout) :: wab(nvir*nvir), wai(nocc*nvac)
 !
       numij= noac*numitrans
@@ -583,7 +648,7 @@ end
 ! Calculate MP2 amplitute and energy, Pab[I], Wab[I], and Wai[I](=Lai3) terms
 !
           call mp2gradamp(tijab,pab,wab,wai,xaibj,xaikj,emp2st,energymo, &
-&                         nocc,ncore,nvir,nvac,nvfz,moi,moj)
+&                         nocc,ncore,nvir,nvac,nvfz,moi,moj,nproc,myrank)
         endif
 !
 ! Send and receive tijab and (ai|bj)/Dijab, and Calculate Pij
@@ -591,16 +656,39 @@ end
         call mp2gradpij(pij,tijab,xaibj,recvint,sendint,nocc,noac,ncore,nvac, &
 &                       numirecv,numab,icycle,numij,idis,nproc,myrank,mpi_comm)
 !
-! Calculate tijml
+! First half back-transformation
+!   tijab[a,b] -> tijml[l,m]
 !
-        call dgemm('N','T',nvac,nao,nvac,one,tijab,nvac,cmo(1,nocc+1),nao,zero,xaibj,nvac)
-        call dgemm('N','N',nao,nao,nvac,one,cmo(1,nocc+1),nao,xaibj,nvac,zero,tijab,nao)
+        if(myij <= numij) then
+          call dgemm('N','T',nvac,nao,nvac,one,tijab,nvac,cmo(1,nocc+1),nao,zero,xaibj,nvac)
+          call dgemm('T','T',nao,nao,nvac,one,xaibj,nvac,cmo(1,nocc+1),nao,zero,tijab,nao)
+        endif
 !
-! Send and receive tijml, and calculate Wij[I] and PiJ
+! Send and receive tijml, and calculate Wij[I]
 !
-        call mp2gradwij1(wij,pij,tijab,trint2,trint2core,energymo,xaibj,recvt,storet,nocc, &
+        call mp2gradwij1(wij,tijab,trint2,trint2core,energymo,xaibj,recvt,storet,nocc, &
 &                        noac,ncore,numitrans,maxsize,icycle,numij,idis,nproc,myrank,mpi_comm)
       enddo
+!
+!ishimura
+!write(*,*)"wai"
+!write(*,'(10f10.6)')wai
+!write(*,*)"pab"
+!write(*,'(10f10.6)')pab
+!      call para_allreducer(wij,tijab,nocc*nocc,mpi_comm)
+!write(*,*)"wij"
+!write(*,'(10f10.6)')tijab(1:nocc*nocc)
+!call ishi(wij,nocc,noac)
+!      call para_allreducer(wab,tijab,nvir*nvir,mpi_comm)
+!if(myrank==0)then
+!write(*,*)"wab"
+!write(*,'(10f10.6)')tijab(1:nvir*nvir)
+!endif
+!      call para_allreducer(pij,tijab,nocc*(nocc+1)/2,mpi_comm)
+!if(myrank==0)then
+!write(*,*)"pij"
+!write(*,'(10f10.6)')tijab(1:nocc*(nocc+1)/2)
+!endif
 !
       return
 end
@@ -608,7 +696,7 @@ end
 
 !-------------------------------------------------------------------------
   subroutine mp2gradamp(tijab,pab,wab,wai,xaibj,xaikj,emp2st,energymo, &
-&                       nocc,ncore,nvir,nvac,nvfz,moi,moj)
+&                       nocc,ncore,nvir,nvac,nvfz,moi,moj,nproc,myrank)
 !-------------------------------------------------------------------------
 !
 ! Calculate MP2 amplitute and energy, Pab[I], Wab[I], and Wai[I](=Lai3) terms
@@ -623,14 +711,14 @@ end
 !
       use modmolecule, only : nmo
       implicit none
-      integer,intent(in) :: nocc, ncore, nvir, nvac, nvfz, moi, moj
+      integer,intent(in) :: nocc, ncore, nvir, nvac, nvfz, moi, moj, nproc, myrank
       integer :: moa, mob, moc
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, four=4.0D+00
       real(8),intent(in) :: xaikj(nvac,nocc), energymo(nmo)
       real(8),intent(inout) :: pab(nvir,nvir), wab(nvir*nvir), wai(nocc*nvac)
       real(8),intent(inout) :: xaibj(nvac,nvir), emp2st(2)
       real(8),intent(out) :: tijab(nvac,nvac)
-      real(8) :: eij, eijb, eijab, etmp(2)
+      real(8) :: eij, eijb, eijab, etmp(2), eab
 !
 ! Calculate MP2 amplitute and energy
 !
@@ -663,9 +751,9 @@ end
 !
 !$OMP parallel do private(eijb)
       do mob= 1,nvac
-        eijb= eij-energymo(moa+nocc)
+        eijb= eij-energymo(mob+nocc)
         do moa= 1,nvac
-          xaibj(moa,mob)= xaibj(moa,mob)/(eijb-energymo(mob+nocc))
+          xaibj(moa,mob)= xaibj(moa,mob)/(eijb-energymo(moa+nocc))
         enddo
       enddo
 !$OMP end parallel do
@@ -675,12 +763,12 @@ end
       call dgemm('T','N',nvac,nvac,nvac,two,tijab,nvac,xaibj,nvac,one,pab,nvir)
 !
       if(nvfz /= 0 ) then
-!$OMP parallel do
-        do mob= nvac+1,nvir
+!$OMP parallel do private(eab)
+        do mob= nvac+myrank+1,nvir,nproc
           do moa= 1,nvac
+            eab= two/(energymo(moa+nocc)-energymo(mob+nocc))
             do moc= 1,nvac
-              pab(moa,mob)= pab(moa,mob)+two*tijab(moc,moa)*xaibj(moc,mob) &
-&                           /(energymo(moa+nocc)-energymo(mob+nocc))
+              pab(moa,mob)= pab(moa,mob)+eab*tijab(moc,moa)*xaibj(moc,mob)
             enddo
           enddo
         enddo
@@ -691,10 +779,10 @@ end
 end
 
 
-!----------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------
   subroutine mp2gradpij(pij,tijab,xaibj,recvint,sendint,nocc,noac,ncore,nvac, &
 &                       numirecv,numab,icycle,numij,idis,nproc,myrank,mpi_comm)
-!----------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------
 !
 ! Calculate Pij term
 !
@@ -787,9 +875,9 @@ end
         endif
       elseif(kfirst < klast) then
         if(jlast /= noac) klast= klast-1
-!$OMP parallel private(moij)
+!!$OMP parallel private(moij)
         do mok= kfirst,klast
-!$OMP do
+!!$OMP do
           do moi= 1,noac
             do moj= 1,moi
               moij=(moi+ncore)*(moi+ncore-1)/2+moj+ncore
@@ -798,14 +886,14 @@ end
               enddo
             enddo
           enddo
-!$OMP end do
+!!$OMP end do
         enddo
-!$OMP end parallel
+!!$OMP end parallel
       else
         if(jlast /= noac) klast= klast-1
-!$OMP parallel private(moij)
+!!$OMP parallel private(moij)
         do mok= kfirst,numirecv
-!$OMP do
+!!$OMP do
           do moi= 1,noac
             do moj= 1,moi
               moij=(moi+ncore)*(moi+ncore-1)/2+moj+ncore
@@ -814,10 +902,10 @@ end
               enddo
             enddo
           enddo
-!$OMP end do
+!!$OMP end do
         enddo
         do mok= 1,klast
-!$OMP do
+!!$OMP do
           do moi= 1,noac
             do moj= 1,moi
               moij=(moi+ncore)*(moi+ncore-1)/2+moj+ncore
@@ -826,9 +914,9 @@ end
               enddo
             enddo
           enddo
-!$OMP end do
+!!$OMP end do
         enddo
-!$OMP end parallel
+!!$OMP end parallel
       endif
 !
       return
@@ -836,11 +924,11 @@ end
 
 
 !-----------------------------------------------------------------------------------------------
-  subroutine mp2gradwij1(wij,pij,tijml,trint2,trint2core,energymo,sendt,recvt,storet,nocc, &
+  subroutine mp2gradwij1(wij,tijml,trint2,trint2core,energymo,sendt,recvt,storet,nocc, &
 &                        noac,ncore,numitrans,maxsize,icycle,numij,idis,nproc,myrank,mpi_comm)
 !-----------------------------------------------------------------------------------------------
 !
-! Send and receive tijml, and calculate Wij[I] and PiJ
+! Send and receive tijml, and calculate Wij[I]
 !
 ! In:   tijml     (tijml)
 !       trint2core(Second transformed integrals of core MOs)
@@ -848,7 +936,6 @@ end
 !       recvt     (Receiving buffer for tijml)
 !       storet    (Storing buffer for tijml)
 ! Inout:wij       (Wij)
-!       pij       (Pij)
 !       trint2    (In:Second transformed integrals, Out:tijml)
 !
       use modbasis, only : nao, mbf, locbf, nshell
@@ -859,18 +946,21 @@ end
       integer :: myij, iproc, jproc, ish, ksh, jcount, num, nbfi, nbfk, locbfi, locbfk
       integer :: ik, ii, kk, ijstart, nrecv, nsend
       integer :: moikfirst, moiklast, mokfirst, moklast, moifirst, moilast
-      integer :: moi, moj, mok, moij, moab, moirecvt
-      real(8),parameter :: two=2.0D+00
+      integer :: moi, moj, mok, moij, moab, moirecvt, numml
+      real(8),parameter :: one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: tijml(nao,nao), trint2core(idis(myrank,3),ncore,numitrans)
       real(8),intent(in) :: energymo(nmo)
       real(8),intent(out) :: sendt(maxsize,0:nproc-1), recvt(maxsize,0:nproc-1)
       real(8),intent(out) :: storet(maxsize,noac)
-      real(8),intent(inout) :: wij(nocc*(nocc+1)/2), pij(nocc*(nocc+1)/2)
+      real(8),intent(inout) :: wij(nocc,nocc)
       real(8),intent(inout) :: trint2(idis(myrank,3),noac,numitrans)
       real(8) :: eij
 !
 ! Copy tijml to sending buffer
 !
+!ishimura
+!change moab -> mlao
+
       myij=(icycle-1)*nproc+1+myrank
       if(myij <= numij) then
         do iproc= 0,nproc-1
@@ -913,12 +1003,11 @@ end
       jproc= myrank
       ijstart=(icycle-1)*nproc+1
       nrecv= idis(myrank,3)
-      if(myij > numij) nrecv= 0
+!
       do iproc= myrank+1,nproc-1
         jproc= jproc-1
         if(jproc < 0) jproc= nproc-1
         nsend= idis(iproc,3)
-        if((ijstart+iproc) > numij) nsend= 0
         call para_sendrecvr(sendt(1,iproc),nsend,iproc,myrank, &
 &                           recvt(1,jproc),nrecv,jproc,jproc,mpi_comm)
       enddo
@@ -927,14 +1016,15 @@ end
         jproc= jproc-1
         if(jproc < 0) jproc= nproc-1
         nsend= idis(iproc,3)
-        if((ijstart+iproc) > numij) nsend= 0
+!ishimura
+!       if((ijstart+iproc) > numij) nsend= 0
         call para_sendrecvr(sendt(1,iproc),nsend,iproc,myrank, &
 &                           recvt(1,jproc),nrecv,jproc,jproc,mpi_comm)
       enddo
 !
       if(myij <= numij) call dcopy(nrecv,sendt(1,myrank),1,recvt(1,myrank),1)
 !
-! Calculate Wij[I] and PiJ, and copy tijml to trint2
+! Calculate Wij[I] and copy tijml to trint2
 !
       moikfirst=(icycle-1)*nproc+1
       moiklast = icycle*nproc
@@ -945,40 +1035,19 @@ end
       moilast = mod((moiklast -1),noac)+1
 !
       if((mokfirst /= moklast).or.(moilast == noac)) then
-!ishimura
-!OMP
-        do moi= 1,moifirst-1
-          do moj= 1,moi
-            moij=(moi+ncore)*(moi+ncore-1)/2+moj+ncore
-            do moab= 1,idis(myrank,3)
-              wij(moij)= wij(moij)-two*trint2(moab,moj,mokfirst)*storet(moab,moi)
-            enddo
-          enddo
-          do moj= 1,ncore
-            moij=(moi+ncore)*(moi+ncore-1)/2+moj
-            eij= two/(energymo(moi+ncore)-energymo(moj))
-            do moab= 1,idis(myrank,3)
-              wij(moij)= wij(moij)-two*trint2core(moab,moj,mokfirst)*storet(moab,moi)
-              pij(moij)= pij(moij)+eij*trint2core(moab,moj,mokfirst)*storet(moab,moi)
-            enddo
-          enddo
-        enddo
-        do moi= moifirst,noac
-          do moj= 1,moi
-            moij=(moi+ncore)*(moi+ncore-1)/2+moj+ncore
-            do moab= 1,idis(myrank,3)
-              wij(moij)= wij(moij)-two*trint2(moab,moj,mokfirst)*recvt(moab,moi-moifirst)
-            enddo
-          enddo
-          do moj= 1,ncore
-            moij=(moi+ncore)*(moi+ncore-1)/2+moj
-            eij= two/(energymo(moi+ncore)-energymo(moj))
-            do moab= 1,idis(myrank,3)
-              wij(moij)= wij(moij)-two*trint2core(moab,moj,mokfirst)*recvt(moab,moi-moifirst)
-              pij(moij)= pij(moij)+eij*trint2core(moab,moj,mokfirst)*recvt(moab,moi-moifirst)
-            enddo
-          enddo
-        enddo
+        numml= idis(myrank,3)
+        if((numml /= 0).and.(moifirst /= 1)) then
+          call dgemm('T','N',noac,moifirst-1,numml,-two,trint2(1,1,mokfirst),numml, &
+&                    storet(1,1),maxsize,one,wij(ncore+1,ncore+1),nocc)
+          call dgemm('T','N',ncore,moifirst-1,numml,-two,trint2core(1,1,mokfirst),numml, &
+&                    storet(1,1),maxsize,one,wij(1,ncore+1),nocc)
+        endif
+        if(numml /= 0) then
+          call dgemm('T','N',noac,noac-moifirst+1,numml,-two,trint2(1,1,mokfirst),numml, &
+&                    recvt(1,0),maxsize,one,wij(ncore+1,ncore+moifirst),nocc)
+          call dgemm('T','N',ncore,noac-moifirst+1,numml,-two,trint2core(1,1,mokfirst),numml, &
+&                    recvt(1,0),maxsize,one,wij(1,ncore+moifirst),nocc)
+        endif
 !
         do moi= 1,moifirst-1
           do moab= 1,idis(myrank,3)
@@ -993,29 +1062,18 @@ end
       endif
 !
 !ishimura
-!OMP
       do mok= mokfirst+1,moklast
         if((mok == moklast).and.(moilast /= noac)) cycle
+        if(numml /= 0) then
+          moirecvt= noac*(mok-mokfirst-1)+(noac-moifirst)+1
+          call dgemm('T','N',noac,noac,numml,-two,trint2(1,1,mok),numml, &
+&                    recvt(1,moirecvt),maxsize,one,wij(ncore+1,ncore+1),nocc)
+          call dgemm('T','N',ncore,noac,numml,-two,trint2core(1,1,mok),numml, &
+&                    recvt(1,moirecvt),maxsize,one,wij(1,ncore+1),nocc)
+        endif
         do moi= 1,noac
-          moirecvt= moi+noac*(mok-mokfirst-1)-(noac-moifirst)
-          do moj= 1,moi
-            moij=(moi+ncore)*(moi+ncore-1)/2+moj+ncore
-            do moab= 1,idis(myrank,3)
-              wij(moij)= wij(moij)-two*trint2(moab,moj,mok)*recvt(moab,moirecvt)
-            enddo
-          enddo
-          do moj= 1,ncore
-            moij=(moi+ncore)*(moi+ncore-1)/2+moj
-            eij= two/(energymo(moi+ncore)-energymo(moj))
-            do moab= 1,idis(myrank,3)
-              wij(moij)= wij(moij)-two*trint2core(moab,moj,mokfirst)*recvt(moab,moirecvt)
-              pij(moij)= pij(moij)+eij*trint2core(moab,moj,mokfirst)*recvt(moab,moirecvt)
-            enddo
-          enddo
-        enddo
-!
-        do moi= 1,noac
-          do moab= 1,idis(myrank,3)
+          moirecvt= noac*(mok-mokfirst-1)+(noac-moifirst)+moi
+          do moab= 1,numml
             trint2(moab,moi,mok)= recvt(moab,moirecvt)
           enddo
         enddo
@@ -1030,7 +1088,7 @@ end
           enddo
         else
           do moi= 1,moilast
-            moirecvt= moi+noac*(moklast-mokfirst-1)-(noac-moifirst)
+            moirecvt= moi+noac*(moklast-mokfirst-1)+(noac-moifirst)
             do moab= 1,idis(myrank,3)
               storet(moab,moi)= recvt(moab,moirecvt)
             enddo
@@ -1071,14 +1129,14 @@ end
       integer :: istart2, mlcount, ish, ksh, ml, mlindex(4,idis(myrank,4)), jcount, ii, numshell
       integer :: mlnum, nbfi, nbfj, nbfk, nbfl, nbfik, locbfj, locbfl, moi, moj, jsh, lsh
       integer :: ij, kl, jj, kk, ll, i2, ik
-      real(8),parameter :: zero=0.0D+00, one=1.0D+00, four=4.0D+00
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, four=4.0D+00
       real(8),intent(in) :: cmo(nao,nao), xint(nshell*(nshell+1)/2)
       real(8),intent(in) :: tijml(idis(myrank,3),noac,numitrans)
       real(8),intent(out) :: egradtmp(3*natom), tisml(maxdim*maxdim,maxdim,numitrans)
       real(8),intent(out) :: xlmi(numitrans,nao)
       real(8),intent(inout) :: egrad(3*natom), xlai(nocc,nvir) 
-      real(8) :: xijkl, twork(maxdim,maxdim,maxdim,maxdim), twoeri(maxgraddim**4)
-      real(8) :: dtwoeri(maxgraddim**4), tmax, tmp
+      real(8) :: xijkl, twork(maxgraddim,maxgraddim,maxgraddim,maxgraddim), twoeri(maxgraddim**4)
+      real(8) :: dtwoeri(3*maxgraddim**4), tmax, tmp
 !
       xlmi(:,:)= zero
       egradtmp(:)= zero
@@ -1087,6 +1145,7 @@ end
       mlcount= 0
       ish= idis(myrank,1)
       ksh= idis(myrank,2)
+      jcount= 0
       do ml= 1,idis(myrank,4)
         mlindex(1,ml)= ish
         mlindex(2,ml)= ksh
@@ -1110,8 +1169,8 @@ end
         endif
       enddo
 !
-!$OMP parallel do schedule(dynamic,1) collapse(2) private(ish,ksh,mlcount,mlnum,nbfi,nbfk,nbfl, &
-!$OMP nbfik,locbfl,tisml,ij,kl,xijkl,twork,i2,ik,tmax,tmp,twoeri,dtwoeri) &
+!$OMP parallel do schedule(dynamic,1) collapse(2) private(ish,ksh,mlcount,mlnum,nbfi,nbfj,nbfk, &
+!$OMP nbfl,nbfik,locbfj,locbfl,tisml,ij,kl,xijkl,twork,i2,ik,tmax,tmp,twoeri,dtwoeri) &
 !$OMP reduction(+:xlmi,egradtmp)
       do numshell= 1,idis(myrank,4)
         do lsh= 1,nshell
@@ -1124,12 +1183,12 @@ end
           nbfl= mbf(lsh)
           nbfik= nbfi*nbfk
           locbfl= locbf(lsh)
-          tisml(1:numitrans,1:nbfl,1:mlnum)= zero
+          tisml(1:mlnum,1:nbfl,1:numitrans)= zero
           do moi= 1,numitrans
             do moj= 1,noac
               do ll= 1,nbfl
                 do ml= 1,mlnum
-                  tisml(moi,ll,ml)= tisml(moi,ll,ml) &
+                  tisml(ml,ll,moi)= tisml(ml,ll,moi) &
 &                                  +tijml(mlcount+ml,moj,moi)*cmo(locbfl+ll,moj+ncore)
                 enddo
               enddo
@@ -1154,7 +1213,7 @@ end
 !
             xijkl= xint(ij)*xint(kl)
             if(xijkl < cutint2) cycle
-            call calc2eri(twork,ksh,lsh,ish,jsh,maxdim)
+            call calc2eri(twork,ksh,lsh,ish,jsh,maxgraddim)
 !
             do ii= 1,nbfi 
               i2=(ii-1)*nbfk
@@ -1181,7 +1240,7 @@ end
                     do moi= 1,numitrans
                       tmp= tmp+tisml(ik,ll,moi)*cmo(locbfj+jj,istart2+moi)
                     enddo
-                    twork(ll,kk,jj,ii)= tmp
+                    twork(ll,kk,jj,ii)= tmp*two
                     if(abs(tmp) > tmax) tmax= abs(tmp)
                   enddo
                 enddo
@@ -1209,14 +1268,13 @@ end
 &                              istart,maxdim,maxgraddim,idis,nproc,myrank,mpi_comm)
 !-------------------------------------------------------------------------------------------------
 !
-! Accumulate Pij and Pab, and
-! calculate second-half back-transformation (tnsml), and Lai1,2,4 and tnsml*(mn|ls)' terms
+! Calculate second-half back-transformation (tnsml), and PiJ, Lai1,2,4 and tnsml*(mn|ls)' terms,
+! and Accumulate Pij and Pab
 !
 ! In:   wai       (Wai)
 !       cmo       (MO coefficient matrix)
 !       xint      (Exchange integral matrix)
 !       tijml     (tijml)
-!       pij       (Pij)
 !       pab       (Pab)
 !       energymo  (MO energies)
 !       istart    (First index of transformed occupied MOs)
@@ -1227,9 +1285,11 @@ end
 !       wij       (Wij)
 !       wab       (Wab)
 !       xlai      (Lai)
+!       pij       (Pij)
 ! Work: egradtmp  (Workspace for MP2 energy gradients)
 !       tisml     (tisml)
 !       xlmi      (Lmi)
+!       xlmn      (Lmn)
 !       work      (Work space)
 !
       use modbasis, only : nao, nshell, mbf, locbf
@@ -1239,18 +1299,18 @@ end
       integer,intent(in) :: nocc, noac, nvir, ncore, numitrans, istart, maxdim, maxgraddim
       integer,intent(in) :: nproc, myrank, mpi_comm, idis(0:nproc-1,8)
       integer :: istart2, mlcount, ish, ksh, ml, mlindex(4,idis(myrank,4)), jcount, ii, numshell
-      integer :: mlnum, nbfi, nbfj, nbfk, nbfl, nbfik, locbfj, locbfl, moi, moj, jsh, lsh
-      integer :: ij, kl, jj, kk, ll, i2, ik
+      integer :: mlnum, nbfi, nbfj, nbfk, nbfl, nbfik, locbfi, locbfj, locbfk, locbfl, moi, moj
+      integer :: moij, jsh, lsh, ij, kl, jj, kk, ll, i2, ik
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00, four=4.0D+00
       real(8),intent(in) :: wai(nocc*nvir), cmo(nao,nao), xint(nshell*(nshell+1)/2)
       real(8),intent(in) :: tijml(idis(myrank,3),noac,numitrans)
-      real(8),intent(in) :: pij(nocc*(nocc+1)/2), pab(nvir*nvir), energymo(nao)
+      real(8),intent(in) :: pab(nvir*nvir), energymo(nao)
       real(8),intent(out) :: egradtmp(3*natom), tisml(maxdim*maxdim,maxdim,numitrans)
       real(8),intent(out) :: xlmi(numitrans,nao), xlmn(nao,nao), pmn(nao,nao), work(nao*nao)
-      real(8),intent(inout) :: egrad(3*natom), wij(nocc*(nocc+1)/2), wab(nvir,nvir)
-      real(8),intent(inout) :: xlai(nocc,nvir) 
-      real(8) :: xijkl, twork(maxdim,maxdim,maxdim,maxdim), twoeri(maxgraddim**4)
-      real(8) :: dtwoeri(maxgraddim**4), tmax, tmp
+      real(8),intent(inout) :: egrad(3*natom), wij(nocc,nocc), wab(nvir,nvir)
+      real(8),intent(inout) :: xlai(nocc,nvir), pij(nocc*(nocc+1)/2)
+      real(8) :: eij, xijkl, twork(maxgraddim,maxgraddim,maxgraddim,maxgraddim)
+      real(8) :: twoeri(maxgraddim**4), dtwoeri(3*maxgraddim**4), tmax, tmp
 !
       egradtmp(:)= zero
       istart2= istart+ncore
@@ -1258,6 +1318,7 @@ end
       mlcount= 0
       ish= idis(myrank,1)
       ksh= idis(myrank,2)
+      jcount= 0
       do ml= 1,idis(myrank,4)
         mlindex(1,ml)= ish
         mlindex(2,ml)= ksh
@@ -1279,10 +1340,26 @@ end
           enddo
         endif
       enddo
+
+!
+! Calculate PiJ
+!
+      do moi= ncore+1,nocc
+        do moj= 1,ncore
+          moij= moi*(moi-1)/2+moj
+          eij=-one/(energymo(moi)-energymo(moj))
+          pij(moij)= pij(moij)+eij*wij(moj,moi)
+        enddo
+      enddo
 !
 ! Accumulate Pij, and calculate Wij[II] and Pmn
 !
       call para_allreducer(pij,work,nocc*(nocc+1)/2,mpi_comm)
+!ishimura
+!if(myrank==0) then
+!write(*,*)"pij"
+!write(*,'(10f10.6)')work(1:nocc*(nocc+1)/2)
+!endif
       do ii= 1,nocc
         ij= ii*(ii-1)/2
         do jj= 1,ii
@@ -1290,30 +1367,49 @@ end
         enddo
       enddo
       do ii= myrank+1,nocc,nproc
-        ij= ii*(ii-1)/2
-        do jj= 1,ii
-          wij(ij+jj)= wij(ij+jj)-half*xlmn(jj,ii)*(energymo(ii)+energymo(jj))
+        do jj= 1,ii-1
+          wij(ii,jj)= wij(ii,jj)-half*xlmn(jj,ii)*(energymo(ii)+energymo(jj))
+          wij(jj,ii)= wij(jj,ii)-half*xlmn(jj,ii)*(energymo(ii)+energymo(jj))
         enddo
+        wij(ii,ii)= wij(ii,ii)-half*xlmn(ii,ii)*(energymo(ii)+energymo(ii))
       enddo
-      call dsymm('R','U',nocc,nao,one,xlmn,nao,cmo,nao,zero,work,nao)
+      call dsymm('R','U',nao,nocc,one,xlmn,nao,cmo,nao,zero,work,nao)
       call dgemm('N','T',nao,nao,nocc,one,work,nao,cmo,nao,zero,pmn,nao)
 !
 ! Accumulate Pab, and calculate Wab[II] and Pmn
 !
-      call para_allreducer(pab,xlmn,nvir*nvir,mpi_comm)
-      do ii= myrank+1,nvir,nproc
+      call para_allreducer(pab,work,nvir*nvir,mpi_comm)
+      do ii= 1,nvir
+        ij= nvir*(ii-1)
         do jj= 1,ii
-          wab(jj,ii)= wab(jj,ii)-half*xlmn(jj,ii)*(energymo(ii+nocc)+energymo(jj+nocc))
+          xlmn(jj,ii)= work(ij+jj)
         enddo
       enddo
-      call dsymm('R','U',nvir,nao,one,xlmn,nao,cmo(1,nocc+1),nao,zero,work,nao)
+      do ii= myrank+1,nvir,nproc
+        ij= nvir*(ii-1)
+        do jj= 1,ii-1
+          wab(jj,ii)= wab(jj,ii)-half*xlmn(jj,ii)*(energymo(ii+nocc)+energymo(jj+nocc))
+          wab(ii,jj)= wab(ii,jj)-half*xlmn(jj,ii)*(energymo(ii+nocc)+energymo(jj+nocc))
+        enddo
+        wab(ii,ii)= wab(ii,ii)-half*xlmn(ii,ii)*(energymo(ii+nocc)+energymo(ii+nocc))
+      enddo
+      call dsymm('R','U',nao,nvir,one,xlmn,nao,cmo(1,nocc+1),nao,zero,work,nao)
       call dgemm('N','T',nao,nao,nvir,one,work,nao,cmo(1,nocc+1),nao,one,pmn,nao)
+!
+!ishimura
+!write(*,*)"wab2"
+!call ishi2(wab,nvir)
+!if(myrank==0)then
+! write(*,*)"pmn"
+! write(*,'(10f10.6)')pmn
+!endif
 !
       xlmi(:,:)= zero
       xlmn(:,:)= zero
 !
-!$OMP parallel do schedule(dynamic,1) collapse(2) private(ish,ksh,mlcount,mlnum,nbfi,nbfk,nbfl, &
-!$OMP nbfik,locbfl,tisml,ij,kl,xijkl,twork,i2,ik,tmax,tmp,twoeri,dtwoeri) &
+!$OMP parallel do schedule(dynamic,1) collapse(2) private(ish,ksh,mlcount,mlnum,nbfi,nbfj,nbfk, &
+!$OMP nbfl,nbfik,locbfi,locbfj,locbfk,locbfl,tisml,ij,kl,xijkl,twork,i2,ik,tmax,tmp,twoeri, &
+!$OMP dtwoeri) &
 !$OMP reduction(+:xlmi,xlmn,egradtmp)
       do numshell= 1,idis(myrank,4)
         do lsh= 1,nshell
@@ -1325,13 +1421,15 @@ end
           nbfk= mbf(ksh)
           nbfl= mbf(lsh)
           nbfik= nbfi*nbfk
+          locbfi= locbf(ish)
+          locbfk= locbf(ksh)
           locbfl= locbf(lsh)
-          tisml(1:numitrans,1:nbfl,1:mlnum)= zero
+          tisml(1:mlnum,1:nbfl,1:numitrans)= zero
           do moi= 1,numitrans
             do moj= 1,noac
               do ll= 1,nbfl
                 do ml= 1,mlnum
-                  tisml(moi,ll,ml)= tisml(moi,ll,ml) &
+                  tisml(ml,ll,moi)= tisml(ml,ll,moi) &
 &                                  +tijml(mlcount+ml,moj,moi)*cmo(locbfl+ll,moj+ncore)
                 enddo
               enddo
@@ -1356,14 +1454,14 @@ end
 !
             xijkl= xint(ij)*xint(kl)
             if(xijkl < cutint2) cycle
-            call calc2eri(twork,ksh,lsh,ish,jsh,maxdim)
+            call calc2eri(twork,ksh,lsh,ish,jsh,maxgraddim)
 !
-            do ii= 1,nbfi 
+            do ii= 1,nbfi
               i2=(ii-1)*nbfk
-              do kk= 1,nbfk 
+              do kk= 1,nbfk
                 ik= i2+kk
-                do ll= 1,nbfl 
-                  do jj= 1,nbfj 
+                do ll= 1,nbfl
+                  do jj= 1,nbfj
                     do moi= 1,numitrans
                       xlmi(moi,locbfj+jj)= xlmi(moi,locbfj+jj)+tisml(ik,ll,moi)*twork(jj,ii,ll,kk)
                     enddo
@@ -1372,13 +1470,14 @@ end
               enddo
             enddo
 !
-!if(ipass == npass) then
             do kk= 1,nbfk
               do ll= 1,nbfl
                 do ii= 1,nbfi
                   do jj= 1,nbfj
-                    xlmn(ll,kk)= xlmn(ll,kk) &
-&                               +pmn(jj,ii)*(four*twork(jj,ii,ll,kk)-two*twork(jj,ll,ii,kk))
+                    xlmn(locbfl+ll,locbfk+kk)= xlmn(locbfl+ll,locbfk+kk)+pmn(locbfj+jj,locbfi+ii) &
+&                                              *(four*twork(jj,ii,ll,kk))
+                    xlmn(locbfl+ll,locbfi+ii)= xlmn(locbfl+ll,locbfi+ii)+pmn(locbfj+jj,locbfk+kk) &
+&                                              *(-two*twork(jj,ii,ll,kk))
                   enddo
                 enddo
               enddo
@@ -1395,7 +1494,7 @@ end
                     do moi= 1,numitrans
                       tmp= tmp+tisml(ik,ll,moi)*cmo(locbfj+jj,istart2+moi)
                     enddo
-                    twork(ll,kk,jj,ii)= tmp
+                    twork(ll,kk,jj,ii)= tmp*two
                     if(abs(tmp) > tmax) tmax= abs(tmp)
                   enddo
                 enddo
@@ -1410,13 +1509,26 @@ end
       do ii= 1,3*natom
         egrad(ii)= egrad(ii)+egradtmp(ii)
       enddo
-      call dgemm('T','N',numitrans,nao,nao,one,cmo(1,istart2+1),nao,xlmn,nao,one,xlmi,numitrans)
+!
       call dgemm('N','N',numitrans,nvir,nao,four,xlmi,numitrans,cmo(1,nocc+1),nao,one, &
 &                xlai(istart2+1,1),nocc)
+      call dgemm('T','N',nocc,nao,nao,one,cmo,nao,xlmn,nao,zero,work,nocc)
+      call dgemm('N','N',nocc,nvir,nao,one,work,nocc,cmo(1,nocc+1),nao,one,xlai,nocc)
 !
 ! Add Wai[I] as Lai4
 !
       call daxpy(nocc*nvir,one,wai,1,xlai,1)
+      if(nproc /= 1) then
+        call para_allreducer(xlai,work,nocc*nvir,mpi_comm)
+        call dcopy(nocc*nvir,work,1,xlai,1)
+      endif
+!ishimura
+!if(myrank==0) then
+!write(*,*)"wai"
+!write(*,'(10f10.6)')wai
+!write(*,*)"xlai"
+!write(*,'(10f10.6)')xlai
+!endif
 !
       return
 end
@@ -1441,7 +1553,7 @@ end
 !       paidiis   (Old Pai for DIIS)
 !       diismtrx  (DIIS matrix)
 !
-
+      use modparallel, only : master
       use modbasis, only : nao, nshell
       use modmp2, only : maxmp2diis, maxmp2iter
       use modthresh, only : threshmp2cphf
@@ -1475,8 +1587,8 @@ end
 !
 ! Calculate Pls 
 !
-        call dgemm('N','N',nocc,nao,nvir,one,paiprev,nocc,cmo(1,nocc+1),nao,zero,work2,nocc)
-        call dgemm('T','N',nao,nao,nocc,one,cmo,nao,work2,nocc,zero,work1,nao)
+        call dgemm('N','T',nocc,nao,nvir,one,paiprev,nocc,cmo(1,nocc+1),nao,zero,work2,nocc)
+        call dgemm('N','N',nao,nao,nocc,one,cmo,nao,work2,nocc,zero,work1,nao)
 !
 !$OMP parallel do private(ij)
         do ii= 1,nao
@@ -1537,6 +1649,8 @@ end
 !$OMP end parallel do
 !
         deltapai= sqrt(deltapai/(nocc*nvir))
+!ishimura
+        if(master) write(*,'(6x,"Cycle",i3,3x,"Z-Vector error=",1p,d11.3)')iter,deltapai
         if(deltapai < threshmp2cphf) exit
 !
         if(itdiis == maxmp2diis) itdiis= 0
@@ -1625,7 +1739,7 @@ end
 
 !--------------------------------------------------------------------------------------------
   subroutine mp2gradwij3(wij,wai,pmn,pai,pmnfock,cmo,energymo,xint,pmn2,pmax,work1,work2, &
-&                        nocc,nvir,maxdim,nproc,myrank,mpi_comm)
+&                        nocc,nvir,nvac,maxdim,nproc,myrank,mpi_comm)
 !--------------------------------------------------------------------------------------------
 !
 ! Calculate Wij[III] and Wai[II]
@@ -1641,17 +1755,17 @@ end
 !
       use modbasis, only : nao, nshell
       implicit none
-      integer,intent(in) :: nocc, nvir, maxdim, nproc, myrank, mpi_comm
+      integer,intent(in) :: nocc, nvir, nvac, maxdim, nproc, myrank, mpi_comm
       integer :: moa, moi, moj, ii, ij, jj
-      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
       real(8),intent(in) :: pai(nocc,nvir), cmo(nao,nao), energymo(nao), xint(nshell*(nshell+1)/2)
       real(8),intent(out) :: pmnfock(nao*(nao+1)/2), pmn2(nao*(nao+1)/2)
       real(8),intent(out) :: pmax(nshell*(nshell+1)/2), work1(nao,nao), work2(nao*nao)
-      real(8),intent(inout) :: wij(nocc*(nocc+1)/2), wai(nocc,nvir), pmn(nao,nao)
+      real(8),intent(inout) :: wij(nocc,nocc), wai(nocc,nvac), pmn(nao,nao)
 !
 ! Calculate Wai[II]
 !
-      do moa= myrank+1,nvir,nproc
+      do moa= myrank+1,nvac,nproc
         do moi= 1,nocc
           wai(moi,moa)= wai(moi,moa)-pai(moi,moa)*energymo(moi)
         enddo
@@ -1660,8 +1774,8 @@ end
 ! Add Pai to Pmn
 !
       call dgemm('N','T',nocc,nao,nvir,one,pai,nocc,cmo(1,nocc+1),nao,zero,work1,nocc)
-      call dgemm('N','N',nao,nao,nocc,one,cmo,nao,work1,nocc,one,pmn,nao)
-      call dgemm('T','T',nao,nao,nocc,one,work1,nocc,cmo,nao,one,pmn,nao)
+      call dgemm('N','N',nao,nao,nocc,half,cmo,nao,work1,nocc,one,pmn,nao)
+      call dgemm('T','T',nao,nao,nocc,half,work1,nocc,cmo,nao,one,pmn,nao)
 !
 ! Calculate maximum Pmn of each shell
 !
@@ -1695,20 +1809,26 @@ end
       call dgemm('T','N',nocc,nocc,nao,-one,work2,nao,cmo,nao,zero,work1,nao)
 !
       do moi= myrank+1,nocc,nproc
-        ij= moi*(moi-1)/2
-        do moj= 1,moi
-          wij(ij+moj)= wij(ij+moj)+work1(moj,moi)
+        do moj= 1,moi-1
+          wij(moj,moi)= wij(moj,moi)+work1(moj,moi)
+          wij(moi,moj)= wij(moi,moj)+work1(moj,moi)
         enddo
+        wij(moi,moi)= wij(moi,moi)+work1(moi,moi)
       enddo
 !
+!ishimura
+!write(*,*)"wai"
+!write(*,'(10f10.6)')wai
+!write(*,*)"wij"
+!write(*,'(10f10.6)')wij
       return
 end
 
 
-!-----------------------------------------------------------------------------
-  subroutine mp2graddint(egrad,egradtmp,pmn,wij,wab,wai,xint,cmo,wmn,work, &
+!----------------------------------------------------------------------------------------------
+  subroutine mp2graddint(egrad,egradtmp,pmn,wij,wab,wai,xint,cmo,energymo,wmn,pmnhf,work, &
 &                        nocc,nvir,maxgraddim,nproc,myrank,mpi_comm)
-!-----------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------------
 !
 ! Calculate integral derivatives and MP2 energy gradient
 !
@@ -1717,6 +1837,7 @@ end
 !       wai       (Wai)
 !       xint      (Exchange integral matrix)
 !       cmo       (MO coefficient matrix)
+!       energymo  (MO energies)
 ! Inout:egrad     (MP2 energy gradients)
 !       pmn       (Pmn)
 ! Work :egradtmp,wmn,work
@@ -1725,13 +1846,13 @@ end
       use modmolecule, only : natom
       implicit none
       integer,intent(in) :: nocc, nvir, maxgraddim, nproc, myrank, mpi_comm
-      integer :: moi, moj, ij, ii
-      real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
-      real(8),intent(in) :: wij(nocc*(nocc+1)/2), wab(nvir*nvir), wai(nocc*nvir)
-      real(8),intent(in) :: xint(nshell*(nshell+1)/2), cmo(nao,nao)
-      real(8),intent(out) :: egradtmp(3*natom), wmn(nao,nao), work(nao*nao)
-      real(8),intent(inout) :: egrad(3*natom), pmn(nao*nao)
-      real(8) :: egradtmp2(3*natom)
+      integer :: ii, jj, ij, kk
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
+      real(8),intent(in) :: wij(nocc*nocc), wab(nvir*nvir), wai(nocc*nvir)
+      real(8),intent(in) :: xint(nshell*(nshell+1)/2), cmo(nao,nao), energymo(nao)
+      real(8),intent(out) :: egradtmp(3*natom), wmn(nao*(nao+1)/2), pmnhf(nao,nao), work(nao,nao)
+      real(8),intent(inout) :: egrad(3*natom), pmn(nao,nao)
+      real(8) :: egradtmp2(3*natom), ewtmp
 !
       egradtmp(:)= zero
 !
@@ -1739,36 +1860,50 @@ end
 !
       call nucgradient(egradtmp,nproc,myrank)
 !
-! Calculate Pmn and Wmn
+! Calculate HF density matrix
 !
-      call dgemm('N','T',nao,nao,nocc,two,cmo,nao,cmo,nao,one,pmn,nao)
-!
-      do moi= 1,nocc
-        ij= moi*(moi-1)/2
-        do moj= 1,moi
-          wmn(moj,moi)= wij(ij+moj)
-        enddo
-      enddo
-      call dgemm('N','T',nocc,nao,nocc,one,wmn,nao,cmo,nao,zero,work,nocc)
-      call dgemm('N','N',nao,nao,nocc,one,cmo,nao,work,nocc,zero,wmn,nao)
-      call dgemm('N','T',nvir,nao,nvir,one,wab,nvir,cmo(1,nocc+1),nao,zero,work,nvir)
-      call dgemm('N','N',nao,nao,nvir,one,cmo(1,nocc+1),nao,work,nvir,one,wmn,nao)
-      call dgemm('N','T',nocc,nao,nvir,one,wai,nocc,cmo(1,nocc+1),nao,zero,work,nocc)
-      call dgemm('N','N',nao,nao,nocc,one,cmo,nao,work,nocc,one,wmn,nao)
-!
-! Calculate derivatives of one-electron integrals
-!
-      call gradoneei(egradtmp,egrad,pmn,wmn,nproc,myrank)
+      call dgemm('N','T',nao,nao,nocc,two,cmo,nao,cmo,nao,zero,pmnhf,nao)
 !
 ! Calculate derivatives for two-electron integrals
 !
-      call grad2eri(egradtmp,egrad,pmn,pmn,xint,one, &
-&                   maxgraddim,nproc,myrank,1)
+      call grad2eri(egradtmp,egradtmp2,pmnhf,pmn,xint,one, &
+&                   maxgraddim,nproc,myrank,3)
 !
-      call para_allreducer(egradtmp(1),egradtmp2(1),3*natom,mpi_comm)
+! Calculate HF+MP2 density matrix
+!
+      call daxpy(nao*nao,one,pmnhf,1,pmn,1)
+!
+! Calculate Wmn
+!
+      call dgemm('N','T',nocc,nao,nocc,one,wij,nocc,cmo,nao,zero,pmnhf,nocc)
+      call dgemm('N','T',nocc,nao,nvir,one,wai,nocc,cmo(1,nocc+1),nao,one,pmnhf,nocc)
+      call dgemm('N','N',nao,nao,nocc,one,cmo,nao,pmnhf,nocc,zero,work,nao)
+      call dgemm('N','T',nvir,nao,nvir,one,wab,nvir,cmo(1,nocc+1),nao,zero,pmnhf,nvir)
+      call dgemm('N','N',nao,nao,nvir,one,cmo(1,nocc+1),nao,pmnhf,nvir,one,work,nao)
+      call para_allreducer(work,pmnhf,nao*nao,mpi_comm)
+!
+      do ii= 1,nocc
+        do jj= 1,nao
+          work(ii,jj)= cmo(jj,ii)
+        enddo
+      enddo
+      do ii= nao,1,-1
+        ij= ii*(ii-1)/2
+        do jj= 1,ii
+          ewtmp= zero
+          do kk= 1,nocc
+            ewtmp= ewtmp-work(kk,ii)*work(kk,jj)*energymo(kk)
+          enddo
+          wmn(ij+jj)= ewtmp*two+(pmnhf(ii,jj)+pmnhf(jj,ii))*half
+        enddo
+      enddo
+!
+! Calculate derivatives of one-electron integrals
+!
+      call gradoneei(egradtmp,egradtmp2,pmn,wmn,nproc,myrank)
 !
       do ii= 1,3*natom
-        egrad(ii)= egrad(ii)+egradtmp2(ii)
+        egrad(ii)= egrad(ii)+egradtmp(ii)
       enddo
 !
       return
