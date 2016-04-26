@@ -265,7 +265,7 @@ end
 ! These valuables are for SCF calculations.
 !
       implicit none
-      integer :: maxiter, maxdiis, maxsoscf, maxqc
+      integer :: maxiter, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
       real(8) :: dconv
       logical :: fdiff, extrap
       character(len=16) :: scfconv

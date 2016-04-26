@@ -146,7 +146,8 @@ end program main
       use modprint, only : iprint
       use modunit, only : bohr
       use modbasis, only : spher, basis
-      use modscf, only : maxiter, dconv, fdiff, scfconv, maxdiis, maxsoscf, maxqc, extrap
+      use modscf, only : maxiter, dconv, fdiff, scfconv, maxdiis, maxsoscf, maxqc, &
+&                        maxqcdiag, maxqcdiagsub, extrap
       use modthresh, only : cutint2, threshsoscf, threshqc
       use moddft, only : idft, nrad, nleb, bqrad
       use modopt, only : nopt, optconv, cartesian
@@ -182,7 +183,9 @@ end program main
       maxiter= 100
       maxdiis= 20
       maxsoscf= 20
-      maxqc   = 20
+      maxqc   = 15
+      maxqcdiag= 100
+      maxqcdiagsub= 10
       fdiff  =.true.
       scfconv='DIIS'
       extrap =.false.

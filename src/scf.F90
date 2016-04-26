@@ -30,7 +30,8 @@
       use modparallel, only : master
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nmo
-      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, scfconv, extrap
+      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
+&                        maxqcdiagsub, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
       use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, thresherr
       use modprint, only : iprint
@@ -82,11 +83,12 @@
                    hstart(nocc*nvir),sograd(nocc*nvir,maxsoscf),sodisp(nocc*nvir*maxsoscf), &
 &                  sovecy(nocc*nvir*(maxsoscf-1)),work2(isize1))
         case('QC')
-          call memset(nao2*2+nao3*2+nshell3+(nocc*nvir+1)*(maxqc+1)*2+maxqc*maxqc &
-&                    +maxqc*(maxqc+1)/2+maxqc)
+          call memset(nao2*2+nao3*2+nshell3+(nocc*nvir+1)*(maxqcdiagsub+1)*2+maxqcdiagsub**2 &
+&                    +maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub)
           allocate(fock(nao2),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
-                   qcvec((nocc*nvir+1)*(maxqc+1)*2),qcmat(maxqc*maxqc), &
-&                  qcmatsave(maxqc*(maxqc+1)/2),qceigen(maxqc),qcgmn(nao3),work2(nao2))
+                   qcvec((nocc*nvir+1)*(maxqcdiagsub+1)*2),qcmat(maxqcdiagsub**2), &
+&                  qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2),qceigen(maxqcdiagsub), &
+&                  qcgmn(nao3),work2(nao2))
         case default
           if(master) then
             write(*,'(" SCFConv=",a12,"is not supported.")') 
@@ -122,6 +124,8 @@
         write(*,'("   SCFConv    =",1x,a10)') scfconv
         write(*,'("   Dconv      =",1p,d9.2,",  MaxIter    = ",i9  ,",  MaxQC      =",i9  )') &
 &                    dconv, maxiter, maxqc
+        write(*,'("   MaxQCDiag  =",i9,     ",  MaxQCDiagsub=",i9                         )') &
+&                    maxqcdiag, maxqcdiagsub
         write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   = ",d9.2,",  ThreshOver =",d9.2)') &
 &                    cutint2, threshex, threshover
         write(*,'("   ThreshSOSCF=",1p,d9.2,",  ThreshQC   = ",d9.2)')                        &
@@ -220,10 +224,13 @@
             if((itqc == 0).or.(convqc)) then
               call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
               itqc= itqc+1
+            elseif(itqc == maxqc) then
+              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+              itqc= 1
             else
               call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
-&                        work,work2,one,nao,nmo,nocc,nvir,nshell,maxdim,maxqc,threshqc, &
-&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                        work,work2,one,nao,nmo,nocc,nvir,nshell,maxdim,maxqcdiag, &
+&                        maxqcdiagsub,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
               itqc= itqc+1
             endif
         end select
@@ -268,6 +275,10 @@
             if((diffmax < dconv).and.(convqc)) exit
             if((diffmax < dconv).and.(itqc == 1)) exit
             if((diffmax < dconv).and.(.not.convqc)) convqc=.true.
+            if((diffmax >= dconv).and.(convqc)) then
+              itqc= 0
+              convqc=.false.
+            endif
         end select
 !
         if(iter == maxiter) then
@@ -304,11 +315,12 @@
                      hstart,sograd,sodisp, &
 &                    sovecy,work2)
         case('QC')
-          call memunset(nao2*2+nao3*2+nshell3+(nocc*nvir+1)*(maxqc+1)*2+maxqc*maxqc+ &
-&                       maxqc*(maxqc+1)/2+maxqc)
+          call memunset(nao2*2+nao3*2+nshell3+(nocc*nvir+1)*(maxqcdiagsub+1)*2+maxqcdiagsub**2 &
+&                      +maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub)
           deallocate(fock,fockprev,dmtrxprev,dmax,work, &
-                     qcvec,qcmat, &
-&                    qcmatsave,qceigen,qcgmn,work2)
+&                    qcvec,qcmat, &
+&                    qcmatsave,qceigen, &
+&                    qcgmn,work2)
       end select
 !
       return
@@ -867,7 +879,8 @@ end
       use modatom, only : atomrad
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nmo, natom, numatomic
-      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, scfconv, extrap
+      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
+                         maxqcdiagsub, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
       use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, thresherr, &
 &                           threshrho, threshdfock
@@ -932,13 +945,14 @@ end
         case ('QC')
           isize1= max(isize1,nao2)
           call memset(nao2*2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
-&                    +nao*4+nocc*4+isize1+(nocc*nvir+1)*(maxqc+1)*2+maxqc*(maxqc*3+1)/2+maxqc)
+&                    +nao*4+nocc*4+isize1+(nocc*nvir+1)*(maxqcdiagsub+1)*2 &
+&                    +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub)
           allocate(fock(nao2),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
 &                  fockd(nao3),rad(natom),atomvec(5*natom*natom),surface(natom*natom), &
 &                  radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb),xyzpt(3*natom), &
 &                  rsqrd(natom),vao(4*nao),vmo(4*nocc),work2(isize1), &
-&                  qcvec((nocc*nvir+1)*(maxqc+1)*2),qcmat(maxqc*maxqc), &
-&                  qcmatsave(maxqc*(maxqc+1)/2),qceigen(maxqc),qcgmn(nao3))
+&                  qcvec((nocc*nvir+1)*(maxqcdiagsub+1)*2),qcmat(maxqcdiagsub*maxqcdiagsub), &
+&                  qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2),qceigen(maxqcdiagsub),qcgmn(nao3))
         case default
           if(master) then
             write(*,'(" SCFConv=",a12,"is not supported.")')
@@ -982,10 +996,14 @@ end
         write(*,'("   DFT calculation")')
         write(*,'(1x,74("-"))')
         write(*,'("   SCFConv    =",1x,a10)') scfconv
-        write(*,'("   Dconv      =",1p,d9.2,",  MaxIter    = ",i9  ,",  ThreshSOSCF=",d9.2)') &
-&                    dconv, maxiter, threshsoscf
+        write(*,'("   Dconv      =",1p,d9.2,",  MaxIter    = ",i9  ,",  MaxQC      =",i9  )') &
+&                    dconv, maxiter, maxqc
+        write(*,'("   MaxQCDiag  =",i9,     ",  MaxQCDiagsub=",i9                         )') &
+&                    maxqcdiag, maxqcdiagsub
         write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   = ",d9.2,",  ThreshOver =",d9.2)') &
 &                    cutint2, threshex, threshover
+        write(*,'("   ThreshSOSCF=",1p,d9.2,",  ThreshQC   = ",d9.2)')                        &
+&                    threshsoscf, threshqc
         write(*,'("   Nrad       =",1p,i9  ,",  Nleb       = ",i9  ,",  ThreshRho  =",d9.2)') &
 &                    nrad, nleb, threshrho
         write(*,'("   ThreshDfock=",1p,d9.2)') threshdfock
@@ -1094,10 +1112,13 @@ end
             if((itqc == 0).or.(convqc)) then
               call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
               itqc= itqc+1
+            elseif((itqc == maxqc)) then
+              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+              itqc= 1
             else
               call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
-&                        work,work2,hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,maxqc,threshqc, &
-&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                        work,work2,hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,maxqcdiag, &
+&                        maxqcdiagsub,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
               itqc= itqc+1
             endif
         end select
@@ -1142,6 +1163,10 @@ end
             if((diffmax < dconv).and.(convqc)) exit
             if((diffmax < dconv).and.(itqc == 1)) exit
             if((diffmax < dconv).and.(.not.convqc)) convqc=.true.
+            if((diffmax >= dconv).and.(convqc)) then
+              itqc= 0
+              convqc=.false.
+            endif
         end select
 !
         if(iter == maxiter) then
@@ -1193,7 +1218,8 @@ end
 &                    qcvec,qcmat, &
 &                    qcmatsave,qceigen,qcgmn)
           call memunset(nao2*2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
-&                      +nao*4+nocc*4+isize1+(nocc*nvir+1)*(maxqc+1)*2+maxqc*(maxqc*3+1)/2+maxqc)
+&                      +nao*4+nocc*4+isize1+(nocc*nvir+1)*(maxqcdiagsub+1)*2 &
+&                      +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub)
       end select
 !
       return
@@ -1221,7 +1247,8 @@ end
       use modparallel, only : master
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nelecb, nmo
-      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, scfconv, extrap
+      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
+&                        maxqcdiagsub, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
       use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, thresherr
       use modprint, only : iprint
@@ -1289,13 +1316,14 @@ end
 &                  sovecya(nocca*nvira*(maxsoscf-1)),sovecyb(noccb*nvirb*(maxsoscf-1)), &
 &                  work(nao3*2),work2(isize1),work3(isize2))
         case('QC')
-          call memset(nao2*4+nao3*8+(nocca*nvira+noccb*nvirb+1)*(maxqc+1)*2 &
-&                    +maxqc*maxqc+maxqc*(maxqc+1)/2+maxqc)
+          call memset(nao2*4+nao3*8+(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
+&                    +maxqcdiagsub**2+maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub)
           allocate(focka(nao2),fockb(nao2),fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3), &
-&                  qcvec((nocca*nvira+noccb*nvirb+1)*(maxqc+1)*2), &
-&                  qcmat(maxqc*maxqc),qcmatsave(maxqc*(maxqc+1)/2),qceigen(maxqc),&
-&                  qcgmna(nao3),qcgmnb(nao3),work(nao3*2),work2(nao2),work3(nao2))
+&                  qcvec((nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2), &
+&                  qcmat(maxqcdiagsub**2),qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2), &
+&                  qceigen(maxqcdiagsub),qcgmna(nao3),qcgmnb(nao3), &
+&                  work(nao3*2),work2(nao2),work3(nao2))
         case default
           if(master) then
             write(*,'(" SCFConv=",a12,"is not supported.")')
@@ -1458,11 +1486,16 @@ end
               call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
               call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
               itqc= itqc+1
+            elseif((itqc == maxqc)) then
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+              itqc= 1
             else
               call uhfqc(focka,fockb,cmoa,cmob,dmax,qcgmna,qcgmnb,qcvec, &
 &                        qcmat,qcmatsave,qceigen,overlap,xint, &
 &                        work,work2,work3,one,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
-&                        maxdim,maxqc,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                        maxdim,maxqcdiag,maxqcdiagsub,threshqc, &
+&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
               itqc= itqc+1
             endif
         end select
@@ -1509,6 +1542,10 @@ end
             if((diffmax < dconv).and.(convqc)) exit
             if((diffmax < dconv).and.(itqc == 1)) exit
             if((diffmax < dconv).and.(.not.convqc)) convqc=.true.
+            if((diffmax >= dconv).and.(convqc)) then
+              itqc= 0
+              convqc=.false.
+            endif
         end select
 !
         if(iter == maxiter) then
@@ -1569,10 +1606,11 @@ end
           deallocate(focka,fockb,fockpreva,fockprevb, &
 &                    dmtrxpreva,dmtrxprevb,dmax, &
 &                    qcvec, &
-&                    qcmat,qcmatsave,qceigen, &
-&                    qcgmna,qcgmnb,work,work2,work3)
-          call memunset(nao2*4+nao3*8+(nocca*nvira+noccb*nvirb+1)*(maxqc+1)*2 &
-&                      +maxqc*maxqc+maxqc*(maxqc+1)/2+maxqc)
+&                    qcmat,qcmatsave, &
+&                    qceigen,qcgmna,qcgmnb, &
+&                    work,work2,work3)
+          call memunset(nao2*4+nao3*8+(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
+&                      +maxqcdiagsub**2+maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub)
       end select
 !
       return
@@ -1876,7 +1914,8 @@ end
       use modatom, only : atomrad
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nelecb, nmo, natom, numatomic
-      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, scfconv, extrap
+      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
+&                        maxqcdiagsub, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
       use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, thresherr, &
 &                           threshrho, threshdfock
@@ -1962,15 +2001,16 @@ end
           isize1= max(isize1,nao2)
           call memset(nao2*3+nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
 &                    +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1 &
-&                    +(nocca*nvira+noccb*nvirb+1)*(maxqc+1)*2+maxqc*(maxqc*3+1)/2+maxqc)
+&                    +(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
+&                    +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub)
           allocate(focka(nao2),fockb(nao2),fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(numwork), &
 &                  fockda(nao3),fockdb(nao3),rad(natom),atomvec(5*natom*natom), &
 &                  surface(natom*natom),radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb), &
 &                  xyzpt(3*natom),rsqrd(natom),vao(4*nao),vmoa(4*nocca),vmob(4*noccb), &
-&                  qcvec((nocca*nvira+noccb*nvirb+1)*(maxqc+1)*2), &
-&                  qcmat(maxqc*maxqc),qcmatsave(maxqc*(maxqc+1)/2),qceigen(maxqc),&
-&                  qcgmna(nao3),qcgmnb(nao3),work2(isize1),work3(nao2))
+&                  qcvec((nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2), &
+&                  qcmat(maxqcdiagsub**2),qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2), &
+&                  qceigen(maxqcdiagsub),qcgmna(nao3),qcgmnb(nao3),work2(isize1),work3(nao2))
         case default
           if(master) then
             write(*,'(" SCFConv=",a12,"is not supported.")')
@@ -2158,11 +2198,16 @@ end
               call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
               call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
               itqc= itqc+1
+            elseif((itqc == maxqc)) then
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+              itqc= 1
             else
               call uhfqc(focka,fockb,cmoa,cmob,dmax,qcgmna,qcgmnb,qcvec, &
 &                        qcmat,qcmatsave,qceigen,overlap,xint, &
 &                        work,work2,work3,hfexchange,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
-&                        maxdim,maxqc,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                        maxdim,maxqcdiag,maxqcdiagsub,threshqc, &
+&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
               itqc= itqc+1
             endif
         end select
@@ -2209,6 +2254,10 @@ end
             if((diffmax < dconv).and.(convqc)) exit
             if((diffmax < dconv).and.(itqc == 1)) exit
             if((diffmax < dconv).and.(.not.convqc)) convqc=.true.
+            if((diffmax >= dconv).and.(convqc)) then
+              itqc= 0
+              convqc=.false.
+            endif
         end select
 !
         if(iter == maxiter) then
@@ -2282,11 +2331,12 @@ end
 &                    surface,radpt,angpt,ptweight, &
 &                    xyzpt,rsqrd,vao,vmoa,vmob, &
 &                    qcvec, &
-&                    qcmat,qcmatsave,qceigen,&
-&                    qcgmna,qcgmnb,work2,work3)
+&                    qcmat,qcmatsave, &
+&                    qceigen,qcgmna,qcgmnb,work2,work3)
           call memunset(nao2*3+nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
 &                      +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1 &
-&                      +(nocca*nvira+noccb*nvirb+1)*(maxqc+1)*2+maxqc*(maxqc*3+1)/2+maxqc)
+&                      +(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
+&                      +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub)
       end select
       return
 end

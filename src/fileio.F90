@@ -26,7 +26,7 @@
       use modthresh, only : cutint2, threshsoscf, threshqc
       use modguess, only : guess
       use modprint, only : iprint
-      use modscf, only : scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc
+      use modscf, only : scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
       use modopt, only : nopt, optconv, cartesian
       use modunit, only : bohr
       use moddft, only : nrad, nleb, bqrad
@@ -34,14 +34,15 @@
       use modmp2, only : ncore, nvfz, maxmp2diis, maxmp2iter
       implicit none
       integer,intent(in) :: mpi_comm
-      integer :: myrank, ii, ilen, intarray(14), info
+      integer :: myrank, ii, ilen, intarray(16), info
       real(8) :: realarray(15)
       character(len=254) :: line
       character(len=16) :: chararray(8), mem=''
       logical :: logarray(5)
       namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp
       namelist /control/ cutint2, spher, guess, iprint, bohr, check
-      namelist /scf/ scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, threshsoscf, threshqc
+      namelist /scf/ scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub, &
+&                    threshsoscf, threshqc
       namelist /opt/ nopt, optconv, cartesian
       namelist /dft/ nrad, nleb, bqrad
       namelist /mp2/ ncore, nvfz, maxmp2diis, maxmp2iter
@@ -175,13 +176,15 @@
         intarray( 5)= maxdiis
         intarray( 6)= maxsoscf
         intarray( 7)= maxqc
-        intarray( 8)= nopt
-        intarray( 9)= nrad
-        intarray(10)= nleb
-        intarray(11)= ncore
-        intarray(12)= nvfz
-        intarray(13)= maxmp2diis
-        intarray(14)= maxmp2iter
+        intarray( 8)= maxqcdiag
+        intarray( 9)= maxqcdiagsub
+        intarray(10)= nopt
+        intarray(11)= nrad
+        intarray(12)= nleb
+        intarray(13)= ncore
+        intarray(14)= nvfz
+        intarray(15)= maxmp2diis
+        intarray(16)= maxmp2iter
         logarray(1)= spher
         logarray(2)= bohr
         logarray(3)= flagecp
@@ -191,7 +194,7 @@
       call para_bcastc(chararray,16*8,0,mpi_comm)
       call para_bcastc(check,64,0,mpi_comm)
       call para_bcastr(realarray,15,0,mpi_comm)
-      call para_bcasti(intarray,14,0,mpi_comm)
+      call para_bcasti(intarray,16,0,mpi_comm)
       call para_bcastl(logarray,4,0,mpi_comm)
 !
       natom= intarray(1)
@@ -229,13 +232,15 @@
       maxdiis = intarray( 5)
       maxsoscf= intarray( 6)
       maxqc   = intarray( 7)
-      nopt    = intarray( 8)
-      nrad    = intarray( 9)
-      nleb    = intarray(10)
-      ncore   = intarray(11)
-      nvfz    = intarray(12)
-      maxmp2diis= intarray(13)
-      maxmp2iter= intarray(14)
+      maxqcdiag=intarray( 8)
+      maxqcdiagsub=intarray( 9)
+      nopt    = intarray(10)
+      nrad    = intarray(11)
+      nleb    = intarray(12)
+      ncore   = intarray(13)
+      nvfz    = intarray(14)
+      maxmp2diis= intarray(15)
+      maxmp2iter= intarray(16)
       spher   = logarray(1)
       bohr    = logarray(2)
       flagecp = logarray(3)

@@ -1329,17 +1329,17 @@ end
 end
 
 
-!-----------------------------------------------------------------------
-  subroutine calcqcrmn(qcrmn,qcvec,cmo,work,nao,nocc,nvir,itdav,maxqc)
-!-----------------------------------------------------------------------
+!------------------------------------------------------------------------------
+  subroutine calcqcrmn(qcrmn,qcvec,cmo,work,nao,nocc,nvir,itdav,maxqcdiagsub)
+!------------------------------------------------------------------------------
 !
 ! Calculate Rmn for quadratically convergent method
 !
       implicit none
-      integer,intent(in) :: nao, nocc, nvir, itdav, maxqc
+      integer,intent(in) :: nao, nocc, nvir, itdav, maxqcdiagsub
       integer :: ii, jj, ij
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
-      real(8),intent(in) :: qcvec(nocc*nvir+1,maxqc+1,2), cmo(nao,nao)
+      real(8),intent(in) :: qcvec(nocc*nvir+1,maxqcdiagsub+1,2), cmo(nao,nao)
       real(8),intent(out) :: qcrmn(nao*nao), work(nao,nao)
 !
       call dgemm('N','N',nao,nvir,nocc,one,cmo,nao,qcvec(2,itdav,1),nocc,zero,qcrmn,nao)
@@ -1362,16 +1362,16 @@ end
 
 !------------------------------------------------------------------------------------------
   subroutine calcqcurmn(qcrmna,qcrmnb,qcvec,cmoa,cmob,work,nao,nocca,noccb,nvira,nvirb, &
-&                       itdav,maxqc)
+&                       itdav,maxqcdiagsub)
 !------------------------------------------------------------------------------------------
 !
 ! Calculate Rmn for quadratically convergent method of UHF
 !
       implicit none
-      integer,intent(in) :: nao, nocca, noccb, nvira, nvirb, itdav, maxqc
+      integer,intent(in) :: nao, nocca, noccb, nvira, nvirb, itdav, maxqcdiagsub
       integer :: ii, jj, ij
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
-      real(8),intent(in) :: qcvec(nocca*nvira+noccb*nvirb+1,maxqc+1,2)
+      real(8),intent(in) :: qcvec(nocca*nvira+noccb*nvirb+1,maxqcdiagsub+1,2)
       real(8),intent(in) :: cmoa(nao,nao), cmob(nao,nao)
       real(8),intent(out) :: qcrmna(nao*nao), qcrmnb(nao*nao), work(nao,nao)
 !
@@ -1408,23 +1408,24 @@ end
 
 !--------------------------------------------------------------------------------------------
   subroutine rhfqc(fock,cmo,qcrmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
-&                  qcwork,work,hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,maxqc,threshqc, &
-&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                  qcwork,work,hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,maxqcdiag, &
+&                  maxqcdiagsub,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
 !--------------------------------------------------------------------------------------------
 !
 ! Driver of Davidson diagonalization for quadratically convergent of RHF
 !
       use modparallel, only : master
       implicit none
-      integer,intent(in) :: nao, nmo, nocc, nvir, nshell, maxdim, maxqc
+      integer,intent(in) :: nao, nmo, nocc, nvir, nshell, maxdim, maxqcdiag, maxqcdiagsub
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
-      integer :: itdav, ii, ij, jj, kk, ia, ib, istart, icount
+      integer :: itdav, itqcdiag, ii, ij, jj, kk, ia, ib, istart, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: overlap(nao*(nao+1)/2), xint(nshell*(nshell+1)/2)
       real(8),intent(in) :: hfexchange, threshqc
-      real(8),intent(out) :: qcvec(nocc*nvir+1,maxqc+1,2), qcrmax(nshell*(nshell+1)/2)
-      real(8),intent(out) :: qcwork(nao,nao), qcmat(maxqc,maxqc)
-      real(8),intent(out) :: qcmatsave(maxqc*(maxqc+1)/2), qceigen(maxqc), work(nao,nao)
+      real(8),intent(out) :: qcvec(nocc*nvir+1,maxqcdiagsub+1,2), qcrmax(nshell*(nshell+1)/2)
+      real(8),intent(out) :: qcwork(nao,nao), qcmat(maxqcdiagsub,maxqcdiagsub)
+      real(8),intent(out) :: qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2), qceigen(maxqcdiagsub)
+      real(8),intent(out) :: work(nao,nao)
       real(8),intent(inout) :: fock(nao,nao), cmo(nao,nao)
       real(8),intent(inout) :: qcgmn(nao*(nao+1)/2)
       real(8) :: tmp, qcnorm, ddot, rotqc
@@ -1464,11 +1465,12 @@ end
 !
 ! Start Davidson diagonalization
 !
-      do itdav= 2,maxqc
+      itdav= 2
+      do itqcdiag= 2,maxqcdiag
 !
 ! Calculate Gmn
 !
-        call calcqcrmn(qcwork,qcvec,cmo,work,nao,nocc,nvir,itdav,maxqc)
+        call calcqcrmn(qcwork,qcvec,cmo,work,nao,nocc,nvir,itdav,maxqcdiagsub)
         call calcrdmax(qcwork,qcrmax,work,nproc2,myrank2,mpi_comm2)
         call formrdftfock(qcgmn,work,qcwork,qcrmax,xint,maxdim,hfexchange, &
 &                         nproc1,myrank1,mpi_comm1)
@@ -1527,7 +1529,7 @@ end
 !
 ! Diagonalize small matrix
 !
-        call diag('V','U',itdav,qcmat,maxqc,qceigen,nproc2,myrank2,mpi_comm2)
+        call diag('V','U',itdav,qcmat,maxqcdiagsub,qceigen,nproc2,myrank2,mpi_comm2)
 !
 ! Form correction vector
 !
@@ -1581,11 +1583,27 @@ end
 !
         if(qcnorm < threshqc) exit
 !
-        if(itdav ==(maxqc)) then
+! Reset Davidson diagonalization
+!
+        if(itdav == maxqcdiagsub) then
+          do jj= 1,nocc*nvir+1
+            qcvec(jj,1,1)= qcvec(jj,1,1)*qcmat(1,1)
+          enddo
+          do ii= 2,itdav
+            do jj= 1,nocc*nvir+1
+              qcvec(jj,1,1)= qcvec(jj,1,1)+qcvec(jj,ii,1)*qcmat(ii,1)
+            enddo
+          enddo
+!    
+          itdav=1
+          cycle
+        endif
+!
+        if(itqcdiag ==(maxqcdiag)) then
           if(master) then
             write(*,'(" Error! Number of iteration for Quadratically convergent ",&
-&                     "method exceeds maxqc=",i3,".")') maxqc
-            write(*,'(" Set larger value for maxqc in scf section.")')
+&                     "method exceeds maxqcdiag=",i3,".")') maxqcdiag
+            write(*,'(" Set larger value for maxqcdiag in scf section.")')
           endif
           call iabort
         endif
@@ -1596,6 +1614,7 @@ end
           qcvec(ii,itdav+1,1)= qcvec(ii,itdav+1,1)*qcnorm
         enddo
 !$OMP end parallel do
+        itdav= itdav+1
       enddo
 !
 ! End of Davidson diagonalization
@@ -1695,24 +1714,26 @@ end
   subroutine uhfqc(focka,fockb,cmoa,cmob,qcrmax,qcgmna,qcgmnb,qcvec, &
 &                  qcmat,qcmatsave,qceigen,overlap,xint, &
 &                  qcworka,qcworkb,work,hfexchange,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
-&                  maxdim,maxqc,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                  maxdim,maxqcdiag,maxqcdiagsub,threshqc, &
+&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
 !---------------------------------------------------------------------------------------------
 !
 ! Driver of Davidson diagonalization for quadratically convergent of UHF
 !
       use modparallel, only : master
       implicit none
-      integer,intent(in) :: nao, nmo, nocca, noccb, nvira, nvirb, nshell, maxdim, maxqc
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
-      integer :: itdav, ii, ij, jj, kk, ia, ib, istart, icount
+      integer,intent(in) :: nao, nmo, nocca, noccb, nvira, nvirb, nshell, maxdim, maxqcdiag
+      integer,intent(in) :: maxqcdiagsub, nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
+      integer :: itdav, itqcdiag, ii, ij, jj, kk, ia, ib, istart, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: overlap(nao*(nao+1)/2), xint(nshell*(nshell+1)/2)
       real(8),intent(in) :: hfexchange, threshqc
       real(8),intent(inout) :: qcrmax(nshell*(nshell+1)/2)
       real(8),intent(inout) :: qcgmna(nao*(nao+1)/2), qcgmnb(nao*(nao+1)/2)
-      real(8),intent(inout) :: qcvec(nocca*nvira+noccb*nvirb+1,maxqc+1,2)
-      real(8),intent(inout) :: qcmat(maxqc,maxqc), qcmatsave(maxqc*(maxqc+1)/2)
-      real(8),intent(inout) :: qceigen(maxqc)
+      real(8),intent(inout) :: qcvec(nocca*nvira+noccb*nvirb+1,maxqcdiagsub+1,2)
+      real(8),intent(inout) :: qcmat(maxqcdiagsub,maxqcdiagsub)
+      real(8),intent(inout) :: qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2)
+      real(8),intent(inout) :: qceigen(maxqcdiagsub)
       real(8),intent(inout) :: qcworka(nao,nao), qcworkb(nao,nao), work(nao,nao)
       real(8),intent(inout) :: focka(nao,nao),fockb(nao,nao), cmoa(nao,nao), cmob(nao,nao)
       real(8) :: tmp, tmpa, tmpb, qcnorm, ddot, rotqc
@@ -1768,12 +1789,13 @@ end
 !
 ! Start Davidson diagonalization
 !
-      do itdav= 2,maxqc
+      itdav= 2
+      do itqcdiag= 2,maxqcdiag
 !
 ! Calculate Gmn
 !
         call calcqcurmn(qcworka,qcworkb,qcvec,cmoa,cmob,work,nao,nocca,noccb,nvira,nvirb, &
-&                       itdav,maxqc)
+&                       itdav,maxqcdiagsub)
         call calcudmax(qcworka,qcworkb,qcrmax,work,nproc2,myrank2,mpi_comm2)
         call calcqcugmn(qcgmna,qcgmnb,work,qcworka,qcworkb,qcrmax,xint,hfexchange,maxdim, &
 &                       nao,nshell,nproc1,myrank1,mpi_comm1)
@@ -1855,7 +1877,7 @@ end
 !
 ! Diagonalize small matrix
 !
-        call diag('V','U',itdav,qcmat,maxqc,qceigen,nproc2,myrank2,mpi_comm2)
+        call diag('V','U',itdav,qcmat,maxqcdiagsub,qceigen,nproc2,myrank2,mpi_comm2)
 !
 ! Form correction vector
 !
@@ -1920,13 +1942,29 @@ end
 !
         if(qcnorm < threshqc) exit
 !
-        if(itdav ==(maxqc)) then
+        if(itqcdiag ==(maxqcdiag)) then
           if(master) then
             write(*,'(" Error! Number of iteration for Quadratically convergent ",&
-&                     "method exceeds maxqc=",i3,".")') maxqc
-            write(*,'(" Set larger value for maxqc in scf section.")')
+&                     "method exceeds maxqcdiag=",i3,".")') maxqcdiag
+            write(*,'(" Set larger value for maxqcdiag in scf section.")')
           endif
           call iabort
+        endif
+!
+! Reset Davidson diagonalization
+!
+        if(itdav == maxqcdiagsub) then
+          do jj= 1,nocca*nvira+noccb*nvirb+1
+            qcvec(jj,1,1)= qcvec(jj,1,1)*qcmat(1,1)
+          enddo
+          do ii= 2,itdav
+            do jj= 1,nocca*nvira+noccb*nvirb+1
+              qcvec(jj,1,1)= qcvec(jj,1,1)+qcvec(jj,ii,1)*qcmat(ii,1)
+            enddo
+          enddo
+!
+          itdav=1
+          cycle
         endif
 !
         qcnorm= one/qcnorm
@@ -1935,6 +1973,7 @@ end
           qcvec(ii,itdav+1,1)= qcvec(ii,itdav+1,1)*qcnorm
         enddo
 !$OMP end parallel do
+        itdav= itdav+1
       enddo
 !
 ! End of Davidson diagonalization
