@@ -264,6 +264,8 @@ end
       integer,intent(in) :: nproc, myrank, mpi_comm, idis(0:nproc-1,8), npass
       integer,intent(in) :: numi, numab, numirecv
       integer :: nao2, nao3, nocc2, nocc3, nvir2, numitrans, ipass, msize, mlsize, istart
+!ishimura
+      integer :: mlsize2
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmo(nao,nao), energymo(nmo), xint(nshell*(nshell+1)/2)
       real(8),intent(inout) :: emp2st(2), egrad(3*natom), egradtmp(3*natom)
@@ -350,7 +352,12 @@ call tstamp(1)
 !
 ! mem5
         call memset(numi*maxdim**3+nao*numi+2*nao2)
-        allocate(tisml(numi*maxdim**3),xlmi(nao*numi),xlmn(nao2),work1(nao2))
+!ishimura
+!       allocate(tisml(numi*maxdim**3),xlmi(nao*numi),xlmn(nao2),work1(nao2))
+        call memrest(msize)
+        mlsize2=(msize-nao*numi-2*nao2)/(nao*numi)
+        if(mlsize2 > nao2) mlsize2= nao2
+        allocate(tisml(numi*mlsize2*nao),xlmi(nao*numi),xlmn(nao2),work1(nao2))
 !
         if(ipass /= npass) then
           call mp2gradbacktrans(egrad,egradtmp,xlai,tisml,xlmi,cmo,xint,trint2, &
@@ -359,7 +366,7 @@ call tstamp(1)
         else
           call mp2gradbacktrans2(egrad,egradtmp,wij,wab,wai,xlai,tisml,xlmi,xlmn,cmo,xint,trint2, &
 &                                pij,pab,pmn,energymo,work1,nocc,noac,nvir,ncore,numitrans, &
-&                                istart,maxdim,maxgraddim,idis,nproc,myrank,mpi_comm)
+&                                istart,maxdim,maxgraddim,mlsize2,idis,nproc,myrank,mpi_comm)
         endif
 !
         deallocate(tisml,xlmi,xlmn,work1)
@@ -407,7 +414,7 @@ call tstamp(1)
 &                   +maxmp2diis*(maxmp2diis+1)/2+2*nao2)
 !
       deallocate(wij,wab,wai,xlai,pmn)
-      call memunset(nocc3+nvir2+nocc*nvac+nocc*nvir+nao2)
+      call memunset(nocc2+nvir2+nocc*nvac+nocc*nvir+nao2)
 !
       return
 end
@@ -1173,9 +1180,26 @@ end
 !$OMP nbfl,nbfik,locbfj,locbfl,tisml,ij,kl,xijkl,twork,i2,ik,tmax,tmp,twoeri,dtwoeri) &
 !$OMP reduction(+:xlmi,egradtmp)
       do numshell= 1,idis(myrank,4)
-        do lsh= 1,nshell
+ lloop: do lsh= 1,nshell
           ish= mlindex(1,numshell)
           ksh= mlindex(2,numshell)
+!
+          if(ksh >= lsh) then
+            kl= ksh*(ksh-1)/2+lsh
+          else
+            kl= lsh*(lsh-1)/2+ksh
+          endif
+          do jsh= 1,nshell
+            if(ish >= jsh) then
+              ij= ish*(ish-1)/2+jsh
+            else
+              ij= jsh*(jsh-1)/2+ish
+            endif
+            xijkl= xint(ij)*xint(kl)
+            if(xijkl >= cutint2) exit
+            if(jsh==nshell) cycle lloop
+          enddo
+!
           mlcount= mlindex(3,numshell)
           mlnum  = mlindex(4,numshell)
           nbfi= mbf(ish)
@@ -1194,11 +1218,6 @@ end
               enddo
             enddo
           enddo
-          if(ksh >= lsh) then
-            kl= ksh*(ksh-1)/2+lsh
-          else
-            kl= lsh*(lsh-1)/2+ksh
-          endif
 !
           do jsh= 1,nshell
             nbfj  = mbf(jsh)
@@ -1249,7 +1268,7 @@ end
             if(xijkl*tmax < cutint2) cycle
             call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxgraddim)
           enddo
-        enddo
+        enddo lloop
       enddo
 !
       do ii= 1,3*natom
@@ -1265,7 +1284,7 @@ end
 !-------------------------------------------------------------------------------------------------
   subroutine mp2gradbacktrans2(egrad,egradtmp,wij,wab,wai,xlai,tisml,xlmi,xlmn,cmo,xint,tijml, &
 &                              pij,pab,pmn,energymo,work,nocc,noac,nvir,ncore,numitrans, &
-&                              istart,maxdim,maxgraddim,idis,nproc,myrank,mpi_comm)
+&                              istart,maxdim,maxgraddim,mlsize2,idis,nproc,myrank,mpi_comm)
 !-------------------------------------------------------------------------------------------------
 !
 ! Calculate second-half back-transformation (tnsml), and PiJ, Lai1,2,4 and tnsml*(mn|ls)' terms,
@@ -1280,6 +1299,7 @@ end
 !       istart    (First index of transformed occupied MOs)
 !       maxdim    (Maximum size of basis functions in a shell)
 !       maxgraddim(Maximum size of basis functions in a shell for derivative calculation)
+!       mlsize2   (Maximum size of basis function pairs for second-half back-transformation)
 ! Out:  pmn       (Pmn)
 ! Inout:egrad     (MP2 energy gradients)
 !       wij       (Wij)
@@ -1297,20 +1317,21 @@ end
       use modthresh, only : cutint2
       implicit none
       integer,intent(in) :: nocc, noac, nvir, ncore, numitrans, istart, maxdim, maxgraddim
-      integer,intent(in) :: nproc, myrank, mpi_comm, idis(0:nproc-1,8)
+      integer,intent(in) :: mlsize2, nproc, myrank, mpi_comm, idis(0:nproc-1,8)
       integer :: istart2, mlcount, ish, ksh, ml, mlindex(4,idis(myrank,4)), jcount, ii, numshell
       integer :: mlnum, nbfi, nbfj, nbfk, nbfl, nbfik, locbfi, locbfj, locbfk, locbfl, moi, moj
-      integer :: moij, jsh, lsh, ij, kl, jj, kk, ll, i2, ik
+      integer :: moij, jsh, lsh, ij, kl, jj, kk, ll, i2, ik, mlstart, mlend
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00, four=4.0D+00
       real(8),intent(in) :: wai(nocc*nvir), cmo(nao,nao), xint(nshell*(nshell+1)/2)
       real(8),intent(in) :: tijml(idis(myrank,3),noac,numitrans)
       real(8),intent(in) :: pab(nvir*nvir), energymo(nao)
-      real(8),intent(out) :: egradtmp(3*natom), tisml(maxdim*maxdim,maxdim,numitrans)
-      real(8),intent(out) :: xlmi(numitrans,nao), xlmn(nao,nao), pmn(nao,nao), work(nao*nao)
+      real(8),intent(out) :: egradtmp(3*natom), tisml(nao*mlsize2*numitrans)
+      real(8),intent(out) :: xlmi(nao,numitrans), xlmn(nao,nao), pmn(nao,nao), work(nao*nao)
       real(8),intent(inout) :: egrad(3*natom), wij(nocc,nocc), wab(nvir,nvir)
       real(8),intent(inout) :: xlai(nocc,nvir), pij(nocc*(nocc+1)/2)
       real(8) :: eij, xijkl, twork(maxgraddim,maxgraddim,maxgraddim,maxgraddim)
-      real(8) :: twoeri(maxgraddim**4), dtwoeri(3*maxgraddim**4), tmax, tmp
+      real(8) :: twoeri(maxgraddim,maxgraddim,maxgraddim,maxgraddim)
+      real(8) :: dtwoeri(3*maxgraddim**4), tmax, tmp
 !
       egradtmp(:)= zero
       istart2= istart+ncore
@@ -1407,107 +1428,22 @@ end
       xlmi(:,:)= zero
       xlmn(:,:)= zero
 !
-!$OMP parallel do schedule(dynamic,1) collapse(2) private(ish,ksh,mlcount,mlnum,nbfi,nbfj,nbfk, &
-!$OMP nbfl,nbfik,locbfi,locbfj,locbfk,locbfl,tisml,ij,kl,xijkl,twork,i2,ik,tmax,tmp,twoeri, &
-!$OMP dtwoeri) &
-!$OMP reduction(+:xlmi,xlmn,egradtmp)
+      mlnum= 0
+      mlstart= 1
+!
       do numshell= 1,idis(myrank,4)
-        do lsh= 1,nshell
-          ish= mlindex(1,numshell)
-          ksh= mlindex(2,numshell)
-          mlcount= mlindex(3,numshell)
-          mlnum  = mlindex(4,numshell)
-          nbfi= mbf(ish)
-          nbfk= mbf(ksh)
-          nbfl= mbf(lsh)
-          nbfik= nbfi*nbfk
-          locbfi= locbf(ish)
-          locbfk= locbf(ksh)
-          locbfl= locbf(lsh)
-          tisml(1:mlnum,1:nbfl,1:numitrans)= zero
-          do moi= 1,numitrans
-            do moj= 1,noac
-              do ll= 1,nbfl
-                do ml= 1,mlnum
-                  tisml(ml,ll,moi)= tisml(ml,ll,moi) &
-&                                  +tijml(mlcount+ml,moj,moi)*cmo(locbfl+ll,moj+ncore)
-                enddo
-              enddo
-            enddo
-          enddo
-          if(ksh >= lsh) then
-            kl= ksh*(ksh-1)/2+lsh
-          else
-            kl= lsh*(lsh-1)/2+ksh
-          endif
+        mlnum= mlnum+mlindex(4,numshell)
+        if(numshell == idis(myrank,4)) then
+          mlend= numshell
+          call mp2gradbt2(xlmi,xlmn,egrad,egradtmp,tijml,cmo,tisml,pmn,xint,work,mlindex,mlnum,mlstart,mlend,numitrans,noac,ncore,maxgraddim,istart2,idis,nproc,myrank)
+          exit
+        endif
 !
-          do jsh= 1,nshell
-            nbfj  = mbf(jsh)
-            locbfj= locbf(jsh)
-            if(ish >= jsh) then
-              ij= ish*(ish-1)/2+jsh
-            else
-              ij= jsh*(jsh-1)/2+ish
-            endif
-!
-! AO integral calculation
-!
-            xijkl= xint(ij)*xint(kl)
-            if(xijkl < cutint2) cycle
-            call calc2eri(twork,ksh,lsh,ish,jsh,maxgraddim)
-!
-            do ii= 1,nbfi
-              i2=(ii-1)*nbfk
-              do kk= 1,nbfk
-                ik= i2+kk
-                do ll= 1,nbfl
-                  do jj= 1,nbfj
-                    do moi= 1,numitrans
-                      xlmi(moi,locbfj+jj)= xlmi(moi,locbfj+jj)+tisml(ik,ll,moi)*twork(jj,ii,ll,kk)
-                    enddo
-                  enddo
-                enddo
-              enddo
-            enddo
-!
-            do kk= 1,nbfk
-              do ll= 1,nbfl
-                do ii= 1,nbfi
-                  do jj= 1,nbfj
-                    xlmn(locbfl+ll,locbfk+kk)= xlmn(locbfl+ll,locbfk+kk)+pmn(locbfj+jj,locbfi+ii) &
-&                                              *(four*twork(jj,ii,ll,kk))
-                    xlmn(locbfl+ll,locbfi+ii)= xlmn(locbfl+ll,locbfi+ii)+pmn(locbfj+jj,locbfk+kk) &
-&                                              *(-two*twork(jj,ii,ll,kk))
-                  enddo
-                enddo
-              enddo
-            enddo
-!
-            tmax= zero
-            do ii= 1,nbfi
-              i2=(ii-1)*nbfk
-              do kk= 1,nbfk 
-                ik= i2+kk
-                do ll= 1,nbfl
-                  do jj= 1,nbfj
-                    tmp= zero
-                    do moi= 1,numitrans
-                      tmp= tmp+tisml(ik,ll,moi)*cmo(locbfj+jj,istart2+moi)
-                    enddo
-                    twork(ll,kk,jj,ii)= tmp*two
-                    if(abs(tmp) > tmax) tmax= abs(tmp)
-                  enddo
-                enddo
-              enddo
-            enddo
-            if(xijkl*tmax < cutint2) cycle
-            call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxgraddim)
-          enddo
-        enddo
-      enddo
-!
-      do ii= 1,3*natom
-        egrad(ii)= egrad(ii)+egradtmp(ii)
+        if(mlnum+mlindex(4,numshell+1) > mlsize2) then
+          mlend= numshell
+          call mp2gradbt2(xlmi,xlmn,egrad,egradtmp,tijml,cmo,tisml,pmn,xint,work,mlindex,mlnum,mlstart,mlend,numitrans,noac,ncore,maxgraddim,istart2,idis,nproc,myrank)
+          mlstart= numshell+1
+        endif
       enddo
 !
       call dgemm('N','N',numitrans,nvir,nao,four,xlmi,numitrans,cmo(1,nocc+1),nao,one, &
@@ -1654,7 +1590,7 @@ end
         if(deltapai < threshmp2cphf) exit
 !
         if(itdiis == maxmp2diis) itdiis= 0
-        if(iter == maxmp2diis) then
+        if(iter == maxmp2iter) then
           if(master) write(*,'(" Error! MP2 CPHF calculation did not converge.")')
           call iabort
         endif
@@ -1825,10 +1761,10 @@ end
 end
 
 
-!----------------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------------
   subroutine mp2graddint(egrad,egradtmp,pmn,wij,wab,wai,xint,cmo,energymo,wmn,pmnhf,work, &
 &                        nocc,nvir,maxgraddim,nproc,myrank,mpi_comm)
-!----------------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------------
 !
 ! Calculate integral derivatives and MP2 energy gradient
 !
@@ -1908,3 +1844,138 @@ end
 !
       return
 end
+
+!-----------------------------------------------------------------------------------------------
+  subroutine mp2gradbt2(xlmi,xlmn,egrad,egradtmp,tijml,cmo,tisml,pmn,xint,xlmntmp,mlindex,mlnum, &
+&                       mlstart,mlend,numitrans,noac,ncore,maxgraddim,istart2,idis,nproc,myrank)
+!-----------------------------------------------------------------------------------------------
+
+      use modbasis, only : nao, nshell, mbf, locbf
+      use modmolecule, only : natom
+      use modthresh, only : cutint2
+      implicit none
+      integer,intent(in) :: mlnum, mlstart, mlend, numitrans, noac, ncore, maxgraddim
+      integer,intent(in) :: istart2, nproc, myrank, idis(0:nproc-1,8), mlindex(4,idis(myrank,4))
+      integer :: moi, mlcount, numshell, ish, jsh, ksh, lsh, nbfi, nbfj, nbfk, nbfl
+      integer :: locbfi, locbfj, locbfk, locbfl, ij, kl, ii, jj, kk, ll, i2, ik, ml
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, four=4.0D+00
+      real(8),intent(in) :: cmo(nao,ncore+noac), xint(nshell*(nshell+1)/2)
+      real(8),intent(in) :: tijml(idis(myrank,3),noac,numitrans), pmn(nao,nao)
+      real(8),intent(out) :: tisml(numitrans,nao,mlnum), xlmntmp(nao,nao), egradtmp(3*natom)
+      real(8),intent(inout) :: xlmi(numitrans*nao), xlmn(nao,nao), egrad(3*natom)
+      real(8) :: twoeri(maxgraddim,maxgraddim,maxgraddim,maxgraddim)
+      real(8) :: twork(maxgraddim,maxgraddim,maxgraddim,maxgraddim)
+      real(8) :: dtwoeri(3*maxgraddim**4), tmax, tmp, xijkl
+!ishimura
+      real(8) :: xlmitmp(numitrans,nao)
+      real(8) :: work(nao,mlnum), cmo2(ncore+noac,nao)
+!
+      do moi= 1,numitrans
+        call dgemm('N','T',nao,mlnum,noac,one,cmo(1,ncore+1),nao, &
+&                  tijml(mlindex(3,mlstart)+1,1,moi),idis(myrank,3),zero,work,nao)
+        do ml= 1,mlnum
+          do ll= 1,nao
+            tisml(moi,ll,ml)=work(ll,ml)
+          enddo
+        enddo
+      enddo
+      cmo2=transpose(cmo)
+!
+      xlmitmp(:,:)= zero
+      xlmntmp(:,:)= zero
+      egradtmp(:)= zero
+!$OMP parallel do schedule(dynamic,1) collapse(2) private(ish,ksh,mlcount,nbfi,nbfj,nbfk,nbfl, &
+!$OMP locbfi,locbfj,locbfk,locbfl,ij,kl,i2,ik,xijkl,tmax,tmp,twoeri,twork,dtwoeri) &
+!$OMP reduction(+:xlmitmp,xlmntmp,egradtmp)
+      do numshell= mlstart,mlend
+        do lsh= 1,nshell
+          ish= mlindex(1,numshell)
+          ksh= mlindex(2,numshell)
+          mlcount= mlindex(3,numshell)-mlindex(3,mlstart)
+          nbfi= mbf(ish)
+          nbfk= mbf(ksh)
+          nbfl= mbf(lsh)
+          locbfi= locbf(ish)
+          locbfk= locbf(ksh)
+          locbfl= locbf(lsh)
+          if(ksh >= lsh) then
+            kl= ksh*(ksh-1)/2+lsh
+          else
+            kl= lsh*(lsh-1)/2+ksh
+          endif
+          do jsh= 1,nshell
+            nbfj  = mbf(jsh)
+            locbfj= locbf(jsh)
+            if(ish >= jsh) then
+              ij= ish*(ish-1)/2+jsh
+            else
+              ij= jsh*(jsh-1)/2+ish
+            endif
+!
+! AO integral calculation
+!
+            xijkl= xint(ij)*xint(kl)
+            if(xijkl < cutint2) cycle
+!           call calc2eri(twoeri,ksh,lsh,ish,jsh,maxgraddim)
+            call calc2eri(twoeri,ish,jsh,ksh,lsh,maxgraddim)
+!
+            tmax= zero
+            do ii= 1,nbfi
+              i2=(ii-1)*nbfk+mlcount
+              do kk= 1,nbfk
+                ik= i2+kk
+                do jj= 1,nbfj
+                  do ll= 1,nbfl
+                    tmp= zero
+if(abs(twoeri(ll,kk,jj,ii)) > cutint2) then
+                    do moi= 1,numitrans
+                      xlmitmp(moi,locbfj+jj)= xlmitmp(moi,locbfj+jj) &
+&                                         +tisml(moi,locbfl+ll,ik)*twoeri(ll,kk,jj,ii)
+!                     tmp= tmp+tisml(moi,locbfl+ll,ik)*cmo(locbfj+jj,istart2+moi)
+                      tmp= tmp+tisml(moi,locbfl+ll,ik)*cmo2(istart2+moi,locbfj+jj)
+                    enddo
+endif
+                    twork(ll,kk,jj,ii)= tmp*two
+                    if(abs(tmp) > tmax) tmax= abs(tmp)
+                  enddo
+                enddo
+              enddo
+            enddo
+!
+            do ii= 1,nbfi
+              do kk= 1,nbfk
+                do jj= 1,nbfj
+                  do ll= 1,nbfl
+                    xlmntmp(locbfl+ll,locbfk+kk)= xlmntmp(locbfl+ll,locbfk+kk)+pmn(locbfj+jj,locbfi+ii) &
+&                                              *(four*twoeri(ll,kk,jj,ii))
+                    xlmntmp(locbfl+ll,locbfi+ii)= xlmntmp(locbfl+ll,locbfi+ii)+pmn(locbfj+jj,locbfk+kk) &
+&                                              *(-two*twoeri(ll,kk,jj,ii))
+                  enddo
+                enddo
+              enddo
+            enddo
+!
+            if(xijkl*tmax < cutint2) cycle
+            call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxgraddim)
+          enddo
+        enddo
+      enddo
+!
+      call daxpy(numitrans*nao,one,xlmitmp,1,xlmi,1)
+      call daxpy(nao*nao,one,xlmntmp,1,xlmn,1)
+      call daxpy(3*natom,one,egradtmp,1,egrad,1)
+!
+      return
+end
+
+
+
+
+
+
+
+
+
+
+
+
