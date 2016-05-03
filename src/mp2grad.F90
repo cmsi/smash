@@ -55,8 +55,9 @@
       emp2st(:)= zero
       egrad(:,:)= zero
       egradtmp(:)= zero
-      maxdim= maxfunc(maxval(mtype(1:nshell)))
-      maxgraddim= maxfunc(maxval(mtype(1:nshell))+1)
+      maxdim= maxval(mtype(1:nshell))
+      maxgraddim= maxfunc(maxdim+1)
+      maxdim= maxfunc(maxdim)
       nocc= neleca
       nvir= nmo-neleca
       noac= nocc-ncore
@@ -402,7 +403,7 @@ call tstamp(1)
 ! Calculate integral derivatives and their MP2 energy gradient
 !
       call mp2graddint(egrad,egradtmp,pmn,wij,wab,wai,xint,cmo,energymo,pls,work1,work2, &
-&                      nocc,nvir,maxgraddim,nproc,myrank,mpi_comm)
+&                      nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm)
 !ishimura
 call tstamp(1)
 !
@@ -1142,8 +1143,8 @@ end
       real(8),intent(out) :: egradtmp(3*natom), tisml(maxdim*maxdim,maxdim,numitrans)
       real(8),intent(out) :: xlmi(numitrans,nao)
       real(8),intent(inout) :: egrad(3*natom), xlai(nocc,nvir) 
-      real(8) :: xijkl, twork(maxgraddim,maxgraddim,maxgraddim,maxgraddim), twoeri(maxgraddim**4)
-      real(8) :: dtwoeri(3*maxgraddim**4), tmax, tmp
+      real(8) :: xijkl, twork(maxdim,maxdim,maxdim,maxdim), twoeri(maxgraddim**4)
+      real(8) :: dtwoeri(3*maxdim**4), tmax, tmp
 !
       xlmi(:,:)= zero
       egradtmp(:)= zero
@@ -1329,9 +1330,7 @@ end
       real(8),intent(out) :: xlmi(nao,numitrans), xlmn(nao,nao), pmn(nao,nao), work(nao*nao)
       real(8),intent(inout) :: egrad(3*natom), wij(nocc,nocc), wab(nvir,nvir)
       real(8),intent(inout) :: xlai(nocc,nvir), pij(nocc*(nocc+1)/2)
-      real(8) :: eij, xijkl, twork(maxgraddim,maxgraddim,maxgraddim,maxgraddim)
-      real(8) :: twoeri(maxgraddim,maxgraddim,maxgraddim,maxgraddim)
-      real(8) :: dtwoeri(3*maxgraddim**4), tmax, tmp
+      real(8) :: eij, xijkl, tmax, tmp
 !
       egradtmp(:)= zero
       istart2= istart+ncore
@@ -1435,13 +1434,13 @@ end
         mlnum= mlnum+mlindex(4,numshell)
         if(numshell == idis(myrank,4)) then
           mlend= numshell
-          call mp2gradbt2(xlmi,xlmn,egrad,egradtmp,tijml,cmo,tisml,pmn,xint,work,mlindex,mlnum,mlstart,mlend,numitrans,noac,ncore,maxgraddim,istart2,idis,nproc,myrank)
+          call mp2gradbt2(xlmi,xlmn,egrad,egradtmp,tijml,cmo,tisml,pmn,xint,work,mlindex,mlnum,mlstart,mlend,numitrans,noac,ncore,maxdim,maxgraddim,istart2,idis,nproc,myrank)
           exit
         endif
 !
         if(mlnum+mlindex(4,numshell+1) > mlsize2) then
           mlend= numshell
-          call mp2gradbt2(xlmi,xlmn,egrad,egradtmp,tijml,cmo,tisml,pmn,xint,work,mlindex,mlnum,mlstart,mlend,numitrans,noac,ncore,maxgraddim,istart2,idis,nproc,myrank)
+          call mp2gradbt2(xlmi,xlmn,egrad,egradtmp,tijml,cmo,tisml,pmn,xint,work,mlindex,mlnum,mlstart,mlend,numitrans,noac,ncore,maxdim,maxgraddim,istart2,idis,nproc,myrank)
           mlstart= numshell+1
         endif
       enddo
@@ -1763,7 +1762,7 @@ end
 
 !--------------------------------------------------------------------------------------------
   subroutine mp2graddint(egrad,egradtmp,pmn,wij,wab,wai,xint,cmo,energymo,wmn,pmnhf,work, &
-&                        nocc,nvir,maxgraddim,nproc,myrank,mpi_comm)
+&                        nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm)
 !--------------------------------------------------------------------------------------------
 !
 ! Calculate integral derivatives and MP2 energy gradient
@@ -1781,7 +1780,7 @@ end
       use modbasis, only : nao, nshell
       use modmolecule, only : natom
       implicit none
-      integer,intent(in) :: nocc, nvir, maxgraddim, nproc, myrank, mpi_comm
+      integer,intent(in) :: nocc, nvir, maxdim, maxgraddim, nproc, myrank, mpi_comm
       integer :: ii, jj, ij, kk
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: wij(nocc*nocc), wab(nvir*nvir), wai(nocc*nvir)
@@ -1803,7 +1802,7 @@ end
 ! Calculate derivatives for two-electron integrals
 !
       call grad2eri(egradtmp,egradtmp2,pmnhf,pmn,xint,one, &
-&                   maxgraddim,nproc,myrank,3)
+&                   maxdim,maxgraddim,nproc,myrank,3)
 !
 ! Calculate HF+MP2 density matrix
 !
@@ -1847,14 +1846,14 @@ end
 
 !-----------------------------------------------------------------------------------------------
   subroutine mp2gradbt2(xlmi,xlmn,egrad,egradtmp,tijml,cmo,tisml,pmn,xint,xlmntmp,mlindex,mlnum, &
-&                       mlstart,mlend,numitrans,noac,ncore,maxgraddim,istart2,idis,nproc,myrank)
+&                       mlstart,mlend,numitrans,noac,ncore,maxdim,maxgraddim,istart2,idis,nproc,myrank)
 !-----------------------------------------------------------------------------------------------
 
       use modbasis, only : nao, nshell, mbf, locbf
       use modmolecule, only : natom
       use modthresh, only : cutint2
       implicit none
-      integer,intent(in) :: mlnum, mlstart, mlend, numitrans, noac, ncore, maxgraddim
+      integer,intent(in) :: mlnum, mlstart, mlend, numitrans, noac, ncore, maxdim, maxgraddim
       integer,intent(in) :: istart2, nproc, myrank, idis(0:nproc-1,8), mlindex(4,idis(myrank,4))
       integer :: moi, mlcount, numshell, ish, jsh, ksh, lsh, nbfi, nbfj, nbfk, nbfl
       integer :: locbfi, locbfj, locbfk, locbfl, ij, kl, ii, jj, kk, ll, i2, ik, ml
@@ -1863,9 +1862,9 @@ end
       real(8),intent(in) :: tijml(idis(myrank,3),noac,numitrans), pmn(nao,nao)
       real(8),intent(out) :: tisml(numitrans,nao,mlnum), xlmntmp(nao,nao), egradtmp(3*natom)
       real(8),intent(inout) :: xlmi(numitrans*nao), xlmn(nao,nao), egrad(3*natom)
-      real(8) :: twoeri(maxgraddim,maxgraddim,maxgraddim,maxgraddim)
-      real(8) :: twork(maxgraddim,maxgraddim,maxgraddim,maxgraddim)
-      real(8) :: dtwoeri(3*maxgraddim**4), tmax, tmp, xijkl
+      real(8) :: twoeri(maxgraddim**4)
+      real(8) :: twork(maxdim,maxdim,maxdim,maxdim)
+      real(8) :: dtwoeri(maxdim,maxdim,maxdim,maxdim,3), tmax, tmp, xijkl
 !ishimura
       real(8) :: xlmitmp(numitrans,nao)
       real(8) :: work(nao,mlnum), cmo2(ncore+noac,nao)
@@ -1916,8 +1915,7 @@ end
 !
             xijkl= xint(ij)*xint(kl)
             if(xijkl < cutint2) cycle
-!           call calc2eri(twoeri,ksh,lsh,ish,jsh,maxgraddim)
-            call calc2eri(twoeri,ish,jsh,ksh,lsh,maxgraddim)
+            call calc2eri(dtwoeri,ish,jsh,ksh,lsh,maxdim)
 !
             tmax= zero
             do ii= 1,nbfi
@@ -1927,10 +1925,10 @@ end
                 do jj= 1,nbfj
                   do ll= 1,nbfl
                     tmp= zero
-if(abs(twoeri(ll,kk,jj,ii)) > cutint2) then
+if(abs(dtwoeri(ll,kk,jj,ii,1)) > cutint2) then
                     do moi= 1,numitrans
                       xlmitmp(moi,locbfj+jj)= xlmitmp(moi,locbfj+jj) &
-&                                         +tisml(moi,locbfl+ll,ik)*twoeri(ll,kk,jj,ii)
+&                                         +tisml(moi,locbfl+ll,ik)*dtwoeri(ll,kk,jj,ii,1)
 !                     tmp= tmp+tisml(moi,locbfl+ll,ik)*cmo(locbfj+jj,istart2+moi)
                       tmp= tmp+tisml(moi,locbfl+ll,ik)*cmo2(istart2+moi,locbfj+jj)
                     enddo
@@ -1947,16 +1945,16 @@ endif
                 do jj= 1,nbfj
                   do ll= 1,nbfl
                     xlmntmp(locbfl+ll,locbfk+kk)= xlmntmp(locbfl+ll,locbfk+kk)+pmn(locbfj+jj,locbfi+ii) &
-&                                              *(four*twoeri(ll,kk,jj,ii))
+&                                              *(four*dtwoeri(ll,kk,jj,ii,1))
                     xlmntmp(locbfl+ll,locbfi+ii)= xlmntmp(locbfl+ll,locbfi+ii)+pmn(locbfj+jj,locbfk+kk) &
-&                                              *(-two*twoeri(ll,kk,jj,ii))
+&                                              *(-two*dtwoeri(ll,kk,jj,ii,1))
                   enddo
                 enddo
               enddo
             enddo
 !
             if(xijkl*tmax < cutint2) cycle
-            call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxgraddim)
+            call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim)
           enddo
         enddo
       enddo

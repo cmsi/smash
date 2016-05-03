@@ -23,7 +23,7 @@
       use modmolecule, only : natom, neleca, numatomic
       implicit none
       integer,intent(in) :: nproc1, myrank1, mpi_comm1
-      integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j
+      integer :: nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmo(nao*nao), energymo(nao), xint(nshell*(nshell+1)/2)
       real(8),intent(out) :: egrad(3,natom)
@@ -69,9 +69,11 @@
 !
 ! Calculate derivatives for two-electron integrals
 !
-      maxdim=maxfunc(maxval(mtype(1:nshell))+1)
+      maxdim= maxval(mtype(1:nshell))
+      maxgraddim= maxfunc(maxdim+1)
+      maxdim= maxfunc(maxdim)
       call grad2eri(egradtmp,egrad,fulldmtrx,fulldmtrx,xint,one, &
-&                   maxdim,nproc1,myrank1,1)
+&                   maxdim,maxgraddim,nproc1,myrank1,1)
 !
       call para_allreducer(egradtmp(1),egrad(1,1),3*natom,mpi_comm1)
 !
@@ -106,7 +108,7 @@ end
       use modmolecule, only : natom, neleca, nelecb, numatomic
       implicit none
       integer,intent(in) :: nproc1, myrank1, mpi_comm1
-      integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j
+      integer :: nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmoa(nao*nao), cmob(nao*nao), energymoa(nao), energymob(nao)
       real(8),intent(in) :: xint(nshell*(nshell+1)/2)
@@ -154,9 +156,11 @@ end
 !
 ! Calculate derivatives for two-electron integrals
 !
-      maxdim=maxfunc(maxval(mtype(1:nshell))+1)
+      maxdim= maxval(mtype(1:nshell))
+      maxgraddim= maxfunc(maxdim+1)
+      maxdim= maxfunc(maxdim)
       call grad2eri(egradtmp,egrad,fulldmtrx1,fulldmtrx2,xint,one, &
-&                   maxdim,nproc1,myrank1,2)
+&                   maxdim,maxgraddim,nproc1,myrank1,2)
 !
       call para_allreducer(egradtmp(1),egrad(1,1),3*natom,mpi_comm1)
 !
@@ -195,7 +199,7 @@ end
       use moddft, only : idft, hfexchange
       implicit none
       integer,intent(in) :: nproc1, myrank1, mpi_comm1
-      integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j, iatom
+      integer :: nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j, iatom
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmo(nao*nao), energymo(nao), xint(nshell*(nshell+1)/2)
       real(8),intent(out) :: egrad(3,natom)
@@ -259,9 +263,11 @@ end
 !
 ! Calculate derivatives of two-electron integrals
 !
-      maxdim=maxfunc(maxval(mtype(1:nshell))+1)
+      maxdim= maxval(mtype(1:nshell))
+      maxgraddim= maxfunc(maxdim+1)
+      maxdim= maxfunc(maxdim)
       call grad2eri(egradtmp,egrad,fulldmtrx,fulldmtrx,xint,hfexchange, &
-&                   maxdim,nproc1,myrank1,1)
+&                   maxdim,maxgraddim,nproc1,myrank1,1)
 !
 ! Calculate derivatives of exchange-correlation terms 
 !
@@ -309,7 +315,7 @@ end
       use modunit, only : tobohr
       use moddft, only : idft, hfexchange
       implicit none
-      integer :: nao2, nao3, maxdim, maxfunc(0:7), i, j, iatom
+      integer :: nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j, iatom
       integer,intent(in) :: nproc1, myrank1, mpi_comm1
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmoa(nao*nao), cmob(nao*nao), energymoa(nao), energymob(nao)
@@ -377,9 +383,11 @@ end
 !
 ! Calculate derivatives of two-electron integrals
 !
-      maxdim=maxfunc(maxval(mtype(1:nshell))+1)
+      maxdim= maxval(mtype(1:nshell))
+      maxgraddim= maxfunc(maxdim+1)
+      maxdim= maxfunc(maxdim)
       call grad2eri(egradtmp,egrad,fulldmtrx1,fulldmtrx2,xint,hfexchange, &
-&                   maxdim,nproc1,myrank1,2)
+&                   maxdim,maxgraddim,nproc1,myrank1,2)
 !
 ! Calculate derivatives of exchange-correlation terms 
 !

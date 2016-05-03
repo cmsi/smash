@@ -14,7 +14,7 @@
 !
 !----------------------------------------------------------------------------
   subroutine grad2eri(egrad,egrad2,fulldmtrx1,fulldmtrx2,xint,hfexchange, &
-&                     maxdim,nproc,myrank,itype)
+&                     maxdim,maxgraddim,nproc,myrank,itype)
 !----------------------------------------------------------------------------
 !
 ! Main driver of derivatives for two-electron integrals
@@ -25,7 +25,8 @@
 !         fulldmtrx2(Full alpha density matrix (itype=1)
 !                    Full alpha-beta (itype=2)
 !                    Full MP2 alpha density matrix (itype=3))
-!         maxdim    (Maximum dimension of twoeri and dtwoeri)
+!         maxdim    (Maximum dimension of pdmtrx and dtwoeri)
+!         maxgraddim(Maximum dimension of twoeri)
 !         hfexchange(Hartree-Fock exchange scaling factor)
 !         itype     (1:RHF, 2:UHF)
 ! Inout : egrad2    (Energy gradient values)
@@ -34,7 +35,7 @@
       use modthresh, only : cutint2
       use modmolecule, only : natom
       implicit none
-      integer,intent(in) :: maxdim, nproc, myrank, itype
+      integer,intent(in) :: maxdim, maxgraddim, nproc, myrank, itype
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl
       integer :: ii, kk, kstart, ishcheck
       integer(8) :: ncount, icount(nshell)
@@ -43,7 +44,7 @@
       real(8),intent(in) :: xint(nshell*(nshell+1)/2), hfexchange
       real(8),intent(out) :: egrad2(3*natom)
       real(8),intent(inout) :: egrad(3*natom)
-      real(8) :: xijkl, twoeri(maxdim**4), dtwoeri(maxdim**4,3), pdmtrx(maxdim**4)
+      real(8) :: xijkl, twoeri(maxgraddim**4), dtwoeri(maxdim**4,3), pdmtrx(maxdim**4)
       real(8) :: pdmax
 !
       egrad2(:)= zero
@@ -83,7 +84,7 @@
             call calcpdmtrx(fulldmtrx1,fulldmtrx2,pdmtrx,pdmax,hfexchange, &
 &                           ish,jsh,ksh,lsh,maxdim,itype)
             if((xijkl*pdmax).lt.cutint2) cycle
-            call calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim)
+            call calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim)
           enddo
         enddo kloop
       enddo
@@ -96,14 +97,15 @@
 end
 
 
-!----------------------------------------------------------------------------
-  subroutine calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim)
-!----------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------
+  subroutine calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim)
+!---------------------------------------------------------------------------------------
 !
 ! Driver of derivatives for two-electron integrals
 !
 ! In    : pdmtrx    (Products of density matrix)
-!         maxdim    (Maximum dimension of twoeri and dtwoeri)
+!         maxdim    (Maximum dimension of pdmtrx and dtwoeri)
+!         maxgraddim(Maximum dimension of twoeri)
 !         ish,jsh,ksh,lsh (Shell indices)
 ! Out   : twoeri    (Derivatives for two-electron repulsion integrals)
 !         dtwoeri   (Derivatives for two-electron repulsion integrals)
@@ -115,7 +117,7 @@ end
       use modthresh, only : threshex
       implicit none
       integer,parameter :: ncart(0:6)=(/1,3,6,10,15,21,28/)
-      integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
+      integer,intent(in) :: ish, jsh, ksh, lsh, maxdim, maxgraddim
       integer :: i, j, k, l, iatom, jatom, katom, latom, iloc, jloc, kloc, lloc, ider
       integer :: nangijkl(4), nbfijkl(4), nprimijkl(4)
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00, three=3.0D+00
@@ -130,7 +132,7 @@ end
       real(8),parameter :: facf3=0.28116020334310144D+00 ! 1/sqrt(46/3-6/sqrt(5))
       real(8),parameter :: facf4=0.24065403274177409D+00 ! 1/sqrt(28-24/sqrt(5))
       real(8),intent(in) :: pdmtrx(maxdim,maxdim,maxdim,maxdim)
-      real(8),intent(out) :: twoeri(maxdim,maxdim,maxdim,maxdim)
+      real(8),intent(out) :: twoeri(maxgraddim,maxgraddim,maxgraddim,maxgraddim)
       real(8),intent(out) :: dtwoeri(maxdim,maxdim,maxdim,maxdim,3)
       real(8),intent(inout) :: egrad2(3,natom)
       real(8) :: gradtwo(3,4), xyzijkl(3,4), exijkl(mxprsh,4), coijkl(mxprsh,4), work(10)
@@ -195,7 +197,7 @@ end
 !
 ! Two-electron integral calculation
 !
-      call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
+      call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxgraddim, &
 &                   mxprsh,threshex)
 !
       select case(nangijkl(4))
@@ -301,7 +303,7 @@ end
 !
 ! Two-electron integral calculation
 !
-        call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
+        call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxgraddim, &
 &                     mxprsh,threshex)
 !
         select case(nangijkl(4))
@@ -424,7 +426,7 @@ end
 !
 ! Two-electron integral calculation
 !
-      call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
+      call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxgraddim, &
 &                   mxprsh,threshex)
 !
       select case(nangijkl(3))
@@ -530,7 +532,7 @@ end
 !
 ! Two-electron integral calculation
 !
-        call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
+        call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxgraddim, &
 &                     mxprsh,threshex)
 !
         select case(nangijkl(3))
@@ -653,7 +655,7 @@ end
 !
 ! Two-electron integral calculation
 !
-      call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
+      call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxgraddim, &
 &                   mxprsh,threshex)
 !
       select case(nangijkl(2))
@@ -759,7 +761,7 @@ end
 !
 ! Two-electron integral calculation
 !
-        call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
+        call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxgraddim, &
 &                     mxprsh,threshex)
 !
         select case(nangijkl(2))
