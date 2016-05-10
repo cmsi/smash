@@ -350,11 +350,11 @@ end
       call memset(nao2*2+nao3+natom*3)
       allocate(fulldmtrx1(nao2),fulldmtrx2(nao2),ewdmtrx(nao3),egradtmp(3,natom))
       call memset(natom*natom*9+natom*13+nrad*2+nleb*4+nleb*nrad*natom+nao*10 &
-&                +neleca*4+nelecb*4+nao2)
+&                +neleca*4+nelecb*4+(neleca+nelecb)*nao)
       allocate(atomvec(5*natom*natom),surface(natom*natom),radpt(2*nrad),angpt(4*nleb), &
 &              rad(natom),ptweight(nleb*nrad*natom),xyzpt(3*natom),rsqrd(natom),rr(natom), &
 &              uvec(3*natom),vao(10*nao),vmoa(4*neleca),vmob(4*nelecb), &
-&              dweight(3*natom),dpa(3*natom*natom),pa(natom),work(nao2))
+&              dweight(3*natom),dpa(3*natom*natom),pa(natom),work((neleca+nelecb)*nao))
 !
       egradtmp(:,:)= zero
 !
@@ -415,7 +415,7 @@ end
 &                uvec,vao,vmoa,vmob, &
 &                dweight,dpa,pa,work)
       call memunset(natom*natom*9+natom*13+nrad*2+nleb*4+nleb*nrad*natom+nao*10 &
-&                  +neleca*4+nelecb*4+nao2)
+&                  +neleca*4+nelecb*4+(neleca+nelecb)*nao)
       deallocate(fulldmtrx1,fulldmtrx2,ewdmtrx,egradtmp)
       call memunset(nao2*2+nao3+natom*3)
 !
