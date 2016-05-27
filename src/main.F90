@@ -622,7 +622,7 @@ end
 !
 ! Start SCF
 !
-      if(method == 'HARTREE-FOCK') then
+      if((method == 'HARTREE-FOCK').or.(method == 'MP2')) then
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymo,energymo,1)
@@ -643,10 +643,6 @@ end
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
-     elseif(method == 'MP2') then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
-        call tstamp(1)
       else
         if(master) then
           write(*,'(" Error! This program does not support method= ",a16,".")')method
@@ -663,11 +659,13 @@ end
 !
       if(method == 'HARTREE-FOCK') then
         call calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
+        call tstamp(1)
       elseif(idft >= 1) then
         call calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
-!ishimura
+        call tstamp(1)
       elseif(method == 'MP2') then
         call calcgradrmp2(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
+        call tstamp(1)
       else
         if(master) then
           write(*,'(" Error! This program does not support method= ",a16,".")')method
@@ -1021,7 +1019,7 @@ end
 !
 ! Calculate energy
 !
-        if(method == 'HARTREE-FOCK') then
+        if((method == 'HARTREE-FOCK').or.(method == 'MP2')) then
           call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1)
@@ -1056,6 +1054,9 @@ end
           call tstamp(1)
         elseif(idft >= 1) then
           call calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
+          call tstamp(1)
+        elseif(method == 'MP2') then
+          call calcgradrmp2(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
           call tstamp(1)
         else
           if(master) then
