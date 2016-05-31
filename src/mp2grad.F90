@@ -931,7 +931,7 @@ end
       integer :: myij, iproc, jproc, ish, ksh, jcount, num, nbfi, nbfk, locbfi, locbfk
       integer :: ik, ii, kk, ijstart, nrecv, nsend
       integer :: moikfirst, moiklast, mokfirst, moklast, moifirst, moilast
-      integer :: moi, mok, moab, moirecvt, numml
+      integer :: moi, mok, mlao, moirecvt, numml
       real(8),parameter :: one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: tijml(nao,nao), trint2core(idis(myrank,3),ncore,numitrans)
       real(8),intent(out) :: sendt(maxsize,0:nproc-1), recvt(maxsize,0:nproc-1)
@@ -941,8 +941,6 @@ end
 !
 ! Copy tijml to sending buffer
 !
-!ishimura
-!change moab -> mlao
 
       myij=(icycle-1)*nproc+1+myrank
       if(myij <= numij) then
@@ -1033,13 +1031,13 @@ end
         endif
 !
         do moi= 1,moifirst-1
-          do moab= 1,idis(myrank,3)
-            trint2(moab,moi,mokfirst)= storet(moab,moi)
+          do mlao= 1,idis(myrank,3)
+            trint2(mlao,moi,mokfirst)= storet(mlao,moi)
           enddo
         enddo
         do moi= moifirst,noac
-          do moab= 1,idis(myrank,3)
-            trint2(moab,moi,mokfirst)= recvt(moab,moi-moifirst)
+          do mlao= 1,idis(myrank,3)
+            trint2(mlao,moi,mokfirst)= recvt(mlao,moi-moifirst)
           enddo
         enddo
       endif
@@ -1056,8 +1054,8 @@ end
         endif
         do moi= 1,noac
           moirecvt= noac*(mok-mokfirst-1)+(noac-moifirst)+moi
-          do moab= 1,numml
-            trint2(moab,moi,mok)= recvt(moab,moirecvt)
+          do mlao= 1,numml
+            trint2(mlao,moi,mok)= recvt(mlao,moirecvt)
           enddo
         enddo
       enddo
@@ -1065,15 +1063,15 @@ end
       if(moilast /= noac) then
         if(mokfirst == moklast) then
           do moi= moifirst,moilast
-            do moab= 1,idis(myrank,3)
-              storet(moab,moi)= recvt(moab,moi-moifirst)
+            do mlao= 1,idis(myrank,3)
+              storet(mlao,moi)= recvt(mlao,moi-moifirst)
             enddo
           enddo
         else
           do moi= 1,moilast
             moirecvt= moi+noac*(moklast-mokfirst-1)+(noac-moifirst)
-            do moab= 1,idis(myrank,3)
-              storet(moab,moi)= recvt(moab,moirecvt)
+            do mlao= 1,idis(myrank,3)
+              storet(mlao,moi)= recvt(mlao,moirecvt)
             enddo
           enddo
         endif

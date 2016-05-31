@@ -180,7 +180,7 @@ end program main
       memused= 0
       memusedmax= 0
       memory = ''
-      maxiter= 100
+      maxiter= 150
       maxdiis= 20
       maxsoscf= 20
       maxqc   = 15
@@ -426,16 +426,18 @@ end
       use modenergy, only : enuc
       use modmolecule, only : nmo
       use modjob, only : method
-      use modthresh, only : threshover
       use moddft, only : idft
       use modguess, only : guess
       use modprint, only : iprint
+      use modscf, only : dconv
+      use modthresh, only : cutint2, threshover
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
       real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), energymoa(:), energymob(:)
       real(8), allocatable :: overinv(:), work(:)
+      real(8) :: savedconv, savecutint2
 !
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
@@ -488,8 +490,14 @@ end
         call tstamp(1)
       elseif(idft >= 1) then
         if(guess == 'HUCKEL') then
+          savedconv= dconv
+          savecutint2= cutint2
+          dconv= max(dconv,1.0D-2)
+          cutint2= max(cutint2,1.0D-9)
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+          dconv= savedconv
+          cutint2= savecutint2
           call tstamp(1)
         endif
         call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
@@ -635,9 +643,9 @@ end
           cutint2= max(cutint2,1.0D-9)
           call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
-          call tstamp(1)
           dconv= savedconv
           cutint2= savecutint2
+          call tstamp(1)
         endif
         call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
@@ -736,10 +744,11 @@ end
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom
       use modjob, only : method
-      use modthresh, only : threshover
       use moddft, only : idft
       use modguess, only : guess
       use modprint, only : iprint
+      use modscf, only : dconv
+      use modthresh, only : cutint2, threshover
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
@@ -748,6 +757,7 @@ end
       real(8), allocatable :: overinv(:), work(:)
       real(8), allocatable :: egrad(:)
       real(8) :: egradmax, egradrms
+      real(8) :: savedconv, savecutint2
 !
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
@@ -800,8 +810,14 @@ end
         call tstamp(1)
       elseif(idft >= 1) then
         if(guess == 'HUCKEL') then
+          savedconv= dconv
+          savecutint2= cutint2
+          dconv= max(dconv,1.0D-2)
+          cutint2= max(cutint2,1.0D-9)
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+          dconv= savedconv
+          cutint2= savecutint2
           call tstamp(1)
         endif
         call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
@@ -1209,9 +1225,10 @@ end
       use modwarn, only : nwarn
       use modjob, only : method
       use moddft, only : idft
-      use modthresh, only : threshover
       use modguess, only : guess
       use modprint, only : iprint
+      use modscf, only : dconv
+      use modthresh, only : cutint2, threshover
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer,allocatable :: iredun(:)
@@ -1224,6 +1241,7 @@ end
       real(8), allocatable :: overinv(:,:), work(:,:)
       real(8), allocatable :: workv(:), coordredun(:), egradredun(:)
       real(8) :: egradmax, egradrms
+      real(8) :: savedconv, savecutint2
       logical,intent(out) :: converged
       logical :: exceed
 !
@@ -1324,8 +1342,14 @@ end
           call tstamp(1)
         elseif(idft >= 1) then
           if((iopt == 1).and.(guess == 'HUCKEL')) then
+            savedconv= dconv
+            savecutint2= cutint2
+            dconv= max(dconv,1.0D-2)
+            cutint2= max(cutint2,1.0D-9)
             call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+            dconv= savedconv
+            cutint2= savecutint2
             call tstamp(1)
           endif
           call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &

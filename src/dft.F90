@@ -148,7 +148,9 @@ end
           call funcsdlda(excora,excorb,energy,rhoa,rhob,rhoa13,rhob13,weight,csdlda,iscf)
           call funcbecke88(excora,excorb,energy,rhoa,rhob,grhoa,grhob,rhoa13,rhob13, &
 &                        weight,cb88,iscf)
+!ishimura
           call funcvwn5(excora,excorb,energy,rhoa,rhob,weight,cvwn,iscf)
+!         call funcvwn1(excora,excorb,energy,rhoa,rhob,weight,cvwn,iscf)
           call funclyp(excora,excorb,energy,rhoa,rhob,grhoa,grhob,rhoa13,rhob13,weight,clyp,iscf)
       end select
       return
@@ -1286,7 +1288,6 @@ end
               vg2ao(iloc+2,6)= vg2ao(iloc+2,6)+expval*(fac*xyzpt(2,iatom)      +yzz)
               vg2ao(iloc+3,6)= vg2ao(iloc+3,6)+expval*(fac*xyzpt(3,iatom)*three+zzz)
             enddo
-!ishimura up to here
           case(2)
             do iprim= 1,numprim
               icount= icount+1

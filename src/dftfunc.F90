@@ -133,18 +133,128 @@ end
       real(8),parameter :: prmqfinv=0.2113750685894619D+00 ! 1/Qf
       real(8),parameter :: prmqainv=0.1403881383167604D+00 ! 1/Qa
       real(8),parameter :: prmxx0pinv=7.965008666058621D-02 ! 1/Xx0p=1/(x0p*x0p+bp*x0p+cp)
-      real(8),parameter :: prmxx0finv=6.301678291320096D-02 ! 1/Xx0f=1/(x0p*x0p+bp*x0p+cp)
-      real(8),parameter :: prmxx0ainv=7.692816270970167D-02 ! 1/Xx0a=1/(x0p*x0p+bp*x0p+cp)
+      real(8),parameter :: prmxx0finv=6.301678291320096D-02 ! 1/Xx0f=1/(x0f*x0f+bf*x0f+cf)
+      real(8),parameter :: prmxx0ainv=7.692816270970167D-02 ! 1/Xx0a=1/(x0a*x0a+ba*x0a+ca)
       real(8),parameter :: prmap=3.10907D-02, prmbp=3.72744D+00, prmcp=1.29352D+01
       real(8),parameter :: prmaf=1.554535D-02, prmbf=7.06042D+00, prmcf=1.80578D+01
       real(8),parameter :: prmaa=-1.688686D-02, prmba=1.13107D+00, prmca=1.30045D+01
       real(8),parameter :: prmx0p=-0.10498D+00, prmx0f=-0.325D+00, prmx0a=-0.0047584D+00
-      real(8),parameter :: prmp2=9.690227711544374D-04  ! ap*bp*x0p/Xx0p
-      real(8),parameter :: prmf2=2.247867095542611D-03  ! af*bf*x0f/Xx0f
-      real(8),parameter :: prma2=-6.991730719309994D-06 ! aa*ba*x0a/Xx0a
+      real(8),parameter :: prmp2=9.690227711544374D-04  ! -ap*bp*x0p/Xx0p
+      real(8),parameter :: prmf2=2.247867095542611D-03  ! -af*bf*x0f/Xx0f
+      real(8),parameter :: prma2=-6.991730719309994D-06 ! -aa*ba*x0a/Xx0a
       real(8),parameter :: prmp3=3.878329487811301D-02  ! ap*2*bp/Qp*(cp-x0p*x0p)/Xx0p
       real(8),parameter :: prmf3=5.249139316978093D-02  ! af*2*bf/Qf*(cf-x0f*x0f)/Xx0f
       real(8),parameter :: prma3=-5.365090596990275D-03 ! aa*2*ba/Qa*(ca-x0a*x0a)/Xx0a
+      real(8),parameter :: one=1.0D+00, two=2.0D+00, onethird=0.3333333333333333D+00
+      real(8),parameter :: onesixth=0.1666666666666666D+00, four=4.0D+00
+      real(8),parameter :: fourthird=1.333333333333333D+00, nineeighth=1.125D+00
+      real(8),parameter :: onehalf=1.5D+00
+      real(8),intent(in) :: rhoa, rhob, weight, cvwn
+      real(8),intent(inout) :: excora(4), excorb(4), energy
+      real(8) :: rhot, x, xxp, xxf, xxa, xxpinv, xxfinv, xxainv, tmp1p, tmp2p, tmp3p
+      real(8) :: tmp1f, tmp2f, tmp3f, tmp1a, tmp2a, tmp3a, epsp, epsf, epsa, xbq2p, xbq2f, xbq2a
+      real(8) :: depsp, depsf, depsa, xbp, xbf, xba, bracketp, bracketf, bracketa, hx, dhx
+      real(8) :: zeta, zeta2, zeta3, zeta4, gzeta, dgzeta, vwnpot, dvwnpot1, dvwnpot2
+!
+      if(itype == 1) then
+        rhot= rhoa*two
+        x= facx*(rhot**(-onesixth))
+        xxp= x*x+prmbp*x+prmcp
+        xxpinv=one/xxp
+        xbp= two*x+prmbp
+!  
+        tmp1p= log(x*x*xxpinv)
+        tmp2p= log((x-prmx0p)*(x-prmx0p)*xxpinv)
+        tmp3p= atan(prmqp/xbp)
+        epsp= prmap*tmp1p+prmp2*tmp2p+prmp3*tmp3p
+        depsp= onethird*prmap*(one/x-(x*xxpinv)*(one+prmbp/(x-prmx0p)))
+        energy= energy+cvwn*rhot*epsp*weight
+        excora(1)= excora(1)+cvwn*(epsp-x*depsp)
+      elseif(itype == 2) then
+        rhot= rhoa+rhob
+        x= facx*(rhot**(-onesixth))
+        xxp= x*x+prmbp*x+prmcp
+        xxf= x*x+prmbf*x+prmcf
+        xxa= x*x+prmba*x+prmca
+        xxpinv=one/xxp
+        xxfinv=one/xxf
+        xxainv=one/xxa
+        xbp= two*x+prmbp
+        xbf= two*x+prmbf
+        xba= two*x+prmba
+!
+        tmp1p= log(x*x*xxpinv)
+        tmp1f= log(x*x*xxfinv)
+        tmp1a= log(x*x*xxainv)
+        tmp2p= log((x-prmx0p)*(x-prmx0p)*xxpinv)
+        tmp2f= log((x-prmx0f)*(x-prmx0f)*xxfinv)
+        tmp2a= log((x-prmx0a)*(x-prmx0a)*xxainv)
+        tmp3p= atan(prmqp/xbp)
+        tmp3f= atan(prmqf/xbf)
+        tmp3a= atan(prmqa/xba)
+        epsp= prmap*tmp1p+prmp2*tmp2p+prmp3*tmp3p
+        epsf= prmaf*tmp1f+prmf2*tmp2f+prmf3*tmp3f
+        epsa= prmaa*tmp1a+prma2*tmp2a+prma3*tmp3a
+!
+        xbq2p= one/(xbp*xbp+prmqp*prmqp)
+        xbq2f= one/(xbf*xbf+prmqf*prmqf)
+        xbq2a= one/(xba*xba+prmqa*prmqa)
+        bracketp= two/(x-prmx0p)-xbp*xxpinv-four*(two*prmx0p+prmbp)*xbq2p
+        bracketf= two/(x-prmx0f)-xbf*xxfinv-four*(two*prmx0f+prmbf)*xbq2f
+        bracketa= two/(x-prmx0a)-xba*xxainv-four*(two*prmx0a+prmba)*xbq2a
+        depsp=prmap*(two/x-xbp*xxpinv-four*prmbp*xbq2p-prmbp*prmx0p*prmxx0pinv*bracketp)
+        depsf=prmaf*(two/x-xbf*xxfinv-four*prmbf*xbq2f-prmbf*prmx0f*prmxx0finv*bracketf)
+        depsa=prmaa*(two/x-xba*xxainv-four*prmba*xbq2a-prmba*prmx0a*prmxx0ainv*bracketa)
+!
+        hx= fach*(epsf-epsp)/epsa-one
+        dhx= fach*(depsf-depsp-(epsf-epsp)*depsa/epsa)/epsa
+!
+        zeta=(rhoa-rhob)/rhot
+        zeta2= zeta *zeta
+        zeta3= zeta2*zeta
+        zeta4= zeta2*zeta2
+        gzeta= nineeighth*((one+zeta)**fourthird+(one-zeta)**fourthird-two)
+        dgzeta= onehalf*((one+zeta)**onethird-(one-zeta)**onethird)
+        vwnpot= epsp+epsa*gzeta*(one+hx*zeta4)
+        energy= energy+cvwn*rhot*vwnpot*weight
+        dvwnpot1=-x*onesixth*(depsp+depsa*gzeta*(one+hx*zeta4)+epsa*gzeta*dhx*zeta4)
+        dvwnpot2= epsa*(dgzeta*(one+hx*zeta4)+four*gzeta*hx*zeta3)
+        excora(1)= excora(1)+cvwn*(vwnpot+dvwnpot1+dvwnpot2*(one-zeta))
+        excorb(1)= excorb(1)+cvwn*(vwnpot+dvwnpot1-dvwnpot2*(one+zeta))
+      endif
+      return
+end
+
+
+!------------------------------------------------------------------------
+  subroutine funcvwn1(excora,excorb,energy,rhoa,rhob,weight,cvwn,itype)
+!------------------------------------------------------------------------
+!
+! Calculate VWN (Formula I) correlation functional
+!
+      implicit none
+      integer,intent(in):: itype
+      real(8),parameter :: facx=0.7876233178997432D+00 ! (3/(4*pi))**(1/6)
+      real(8),parameter :: fach=1.7099209341613656D+00 ! 4/(9*(2**(1/3)-1))
+      real(8),parameter :: prmqp= 4.489988864157680D-02 ! Qp=sqrt(4*cp-bp*bp)
+      real(8),parameter :: prmqf= 1.171685277708971D+00 ! Qf=sqrt(4*cf-bf*bf)
+      real(8),parameter :: prmqa= 6.692072046645942D+00 ! Qa=sqrt(4*ca-ba*ba)
+      real(8),parameter :: prmqpinv= 2.227177015922510D+01 ! 1/Qp
+      real(8),parameter :: prmqfinv= 8.534715072594644D-01 ! 1/Qf
+      real(8),parameter :: prmqainv= 1.494305490182520D-01 ! 1/Qa
+      real(8),parameter :: prmxx0pinv= 2.664029033699615D-02 ! 1/Xx0p=1/(x0p*x0p+bp*x0p+cp)
+      real(8),parameter :: prmxx0finv= 2.664029033699615D-02 ! 1/Xx0f=1/(x0f*x0f+bf*x0f+cf)
+      real(8),parameter :: prmxx0ainv= 2.664029033699615D-02 ! 1/Xx0a=1/(x0a*x0a+ba*x0a+ca)
+      real(8),parameter :: prmap=3.10907D-02, prmbp=1.30720D+01, prmcp=4.27198D+01
+      real(8),parameter :: prmaf=1.554535D-02, prmbf=2.01231D+01, prmcf=1.01578D+02
+      real(8),parameter :: prmaa=-1.688686D-02, prmba=1.06835D+00, prmca=1.14813D+01
+      real(8),parameter :: prmx0p=-4.09286D-01, prmx0f=-7.43294D-01, prmx0a=-2.28344D-01
+      real(8),parameter :: prmp2= 4.431373767749538D-03 !-ap*bp*x0p/Xx0p
+      real(8),parameter :: prmf2= 2.667310007273315D-03 !-af*bf*x0f/Xx0f
+      real(8),parameter :: prma2=-3.649032666450384D-04 !-aa*ba*x0a/Xx0a
+      real(8),parameter :: prmp3= 2.052197293770518D+01 ! ap*2*bp/Qp*(cp-x0p*x0p)/Xx0p
+      real(8),parameter :: prmf3= 6.188180297906176D-01 ! af*2*bf/Qf*(cf-x0f*x0f)/Xx0f
+      real(8),parameter :: prma3=-5.458481084953849D-03 ! aa*2*ba/Qa*(ca-x0a*x0a)/Xx0a
       real(8),parameter :: one=1.0D+00, two=2.0D+00, onethird=0.3333333333333333D+00
       real(8),parameter :: onesixth=0.1666666666666666D+00, four=4.0D+00
       real(8),parameter :: fourthird=1.333333333333333D+00, nineeighth=1.125D+00
