@@ -13,23 +13,23 @@
 ! limitations under the License.
 !
 !---------------------------
-  subroutine tstamp(index)
+  subroutine tstamp(indext)
 !---------------------------
 !
 ! Print CPU and elapsed times
-! index = 0 : at the beginning of the program
-! index = 1 : at the end of a step
-! index = 2 : at the end of the program
+! indext = 0 : at the beginning of the program
+! indext = 1 : at the end of a step
+! indext = 2 : at the end of the program
 !
       use modtclock, only : cpu0, cpu1, iwall0, iwall1
       use modparallel, only : master
       implicit none
-      integer :: index, iwall2, iwrate, iwmax, iday, ihour, imin
+      integer :: indext, iwall2, iwrate, iwmax, iday, ihour, imin
       real(8) :: cpu2, wall0, wall1, sec
       character(len=24) :: tdate
 !
       if(.not.master) return
-      if(index == 0) then
+      if(indext == 0) then
         call cpu_time(cpu0)
         call system_clock(iwall0,iwrate,iwmax)
         call fdate(tdate)
@@ -37,7 +37,7 @@
         cpu1= cpu0
         iwall1= iwall0
 !
-      elseif(index == 1) then
+      elseif(indext == 1) then
         call cpu_time(cpu2)
         call system_clock(iwall2,iwrate,iwmax)
         if(iwall2 < iwall1) then
@@ -54,7 +54,7 @@
         cpu1 = cpu2
         iwall1= iwall2
 !
-      elseif(index == 2) then
+      elseif(indext == 2) then
         call cpu_time(cpu2)
         call system_clock(iwall2,iwrate,iwmax)
         if(iwall2 < iwall1) then

@@ -34,7 +34,7 @@
       use modmp2, only : ncore, nvfz, maxmp2diis, maxmp2iter
       implicit none
       integer,intent(in) :: mpi_comm
-      integer :: myrank, ii, ilen, intarray(16), info
+      integer :: myrank, ii, llen, intarray(16), info
       real(8) :: realarray(15)
       character(len=254) :: line
       character(len=16) :: chararray(8), mem=''
@@ -53,8 +53,8 @@
         do ii= 1,maxline
           read(5,'(a)',end=100) line
           line=adjustl(line)
-          ilen=len_trim(line)
-          call low2up(line,ilen)
+          llen=len_trim(line)
+          call low2up(line,llen)
           select case(line(1:3))
             case('JOB')
               line="&"//trim(line)//" /"
@@ -75,9 +75,9 @@
             case('OPT','DFT','MP2')
               line="&"//trim(line)//" /"
           end select
-          ilen=len_trim(line)
-          if(ilen > 0) then
-            write(input,'(a)')line(1:ilen)
+          llen=len_trim(line)
+          if(llen > 0) then
+            write(input,'(a)')line(1:llen)
           else
             write(input,*)
           endif
@@ -484,25 +484,25 @@ end
 
 
 !-------------------------------
-  subroutine low2up(line,ilen)
+  subroutine low2up(line,llen)
 !-------------------------------
 !
 ! Convert lower charcters to upper 
 !
       implicit none
-      integer :: ilen, ii, inum, ispace
+      integer :: llen, ii, inum, ispace
       character(len=254),intent(inout) :: line
       character(len=254) :: linecopy
       character(len=26) :: upper='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
       character(len=26) :: lower='abcdefghijklmnopqrstuvwxyz'
 !
-      linecopy(1:ilen)=line(1:ilen)
-      do ii= 1,ilen
+      linecopy(1:llen)=line(1:llen)
+      do ii= 1,llen
         inum=(index(lower,line(ii:ii)))
         if(inum > 0) line(ii:ii)= upper(inum:inum)
       enddo
 !
-      inum= index(line(1:ilen),'CHECK=')
+      inum= index(line(1:llen),'CHECK=')
       if(inum > 0) then
         ispace= index(line(inum:),' ')
         line(inum+6:inum+ispace-2)= linecopy(inum+6:inum+ispace-2)
