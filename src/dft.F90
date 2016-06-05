@@ -472,6 +472,10 @@ end
       real(8),parameter :: pi4=1.256637061435917D+01
       real(8),intent(out) :: angpt(4,nleb)
 !
+!
+! Omit nleb= 74, 230, 266 because of negative weights
+! Number of electrons and energy are not accurate.
+!
       select case(nleb)
         case(6)
           call lebedev6(angpt)
@@ -483,8 +487,8 @@ end
           call lebedev38(angpt)
         case(50)
           call lebedev50(angpt)
-        case(74)
-          call lebedev74(angpt)
+!       case(74)
+!         call lebedev74(angpt)
         case(86)
           call lebedev86(angpt)
         case(110)
@@ -495,10 +499,10 @@ end
           call lebedev170(angpt)
         case(194)
           call lebedev194(angpt)
-        case(230)
-          call lebedev230(angpt)
-        case(266)
-          call lebedev266(angpt)
+!       case(230)
+!         call lebedev230(angpt)
+!       case(266)
+!         call lebedev266(angpt)
         case(302)
           call lebedev302(angpt)
         case(350)
