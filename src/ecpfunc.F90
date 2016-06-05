@@ -20,7 +20,7 @@
 !
       use modparallel, only : master
       use modecp, only : ecp, maxangecp, izcore, locecp, mprimecp, execp, coeffecp, mtypeecp
-      use modmolecule, only : natom, numatomic, neleca, nelecb, znuc
+      use modmolecule, only : natom, numatomic, znuc
       implicit none
       integer,intent(in) :: mpi_comm
       integer :: iatom, iprim
@@ -55,8 +55,6 @@
       call para_bcasti(mtypeecp,iprim,0,mpi_comm)
 ! 
       do iatom= 1,natom
-        neleca= neleca-izcore(iatom)/2
-        nelecb= nelecb-izcore(iatom)/2
         znuc(iatom)= znuc(iatom)-izcore(iatom)
       enddo
 !

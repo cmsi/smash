@@ -1442,11 +1442,11 @@ end
 end
 
 
-!----------------------------------
-  subroutine setdetails(mpi_comm)
-!----------------------------------
+!---------------------------------
+  subroutine setcharge(mpi_comm)
+!---------------------------------
 !
-! Read and write settings (currently, charge only)
+! Set atom charge
 !
       use modparallel, only : master
       use modiofile, only : input, maxline

@@ -23,7 +23,6 @@
       use modwarn, only : nwarn
       use modmemory, only : memusedmax
       use modjob, only : runtype, method, scftype
-      use modecp, only : flagecp
       use modiofile, only : input, icheck, check, version
       implicit none
       logical :: converged
@@ -44,43 +43,7 @@
       call gethostnm
       call parallelinfo
 !
-! Read input data and open checkpoint file if necessary
-!
-      if(master) call opendatfile
-      call readinput(mpi_comm1)
-!
-! Set maximum memory size
-!
-      call maxmemset
-!
-! Set basis functions
-!
-      call setbasis(mpi_comm1)
-!
-! Set number of electrons
-!
-      call setelectron
-!
-! Set ECP functions
-!
-      if(flagecp) call setecp(mpi_comm1)
-!
-! Set functional information and adjust the number of DFT grids
-!
-      call setdft
-!
-! Set functional information and adjust the number of DFT grids
-!
-      call setmp2
-!
-! Write input data
-!
-      call writecondition
-      call writegeom
-      call writebasis
-      if(flagecp) call writeecp
-!
-! Set several information (currently, charge only)
+! Read input file and set details
 !
       call setdetails(mpi_comm1)
 !
@@ -176,7 +139,7 @@ end program main
       endif
 !
       nwarn  = 0
-      memmax = 500000000
+      memmax = 1000000000
       memused= 0
       memusedmax= 0
       memory = ''
@@ -200,7 +163,7 @@ end program main
       bohr   =.false.
       spher  =.true.
       spher_g=.true.
-      nopt   = 50
+      nopt   = 100
       optconv= 1.0D-04
       cartesian=.false.
       multi  = 1
@@ -224,6 +187,61 @@ end program main
 end
 
 
+!----------------------------------
+  subroutine setdetails(mpi_comm)
+!----------------------------------
+!
+! Read input file and set details
+!
+      use modparallel, only : master
+      use modecp, only : flagecp
+      implicit none
+      integer,intent(in) :: mpi_comm
+!
+! Read input data and open checkpoint file if necessary
+!
+      if(master) call opendatfile
+      call readinput(mpi_comm)
+!
+! Set basis functions
+!
+      call setbasis(mpi_comm)
+!
+! Set ECP functions
+!
+      if(flagecp) call setecp(mpi_comm)
+!
+! Set maximum memory size
+!
+      call maxmemset
+!
+! Set number of electrons
+!
+      call setelectron
+!
+! Set functional information and adjust the number of DFT grids
+!
+      call setdft
+!
+! Set functional information and adjust the number of DFT grids
+!
+      call setmp2
+!
+! Write input data
+!
+      call writecondition
+      call writegeom
+      call writebasis
+      if(flagecp) call writeecp
+!
+! Set atom charge including dummy atom
+!
+      call setcharge(mpi_comm)
+!
+      return
+end
+
+
 !-------------------------
   subroutine setelectron
 !-------------------------
@@ -232,6 +250,7 @@ end
 !
       use modparallel, only : master
       use modmolecule, only : numatomic, neleca, nelecb, natom, multi, charge
+      use modecp, only : flagecp, izcore
       use modjob, only : scftype
       use modbasis, only : nao
       use modwarn, only : nwarn
@@ -240,10 +259,19 @@ end
 !
 ! Calculate total number of electrons
 !
-      nume= -charge
+      nume= -nint(charge)
       do ii= 1,natom
         if(numatomic(ii) > 0) nume= nume+numatomic(ii)
       enddo
+!
+! Subtract electrons of core potentials
+!
+      if(flagecp) then
+        do ii= 1,natom
+          nume= nume-izcore(ii)
+        enddo
+      endif
+
 !
 ! Calculate numbers of alpha and beta electrons
 !
