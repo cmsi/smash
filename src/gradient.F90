@@ -196,7 +196,7 @@ end
       use moddft, only : nrad, nleb
       use modatom, only : atomrad
       use modunit, only : tobohr
-      use moddft, only : idft, hfexchange
+      use moddft, only : idftex, idftcor, hfexchange
       implicit none
       integer,intent(in) :: nproc1, myrank1, mpi_comm1
       integer :: nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j, iatom
@@ -272,7 +272,8 @@ end
 ! Calculate derivatives of exchange-correlation terms 
 !
       call gradrexcor(egradtmp,egrad,cmo,fulldmtrx,atomvec,surface,radpt,angpt,rad,ptweight, &
-&                     xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,work,idft,nproc1,myrank1)
+&                     xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,work,idftex,idftcor, &
+&                     nproc1,myrank1)
 !
       call para_allreducer(egradtmp(1,1),egrad(1,1),3*natom,mpi_comm1)
 !
@@ -313,7 +314,7 @@ end
       use moddft, only : nrad, nleb
       use modatom, only : atomrad
       use modunit, only : tobohr
-      use moddft, only : idft, hfexchange
+      use moddft, only : idftex, idftcor, hfexchange
       implicit none
       integer :: nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j, iatom
       integer,intent(in) :: nproc1, myrank1, mpi_comm1
@@ -393,7 +394,7 @@ end
 !
       call graduexcor(egradtmp,egrad,cmoa,cmob,fulldmtrx1,fulldmtrx2,atomvec,surface,radpt, &
 &                     angpt,rad,ptweight,xyzpt,rsqrd,rr,uvec,vao,vmoa,vmob,dweight, &
-&                     dpa,pa,work,work(neleca*nao+1),idft,nproc1,myrank1)
+&                     dpa,pa,work,work(neleca*nao+1),idftex,idftcor,nproc1,myrank1)
 !
       call para_allreducer(egradtmp(1,1),egrad(1,1),3*natom,mpi_comm1)
 !

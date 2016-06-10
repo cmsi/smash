@@ -1,4 +1,4 @@
-! Copyright 2014  Kazuya Ishimura
+! Copyright 2014-2016  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -23,7 +23,8 @@
       use modmolecule, only : numatomic, natom, coord, znuc, neleca, nelecb, charge, multi
       use modjob, only : method, runtype, scftype
       use modmemory, only : memory
-      use modthresh, only : cutint2, threshsoscf, threshqc
+      use modthresh, only : precision, cutint2, threshsoscf, threshqc, threshweight,  &
+&                           threshrho, threshdfock, threshdftao, threshover, threshatom
       use modguess, only : guess
       use modprint, only : iprint
       use modscf, only : scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
@@ -35,16 +36,17 @@
       implicit none
       integer,intent(in) :: mpi_comm
       integer :: myrank, ii, llen, intarray(16), info
-      real(8) :: realarray(15)
+      real(8) :: realarray(21)
       character(len=254) :: line
-      character(len=16) :: chararray(8), mem=''
+      character(len=16) :: chararray(9), mem=''
       logical :: logarray(5)
       namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp
-      namelist /control/ cutint2, spher, guess, iprint, bohr, check
+      namelist /control/ precision, cutint2, spher, guess, iprint, bohr, check, threshover, &
+&                        threshatom
       namelist /scf/ scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub, &
 &                    threshsoscf, threshqc
       namelist /opt/ nopt, optconv, cartesian
-      namelist /dft/ nrad, nleb, bqrad
+      namelist /dft/ nrad, nleb, bqrad, threshweight, threshrho, threshdfock, threshdftao
       namelist /mp2/ ncore, nvfz, maxmp2diis, maxmp2iter
 !
       call para_comm_rank(myrank,mpi_comm)
@@ -69,6 +71,7 @@
               line="&"//trim(line)//" /"
               call addapos(line,'GUESS=',6)
               call addapos(line,'CHECK=',6)
+              call addapos(line,'PRECISION=',10)
             case('SCF')
               line="&"//trim(line)//" /"
               call addapos(line,'SCFCONV=',8)
@@ -154,6 +157,7 @@
         chararray(6)= guess
         chararray(7)= ecp
         chararray(8)= scfconv
+        chararray(9)= precision
         realarray( 1)= charge
         realarray( 2)= cutint2
         realarray( 3)= dconv
@@ -169,6 +173,12 @@
         realarray(13)= bqrad(7)
         realarray(14)= bqrad(8)
         realarray(15)= bqrad(9)
+        realarray(16)= threshweight
+        realarray(17)= threshrho
+        realarray(18)= threshdfock
+        realarray(19)= threshdftao
+        realarray(20)= threshover
+        realarray(21)= threshatom
         intarray( 1)= natom
         intarray( 2)= multi
         intarray( 3)= iprint
@@ -191,9 +201,9 @@
         logarray(4)= cartesian
       endif
 !
-      call para_bcastc(chararray,16*8,0,mpi_comm)
+      call para_bcastc(chararray,16*9,0,mpi_comm)
       call para_bcastc(check,64,0,mpi_comm)
-      call para_bcastr(realarray,15,0,mpi_comm)
+      call para_bcastr(realarray,21,0,mpi_comm)
       call para_bcasti(intarray,16,0,mpi_comm)
       call para_bcastl(logarray,4,0,mpi_comm)
 !
@@ -211,6 +221,7 @@
       guess   = chararray(6)
       ecp     = chararray(7)
       scfconv = chararray(8)
+      precision=chararray(9)
       charge  = realarray( 1)
       cutint2 = realarray( 2)
       dconv   = realarray( 3)
@@ -226,6 +237,12 @@
       bqrad(7)= realarray(13)
       bqrad(8)= realarray(14)
       bqrad(9)= realarray(15)
+      threshweight= realarray(16)
+      threshrho   = realarray(17)
+      threshdfock = realarray(18)
+      threshdftao = realarray(19)
+      threshover  = realarray(20)
+      threshatom  = realarray(21)
       multi   = intarray( 2)
       iprint  = intarray( 3)
       maxiter = intarray( 4)
@@ -425,9 +442,9 @@ end
 end
 
 
-!---------------------------
+!----------------------------
   subroutine writecondition
-!---------------------------
+!----------------------------
 !
 ! Write computational conditions
 !
@@ -440,6 +457,7 @@ end
       use modopt, only : nopt, optconv, cartesian
       use modunit, only : bohr
       use modguess, only : guess
+      use modthresh, only : precision
       implicit none
 !
       if(master) then
@@ -451,22 +469,22 @@ end
           call iabort
         endif
 !
-        write(*,'(" --------------------------------------------------------------------------")')
+        write(*,'(" -------------------------------------------------------------------------")')
         write(*,'("   Job infomation")')
-        write(*,'(" --------------------------------------------------------------------------")')
-        write(*,'("   Runtype = ",a12,",   Method  = ",a12,",   Basis    = ",a12)') &
+        write(*,'(" -------------------------------------------------------------------------")')
+        write(*,'("   Runtype = ",a12,  ",  Method  = ",a12,     " ,  Basis    = ",a12)') &
 &                  runtype, method, basis
-        write(*,'("   Memory  =",i10,"MB ,   SCFtype = ",a12,",   Spher    = ",l1)') &
-&                  memmax/125000, scftype, spher
-        write(*,'("   Charge  = ",F11.1," ,   Multi   =  ",i10," ,   Bohr     = ",l1)') &
-&                  charge, multi, bohr
-        write(*,'("   Guess   = ",a12)') guess
+        write(*,'("   Memory  =",i10, "MB ,  SCFtype = ",a12,     " ,  Precision= ",a12)') &
+&                  memmax/125000, scftype, precision
+        write(*,'("   Charge  = ",F11.1," ,  Multi   = ",i12,     " ,  Spher    = ",l1)') &
+&                  charge, multi, spher
+        write(*,'("   Bohr    = ",l1,11x,",  Guess   = ",a12)') bohr, guess
         if(runtype == 'OPTIMIZE') &
-&       write(*,'("   Nopt    =  ",i10," ,   Optconv = ",1p,D11.1," ,   Cartesian= ",l1)') &
+&       write(*,'("   Nopt    =  ",i10," ,  Optconv = ",1p,D10.1," ,  Cartesian= ",l1)') &
 &                  nopt, optconv, cartesian
         if(check /= '') &
         write(*,'("   Check   = ",a64)') check
-        write(*,'(" --------------------------------------------------------------------------")')
+        write(*,'(" -------------------------------------------------------------------------")')
 
         write(*,'(/," ------------------------------------------------")')
         write(*,'("   Computational condition")')

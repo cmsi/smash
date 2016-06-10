@@ -12,11 +12,11 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!---------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------------
   subroutine formrfockexcor(fockdsum,fockd,energy,totalelec,cmo,atomvec,radpt,angpt, &
-&                           rad,ptweight,vao,vmo,xyzpt,rsqrd,transcmo,work,idft, &
+&                           rad,ptweight,vao,vmo,xyzpt,rsqrd,transcmo,work,idftex,idftcor, &
 &                           nproc,myrank,mpi_comm)
-!---------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------------
 !
 ! Driver of DFT Fock matrix formation from exchange-correlation functionals
 !
@@ -37,7 +37,7 @@
       use modbasis, only : nao
       use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
       implicit none
-      integer,intent(in) :: idft, nproc, myrank, mpi_comm
+      integer,intent(in) :: idftex, idftcor, nproc, myrank, mpi_comm
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: cmo(nao,neleca), atomvec(5,natom,natom), radpt(2,nrad)
@@ -95,7 +95,7 @@
             grhoa(1)= grhoa(1)*two
             grhoa(2)= grhoa(2)*two
             grhoa(3)= grhoa(3)*two
-            call calcexcor(excora,excora,energy,rhoa,rhoa,grhoa,grhoa,weight,idft,1)
+            call calcexcor(excora,excora,energy,rhoa,rhoa,grhoa,grhoa,weight,idftex,idftcor,1)
             call fockexcor(fockd,excora,vao,vao(1,2),work,weight,nao,fcutoff)
             totalelec=totalelec+weight*rhoa*two
           enddo
@@ -113,9 +113,9 @@
 end
 
 
-!------------------------------------------------------------------------------------
-  subroutine calcexcor(excora,excorb,energy,rhoa,rhob,grhoa,grhob,weight,idft,iscf)
-!------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------------
+  subroutine calcexcor(excora,excorb,energy,rhoa,rhob,grhoa,grhob,weight,idftex,idftcor,iscf)
+!----------------------------------------------------------------------------------------------
 !
 ! Calculate exchange and correlation energy at a grid point
 !
@@ -123,7 +123,7 @@ end
 !       iscf (1:RHF, 2:UHF)
 !
       implicit none
-      integer,intent(in) :: idft, iscf
+      integer,intent(in) :: idftex, idftcor, iscf
       real(8),parameter :: zero=0.0D+00, onethird=0.3333333333333333D+00, two=2.0D+00
       real(8),parameter :: four=4.0D+00
       real(8),intent(in) :: rhoa, rhob, grhoa(3), grhob(3), weight
@@ -138,19 +138,25 @@ end
       rhob13= rhob**onethird
 !
 ! B3LYP
-      select case(idft)
+      select case(idftex)
         case(1)
           csdlda= 0.08D+00
           cb88=   0.72D+00
-          cvwn=   0.19D+00
-          clyp=   0.81D+00
-!
           call funcsdlda(excora,excorb,energy,rhoa,rhob,rhoa13,rhob13,weight,csdlda,iscf)
           call funcbecke88(excora,excorb,energy,rhoa,rhob,grhoa,grhob,rhoa13,rhob13, &
 &                        weight,cb88,iscf)
-!ishimura
+      end select
+
+      select case(idftcor)
+        case(1)
+          cvwn=   0.19D+00
+          clyp=   0.81D+00
+          call funcvwn1(excora,excorb,energy,rhoa,rhob,weight,cvwn,iscf)
+          call funclyp(excora,excorb,energy,rhoa,rhob,grhoa,grhob,rhoa13,rhob13,weight,clyp,iscf)
+        case(2)
+          cvwn=   0.19D+00
+          clyp=   0.81D+00
           call funcvwn5(excora,excorb,energy,rhoa,rhob,weight,cvwn,iscf)
-!         call funcvwn1(excora,excorb,energy,rhoa,rhob,weight,cvwn,iscf)
           call funclyp(excora,excorb,energy,rhoa,rhob,grhoa,grhob,rhoa13,rhob13,weight,clyp,iscf)
       end select
       return
@@ -194,11 +200,11 @@ end
 end
 
 
-!---------------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------------------
   subroutine formufockexcor(fockd1,fockd2,fockd3,energy,totalelec,cmoa,cmob,atomvec, &
 &                           radpt,angpt,rad,ptweight,vao,vmoa,vmob,xyzpt,rsqrd, &
-&                           transcmoa,transcmob,work,idft,nproc,myrank,mpi_comm)
-!---------------------------------------------------------------------------------------
+&                           transcmoa,transcmob,work,idftex,idftcor,nproc,myrank,mpi_comm)
+!-------------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted DFT Fock matrix formation from exchange-correlation functionals
 !
@@ -213,7 +219,7 @@ end
       use modbasis, only : nao
       use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
       implicit none
-      integer,intent(in) :: idft, nproc, myrank, mpi_comm
+      integer,intent(in) :: idftex, idftcor, nproc, myrank, mpi_comm
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: cmoa(nao,neleca), cmob(nao,nelecb), atomvec(5,natom,natom)
@@ -284,7 +290,7 @@ end
             grhob(1)= grhob(1)*two
             grhob(2)= grhob(2)*two
             grhob(3)= grhob(3)*two
-            call calcexcor(excora,excorb,energy,rhoa,rhob,grhoa,grhob,weight,idft,2)
+            call calcexcor(excora,excorb,energy,rhoa,rhob,grhoa,grhob,weight,idftex,idftcor,2)
             call ufockexcor(fockd2,fockd3,excora,excorb,vao,vao(1,2),work,weight,nao,fcutoff)
             totalelec=totalelec+weight*(rhoa+rhob)
           enddo
@@ -1504,7 +1510,8 @@ end
 
 !-------------------------------------------------------------------------------------------------
   subroutine gradrexcor(egrad,edftgrad,cmo,fulldmtrx,atomvec,surface,radpt,angpt,rad,ptweight, &
-&                       xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,transcmo,idft,nproc,myrank)
+&                       xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,transcmo,idftex,idftcor, &
+&                       nproc,myrank)
 !-------------------------------------------------------------------------------------------------
 !
 ! Driver of derivatives for closed-shell exchange-correlation terms
@@ -1514,7 +1521,7 @@ end
       use moddft, only : nrad, nleb
       use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
       implicit none
-      integer,intent(in) :: idft, nproc, myrank
+      integer,intent(in) :: idftex, idftcor, nproc, myrank
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: cmo(nao,neleca), fulldmtrx(nao,nao)
@@ -1589,7 +1596,7 @@ end
             call calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom)
 !
             ptenergy= zero
-            call calcexcor(excora,excora,ptenergy,rhoa,rhoa,grhoa,grhoa,one,idft,1)
+            call calcexcor(excora,excora,ptenergy,rhoa,rhoa,grhoa,grhoa,one,idftex,idftcor,1)
 !
             if(abs(excora(1))*two*weight < fcutoff)cycle
 !
@@ -1619,7 +1626,7 @@ end
 !------------------------------------------------------------------------------------------------
   subroutine graduexcor(egrad,edftgrad,cmoa,cmob,fulldmtrx1,fulldmtrx2,atomvec,surface,radpt, &
 &                       angpt,rad,ptweight,xyzpt,rsqrd,rr,uvec,vao,vmoa,vmob,dweight, &
-&                       dpa,pa,transcmoa,transcmob,idft,nproc,myrank)
+&                       dpa,pa,transcmoa,transcmob,idftex,idftcor,nproc,myrank)
 !------------------------------------------------------------------------------------------------
 !
 ! Driver of derivatives for open-shell exchange-correlation terms
@@ -1629,7 +1636,7 @@ end
       use moddft, only : nrad, nleb
       use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
       implicit none
-      integer,intent(in) :: idft, nproc, myrank
+      integer,intent(in) :: idftex, idftcor, nproc, myrank
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: cmoa(nao,neleca), cmob(nao,nelecb), fulldmtrx1(nao,nao)
@@ -1714,7 +1721,7 @@ end
             call calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom)
 !
             ptenergy= zero
-            call calcexcor(excora,excorb,ptenergy,rhoa,rhob,grhoa,grhob,one,idft,2)
+            call calcexcor(excora,excorb,ptenergy,rhoa,rhob,grhoa,grhob,one,idftex,idftcor,2)
 !
             if((abs(excora(1))+abs(excorb(1)))*weight < fcutoff)cycle
 !

@@ -27,7 +27,7 @@
       implicit none
       logical :: converged
 !
-      call start
+      call setparallel
       version='2.0.0'
 !
       if(master) then
@@ -40,7 +40,6 @@
 &             " *******************************************",/)') version
       endif
       call tstamp(0)
-      call gethostnm
       call parallelinfo
 !
 ! Read input file and set details
@@ -94,33 +93,18 @@
 end program main
 
 
-!-------------------
-  subroutine start
-!-------------------
+!-------------------------
+  subroutine setparallel
+!-------------------------
 !
-! Set computational data and machine information
+!  Initialize MPI execution environment
 !
       use modparallel, only : master, nproc1, nproc2, myrank1, myrank2, &
 &                             mpi_comm1, mpi_comm2
-      use modiofile, only : check
-      use modwarn, only : nwarn
-      use modguess, only : spher_g, guess
-      use modmemory, only : memmax, memused, memusedmax, memory
       use modprint, only : iprint
-      use modunit, only : bohr
-      use modbasis, only : spher, basis
-      use modscf, only : maxiter, dconv, fdiff, scfconv, maxdiis, maxsoscf, maxqc, &
-&                        maxqcdiag, maxqcdiagsub, extrap
-      use modthresh, only : cutint2, threshsoscf, threshqc
-      use moddft, only : idft, nrad, nleb, bqrad
-      use modopt, only : nopt, optconv, cartesian
-      use modecp, only : ecp, flagecp
-      use modjob, only : scftype, runtype, method
-      use modmolecule, only : multi, charge
-      use modmp2, only : ncore, nvfz, maxmp2diis, maxmp2iter
       implicit none
 !
-! Initialize valuables for parallelization
+! Initialize variables for parallelization
 !
       master = .true.
 !
@@ -138,51 +122,6 @@ end program main
         master =(myrank1 == 0)
       endif
 !
-      nwarn  = 0
-      memmax = 1000000000
-      memused= 0
-      memusedmax= 0
-      memory = ''
-      maxiter= 150
-      maxdiis= 20
-      maxsoscf= 20
-      maxqc   = 15
-      maxqcdiag= 100
-      maxqcdiagsub= 10
-      fdiff  =.true.
-      scfconv='DIIS'
-      extrap =.false.
-      cutint2= 1.0d-12
-      threshsoscf= 0.25D+00
-      threshqc   = 1.0D-05
-      dconv  = 5.0D-06
-      idft   = 0
-      nrad   = 96
-      nleb   = 302
-      iprint = 2
-      bohr   =.false.
-      spher  =.true.
-      spher_g=.true.
-      nopt   = 100
-      optconv= 1.0D-04
-      cartesian=.false.
-      multi  = 1
-      charge = 0.0D+00
-      bqrad(:)=1.0D+00
-      ncore= -1
-      nvfz= 0
-      maxmp2diis= 20
-      maxmp2iter= 100
-!
-      flagecp= .false.
-      scftype='RHF'
-      method='HF'
-      runtype='ENERGY'
-      basis='STO-3G'
-      guess='HUCKEL'
-      ecp=''
-      check=''
-!
       return
 end
 
@@ -191,12 +130,16 @@ end
   subroutine setdetails(mpi_comm)
 !----------------------------------
 !
-! Read input file and set details
+! Read input file and set variables
 !
       use modparallel, only : master
       use modecp, only : flagecp
       implicit none
       integer,intent(in) :: mpi_comm
+!
+! Set defaults before reading input file
+!
+      call setdefault1
 !
 ! Read input data and open checkpoint file if necessary
 !
@@ -219,6 +162,10 @@ end
 !
       call setelectron
 !
+! Reset defaults after reading input file
+!
+      call setdefault2
+!
 ! Set functional information and adjust the number of DFT grids
 !
       call setdft
@@ -237,6 +184,144 @@ end
 ! Set atom charge including dummy atom
 !
       call setcharge(mpi_comm)
+!
+      return
+end
+
+
+!-------------------------
+  subroutine setdefault1
+!-------------------------
+!
+! Set defaults before reading input file
+!
+      use modiofile, only : check
+      use modwarn, only : nwarn
+      use modguess, only : spher_g, guess
+      use modmemory, only : memmax, memused, memusedmax, memory
+      use modprint, only : iprint
+      use modunit, only : bohr
+      use modbasis, only : spher, basis
+      use modscf, only : maxiter, dconv, fdiff, scfconv, maxdiis, maxsoscf, maxqc, &
+&                        maxqcdiag, maxqcdiagsub, extrap
+      use modthresh, only : precision, cutint2, threshsoscf, threshqc, threshover, threshatom, &
+&                           threshdiis, threshweight, threshrho, threshdfock, threshdftao, &
+&                           threshmp2cphf
+      use moddft, only : idftex, idftcor, nrad, nleb, bqrad
+      use modopt, only : nopt, optconv, cartesian
+      use modecp, only : ecp, flagecp
+      use modjob, only : scftype, runtype, method
+      use modmolecule, only : multi, charge
+      use modmp2, only : ncore, nvfz, maxmp2diis, maxmp2iter
+      implicit none
+!
+      nwarn  = 0
+      memmax = 1000000000
+      memused= 0
+      memusedmax= 0
+      memory = ''
+      maxiter= 150
+      maxdiis= 20
+      maxsoscf= 20
+      maxqc   = 15
+      maxqcdiag= 100
+      maxqcdiagsub= 10
+      fdiff  =.true.
+      scfconv='DIIS'
+      extrap =.false.
+      threshsoscf= 0.25D+00
+      threshqc   = 1.0D-05
+      threshover = 1.0D-06
+      threshatom = 2.0D-01
+      threshdiis = 6.0D-01
+      threshmp2cphf=1.0D-10
+      idftex = 0
+      idftcor= 0
+      iprint = 2
+      bohr   =.false.
+      spher  =.true.
+      spher_g=.true.
+      nopt   = 100
+      optconv= 1.0D-04
+      cartesian=.false.
+      multi  = 1
+      charge = 0.0D+00
+      bqrad(:)=1.0D+00
+      nvfz= 0
+      maxmp2diis= 20
+      maxmp2iter= 100
+!
+      cutint2=-1.0d+00
+      nrad = 0
+      nleb = 0
+      ncore= -1
+      dconv=-1.0D+00
+      threshweight=-1.0D+00
+      threshrho=-1.0D+00
+      threshdfock=-1.0D+00
+      threshdftao=-1.0D+00
+!
+      precision='MEDIUM'
+      flagecp= .false.
+      scftype='RHF'
+      method='HARTREE-FOCK'
+      runtype='ENERGY'
+      basis='STO-3G'
+      guess='HUCKEL'
+      ecp=''
+      check=''
+!
+      return
+end
+
+
+
+!-------------------------
+  subroutine setdefault2
+!-------------------------
+!
+! Reset defaults after reading input file
+!
+      use modparallel, only : master
+      use modthresh, only : precision, cutint2, threshweight, threshrho, threshdfock, threshdftao
+      use moddft, only : nrad, nleb
+      use modscf, only : dconv
+      implicit none
+      real(8),parameter :: zero= 0.0D+00
+
+      select case(precision)
+        case('HIGH')
+          if(cutint2 < zero) cutint2= 1.0D-12
+          if(dconv   < zero) dconv  = 5.0D-06
+          if(threshweight < zero) threshweight=1.0D-08
+          if(threshrho    < zero) threshrho   =1.0D-06
+          if(threshdfock  < zero) threshdfock =1.0D-05
+          if(threshdftao  < zero) threshdftao =1.0D-04
+          if(nrad == 0) nrad= 150
+          if(nleb == 0) nleb= 590
+        case('MEDIUM')
+          if(cutint2 < zero) cutint2= 1.0D-11
+          if(dconv   < zero) dconv  = 5.0D-06
+          if(threshweight < zero) threshweight=1.0D-08
+          if(threshrho    < zero) threshrho   =1.0D-05
+          if(threshdfock  < zero) threshdfock =1.0D-04
+          if(threshdftao  < zero) threshdftao =1.0D-03
+          if(nrad == 0) nrad= 96
+          if(nleb == 0) nleb= 302
+        case('LOW')
+          if(cutint2 < zero) cutint2= 1.0D-10
+          if(dconv   < zero) dconv  = 1.0D-05
+          if(threshweight < zero) threshweight=1.0D-08
+          if(threshrho    < zero) threshrho   =1.0D-04
+          if(threshdfock  < zero) threshdfock =1.0D-04
+          if(threshdftao  < zero) threshdftao =1.0D-02
+          if(nrad == 0) nrad= 72
+          if(nleb == 0) nleb= 302
+        case default
+          if(master) write(*,'(" Error! This program does not support precision= ", &
+&                          a16,".")') precision
+          call iabort
+      end select
 !
       return
 end
@@ -310,7 +395,7 @@ end
       use modenergy, only : enuc
       use modmolecule, only : nmo, neleca
       use modjob, only : method
-      use moddft, only : idft
+      use moddft, only : idftex, idftcor
       use modguess, only : guess
       use modprint, only : iprint
       use modscf, only : dconv
@@ -372,7 +457,7 @@ end
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
-      elseif(idft >= 1) then
+      elseif((idftex >= 1).or.(idftcor >= 1)) then
         if(guess == 'HUCKEL') then
           savedconv= dconv
           savecutint2= cutint2
@@ -454,7 +539,7 @@ end
       use modenergy, only : enuc
       use modmolecule, only : nmo
       use modjob, only : method
-      use moddft, only : idft
+      use moddft, only : idftex, idftcor
       use modguess, only : guess
       use modprint, only : iprint
       use modscf, only : dconv
@@ -516,7 +601,7 @@ end
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
-      elseif(idft >= 1) then
+      elseif((idftex >= 1).or.(idftcor >= 1)) then
         if(guess == 'HUCKEL') then
           savedconv= dconv
           savecutint2= cutint2
@@ -599,7 +684,7 @@ end
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom
       use modjob, only : method
-      use moddft, only : idft
+      use moddft, only : idftex, idftcor
       use modguess, only : guess
       use modprint, only : iprint
       use modscf, only : dconv
@@ -663,7 +748,7 @@ end
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
-      elseif(idft >= 1) then
+      elseif((idftex >= 1).or.(idftcor >= 1)) then
         if(guess == 'HUCKEL') then
           savedconv= dconv
           savecutint2= cutint2
@@ -696,7 +781,7 @@ end
       if(method == 'HARTREE-FOCK') then
         call calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
         call tstamp(1)
-      elseif(idft >= 1) then
+      elseif((idftex >= 1).or.(idftcor >= 1)) then
         call calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
         call tstamp(1)
       elseif(method == 'MP2') then
@@ -772,7 +857,7 @@ end
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom
       use modjob, only : method
-      use moddft, only : idft
+      use moddft, only : idftex, idftcor
       use modguess, only : guess
       use modprint, only : iprint
       use modscf, only : dconv
@@ -836,7 +921,7 @@ end
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
-      elseif(idft >= 1) then
+      elseif((idftex >= 1).or.(idftcor >= 1)) then
         if(guess == 'HUCKEL') then
           savedconv= dconv
           savecutint2= cutint2
@@ -873,7 +958,7 @@ end
 !
       if(method == 'HARTREE-FOCK') then
         call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1)
-      elseif(idft >= 1) then
+      elseif((idftex >= 1).or.(idftcor >= 1)) then
         call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1)
       else
         if(master) then
@@ -952,7 +1037,7 @@ end
       use modopt, only : nopt, optconv, cartesian
       use modwarn, only : nwarn
       use modjob, only : method
-      use moddft, only : idft
+      use moddft, only : idftex, idftcor
       use modguess, only : guess
       use modprint, only : iprint
       use modscf, only : dconv
@@ -1068,7 +1153,7 @@ end
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1)
           call tstamp(1)
-        elseif(idft >= 1) then
+        elseif((idftex >= 1).or.(idftcor >= 1)) then
           if((iopt == 1).and.(guess == 'HUCKEL')) then
             savedconv= dconv
             savecutint2= cutint2
@@ -1096,7 +1181,7 @@ end
         if(method == 'HARTREE-FOCK') then
           call calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
           call tstamp(1)
-        elseif(idft >= 1) then
+        elseif((idftex >= 1).or.(idftcor >= 1)) then
           call calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
           call tstamp(1)
         elseif(method == 'MP2') then
@@ -1252,7 +1337,7 @@ end
       use modopt, only : nopt, optconv, cartesian
       use modwarn, only : nwarn
       use modjob, only : method
-      use moddft, only : idft
+      use moddft, only : idftex, idftcor
       use modguess, only : guess
       use modprint, only : iprint
       use modscf, only : dconv
@@ -1368,7 +1453,7 @@ end
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2)
           call tstamp(1)
-        elseif(idft >= 1) then
+        elseif((idftex >= 1).or.(idftcor >= 1)) then
           if((iopt == 1).and.(guess == 'HUCKEL')) then
             savedconv= dconv
             savecutint2= cutint2
@@ -1400,7 +1485,7 @@ end
 !
         if(method == 'HARTREE-FOCK') then
           call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1)
-        elseif(idft >= 1) then
+        elseif((idftex >= 1).or.(idftcor >= 1)) then
           call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1)
         else
           if(master) then
@@ -1605,11 +1690,12 @@ end
 ! Adjust the numbe of DFT grids when heavy elements are included
 !
       use modparallel, only : master
-      use moddft, only : idft, nrad, nleb, hfexchange, bqrad
+      use moddft, only : idftex, idftcor, nrad, nleb, hfexchange, bqrad
       use modatom, only : atomrad
       use modmolecule, only : natom, numatomic
       use modjob, only : method
       use modwarn, only : nwarn
+      use modbasis, only : nao
       implicit none
       integer :: ii, maxelem
 !
@@ -1619,19 +1705,26 @@ end
 !
       select case(method)
         case('B3LYP')
-          idft= 1
+          idftex = 1
+          idftcor= 1
           hfexchange= 0.2D+00
+        case('B3LYP5')
+          idftex = 1
+          idftcor= 2
+          hfexchange= 0.2D+00
+        case('HARTREE-FOCK','MP2')
+        case default
+          if(master) then
+            write(*,'(" Error! This program does not support method= ",a16,".")') method
+            call iabort
+          endif
       endselect
 !
-      if(idft >= 1) then
+      if((idftex >= 1).or.(idftcor >= 1)) then
         maxelem= maxval(numatomic(1:natom))
-        if((maxelem >= 55).and.(nrad == 96).and.(nleb == 302)) then
-          nrad= 150
-          nleb= 590
+        if(((maxelem >= 55).or.(nao >= 2000)).and.((nrad == 96).and.(nleb == 302))) then
           nwarn= nwarn+1
-          if(master) then
-            write(*,'(" Warning! The number of DFT grids is changed.")')
-          endif
+          if(master) write(*,'(" Warning! The number of DFT grids may not be enough.")')
         endif
       endif
 !

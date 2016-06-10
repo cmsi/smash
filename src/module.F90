@@ -123,11 +123,12 @@ end
 ! threshmp2cphf : threshold for MP2-CPHF
 !
       implicit none
-      real(8) :: threshex=30.0D+00, threshover=1.0D-06
-      real(8) :: threshatm=2.0D-01, thresherr=0.6D+00
+      real(8),parameter :: threshex=30.0D+00
+      real(8) :: threshover, threshatom, threshdiis
       real(8) :: cutint2, threshsoscf, threshqc
-      real(8) :: threshweight=1.0D-08, threshrho=1.0D-07, threshdfock=1.0D-06
-      real(8) :: threshdftao=1.0D-04, threshmp2cphf=1.0D-10
+      real(8) :: threshweight, threshrho, threshdfock, threshdftao 
+      real(8) :: threshmp2cphf
+      character(len=16) :: precision
 end
 
 
@@ -276,7 +277,7 @@ end
   module moddft
 !----------------
       implicit none
-      integer :: idft, nrad, nleb
+      integer :: idftex, idftcor, nrad, nleb
       real(8) :: hfexchange, bqrad(9)
 end
 

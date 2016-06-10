@@ -33,7 +33,7 @@
       use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
 &                        maxqcdiagsub, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
-      use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, thresherr
+      use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis
       use modprint, only : iprint
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
@@ -119,17 +119,25 @@
 !
       if(master) then
         write(*,'(1x,74("-"))')
-        write(*,'("   Hartree-Fock calculation")')
+        write(*,'("   Restricted Hartree-Fock calculation")')
         write(*,'(1x,74("-"))')
-        write(*,'("   SCFConv    =",1x,a10)') scfconv
-        write(*,'("   Dconv      =",1p,d9.2,",  MaxIter    = ",i9  ,",  MaxQC      =",i9  )') &
-&                    dconv, maxiter, maxqc
-        write(*,'("   MaxQCDiag  =",i9,     ",  MaxQCDiagsub=",i9                         )') &
-&                    maxqcdiag, maxqcdiagsub
-        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   = ",d9.2,",  ThreshOver =",d9.2)') &
+        write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter    =",i9)') &
+&                    scfconv, dconv, maxiter
+        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver =",d9.2)') &
 &                    cutint2, threshex, threshover
-        write(*,'("   ThreshSOSCF=",1p,d9.2,",  ThreshQC   = ",d9.2)')                        &
-&                    threshsoscf, threshqc
+        select case(scfconv)
+          case('DIIS')
+            write(*,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
+&                    maxdiis, threshdiis
+          case('SOSCF')
+            write(*,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
+&                    maxdiis, threshdiis
+          case('QC')
+            write(*,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
+&                    maxqc, threshqc, maxqcdiag
+            write(*,'("   MaxQCDiagSub=",i8)') &
+&                    maxqcdiagsub
+        end select
         write(*,'(1x,74("-"))')
         write(*,'(" ====================")')
         write(*,'("    SCF Iteration")')
@@ -180,7 +188,7 @@
           case('DIIS')
             call calcdiiserr(fock,dmtrxprev,overlap,ortho,cmo,work,work2,errmax,nao,nmo, &
 &                            idis,nproc2,myrank2,mpi_comm2)
-            if(((itdiis /= 0).or.(errmax <= thresherr)).and.(errmax > small))then
+            if(((itdiis /= 0).or.(errmax <= threshdiis)).and.(errmax > small))then
               itdiis= itdiis+1
               call calcrdiis(fock,errdiis,fockdiis,diismtrx,cmo,work2,itdiis,nao,maxdiis, &
 &                            idis,nproc2,myrank2,mpi_comm2)
@@ -875,15 +883,15 @@ end
 ! Inout : cmo   (MO coefficient matrix)
 !
       use modparallel, only : master
-      use moddft, only : idft, nrad, nleb, hfexchange
+      use moddft, only : idftex, idftcor, nrad, nleb, hfexchange
       use modatom, only : atomrad
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nmo, natom, numatomic
       use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
                          maxqcdiagsub, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
-      use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, thresherr, &
-&                           threshrho, threshdfock
+      use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
+&                           threshweight, threshrho, threshdfock, threshdftao
       use modprint, only : iprint
       use modunit, only : tobohr
       implicit none
@@ -993,20 +1001,29 @@ end
 !
       if(master) then
         write(*,'(1x,74("-"))')
-        write(*,'("   DFT calculation")')
+        write(*,'("   Restricted DFT calculation")')
         write(*,'(1x,74("-"))')
-        write(*,'("   SCFConv    =",1x,a10)') scfconv
-        write(*,'("   Dconv      =",1p,d9.2,",  MaxIter    = ",i9  ,",  MaxQC      =",i9  )') &
-&                    dconv, maxiter, maxqc
-        write(*,'("   MaxQCDiag  =",i9,     ",  MaxQCDiagsub=",i9                         )') &
-&                    maxqcdiag, maxqcdiagsub
-        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   = ",d9.2,",  ThreshOver =",d9.2)') &
+        write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter    =",i9)') &
+&                    scfconv, dconv, maxiter
+        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver =",d9.2)') &
 &                    cutint2, threshex, threshover
-        write(*,'("   ThreshSOSCF=",1p,d9.2,",  ThreshQC   = ",d9.2)')                        &
-&                    threshsoscf, threshqc
-        write(*,'("   Nrad       =",1p,i9  ,",  Nleb       = ",i9  ,",  ThreshRho  =",d9.2)') &
+        write(*,'("   Nrad       =",i9  ,",  Nleb       =",i9  ,",  ThreshRho  =",1p,d9.2)') &
 &                    nrad, nleb, threshrho
-        write(*,'("   ThreshDfock=",1p,d9.2)') threshdfock
+        write(*,'("   ThreshDfock=",1p,d9.2,",  Threshdftao=",d9.2,",  ThreshWeight=",d8.2)') &
+&                    threshdfock, threshdftao, threshweight
+        select case(scfconv)
+          case('DIIS')
+            write(*,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
+&                    maxdiis, threshdiis
+          case('SOSCF')
+            write(*,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
+&                    maxdiis, threshdiis
+          case('QC')
+            write(*,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
+&                    maxqc, threshqc, maxqcdiag
+            write(*,'("   MaxQCDiagSub=",i8)') &
+&                    maxqcdiagsub
+        end select
         write(*,'(1x,74("-"))')
         write(*,'(" ====================")')
         write(*,'("    SCF Iteration")')
@@ -1036,7 +1053,7 @@ end
 ! Calculate exchange-correlation terms
 !
         call formrfockexcor(fockd,fock,edft,totalelec,cmo,atomvec,radpt,angpt, &
-&                           rad,ptweight,vao,vmo,xyzpt,rsqrd,work,work2,idft, &
+&                           rad,ptweight,vao,vmo,xyzpt,rsqrd,work,work2,idftex,idftcor, &
 &                           nproc1,myrank1,mpi_comm1)
 !
 ! Calculate two-electron integrals
@@ -1068,7 +1085,7 @@ end
           case('DIIS')
             call calcdiiserr(fock,dmtrxprev,overlap,ortho,cmo,work,work2,errmax,nao,nmo, &
 &                            idis,nproc2,myrank2,mpi_comm2)
-            if(((itdiis /= 0).or.(errmax <= thresherr)).and.(errmax > small))then
+            if(((itdiis /= 0).or.(errmax <= threshdiis)).and.(errmax > small))then
               itdiis= itdiis+1
               call calcrdiis(fock,errdiis,fockdiis,diismtrx,cmo,work2,itdiis,nao,maxdiis, &
 &                            idis,nproc2,myrank2,mpi_comm2)
@@ -1250,7 +1267,7 @@ end
       use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
 &                        maxqcdiagsub, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
-      use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, thresherr
+      use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis
       use modprint, only : iprint
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
@@ -1358,11 +1375,23 @@ end
         write(*,'(1x,74("-"))')
         write(*,'("   Unrestricted Hartree-Fock calculation")')
         write(*,'(1x,74("-"))')
-        write(*,'("   SCFConv    =",1x,a10)') scfconv
-        write(*,'("   Dconv      =",1p,d9.2,",  MaxIter    = ",i9  ,",  ThreshSOSCF=",d9.2)') &
-&                    dconv, maxiter, threshsoscf
-        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   = ",d9.2,",  ThreshOver =",d9.2)') &
+        write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter    =",i9)') &
+&                    scfconv, dconv, maxiter
+        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver =",d9.2)') &
 &                    cutint2, threshex, threshover
+        select case(scfconv)
+          case('DIIS')
+            write(*,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
+&                    maxdiis, threshdiis
+          case('SOSCF')
+            write(*,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
+&                    maxdiis, threshdiis
+          case('QC')
+            write(*,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
+&                    maxqc, threshqc, maxqcdiag
+            write(*,'("   MaxQCDiagSub=",i8)') &
+&                    maxqcdiagsub
+        end select
         write(*,'(1x,74("-"))')
         write(*,'(" ====================")')
         write(*,'("    SCF Iteration")')
@@ -1419,7 +1448,7 @@ end
             call calcdiiserr(fockb,dmtrxprevb,overlap,ortho,cmob,work,work2,errmaxb,nao,nmo, &
 &                            idis,nproc2,myrank2,mpi_comm2)
             errmax= max(errmaxa,errmaxb)
-            if(((itdiis /= 0).or.(errmax <= thresherr)).and.(errmax > small))then
+            if(((itdiis /= 0).or.(errmax <= threshdiis)).and.(errmax > small))then
               itdiis= itdiis+1
               call calcudiis(focka,fockb,errdiisa,errdiisb,fockdiisa,fockdiisb, &
 &                            diismtrx,cmoa,cmob,work2,itdiis,nao,maxdiis, &
@@ -1910,15 +1939,15 @@ end
 !         cmob  (Beta MO coefficient matrix)
 !
       use modparallel, only : master
-      use moddft, only : idft, nrad, nleb, hfexchange
+      use moddft, only : idftex, idftcor, nrad, nleb, hfexchange
       use modatom, only : atomrad
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nelecb, nmo, natom, numatomic
       use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
 &                        maxqcdiagsub, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
-      use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, thresherr, &
-&                           threshrho, threshdfock
+      use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
+&                           threshweight, threshrho, threshdfock, threshdftao
       use modprint, only : iprint
       use modunit, only : tobohr
       implicit none
@@ -2055,14 +2084,27 @@ end
         write(*,'(1x,74("-"))')
         write(*,'("   Unrestricted DFT calculation")')
         write(*,'(1x,74("-"))')
-        write(*,'("   SCFConv    =",1x,a10)') scfconv
-        write(*,'("   Dconv      =",1p,d9.2,",  MaxIter    = ",i9  ,",  ThreshSOSCF=",d9.2)') &
-&                    dconv, maxiter, threshsoscf
-        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   = ",d9.2,",  ThreshOver =",d9.2)') &
+        write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter    =",i9)') &
+&                    scfconv, dconv, maxiter
+        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver =",d9.2)') &
 &                    cutint2, threshex, threshover
-        write(*,'("   Nrad       =",1p,i9  ,",  Nleb       = ",i9  ,",  ThreshRho  =",d9.2)') &
+        write(*,'("   Nrad       =",i9  ,",  Nleb       =",i9  ,",  ThreshRho  =",1p,d9.2)') &
 &                    nrad, nleb, threshrho
-        write(*,'("   ThreshDfock=",1p,d9.2)') threshdfock
+        write(*,'("   ThreshDfock=",1p,d9.2,",  Threshdftao=",d9.2,",  ThreshWeight=",d8.2)') &
+&                    threshdfock, threshdftao, threshweight
+        select case(scfconv)
+          case('DIIS')
+            write(*,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
+&                    maxdiis, threshdiis
+          case('SOSCF')
+            write(*,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
+&                    maxdiis, threshdiis
+          case('QC')
+            write(*,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
+&                    maxqc, threshqc, maxqcdiag
+            write(*,'("   MaxQCDiagSub=",i8)') &
+&                    maxqcdiagsub
+        end select
         write(*,'(1x,74("-"))')
         write(*,'(" ====================")')
         write(*,'("    SCF Iteration")')
@@ -2093,7 +2135,7 @@ end
 !
         call formufockexcor(fockda,fockdb,focka,edft,totalelec,cmoa,cmob,atomvec,&
 &                           radpt,angpt,rad,ptweight,vao,vmoa,vmob,xyzpt,rsqrd, &
-&                           work,work(neleca*nao+1),work2,idft,nproc1,myrank1,mpi_comm1)
+&                           work,work(neleca*nao+1),work2,idftex,idftcor,nproc1,myrank1,mpi_comm1)
 !
 ! Calculate two-electron integrals
 !
@@ -2131,7 +2173,7 @@ end
             call calcdiiserr(fockb,dmtrxprevb,overlap,ortho,cmob,work,work2,errmaxb,nao,nmo, &
 &                            idis,nproc2,myrank2,mpi_comm2)
             errmax= max(errmaxa,errmaxb)
-            if(((itdiis /= 0).or.(errmax <= thresherr)).and.(errmax > small))then
+            if(((itdiis /= 0).or.(errmax <= threshdiis)).and.(errmax > small))then
               itdiis= itdiis+1
               call calcudiis(focka,fockb,errdiisa,errdiisb,fockdiisa,fockdiisb, &
 &                            diismtrx,cmoa,cmob,work2,itdiis,nao,maxdiis, &

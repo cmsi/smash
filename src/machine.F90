@@ -77,36 +77,17 @@
 end
 
 
-!-----------------------
-  subroutine gethostnm
-!-----------------------
-!
-! Get and write hostname of master node
-!
-      use modparallel, only : master
-      implicit none
-      integer :: istat, hostnm, ilen, len_trim
-      character(len=70) :: hostname
-!
-      if(master) then
-        istat= hostnm(hostname) 
-        ilen= len_trim(hostname)
-        write(*,'(" Master node is ",a)')hostname(1:ilen)
-      endif
-      return
-end
-
-
 !--------------------------
   subroutine parallelinfo
 !--------------------------
 !
-! Write the numbers of processes and threads
+! Write hostname of master node and numbers of processes and threads
 !
       use modparallel, only : master, nproc1
 !$    use omp_lib
       implicit none
-      integer :: nthread
+      integer :: nthread, istat, hostnm, ilen, len_trim
+      character(len=64) :: hostname
 !
       nthread=1
 !$OMP parallel
@@ -114,7 +95,12 @@ end
 !$    nthread= omp_get_num_threads()
 !$OMP end master
 !$OMP end parallel
+!
       if(master) then
+        istat= hostnm(hostname)
+        ilen= len_trim(hostname)
+        write(*,'(" Master node is ",a)')hostname(1:ilen)
+!
         write(*,'(" Number of processes =",i6  )')nproc1
         write(*,'(" Number of threads   =",i6,/)')nthread
       endif

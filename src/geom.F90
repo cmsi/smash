@@ -20,7 +20,7 @@
 !
       use modparallel, only : master
       use modmolecule, only : natom, coord, znuc
-      use modthresh, only : threshatm
+      use modthresh, only : threshatom
       use modenergy, only : enuc
       use modwarn, only : nwarn
       implicit none
@@ -39,7 +39,7 @@
           chrgij= znuc(iatom)*znuc(jatom)
           if(rr /= zero) then
             enuc= enuc+chrgij/rr
-            if((rr <= threshatm).and.master) then
+            if((rr <= threshatom).and.master) then
               write(*,'("Warning! Distance of Atoms",i4," and",i4," is short!")') iatom, jatom
               nwarn= nwarn+1
             endif       
