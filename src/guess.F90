@@ -231,8 +231,8 @@ end
       use modmolecule, only : neleca, nmo
       implicit none
       integer,intent(in) :: nproc, myrank, mpi_comm
-      integer :: i, j
-      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      integer :: i, j, nskip
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, small=1.0D-5
       real(8),intent(in) :: overinv(nao,nao)
       real(8),intent(inout) :: overlap(nao,nao_g), hmo(nao_g,nao_g)
       real(8),intent(out) :: cmo(nao,nao), work1(nao_g,nao_g), work2(nao_g,nao_g)
@@ -254,15 +254,26 @@ end
 ! Calculate (C2t*S12t*S11^-1*S12*C2)^-1/2
 !
       call diag('V','U',nmo_g,work1,nao_g,eigen,nproc,myrank,mpi_comm)
-!$OMP parallel do private(eigeninv)
+!
+      nskip= 0
       do i= 1,nmo_g
+        if(eigen(i) <= small) then
+          nskip= nskip+1
+        else
+          cycle
+        endif
+      enddo
+!
+!$OMP parallel do private(eigeninv)
+      do i= nskip+1,nmo_g
         eigeninv= one/sqrt(eigen(i))
         do j= 1,nmo_g
           work2(j,i)= work1(j,i)*eigeninv
         enddo
       enddo
 !$OMP end parallel do
-      call dgemm('N','T',nmo_g,nmo_g,nmo_g,one,work1,nao_g,work2,nao_g,zero,hmo,nao_g)
+      call dgemm('N','T',nmo_g,nmo_g,nmo_g-nskip,one,work1(1,nskip+1),nao_g,work2(1,nskip+1), &
+&                nao_g,zero,hmo,nao_g)
 !
 ! Calculate C1
 !
