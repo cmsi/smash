@@ -35,6 +35,7 @@
       use modenergy, only : enuc, escf, escfe
       use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis
       use modprint, only : iprint
+      use modwarn, only : nwarn
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
@@ -139,6 +140,12 @@
 &                    maxqcdiagsub
         end select
         write(*,'(1x,74("-"))')
+!
+        if((nao /= nmo).and.master) then
+          write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
+          nwarn= nwarn+1
+        endif
+!
         write(*,'(" ====================")')
         write(*,'("    SCF Iteration")')
         write(*,'(" ====================")')
@@ -894,6 +901,7 @@ end
 &                           threshweight, threshrho, threshdfock, threshdftao
       use modprint, only : iprint
       use modunit, only : tobohr
+      use modwarn, only : nwarn
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
@@ -1025,6 +1033,12 @@ end
 &                    maxqcdiagsub
         end select
         write(*,'(1x,74("-"))')
+!
+        if((nao /= nmo).and.master) then
+          write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
+          nwarn= nwarn+1
+        endif
+!
         write(*,'(" ====================")')
         write(*,'("    SCF Iteration")')
         write(*,'(" ====================")')
@@ -1269,6 +1283,7 @@ end
       use modenergy, only : enuc, escf, escfe
       use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis
       use modprint, only : iprint
+      use modwarn, only : nwarn
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
@@ -1393,6 +1408,12 @@ end
 &                    maxqcdiagsub
         end select
         write(*,'(1x,74("-"))')
+!
+        if((nao /= nmo).and.master) then
+          write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
+          nwarn= nwarn+1
+        endif
+!
         write(*,'(" ====================")')
         write(*,'("    SCF Iteration")')
         write(*,'(" ====================")')
@@ -1950,6 +1971,7 @@ end
 &                           threshweight, threshrho, threshdfock, threshdftao
       use modprint, only : iprint
       use modunit, only : tobohr
+      use modwarn, only : nwarn
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), numwork, iter, itsub, itdiis
@@ -2106,6 +2128,12 @@ end
 &                    maxqcdiagsub
         end select
         write(*,'(1x,74("-"))')
+!
+        if((nao /= nmo).and.master) then
+          write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
+          nwarn= nwarn+1
+        endif
+!
         write(*,'(" ====================")')
         write(*,'("    SCF Iteration")')
         write(*,'(" ====================")')

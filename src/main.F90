@@ -275,7 +275,6 @@ end
 end
 
 
-
 !-------------------------
   subroutine setdefault2
 !-------------------------
@@ -1246,6 +1245,7 @@ end
 !
         if((iopt == nopt).and.master) then
           write(*,'("Warning! Geometry did not converge.")')
+          nwarn= nwarn+1
           exit
         endif
         call tstamp(1)
@@ -1548,6 +1548,7 @@ end
 !
         if((iopt == nopt).and.master) then
           write(*,'("Warning! Geometry did not converge.")')
+          nwarn= nwarn+1
           exit
         endif
         call tstamp(1)

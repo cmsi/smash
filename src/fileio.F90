@@ -23,7 +23,7 @@
       use modmolecule, only : numatomic, natom, coord, znuc, neleca, nelecb, charge, multi
       use modjob, only : method, runtype, scftype
       use modmemory, only : memory
-      use modthresh, only : precision, cutint2, threshsoscf, threshqc, threshweight,  &
+      use modthresh, only : precision, cutint2, threshdiis, threshsoscf, threshqc, threshweight, &
 &                           threshrho, threshdfock, threshdftao, threshover, threshatom
       use modguess, only : guess
       use modprint, only : iprint
@@ -36,17 +36,17 @@
       implicit none
       integer,intent(in) :: mpi_comm
       integer :: myrank, ii, llen, intarray(16), info
-      real(8) :: realarray(21)
+      real(8) :: realarray(22)
       character(len=254) :: line
       character(len=16) :: chararray(9), mem=''
-      logical :: logarray(5)
+      logical :: logarray(4)
       namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp
       namelist /control/ precision, cutint2, spher, guess, iprint, bohr, check, threshover, &
 &                        threshatom
       namelist /scf/ scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub, &
-&                    threshsoscf, threshqc
+&                    threshdiis, threshsoscf, threshqc
       namelist /opt/ nopt, optconv, cartesian
-      namelist /dft/ nrad, nleb, bqrad, threshweight, threshrho, threshdfock, threshdftao
+      namelist /dft/ nrad, nleb, threshweight, threshrho, threshdfock, threshdftao, bqrad
       namelist /mp2/ ncore, nvfz, maxmp2diis, maxmp2iter
 !
       call para_comm_rank(myrank,mpi_comm)
@@ -162,23 +162,24 @@
         realarray( 2)= cutint2
         realarray( 3)= dconv
         realarray( 4)= optconv
-        realarray( 5)= threshsoscf
-        realarray( 6)= threshqc
-        realarray( 7)= bqrad(1)
-        realarray( 8)= bqrad(2)
-        realarray( 9)= bqrad(3)
-        realarray(10)= bqrad(4)
-        realarray(11)= bqrad(5)
-        realarray(12)= bqrad(6)
-        realarray(13)= bqrad(7)
-        realarray(14)= bqrad(8)
-        realarray(15)= bqrad(9)
-        realarray(16)= threshweight
-        realarray(17)= threshrho
-        realarray(18)= threshdfock
-        realarray(19)= threshdftao
-        realarray(20)= threshover
-        realarray(21)= threshatom
+        realarray( 5)= threshdiis
+        realarray( 6)= threshsoscf
+        realarray( 7)= threshqc
+        realarray( 8)= bqrad(1)
+        realarray( 9)= bqrad(2)
+        realarray(10)= bqrad(3)
+        realarray(11)= bqrad(4)
+        realarray(12)= bqrad(5)
+        realarray(13)= bqrad(6)
+        realarray(14)= bqrad(7)
+        realarray(15)= bqrad(8)
+        realarray(16)= bqrad(9)
+        realarray(17)= threshweight
+        realarray(18)= threshrho
+        realarray(19)= threshdfock
+        realarray(20)= threshdftao
+        realarray(21)= threshover
+        realarray(22)= threshatom
         intarray( 1)= natom
         intarray( 2)= multi
         intarray( 3)= iprint
@@ -203,7 +204,7 @@
 !
       call para_bcastc(chararray,16*9,0,mpi_comm)
       call para_bcastc(check,64,0,mpi_comm)
-      call para_bcastr(realarray,21,0,mpi_comm)
+      call para_bcastr(realarray,22,0,mpi_comm)
       call para_bcasti(intarray,16,0,mpi_comm)
       call para_bcastl(logarray,4,0,mpi_comm)
 !
@@ -226,23 +227,24 @@
       cutint2 = realarray( 2)
       dconv   = realarray( 3)
       optconv = realarray( 4)
-      threshsoscf= realarray( 5)
-      threshqc= realarray( 6)
-      bqrad(1)= realarray( 7)
-      bqrad(2)= realarray( 8)
-      bqrad(3)= realarray( 9)
-      bqrad(4)= realarray(10)
-      bqrad(5)= realarray(11)
-      bqrad(6)= realarray(12)
-      bqrad(7)= realarray(13)
-      bqrad(8)= realarray(14)
-      bqrad(9)= realarray(15)
-      threshweight= realarray(16)
-      threshrho   = realarray(17)
-      threshdfock = realarray(18)
-      threshdftao = realarray(19)
-      threshover  = realarray(20)
-      threshatom  = realarray(21)
+      threshdiis = realarray( 5)
+      threshsoscf= realarray( 6)
+      threshqc= realarray( 7)
+      bqrad(1)= realarray( 8)
+      bqrad(2)= realarray( 9)
+      bqrad(3)= realarray(10)
+      bqrad(4)= realarray(11)
+      bqrad(5)= realarray(12)
+      bqrad(6)= realarray(13)
+      bqrad(7)= realarray(14)
+      bqrad(8)= realarray(15)
+      bqrad(9)= realarray(16)
+      threshweight= realarray(17)
+      threshrho   = realarray(18)
+      threshdfock = realarray(19)
+      threshdftao = realarray(20)
+      threshover  = realarray(21)
+      threshatom  = realarray(22)
       multi   = intarray( 2)
       iprint  = intarray( 3)
       maxiter = intarray( 4)
