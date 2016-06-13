@@ -24,7 +24,8 @@
       use modjob, only : method, runtype, scftype
       use modmemory, only : memory
       use modthresh, only : precision, cutint2, threshdiis, threshsoscf, threshqc, threshweight, &
-&                           threshrho, threshdfock, threshdftao, threshover, threshatom
+&                           threshrho, threshdfock, threshdftao, threshover, threshatom, &
+&                           threshmp2cphf
       use modguess, only : guess
       use modprint, only : iprint
       use modscf, only : scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
@@ -36,7 +37,7 @@
       implicit none
       integer,intent(in) :: mpi_comm
       integer :: myrank, ii, llen, intarray(16), info
-      real(8) :: realarray(22)
+      real(8) :: realarray(23)
       character(len=254) :: line
       character(len=16) :: chararray(9), mem=''
       logical :: logarray(4)
@@ -47,7 +48,7 @@
 &                    threshdiis, threshsoscf, threshqc
       namelist /opt/ nopt, optconv, cartesian
       namelist /dft/ nrad, nleb, threshweight, threshrho, threshdfock, threshdftao, bqrad
-      namelist /mp2/ ncore, nvfz, maxmp2diis, maxmp2iter
+      namelist /mp2/ ncore, nvfz, maxmp2diis, maxmp2iter, threshmp2cphf
 !
       call para_comm_rank(myrank,mpi_comm)
 
@@ -180,6 +181,7 @@
         realarray(20)= threshdftao
         realarray(21)= threshover
         realarray(22)= threshatom
+        realarray(23)= threshmp2cphf
         intarray( 1)= natom
         intarray( 2)= multi
         intarray( 3)= iprint
@@ -204,7 +206,7 @@
 !
       call para_bcastc(chararray,16*9,0,mpi_comm)
       call para_bcastc(check,64,0,mpi_comm)
-      call para_bcastr(realarray,22,0,mpi_comm)
+      call para_bcastr(realarray,23,0,mpi_comm)
       call para_bcasti(intarray,16,0,mpi_comm)
       call para_bcastl(logarray,4,0,mpi_comm)
 !
@@ -245,6 +247,7 @@
       threshdftao = realarray(20)
       threshover  = realarray(21)
       threshatom  = realarray(22)
+      threshmp2cphf=realarray(23)
       multi   = intarray( 2)
       iprint  = intarray( 3)
       maxiter = intarray( 4)
