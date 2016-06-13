@@ -1,0 +1,3 @@
+job runtype=energy method=b3lyp basis=cc-pvdz
+control check=anthracene.chk guess=check
+geom=check

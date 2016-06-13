@@ -1,5 +1,4 @@
-job runtype=optimize method=hf basis='6-31G(d)' memory=1g multi=3
-control spher=.f.
+job runtype=optimize method=hf basis=6-31G(d) multi=3
 geom
  C   0.0000000000   0.0000000000   0.0000000000
  H   0.0000000000  -0.8288400000   0.7079000000
