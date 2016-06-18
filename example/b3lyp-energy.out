@@ -1,30 +1,3 @@
-Sender: LSF System <lavaadmin@hpcs03.local>
-Subject: Job 3613: </usr/share/lava/1.0/linux2.6-glibc2.12-x86_64/bin/openmpi_wrapper -np 3 /home/ishimura/smash/bin/smash < b3lyp-energy.inp > Done
-
-Job </usr/share/lava/1.0/linux2.6-glibc2.12-x86_64/bin/openmpi_wrapper -np 3 /home/ishimura/smash/bin/smash < b3lyp-energy.inp > was submitted from host <hpcs01.local> by user <ishimura>.
-Job was executed on host(s) <1*hpcs03.local>, in queue <normal>, as user <ishimura>.
-                            <1*hpcs02.local>
-                            <1*hpcs01.local>
-</home/ishimura> was used as the home directory.
-</home/ishimura/examples/newexample> was used as the working directory.
-Started at Sun Jun 12 18:00:57 2016
-Results reported at Sun Jun 12 18:01:23 2016
-
-Your job looked like:
-
-------------------------------------------------------------
-# LSBATCH: User input
-/usr/share/lava/1.0/linux2.6-glibc2.12-x86_64/bin/openmpi_wrapper -np 3 /home/ishimura/smash/bin/smash < b3lyp-energy.inp 
-------------------------------------------------------------
-
-Successfully completed.
-
-Resource usage summary:
-
-    CPU time   :    217.87 sec.
-
-The output (if any) follows:
-
  *******************************************
     Scalable Molecular Analysis Solver for
       High performance computing systems

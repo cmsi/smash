@@ -418,10 +418,6 @@ end
         enddo
         do jatom= iatom+1,natom
           jnum= numatomic(jatom)
-          if(jnum == 0) then
-            surface(jatom,iatom)= one
-            cycle
-          endif
           tmp1= atomrad(inum)/atomrad(jnum)
           tmp2=(tmp1-one)/(tmp1+one)
           surface(jatom,iatom)= tmp2/(tmp2*tmp2-one)

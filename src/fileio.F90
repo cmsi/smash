@@ -1,4 +1,4 @@
-! Copyright 2014-2016  Kazuya Ishimura
+! Copyright 2014  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@
 
       if(myrank == 0) then
         do ii= 1,maxline
-          read(5,'(a)',end=100) line
+          read(*,'(a)',end=100) line
           line=adjustl(line)
           llen=len_trim(line)
           call low2up(line,llen)

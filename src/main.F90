@@ -28,7 +28,7 @@
       logical :: converged
 !
       call setparallel
-      version='2.0.0'
+      version='2.0.0.b1'
 !
       if(master) then
         write(*,&

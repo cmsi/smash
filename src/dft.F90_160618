@@ -597,16 +597,20 @@ end
                 cycle
               endif
               do jatom= 1,iatom-1
-                if(surface(jatom,iatom) == one) cycle
-                zmuij=(work(iatom,2)-work(jatom,2))*atomvec(5,iatom,jatom)
-                xmuij= zmuij+surface(jatom,iatom)*(one-zmuij*zmuij)
-                f4= xmuij
-                do i= 1,4
-                  f4=f4*(oneh-half*f4*f4)
-                enddo
-                f2= half*f4
-                cutij= half-f2
-                cutji= half+f2
+                if(surface(jatom,iatom) == one) then
+                  cutij=1.0
+                  cutij=1.0
+                else
+                  zmuij=(work(iatom,2)-work(jatom,2))*atomvec(5,iatom,jatom)
+                  xmuij= zmuij+surface(jatom,iatom)*(one-zmuij*zmuij)
+                  f4= xmuij
+                  do i= 1,4
+                    f4=f4*(oneh-half*f4*f4)
+                  enddo
+                  f2= half*f4
+                  cutij= half-f2
+                  cutji= half+f2
+                endif
                 work(iatom,1)=work(iatom,1)*cutij
                 work(jatom,1)=work(jatom,1)*cutji
               enddo
