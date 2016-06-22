@@ -28,7 +28,7 @@
       logical :: converged
 !
       call setparallel
-      version='2.0.0.b1'
+      version='2.0.0.b3'
 !
       if(master) then
         write(*,&
@@ -85,7 +85,9 @@
       if(master) then
         write(*,'(" Used memory :",1x,i6," MB")')memusedmax/125000
         if((runtype =='OPTIMIZE').and.(.not.converged))then
-          write(*,'(" Geometry optimization did not finish with",i3," warning(s).")')nwarn
+          write(*,'(/," ============================================================")')
+          write(*,'("  Geometry optimization did not finish with",i3," warning(s)!")')nwarn
+          write(*,'(" ============================================================")')
         else
           write(*,'(" Your calculation finished with",i3," warning(s).")')nwarn
         endif
@@ -1278,7 +1280,7 @@ end
 !
 ! Write optimized geometry
 !
-      if(master) then
+      if(master.and.converged) then
         write(*,'(" ==========================")')
         write(*,'("     Optimized Geometry")')
         write(*,'(" ==========================")')
@@ -1585,7 +1587,7 @@ end
 !
 ! Write optimized geometry
 !
-      if(master) then
+      if(master.and.converged) then
         write(*,'(" ==========================")')
         write(*,'("     Optimized Geometry")')
         write(*,'(" ==========================")')

@@ -32,7 +32,7 @@
       iprim= 0
 !
       if(master) then
-        if(ecp == 'LANL2DZ') then
+        if((ecp == 'LANL2DZ').or.(ecp == 'LANL2MB')) then
           do iatom= 1,natom
             call ecplanl2(iatom,iprim)
           enddo
@@ -72,7 +72,7 @@ end
       use modmolecule, only : natom, numatomic
       use modecp, only : maxangecp, izcore, mtypeecp, locecp, mprimecp, execp, coeffecp, &
 &                        maxgenangecp, izgencore, mgentypeecp, locgenecp, mgenprimecp, &
-&                        exgenecp, coeffgenecp, flagecp, atomecp
+&                        exgenecp, coeffgenecp, atomecp
       implicit none
       integer,intent(inout) :: iprim
       integer :: iatom, nn, lmax, iang, numprim, locgen, ii
@@ -82,7 +82,7 @@ end
       do iatom= 1,natom
         nn= numatomic(iatom)
         select case(atomecp(nn))
-          case('LANL2DZ')
+          case('LANL2DZ','LANL2MB')
             call ecplanl2(iatom,iprim)
           case('')
           case default

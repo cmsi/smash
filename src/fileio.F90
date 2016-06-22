@@ -485,7 +485,7 @@ end
 &                  charge, multi, spher
         write(*,'("   Bohr    = ",l1,11x,",  Guess   = ",a12)') bohr, guess
         if(runtype == 'OPTIMIZE') &
-&       write(*,'("   Nopt    =  ",i10," ,  Optconv = ",1p,D10.1," ,  Cartesian= ",l1)') &
+&       write(*,'("   Nopt    =  ",i10," ,  Optconv = ",1p,D12.1," ,  Cartesian= ",l1)') &
 &                  nopt, optconv, cartesian
         if(check /= '') &
         write(*,'("   Check   = ",a64)') check
@@ -1156,7 +1156,7 @@ end
           enddo
           cycle
 !
- 200      if(symbol == 'LANL2DZ') then
+ 200      if((symbol == 'LANL2DZ').or.(symbol == 'LANL2MB')) then
             do ii= -9,nelem-10
               atomecp(ielem(ii))= symbol
             enddo
