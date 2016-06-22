@@ -196,7 +196,7 @@ end
   module modguess
 !------------------
 !
-! These valuables are for guess calculations.
+! These variables are for guess calculations.
 ! (Extended Huckel)
 !
 ! nshell_v : the number of valence shells
@@ -263,7 +263,7 @@ end
   module modscf
 !----------------
 !
-! These valuables are for SCF calculations.
+! These variables are for SCF calculations.
 !
       implicit none
       integer :: maxiter, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
