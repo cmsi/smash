@@ -326,7 +326,7 @@ end
         deallocate(cmowrk,trint1a,trint1b)
         call memunset(nao*noac+numi*maxdim**3+mlsize*nao*numi)
 !ishimura
-call tstamp(1)
+!call tstamp(1)
 !
 ! Third and fourth integral transformations, and
 ! MP2 energy, Pij, Pab, Wij[I], Wab[I], Wai[I](=Lai3), Tijab half back-transformation calculations
@@ -345,7 +345,7 @@ call tstamp(1)
 &                  sendint,recvt,storet)
         call memunset(2*nproc*maxsize+nao2+nocc*nvac+2*numab*noac*numirecv+2*numab)
 !ishimura
-call tstamp(1)
+!call tstamp(1)
 !
 ! Second-half back-transformation (tnsml), and
 ! Lai1,2,4, tnsml*(mn|ls)', PiJ, Wij[II], and Wab[II] calculations
@@ -370,7 +370,7 @@ call tstamp(1)
         deallocate(tisml,xlmi,xlmn,work1,work2)
         call memunset(numi*mlsize2*nao+nao*numi+2*nao2+nao*mlsize2)
 !ishimura
-call tstamp(1)
+!call tstamp(1)
       enddo
 !
       deallocate(trint2,trint2core,pij,pab)
@@ -388,21 +388,21 @@ call tstamp(1)
       call mp2gradcphf(pai,xlai,cmo,xint,energymo,paiprev,pls,pmax,paifock,errdiis,paidiis, &
 &                      diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm)
 !ishimura
-call tstamp(1)
+!call tstamp(1)
 !
 ! Calculate Wij[III] and Wai[II]
 !
       call mp2gradwij3(wij,wai,pmn,pai,paifock,cmo,energymo,xint,pls,pmax,work1,work2, &
 &                      nocc,nvir,nvac,maxdim,nproc,myrank,mpi_comm)
 !ishimura
-call tstamp(1)
+!call tstamp(1)
 !
 ! Calculate integral derivatives and their MP2 energy gradient
 !
       call mp2graddint(egrad,egradtmp,pmn,wij,wab,wai,xint,cmo,energymo,pls,work1,work2, &
 &                      nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm)
 !ishimura
-call tstamp(1)
+!call tstamp(1)
 !
       deallocate(pai,paiprev,pls,pmax, &
 &                paifock,errdiis, &
