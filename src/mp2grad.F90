@@ -167,6 +167,7 @@
 !
       call memrest(msize)
       if((msize < memmin16).and.master) then
+        write(*,'(" Error! Available memory size for MP2 energy gradient is small!")')
         call memset(memmin16)
         call iabort
       endif
@@ -182,14 +183,18 @@
 !
       if(numi <= 0) then
         if(master) then
-          write(*,'(" Error! Available memory size for MP2 is small!")')
+          write(*,'(" Error! Available memory size for MP2 energy gradient is small!")')
           call iabort
         endif
       else
         npass=(noac-1)/numi+1
         if(master) then
-          write(*,'(" == Multiple pass calculation ==")')
-          write(*,'("    Number of passes :",i5)')npass
+          if(npass == 1) then
+            write(*,'(" == Single pass calculation ==")')
+          else
+            write(*,'(" == Multiple pass calculation ==")')
+            write(*,'("    Number of passes :",i5)')npass
+          endif
         endif
         call mp2gradmulti(emp2st,egradtmp,egrad,cmo,energymo,xint,nocc,noac,nvir,nvac, &
 &                         ncore,nvfz,maxsize,maxdim,maxgraddim,idis,npass,numi,numab,numirecv, &
@@ -309,6 +314,7 @@ end
 ! Start multiple pass
 !
       do ipass= 1,npass
+        if(master) write(*,'("    Start Pass",i5)')ipass
         if(ipass == npass) numitrans= noac-(npass-1)*numi
         istart=(ipass-1)*numi
 !
@@ -318,8 +324,6 @@ end
         call memset(nao*noac+numi*maxdim**3+mlsize*nao*numi)
         allocate(cmowrk(nao*noac),trint1a(numi*maxdim**3),trint1b(mlsize*nao*numi))
 !
-        if(master) &
-&         write(*,'("    Start first and second integral transformations of Pass",i5)')ipass
         call mp2gradtrans12(cmo,cmowrk,trint1a,trint1b,trint2,trint2core,xint,istart,mlsize, &
 &                           noac,ncore,maxdim,numitrans,idis,nproc,myrank)
 !
