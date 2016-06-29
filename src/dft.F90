@@ -151,7 +151,7 @@ end
         case(1)
           cvwn=   0.19D+00
           clyp=   0.81D+00
-          call funcvwn1(excora,excorb,energy,rhoa,rhob,weight,cvwn,iscf)
+          call funcvwn3(excora,excorb,energy,rhoa,rhob,weight,cvwn,iscf)
           call funclyp(excora,excorb,energy,rhoa,rhob,grhoa,grhob,rhoa13,rhob13,weight,clyp,iscf)
         case(2)
           cvwn=   0.19D+00

@@ -227,10 +227,10 @@ end
 
 
 !------------------------------------------------------------------------
-  subroutine funcvwn1(excora,excorb,energy,rhoa,rhob,weight,cvwn,itype)
+  subroutine funcvwn3(excora,excorb,energy,rhoa,rhob,weight,cvwn,itype)
 !------------------------------------------------------------------------
 !
-! Calculate VWN (Formula I) correlation functional
+! Calculate VWN (Formula III) correlation functional
 !
       implicit none
       integer,intent(in):: itype
