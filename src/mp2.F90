@@ -152,8 +152,8 @@ end
       use modmolecule, only : natom, numatomic
       use modecp, only : izcore
       implicit none
-      integer :: ncorecalc, ncore, iatom, numcore(137)
-      data numcore/2*0, 8*1, 8*5, 18*9, 18*18, 32*27, 32*43, 19*59/
+      integer :: ncorecalc, ncore, iatom, numcore(-9:137)
+      data numcore/12*0, 8*1, 8*5, 18*9, 18*18, 32*27, 32*43, 19*59/
 !
       ncore= 0
       do iatom= 1,natom
