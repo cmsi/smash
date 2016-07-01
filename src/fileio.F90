@@ -20,7 +20,7 @@
 !
       use modiofile, only : input, check, maxline
       use modbasis, only : basis, spher
-      use modmolecule, only : numatomic, natom, coord, znuc, neleca, nelecb, charge, multi
+      use modmolecule, only : numatomic, natom, coord, znuc, charge, multi
       use modjob, only : method, runtype, scftype
       use modmemory, only : memory
       use modthresh, only : precision, cutint2, threshdiis, threshsoscf, threshqc, threshweight, &
@@ -316,7 +316,7 @@ end
 !
       use modparallel, only : master
       use modmolecule, only : numatomic
-      use modbasis, only : nshell, nao, nprim, ex, coeffinp, locprim, locatom, mprim, mtype
+      use modbasis, only : nshell, ex, coeffinp, locprim, locatom, mprim, mtype
       use modprint, only : iprint
       implicit none
       integer :: iatom, ishell, iloc, iprim, jatomcheck(-9:112)=0
@@ -541,7 +541,7 @@ end
 ! Read atomic data
 !
       use modparallel, only : master
-      use modiofile, only : input, icheck, check, maxline
+      use modiofile, only : input, icheck, maxline
       use modmolecule, only : numatomic, natom, coord, znuc
       use modunit, only : tobohr, bohr
       use modparam, only : mxatom
@@ -1362,7 +1362,6 @@ end
 ! Write checkpoint file
 !
       use modiofile, only : icheck, version
-      use modparallel, only : master
       use modmolecule, only : numatomic, natom, coord, nmo, neleca, nelecb, charge, multi, znuc
       use modjob, only : method, runtype, scftype
       use modbasis, only : nshell, nao, nprim, ex, coeffinp, locprim, locbf, locatom, &
@@ -1496,9 +1495,9 @@ end
               znuc(iatom)= znew
               write(*,'("   Charge of Atom ",i5,"     ",f7.3)')iatom, znew
             enddo
- 100        write(*,*)
           endif
         enddo
+ 100    write(*,*)
       endif
  200  continue
 !

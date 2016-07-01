@@ -25,7 +25,7 @@
       use modparallel, only : master
       use modbasis, only : nshell, nao, mbf
       use modmolecule, only : neleca, nmo
-      use modenergy, only : enuc, escf, escfe, emp2, escsmp2
+      use modenergy, only : escf, emp2, escsmp2
       use modmp2, only : ncore, nvfz
       implicit none
       integer,intent(in) :: nproc, myrank, mpi_comm

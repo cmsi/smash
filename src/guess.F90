@@ -90,7 +90,7 @@ end
 ! In  : overinv (overlap integral inverse matrix)
 ! Out : cmo     (initial guess orbitals)
 !
-      use modguess, only : nao_g, spher_g, coord_g, nmo_g
+      use modguess, only : nao_g, spher_g, coord_g
       use modbasis, only : nao
       use modmolecule, only : coord, natom
       implicit none
@@ -228,7 +228,6 @@ end
 !
       use modguess, only : nao_g, nmo_g
       use modbasis, only : nao
-      use modmolecule, only : neleca, nmo
       implicit none
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: i, j, nskip
@@ -295,7 +294,6 @@ end
 !
       use modparallel, only : master
       use modmolecule, only : natom, numatomic
-      use modguess, only : nao_g, spher_g
       use modecp, only : flagecp, izcore
       implicit none
       integer,intent(in) :: itype
@@ -1467,7 +1465,6 @@ end
 !
       use modguess, only : nao_g, nmo_g
       use modbasis, only : nao
-      use modmolecule, only : neleca, nmo
       implicit none
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ndim
@@ -1987,7 +1984,7 @@ end
 ! In  : overinv (overlap integral inverse matrix)
 ! Out : cmo     (initial guess orbitals)
 !
-      use modguess, only : nao_g, spher_g, coord_g, nmo_g
+      use modguess, only : nao_g, spher_g, coord_g
       use modbasis, only : nao
       use modmolecule, only : coord, natom
       implicit none
@@ -2148,7 +2145,7 @@ end
       use modguess, only : nao_v, nshell_v, nao_g, locprim_g, locbf_g, locatom_g, mprim_g, &
 &                          mbf_g, mtype_g, ex_g, coeff_g, coord_g
       use modthresh, only : threshex
-      use modmolecule, only : numatomic, natom, znuc
+      use modmolecule, only : numatomic
       implicit none
       integer,parameter :: len1=5
       integer :: ii, jj, ish, jsh, iprim, jprim, nangij(2), nprimij(2), nbfij(2)
@@ -2343,7 +2340,7 @@ end
 ! Calculate Mulliken population for DFTB
 !
       use modguess, only : nao_g, nshell_v, locbf_g, mbf_g, mtype_g, locatom_g
-      use modmolecule, only : natom, numatomic
+      use modmolecule, only : numatomic
       implicit none
       integer,intent(in) :: nelecdftb(2)
       integer :: ii, jj, ish, locbfi

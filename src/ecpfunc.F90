@@ -20,7 +20,7 @@
 !
       use modparallel, only : master
       use modecp, only : ecp, maxangecp, izcore, locecp, mprimecp, execp, coeffecp, mtypeecp
-      use modmolecule, only : natom, numatomic, znuc
+      use modmolecule, only : natom, znuc
       implicit none
       integer,intent(in) :: mpi_comm
       integer :: iatom, iprim

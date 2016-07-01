@@ -87,7 +87,7 @@ end
 ! Deallocate requested memory size, "msize".
 !
       use modparallel, only : master
-      use modmemory, only : memmax, memused
+      use modmemory, only : memused
       use modwarn, only : nwarn
       implicit none
       integer,intent(in) :: msize

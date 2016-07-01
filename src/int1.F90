@@ -25,7 +25,6 @@
 !
       use modbasis, only : nao, nshell, mtype
       use modecp, only : flagecp
-      use modmolecule, only : natom
       implicit none
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh, num, maxfunc(0:6), maxbasis, maxdim
@@ -1960,7 +1959,7 @@ end
 ! Driver of dipole moment integrals (j|r|i)
 !
       use modparam, only : mxprsh
-      use modmolecule, only : natom, coord, znuc
+      use modmolecule, only : coord
       use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
       use modthresh, only : threshex
       implicit none

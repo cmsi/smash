@@ -129,8 +129,8 @@ end
       real(8),intent(in) :: rhoa, rhob, grhoa(3), grhob(3), weight
       real(8),intent(out) :: excora(4), excorb(4)
       real(8),intent(inout) :: energy
-      real(8) :: rhoa13, rhob13, csdlda, cb88, cvwn, clyp, cpw91lda, cpw91
-      real(8) :: dummy, vrhoa, vrhob, zk, vsigmaaa, vsigmaab, vsigmabb, gradaa, gradab, gradbb
+      real(8) :: rhoa13, rhob13, csdlda, cb88, cvwn, clyp !, cpw91lda, cpw91
+!     real(8) :: vrhoa, vrhob, zk, vsigmaaa, vsigmaab, vsigmabb, gradaa, gradab, gradbb
 !
       excora(1:4)= zero
       excorb(1:4)= zero
@@ -630,7 +630,7 @@ end
 ! Calculate closed-shell AO and MO values for a grid point
 !
       use modmolecule, only : natom, neleca
-      use modbasis, only : ex, coeff, nshell, nao, locprim, locbf, locatom, &
+      use modbasis, only : ex, coeff, nshell, nao, locbf, locatom, &
 &                          mprim, mbf, mtype
       use modthresh, only : threshex
       implicit none
@@ -910,7 +910,7 @@ end
 ! Calculate open-shell AO and MO values for a grid point
 !
       use modmolecule, only : natom, neleca, nelecb
-      use modbasis, only : ex, coeff, nshell, nao, locprim, locbf, locatom, &
+      use modbasis, only : ex, coeff, nshell, nao, locbf, locatom, &
 &                          mprim, mbf, mtype
       use modthresh, only : threshex
       implicit none
@@ -1216,8 +1216,8 @@ end
 !
 ! Calculate second derivatives of AO values for a grid point
 !
-      use modmolecule, only : natom, neleca
-      use modbasis, only : ex, coeff, nshell, nao, locprim, locbf, locatom, mprim, mbf, mtype
+      use modmolecule, only : natom
+      use modbasis, only : ex, coeff, nshell, nao, locbf, locatom, mprim, mbf, mtype
       use modthresh, only : threshex
       implicit none
       integer :: icount, ish, numprim, iatom, iprim, nang, nbf, iloc, i, j
@@ -1767,7 +1767,6 @@ end
 !       pa       (work space (P))
 !
       use modparallel, only : master
-      use moddft, only : nrad, nleb
       use modmolecule, only : natom
       implicit none
       integer,intent(in) :: katom

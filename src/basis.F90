@@ -246,8 +246,8 @@ end
 ! This routine must be called only from master node.
 !
       use modmolecule, only : natom, numatomic
-      use modbasis, only : basis, locprim, locbf, locatom, mprim, mbf, mtype, &
-&                          nshell, nao, nprim, ex, coeff, locgenprim, mgenprim, mgentype, &
+      use modbasis, only : locprim, locbf, locatom, mprim, mbf, mtype, &
+&                          ex, coeff, locgenprim, mgenprim, mgentype, &
 &                          locgenshell, ngenshell, exgen, coeffgen, atombasis, spher
       use modecp, only : flagecp
       implicit none
@@ -3749,7 +3749,7 @@ end
 ! Set basis polarization function of Hydrogen 6-31G(d,p)
 !
       use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mtype, mbf, spher
+      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mtype, mbf
       use modparam, only : mxao, mxshell, mxprim
       implicit none
       integer,intent(in) :: iatom
@@ -4628,7 +4628,7 @@ end
 ! Set basis polarization function of Hydrogen 6-311G(d,p)
 !
       use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mtype, mbf, spher
+      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mtype, mbf
       use modparam, only : mxao, mxshell, mxprim
       implicit none
       integer,intent(in) :: iatom
@@ -8386,7 +8386,7 @@ end
 ! Set basis functions of D95V
 !
       use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mbf, mtype, spher
+      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mbf, mtype
       use modparam, only : mxao, mxshell, mxprim
       implicit none
       integer,intent(in) :: iatom

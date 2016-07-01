@@ -113,7 +113,7 @@ end
 !
       use modparam, only : mxprsh
       use modmolecule, only : coord, natom
-      use modbasis, only : nao, locatom, locprim, mprim, mbf, mtype, ex, coeff
+      use modbasis, only : locatom, locprim, mprim, mbf, mtype, ex, coeff
       use modthresh, only : threshex
       implicit none
       integer,parameter :: ncart(0:6)=(/1,3,6,10,15,21,28/)

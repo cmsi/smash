@@ -86,7 +86,7 @@ end
       use modparallel, only : master, nproc1
 !$    use omp_lib
       implicit none
-      integer :: nthread, istat, hostnm, ilen, len_trim
+      integer :: nthread, istat, hostnm, llen, len_trim
       character(len=64) :: hostname
 !
       nthread=1
@@ -98,8 +98,8 @@ end
 !
       if(master) then
         istat= hostnm(hostname)
-        ilen= len_trim(hostname)
-        write(*,'(" Master node is ",a)')hostname(1:ilen)
+        llen= len_trim(hostname)
+        write(*,'(" Master node is ",a)')hostname(1:llen)
 !
         write(*,'(" Number of processes =",i6  )')nproc1
         write(*,'(" Number of threads   =",i6,/)')nthread

@@ -2197,7 +2197,7 @@ end
 !
 ! Form Gmn matrix from two-electron intgrals
 !
-      use modbasis, only : nshell, nao, mbf, locbf
+      use modbasis, only : nao, mbf, locbf
       use modthresh, only : cutint2
       implicit none
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim

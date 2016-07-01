@@ -91,14 +91,14 @@ end
 ! Out : xint    ((ij|ij) integrals for Schwarz screening)
 !       xinttmp (Work array)
 !
-      use modbasis, only : nshell, mtype, mbf
+      use modbasis, only : nshell, mbf
       implicit none
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ish, jsh, nbfi, nbfj, i, j, ii, ij
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, two=2.0D+00
       real(8),intent(out) :: xint(nshell*(nshell+1)/2)
       real(8),intent(out) :: xinttmp(nshell*(nshell+1)/2)
-      real(8) :: twoeri(maxdim,maxdim,maxdim,maxdim), xintmax, cutsave, val
+      real(8) :: twoeri(maxdim,maxdim,maxdim,maxdim), xintmax, val
 !
       xinttmp(:)= zero
 !

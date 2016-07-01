@@ -106,7 +106,7 @@ end
 !   (j|Uecp|i)
 !
       use modparam, only : mxprsh
-      use modmolecule, only : natom, coord, znuc
+      use modmolecule, only : natom, coord
       use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
       use modecp, only : maxangecp, mtypeecp, locecp, mprimecp, execp, coeffecp, nterm1, nterm2
       implicit none

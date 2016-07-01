@@ -1,4 +1,4 @@
-job runtype=opt method=mp2 basis=sto-3g mem=30gb
+job runtype=opt method=mp2 basis=sto-3g
 geom
 C    -0.151854  -0.019504   0.291605
 N    -0.876114  -1.013821   0.787674

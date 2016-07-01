@@ -113,7 +113,6 @@
         idis(iproc,4)= nshell*nshell
       endif
 !
-!
       nvac2= nvac*nvac
       numab=(nvac2-1)/nproc+1
       numov=(nocc*nvir-1)/nproc+1
@@ -609,7 +608,7 @@ end
 !       recvt    (Receiving buffer for tijml)
 !       storet   (Storing buffer for tijml)
 !
-      use modbasis, only : nao, nshell
+      use modbasis, only : nao
       use modmolecule, only : nmo
       implicit none
       integer,intent(in) :: nocc, noac, nvir, nvac, ncore, nvfz, istart, numitrans, numirecv
@@ -781,7 +780,6 @@ end
 ! Work: recvint  (Buffer for receiving tijab and (ai|bj))
 !       sendint  (Buffer for sending tijab and (ai|bj))
 !
-      use modmolecule, only : nmo
       implicit none
       integer,intent(in) :: nocc, noac, ncore, nvac, numirecv, numab, icycle, numij
       integer,intent(in) :: nproc, myrank, mpi_comm, idis(0:nproc-1,8)
@@ -928,7 +926,6 @@ end
 !       trint2    (In:Second transformed integrals, Out:tijml)
 !
       use modbasis, only : nao, mbf, locbf, nshell
-      use modmolecule, only : nmo
       implicit none
       integer,intent(in) :: nocc, noac, ncore, numitrans, maxsize, icycle, numij
       integer,intent(in) :: nproc, myrank, mpi_comm, idis(0:nproc-1,8)
@@ -1107,7 +1104,6 @@ end
 !
       use modbasis, only : nao, nshell, mbf
       use modmolecule, only : natom
-      use modthresh, only : cutint2
       implicit none
       integer,intent(in) :: nocc, noac, nvir, ncore, numitrans, istart, maxdim, maxgraddim
       integer,intent(in) :: mlsize2, nproc, myrank, idis(0:nproc-1,8)
@@ -1209,7 +1205,6 @@ end
 !
       use modbasis, only : nao, nshell, mbf
       use modmolecule, only : natom
-      use modthresh, only : cutint2
       implicit none
       integer,intent(in) :: nocc, noac, nvir, ncore, numitrans, istart, maxdim, maxgraddim
       integer,intent(in) :: mlsize2, nproc, myrank, mpi_comm, idis(0:nproc-1,8)

@@ -22,13 +22,13 @@
       use modparallel, only : master, nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       use modwarn, only : nwarn
       use modmemory, only : memusedmax
-      use modjob, only : runtype, method, scftype
+      use modjob, only : runtype, scftype
       use modiofile, only : input, icheck, check, version
       implicit none
       logical :: converged
 !
       call setparallel
-      version='2.0.0.b3'
+      version='2.0.0'
 !
       if(master) then
         write(*,&
@@ -103,7 +103,6 @@ end program main
 !
       use modparallel, only : master, nproc1, nproc2, myrank1, myrank2, &
 &                             mpi_comm1, mpi_comm2
-      use modprint, only : iprint
       implicit none
 !
 ! Initialize variables for parallelization
@@ -338,7 +337,6 @@ end
       use modmolecule, only : numatomic, neleca, nelecb, natom, multi, charge
       use modecp, only : flagecp, izcore
       use modjob, only : scftype
-      use modbasis, only : nao
       use modwarn, only : nwarn
       implicit none
       integer :: nume, ii
@@ -394,7 +392,7 @@ end
       use modiofile, only : check
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
-      use modmolecule, only : nmo, neleca
+      use modmolecule, only : nmo
       use modjob, only : method
       use moddft, only : idftex, idftcor
       use modguess, only : guess

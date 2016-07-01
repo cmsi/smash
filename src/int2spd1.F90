@@ -27,7 +27,7 @@
       use fmtgrid, only : fgrid, threshtval
       implicit none
       integer,intent(in) :: nijkl(2), nbfijkl(4)
-      integer :: ij, kl, igrid, k, l, ii
+      integer :: ij, kl, igrid, l, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, sqrtpi4=0.8862269254527580D+00
       real(8),parameter :: half=0.5D+00, two=2.0D+00, three=3.0D+00
       real(8),parameter :: sqrt3=1.73205080756888D+00, sqrt3h=8.660254037844386D-01
@@ -460,7 +460,7 @@ end
       use fmtgrid, only : fgrid, threshtval
       implicit none
       integer,intent(in) :: nijkl(2), nbfijkl(4)
-      integer :: ij, kl, igrid, i, j, k, l, ii
+      integer :: ij, kl, igrid, i, j, l, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, sqrtpi4=0.8862269254527580D+00
       real(8),parameter :: half=0.5D+00, two=2.0D+00, three=3.0D+00, five=5.0D+00
       real(8),parameter :: sqrt3=1.73205080756888D+00, sqrt3h=8.660254037844386D-01
@@ -1492,7 +1492,7 @@ end
       use fmtgrid, only : fgrid, threshtval
       implicit none
       integer,intent(in) :: nijkl(2), nbfijkl(4)
-      integer :: ij, kl, igrid, i, j, k, l, ii
+      integer :: ij, kl, igrid, i, j, l, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, sqrtpi4=0.8862269254527580D+00
       real(8),parameter :: half=0.5D+00, two=2.0D+00, three=3.0D+00, four=4.0D+00, five=5.0D+00
       real(8),parameter :: six=6.0D+00, seven=7.0D+00, sqrt3=1.73205080756888D+00
@@ -1839,7 +1839,7 @@ end
       use fmtgrid, only : fgrid, threshtval
       implicit none
       integer,intent(in) :: nijkl(2), nbfijkl(4)
-      integer :: ij, kl, igrid, i, j, k, l, ii
+      integer :: ij, kl, igrid, i, j, l, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, sqrtpi4=0.8862269254527580D+00
       real(8),parameter :: half=0.5D+00, two=2.0D+00, three=3.0D+00, four=4.0D+00, five=5.0D+00
       real(8),parameter :: six=6.0D+00, seven=7.0D+00, sqrt3=1.73205080756888D+00
