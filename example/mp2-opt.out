@@ -5,19 +5,19 @@
            written by K. ISHIMURA
  *******************************************
 
- The job started at Sun Jun 12 20:18:48 2016
- Master node is hpcs03.local
- Number of processes =     3
+ The job started at Sun Jul  3 23:12:51 2016
+ Master node is hpcs01.local
+ Number of processes =     1
  Number of threads   =    12
 
  -------------------------------------------------------------------------
    Job infomation
  -------------------------------------------------------------------------
    Runtype = OPTIMIZE    ,  Method  = MP2          ,  Basis    = STO-3G      
-   Memory  =     30000MB ,  SCFtype = RHF          ,  Precision= MEDIUM      
+   Memory  =      8000MB ,  SCFtype = RHF          ,  Precision= MEDIUM      
    Charge  =         0.0 ,  Multi   =            1 ,  Spher    = T
    Bohr    = F           ,  Guess   = HUCKEL      
-   Nopt    =         100 ,  Optconv =    1.0D-04 ,  Cartesian= F
+   Nopt    =         100 ,  Optconv =      1.0D-04 ,  Cartesian= F
  -------------------------------------------------------------------------
 
  ------------------------------------------------
@@ -151,8 +151,8 @@
        unlimit
        setenv OMP_STACKSIZE 1G
 
- Step CPU :       1.2, Total CPU :       1.2 of Master node
- Step Wall :      0.1, Total Wall :      0.1 at Sun Jun 12 20:18:48 2016
+ Step CPU :       1.8, Total CPU :       1.8 of Master node
+ Step Wall :      0.2, Total Wall :      0.2 at Sun Jul  3 23:12:51 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -209,8 +209,8 @@
    Alpha Virtual :      0.83736     0.83932     0.88306     0.89486     0.91191
    Alpha Virtual :      0.96977     0.99711     1.07297     1.11281
  --------------------------------------------------------------------------------
- Step CPU :       5.9, Total CPU :       7.1 of Master node
- Step Wall :      0.5, Total Wall :      0.6 at Sun Jun 12 20:18:49 2016
+ Step CPU :      16.5, Total CPU :      18.3 of Master node
+ Step Wall :      1.4, Total Wall :      1.6 at Sun Jul  3 23:12:53 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -222,18 +222,8 @@
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
  ----------------------------------------------
- == Multiple pass calculation ==
-    Number of passes :    1
-    Start first and second integral transformations of Pass    1
- Step CPU :       5.2, Total CPU :      12.3 of Master node
- Step Wall :      0.4, Total Wall :      1.0 at Sun Jun 12 20:18:49 2016
-
- Step CPU :       6.1, Total CPU :      18.4 of Master node
- Step Wall :      0.5, Total Wall :      1.5 at Sun Jun 12 20:18:50 2016
-
- Step CPU :      19.1, Total CPU :      37.5 of Master node
- Step Wall :      1.6, Total Wall :      3.1 at Sun Jun 12 20:18:51 2016
-
+ == Single pass calculation ==
+    Start Pass    1
       Cycle  1   Z-Vector error=  2.443D-03
       Cycle  2   Z-Vector error=  1.275D-03
       Cycle  3   Z-Vector error=  5.523D-04
@@ -254,15 +244,6 @@
       Cycle 18   Z-Vector error=  6.936D-10
       Cycle 19   Z-Vector error=  1.678D-10
       Cycle 20   Z-Vector error=  6.345D-11
- Step CPU :      10.7, Total CPU :      48.1 of Master node
- Step Wall :      0.9, Total Wall :      4.1 at Sun Jun 12 20:18:52 2016
-
- Step CPU :       0.5, Total CPU :      48.6 of Master node
- Step Wall :      0.0, Total Wall :      4.1 at Sun Jun 12 20:18:52 2016
-
- Step CPU :       2.3, Total CPU :      50.9 of Master node
- Step Wall :      0.2, Total Wall :      4.3 at Sun Jun 12 20:18:52 2016
-
  -------------------------------------------------
    HF Energy                  =  -1531.470157978
    MP2 Correlation Energy     =     -0.944443323
@@ -301,8 +282,8 @@
    H         -0.0014809     0.0003297     0.0075426
    H         -0.0001654     0.0057028    -0.0061777
  ----------------------------------------------------
- Step CPU :       0.0, Total CPU :      50.9 of Master node
- Step Wall :      0.0, Total Wall :      4.3 at Sun Jun 12 20:18:52 2016
+ Step CPU :     121.3, Total CPU :     139.6 of Master node
+ Step Wall :     10.1, Total Wall :     11.7 at Sun Jul  3 23:13:03 2016
 
  Optimization Cycle   1    Maximum gradient =   0.078085    RMS gradient =   0.025109
 
@@ -480,8 +461,8 @@
    H          0.1258445     0.0240402     0.0217514
    H          0.1310211     0.0115207     0.0432268
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :      51.1 of Master node
- Step Wall :      0.0, Total Wall :      4.3 at Sun Jun 12 20:18:52 2016
+ Step CPU :       0.1, Total CPU :     139.7 of Master node
+ Step Wall :      0.0, Total Wall :     11.7 at Sun Jul  3 23:13:03 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -517,8 +498,8 @@
 
  Nuclear repulsion energy =  1429.95409972 a.u.
 
- Step CPU :       0.0, Total CPU :      51.1 of Master node
- Step Wall :      0.0, Total Wall :      4.3 at Sun Jun 12 20:18:52 2016
+ Step CPU :       0.0, Total CPU :     139.7 of Master node
+ Step Wall :      0.0, Total Wall :     11.7 at Sun Jul  3 23:13:03 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -550,8 +531,8 @@
     RHF Energy =   -1531.464091450 a.u.
  -----------------------------------------
 
- Step CPU :       5.6, Total CPU :      56.7 of Master node
- Step Wall :      0.5, Total Wall :      4.8 at Sun Jun 12 20:18:53 2016
+ Step CPU :      15.4, Total CPU :     155.2 of Master node
+ Step Wall :      1.3, Total Wall :     13.0 at Sun Jul  3 23:13:04 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -563,18 +544,8 @@
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
  ----------------------------------------------
- == Multiple pass calculation ==
-    Number of passes :    1
-    Start first and second integral transformations of Pass    1
- Step CPU :       5.0, Total CPU :      61.7 of Master node
- Step Wall :      0.4, Total Wall :      5.2 at Sun Jun 12 20:18:53 2016
-
- Step CPU :       6.1, Total CPU :      67.7 of Master node
- Step Wall :      0.5, Total Wall :      5.7 at Sun Jun 12 20:18:54 2016
-
- Step CPU :      18.0, Total CPU :      85.7 of Master node
- Step Wall :      1.5, Total Wall :      7.2 at Sun Jun 12 20:18:55 2016
-
+ == Single pass calculation ==
+    Start Pass    1
       Cycle  1   Z-Vector error=  2.714D-03
       Cycle  2   Z-Vector error=  1.526D-03
       Cycle  3   Z-Vector error=  6.410D-04
@@ -596,15 +567,6 @@
       Cycle 19   Z-Vector error=  2.800D-10
       Cycle 20   Z-Vector error=  1.196D-10
       Cycle 21   Z-Vector error=  5.554D-11
- Step CPU :      10.5, Total CPU :      96.3 of Master node
- Step Wall :      0.9, Total Wall :      8.1 at Sun Jun 12 20:18:56 2016
-
- Step CPU :       0.5, Total CPU :      96.7 of Master node
- Step Wall :      0.0, Total Wall :      8.2 at Sun Jun 12 20:18:56 2016
-
- Step CPU :       2.2, Total CPU :      98.9 of Master node
- Step Wall :      0.2, Total Wall :      8.3 at Sun Jun 12 20:18:56 2016
-
  -------------------------------------------------
    HF Energy                  =  -1531.464091450
    MP2 Correlation Energy     =     -0.992908425
@@ -643,8 +605,8 @@
    H         -0.0014988     0.0006632    -0.0001216
    H         -0.0010235     0.0009567     0.0009116
  ----------------------------------------------------
- Step CPU :       0.0, Total CPU :      98.9 of Master node
- Step Wall :      0.0, Total Wall :      8.3 at Sun Jun 12 20:18:56 2016
+ Step CPU :     117.2, Total CPU :     272.3 of Master node
+ Step Wall :      9.8, Total Wall :     22.8 at Sun Jul  3 23:13:14 2016
 
  Optimization Cycle   2    Maximum gradient =   0.015832    RMS gradient =   0.006175
 
@@ -822,8 +784,8 @@
    H          0.0316252     0.0350750    -0.0256554
    H          0.0120354    -0.0223913    -0.0351000
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :      99.1 of Master node
- Step Wall :      0.0, Total Wall :      8.3 at Sun Jun 12 20:18:56 2016
+ Step CPU :       0.1, Total CPU :     272.5 of Master node
+ Step Wall :      0.0, Total Wall :     22.8 at Sun Jul  3 23:13:14 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -859,8 +821,8 @@
 
  Nuclear repulsion energy =  1429.20701363 a.u.
 
- Step CPU :       0.0, Total CPU :      99.1 of Master node
- Step Wall :      0.0, Total Wall :      8.4 at Sun Jun 12 20:18:56 2016
+ Step CPU :       0.0, Total CPU :     272.5 of Master node
+ Step Wall :      0.0, Total Wall :     22.8 at Sun Jul  3 23:13:14 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -891,8 +853,8 @@
     RHF Energy =   -1531.461926125 a.u.
  -----------------------------------------
 
- Step CPU :       5.2, Total CPU :     104.3 of Master node
- Step Wall :      0.4, Total Wall :      8.8 at Sun Jun 12 20:18:57 2016
+ Step CPU :      14.3, Total CPU :     286.8 of Master node
+ Step Wall :      1.2, Total Wall :     24.0 at Sun Jul  3 23:13:15 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -904,18 +866,8 @@
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
  ----------------------------------------------
- == Multiple pass calculation ==
-    Number of passes :    1
-    Start first and second integral transformations of Pass    1
- Step CPU :       4.9, Total CPU :     109.2 of Master node
- Step Wall :      0.4, Total Wall :      9.2 at Sun Jun 12 20:18:57 2016
-
- Step CPU :       6.0, Total CPU :     115.2 of Master node
- Step Wall :      0.5, Total Wall :      9.7 at Sun Jun 12 20:18:58 2016
-
- Step CPU :      18.0, Total CPU :     133.3 of Master node
- Step Wall :      1.5, Total Wall :     11.2 at Sun Jun 12 20:18:59 2016
-
+ == Single pass calculation ==
+    Start Pass    1
       Cycle  1   Z-Vector error=  2.729D-03
       Cycle  2   Z-Vector error=  1.536D-03
       Cycle  3   Z-Vector error=  6.429D-04
@@ -937,15 +889,6 @@
       Cycle 19   Z-Vector error=  2.822D-10
       Cycle 20   Z-Vector error=  1.170D-10
       Cycle 21   Z-Vector error=  5.406D-11
- Step CPU :       9.8, Total CPU :     143.1 of Master node
- Step Wall :      0.9, Total Wall :     12.1 at Sun Jun 12 20:19:00 2016
-
- Step CPU :       0.5, Total CPU :     143.6 of Master node
- Step Wall :      0.0, Total Wall :     12.1 at Sun Jun 12 20:19:00 2016
-
- Step CPU :       2.2, Total CPU :     145.8 of Master node
- Step Wall :      0.2, Total Wall :     12.3 at Sun Jun 12 20:19:00 2016
-
  -------------------------------------------------
    HF Energy                  =  -1531.461926125
    MP2 Correlation Energy     =     -0.997364828
@@ -984,8 +927,8 @@
    H         -0.0000358    -0.0003398     0.0003167
    H          0.0000670    -0.0000134     0.0000102
  ----------------------------------------------------
- Step CPU :       0.0, Total CPU :     145.8 of Master node
- Step Wall :      0.0, Total Wall :     12.3 at Sun Jun 12 20:19:00 2016
+ Step CPU :     117.4, Total CPU :     404.1 of Master node
+ Step Wall :      9.8, Total Wall :     33.8 at Sun Jul  3 23:13:25 2016
 
  Optimization Cycle   3    Maximum gradient =   0.006591    RMS gradient =   0.001801
 
@@ -1163,8 +1106,8 @@
    H          0.0378472     0.0526375    -0.0643802
    H          0.0043477    -0.0192699    -0.0711499
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :     145.9 of Master node
- Step Wall :      0.0, Total Wall :     12.3 at Sun Jun 12 20:19:00 2016
+ Step CPU :       0.1, Total CPU :     404.3 of Master node
+ Step Wall :      0.0, Total Wall :     33.8 at Sun Jul  3 23:13:25 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -1200,8 +1143,8 @@
 
  Nuclear repulsion energy =  1428.04402647 a.u.
 
- Step CPU :       0.0, Total CPU :     145.9 of Master node
- Step Wall :      0.0, Total Wall :     12.3 at Sun Jun 12 20:19:00 2016
+ Step CPU :       0.0, Total CPU :     404.3 of Master node
+ Step Wall :      0.0, Total Wall :     33.8 at Sun Jul  3 23:13:25 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -1232,8 +1175,8 @@
     RHF Energy =   -1531.461172583 a.u.
  -----------------------------------------
 
- Step CPU :       5.1, Total CPU :     151.0 of Master node
- Step Wall :      0.4, Total Wall :     12.8 at Sun Jun 12 20:19:01 2016
+ Step CPU :      14.0, Total CPU :     418.3 of Master node
+ Step Wall :      1.2, Total Wall :     35.0 at Sun Jul  3 23:13:26 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -1245,18 +1188,8 @@
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
  ----------------------------------------------
- == Multiple pass calculation ==
-    Number of passes :    1
-    Start first and second integral transformations of Pass    1
- Step CPU :       4.9, Total CPU :     155.9 of Master node
- Step Wall :      0.4, Total Wall :     13.2 at Sun Jun 12 20:19:01 2016
-
- Step CPU :       6.0, Total CPU :     161.9 of Master node
- Step Wall :      0.5, Total Wall :     13.7 at Sun Jun 12 20:19:02 2016
-
- Step CPU :      18.0, Total CPU :     179.9 of Master node
- Step Wall :      1.5, Total Wall :     15.2 at Sun Jun 12 20:19:03 2016
-
+ == Single pass calculation ==
+    Start Pass    1
       Cycle  1   Z-Vector error=  2.723D-03
       Cycle  2   Z-Vector error=  1.530D-03
       Cycle  3   Z-Vector error=  6.399D-04
@@ -1278,15 +1211,6 @@
       Cycle 19   Z-Vector error=  2.716D-10
       Cycle 20   Z-Vector error=  1.155D-10
       Cycle 21   Z-Vector error=  5.358D-11
- Step CPU :      10.3, Total CPU :     190.2 of Master node
- Step Wall :      0.9, Total Wall :     16.1 at Sun Jun 12 20:19:04 2016
-
- Step CPU :       0.5, Total CPU :     190.7 of Master node
- Step Wall :      0.0, Total Wall :     16.1 at Sun Jun 12 20:19:04 2016
-
- Step CPU :       2.2, Total CPU :     192.9 of Master node
- Step Wall :      0.2, Total Wall :     16.3 at Sun Jun 12 20:19:04 2016
-
  -------------------------------------------------
    HF Energy                  =  -1531.461172583
    MP2 Correlation Energy     =     -0.998524537
@@ -1325,8 +1249,8 @@
    H          0.0003171    -0.0003882     0.0000955
    H          0.0001232     0.0000502     0.0000760
  ----------------------------------------------------
- Step CPU :       0.0, Total CPU :     192.9 of Master node
- Step Wall :      0.0, Total Wall :     16.3 at Sun Jun 12 20:19:04 2016
+ Step CPU :     117.0, Total CPU :     535.4 of Master node
+ Step Wall :      9.8, Total Wall :     44.7 at Sun Jul  3 23:13:36 2016
 
  Optimization Cycle   4    Maximum gradient =   0.005039    RMS gradient =   0.001133
 
@@ -1504,8 +1428,8 @@
    H          0.0325205     0.0866155    -0.0682273
    H          0.0056622    -0.0053855    -0.0723752
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :     193.0 of Master node
- Step Wall :      0.0, Total Wall :     16.3 at Sun Jun 12 20:19:04 2016
+ Step CPU :       0.1, Total CPU :     535.5 of Master node
+ Step Wall :      0.0, Total Wall :     44.7 at Sun Jul  3 23:13:36 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -1541,8 +1465,8 @@
 
  Nuclear repulsion energy =  1428.63914289 a.u.
 
- Step CPU :       0.0, Total CPU :     193.1 of Master node
- Step Wall :      0.0, Total Wall :     16.3 at Sun Jun 12 20:19:04 2016
+ Step CPU :       0.0, Total CPU :     535.5 of Master node
+ Step Wall :      0.0, Total Wall :     44.7 at Sun Jul  3 23:13:36 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -1573,8 +1497,8 @@
     RHF Energy =   -1531.461045226 a.u.
  -----------------------------------------
 
- Step CPU :       5.2, Total CPU :     198.2 of Master node
- Step Wall :      0.4, Total Wall :     16.7 at Sun Jun 12 20:19:05 2016
+ Step CPU :      14.3, Total CPU :     549.8 of Master node
+ Step Wall :      1.2, Total Wall :     45.9 at Sun Jul  3 23:13:37 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -1586,18 +1510,8 @@
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
  ----------------------------------------------
- == Multiple pass calculation ==
-    Number of passes :    1
-    Start first and second integral transformations of Pass    1
- Step CPU :       5.0, Total CPU :     203.2 of Master node
- Step Wall :      0.4, Total Wall :     17.2 at Sun Jun 12 20:19:05 2016
-
- Step CPU :       5.9, Total CPU :     209.1 of Master node
- Step Wall :      0.5, Total Wall :     17.7 at Sun Jun 12 20:19:06 2016
-
- Step CPU :      18.0, Total CPU :     227.1 of Master node
- Step Wall :      1.5, Total Wall :     19.2 at Sun Jun 12 20:19:07 2016
-
+ == Single pass calculation ==
+    Start Pass    1
       Cycle  1   Z-Vector error=  2.717D-03
       Cycle  2   Z-Vector error=  1.522D-03
       Cycle  3   Z-Vector error=  6.376D-04
@@ -1619,15 +1533,6 @@
       Cycle 19   Z-Vector error=  2.755D-10
       Cycle 20   Z-Vector error=  1.188D-10
       Cycle 21   Z-Vector error=  5.434D-11
- Step CPU :      10.7, Total CPU :     237.8 of Master node
- Step Wall :      0.9, Total Wall :     20.0 at Sun Jun 12 20:19:08 2016
-
- Step CPU :       0.5, Total CPU :     238.3 of Master node
- Step Wall :      0.0, Total Wall :     20.1 at Sun Jun 12 20:19:08 2016
-
- Step CPU :       2.2, Total CPU :     240.5 of Master node
- Step Wall :      0.2, Total Wall :     20.3 at Sun Jun 12 20:19:08 2016
-
  -------------------------------------------------
    HF Energy                  =  -1531.461045226
    MP2 Correlation Energy     =     -0.998780627
@@ -1666,8 +1571,8 @@
    H          0.0002013    -0.0001381    -0.0001788
    H          0.0000023     0.0001258     0.0001652
  ----------------------------------------------------
- Step CPU :       0.0, Total CPU :     240.5 of Master node
- Step Wall :      0.0, Total Wall :     20.3 at Sun Jun 12 20:19:08 2016
+ Step CPU :     117.2, Total CPU :     667.0 of Master node
+ Step Wall :      9.8, Total Wall :     55.7 at Sun Jul  3 23:13:47 2016
 
  Optimization Cycle   5    Maximum gradient =   0.006693    RMS gradient =   0.001800
 
@@ -1845,8 +1750,8 @@
    H         -0.0134474     0.0270730    -0.0382224
    H         -0.0119540    -0.0085069    -0.0394323
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :     240.6 of Master node
- Step Wall :      0.0, Total Wall :     20.3 at Sun Jun 12 20:19:08 2016
+ Step CPU :       0.1, Total CPU :     667.2 of Master node
+ Step Wall :      0.0, Total Wall :     55.7 at Sun Jul  3 23:13:47 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -1882,8 +1787,8 @@
 
  Nuclear repulsion energy =  1429.16046558 a.u.
 
- Step CPU :       0.0, Total CPU :     240.6 of Master node
- Step Wall :      0.0, Total Wall :     20.3 at Sun Jun 12 20:19:08 2016
+ Step CPU :       0.0, Total CPU :     667.2 of Master node
+ Step Wall :      0.0, Total Wall :     55.7 at Sun Jul  3 23:13:47 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -1914,8 +1819,8 @@
     RHF Energy =   -1531.461733145 a.u.
  -----------------------------------------
 
- Step CPU :       4.9, Total CPU :     245.6 of Master node
- Step Wall :      0.4, Total Wall :     20.7 at Sun Jun 12 20:19:09 2016
+ Step CPU :      13.7, Total CPU :     680.9 of Master node
+ Step Wall :      1.1, Total Wall :     56.9 at Sun Jul  3 23:13:48 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -1927,18 +1832,8 @@
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
  ----------------------------------------------
- == Multiple pass calculation ==
-    Number of passes :    1
-    Start first and second integral transformations of Pass    1
- Step CPU :       5.0, Total CPU :     250.5 of Master node
- Step Wall :      0.4, Total Wall :     21.1 at Sun Jun 12 20:19:09 2016
-
- Step CPU :       6.0, Total CPU :     256.5 of Master node
- Step Wall :      0.5, Total Wall :     21.6 at Sun Jun 12 20:19:10 2016
-
- Step CPU :      18.0, Total CPU :     274.5 of Master node
- Step Wall :      1.5, Total Wall :     23.1 at Sun Jun 12 20:19:11 2016
-
+ == Single pass calculation ==
+    Start Pass    1
       Cycle  1   Z-Vector error=  2.720D-03
       Cycle  2   Z-Vector error=  1.527D-03
       Cycle  3   Z-Vector error=  6.397D-04
@@ -1960,15 +1855,6 @@
       Cycle 19   Z-Vector error=  2.718D-10
       Cycle 20   Z-Vector error=  1.169D-10
       Cycle 21   Z-Vector error=  5.368D-11
- Step CPU :      10.6, Total CPU :     285.0 of Master node
- Step Wall :      0.9, Total Wall :     24.0 at Sun Jun 12 20:19:12 2016
-
- Step CPU :       0.5, Total CPU :     285.5 of Master node
- Step Wall :      0.0, Total Wall :     24.0 at Sun Jun 12 20:19:12 2016
-
- Step CPU :       2.2, Total CPU :     287.7 of Master node
- Step Wall :      0.2, Total Wall :     24.2 at Sun Jun 12 20:19:12 2016
-
  -------------------------------------------------
    HF Energy                  =  -1531.461733145
    MP2 Correlation Energy     =     -0.998516502
@@ -2007,8 +1893,8 @@
    H         -0.0001472     0.0002418    -0.0001359
    H         -0.0002318     0.0001877     0.0001206
  ----------------------------------------------------
- Step CPU :       0.0, Total CPU :     287.7 of Master node
- Step Wall :      0.0, Total Wall :     24.2 at Sun Jun 12 20:19:12 2016
+ Step CPU :     117.2, Total CPU :     798.1 of Master node
+ Step Wall :      9.8, Total Wall :     66.6 at Sun Jul  3 23:13:58 2016
 
  Optimization Cycle   6    Maximum gradient =   0.002426    RMS gradient =   0.000816
 
@@ -2186,8 +2072,8 @@
    H         -0.0084359     0.0528890    -0.0667753
    H         -0.0040310    -0.0219322    -0.0670099
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :     287.8 of Master node
- Step Wall :      0.0, Total Wall :     24.2 at Sun Jun 12 20:19:12 2016
+ Step CPU :       0.1, Total CPU :     798.2 of Master node
+ Step Wall :      0.0, Total Wall :     66.6 at Sun Jul  3 23:13:58 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -2223,8 +2109,8 @@
 
  Nuclear repulsion energy =  1429.96373898 a.u.
 
- Step CPU :       0.0, Total CPU :     287.8 of Master node
- Step Wall :      0.0, Total Wall :     24.2 at Sun Jun 12 20:19:12 2016
+ Step CPU :       0.0, Total CPU :     798.2 of Master node
+ Step Wall :      0.0, Total Wall :     66.7 at Sun Jul  3 23:13:58 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -2253,8 +2139,8 @@
     RHF Energy =   -1531.462215008 a.u.
  -----------------------------------------
 
- Step CPU :       4.5, Total CPU :     292.3 of Master node
- Step Wall :      0.4, Total Wall :     24.6 at Sun Jun 12 20:19:13 2016
+ Step CPU :      12.4, Total CPU :     810.7 of Master node
+ Step Wall :      1.0, Total Wall :     67.7 at Sun Jul  3 23:13:59 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -2266,18 +2152,8 @@
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
  ----------------------------------------------
- == Multiple pass calculation ==
-    Number of passes :    1
-    Start first and second integral transformations of Pass    1
- Step CPU :       5.0, Total CPU :     297.3 of Master node
- Step Wall :      0.4, Total Wall :     25.0 at Sun Jun 12 20:19:13 2016
-
- Step CPU :       6.0, Total CPU :     303.3 of Master node
- Step Wall :      0.5, Total Wall :     25.5 at Sun Jun 12 20:19:14 2016
-
- Step CPU :      18.1, Total CPU :     321.4 of Master node
- Step Wall :      1.5, Total Wall :     27.0 at Sun Jun 12 20:19:15 2016
-
+ == Single pass calculation ==
+    Start Pass    1
       Cycle  1   Z-Vector error=  2.727D-03
       Cycle  2   Z-Vector error=  1.531D-03
       Cycle  3   Z-Vector error=  6.423D-04
@@ -2299,15 +2175,6 @@
       Cycle 19   Z-Vector error=  2.658D-10
       Cycle 20   Z-Vector error=  1.144D-10
       Cycle 21   Z-Vector error=  5.230D-11
- Step CPU :      10.3, Total CPU :     331.7 of Master node
- Step Wall :      0.9, Total Wall :     27.9 at Sun Jun 12 20:19:16 2016
-
- Step CPU :       0.5, Total CPU :     332.1 of Master node
- Step Wall :      0.0, Total Wall :     28.0 at Sun Jun 12 20:19:16 2016
-
- Step CPU :       2.2, Total CPU :     334.3 of Master node
- Step Wall :      0.2, Total Wall :     28.1 at Sun Jun 12 20:19:16 2016
-
  -------------------------------------------------
    HF Energy                  =  -1531.462215008
    MP2 Correlation Energy     =     -0.998247894
@@ -2346,8 +2213,8 @@
    H         -0.0000833     0.0001527     0.0000637
    H         -0.0000367     0.0000092    -0.0001626
  ----------------------------------------------------
- Step CPU :       0.0, Total CPU :     334.3 of Master node
- Step Wall :      0.0, Total Wall :     28.1 at Sun Jun 12 20:19:16 2016
+ Step CPU :     117.6, Total CPU :     928.3 of Master node
+ Step Wall :      9.8, Total Wall :     77.5 at Sun Jul  3 23:14:09 2016
 
  Optimization Cycle   7    Maximum gradient =   0.001503    RMS gradient =   0.000423
 
@@ -2525,8 +2392,8 @@
    H          0.0063861     0.0763185    -0.1030121
    H          0.0038898    -0.0340076    -0.0959357
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :     334.5 of Master node
- Step Wall :      0.0, Total Wall :     28.2 at Sun Jun 12 20:19:16 2016
+ Step CPU :       0.1, Total CPU :     928.4 of Master node
+ Step Wall :      0.0, Total Wall :     77.5 at Sun Jul  3 23:14:09 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -2560,10 +2427,10 @@
    H          4.2693372     1.5653513    -0.3990811
  ----------------------------------------------------
 
- Nuclear repulsion energy =  1430.30153538 a.u.
+ Nuclear repulsion energy =  1430.30153539 a.u.
 
- Step CPU :       0.0, Total CPU :     334.5 of Master node
- Step Wall :      0.0, Total Wall :     28.2 at Sun Jun 12 20:19:16 2016
+ Step CPU :       0.0, Total CPU :     928.5 of Master node
+ Step Wall :      0.0, Total Wall :     77.5 at Sun Jul  3 23:14:09 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -2594,8 +2461,8 @@
     RHF Energy =   -1531.462377075 a.u.
  -----------------------------------------
 
- Step CPU :       5.1, Total CPU :     339.6 of Master node
- Step Wall :      0.4, Total Wall :     28.6 at Sun Jun 12 20:19:17 2016
+ Step CPU :      14.2, Total CPU :     942.7 of Master node
+ Step Wall :      1.2, Total Wall :     78.7 at Sun Jul  3 23:14:10 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -2607,18 +2474,8 @@
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
  ----------------------------------------------
- == Multiple pass calculation ==
-    Number of passes :    1
-    Start first and second integral transformations of Pass    1
- Step CPU :       4.9, Total CPU :     344.6 of Master node
- Step Wall :      0.4, Total Wall :     29.0 at Sun Jun 12 20:19:17 2016
-
- Step CPU :       6.0, Total CPU :     350.6 of Master node
- Step Wall :      0.5, Total Wall :     29.5 at Sun Jun 12 20:19:18 2016
-
- Step CPU :      18.1, Total CPU :     368.7 of Master node
- Step Wall :      1.5, Total Wall :     31.0 at Sun Jun 12 20:19:19 2016
-
+ == Single pass calculation ==
+    Start Pass    1
       Cycle  1   Z-Vector error=  2.731D-03
       Cycle  2   Z-Vector error=  1.533D-03
       Cycle  3   Z-Vector error=  6.439D-04
@@ -2640,15 +2497,6 @@
       Cycle 19   Z-Vector error=  2.561D-10
       Cycle 20   Z-Vector error=  1.074D-10
       Cycle 21   Z-Vector error=  4.827D-11
- Step CPU :      10.6, Total CPU :     379.3 of Master node
- Step Wall :      0.9, Total Wall :     31.9 at Sun Jun 12 20:19:20 2016
-
- Step CPU :       0.5, Total CPU :     379.7 of Master node
- Step Wall :      0.0, Total Wall :     31.9 at Sun Jun 12 20:19:20 2016
-
- Step CPU :       2.2, Total CPU :     381.9 of Master node
- Step Wall :      0.2, Total Wall :     32.1 at Sun Jun 12 20:19:20 2016
-
  -------------------------------------------------
    HF Energy                  =  -1531.462377075
    MP2 Correlation Energy     =     -0.998228898
@@ -2687,8 +2535,8 @@
    H          0.0000140     0.0000368     0.0000147
    H          0.0000181    -0.0001694    -0.0002031
  ----------------------------------------------------
- Step CPU :       0.0, Total CPU :     381.9 of Master node
- Step Wall :      0.0, Total Wall :     32.1 at Sun Jun 12 20:19:20 2016
+ Step CPU :     117.7, Total CPU :    1060.4 of Master node
+ Step Wall :      9.8, Total Wall :     88.5 at Sun Jul  3 23:14:20 2016
 
  Optimization Cycle   8    Maximum gradient =   0.001745    RMS gradient =   0.000419
 
@@ -2846,7 +2694,7 @@
    C          0.0086268    -0.0142226    -0.0398309
    C         -0.0021381     0.0013175     0.0209181
    C         -0.0080980     0.0113005     0.0506149
-   C         -0.0034260     0.0062010     0.0197771
+   C         -0.0034260     0.0062009     0.0197771
    S         -0.0080422     0.0151914     0.0398213
    C          0.0020988     0.0080275    -0.0139469
    N          0.0028678     0.0133034     0.0413375
@@ -2866,8 +2714,8 @@
    H         -0.0089105     0.0497848    -0.0539334
    H          0.0131627    -0.0191789    -0.0453663
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :     382.1 of Master node
- Step Wall :      0.0, Total Wall :     32.1 at Sun Jun 12 20:19:20 2016
+ Step CPU :       0.1, Total CPU :    1060.5 of Master node
+ Step Wall :      0.0, Total Wall :     88.5 at Sun Jul  3 23:14:20 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -2903,8 +2751,8 @@
 
  Nuclear repulsion energy =  1430.50984413 a.u.
 
- Step CPU :       0.0, Total CPU :     382.1 of Master node
- Step Wall :      0.0, Total Wall :     32.1 at Sun Jun 12 20:19:20 2016
+ Step CPU :       0.0, Total CPU :    1060.6 of Master node
+ Step Wall :      0.0, Total Wall :     88.5 at Sun Jul  3 23:14:20 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -2933,8 +2781,8 @@
     RHF Energy =   -1531.462240758 a.u.
  -----------------------------------------
 
- Step CPU :       4.5, Total CPU :     386.6 of Master node
- Step Wall :      0.4, Total Wall :     32.5 at Sun Jun 12 20:19:21 2016
+ Step CPU :      12.4, Total CPU :    1073.0 of Master node
+ Step Wall :      1.0, Total Wall :     89.6 at Sun Jul  3 23:14:21 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -2946,18 +2794,8 @@
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
  ----------------------------------------------
- == Multiple pass calculation ==
-    Number of passes :    1
-    Start first and second integral transformations of Pass    1
- Step CPU :       5.0, Total CPU :     391.6 of Master node
- Step Wall :      0.4, Total Wall :     32.9 at Sun Jun 12 20:19:21 2016
-
- Step CPU :       6.0, Total CPU :     397.5 of Master node
- Step Wall :      0.5, Total Wall :     33.4 at Sun Jun 12 20:19:22 2016
-
- Step CPU :      18.1, Total CPU :     415.7 of Master node
- Step Wall :      1.5, Total Wall :     34.9 at Sun Jun 12 20:19:23 2016
-
+ == Single pass calculation ==
+    Start Pass    1
       Cycle  1   Z-Vector error=  2.736D-03
       Cycle  2   Z-Vector error=  1.534D-03
       Cycle  3   Z-Vector error=  6.451D-04
@@ -2979,15 +2817,6 @@
       Cycle 19   Z-Vector error=  2.520D-10
       Cycle 20   Z-Vector error=  1.031D-10
       Cycle 21   Z-Vector error=  4.538D-11
- Step CPU :      10.7, Total CPU :     426.3 of Master node
- Step Wall :      0.9, Total Wall :     35.8 at Sun Jun 12 20:19:24 2016
-
- Step CPU :       0.5, Total CPU :     426.8 of Master node
- Step Wall :      0.0, Total Wall :     35.9 at Sun Jun 12 20:19:24 2016
-
- Step CPU :       2.2, Total CPU :     429.0 of Master node
- Step Wall :      0.2, Total Wall :     36.1 at Sun Jun 12 20:19:24 2016
-
  -------------------------------------------------
    HF Energy                  =  -1531.462240758
    MP2 Correlation Energy     =     -0.998439162
@@ -3026,8 +2855,8 @@
    H          0.0000166     0.0000405    -0.0001327
    H          0.0000258    -0.0001232    -0.0000002
  ----------------------------------------------------
- Step CPU :       0.0, Total CPU :     429.0 of Master node
- Step Wall :      0.0, Total Wall :     36.1 at Sun Jun 12 20:19:24 2016
+ Step CPU :     117.8, Total CPU :    1190.8 of Master node
+ Step Wall :      9.8, Total Wall :     99.4 at Sun Jul  3 23:14:30 2016
 
  Optimization Cycle   9    Maximum gradient =   0.000799    RMS gradient =   0.000269
 
@@ -3205,8 +3034,8 @@
    H         -0.0129903     0.0333585    -0.0342302
    H          0.0216813    -0.0166939    -0.0264087
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :     429.1 of Master node
- Step Wall :      0.0, Total Wall :     36.1 at Sun Jun 12 20:19:24 2016
+ Step CPU :       0.1, Total CPU :    1190.9 of Master node
+ Step Wall :      0.0, Total Wall :     99.4 at Sun Jul  3 23:14:31 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -3242,8 +3071,8 @@
 
  Nuclear repulsion energy =  1430.92686690 a.u.
 
- Step CPU :       0.0, Total CPU :     429.2 of Master node
- Step Wall :      0.0, Total Wall :     36.1 at Sun Jun 12 20:19:24 2016
+ Step CPU :       0.0, Total CPU :    1190.9 of Master node
+ Step Wall :      0.0, Total Wall :     99.4 at Sun Jul  3 23:14:31 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -3272,8 +3101,8 @@
     RHF Energy =   -1531.462140902 a.u.
  -----------------------------------------
 
- Step CPU :       4.4, Total CPU :     433.6 of Master node
- Step Wall :      0.4, Total Wall :     36.4 at Sun Jun 12 20:19:25 2016
+ Step CPU :      12.3, Total CPU :    1203.2 of Master node
+ Step Wall :      1.0, Total Wall :    100.4 at Sun Jul  3 23:14:32 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -3285,18 +3114,8 @@
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
  ----------------------------------------------
- == Multiple pass calculation ==
-    Number of passes :    1
-    Start first and second integral transformations of Pass    1
- Step CPU :       5.0, Total CPU :     438.6 of Master node
- Step Wall :      0.4, Total Wall :     36.9 at Sun Jun 12 20:19:25 2016
-
- Step CPU :       6.0, Total CPU :     444.6 of Master node
- Step Wall :      0.5, Total Wall :     37.4 at Sun Jun 12 20:19:25 2016
-
- Step CPU :      18.1, Total CPU :     462.7 of Master node
- Step Wall :      1.5, Total Wall :     38.9 at Sun Jun 12 20:19:27 2016
-
+ == Single pass calculation ==
+    Start Pass    1
       Cycle  1   Z-Vector error=  2.740D-03
       Cycle  2   Z-Vector error=  1.535D-03
       Cycle  3   Z-Vector error=  6.457D-04
@@ -3317,15 +3136,6 @@
       Cycle 18   Z-Vector error=  1.264D-09
       Cycle 19   Z-Vector error=  2.470D-10
       Cycle 20   Z-Vector error=  9.771D-11
- Step CPU :      10.0, Total CPU :     472.7 of Master node
- Step Wall :      0.9, Total Wall :     39.7 at Sun Jun 12 20:19:28 2016
-
- Step CPU :       0.5, Total CPU :     473.1 of Master node
- Step Wall :      0.0, Total Wall :     39.8 at Sun Jun 12 20:19:28 2016
-
- Step CPU :       2.2, Total CPU :     475.3 of Master node
- Step Wall :      0.2, Total Wall :     40.0 at Sun Jun 12 20:19:28 2016
-
  -------------------------------------------------
    HF Energy                  =  -1531.462140902
    MP2 Correlation Energy     =     -0.998590711
@@ -3364,8 +3174,8 @@
    H          0.0000844    -0.0000110    -0.0000945
    H          0.0001209    -0.0000316     0.0000702
  ----------------------------------------------------
- Step CPU :       0.0, Total CPU :     475.3 of Master node
- Step Wall :      0.0, Total Wall :     40.0 at Sun Jun 12 20:19:28 2016
+ Step CPU :     116.4, Total CPU :    1319.7 of Master node
+ Step Wall :      9.7, Total Wall :    110.1 at Sun Jul  3 23:14:41 2016
 
  Optimization Cycle  10    Maximum gradient =   0.000965    RMS gradient =   0.000241
 
@@ -3526,7 +3336,7 @@
    C         -0.0022132     0.0050341     0.0164806
    S         -0.0062761     0.0120311     0.0379958
    C          0.0023312     0.0082744    -0.0086899
-   N         -0.0009005     0.0137693     0.0339635
+   N         -0.0009005     0.0137694     0.0339635
    C          0.0013069     0.0123956     0.0099917
    C          0.0042954     0.0068432    -0.0251999
    S          0.0066788     0.0026018    -0.0709870
@@ -3543,8 +3353,8 @@
    H         -0.0101376     0.0269303    -0.0273154
    H          0.0186602    -0.0144869    -0.0200888
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :     475.4 of Master node
- Step Wall :      0.0, Total Wall :     40.0 at Sun Jun 12 20:19:28 2016
+ Step CPU :       0.1, Total CPU :    1319.8 of Master node
+ Step Wall :      0.0, Total Wall :    110.1 at Sun Jul  3 23:14:41 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -3580,8 +3390,8 @@
 
  Nuclear repulsion energy =  1431.27847638 a.u.
 
- Step CPU :       0.0, Total CPU :     475.5 of Master node
- Step Wall :      0.0, Total Wall :     40.0 at Sun Jun 12 20:19:28 2016
+ Step CPU :       0.0, Total CPU :    1319.8 of Master node
+ Step Wall :      0.0, Total Wall :    110.1 at Sun Jul  3 23:14:41 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -3596,7 +3406,7 @@
  Iter SubIt   Total Energy      Delta Energy      Delta Density     DIIS Error
    1    1   -1531.453794022   -1531.453794022      0.031952569      0.026090026
    2    2   -1531.461368885      -0.007574863      0.009780950      0.005214968
-   3    3   -1531.462051859      -0.000682975      0.005734763      0.001792758
+   3    3   -1531.462051859      -0.000682975      0.005734763      0.001792759
    4    4   -1531.462161615      -0.000109756      0.001646120      0.000441343
    5    5   -1531.462167782      -0.000006167      0.001428311      0.000276764
    6    6   -1531.462170344      -0.000002562      0.000494458      0.000072128
@@ -3611,8 +3421,8 @@
     RHF Energy =   -1531.462170754 a.u.
  -----------------------------------------
 
- Step CPU :       4.7, Total CPU :     480.2 of Master node
- Step Wall :      0.4, Total Wall :     40.4 at Sun Jun 12 20:19:28 2016
+ Step CPU :      13.0, Total CPU :    1332.8 of Master node
+ Step Wall :      1.1, Total Wall :    111.2 at Sun Jul  3 23:14:42 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -3624,18 +3434,8 @@
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
  ----------------------------------------------
- == Multiple pass calculation ==
-    Number of passes :    1
-    Start first and second integral transformations of Pass    1
- Step CPU :       5.0, Total CPU :     485.1 of Master node
- Step Wall :      0.4, Total Wall :     40.8 at Sun Jun 12 20:19:29 2016
-
- Step CPU :       6.0, Total CPU :     491.2 of Master node
- Step Wall :      0.5, Total Wall :     41.3 at Sun Jun 12 20:19:29 2016
-
- Step CPU :      18.1, Total CPU :     509.3 of Master node
- Step Wall :      1.5, Total Wall :     42.8 at Sun Jun 12 20:19:31 2016
-
+ == Single pass calculation ==
+    Start Pass    1
       Cycle  1   Z-Vector error=  2.740D-03
       Cycle  2   Z-Vector error=  1.535D-03
       Cycle  3   Z-Vector error=  6.457D-04
@@ -3656,15 +3456,6 @@
       Cycle 18   Z-Vector error=  1.257D-09
       Cycle 19   Z-Vector error=  2.422D-10
       Cycle 20   Z-Vector error=  9.350D-11
- Step CPU :      10.1, Total CPU :     519.4 of Master node
- Step Wall :      0.8, Total Wall :     43.6 at Sun Jun 12 20:19:32 2016
-
- Step CPU :       0.5, Total CPU :     519.9 of Master node
- Step Wall :      0.0, Total Wall :     43.7 at Sun Jun 12 20:19:32 2016
-
- Step CPU :       2.2, Total CPU :     522.1 of Master node
- Step Wall :      0.2, Total Wall :     43.9 at Sun Jun 12 20:19:32 2016
-
  -------------------------------------------------
    HF Energy                  =  -1531.462170754
    MP2 Correlation Energy     =     -0.998590094
@@ -3703,8 +3494,8 @@
    H          0.0001004    -0.0000532     0.0000117
    H          0.0001117    -0.0000610     0.0000182
  ----------------------------------------------------
- Step CPU :       0.0, Total CPU :     522.1 of Master node
- Step Wall :      0.0, Total Wall :     43.9 at Sun Jun 12 20:19:32 2016
+ Step CPU :     116.5, Total CPU :    1449.3 of Master node
+ Step Wall :      9.7, Total Wall :    120.9 at Sun Jul  3 23:14:52 2016
 
  Optimization Cycle  11    Maximum gradient =   0.000693    RMS gradient =   0.000182
 
@@ -3882,8 +3673,8 @@
    H         -0.0061223     0.0175878    -0.0216614
    H          0.0076764    -0.0091937    -0.0162661
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :     522.2 of Master node
- Step Wall :      0.0, Total Wall :     43.9 at Sun Jun 12 20:19:32 2016
+ Step CPU :       0.1, Total CPU :    1449.4 of Master node
+ Step Wall :      0.0, Total Wall :    121.0 at Sun Jul  3 23:14:52 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -3917,10 +3708,10 @@
    H          4.3305178     1.5057979    -0.5072110
  ----------------------------------------------------
 
- Nuclear repulsion energy =  1431.54375507 a.u.
+ Nuclear repulsion energy =  1431.54375508 a.u.
 
- Step CPU :       0.0, Total CPU :     522.2 of Master node
- Step Wall :      0.0, Total Wall :     43.9 at Sun Jun 12 20:19:32 2016
+ Step CPU :       0.0, Total CPU :    1449.4 of Master node
+ Step Wall :      0.0, Total Wall :    121.0 at Sun Jul  3 23:14:52 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -3949,8 +3740,8 @@
     RHF Energy =   -1531.462271775 a.u.
  -----------------------------------------
 
- Step CPU :       4.3, Total CPU :     526.5 of Master node
- Step Wall :      0.4, Total Wall :     44.2 at Sun Jun 12 20:19:32 2016
+ Step CPU :      12.0, Total CPU :    1461.4 of Master node
+ Step Wall :      1.0, Total Wall :    122.0 at Sun Jul  3 23:14:53 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -3962,18 +3753,8 @@
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
  ----------------------------------------------
- == Multiple pass calculation ==
-    Number of passes :    1
-    Start first and second integral transformations of Pass    1
- Step CPU :       5.0, Total CPU :     531.5 of Master node
- Step Wall :      0.4, Total Wall :     44.7 at Sun Jun 12 20:19:33 2016
-
- Step CPU :       6.0, Total CPU :     537.5 of Master node
- Step Wall :      0.5, Total Wall :     45.2 at Sun Jun 12 20:19:33 2016
-
- Step CPU :      18.2, Total CPU :     555.7 of Master node
- Step Wall :      1.5, Total Wall :     46.7 at Sun Jun 12 20:19:35 2016
-
+ == Single pass calculation ==
+    Start Pass    1
       Cycle  1   Z-Vector error=  2.739D-03
       Cycle  2   Z-Vector error=  1.534D-03
       Cycle  3   Z-Vector error=  6.454D-04
@@ -3994,15 +3775,6 @@
       Cycle 18   Z-Vector error=  1.252D-09
       Cycle 19   Z-Vector error=  2.393D-10
       Cycle 20   Z-Vector error=  9.163D-11
- Step CPU :      10.1, Total CPU :     565.8 of Master node
- Step Wall :      0.9, Total Wall :     47.5 at Sun Jun 12 20:19:36 2016
-
- Step CPU :       0.5, Total CPU :     566.3 of Master node
- Step Wall :      0.0, Total Wall :     47.6 at Sun Jun 12 20:19:36 2016
-
- Step CPU :       2.2, Total CPU :     568.5 of Master node
- Step Wall :      0.2, Total Wall :     47.7 at Sun Jun 12 20:19:36 2016
-
  -------------------------------------------------
    HF Energy                  =  -1531.462271775
    MP2 Correlation Energy     =     -0.998496830
@@ -4041,8 +3813,8 @@
    H         -0.0000229    -0.0000099    -0.0000127
    H         -0.0000220     0.0000038     0.0000183
  ----------------------------------------------------
- Step CPU :       0.0, Total CPU :     568.5 of Master node
- Step Wall :      0.0, Total Wall :     47.7 at Sun Jun 12 20:19:36 2016
+ Step CPU :     116.8, Total CPU :    1578.2 of Master node
+ Step Wall :      9.7, Total Wall :    131.7 at Sun Jul  3 23:15:03 2016
 
  Optimization Cycle  12    Maximum gradient =   0.000235    RMS gradient =   0.000086
 
@@ -4220,8 +3992,8 @@
    H         -0.0000320     0.0050166    -0.0102515
    H          0.0002413    -0.0043093    -0.0084200
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :     568.6 of Master node
- Step Wall :      0.0, Total Wall :     47.8 at Sun Jun 12 20:19:36 2016
+ Step CPU :       0.1, Total CPU :    1578.3 of Master node
+ Step Wall :      0.0, Total Wall :    131.7 at Sun Jul  3 23:15:03 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -4255,10 +4027,10 @@
    H          4.3307592     1.5014886    -0.5156310
  ----------------------------------------------------
 
- Nuclear repulsion energy =  1431.62310877 a.u.
+ Nuclear repulsion energy =  1431.62310876 a.u.
 
- Step CPU :       0.0, Total CPU :     568.7 of Master node
- Step Wall :      0.0, Total Wall :     47.8 at Sun Jun 12 20:19:36 2016
+ Step CPU :       0.0, Total CPU :    1578.3 of Master node
+ Step Wall :      0.0, Total Wall :    131.7 at Sun Jul  3 23:15:03 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -4286,8 +4058,8 @@
     RHF Energy =   -1531.462303331 a.u.
  -----------------------------------------
 
- Step CPU :       3.8, Total CPU :     572.5 of Master node
- Step Wall :      0.3, Total Wall :     48.1 at Sun Jun 12 20:19:36 2016
+ Step CPU :      10.6, Total CPU :    1588.9 of Master node
+ Step Wall :      0.9, Total Wall :    132.6 at Sun Jul  3 23:15:04 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -4299,18 +4071,8 @@
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
  ----------------------------------------------
- == Multiple pass calculation ==
-    Number of passes :    1
-    Start first and second integral transformations of Pass    1
- Step CPU :       5.0, Total CPU :     577.5 of Master node
- Step Wall :      0.4, Total Wall :     48.5 at Sun Jun 12 20:19:37 2016
-
- Step CPU :       6.0, Total CPU :     583.5 of Master node
- Step Wall :      0.5, Total Wall :     49.0 at Sun Jun 12 20:19:37 2016
-
- Step CPU :      18.2, Total CPU :     601.6 of Master node
- Step Wall :      1.5, Total Wall :     50.5 at Sun Jun 12 20:19:39 2016
-
+ == Single pass calculation ==
+    Start Pass    1
       Cycle  1   Z-Vector error=  2.739D-03
       Cycle  2   Z-Vector error=  1.534D-03
       Cycle  3   Z-Vector error=  6.454D-04
@@ -4331,15 +4093,6 @@
       Cycle 18   Z-Vector error=  1.249D-09
       Cycle 19   Z-Vector error=  2.385D-10
       Cycle 20   Z-Vector error=  9.107D-11
- Step CPU :      10.2, Total CPU :     611.8 of Master node
- Step Wall :      0.9, Total Wall :     51.4 at Sun Jun 12 20:19:39 2016
-
- Step CPU :       0.5, Total CPU :     612.3 of Master node
- Step Wall :      0.0, Total Wall :     51.4 at Sun Jun 12 20:19:39 2016
-
- Step CPU :       2.2, Total CPU :     614.5 of Master node
- Step Wall :      0.2, Total Wall :     51.6 at Sun Jun 12 20:19:40 2016
-
  -------------------------------------------------
    HF Energy                  =  -1531.462303331
    MP2 Correlation Energy     =     -0.998466584
@@ -4378,8 +4131,8 @@
    H         -0.0000270     0.0000045     0.0000149
    H         -0.0000044     0.0000074     0.0000054
  ----------------------------------------------------
- Step CPU :       0.0, Total CPU :     614.5 of Master node
- Step Wall :      0.0, Total Wall :     51.6 at Sun Jun 12 20:19:40 2016
+ Step CPU :     116.6, Total CPU :    1705.6 of Master node
+ Step Wall :      9.7, Total Wall :    142.3 at Sun Jul  3 23:15:13 2016
 
  Optimization Cycle  13    Maximum gradient =   0.000105    RMS gradient =   0.000035
 
@@ -4557,8 +4310,8 @@
    H          0.0023968     0.0014793    -0.0062819
    H         -0.0020346    -0.0021425    -0.0056840
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :     614.6 of Master node
- Step Wall :      0.0, Total Wall :     51.6 at Sun Jun 12 20:19:40 2016
+ Step CPU :       0.1, Total CPU :    1705.7 of Master node
+ Step Wall :      0.0, Total Wall :    142.3 at Sun Jul  3 23:15:13 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -4594,8 +4347,8 @@
 
  Nuclear repulsion energy =  1431.53950463 a.u.
 
- Step CPU :       0.0, Total CPU :     614.7 of Master node
- Step Wall :      0.0, Total Wall :     51.6 at Sun Jun 12 20:19:40 2016
+ Step CPU :       0.0, Total CPU :    1705.7 of Master node
+ Step Wall :      0.0, Total Wall :    142.3 at Sun Jul  3 23:15:13 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -4622,8 +4375,8 @@
     RHF Energy =   -1531.462303534 a.u.
  -----------------------------------------
 
- Step CPU :       3.4, Total CPU :     618.1 of Master node
- Step Wall :      0.3, Total Wall :     51.9 at Sun Jun 12 20:19:40 2016
+ Step CPU :       9.4, Total CPU :    1715.1 of Master node
+ Step Wall :      0.8, Total Wall :    143.1 at Sun Jul  3 23:15:14 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -4635,18 +4388,8 @@
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
  ----------------------------------------------
- == Multiple pass calculation ==
-    Number of passes :    1
-    Start first and second integral transformations of Pass    1
- Step CPU :       5.0, Total CPU :     623.1 of Master node
- Step Wall :      0.4, Total Wall :     52.3 at Sun Jun 12 20:19:40 2016
-
- Step CPU :       6.0, Total CPU :     629.1 of Master node
- Step Wall :      0.5, Total Wall :     52.8 at Sun Jun 12 20:19:41 2016
-
- Step CPU :      18.2, Total CPU :     647.2 of Master node
- Step Wall :      1.5, Total Wall :     54.3 at Sun Jun 12 20:19:42 2016
-
+ == Single pass calculation ==
+    Start Pass    1
       Cycle  1   Z-Vector error=  2.739D-03
       Cycle  2   Z-Vector error=  1.534D-03
       Cycle  3   Z-Vector error=  6.454D-04
@@ -4667,15 +4410,6 @@
       Cycle 18   Z-Vector error=  1.248D-09
       Cycle 19   Z-Vector error=  2.385D-10
       Cycle 20   Z-Vector error=  9.109D-11
- Step CPU :      10.2, Total CPU :     657.4 of Master node
- Step Wall :      0.9, Total Wall :     55.2 at Sun Jun 12 20:19:43 2016
-
- Step CPU :       0.5, Total CPU :     657.9 of Master node
- Step Wall :      0.0, Total Wall :     55.2 at Sun Jun 12 20:19:43 2016
-
- Step CPU :       2.2, Total CPU :     660.1 of Master node
- Step Wall :      0.2, Total Wall :     55.4 at Sun Jun 12 20:19:43 2016
-
  -------------------------------------------------
    HF Energy                  =  -1531.462303534
    MP2 Correlation Energy     =     -0.998467178
@@ -4714,8 +4448,8 @@
    H         -0.0000075     0.0000043     0.0000239
    H          0.0000113     0.0000029     0.0000022
  ----------------------------------------------------
- Step CPU :       0.0, Total CPU :     660.1 of Master node
- Step Wall :      0.0, Total Wall :     55.4 at Sun Jun 12 20:19:43 2016
+ Step CPU :     116.6, Total CPU :    1831.7 of Master node
+ Step Wall :      9.7, Total Wall :    152.8 at Sun Jul  3 23:15:24 2016
 
  Optimization Cycle  14    Maximum gradient =   0.000079    RMS gradient =   0.000028
 
@@ -5699,12 +5433,12 @@
    H          4.3287246     1.4993460    -0.5213150
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :     660.2 of Master node
- Step Wall :      0.0, Total Wall :     55.4 at Sun Jun 12 20:19:43 2016
+ Step CPU :       0.1, Total CPU :    1831.8 of Master node
+ Step Wall :      0.0, Total Wall :    152.9 at Sun Jul  3 23:15:24 2016
 
- Total CPU time :      660.4 seconds
- Total Wall time:       55.4 seconds
-                 ( 0 days  0 hours  0 minutes 55.4 seconds)
- The job finished at Sun Jun 12 20:19:44 2016
- Used memory :    251 MB
+ Total CPU time :     1831.8 seconds
+ Total Wall time:      152.9 seconds
+                 ( 0 days  0 hours  2 minutes 32.9 seconds)
+ The job finished at Sun Jul  3 23:15:24 2016
+ Used memory :    746 MB
  Your calculation finished with  0 warning(s).

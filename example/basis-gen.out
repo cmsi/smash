@@ -5,9 +5,9 @@
            written by K. ISHIMURA
  *******************************************
 
- The job started at Sun Jun 12 18:10:51 2016
- Master node is hpcs03.local
- Number of processes =     3
+ The job started at Sun Jul  3 23:07:58 2016
+ Master node is hpcs01.local
+ Number of processes =     1
  Number of threads   =    12
 
  -------------------------------------------------------------------------
@@ -194,8 +194,8 @@
        unlimit
        setenv OMP_STACKSIZE 1G
 
- Step CPU :       1.5, Total CPU :       1.5 of Master node
- Step Wall :      0.1, Total Wall :      0.1 at Sun Jun 12 18:10:51 2016
+ Step CPU :       0.7, Total CPU :       0.7 of Master node
+ Step Wall :      0.1, Total Wall :      0.1 at Sun Jul  3 23:07:58 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -219,8 +219,8 @@
     RHF Energy =   -1549.727845033 a.u.
  -----------------------------------------
 
- Step CPU :      33.7, Total CPU :      35.2 of Master node
- Step Wall :      2.8, Total Wall :      3.0 at Sun Jun 12 18:10:54 2016
+ Step CPU :      93.5, Total CPU :      94.2 of Master node
+ Step Wall :      7.8, Total Wall :      7.9 at Sun Jul  3 23:08:05 2016
 
  --------------------------------------------------------------------------
    Restricted DFT calculation
@@ -317,8 +317,8 @@
    Alpha Virtual :      7.65722     7.76867    17.18881    17.22736    17.35134
    Alpha Virtual :     17.38017    17.42431    17.43626   188.78469   188.90607
  --------------------------------------------------------------------------------
- Step CPU :     111.6, Total CPU :     146.8 of Master node
- Step Wall :      9.3, Total Wall :     12.3 at Sun Jun 12 18:11:03 2016
+ Step CPU :     322.5, Total CPU :     416.7 of Master node
+ Step Wall :     26.9, Total Wall :     34.8 at Sun Jul  3 23:08:32 2016
 
   -------------------
     MO coefficients
@@ -2725,12 +2725,12 @@
       -0.6405     1.5561    -0.0541     1.6836
   ----------------------------------------------
 
- Step CPU :       0.3, Total CPU :     147.2 of Master node
- Step Wall :      0.0, Total Wall :     12.3 at Sun Jun 12 18:11:03 2016
+ Step CPU :       0.1, Total CPU :     416.9 of Master node
+ Step Wall :      0.0, Total Wall :     34.8 at Sun Jul  3 23:08:32 2016
 
- Total CPU time :      147.3 seconds
- Total Wall time:       12.3 seconds
-                 ( 0 days  0 hours  0 minutes 12.3 seconds)
- The job finished at Sun Jun 12 18:11:03 2016
- Used memory :     20 MB
+ Total CPU time :      417.0 seconds
+ Total Wall time:       34.8 seconds
+                 ( 0 days  0 hours  0 minutes 34.8 seconds)
+ The job finished at Sun Jul  3 23:08:32 2016
+ Used memory :     34 MB
  Your calculation finished with  0 warning(s).
