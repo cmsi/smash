@@ -3,11 +3,11 @@
           version 2.0.0
   ===========================
 
-  *****************
-  Important setting
-  *****************
-  In general, the default stack size limitation on the system resources
-  and the default of the OMP_STACKSIZE environmental variable are small.
+  ******************
+  Important settings
+  ******************
+  In general, the default stack size of system resources and the default
+  size of the OMP_STACKSIZE environmental variable are small.
   Set new stack sizes according to your shell.
 
   * bash:
@@ -46,7 +46,7 @@
       $ bin/smash < input > output
   
   * Inter-node (MPI) parallel computing
-    Use mpirun or mpiexec command to start a calculation, and specify
+    Use "mpirun" or "mpiexec" command to start a calculation, and specify
     the number of MPI processes by -np option.
 
       $ mpirun -np (# of processes) bin/smash < input > output
@@ -83,7 +83,7 @@
       geom    : Molecular data (atom type, geometry)
       basis   : Basis function
       ecp     : Effective Core Potential
-      charge  : nuclear atomic charge
+      charge  : Nuclear atomic charge
 
     2.2 job keywords
       runtype              specifies the type of computation.
@@ -93,7 +93,7 @@
 
       method               specifies the method of computation.
               = HF         Hartree-Fock (default)
-              = B3LYP      B3LYP DFT with VWN1
+              = B3LYP      B3LYP DFT with VWN3
               = B3LYP5     B3LYP DFT with VWN5
               = MP2        Second-order Moller-Plesset perturbation theory
 
@@ -110,9 +110,10 @@
               = lanl2dz
 
       memory               specifies the memory size per process. (default: 8GB)
-                           Supported unit: B, KB, MB, GB, TB
+                           Supported units: B, KB, MB, GB, TB
                             
       charge               specifies the total charge of the system. (default: 0.0)
+                           The value does not include point charges set in Charge section.
 
       multi                specifies the spin multiplicity of the system.
               = 1          Singlet (default)
@@ -120,8 +121,8 @@
               = 3,4,...    Triplet, Quartet, ...
 
       scftype              specifies the type of the SCF wavefunction.
-              = RHF        Restricted Hartree-Fock (default)
-              = UHF        Unrestricted Hartree-Fock
+              = RHF        Restricted (closed-shell) Hartree-Fock (default)
+              = UHF        Unrestricted (open-shell) Hartree-Fock
 
       ecp                  specifies ECP functions.
               = none       ECP functions are not used. (default)
@@ -131,6 +132,7 @@
 
     2.2 control keywords
       precision            controls computational precision.
+                           The following variables are overridden when these are specified.
               = high       cutint2=1.0D-12, dconv=5.0D-6, threshrho=1.0D-6, threshdfock=1.0D-5,
                            threshdftao=1.0D-4, nrad=150, nleb=590
               = medium     cutint2=1.0D-11, dconv=5.0D-6, threshrho=1.0D-5, threshdfock=1.0D-4,
@@ -160,10 +162,10 @@
               = 2          normal printing (default)
               = 3          detailed information
 
-      threshover           specifies linear dependence threshold of basis function.
+      threshover           specifies the linear dependence threshold of basis functions.
                            (default : 1.0D-6)
 
-      threshatom           specifies atom distance threshold.
+      threshatom           specifies the atom distance threshold.
                            (default : 2.0D-1)
 
     2.3 scf keywords
@@ -215,19 +217,19 @@
                            146, 170, 194, 302, 350, 434, 590, 770, 974,
                            1202, and 1454. (default: 302)
 
-      threshweight         specifies the threshold of weight of a grid point.
+      threshweight         specifies the threshold of the weight of a grid point.
                            (default: 1.0D-8)
 
-      threshrho            specifies the threshold of density of a grid point.
+      threshrho            specifies the threshold of the density of a grid point.
                            (default: 1.0D-5)
 
-      threshdfock          specifies the threshold of Fock matrix element of a grid point.
+      threshdfock          specifies the threshold of the Fock matrix element of a grid point.
                            (default: 1.0D-4)
 
-      threshdftao          specifies the threshold of atomic orbital value of a grid point.
+      threshdftao          specifies the threshold of the atomic orbital value of a grid point.
                            (default: 1.0D-3)
 
-      bqrad(9)             specifies the radius of dummy atoms. (default: 1.06D+0)
+      bqrad(9)             specifies the radii of ghost atoms. (default: 1.06D+0)
 
     2.6 mp2 keywords
       ncore                specifies the number of frozen core orbitals.
@@ -247,26 +249,29 @@
 
     2.7 geom
       Write "geom" to specify the starting point for the molecular geometry.
-      After the line of "geom", write atomic names and their nuclear Cartesian
+      After the line of "geom", write element symbols and their nuclear Cartesian
       coordinates. A blank line or the end of the file means the end of the
       molecular geometry section.
       To read the molecular geometry of a checkpoint file, write "geom=check"
       instead of "geom".
+      To use a dummy atom for a point charge, write "X" as an element symbol.
+      "Bq1"(=Bq) to "Bq9" are available as ghost atoms on which basis functions
+      and ECPs can be added for BSSE calculations.
 
       ex)  geom
            O   0.0  0.0  0.0
            H   1.0  0.0  0.0
            H   0.0  1.0  0.0
-
+           X   0.0  0.0  3.0
 
     2.8 basis
       To use the basis section, basis=gen in the job section is necessary.
       Write "basis" to specify the starting point for the basis functions.
-      After the line of "basis", write atomic names. From the next line,
+      After the line of "basis", write element symbols. From the next line,
       write their basis set or basis functions. At the end of the basis set
       or functions, write "****".
-      For basis functions, the format is as follows.
-        (atomic name)
+      The format of basis functions is as follows.
+        (element symbols)
         (angular momentum=S,P,D,F,G,SP)  (number of primitive functions) 
           (Gaussian exponent) (contraction coefficient) (P contraction coefficient if SP)
           (Gaussian exponent) (contraction coefficient) (P contraction coefficient if SP)
@@ -312,10 +317,10 @@
     2.9 ecp
       To use the ecp section, ecp=gen in the job section is necessary.
       Write "ecp" to specify the starting point for the ECP functions.
-      After the line of "basis", write atomic names. From the next line,
+      After the line of "basis", write element symbols. From the next line,
       write their ECP function name or functions.
       For ECP functions, the format is as follows.
-        (atomic name)
+        (element symbols)
         (name, anything OK) (maximum angular momentum) (number of removed core electrons)
         (title, anything OK)
         (number of Gaussians)
@@ -384,9 +389,9 @@
            2       1.6633189       9.4818270
 
     2.10 charge
-      Write "geom" to specify nuclear charges.
-      A dummy atom is set using X in geom section to specifi a point charge.
-      For nuclear charges, the format is as follows.
+      Write "charge" to specify nuclear charges.
+      A dummy atom is set using X in geom section to specify a point charge.
+      The format of nuclear charges is as follows.
         (atom number in geom section) (nuclear charge)
         (atom number in geom section) (nuclear charge)
 
