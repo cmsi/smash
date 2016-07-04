@@ -56,7 +56,7 @@
     supercomputer systems. It is recommended that the value of
     OMP_NUM_THREADS be set equal to the number of CPU cores in a node.
 
-      ex) Shell: tcsh    Machine: 10nodes, 8cores/node
+      e.g.) Shell: tcsh    Machine: 10nodes, 8cores/node
       Write the following line in the ~/.tcshrc file.
         setenv OMP_NUM_THREADS 8
       And then, run the MPI job.
@@ -258,7 +258,7 @@
       "Bq1"(=Bq) to "Bq9" are available as ghost atoms on which basis functions
       and ECPs can be added for BSSE calculations.
 
-      ex)  geom
+      e.g.)  geom
            O   0.0  0.0  0.0
            H   1.0  0.0  0.0
            H   0.0  1.0  0.0
@@ -281,14 +281,14 @@
       A blank line or the end of the file means the end of the
       basis function section.
 
-      ex1) C O
+      e.g.1) C O
            6-31G(d)
            ****
            H
            STO-3G
            ****
 
-      ex2) C
+      e.g.2) C
              S  6
                3047.5248800      0.0018347
                 457.3695180      0.0140373
@@ -332,10 +332,10 @@
       A blank line or the end of the file means the end of the
       ECP function section.
 
-      ex1) Fe Ru
+      e.g.1) Fe Ru
            LANL2DZ
 
-      ex2) Cl
+      e.g.2) Cl
            Cl-ECP     2   10
            d-ul potential
              5
@@ -398,7 +398,7 @@
       A blank line or the end of the file means the end of the
       charge function section.
 
-      ex) geom
+      e.g.) geom
           O   0.0   0.0   0.0
           H   1.0   0.0   0.0
           H   0.0   1.0   0.0
