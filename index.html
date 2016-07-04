@@ -47,9 +47,10 @@ Hartree-Fock and Density Functional Theory (DFT) calculations can be performed o
   <dd>* Changed default cutoff values. ex) Cutint2 is changed from 1.0D-12 to 1.0D-11.</dd>
   <dd>* Added a quadratically convergent SCF method.</dd>
   <dd>* Changed the order of d, f, g functions in MO coefficients. ex) dxx,yy,zz,xy,xz,yz => dxx,xy,xz,yy,yz,zz</dd>
-  <dd>* Supported dummy atoms for point charges and ghost atoms for BSSE calculations.</dd>
+  <dd>* Supported dummy atoms ("X") for point charges and ghost atoms ("Bq" to "Bq9") for BSSE calculations.</dd>
   <dd>* Increased sample input and output files.
   <dd>* Fixed an issue where open-shell DFT calculations stop with some compilers.</dd>
+  <dt>January 3, 2015</dt>
 <!--  <dd><strong style="color:#0000FF">SMASH-1.0.1 released.</strong></dd> -->
   <dd><a href="http://sourceforge.net/projects/smash-qc/files/smash-1.1.0.tgz/download"><b>SMASH-1.1.0 released.</b></a></dd>
   <dd>* Fixed an issue where the d basis functions of Sn LanL2DZ are not included.</dd>
@@ -76,7 +77,7 @@ Hartree-Fock and Density Functional Theory (DFT) calculations can be performed o
 <a name="Platforms" class="anchor" href="#platforms"><span class="octicon octicon-link"></span></a>Platforms</h3>
 
 <ul>
-  <li>X86-64/Linux with Intel, PGI, and GNU compilers which support collapse of OpenMP</li>
+  <li>X86-64/Linux with Intel, PGI, and GNU compilers which support the OpenMP collapse clause</li>
   <li>K Computer, Fujitsu FX10 and FX100</li>
 </ul>
 
