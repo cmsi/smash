@@ -39,7 +39,17 @@ Hartree-Fock and Density Functional Theory (DFT) calculations can be performed o
 <h3 style="color:#FF0000">
 <a name="new" class="anchor" href="#new"><span class="octicon octicon-link"></span></a>What's New?</h3>
 <dl>
-  <dt>January 3, 2015</dt>
+  <dt>July 4, 2016</dt>
+  <dd><a href="http://sourceforge.net/projects/smash-qc/files/smash-2.0.0.tgz/download"><b>SMASH-2.0.0 released.</b></a></dd>
+  <dd>* Added MP2 energy gradient and geometry optimization calculations.</dd>
+  <dd>* Changed B3LYP parameters from VWN5 to VWN3. (job method=B3LYP for VWN3, job method B3LYP5 for VWN5)</dd>
+  <dd>* Added an keyword to control computational precision such as cutoffs and the number of grid points for DFT. (control precision=high, medium (default), low)</dd>
+  <dd>* Changed default cutoff values. ex) Cutint2 is changed from 1.0D-12 to 1.0D-11.</dd>
+  <dd>* Added a quadratically convergent SCF method.</dd>
+  <dd>* Changed the order of d, f, g functions in MO coefficients. ex) dxx,yy,zz,xy,xz,yz => dxx,xy,xz,yy,yz,zz</dd>
+  <dd>* Supported dummy atoms for point charges and ghost atoms for BSSE calculations.</dd>
+  <dd>* Increased sample input and output files.
+  <dd>* Fixed an issue where open-shell DFT calculations stop with some compilers.</dd>
 <!--  <dd><strong style="color:#0000FF">SMASH-1.0.1 released.</strong></dd> -->
   <dd><a href="http://sourceforge.net/projects/smash-qc/files/smash-1.1.0.tgz/download"><b>SMASH-1.1.0 released.</b></a></dd>
   <dd>* Fixed an issue where the d basis functions of Sn LanL2DZ are not included.</dd>
@@ -47,7 +57,6 @@ Hartree-Fock and Density Functional Theory (DFT) calculations can be performed o
   <dd>* Improved the performance of Hartree-Fock and DFT calculations by about 5%.</dd>
   <dd>* Added the Makefile.mpiifort file to use Intel MPI Library (mpiifort) with the -i8 (8-byte integer) option.</dd>
   <dt>September 3, 2014</dt>
-<!--  <dd><strong style="color:#0000FF">SMASH-1.0.1 released.</strong></dd> -->
   <dd><a href="http://sourceforge.net/projects/smash-qc/files/smash-1.0.1.tgz/download"><b>SMASH-1.0.1 released.</b></a></dd>
   <dd>* Fixed an issue where geometry optimization calculations do not work using OpenMP.</dd>
   <dt>September 1, 2014</dt>
@@ -60,15 +69,15 @@ Hartree-Fock and Density Functional Theory (DFT) calculations can be performed o
 <ul>
   <li>Closed- and open-shell Hartree-Fock energy, gradient, and geometry optimization</li>
   <li>Closed- and open-shell B3LYP density functional theory energy, gradient, and geometry optimization</li>
-  <li>Closed-shell second-order M&#248ller-Plesset perturbation theory energy</li>
+  <li>Closed-shell second-order M&#248ller-Plesset perturbation theory energy, gradient, and geometry optimization</li>
 </ul>
 
 <h3>
 <a name="Platforms" class="anchor" href="#platforms"><span class="octicon octicon-link"></span></a>Platforms</h3>
 
 <ul>
-  <li>x86-64/Linux with Intel or GNU compilers</li>
-  <li>K Computer, Fujitsu FX10</li>
+  <li>X86-64/Linux with Intel, PGI, and GNU compilers which support collapse of OpenMP</li>
+  <li>K Computer, Fujitsu FX10 and FX100</li>
 </ul>
 
 <h3>
