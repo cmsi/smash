@@ -382,7 +382,7 @@ end
 ! Calculate error matrix (=FDS-SDF) for Direct Inversion in the Iterative Subspace
 ! (DIIS) interporation
 !
-! In    : fock    (Interporated Fock matrx (out))
+! In    : fock    (Interporated Fock matrix (out))
 !         dmtrx   (Density matrix)
 !         overlap (Overlap matrix)
 !         ortho   (Orthogonalization matrix)
@@ -445,8 +445,8 @@ end
 !
 ! Direct Inversion in the Iterative Subspace (DIIS) interporation for closed-shell
 !
-! In    : fock    (Fock matrx)
-! Out   : fock    (Interporated Fock matrx)
+! In    : fock    (Fock matrix)
+! Out   : fock    (Interporated Fock matrix)
 ! Inout : fockdiis(Previous Fock matrix)
 !         errdiis (DIIS error matrix)
 !
@@ -511,12 +511,12 @@ end
 !
 ! Direct Inversion in the Iterative Subspace (DIIS) interporation for open-shell
 !
-! In    : focka    (Alpha Fock matrx)
-!         fockb    (Beta Fock matrx)
+! In    : focka    (Alpha Fock matrix)
+!         fockb    (Beta Fock matrix)
 !         worka    (Alpha DIIS error matrix)
 !         workb    (Beta DIIS error matrix)
-! Out   : focka    (Interporated alpha Fock matrx)
-!         fockb    (Interporated beta Fock matrx)
+! Out   : focka    (Interporated alpha Fock matrix)
+!         fockb    (Interporated beta Fock matrix)
 ! Inout : fockdiisa(Previous alpha Fock matrix)
 !         fockdiisb(Previous beta Fock matrix)
 !         errdiisa (History of Alpha DIIS error matrix)
