@@ -17,7 +17,7 @@ OBJDIR= obj
 smash : $(OBJS)
 	$(F90) -o bin/smash $(OPT) $(OBJS) $(LIB)
 
-smash : $(OBJS)
+smash.a : $(OBJS)
 	ar rv obj/smash.a $(OBJS)
 
 $(OBJDIR)/%.o : src/%.F90
