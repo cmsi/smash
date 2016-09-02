@@ -2147,23 +2147,21 @@ end
       integer,intent(in) :: nbfi, nbfj, ncarti
       integer :: i, j
       real(8),parameter :: half=0.5D+00, two=2.0D+00, three=3.0D+00, four=4.0D+00
-      real(8),parameter :: six=6.0D+00, eight=8.0D+00, p24=24.0D+00
+      real(8),parameter :: six=6.0D+00, eight=8.0D+00, p24=24.0D+00, eighth=0.125D+00
       real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
       real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
       real(8),parameter :: sqrt7=2.645751311064590D+00, sqrt35=5.916079783099616D+00
       real(8),parameter :: sqrt35third=3.415650255319866D+00
-      real(8),parameter :: facf1=0.36969351199675831D+00 ! 1/sqrt(10-6/sqrt(5))
-      real(8),parameter :: facf2=0.86602540378443865D+00 ! 1/sqrt(4/3)
-      real(8),parameter :: facf3=0.28116020334310144D+00 ! 1/sqrt(46/3-6/sqrt(5))
-      real(8),parameter :: facf4=0.24065403274177409D+00 ! 1/sqrt(28-24/sqrt(5))
-      real(8),parameter :: facg1=0.19440164201192295D+00 ! 1/sqrt(1336/35-8sqrt(15/7))
-      real(8),parameter :: facg2=0.36969351199675831D+00 ! 1/sqrt(10-6/sqrt(5)
-      real(8),parameter :: facg3=0.15721262982485929D+00 ! 1/sqrt(1774/35-8sqrt(15/7)-8sqrt(3/35))
-      real(8),parameter :: facg4=0.24313189758394717D+00 ! 1/sqrt(98/5-6/sqrt(5))
-      real(8),parameter :: facg5=3.20603188768051639D-02
-!                                                 ! 1/sqrt(51512/35-984sqrt(5/21)-102/sqrt(105))
-      real(8),parameter :: facg6=0.18742611911532351D+00 ! 1/sqrt(196/5-24/sqrt(5))
-      real(8),parameter :: facg7=1.11803398874989484D+00 ! 1/sqrt(4/5)
+      real(8),parameter :: facf1=0.79056941504209483D+00 ! sqrt(5/2)/2
+      real(8),parameter :: facf2=3.87298334620741688D+00 ! sqrt(15)
+      real(8),parameter :: facf3=0.61237243569579452D+00 ! sqrt(3/2)/2
+      real(8),parameter :: facf4=1.93649167310370844D+00 ! sqrt(15)/2
+      real(8),parameter :: facg1=2.95803989154980802D+00 ! sqrt(35)/2
+      real(8),parameter :: facg2=2.09165006633518887D+00 ! sqrt(35/2)/2
+      real(8),parameter :: facg3=1.11803398874989484D+00 ! sqrt(5)/2
+      real(8),parameter :: facg4=0.79056941504209483D+00 ! sqrt(5/2)/2
+      real(8),parameter :: facg5=0.55901699437494742D+00 ! sqrt(5)/4
+      real(8),parameter :: facg6=0.73950997288745200D+00 ! sqrt(35)/8
       real(8),intent(inout) :: onei(28,28)
       real(8) :: work(28)
 !
@@ -2191,22 +2189,15 @@ end
 ! F function
         case(7)
           do i= 1,ncarti
-            work( 1)= onei( 1,i)
-            work( 2)= onei( 2,i)*sqrt5
-            work( 3)= onei( 3,i)*sqrt5
-            work( 4)= onei( 4,i)*sqrt5
-            work( 5)= onei( 5,i)*sqrt15
-            work( 6)= onei( 6,i)*sqrt5
-            work( 7)= onei( 7,i)
-            work( 8)= onei( 8,i)*sqrt5
-            work( 9)= onei( 9,i)*sqrt5
-            work(10)= onei(10,i)
+            do j= 1,10
+              work(j)= onei(j,i)
+            enddo
             onei(1,i)=(-work(7)+three*work(2)                   )*facf1
-            onei(2,i)=  work(5)
+            onei(2,i)=  work(5)                                  *facf2
             onei(3,i)=(-work(7)-work(2)+four*work(9)            )*facf3
-            onei(4,i)=( two*work(10)-three*work(3)-three*work(8))*facf4
+            onei(4,i)=( two*work(10)-three*work(3)-three*work(8))*half
             onei(5,i)=(-work(1)-work(4)+four*work(6)            )*facf3
-            onei(6,i)=( work(3)-work(8)                         )*facf2
+            onei(6,i)=( work(3)-work(8)                         )*facf4
             onei(7,i)=( work(1)-three*work(4)                   )*facf1
           enddo
         case(10)
@@ -2222,31 +2213,19 @@ end
 ! G function
         case(9)
           do i= 1,ncarti
-            work( 1)= onei( 1,i)
-            work( 2)= onei( 2,i)*sqrt7
-            work( 3)= onei( 3,i)*sqrt7
-            work( 4)= onei( 4,i)*sqrt35third
-            work( 5)= onei( 5,i)*sqrt35
-            work( 6)= onei( 6,i)*sqrt35third
-            work( 7)= onei( 7,i)*sqrt7
-            work( 8)= onei( 8,i)*sqrt35
-            work( 9)= onei( 9,i)*sqrt35
-            work(10)= onei(10,i)*sqrt7
-            work(11)= onei(11,i)
-            work(12)= onei(12,i)*sqrt7
-            work(13)= onei(13,i)*sqrt35third
-            work(14)= onei(14,i)*sqrt7
-            work(15)= onei(15,i)
-            onei(1,i)=(work(2)-work(7))*facg7
+            do j= 1,15
+              work(j)= onei(j,i)
+            enddo
+            onei(1,i)=(work(2)-work(7))*facg1
             onei(2,i)=(-work(12)+work(5)*three)*facg2
-            onei(3,i)=(-work(2)-work(7)+work(9)*six)*facg6
+            onei(3,i)=(-work(2)-work(7)+work(9)*six)*facg3
             onei(4,i)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
             onei(5,i)=(work(1)*three+work(11)*three+work(15)*eight+work(4)*six &
-&                     -work(6)*p24-work(13)*p24)*facg5
+&                     -work(6)*p24-work(13)*p24)*eighth
             onei(6,i)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
-            onei(7,i)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg3
+            onei(7,i)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg5
             onei(8,i)=(work(3)-work(8)*three)*facg2
-            onei(9,i)=(work(1)+work(11)-work(4)*six)*facg1
+            onei(9,i)=(work(1)+work(11)-work(4)*six)*facg6
           enddo
         case(15)
           do i= 1,ncarti
@@ -2289,22 +2268,15 @@ end
 ! F function
         case(7)
           do j= 1,nbfj
-            work( 1)= onei(j, 1)
-            work( 2)= onei(j, 2)*sqrt5
-            work( 3)= onei(j, 3)*sqrt5
-            work( 4)= onei(j, 4)*sqrt5
-            work( 5)= onei(j, 5)*sqrt15
-            work( 6)= onei(j, 6)*sqrt5
-            work( 7)= onei(j, 7)
-            work( 8)= onei(j, 8)*sqrt5
-            work( 9)= onei(j, 9)*sqrt5
-            work(10)= onei(j,10)
+            do i= 1,10
+              work(i)= onei(j,i)
+            enddo
             onei(j,1)=(-work(7)+three*work(2)                   )*facf1
-            onei(j,2)=  work(5)
+            onei(j,2)=  work(5)                                  *facf2
             onei(j,3)=(-work(7)-work(2)+four*work(9)            )*facf3
-            onei(j,4)=( two*work(10)-three*work(3)-three*work(8))*facf4
+            onei(j,4)=( two*work(10)-three*work(3)-three*work(8))*half
             onei(j,5)=(-work(1)-work(4)+four*work(6)            )*facf3
-            onei(j,6)=( work(3)-work(8)                         )*facf2
+            onei(j,6)=( work(3)-work(8)                         )*facf4
             onei(j,7)=( work(1)-three*work(4)                   )*facf1
           enddo
         case(10)
@@ -2320,31 +2292,19 @@ end
 ! G function
         case(9)
           do j= 1,nbfj
-            work( 1)= onei(j, 1)
-            work( 2)= onei(j, 2)*sqrt7
-            work( 3)= onei(j, 3)*sqrt7
-            work( 4)= onei(j, 4)*sqrt35third
-            work( 5)= onei(j, 5)*sqrt35
-            work( 6)= onei(j, 6)*sqrt35third
-            work( 7)= onei(j, 7)*sqrt7
-            work( 8)= onei(j, 8)*sqrt35
-            work( 9)= onei(j, 9)*sqrt35
-            work(10)= onei(j,10)*sqrt7
-            work(11)= onei(j,11)
-            work(12)= onei(j,12)*sqrt7
-            work(13)= onei(j,13)*sqrt35third
-            work(14)= onei(j,14)*sqrt7
-            work(15)= onei(j,15)
-            onei(j,1)=(work(2)-work(7))*facg7
+            do i= 1,15
+              work(i)= onei(j,i)
+            enddo
+            onei(j,1)=(work(2)-work(7))*facg1
             onei(j,2)=(-work(12)+work(5)*three)*facg2
-            onei(j,3)=(-work(2)-work(7)+work(9)*six)*facg6
+            onei(j,3)=(-work(2)-work(7)+work(9)*six)*facg3
             onei(j,4)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
             onei(j,5)=(work(1)*three+work(11)*three+work(15)*eight+work(4)*six &
-&                     -work(6)*p24-work(13)*p24)*facg5
+&                     -work(6)*p24-work(13)*p24)*eighth
             onei(j,6)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
-            onei(j,7)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg3
+            onei(j,7)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg5
             onei(j,8)=(work(3)-work(8)*three)*facg2
-            onei(j,9)=(work(1)+work(11)-work(4)*six)*facg1
+            onei(j,9)=(work(1)+work(11)-work(4)*six)*facg6
           enddo
         case(15)
           do j= 1,nbfj

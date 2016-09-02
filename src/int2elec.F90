@@ -479,24 +479,22 @@ end
       integer :: ii, jj, kk, ll, ix, iy, iz, jx, jy, jz, kx, ky, kz, lx, ly, lz, icount, nn
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
       real(8),parameter :: two=2.0D+00, three=3.0D+00, four=4.0D+00
-      real(8),parameter :: six=6.0D+00, eight=8.0D+00, p24=24.0D+00
+      real(8),parameter :: six=6.0D+00, eight=8.0D+00, p24=24.0D+00, eighth=0.125D+00
       real(8),parameter :: pi52=0.3498683665524973D+02 ! 2.0*pi**2.5
       real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
       real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
       real(8),parameter :: sqrt7=2.645751311064590D+00, sqrt35=5.916079783099616D+00
       real(8),parameter :: sqrt35third=3.415650255319866D+00
-      real(8),parameter :: facf1=0.36969351199675831D+00  ! 1/sqrt(10-6/sqrt(5))
-      real(8),parameter :: facf2=0.86602540378443865D+00  ! 1/sqrt(4/3)
-      real(8),parameter :: facf3=0.28116020334310144D+00  ! 1/sqrt(46/3-6/sqrt(5))
-      real(8),parameter :: facf4=0.24065403274177409D+00  ! 1/sqrt(28-24/sqrt(5))
-      real(8),parameter :: facg1=0.19440164201192295D+00 ! 1/sqrt(1336/35-8sqrt(15/7))
-      real(8),parameter :: facg2=0.36969351199675831D+00 ! 1/sqrt(10-6/sqrt(5)
-      real(8),parameter :: facg3=0.15721262982485929D+00 ! 1/sqrt(1744/35-8sqrt(15/7)+8sqrt(3/35))
-      real(8),parameter :: facg4=0.24313189758394717D+00 ! 1/sqrt(98/5-6/sqrt(5))
-      real(8),parameter :: facg5=3.20603188768051639D-02
-!                                                 ! 1/sqrt(51512/35-984sqrt(5/21)-102/sqrt(105))
-      real(8),parameter :: facg6=0.18742611911532351D+00 ! 1/sqrt(196/5-24/sqrt(5))
-      real(8),parameter :: facg7=1.11803398874989484D+00 ! 1/sqrt(4/5)
+      real(8),parameter :: facf1=0.79056941504209483D+00 ! sqrt(5/2)/2
+      real(8),parameter :: facf2=3.87298334620741688D+00 ! sqrt(15)
+      real(8),parameter :: facf3=0.61237243569579452D+00 ! sqrt(3/2)/2
+      real(8),parameter :: facf4=1.93649167310370844D+00 ! sqrt(15)/2
+      real(8),parameter :: facg1=2.95803989154980802D+00 ! sqrt(35)/2
+      real(8),parameter :: facg2=2.09165006633518887D+00 ! sqrt(35/2)/2
+      real(8),parameter :: facg3=1.11803398874989484D+00 ! sqrt(5)/2
+      real(8),parameter :: facg4=0.79056941504209483D+00 ! sqrt(5/2)/2
+      real(8),parameter :: facg5=0.55901699437494742D+00 ! sqrt(5)/4
+      real(8),parameter :: facg6=0.73950997288745200D+00 ! sqrt(35)/8
       real(8),intent(in) :: exijkl(mxprsh,4), coijkl(mxprsh,4), xyzijkl(3,4), threshex
       real(8),intent(out) :: twoeri(maxdim,maxdim,maxdim,maxdim)
       real(8),intent(out) :: eritmp(ncartijkl(4),ncartijkl(3),ncartijkl(2),ncartijkl(1))
@@ -824,22 +822,15 @@ end
           do j= 1,ncartijkl(2)
             do k= 1,ncartijkl(3)
               do l= 1,ncartijkl(4)
-                work( 1)= eritmp(l,k,j, 1)
-                work( 2)= eritmp(l,k,j, 2)*sqrt5
-                work( 3)= eritmp(l,k,j, 3)*sqrt5
-                work( 4)= eritmp(l,k,j, 4)*sqrt5
-                work( 5)= eritmp(l,k,j, 5)*sqrt15
-                work( 6)= eritmp(l,k,j, 6)*sqrt5
-                work( 7)= eritmp(l,k,j, 7)
-                work( 8)= eritmp(l,k,j, 8)*sqrt5
-                work( 9)= eritmp(l,k,j, 9)*sqrt5
-                work(10)= eritmp(l,k,j,10)
+                do i= 1,10
+                  work(i)= eritmp(l,k,j,i)
+                enddo
                 eritmp(l,k,j,1)=(-work(7)+three*work(2)                   )*facf1
-                eritmp(l,k,j,2)=  work(5)
+                eritmp(l,k,j,2)=  work(5)                                  *facf2
                 eritmp(l,k,j,3)=(-work(7)-work(2)+four*work(9)            )*facf3
-                eritmp(l,k,j,4)=( two*work(10)-three*work(3)-three*work(8))*facf4
+                eritmp(l,k,j,4)=( two*work(10)-three*work(3)-three*work(8))*half
                 eritmp(l,k,j,5)=(-work(1)-work(4)+four*work(6)            )*facf3
-                eritmp(l,k,j,6)=( work(3)-work(8)                         )*facf2
+                eritmp(l,k,j,6)=( work(3)-work(8)                         )*facf4
                 eritmp(l,k,j,7)=( work(1)-three*work(4)                   )*facf1
               enddo
             enddo
@@ -863,31 +854,19 @@ end
           do j= 1,ncartijkl(2)
             do k= 1,ncartijkl(3)
               do l= 1,ncartijkl(4)
-                work( 1)= eritmp(l,k,j, 1)
-                work( 2)= eritmp(l,k,j, 2)*sqrt7
-                work( 3)= eritmp(l,k,j, 3)*sqrt7
-                work( 4)= eritmp(l,k,j, 4)*sqrt35third
-                work( 5)= eritmp(l,k,j, 5)*sqrt35
-                work( 6)= eritmp(l,k,j, 6)*sqrt35third
-                work( 7)= eritmp(l,k,j, 7)*sqrt7
-                work( 8)= eritmp(l,k,j, 8)*sqrt35
-                work( 9)= eritmp(l,k,j, 9)*sqrt35
-                work(10)= eritmp(l,k,j,10)*sqrt7
-                work(11)= eritmp(l,k,j,11)
-                work(12)= eritmp(l,k,j,12)*sqrt7
-                work(13)= eritmp(l,k,j,13)*sqrt35third
-                work(14)= eritmp(l,k,j,14)*sqrt7
-                work(15)= eritmp(l,k,j,15)
-                eritmp(l,k,j,1)=(work(2)-work(7))*facg7
+                do i= 1,15
+                  work(i)= eritmp(l,k,j,i)
+                enddo
+                eritmp(l,k,j,1)=(work(2)-work(7))*facg1
                 eritmp(l,k,j,2)=(-work(12)+work(5)*three)*facg2
-                eritmp(l,k,j,3)=(-work(2)-work(7)+work(9)*six)*facg6
+                eritmp(l,k,j,3)=(-work(2)-work(7)+work(9)*six)*facg3
                 eritmp(l,k,j,4)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
                 eritmp(l,k,j,5)=(work(1)*three+work(11)*three+work(15)*eight+work(4)*six &
-&                                -work(6)*p24-work(13)*p24)*facg5
+&                                -work(6)*p24-work(13)*p24)*eighth
                 eritmp(l,k,j,6)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
-                eritmp(l,k,j,7)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg3
+                eritmp(l,k,j,7)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg5
                 eritmp(l,k,j,8)=(work(3)-work(8)*three)*facg2
-                eritmp(l,k,j,9)=(work(1)+work(11)-work(4)*six)*facg1
+                eritmp(l,k,j,9)=(work(1)+work(11)-work(4)*six)*facg6
               enddo
             enddo
           enddo
@@ -942,22 +921,15 @@ end
           do i= 1,nbfijkl(1)
             do k= 1,ncartijkl(3)
               do l= 1,ncartijkl(4)
-                work( 1)= eritmp(l,k, 1,i)
-                work( 2)= eritmp(l,k, 2,i)*sqrt5
-                work( 3)= eritmp(l,k, 3,i)*sqrt5
-                work( 4)= eritmp(l,k, 4,i)*sqrt5
-                work( 5)= eritmp(l,k, 5,i)*sqrt15
-                work( 6)= eritmp(l,k, 6,i)*sqrt5
-                work( 7)= eritmp(l,k, 7,i)
-                work( 8)= eritmp(l,k, 8,i)*sqrt5
-                work( 9)= eritmp(l,k, 9,i)*sqrt5
-                work(10)= eritmp(l,k,10,i)
+                do j= 1,10
+                  work(j)= eritmp(l,k,j,i)
+                enddo
                 eritmp(l,k,1,i)=(-work(7)+three*work(2)                   )*facf1
-                eritmp(l,k,2,i)=  work(5)
+                eritmp(l,k,2,i)=  work(5)                                  *facf2
                 eritmp(l,k,3,i)=(-work(7)-work(2)+four*work(9)            )*facf3
-                eritmp(l,k,4,i)=( two*work(10)-three*work(3)-three*work(8))*facf4
+                eritmp(l,k,4,i)=( two*work(10)-three*work(3)-three*work(8))*half
                 eritmp(l,k,5,i)=(-work(1)-work(4)+four*work(6)            )*facf3
-                eritmp(l,k,6,i)=( work(3)-work(8)                         )*facf2
+                eritmp(l,k,6,i)=( work(3)-work(8)                         )*facf4
                 eritmp(l,k,7,i)=( work(1)-three*work(4)                   )*facf1
               enddo
             enddo
@@ -981,31 +953,19 @@ end
           do i= 1,nbfijkl(1)
             do k= 1,ncartijkl(3)
               do l= 1,ncartijkl(4)
-                work( 1)= eritmp(l,k, 1,i)
-                work( 2)= eritmp(l,k, 2,i)*sqrt7
-                work( 3)= eritmp(l,k, 3,i)*sqrt7
-                work( 4)= eritmp(l,k, 4,i)*sqrt35third
-                work( 5)= eritmp(l,k, 5,i)*sqrt35
-                work( 6)= eritmp(l,k, 6,i)*sqrt35third
-                work( 7)= eritmp(l,k, 7,i)*sqrt7
-                work( 8)= eritmp(l,k, 8,i)*sqrt35
-                work( 9)= eritmp(l,k, 9,i)*sqrt35
-                work(10)= eritmp(l,k,10,i)*sqrt7
-                work(11)= eritmp(l,k,11,i)
-                work(12)= eritmp(l,k,12,i)*sqrt7
-                work(13)= eritmp(l,k,13,i)*sqrt35third
-                work(14)= eritmp(l,k,14,i)*sqrt7
-                work(15)= eritmp(l,k,15,i)
-                eritmp(l,k,1,i)=(work(2)-work(7))*facg7
+                do j= 1,15
+                  work(j)= eritmp(l,k,j,i)
+                enddo
+                eritmp(l,k,1,i)=(work(2)-work(7))*facg1
                 eritmp(l,k,2,i)=(-work(12)+work(5)*three)*facg2
-                eritmp(l,k,3,i)=(-work(2)-work(7)+work(9)*six)*facg6
+                eritmp(l,k,3,i)=(-work(2)-work(7)+work(9)*six)*facg3
                 eritmp(l,k,4,i)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
                 eritmp(l,k,5,i)=(work(1)*three+work(11)*three+work(15)*eight+work(4)*six &
-&                                -work(6)*p24-work(13)*p24)*facg5
+&                                -work(6)*p24-work(13)*p24)*eighth
                 eritmp(l,k,6,i)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
-                eritmp(l,k,7,i)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg3
+                eritmp(l,k,7,i)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg5
                 eritmp(l,k,8,i)=(work(3)-work(8)*three)*facg2
-                eritmp(l,k,9,i)=(work(1)+work(11)-work(4)*six)*facg1
+                eritmp(l,k,9,i)=(work(1)+work(11)-work(4)*six)*facg6
               enddo
             enddo
           enddo
@@ -1060,22 +1020,15 @@ end
           do i= 1,nbfijkl(1)
             do j= 1,nbfijkl(2)
               do l= 1,ncartijkl(4)
-                work( 1)= eritmp(l, 1,j,i)
-                work( 2)= eritmp(l, 2,j,i)*sqrt5
-                work( 3)= eritmp(l, 3,j,i)*sqrt5
-                work( 4)= eritmp(l, 4,j,i)*sqrt5
-                work( 5)= eritmp(l, 5,j,i)*sqrt15
-                work( 6)= eritmp(l, 6,j,i)*sqrt5
-                work( 7)= eritmp(l, 7,j,i)
-                work( 8)= eritmp(l, 8,j,i)*sqrt5
-                work( 9)= eritmp(l, 9,j,i)*sqrt5
-                work(10)= eritmp(l,10,j,i)
+                do k= 1,10
+                  work(k)= eritmp(l,k,j,i)
+                enddo
                 eritmp(l,1,j,i)=(-work(7)+three*work(2)                   )*facf1
-                eritmp(l,2,j,i)=  work(5)
+                eritmp(l,2,j,i)=  work(5)                                  *facf2
                 eritmp(l,3,j,i)=(-work(7)-work(2)+four*work(9)            )*facf3
-                eritmp(l,4,j,i)=( two*work(10)-three*work(3)-three*work(8))*facf4
+                eritmp(l,4,j,i)=( two*work(10)-three*work(3)-three*work(8))*half
                 eritmp(l,5,j,i)=(-work(1)-work(4)+four*work(6)            )*facf3
-                eritmp(l,6,j,i)=( work(3)-work(8)                         )*facf2
+                eritmp(l,6,j,i)=( work(3)-work(8)                         )*facf4
                 eritmp(l,7,j,i)=( work(1)-three*work(4)                   )*facf1
               enddo
             enddo
@@ -1099,31 +1052,19 @@ end
           do i= 1,nbfijkl(1)
             do j= 1,nbfijkl(2)
               do l= 1,ncartijkl(4)
-                work( 1)= eritmp(l, 1,j,i)
-                work( 2)= eritmp(l, 2,j,i)*sqrt7
-                work( 3)= eritmp(l, 3,j,i)*sqrt7
-                work( 4)= eritmp(l, 4,j,i)*sqrt35third
-                work( 5)= eritmp(l, 5,j,i)*sqrt35
-                work( 6)= eritmp(l, 6,j,i)*sqrt35third
-                work( 7)= eritmp(l, 7,j,i)*sqrt7
-                work( 8)= eritmp(l, 8,j,i)*sqrt35
-                work( 9)= eritmp(l, 9,j,i)*sqrt35
-                work(10)= eritmp(l,10,j,i)*sqrt7
-                work(11)= eritmp(l,11,j,i)
-                work(12)= eritmp(l,12,j,i)*sqrt7
-                work(13)= eritmp(l,13,j,i)*sqrt35third
-                work(14)= eritmp(l,14,j,i)*sqrt7
-                work(15)= eritmp(l,15,j,i)
-                eritmp(l,1,j,i)=(work(2)-work(7))*facg7
+                do k= 1,15
+                  work(k)= eritmp(l,k,j,i)
+                enddo
+                eritmp(l,1,j,i)=(work(2)-work(7))*facg1
                 eritmp(l,2,j,i)=(-work(12)+work(5)*three)*facg2
-                eritmp(l,3,j,i)=(-work(2)-work(7)+work(9)*six)*facg6
+                eritmp(l,3,j,i)=(-work(2)-work(7)+work(9)*six)*facg3
                 eritmp(l,4,j,i)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
                 eritmp(l,5,j,i)=(work(1)*three+work(11)*three+work(15)*eight+work(4)*six &
-&                                -work(6)*p24-work(13)*p24)*facg5
+&                                -work(6)*p24-work(13)*p24)*eighth
                 eritmp(l,6,j,i)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
-                eritmp(l,7,j,i)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg3
+                eritmp(l,7,j,i)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg5
                 eritmp(l,8,j,i)=(work(3)-work(8)*three)*facg2
-                eritmp(l,9,j,i)=(work(1)+work(11)-work(4)*six)*facg1
+                eritmp(l,9,j,i)=(work(1)+work(11)-work(4)*six)*facg6
               enddo
             enddo
           enddo
@@ -1191,22 +1132,15 @@ end
           do i= 1,nbfijkl(1)
             do j= 1,nbfijkl(2)
               do k= 1,nbfijkl(3)
-                work( 1)= eritmp( 1,k,j,i)
-                work( 2)= eritmp( 2,k,j,i)*sqrt5
-                work( 3)= eritmp( 3,k,j,i)*sqrt5
-                work( 4)= eritmp( 4,k,j,i)*sqrt5
-                work( 5)= eritmp( 5,k,j,i)*sqrt15
-                work( 6)= eritmp( 6,k,j,i)*sqrt5
-                work( 7)= eritmp( 7,k,j,i)
-                work( 8)= eritmp( 8,k,j,i)*sqrt5
-                work( 9)= eritmp( 9,k,j,i)*sqrt5
-                work(10)= eritmp(10,k,j,i)
+                do l= 1,10
+                  work(l)= eritmp(l,k,j,i)
+                enddo
                 twoeri(1,k,j,i)=(-work(7)+three*work(2)                   )*facf1
-                twoeri(2,k,j,i)=  work(5)
+                twoeri(2,k,j,i)=  work(5)                                  *facf2
                 twoeri(3,k,j,i)=(-work(7)-work(2)+four*work(9)            )*facf3
-                twoeri(4,k,j,i)=( two*work(10)-three*work(3)-three*work(8))*facf4
+                twoeri(4,k,j,i)=( two*work(10)-three*work(3)-three*work(8))*half
                 twoeri(5,k,j,i)=(-work(1)-work(4)+four*work(6)            )*facf3
-                twoeri(6,k,j,i)=( work(3)-work(8)                         )*facf2
+                twoeri(6,k,j,i)=( work(3)-work(8)                         )*facf4
                 twoeri(7,k,j,i)=( work(1)-three*work(4)                   )*facf1
               enddo
             enddo
@@ -1233,31 +1167,19 @@ end
           do i= 1,nbfijkl(1)
             do j= 1,nbfijkl(2)
               do k= 1,nbfijkl(3)
-                work( 1)= eritmp( 1,k,j,i)
-                work( 2)= eritmp( 2,k,j,i)*sqrt7
-                work( 3)= eritmp( 3,k,j,i)*sqrt7
-                work( 4)= eritmp( 4,k,j,i)*sqrt35third
-                work( 5)= eritmp( 5,k,j,i)*sqrt35
-                work( 6)= eritmp( 6,k,j,i)*sqrt35third
-                work( 7)= eritmp( 7,k,j,i)*sqrt7
-                work( 8)= eritmp( 8,k,j,i)*sqrt35
-                work( 9)= eritmp( 9,k,j,i)*sqrt35
-                work(10)= eritmp(10,k,j,i)*sqrt7
-                work(11)= eritmp(11,k,j,i)
-                work(12)= eritmp(12,k,j,i)*sqrt7
-                work(13)= eritmp(13,k,j,i)*sqrt35third
-                work(14)= eritmp(14,k,j,i)*sqrt7
-                work(15)= eritmp(15,k,j,i)
-                twoeri(1,k,j,i)=(work(2)-work(7))*facg7
+                do l= 1,15
+                  work(l)= eritmp(l,k,j,i)
+                enddo
+                twoeri(1,k,j,i)=(work(2)-work(7))*facg1
                 twoeri(2,k,j,i)=(-work(12)+work(5)*three)*facg2
-                twoeri(3,k,j,i)=(-work(2)-work(7)+work(9)*six)*facg6
+                twoeri(3,k,j,i)=(-work(2)-work(7)+work(9)*six)*facg3
                 twoeri(4,k,j,i)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
                 twoeri(5,k,j,i)=(work(1)*three+work(11)*three+work(15)*eight+work(4)*six &
-&                                -work(6)*p24-work(13)*p24)*facg5
+&                                -work(6)*p24-work(13)*p24)*eighth
                 twoeri(6,k,j,i)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
-                twoeri(7,k,j,i)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg3
+                twoeri(7,k,j,i)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg5
                 twoeri(8,k,j,i)=(work(3)-work(8)*three)*facg2
-                twoeri(9,k,j,i)=(work(1)+work(11)-work(4)*six)*facg1
+                twoeri(9,k,j,i)=(work(1)+work(11)-work(4)*six)*facg6
               enddo
             enddo
           enddo
