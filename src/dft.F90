@@ -639,10 +639,10 @@ end
       real(8),parameter :: two=2.0D+00, three=3.0D+00, four=4.0D+00
       real(8),parameter :: sqrt3=1.73205080756888D+00, sqrt3h=8.660254037844386D-01
       real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
-      real(8),parameter :: facf1=0.36969351199675831D+00  ! 1/sqrt(10-6/sqrt(5))
-      real(8),parameter :: facf2=0.86602540378443865D+00  ! 1/sqrt(4/3)
-      real(8),parameter :: facf3=0.28116020334310144D+00  ! 1/sqrt(46/3-6/sqrt(5))
-      real(8),parameter :: facf4=0.24065403274177409D+00  ! 1/sqrt(28-24/sqrt(5))
+      real(8),parameter :: facf1=0.79056941504209483D+00 ! sqrt(5/2)/2
+      real(8),parameter :: facf2=3.87298334620741688D+00 ! sqrt(15)
+      real(8),parameter :: facf3=0.61237243569579452D+00 ! sqrt(3/2)/2
+      real(8),parameter :: facf4=1.93649167310370844D+00 ! sqrt(15)/2
       real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom), transcmo(neleca,nao), aocutoff
       real(8),intent(out) :: vao(nao,4), vmo(neleca,4)
       real(8) :: expval, fac, tmp(10,4), xx, yy, zz, xy, xz, yz, xxx, xxy, xxz, xyy, xyz
@@ -823,60 +823,67 @@ end
               yzzz=-yz*zz*fac
               zzzz=-zz*zz*fac
               tmp( 1,1)= expval*xx*xyzpt(1,iatom)
-              tmp( 2,1)= expval*xx*xyzpt(2,iatom)*sqrt5
-              tmp( 3,1)= expval*xx*xyzpt(3,iatom)*sqrt5
-              tmp( 4,1)= expval*xy*xyzpt(2,iatom)*sqrt5
-              tmp( 5,1)= expval*xy*xyzpt(3,iatom)*sqrt15
-              tmp( 6,1)= expval*xz*xyzpt(3,iatom)*sqrt5
+              tmp( 2,1)= expval*xx*xyzpt(2,iatom)
+              tmp( 3,1)= expval*xx*xyzpt(3,iatom)
+              tmp( 4,1)= expval*xy*xyzpt(2,iatom)
+              tmp( 5,1)= expval*xy*xyzpt(3,iatom)
+              tmp( 6,1)= expval*xz*xyzpt(3,iatom)
               tmp( 7,1)= expval*yy*xyzpt(2,iatom)
-              tmp( 8,1)= expval*yy*xyzpt(3,iatom)*sqrt5
-              tmp( 9,1)= expval*yz*xyzpt(3,iatom)*sqrt5
+              tmp( 8,1)= expval*yy*xyzpt(3,iatom)
+              tmp( 9,1)= expval*yz*xyzpt(3,iatom)
               tmp(10,1)= expval*zz*xyzpt(3,iatom)
               tmp( 1,2)= expval*(xx*three+xxxx)
-              tmp( 2,2)= expval*(xy*two  +xxxy)*sqrt5
-              tmp( 3,2)= expval*(xz*two  +xxxz)*sqrt5
-              tmp( 4,2)= expval*(yy      +xxyy)*sqrt5
-              tmp( 5,2)= expval*(yz      +xxyz)*sqrt15
-              tmp( 6,2)= expval*(zz      +xxzz)*sqrt5
+              tmp( 2,2)= expval*(xy*two  +xxxy)
+              tmp( 3,2)= expval*(xz*two  +xxxz)
+              tmp( 4,2)= expval*(yy      +xxyy)
+              tmp( 5,2)= expval*(yz      +xxyz)
+              tmp( 6,2)= expval*(zz      +xxzz)
               tmp( 7,2)= expval*(        +xyyy)
-              tmp( 8,2)= expval*(        +xyyz)*sqrt5
-              tmp( 9,2)= expval*(        +xyzz)*sqrt5
+              tmp( 8,2)= expval*(        +xyyz)
+              tmp( 9,2)= expval*(        +xyzz)
               tmp(10,2)= expval*(        +xzzz)
               tmp( 1,3)= expval*(        +xxxy)
-              tmp( 2,3)= expval*(xx      +xxyy)*sqrt5
-              tmp( 3,3)= expval*(        +xxyz)*sqrt5
-              tmp( 4,3)= expval*(xy*two  +xyyy)*sqrt5
-              tmp( 5,3)= expval*(xz      +xyyz)*sqrt15
-              tmp( 6,3)= expval*(        +xyzz)*sqrt5
+              tmp( 2,3)= expval*(xx      +xxyy)
+              tmp( 3,3)= expval*(        +xxyz)
+              tmp( 4,3)= expval*(xy*two  +xyyy)
+              tmp( 5,3)= expval*(xz      +xyyz)
+              tmp( 6,3)= expval*(        +xyzz)
               tmp( 7,3)= expval*(yy*three+yyyy)
-              tmp( 8,3)= expval*(yz*two  +yyyz)*sqrt5
-              tmp( 9,3)= expval*(zz      +yyzz)*sqrt5
+              tmp( 8,3)= expval*(yz*two  +yyyz)
+              tmp( 9,3)= expval*(zz      +yyzz)
               tmp(10,3)= expval*(        +yzzz)
               tmp( 1,4)= expval*(        +xxxz)
-              tmp( 2,4)= expval*(        +xxyz)*sqrt5
-              tmp( 3,4)= expval*(xx      +xxzz)*sqrt5
-              tmp( 4,4)= expval*(        +xyyz)*sqrt5
-              tmp( 5,4)= expval*(xy      +xyzz)*sqrt15
-              tmp( 6,4)= expval*(xz*two  +xzzz)*sqrt5
+              tmp( 2,4)= expval*(        +xxyz)
+              tmp( 3,4)= expval*(xx      +xxzz)
+              tmp( 4,4)= expval*(        +xyyz)
+              tmp( 5,4)= expval*(xy      +xyzz)
+              tmp( 6,4)= expval*(xz*two  +xzzz)
               tmp( 7,4)= expval*(        +yyyz)
-              tmp( 8,4)= expval*(yy      +yyzz)*sqrt5
-              tmp( 9,4)= expval*(yz*two  +yzzz)*sqrt5
+              tmp( 8,4)= expval*(yy      +yyzz)
+              tmp( 9,4)= expval*(yz*two  +yzzz)
               tmp(10,4)= expval*(zz*three+zzzz)
               if(nbf == 10) then
                 do jj= 1,4
-                  do ii= 1,10
-                    vao(ilocbf+ii,jj)= vao(ilocbf+ii,jj)+tmp(ii,jj)
-                  enddo
+                  vao(ilocbf+ 1,jj)= vao(ilocbf+ 1,jj)+tmp( 1,jj)
+                  vao(ilocbf+ 2,jj)= vao(ilocbf+ 2,jj)+tmp( 2,jj)*sqrt5
+                  vao(ilocbf+ 3,jj)= vao(ilocbf+ 3,jj)+tmp( 3,jj)*sqrt5
+                  vao(ilocbf+ 4,jj)= vao(ilocbf+ 4,jj)+tmp( 4,jj)*sqrt5
+                  vao(ilocbf+ 5,jj)= vao(ilocbf+ 5,jj)+tmp( 5,jj)*sqrt15
+                  vao(ilocbf+ 6,jj)= vao(ilocbf+ 6,jj)+tmp( 6,jj)*sqrt5
+                  vao(ilocbf+ 7,jj)= vao(ilocbf+ 7,jj)+tmp( 7,jj)
+                  vao(ilocbf+ 8,jj)= vao(ilocbf+ 8,jj)+tmp( 8,jj)*sqrt5
+                  vao(ilocbf+ 9,jj)= vao(ilocbf+ 9,jj)+tmp( 9,jj)*sqrt5
+                  vao(ilocbf+10,jj)= vao(ilocbf+10,jj)+tmp(10,jj)
                 enddo
               else
                 do jj= 1,4
                   vao(ilocbf+1,jj)= vao(ilocbf+1,jj)+(-tmp(7,jj)+three*tmp(2,jj)         )*facf1
-                  vao(ilocbf+2,jj)= vao(ilocbf+2,jj)+  tmp(5,jj)
+                  vao(ilocbf+2,jj)= vao(ilocbf+2,jj)+  tmp(5,jj)                          *facf2
                   vao(ilocbf+3,jj)= vao(ilocbf+3,jj)+(-tmp(7,jj)-tmp(2,jj)+four*tmp(9,jj))*facf3
                   vao(ilocbf+4,jj)= vao(ilocbf+4,jj)+( two*tmp(10,jj)-three*tmp(3,jj) &
-&                                                                    -three*tmp(8,jj)    )*facf4
+&                                                                    -three*tmp(8,jj)    )*half
                   vao(ilocbf+5,jj)= vao(ilocbf+5,jj)+(-tmp(1,jj)-tmp(4,jj)+four*tmp(6,jj))*facf3
-                  vao(ilocbf+6,jj)= vao(ilocbf+6,jj)+( tmp(3,jj)-tmp(8,jj)               )*facf2
+                  vao(ilocbf+6,jj)= vao(ilocbf+6,jj)+( tmp(3,jj)-tmp(8,jj)               )*facf4
                   vao(ilocbf+7,jj)= vao(ilocbf+7,jj)+( tmp(1,jj)-three*tmp(4,jj)         )*facf1
                 enddo
               endif
@@ -919,10 +926,10 @@ end
       real(8),parameter :: two=2.0D+00, three=3.0D+00, four=4.0D+00
       real(8),parameter :: sqrt3=1.73205080756888D+00, sqrt3h=8.660254037844386D-01
       real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
-      real(8),parameter :: facf1=0.36969351199675831D+00  ! 1/sqrt(10-6/sqrt(5))
-      real(8),parameter :: facf2=0.86602540378443865D+00  ! 1/sqrt(4/3)
-      real(8),parameter :: facf3=0.28116020334310144D+00  ! 1/sqrt(46/3-6/sqrt(5))
-      real(8),parameter :: facf4=0.24065403274177409D+00  ! 1/sqrt(28-24/sqrt(5))
+      real(8),parameter :: facf1=0.79056941504209483D+00 ! sqrt(5/2)/2
+      real(8),parameter :: facf2=3.87298334620741688D+00 ! sqrt(15)
+      real(8),parameter :: facf3=0.61237243569579452D+00 ! sqrt(3/2)/2
+      real(8),parameter :: facf4=1.93649167310370844D+00 ! sqrt(15)/2
       real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom), transcmoa(neleca,nao)
       real(8),intent(in) :: transcmob(nelecb,nao), aocutoff
       real(8),intent(out) :: vao(nao,4), vmoa(neleca,4), vmob(nelecb,4)
@@ -1124,60 +1131,67 @@ end
               yzzz=-yz*zz*fac
               zzzz=-zz*zz*fac
               tmp( 1,1)= expval*xx*xyzpt(1,iatom)
-              tmp( 2,1)= expval*xx*xyzpt(2,iatom)*sqrt5
-              tmp( 3,1)= expval*xx*xyzpt(3,iatom)*sqrt5
-              tmp( 4,1)= expval*xy*xyzpt(2,iatom)*sqrt5
-              tmp( 5,1)= expval*xy*xyzpt(3,iatom)*sqrt15
-              tmp( 6,1)= expval*xz*xyzpt(3,iatom)*sqrt5
+              tmp( 2,1)= expval*xx*xyzpt(2,iatom)
+              tmp( 3,1)= expval*xx*xyzpt(3,iatom)
+              tmp( 4,1)= expval*xy*xyzpt(2,iatom)
+              tmp( 5,1)= expval*xy*xyzpt(3,iatom)
+              tmp( 6,1)= expval*xz*xyzpt(3,iatom)
               tmp( 7,1)= expval*yy*xyzpt(2,iatom)
-              tmp( 8,1)= expval*yy*xyzpt(3,iatom)*sqrt5
-              tmp( 9,1)= expval*yz*xyzpt(3,iatom)*sqrt5
+              tmp( 8,1)= expval*yy*xyzpt(3,iatom)
+              tmp( 9,1)= expval*yz*xyzpt(3,iatom)
               tmp(10,1)= expval*zz*xyzpt(3,iatom)
               tmp( 1,2)= expval*(xx*three+xxxx)
-              tmp( 2,2)= expval*(xy*two  +xxxy)*sqrt5
-              tmp( 3,2)= expval*(xz*two  +xxxz)*sqrt5
-              tmp( 4,2)= expval*(yy      +xxyy)*sqrt5
-              tmp( 5,2)= expval*(yz      +xxyz)*sqrt15
-              tmp( 6,2)= expval*(zz      +xxzz)*sqrt5
+              tmp( 2,2)= expval*(xy*two  +xxxy)
+              tmp( 3,2)= expval*(xz*two  +xxxz)
+              tmp( 4,2)= expval*(yy      +xxyy)
+              tmp( 5,2)= expval*(yz      +xxyz)
+              tmp( 6,2)= expval*(zz      +xxzz)
               tmp( 7,2)= expval*(        +xyyy)
-              tmp( 8,2)= expval*(        +xyyz)*sqrt5
-              tmp( 9,2)= expval*(        +xyzz)*sqrt5
+              tmp( 8,2)= expval*(        +xyyz)
+              tmp( 9,2)= expval*(        +xyzz)
               tmp(10,2)= expval*(        +xzzz)
               tmp( 1,3)= expval*(        +xxxy)
-              tmp( 2,3)= expval*(xx      +xxyy)*sqrt5
-              tmp( 3,3)= expval*(        +xxyz)*sqrt5
-              tmp( 4,3)= expval*(xy*two  +xyyy)*sqrt5
-              tmp( 5,3)= expval*(xz      +xyyz)*sqrt15
-              tmp( 6,3)= expval*(        +xyzz)*sqrt5
+              tmp( 2,3)= expval*(xx      +xxyy)
+              tmp( 3,3)= expval*(        +xxyz)
+              tmp( 4,3)= expval*(xy*two  +xyyy)
+              tmp( 5,3)= expval*(xz      +xyyz)
+              tmp( 6,3)= expval*(        +xyzz)
               tmp( 7,3)= expval*(yy*three+yyyy)
-              tmp( 8,3)= expval*(yz*two  +yyyz)*sqrt5
-              tmp( 9,3)= expval*(zz      +yyzz)*sqrt5
+              tmp( 8,3)= expval*(yz*two  +yyyz)
+              tmp( 9,3)= expval*(zz      +yyzz)
               tmp(10,3)= expval*(        +yzzz)
               tmp( 1,4)= expval*(        +xxxz)
-              tmp( 2,4)= expval*(        +xxyz)*sqrt5
-              tmp( 3,4)= expval*(xx      +xxzz)*sqrt5
-              tmp( 4,4)= expval*(        +xyyz)*sqrt5
-              tmp( 5,4)= expval*(xy      +xyzz)*sqrt15
-              tmp( 6,4)= expval*(xz*two  +xzzz)*sqrt5
+              tmp( 2,4)= expval*(        +xxyz)
+              tmp( 3,4)= expval*(xx      +xxzz)
+              tmp( 4,4)= expval*(        +xyyz)
+              tmp( 5,4)= expval*(xy      +xyzz)
+              tmp( 6,4)= expval*(xz*two  +xzzz)
               tmp( 7,4)= expval*(        +yyyz)
-              tmp( 8,4)= expval*(yy      +yyzz)*sqrt5
-              tmp( 9,4)= expval*(yz*two  +yzzz)*sqrt5
+              tmp( 8,4)= expval*(yy      +yyzz)
+              tmp( 9,4)= expval*(yz*two  +yzzz)
               tmp(10,4)= expval*(zz*three+zzzz)
               if(nbf == 10) then
                 do jj= 1,4
-                  do ii= 1,10
-                    vao(ilocbf+ii,jj)= vao(ilocbf+ii,jj)+tmp(ii,jj)
-                  enddo
+                  vao(ilocbf+ 1,jj)= vao(ilocbf+ 1,jj)+tmp( 1,jj)
+                  vao(ilocbf+ 2,jj)= vao(ilocbf+ 2,jj)+tmp( 2,jj)*sqrt5
+                  vao(ilocbf+ 3,jj)= vao(ilocbf+ 3,jj)+tmp( 3,jj)*sqrt5
+                  vao(ilocbf+ 4,jj)= vao(ilocbf+ 4,jj)+tmp( 4,jj)*sqrt5
+                  vao(ilocbf+ 5,jj)= vao(ilocbf+ 5,jj)+tmp( 5,jj)*sqrt15
+                  vao(ilocbf+ 6,jj)= vao(ilocbf+ 6,jj)+tmp( 6,jj)*sqrt5
+                  vao(ilocbf+ 7,jj)= vao(ilocbf+ 7,jj)+tmp( 7,jj)
+                  vao(ilocbf+ 8,jj)= vao(ilocbf+ 8,jj)+tmp( 8,jj)*sqrt5
+                  vao(ilocbf+ 9,jj)= vao(ilocbf+ 9,jj)+tmp( 9,jj)*sqrt5
+                  vao(ilocbf+10,jj)= vao(ilocbf+10,jj)+tmp(10,jj)
                 enddo
               else
                 do jj= 1,4
                   vao(ilocbf+1,jj)= vao(ilocbf+1,jj)+(-tmp(7,jj)+three*tmp(2,jj)         )*facf1
-                  vao(ilocbf+2,jj)= vao(ilocbf+2,jj)+  tmp(5,jj)
+                  vao(ilocbf+2,jj)= vao(ilocbf+2,jj)+  tmp(5,jj)                          *facf2
                   vao(ilocbf+3,jj)= vao(ilocbf+3,jj)+(-tmp(7,jj)-tmp(2,jj)+four*tmp(9,jj))*facf3
                   vao(ilocbf+4,jj)= vao(ilocbf+4,jj)+( two*tmp(10,jj)-three*tmp(3,jj) &
-&                                                                    -three*tmp(8,jj)    )*facf4
+&                                                                    -three*tmp(8,jj)    )*half
                   vao(ilocbf+5,jj)= vao(ilocbf+5,jj)+(-tmp(1,jj)-tmp(4,jj)+four*tmp(6,jj))*facf3
-                  vao(ilocbf+6,jj)= vao(ilocbf+6,jj)+( tmp(3,jj)-tmp(8,jj)               )*facf2
+                  vao(ilocbf+6,jj)= vao(ilocbf+6,jj)+( tmp(3,jj)-tmp(8,jj)               )*facf4
                   vao(ilocbf+7,jj)= vao(ilocbf+7,jj)+( tmp(1,jj)-three*tmp(4,jj)         )*facf1
                 enddo
               endif
@@ -1225,10 +1239,10 @@ end
       real(8),parameter :: four=4.0D+00, five=5.0D+00, six=6.0D+00, seven=7.0D+00
       real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
       real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
-      real(8),parameter :: facf1=0.36969351199675831D+00  ! 1/sqrt(10-6/sqrt(5))
-      real(8),parameter :: facf2=0.86602540378443865D+00  ! 1/sqrt(4/3)
-      real(8),parameter :: facf3=0.28116020334310144D+00  ! 1/sqrt(46/3-6/sqrt(5))
-      real(8),parameter :: facf4=0.24065403274177409D+00  ! 1/sqrt(28-24/sqrt(5))
+      real(8),parameter :: facf1=0.79056941504209483D+00 ! sqrt(5/2)/2
+      real(8),parameter :: facf2=3.87298334620741688D+00 ! sqrt(15)
+      real(8),parameter :: facf3=0.61237243569579452D+00 ! sqrt(3/2)/2
+      real(8),parameter :: facf4=1.93649167310370844D+00 ! sqrt(15)/2
       real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom)
       real(8),intent(out) :: vg2ao(nao,6)
       real(8) :: fac, fac2, tmp(10,6), xx, xy, xz, yy, yz, zz, xxx, xxy, xxz, xyy, xyz, xzz
@@ -1425,79 +1439,86 @@ end
               xxyzz= xxy*zz
               xyyzz= xyy*zz
               tmp( 1,1)= expval*(xyzpt(1,iatom)*six+xxx*seven+xxxxx)
-              tmp( 2,1)= expval*(xyzpt(2,iatom)*two+xxy*five +xxxxy)*sqrt5
-              tmp( 3,1)= expval*(xyzpt(3,iatom)*two+xxz*five +xxxxz)*sqrt5
-              tmp( 4,1)= expval*(                  +xyy*three+xxxyy)*sqrt5
-              tmp( 5,1)= expval*(                  +xyz*three+xxxyz)*sqrt15
-              tmp( 6,1)= expval*(                  +xzz*three+xxxzz)*sqrt5
+              tmp( 2,1)= expval*(xyzpt(2,iatom)*two+xxy*five +xxxxy)
+              tmp( 3,1)= expval*(xyzpt(3,iatom)*two+xxz*five +xxxxz)
+              tmp( 4,1)= expval*(                  +xyy*three+xxxyy)
+              tmp( 5,1)= expval*(                  +xyz*three+xxxyz)
+              tmp( 6,1)= expval*(                  +xzz*three+xxxzz)
               tmp( 7,1)= expval*(                  +yyy      +xxyyy)
-              tmp( 8,1)= expval*(                  +yyz      +xxyyz)*sqrt5
-              tmp( 9,1)= expval*(                  +yzz      +xxyzz)*sqrt5
+              tmp( 8,1)= expval*(                  +yyz      +xxyyz)
+              tmp( 9,1)= expval*(                  +yzz      +xxyzz)
               tmp(10,1)= expval*(                  +zzz      +xxzzz)
               tmp( 1,2)= expval*(                  +xxy*three+xxxxy)
-              tmp( 2,2)= expval*(xyzpt(1,iatom)*two+xxx+xyy*two+xxxyy)*sqrt5
-              tmp( 3,2)= expval*(                  +xyz*two  +xxxyz)*sqrt5
-              tmp( 4,2)= expval*(xyzpt(2,iatom)*two+yyy+xxy*two+xxyyy)*sqrt5
-              tmp( 5,2)= expval*(xyzpt(3,iatom)    +xxz+yyz  +xxyyz)*sqrt15
-              tmp( 6,2)= expval*(                  +yzz      +xxyzz)*sqrt5
+              tmp( 2,2)= expval*(xyzpt(1,iatom)*two+xxx+xyy*two+xxxyy)
+              tmp( 3,2)= expval*(                  +xyz*two  +xxxyz)
+              tmp( 4,2)= expval*(xyzpt(2,iatom)*two+yyy+xxy*two+xxyyy)
+              tmp( 5,2)= expval*(xyzpt(3,iatom)    +xxz+yyz  +xxyyz)
+              tmp( 6,2)= expval*(                  +yzz      +xxyzz)
               tmp( 7,2)= expval*(                  +xyy*three+xyyyy)
-              tmp( 8,2)= expval*(                  +xyz*two  +xyyyz)*sqrt5
-              tmp( 9,2)= expval*(                  +xzz      +xyyzz)*sqrt5
+              tmp( 8,2)= expval*(                  +xyz*two  +xyyyz)
+              tmp( 9,2)= expval*(                  +xzz      +xyyzz)
               tmp(10,2)= expval*(                            +xyzzz)
               tmp( 1,3)= expval*(                  +xxz*three+xxxxz)
-              tmp( 2,3)= expval*(                  +xyz*two  +xxxyz)*sqrt5
-              tmp( 3,3)= expval*(xyzpt(1,iatom)*two+xxx+xzz*two+xxxzz)*sqrt5
-              tmp( 4,3)= expval*(                  +yyz      +xxyyz)*sqrt5
-              tmp( 5,3)= expval*(xyzpt(2,iatom)    +xxy+yzz  +xxyzz)*sqrt15
-              tmp( 6,3)= expval*(xyzpt(3,iatom)*two+zzz+xxz*two+xxzzz)*sqrt5
+              tmp( 2,3)= expval*(                  +xyz*two  +xxxyz)
+              tmp( 3,3)= expval*(xyzpt(1,iatom)*two+xxx+xzz*two+xxxzz)
+              tmp( 4,3)= expval*(                  +yyz      +xxyyz)
+              tmp( 5,3)= expval*(xyzpt(2,iatom)    +xxy+yzz  +xxyzz)
+              tmp( 6,3)= expval*(xyzpt(3,iatom)*two+zzz+xxz*two+xxzzz)
               tmp( 7,3)= expval*(                            +xyyyz)
-              tmp( 8,3)= expval*(                  +xyy      +xyyzz)*sqrt5
-              tmp( 9,3)= expval*(                  +xyz*two  +xyzzz)*sqrt5
+              tmp( 8,3)= expval*(                  +xyy      +xyyzz)
+              tmp( 9,3)= expval*(                  +xyz*two  +xyzzz)
               tmp(10,3)= expval*(                  +xzz*three+xzzzz)
               tmp( 1,4)= expval*(                  +xxx      +xxxyy)
-              tmp( 2,4)= expval*(                  +xxy*three+xxyyy)*sqrt5
-              tmp( 3,4)= expval*(                  +xxz      +xxyyz)*sqrt5
-              tmp( 4,4)= expval*(xyzpt(1,iatom)*two+xyy*five +xyyyy)*sqrt5
-              tmp( 5,4)= expval*(                  +xyz*three+xyyyz)*sqrt15
-              tmp( 6,4)= expval*(                  +xzz      +xyyzz)*sqrt5
+              tmp( 2,4)= expval*(                  +xxy*three+xxyyy)
+              tmp( 3,4)= expval*(                  +xxz      +xxyyz)
+              tmp( 4,4)= expval*(xyzpt(1,iatom)*two+xyy*five +xyyyy)
+              tmp( 5,4)= expval*(                  +xyz*three+xyyyz)
+              tmp( 6,4)= expval*(                  +xzz      +xyyzz)
               tmp( 7,4)= expval*(xyzpt(2,iatom)*six+yyy*seven+yyyyy)
-              tmp( 8,4)= expval*(xyzpt(3,iatom)*two+yyz*five +yyyyz)*sqrt5
-              tmp( 9,4)= expval*(                  +yzz*three+yyyzz)*sqrt5
+              tmp( 8,4)= expval*(xyzpt(3,iatom)*two+yyz*five +yyyyz)
+              tmp( 9,4)= expval*(                  +yzz*three+yyyzz)
               tmp(10,4)= expval*(                  +zzz      +yyzzz)
               tmp( 1,5)= expval*(                            +xxxyz)
-              tmp( 2,5)= expval*(                  +xxz      +xxyyz)*sqrt5
-              tmp( 3,5)= expval*(                  +xxy      +xxyzz)*sqrt5
-              tmp( 4,5)= expval*(                  +xyz*two  +xyyyz)*sqrt5
-              tmp( 5,5)= expval*(xyzpt(1,iatom)    +xyy+xzz  +xyyzz)*sqrt15
-              tmp( 6,5)= expval*(                  +xyz*two  +xyzzz)*sqrt5
+              tmp( 2,5)= expval*(                  +xxz      +xxyyz)
+              tmp( 3,5)= expval*(                  +xxy      +xxyzz)
+              tmp( 4,5)= expval*(                  +xyz*two  +xyyyz)
+              tmp( 5,5)= expval*(xyzpt(1,iatom)    +xyy+xzz  +xyyzz)
+              tmp( 6,5)= expval*(                  +xyz*two  +xyzzz)
               tmp( 7,5)= expval*(                  +yyz*three+yyyyz)
-              tmp( 8,5)= expval*(xyzpt(2,iatom)*two+yyy+yzz*two+yyyzz)*sqrt5
-              tmp( 9,5)= expval*(xyzpt(3,iatom)*two+zzz+yyz*two+yyzzz)*sqrt5
+              tmp( 8,5)= expval*(xyzpt(2,iatom)*two+yyy+yzz*two+yyyzz)
+              tmp( 9,5)= expval*(xyzpt(3,iatom)*two+zzz+yyz*two+yyzzz)
               tmp(10,5)= expval*(                  +yzz*three+yzzzz)
               tmp( 1,6)= expval*(                  +xxx      +xxxzz)
-              tmp( 2,6)= expval*(                  +xxy      +xxyzz)*sqrt5
-              tmp( 3,6)= expval*(                  +xxz*three+xxzzz)*sqrt5
-              tmp( 4,6)= expval*(                  +xyy      +xyyzz)*sqrt5
-              tmp( 5,6)= expval*(                  +xyz*three+xyzzz)*sqrt15
-              tmp( 6,6)= expval*(xyzpt(1,iatom)*two+xzz*five +xzzzz)*sqrt5
+              tmp( 2,6)= expval*(                  +xxy      +xxyzz)
+              tmp( 3,6)= expval*(                  +xxz*three+xxzzz)
+              tmp( 4,6)= expval*(                  +xyy      +xyyzz)
+              tmp( 5,6)= expval*(                  +xyz*three+xyzzz)
+              tmp( 6,6)= expval*(xyzpt(1,iatom)*two+xzz*five +xzzzz)
               tmp( 7,6)= expval*(                  +yyy      +yyyzz)
-              tmp( 8,6)= expval*(                  +yyz*three+yyzzz)*sqrt5
-              tmp( 9,6)= expval*(xyzpt(2,iatom)*two+yzz*five +yzzzz)*sqrt5
+              tmp( 8,6)= expval*(                  +yyz*three+yyzzz)
+              tmp( 9,6)= expval*(xyzpt(2,iatom)*two+yzz*five +yzzzz)
               tmp(10,6)= expval*(xyzpt(3,iatom)*six+zzz*seven+zzzzz)
               if(nbf == 10) then
                 do i= 1,6
-                  do j= 1,10
-                    vg2ao(iloc+j,i)= vg2ao(iloc+j,i)+tmp(j,i)
-                  enddo
+                  vg2ao(iloc+ 1,i)= vg2ao(iloc+ 1,i)+tmp( 1,i)
+                  vg2ao(iloc+ 2,i)= vg2ao(iloc+ 2,i)+tmp( 2,i)*sqrt5
+                  vg2ao(iloc+ 3,i)= vg2ao(iloc+ 3,i)+tmp( 3,i)*sqrt5
+                  vg2ao(iloc+ 4,i)= vg2ao(iloc+ 4,i)+tmp( 4,i)*sqrt5
+                  vg2ao(iloc+ 5,i)= vg2ao(iloc+ 5,i)+tmp( 5,i)*sqrt15
+                  vg2ao(iloc+ 6,i)= vg2ao(iloc+ 6,i)+tmp( 6,i)*sqrt5
+                  vg2ao(iloc+ 7,i)= vg2ao(iloc+ 7,i)+tmp( 7,i)
+                  vg2ao(iloc+ 8,i)= vg2ao(iloc+ 8,i)+tmp( 8,i)*sqrt5
+                  vg2ao(iloc+ 9,i)= vg2ao(iloc+ 9,i)+tmp( 9,i)*sqrt5
+                  vg2ao(iloc+10,i)= vg2ao(iloc+10,i)+tmp(10,i)
                 enddo
               else
                 do i= 1,6
                   vg2ao(iloc+1,i)= vg2ao(iloc+1,i)+(-tmp(7,i)+three*tmp(2,i)               )*facf1
-                  vg2ao(iloc+2,i)= vg2ao(iloc+2,i)+  tmp(5,i)
+                  vg2ao(iloc+2,i)= vg2ao(iloc+2,i)+  tmp(5,i)                               *facf2
                   vg2ao(iloc+3,i)= vg2ao(iloc+3,i)+(-tmp(7,i)-tmp(2,i)+four*tmp(9,i)       )*facf3
-                  vg2ao(iloc+4,i)= vg2ao(iloc+4,i)+(two*tmp(10,i)-three*(tmp(3,i)+tmp(8,i)))*facf4
+                  vg2ao(iloc+4,i)= vg2ao(iloc+4,i)+(two*tmp(10,i)-three*(tmp(3,i)+tmp(8,i)))*half
                   vg2ao(iloc+5,i)= vg2ao(iloc+5,i)+(-tmp(1,i)-tmp(4,i)+four*tmp(6,i)       )*facf3
-                  vg2ao(iloc+6,i)= vg2ao(iloc+6,i)+( tmp(3,i)-tmp(8,i)                     )*facf2
+                  vg2ao(iloc+6,i)= vg2ao(iloc+6,i)+( tmp(3,i)-tmp(8,i)                     )*facf4
                   vg2ao(iloc+7,i)= vg2ao(iloc+7,i)+( tmp(1,i)-three*tmp(4,i)               )*facf1
                 enddo
               endif
