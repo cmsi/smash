@@ -1207,6 +1207,10 @@ end
           exit
         endif
 !
+! Write checkpoint file
+!
+        if(master.and.(check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo)
+!
 ! Set work arrays 2
 !
         if(cartesian) then
@@ -1501,6 +1505,10 @@ end
         call calcmaxgrad(egradmax,egradrms,egrad,natom3)
         if(master) write(*,'(" Optimization Cycle",i4,4x,"Maximum gradient =",f11.6,4x, &
 &                            "RMS gradient =",f11.6,/)') iopt,egradmax,egradrms
+!
+! Write checkpoint file
+!
+        if(master.and.(check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob)
 !
 ! Check convergence
 !
