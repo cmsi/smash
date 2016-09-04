@@ -1,13 +1,13 @@
  *******************************************
     Scalable Molecular Analysis Solver for
       High performance computing systems
-            SMASH Version 2.0.0     
+            SMASH Version 2.1.0     
            written by K. ISHIMURA
  *******************************************
 
- The job started at Sun Jul  3 22:58:03 2016
- Master node is hpcs01.local
- Number of processes =     1
+ The job started at Sun Sep  4 02:43:30 2016
+ Master node is hpcs03.local
+ Number of processes =     3
  Number of threads   =    12
 
  -------------------------------------------------------------------------
@@ -241,8 +241,8 @@
        unlimit
        setenv OMP_STACKSIZE 1G
 
- Step CPU :       2.2, Total CPU :       2.2 of Master node
- Step Wall :      0.3, Total Wall :      0.3 at Sun Jul  3 22:58:03 2016
+ Step CPU :       1.9, Total CPU :       1.9 of Master node
+ Step Wall :      0.2, Total Wall :      0.2 at Sun Sep  4 02:43:31 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -265,8 +265,8 @@
     RHF Energy =   -1549.792378036 a.u.
  -----------------------------------------
 
- Step CPU :     143.9, Total CPU :     146.1 of Master node
- Step Wall :     12.0, Total Wall :     12.3 at Sun Jul  3 22:58:15 2016
+ Step CPU :      49.3, Total CPU :      51.2 of Master node
+ Step Wall :      4.1, Total Wall :      4.3 at Sun Sep  4 02:43:35 2016
 
  --------------------------------------------------------------------------
    Restricted DFT calculation
@@ -365,8 +365,8 @@
    Alpha Virtual :      3.14660     3.15287     3.27970     3.40808     3.45394
    Alpha Virtual :      3.47040     3.67677     3.74452
  --------------------------------------------------------------------------------
- Step CPU :     488.1, Total CPU :     634.2 of Master node
- Step Wall :     40.7, Total Wall :     53.0 at Sun Jul  3 22:58:56 2016
+ Step CPU :     166.6, Total CPU :     217.7 of Master node
+ Step Wall :     13.9, Total Wall :     18.2 at Sun Sep  4 02:43:49 2016
 
  -----------------------------------
    DFT energy gradient calculation
@@ -402,8 +402,8 @@
    H          0.0039502     0.0001219     0.0085474
    H          0.0051516     0.0058351    -0.0074631
  ----------------------------------------------------
- Step CPU :     250.2, Total CPU :     884.4 of Master node
- Step Wall :     20.9, Total Wall :     73.8 at Sun Jul  3 22:59:17 2016
+ Step CPU :      83.5, Total CPU :     301.2 of Master node
+ Step Wall :      7.0, Total Wall :     25.1 at Sun Sep  4 02:43:56 2016
 
  Optimization Cycle   1    Maximum gradient =   0.047760    RMS gradient =   0.014255
 
@@ -581,8 +581,8 @@
    H          0.0983111     0.0165795    -0.0068952
    H          0.0842029    -0.0235091     0.0138570
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :     884.5 of Master node
- Step Wall :      0.0, Total Wall :     73.8 at Sun Jul  3 22:59:17 2016
+ Step CPU :       0.1, Total CPU :     301.4 of Master node
+ Step Wall :      0.0, Total Wall :     25.2 at Sun Sep  4 02:43:56 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -618,8 +618,8 @@
 
  Nuclear repulsion energy =  1462.99948203 a.u.
 
- Step CPU :       0.2, Total CPU :     884.8 of Master node
- Step Wall :      0.0, Total Wall :     73.9 at Sun Jul  3 22:59:17 2016
+ Step CPU :       0.2, Total CPU :     301.6 of Master node
+ Step Wall :      0.0, Total Wall :     25.2 at Sun Sep  4 02:43:56 2016
 
  --------------------------------------------------------------------------
    Restricted DFT calculation
@@ -652,8 +652,8 @@
     Number of electrons           =     144.000086340
  -----------------------------------------------------------
 
- Step CPU :     448.6, Total CPU :    1333.3 of Master node
- Step Wall :     37.4, Total Wall :    111.3 at Sun Jul  3 22:59:54 2016
+ Step CPU :     152.4, Total CPU :     454.0 of Master node
+ Step Wall :     12.7, Total Wall :     37.9 at Sun Sep  4 02:44:08 2016
 
  -----------------------------------
    DFT energy gradient calculation
@@ -689,8 +689,8 @@
    H          0.0009417    -0.0000103     0.0001888
    H          0.0019011     0.0010490     0.0005914
  ----------------------------------------------------
- Step CPU :     249.6, Total CPU :    1582.9 of Master node
- Step Wall :     21.6, Total Wall :    132.8 at Sun Jul  3 23:00:16 2016
+ Step CPU :      83.2, Total CPU :     537.2 of Master node
+ Step Wall :      6.9, Total Wall :     44.8 at Sun Sep  4 02:44:15 2016
 
  Optimization Cycle   2    Maximum gradient =   0.012889    RMS gradient =   0.004273
 
@@ -868,8 +868,8 @@
    H          0.0711169     0.0789572    -0.0831451
    H         -0.0186533    -0.0156316    -0.0975566
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :    1583.1 of Master node
- Step Wall :      0.0, Total Wall :    132.8 at Sun Jul  3 23:00:16 2016
+ Step CPU :       0.1, Total CPU :     537.4 of Master node
+ Step Wall :      0.0, Total Wall :     44.8 at Sun Sep  4 02:44:15 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -903,10 +903,10 @@
    H          4.1939156     1.6261833    -0.1450045
  ----------------------------------------------------
 
- Nuclear repulsion energy =  1460.59292132 a.u.
+ Nuclear repulsion energy =  1460.59292133 a.u.
 
- Step CPU :       0.2, Total CPU :    1583.3 of Master node
- Step Wall :      0.0, Total Wall :    132.9 at Sun Jul  3 23:00:16 2016
+ Step CPU :       0.2, Total CPU :     537.6 of Master node
+ Step Wall :      0.0, Total Wall :     44.9 at Sun Sep  4 02:44:15 2016
 
  --------------------------------------------------------------------------
    Restricted DFT calculation
@@ -939,8 +939,8 @@
     Number of electrons           =     144.000089506
  -----------------------------------------------------------
 
- Step CPU :     439.0, Total CPU :    2022.3 of Master node
- Step Wall :     36.6, Total Wall :    169.5 at Sun Jul  3 23:00:53 2016
+ Step CPU :     149.1, Total CPU :     686.7 of Master node
+ Step Wall :     12.4, Total Wall :     57.3 at Sun Sep  4 02:44:28 2016
 
  -----------------------------------
    DFT energy gradient calculation
@@ -976,8 +976,8 @@
    H         -0.0002381    -0.0004102    -0.0004799
    H          0.0003967    -0.0002141     0.0014688
  ----------------------------------------------------
- Step CPU :     248.9, Total CPU :    2271.2 of Master node
- Step Wall :     20.8, Total Wall :    190.3 at Sun Jul  3 23:01:13 2016
+ Step CPU :      83.0, Total CPU :     769.7 of Master node
+ Step Wall :      6.9, Total Wall :     64.2 at Sun Sep  4 02:44:35 2016
 
  Optimization Cycle   3    Maximum gradient =   0.003628    RMS gradient =   0.001193
 
@@ -1155,8 +1155,8 @@
    H          0.0487292     0.1030023    -0.1299998
    H         -0.0600979    -0.0144423    -0.1371112
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :    2271.3 of Master node
- Step Wall :      0.0, Total Wall :    190.3 at Sun Jul  3 23:01:13 2016
+ Step CPU :       0.2, Total CPU :     769.8 of Master node
+ Step Wall :      0.0, Total Wall :     64.2 at Sun Sep  4 02:44:35 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -1190,10 +1190,10 @@
    H          4.1338177     1.6117410    -0.2821157
  ----------------------------------------------------
 
- Nuclear repulsion energy =  1460.16084320 a.u.
+ Nuclear repulsion energy =  1460.16084321 a.u.
 
- Step CPU :       0.3, Total CPU :    2271.5 of Master node
- Step Wall :      0.0, Total Wall :    190.3 at Sun Jul  3 23:01:13 2016
+ Step CPU :       0.2, Total CPU :     770.1 of Master node
+ Step Wall :      0.0, Total Wall :     64.2 at Sun Sep  4 02:44:35 2016
 
  --------------------------------------------------------------------------
    Restricted DFT calculation
@@ -1225,8 +1225,8 @@
     Number of electrons           =     144.000016745
  -----------------------------------------------------------
 
- Step CPU :     403.2, Total CPU :    2674.7 of Master node
- Step Wall :     33.6, Total Wall :    223.9 at Sun Jul  3 23:01:47 2016
+ Step CPU :     137.0, Total CPU :     907.0 of Master node
+ Step Wall :     11.4, Total Wall :     75.7 at Sun Sep  4 02:44:46 2016
 
  -----------------------------------
    DFT energy gradient calculation
@@ -1262,8 +1262,8 @@
    H         -0.0004174    -0.0003821     0.0003871
    H         -0.0000145     0.0001262     0.0001187
  ----------------------------------------------------
- Step CPU :     249.1, Total CPU :    2923.8 of Master node
- Step Wall :     20.8, Total Wall :    244.7 at Sun Jul  3 23:02:08 2016
+ Step CPU :      83.1, Total CPU :     990.1 of Master node
+ Step Wall :      6.9, Total Wall :     82.6 at Sun Sep  4 02:44:53 2016
 
  Optimization Cycle   4    Maximum gradient =   0.005778    RMS gradient =   0.001136
 
@@ -1441,8 +1441,8 @@
    H          0.0493644     0.1165792    -0.2415836
    H         -0.1098851    -0.0618451    -0.2221641
  ----------------------------------------------------
- Step CPU :       0.2, Total CPU :    2923.9 of Master node
- Step Wall :      0.0, Total Wall :    244.7 at Sun Jul  3 23:02:08 2016
+ Step CPU :       0.1, Total CPU :     990.3 of Master node
+ Step Wall :      0.0, Total Wall :     82.6 at Sun Sep  4 02:44:53 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -1478,8 +1478,8 @@
 
  Nuclear repulsion energy =  1458.45847753 a.u.
 
- Step CPU :       0.4, Total CPU :    2924.3 of Master node
- Step Wall :      0.0, Total Wall :    244.7 at Sun Jul  3 23:02:08 2016
+ Step CPU :       0.3, Total CPU :     990.6 of Master node
+ Step Wall :      0.0, Total Wall :     82.6 at Sun Sep  4 02:44:53 2016
 
  --------------------------------------------------------------------------
    Restricted DFT calculation
@@ -1512,8 +1512,8 @@
     Number of electrons           =     143.999956748
  -----------------------------------------------------------
 
- Step CPU :     445.8, Total CPU :    3370.1 of Master node
- Step Wall :     37.2, Total Wall :    281.9 at Sun Jul  3 23:02:45 2016
+ Step CPU :     152.1, Total CPU :    1142.7 of Master node
+ Step Wall :     12.7, Total Wall :     95.3 at Sun Sep  4 02:45:06 2016
 
  -----------------------------------
    DFT energy gradient calculation
@@ -1549,8 +1549,8 @@
    H         -0.0004564     0.0001694     0.0013640
    H         -0.0007758     0.0000520    -0.0017787
  ----------------------------------------------------
- Step CPU :     249.5, Total CPU :    3619.6 of Master node
- Step Wall :     20.8, Total Wall :    302.7 at Sun Jul  3 23:03:06 2016
+ Step CPU :      83.2, Total CPU :    1225.9 of Master node
+ Step Wall :      6.9, Total Wall :    102.3 at Sun Sep  4 02:45:13 2016
 
  Optimization Cycle   5    Maximum gradient =   0.009098    RMS gradient =   0.002351
 
@@ -1728,8 +1728,8 @@
    H          0.0028904     0.0152352    -0.0352315
    H         -0.0130943     0.0047784    -0.0237983
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :    3619.7 of Master node
- Step Wall :      0.0, Total Wall :    302.7 at Sun Jul  3 23:03:06 2016
+ Step CPU :       0.1, Total CPU :    1226.0 of Master node
+ Step Wall :      0.0, Total Wall :    102.3 at Sun Sep  4 02:45:13 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -1765,8 +1765,8 @@
 
  Nuclear repulsion energy =  1458.34887672 a.u.
 
- Step CPU :       0.2, Total CPU :    3619.9 of Master node
- Step Wall :      0.0, Total Wall :    302.7 at Sun Jul  3 23:03:06 2016
+ Step CPU :       0.2, Total CPU :    1226.2 of Master node
+ Step Wall :      0.0, Total Wall :    102.3 at Sun Sep  4 02:45:13 2016
 
  --------------------------------------------------------------------------
    Restricted DFT calculation
@@ -1798,8 +1798,8 @@
     Number of electrons           =     143.999961497
  -----------------------------------------------------------
 
- Step CPU :     390.0, Total CPU :    4010.0 of Master node
- Step Wall :     32.5, Total Wall :    335.3 at Sun Jul  3 23:03:38 2016
+ Step CPU :     132.7, Total CPU :    1358.9 of Master node
+ Step Wall :     11.1, Total Wall :    113.4 at Sun Sep  4 02:45:24 2016
 
  -----------------------------------
    DFT energy gradient calculation
@@ -1835,8 +1835,8 @@
    H         -0.0004884     0.0001454     0.0006011
    H         -0.0005437    -0.0000339    -0.0003121
  ----------------------------------------------------
- Step CPU :     249.7, Total CPU :    4259.7 of Master node
- Step Wall :     20.8, Total Wall :    356.1 at Sun Jul  3 23:03:59 2016
+ Step CPU :      83.3, Total CPU :    1442.2 of Master node
+ Step Wall :      6.9, Total Wall :    120.3 at Sun Sep  4 02:45:31 2016
 
  Optimization Cycle   6    Maximum gradient =   0.003071    RMS gradient =   0.000859
 
@@ -2014,8 +2014,8 @@
    H          0.0134711     0.0115815    -0.0613623
    H         -0.0182259    -0.0161203    -0.0470543
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :    4259.8 of Master node
- Step Wall :      0.0, Total Wall :    356.1 at Sun Jul  3 23:03:59 2016
+ Step CPU :       0.1, Total CPU :    1442.3 of Master node
+ Step Wall :      0.0, Total Wall :    120.3 at Sun Sep  4 02:45:31 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -2051,8 +2051,8 @@
 
  Nuclear repulsion energy =  1458.12690675 a.u.
 
- Step CPU :       0.2, Total CPU :    4260.0 of Master node
- Step Wall :      0.0, Total Wall :    356.1 at Sun Jul  3 23:03:59 2016
+ Step CPU :       0.2, Total CPU :    1442.5 of Master node
+ Step Wall :      0.0, Total Wall :    120.4 at Sun Sep  4 02:45:31 2016
 
  --------------------------------------------------------------------------
    Restricted DFT calculation
@@ -2084,8 +2084,8 @@
     Number of electrons           =     143.999999331
  -----------------------------------------------------------
 
- Step CPU :     392.2, Total CPU :    4652.2 of Master node
- Step Wall :     32.7, Total Wall :    388.8 at Sun Jul  3 23:04:32 2016
+ Step CPU :     133.6, Total CPU :    1576.2 of Master node
+ Step Wall :     11.1, Total Wall :    131.5 at Sun Sep  4 02:45:42 2016
 
  -----------------------------------
    DFT energy gradient calculation
@@ -2121,8 +2121,8 @@
    H         -0.0002632     0.0000328     0.0000602
    H         -0.0000728    -0.0000609     0.0001117
  ----------------------------------------------------
- Step CPU :     249.9, Total CPU :    4902.1 of Master node
- Step Wall :     20.8, Total Wall :    409.7 at Sun Jul  3 23:04:53 2016
+ Step CPU :      83.4, Total CPU :    1659.5 of Master node
+ Step Wall :      7.0, Total Wall :    138.4 at Sun Sep  4 02:45:49 2016
 
  Optimization Cycle   7    Maximum gradient =   0.000966    RMS gradient =   0.000359
 
@@ -2300,8 +2300,8 @@
    H          0.0173965     0.0080806    -0.0608366
    H         -0.0236780    -0.0172102    -0.0469166
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :    4902.2 of Master node
- Step Wall :      0.0, Total Wall :    409.7 at Sun Jul  3 23:04:53 2016
+ Step CPU :       0.1, Total CPU :    1659.6 of Master node
+ Step Wall :      0.0, Total Wall :    138.5 at Sun Sep  4 02:45:49 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -2337,8 +2337,8 @@
 
  Nuclear repulsion energy =  1457.89484098 a.u.
 
- Step CPU :       0.2, Total CPU :    4902.5 of Master node
- Step Wall :      0.0, Total Wall :    409.7 at Sun Jul  3 23:04:53 2016
+ Step CPU :       0.2, Total CPU :    1659.8 of Master node
+ Step Wall :      0.0, Total Wall :    138.5 at Sun Sep  4 02:45:49 2016
 
  --------------------------------------------------------------------------
    Restricted DFT calculation
@@ -2370,8 +2370,8 @@
     Number of electrons           =     143.999990270
  -----------------------------------------------------------
 
- Step CPU :     386.7, Total CPU :    5289.2 of Master node
- Step Wall :     32.3, Total Wall :    442.0 at Sun Jul  3 23:05:25 2016
+ Step CPU :     131.8, Total CPU :    1791.7 of Master node
+ Step Wall :     11.0, Total Wall :    149.5 at Sun Sep  4 02:46:00 2016
 
  -----------------------------------
    DFT energy gradient calculation
@@ -2407,8 +2407,8 @@
    H         -0.0000064     0.0000092    -0.0000680
    H          0.0000740     0.0000205     0.0000359
  ----------------------------------------------------
- Step CPU :     250.1, Total CPU :    5539.3 of Master node
- Step Wall :     20.9, Total Wall :    462.8 at Sun Jul  3 23:05:46 2016
+ Step CPU :      83.5, Total CPU :    1875.1 of Master node
+ Step Wall :      7.0, Total Wall :    156.4 at Sun Sep  4 02:46:07 2016
 
  Optimization Cycle   8    Maximum gradient =   0.000656    RMS gradient =   0.000222
 
@@ -2586,8 +2586,8 @@
    H         -0.0031194    -0.0035979     0.0151057
    H          0.0057198     0.0037744     0.0116712
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :    5539.4 of Master node
- Step Wall :      0.0, Total Wall :    462.8 at Sun Jul  3 23:05:46 2016
+ Step CPU :       0.1, Total CPU :    1875.3 of Master node
+ Step Wall :      0.0, Total Wall :    156.4 at Sun Sep  4 02:46:07 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -2623,8 +2623,8 @@
 
  Nuclear repulsion energy =  1457.84833311 a.u.
 
- Step CPU :       0.2, Total CPU :    5539.6 of Master node
- Step Wall :      0.0, Total Wall :    462.8 at Sun Jul  3 23:05:46 2016
+ Step CPU :       0.2, Total CPU :    1875.5 of Master node
+ Step Wall :      0.0, Total Wall :    156.5 at Sun Sep  4 02:46:07 2016
 
  --------------------------------------------------------------------------
    Restricted DFT calculation
@@ -2654,8 +2654,8 @@
     Number of electrons           =     144.000001292
  -----------------------------------------------------------
 
- Step CPU :     305.7, Total CPU :    5845.4 of Master node
- Step Wall :     25.5, Total Wall :    488.3 at Sun Jul  3 23:06:11 2016
+ Step CPU :     104.1, Total CPU :    1979.6 of Master node
+ Step Wall :      8.7, Total Wall :    165.1 at Sun Sep  4 02:46:16 2016
 
  -----------------------------------
    DFT energy gradient calculation
@@ -2691,8 +2691,8 @@
    H         -0.0000002     0.0000251    -0.0000083
    H          0.0000158     0.0000202     0.0000207
  ----------------------------------------------------
- Step CPU :     250.0, Total CPU :    6095.4 of Master node
- Step Wall :     20.8, Total Wall :    509.2 at Sun Jul  3 23:06:32 2016
+ Step CPU :      83.3, Total CPU :    2062.9 of Master node
+ Step Wall :      7.0, Total Wall :    172.1 at Sun Sep  4 02:46:22 2016
 
  Optimization Cycle   9    Maximum gradient =   0.000275    RMS gradient =   0.000068
 
@@ -2870,8 +2870,8 @@
    H          0.0003344    -0.0001094     0.0003959
    H          0.0002062    -0.0003008     0.0002772
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :    6095.5 of Master node
- Step Wall :      0.0, Total Wall :    509.2 at Sun Jul  3 23:06:32 2016
+ Step CPU :       0.1, Total CPU :    2063.0 of Master node
+ Step Wall :      0.0, Total Wall :    172.1 at Sun Sep  4 02:46:22 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -2907,8 +2907,8 @@
 
  Nuclear repulsion energy =  1457.86638990 a.u.
 
- Step CPU :       0.2, Total CPU :    6095.7 of Master node
- Step Wall :      0.0, Total Wall :    509.2 at Sun Jul  3 23:06:32 2016
+ Step CPU :       0.2, Total CPU :    2063.3 of Master node
+ Step Wall :      0.0, Total Wall :    172.1 at Sun Sep  4 02:46:22 2016
 
  --------------------------------------------------------------------------
    Restricted DFT calculation
@@ -2937,8 +2937,8 @@
     Number of electrons           =     144.000004443
  -----------------------------------------------------------
 
- Step CPU :     260.2, Total CPU :    6356.0 of Master node
- Step Wall :     21.7, Total Wall :    530.9 at Sun Jul  3 23:06:54 2016
+ Step CPU :      88.5, Total CPU :    2151.8 of Master node
+ Step Wall :      7.4, Total Wall :    179.5 at Sun Sep  4 02:46:30 2016
 
  -----------------------------------
    DFT energy gradient calculation
@@ -2974,8 +2974,8 @@
    H         -0.0000013     0.0000100    -0.0000098
    H          0.0000022     0.0000107     0.0000045
  ----------------------------------------------------
- Step CPU :     250.0, Total CPU :    6606.0 of Master node
- Step Wall :     20.8, Total Wall :    551.8 at Sun Jul  3 23:07:15 2016
+ Step CPU :      83.4, Total CPU :    2235.2 of Master node
+ Step Wall :      7.0, Total Wall :    186.5 at Sun Sep  4 02:46:37 2016
 
  Optimization Cycle  10    Maximum gradient =   0.000144    RMS gradient =   0.000032
 
@@ -3153,8 +3153,8 @@
    H          0.0003933     0.0002672    -0.0013524
    H         -0.0008464    -0.0005976    -0.0010914
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :    6606.1 of Master node
- Step Wall :      0.0, Total Wall :    551.8 at Sun Jul  3 23:07:15 2016
+ Step CPU :       0.1, Total CPU :    2235.3 of Master node
+ Step Wall :      0.0, Total Wall :    186.5 at Sun Sep  4 02:46:37 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -3190,8 +3190,8 @@
 
  Nuclear repulsion energy =  1457.86630601 a.u.
 
- Step CPU :       0.2, Total CPU :    6606.3 of Master node
- Step Wall :      0.0, Total Wall :    551.8 at Sun Jul  3 23:07:15 2016
+ Step CPU :       0.2, Total CPU :    2235.5 of Master node
+ Step Wall :      0.0, Total Wall :    186.5 at Sun Sep  4 02:46:37 2016
 
  --------------------------------------------------------------------------
    Restricted DFT calculation
@@ -3220,8 +3220,8 @@
     Number of electrons           =     144.000004119
  -----------------------------------------------------------
 
- Step CPU :     260.3, Total CPU :    6866.7 of Master node
- Step Wall :     21.7, Total Wall :    573.5 at Sun Jul  3 23:07:37 2016
+ Step CPU :      88.6, Total CPU :    2324.2 of Master node
+ Step Wall :      7.4, Total Wall :    193.9 at Sun Sep  4 02:46:44 2016
 
  -----------------------------------
    DFT energy gradient calculation
@@ -3257,8 +3257,8 @@
    H         -0.0000016     0.0000003    -0.0000040
    H         -0.0000040     0.0000101    -0.0000083
  ----------------------------------------------------
- Step CPU :     250.0, Total CPU :    7116.7 of Master node
- Step Wall :     20.8, Total Wall :    594.3 at Sun Jul  3 23:07:57 2016
+ Step CPU :      83.4, Total CPU :    2407.5 of Master node
+ Step Wall :      7.0, Total Wall :    200.8 at Sun Sep  4 02:46:51 2016
 
  Optimization Cycle  11    Maximum gradient =   0.000044    RMS gradient =   0.000014
 
@@ -5833,12 +5833,12 @@
    H          3.9740139     1.5242197    -0.6111919
  ----------------------------------------------------
 
- Step CPU :       0.2, Total CPU :    7116.8 of Master node
- Step Wall :      0.0, Total Wall :    594.4 at Sun Jul  3 23:07:57 2016
+ Step CPU :       0.1, Total CPU :    2407.6 of Master node
+ Step Wall :      0.0, Total Wall :    200.9 at Sun Sep  4 02:46:51 2016
 
- Total CPU time :     7116.9 seconds
- Total Wall time:      594.4 seconds
-                 ( 0 days  0 hours  9 minutes 54.4 seconds)
- The job finished at Sun Jul  3 23:07:57 2016
- Used memory :     35 MB
+ Total CPU time :     2407.8 seconds
+ Total Wall time:      200.9 seconds
+                 ( 0 days  0 hours  3 minutes 20.9 seconds)
+ The job finished at Sun Sep  4 02:46:51 2016
+ Used memory :     21 MB
  Your calculation finished with  0 warning(s).

@@ -1,13 +1,13 @@
  *******************************************
     Scalable Molecular Analysis Solver for
       High performance computing systems
-            SMASH Version 2.0.0     
+            SMASH Version 2.1.0     
            written by K. ISHIMURA
  *******************************************
 
- The job started at Sun Jul  3 23:12:51 2016
- Master node is hpcs01.local
- Number of processes =     1
+ The job started at Sun Sep  4 02:38:30 2016
+ Master node is hpcs03.local
+ Number of processes =     3
  Number of threads   =    12
 
  -------------------------------------------------------------------------
@@ -151,8 +151,8 @@
        unlimit
        setenv OMP_STACKSIZE 1G
 
- Step CPU :       1.8, Total CPU :       1.8 of Master node
- Step Wall :      0.2, Total Wall :      0.2 at Sun Jul  3 23:12:51 2016
+ Step CPU :       2.3, Total CPU :       2.3 of Master node
+ Step Wall :      0.3, Total Wall :      0.3 at Sun Sep  4 02:38:31 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -209,8 +209,8 @@
    Alpha Virtual :      0.83736     0.83932     0.88306     0.89486     0.91191
    Alpha Virtual :      0.96977     0.99711     1.07297     1.11281
  --------------------------------------------------------------------------------
- Step CPU :      16.5, Total CPU :      18.3 of Master node
- Step Wall :      1.4, Total Wall :      1.6 at Sun Jul  3 23:12:53 2016
+ Step CPU :       5.9, Total CPU :       8.2 of Master node
+ Step Wall :      0.5, Total Wall :      0.8 at Sun Sep  4 02:38:31 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -282,8 +282,8 @@
    H         -0.0014809     0.0003297     0.0075426
    H         -0.0001654     0.0057028    -0.0061777
  ----------------------------------------------------
- Step CPU :     121.3, Total CPU :     139.6 of Master node
- Step Wall :     10.1, Total Wall :     11.7 at Sun Jul  3 23:13:03 2016
+ Step CPU :      45.5, Total CPU :      53.8 of Master node
+ Step Wall :      3.9, Total Wall :      4.6 at Sun Sep  4 02:38:35 2016
 
  Optimization Cycle   1    Maximum gradient =   0.078085    RMS gradient =   0.025109
 
@@ -461,8 +461,8 @@
    H          0.1258445     0.0240402     0.0217514
    H          0.1310211     0.0115207     0.0432268
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :     139.7 of Master node
- Step Wall :      0.0, Total Wall :     11.7 at Sun Jul  3 23:13:03 2016
+ Step CPU :       0.1, Total CPU :      53.9 of Master node
+ Step Wall :      0.0, Total Wall :      4.6 at Sun Sep  4 02:38:35 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -498,8 +498,8 @@
 
  Nuclear repulsion energy =  1429.95409972 a.u.
 
- Step CPU :       0.0, Total CPU :     139.7 of Master node
- Step Wall :      0.0, Total Wall :     11.7 at Sun Jul  3 23:13:03 2016
+ Step CPU :       0.0, Total CPU :      54.0 of Master node
+ Step Wall :      0.0, Total Wall :      4.6 at Sun Sep  4 02:38:35 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -531,8 +531,8 @@
     RHF Energy =   -1531.464091450 a.u.
  -----------------------------------------
 
- Step CPU :      15.4, Total CPU :     155.2 of Master node
- Step Wall :      1.3, Total Wall :     13.0 at Sun Jul  3 23:13:04 2016
+ Step CPU :       5.5, Total CPU :      59.5 of Master node
+ Step Wall :      0.5, Total Wall :      5.1 at Sun Sep  4 02:38:35 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -605,8 +605,8 @@
    H         -0.0014988     0.0006632    -0.0001216
    H         -0.0010235     0.0009567     0.0009116
  ----------------------------------------------------
- Step CPU :     117.2, Total CPU :     272.3 of Master node
- Step Wall :      9.8, Total Wall :     22.8 at Sun Jul  3 23:13:14 2016
+ Step CPU :      42.2, Total CPU :     101.7 of Master node
+ Step Wall :      3.5, Total Wall :      8.6 at Sun Sep  4 02:38:39 2016
 
  Optimization Cycle   2    Maximum gradient =   0.015832    RMS gradient =   0.006175
 
@@ -784,8 +784,8 @@
    H          0.0316252     0.0350750    -0.0256554
    H          0.0120354    -0.0223913    -0.0351000
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :     272.5 of Master node
- Step Wall :      0.0, Total Wall :     22.8 at Sun Jul  3 23:13:14 2016
+ Step CPU :       0.1, Total CPU :     101.9 of Master node
+ Step Wall :      0.0, Total Wall :      8.7 at Sun Sep  4 02:38:39 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -821,8 +821,8 @@
 
  Nuclear repulsion energy =  1429.20701363 a.u.
 
- Step CPU :       0.0, Total CPU :     272.5 of Master node
- Step Wall :      0.0, Total Wall :     22.8 at Sun Jul  3 23:13:14 2016
+ Step CPU :       0.0, Total CPU :     101.9 of Master node
+ Step Wall :      0.0, Total Wall :      8.7 at Sun Sep  4 02:38:39 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -853,8 +853,8 @@
     RHF Energy =   -1531.461926125 a.u.
  -----------------------------------------
 
- Step CPU :      14.3, Total CPU :     286.8 of Master node
- Step Wall :      1.2, Total Wall :     24.0 at Sun Jul  3 23:13:15 2016
+ Step CPU :       5.1, Total CPU :     107.0 of Master node
+ Step Wall :      0.4, Total Wall :      9.1 at Sun Sep  4 02:38:39 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -927,8 +927,8 @@
    H         -0.0000358    -0.0003398     0.0003167
    H          0.0000670    -0.0000134     0.0000102
  ----------------------------------------------------
- Step CPU :     117.4, Total CPU :     404.1 of Master node
- Step Wall :      9.8, Total Wall :     33.8 at Sun Jul  3 23:13:25 2016
+ Step CPU :      42.3, Total CPU :     149.3 of Master node
+ Step Wall :      3.5, Total Wall :     12.6 at Sun Sep  4 02:38:43 2016
 
  Optimization Cycle   3    Maximum gradient =   0.006591    RMS gradient =   0.001801
 
@@ -1106,8 +1106,8 @@
    H          0.0378472     0.0526375    -0.0643802
    H          0.0043477    -0.0192699    -0.0711499
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :     404.3 of Master node
- Step Wall :      0.0, Total Wall :     33.8 at Sun Jul  3 23:13:25 2016
+ Step CPU :       0.1, Total CPU :     149.5 of Master node
+ Step Wall :      0.0, Total Wall :     12.6 at Sun Sep  4 02:38:43 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -1143,8 +1143,8 @@
 
  Nuclear repulsion energy =  1428.04402647 a.u.
 
- Step CPU :       0.0, Total CPU :     404.3 of Master node
- Step Wall :      0.0, Total Wall :     33.8 at Sun Jul  3 23:13:25 2016
+ Step CPU :       0.0, Total CPU :     149.5 of Master node
+ Step Wall :      0.0, Total Wall :     12.6 at Sun Sep  4 02:38:43 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -1175,8 +1175,8 @@
     RHF Energy =   -1531.461172583 a.u.
  -----------------------------------------
 
- Step CPU :      14.0, Total CPU :     418.3 of Master node
- Step Wall :      1.2, Total Wall :     35.0 at Sun Jul  3 23:13:26 2016
+ Step CPU :       5.1, Total CPU :     154.6 of Master node
+ Step Wall :      0.4, Total Wall :     13.1 at Sun Sep  4 02:38:43 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -1249,8 +1249,8 @@
    H          0.0003171    -0.0003882     0.0000955
    H          0.0001232     0.0000502     0.0000760
  ----------------------------------------------------
- Step CPU :     117.0, Total CPU :     535.4 of Master node
- Step Wall :      9.8, Total Wall :     44.7 at Sun Jul  3 23:13:36 2016
+ Step CPU :      42.1, Total CPU :     196.7 of Master node
+ Step Wall :      3.5, Total Wall :     16.6 at Sun Sep  4 02:38:47 2016
 
  Optimization Cycle   4    Maximum gradient =   0.005039    RMS gradient =   0.001133
 
@@ -1428,8 +1428,8 @@
    H          0.0325205     0.0866155    -0.0682273
    H          0.0056622    -0.0053855    -0.0723752
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :     535.5 of Master node
- Step Wall :      0.0, Total Wall :     44.7 at Sun Jul  3 23:13:36 2016
+ Step CPU :       0.1, Total CPU :     196.8 of Master node
+ Step Wall :      0.0, Total Wall :     16.6 at Sun Sep  4 02:38:47 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -1465,8 +1465,8 @@
 
  Nuclear repulsion energy =  1428.63914289 a.u.
 
- Step CPU :       0.0, Total CPU :     535.5 of Master node
- Step Wall :      0.0, Total Wall :     44.7 at Sun Jul  3 23:13:36 2016
+ Step CPU :       0.0, Total CPU :     196.9 of Master node
+ Step Wall :      0.0, Total Wall :     16.6 at Sun Sep  4 02:38:47 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -1497,8 +1497,8 @@
     RHF Energy =   -1531.461045226 a.u.
  -----------------------------------------
 
- Step CPU :      14.3, Total CPU :     549.8 of Master node
- Step Wall :      1.2, Total Wall :     45.9 at Sun Jul  3 23:13:37 2016
+ Step CPU :       5.1, Total CPU :     202.0 of Master node
+ Step Wall :      0.4, Total Wall :     17.0 at Sun Sep  4 02:38:47 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -1571,8 +1571,8 @@
    H          0.0002013    -0.0001381    -0.0001788
    H          0.0000023     0.0001258     0.0001652
  ----------------------------------------------------
- Step CPU :     117.2, Total CPU :     667.0 of Master node
- Step Wall :      9.8, Total Wall :     55.7 at Sun Jul  3 23:13:47 2016
+ Step CPU :      41.4, Total CPU :     243.4 of Master node
+ Step Wall :      3.5, Total Wall :     20.6 at Sun Sep  4 02:38:51 2016
 
  Optimization Cycle   5    Maximum gradient =   0.006693    RMS gradient =   0.001800
 
@@ -1750,8 +1750,8 @@
    H         -0.0134474     0.0270730    -0.0382224
    H         -0.0119540    -0.0085069    -0.0394323
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :     667.2 of Master node
- Step Wall :      0.0, Total Wall :     55.7 at Sun Jul  3 23:13:47 2016
+ Step CPU :       0.1, Total CPU :     243.5 of Master node
+ Step Wall :      0.0, Total Wall :     20.6 at Sun Sep  4 02:38:51 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -1787,8 +1787,8 @@
 
  Nuclear repulsion energy =  1429.16046558 a.u.
 
- Step CPU :       0.0, Total CPU :     667.2 of Master node
- Step Wall :      0.0, Total Wall :     55.7 at Sun Jul  3 23:13:47 2016
+ Step CPU :       0.0, Total CPU :     243.5 of Master node
+ Step Wall :      0.0, Total Wall :     20.6 at Sun Sep  4 02:38:51 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -1808,7 +1808,7 @@
    5    5   -1531.461730241      -0.000011515      0.000930326      0.000306911
    6    6   -1531.461732585      -0.000002344      0.000494230      0.000121116
    7    7   -1531.461733063      -0.000000477      0.000163691      0.000058774
-   8    8   -1531.461733123      -0.000000060      0.000134542      0.000034280
+   8    8   -1531.461733123      -0.000000061      0.000134542      0.000034280
    9    9   -1531.461733142      -0.000000019      0.000032668      0.000015015
   10   10   -1531.461733145      -0.000000002      0.000015405      0.000006492
   11   11   -1531.461733145       0.000000000      0.000008479      0.000003206
@@ -1819,8 +1819,8 @@
     RHF Energy =   -1531.461733145 a.u.
  -----------------------------------------
 
- Step CPU :      13.7, Total CPU :     680.9 of Master node
- Step Wall :      1.1, Total Wall :     56.9 at Sun Jul  3 23:13:48 2016
+ Step CPU :       4.9, Total CPU :     248.4 of Master node
+ Step Wall :      0.4, Total Wall :     21.0 at Sun Sep  4 02:38:51 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -1893,8 +1893,8 @@
    H         -0.0001472     0.0002418    -0.0001359
    H         -0.0002318     0.0001877     0.0001206
  ----------------------------------------------------
- Step CPU :     117.2, Total CPU :     798.1 of Master node
- Step Wall :      9.8, Total Wall :     66.6 at Sun Jul  3 23:13:58 2016
+ Step CPU :      42.2, Total CPU :     290.6 of Master node
+ Step Wall :      3.5, Total Wall :     24.5 at Sun Sep  4 02:38:55 2016
 
  Optimization Cycle   6    Maximum gradient =   0.002426    RMS gradient =   0.000816
 
@@ -2072,8 +2072,8 @@
    H         -0.0084359     0.0528890    -0.0667753
    H         -0.0040310    -0.0219322    -0.0670099
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :     798.2 of Master node
- Step Wall :      0.0, Total Wall :     66.6 at Sun Jul  3 23:13:58 2016
+ Step CPU :       0.2, Total CPU :     290.8 of Master node
+ Step Wall :      0.0, Total Wall :     24.5 at Sun Sep  4 02:38:55 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -2109,8 +2109,8 @@
 
  Nuclear repulsion energy =  1429.96373898 a.u.
 
- Step CPU :       0.0, Total CPU :     798.2 of Master node
- Step Wall :      0.0, Total Wall :     66.7 at Sun Jul  3 23:13:58 2016
+ Step CPU :       0.1, Total CPU :     290.9 of Master node
+ Step Wall :      0.0, Total Wall :     24.5 at Sun Sep  4 02:38:55 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -2139,8 +2139,8 @@
     RHF Energy =   -1531.462215008 a.u.
  -----------------------------------------
 
- Step CPU :      12.4, Total CPU :     810.7 of Master node
- Step Wall :      1.0, Total Wall :     67.7 at Sun Jul  3 23:13:59 2016
+ Step CPU :       4.5, Total CPU :     295.3 of Master node
+ Step Wall :      0.4, Total Wall :     24.9 at Sun Sep  4 02:38:55 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -2213,8 +2213,8 @@
    H         -0.0000833     0.0001527     0.0000637
    H         -0.0000367     0.0000092    -0.0001626
  ----------------------------------------------------
- Step CPU :     117.6, Total CPU :     928.3 of Master node
- Step Wall :      9.8, Total Wall :     77.5 at Sun Jul  3 23:14:09 2016
+ Step CPU :      42.3, Total CPU :     337.6 of Master node
+ Step Wall :      3.5, Total Wall :     28.4 at Sun Sep  4 02:38:59 2016
 
  Optimization Cycle   7    Maximum gradient =   0.001503    RMS gradient =   0.000423
 
@@ -2392,8 +2392,8 @@
    H          0.0063861     0.0763185    -0.1030121
    H          0.0038898    -0.0340076    -0.0959357
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :     928.4 of Master node
- Step Wall :      0.0, Total Wall :     77.5 at Sun Jul  3 23:14:09 2016
+ Step CPU :       0.1, Total CPU :     337.8 of Master node
+ Step Wall :      0.0, Total Wall :     28.5 at Sun Sep  4 02:38:59 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -2429,8 +2429,8 @@
 
  Nuclear repulsion energy =  1430.30153539 a.u.
 
- Step CPU :       0.0, Total CPU :     928.5 of Master node
- Step Wall :      0.0, Total Wall :     77.5 at Sun Jul  3 23:14:09 2016
+ Step CPU :       0.0, Total CPU :     337.8 of Master node
+ Step Wall :      0.0, Total Wall :     28.5 at Sun Sep  4 02:38:59 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -2443,8 +2443,8 @@
     SCF Iteration
  ====================
  Iter SubIt   Total Energy      Delta Energy      Delta Density     DIIS Error
-   1    1   -1531.432844475   -1531.432844475      0.046274565      0.065088126
-   2    2   -1531.459333706      -0.026489232      0.016389519      0.011601634
+   1    1   -1531.432844475   -1531.432844475      0.046274565      0.065088127
+   2    2   -1531.459333706      -0.026489232      0.016389520      0.011601634
    3    3   -1531.461937068      -0.002603362      0.010801344      0.004001589
    4    4   -1531.462343208      -0.000406140      0.002184615      0.001048086
    5    5   -1531.462364861      -0.000021653      0.002476544      0.000532794
@@ -2461,8 +2461,8 @@
     RHF Energy =   -1531.462377075 a.u.
  -----------------------------------------
 
- Step CPU :      14.2, Total CPU :     942.7 of Master node
- Step Wall :      1.2, Total Wall :     78.7 at Sun Jul  3 23:14:10 2016
+ Step CPU :       5.1, Total CPU :     342.9 of Master node
+ Step Wall :      0.4, Total Wall :     28.9 at Sun Sep  4 02:38:59 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -2535,8 +2535,8 @@
    H          0.0000140     0.0000368     0.0000147
    H          0.0000181    -0.0001694    -0.0002031
  ----------------------------------------------------
- Step CPU :     117.7, Total CPU :    1060.4 of Master node
- Step Wall :      9.8, Total Wall :     88.5 at Sun Jul  3 23:14:20 2016
+ Step CPU :      42.3, Total CPU :     385.3 of Master node
+ Step Wall :      3.5, Total Wall :     32.4 at Sun Sep  4 02:39:03 2016
 
  Optimization Cycle   8    Maximum gradient =   0.001745    RMS gradient =   0.000419
 
@@ -2714,8 +2714,8 @@
    H         -0.0089105     0.0497848    -0.0539334
    H          0.0131627    -0.0191789    -0.0453663
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :    1060.5 of Master node
- Step Wall :      0.0, Total Wall :     88.5 at Sun Jul  3 23:14:20 2016
+ Step CPU :       0.1, Total CPU :     385.4 of Master node
+ Step Wall :      0.0, Total Wall :     32.4 at Sun Sep  4 02:39:03 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -2751,8 +2751,8 @@
 
  Nuclear repulsion energy =  1430.50984413 a.u.
 
- Step CPU :       0.0, Total CPU :    1060.6 of Master node
- Step Wall :      0.0, Total Wall :     88.5 at Sun Jul  3 23:14:20 2016
+ Step CPU :       0.0, Total CPU :     385.4 of Master node
+ Step Wall :      0.0, Total Wall :     32.4 at Sun Sep  4 02:39:03 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -2781,8 +2781,8 @@
     RHF Energy =   -1531.462240758 a.u.
  -----------------------------------------
 
- Step CPU :      12.4, Total CPU :    1073.0 of Master node
- Step Wall :      1.0, Total Wall :     89.6 at Sun Jul  3 23:14:21 2016
+ Step CPU :       4.4, Total CPU :     389.9 of Master node
+ Step Wall :      0.4, Total Wall :     32.8 at Sun Sep  4 02:39:03 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -2855,8 +2855,8 @@
    H          0.0000166     0.0000405    -0.0001327
    H          0.0000258    -0.0001232    -0.0000002
  ----------------------------------------------------
- Step CPU :     117.8, Total CPU :    1190.8 of Master node
- Step Wall :      9.8, Total Wall :     99.4 at Sun Jul  3 23:14:30 2016
+ Step CPU :      42.3, Total CPU :     432.2 of Master node
+ Step Wall :      3.5, Total Wall :     36.4 at Sun Sep  4 02:39:07 2016
 
  Optimization Cycle   9    Maximum gradient =   0.000799    RMS gradient =   0.000269
 
@@ -3034,8 +3034,8 @@
    H         -0.0129903     0.0333585    -0.0342302
    H          0.0216813    -0.0166939    -0.0264087
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :    1190.9 of Master node
- Step Wall :      0.0, Total Wall :     99.4 at Sun Jul  3 23:14:31 2016
+ Step CPU :       0.1, Total CPU :     432.3 of Master node
+ Step Wall :      0.0, Total Wall :     36.4 at Sun Sep  4 02:39:07 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -3071,8 +3071,8 @@
 
  Nuclear repulsion energy =  1430.92686690 a.u.
 
- Step CPU :       0.0, Total CPU :    1190.9 of Master node
- Step Wall :      0.0, Total Wall :     99.4 at Sun Jul  3 23:14:31 2016
+ Step CPU :       0.0, Total CPU :     432.3 of Master node
+ Step Wall :      0.0, Total Wall :     36.4 at Sun Sep  4 02:39:07 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -3085,9 +3085,9 @@
     SCF Iteration
  ====================
  Iter SubIt   Total Energy      Delta Energy      Delta Density     DIIS Error
-   1    1   -1531.451166101   -1531.451166101      0.036819142      0.030952734
+   1    1   -1531.451166101   -1531.451166101      0.036819143      0.030952734
    2    2   -1531.461175963      -0.010009862      0.011651489      0.006023505
-   3    3   -1531.461997695      -0.000821732      0.006767778      0.002077387
+   3    3   -1531.461997695      -0.000821732      0.006767779      0.002077387
    4    4   -1531.462128586      -0.000130892      0.001529144      0.000530553
    5    5   -1531.462136070      -0.000007484      0.002119447      0.000282516
    6    6   -1531.462140380      -0.000004311      0.000596069      0.000082867
@@ -3101,8 +3101,8 @@
     RHF Energy =   -1531.462140902 a.u.
  -----------------------------------------
 
- Step CPU :      12.3, Total CPU :    1203.2 of Master node
- Step Wall :      1.0, Total Wall :    100.4 at Sun Jul  3 23:14:32 2016
+ Step CPU :       4.4, Total CPU :     436.7 of Master node
+ Step Wall :      0.4, Total Wall :     36.7 at Sun Sep  4 02:39:07 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -3174,8 +3174,8 @@
    H          0.0000844    -0.0000110    -0.0000945
    H          0.0001209    -0.0000316     0.0000702
  ----------------------------------------------------
- Step CPU :     116.4, Total CPU :    1319.7 of Master node
- Step Wall :      9.7, Total Wall :    110.1 at Sun Jul  3 23:14:41 2016
+ Step CPU :      42.0, Total CPU :     478.7 of Master node
+ Step Wall :      3.5, Total Wall :     40.2 at Sun Sep  4 02:39:11 2016
 
  Optimization Cycle  10    Maximum gradient =   0.000965    RMS gradient =   0.000241
 
@@ -3336,7 +3336,7 @@
    C         -0.0022132     0.0050341     0.0164806
    S         -0.0062761     0.0120311     0.0379958
    C          0.0023312     0.0082744    -0.0086899
-   N         -0.0009005     0.0137694     0.0339635
+   N         -0.0009005     0.0137693     0.0339635
    C          0.0013069     0.0123956     0.0099917
    C          0.0042954     0.0068432    -0.0251999
    S          0.0066788     0.0026018    -0.0709870
@@ -3353,8 +3353,8 @@
    H         -0.0101376     0.0269303    -0.0273154
    H          0.0186602    -0.0144869    -0.0200888
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :    1319.8 of Master node
- Step Wall :      0.0, Total Wall :    110.1 at Sun Jul  3 23:14:41 2016
+ Step CPU :       0.1, Total CPU :     478.8 of Master node
+ Step Wall :      0.0, Total Wall :     40.3 at Sun Sep  4 02:39:11 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -3390,8 +3390,8 @@
 
  Nuclear repulsion energy =  1431.27847638 a.u.
 
- Step CPU :       0.0, Total CPU :    1319.8 of Master node
- Step Wall :      0.0, Total Wall :    110.1 at Sun Jul  3 23:14:41 2016
+ Step CPU :       0.0, Total CPU :     478.9 of Master node
+ Step Wall :      0.0, Total Wall :     40.3 at Sun Sep  4 02:39:11 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -3405,8 +3405,8 @@
  ====================
  Iter SubIt   Total Energy      Delta Energy      Delta Density     DIIS Error
    1    1   -1531.453794022   -1531.453794022      0.031952569      0.026090026
-   2    2   -1531.461368885      -0.007574863      0.009780950      0.005214968
-   3    3   -1531.462051859      -0.000682975      0.005734763      0.001792759
+   2    2   -1531.461368885      -0.007574863      0.009780949      0.005214968
+   3    3   -1531.462051859      -0.000682975      0.005734763      0.001792758
    4    4   -1531.462161615      -0.000109756      0.001646120      0.000441343
    5    5   -1531.462167782      -0.000006167      0.001428311      0.000276764
    6    6   -1531.462170344      -0.000002562      0.000494458      0.000072128
@@ -3421,8 +3421,8 @@
     RHF Energy =   -1531.462170754 a.u.
  -----------------------------------------
 
- Step CPU :      13.0, Total CPU :    1332.8 of Master node
- Step Wall :      1.1, Total Wall :    111.2 at Sun Jul  3 23:14:42 2016
+ Step CPU :       4.7, Total CPU :     483.5 of Master node
+ Step Wall :      0.4, Total Wall :     40.6 at Sun Sep  4 02:39:11 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -3494,8 +3494,8 @@
    H          0.0001004    -0.0000532     0.0000117
    H          0.0001117    -0.0000610     0.0000182
  ----------------------------------------------------
- Step CPU :     116.5, Total CPU :    1449.3 of Master node
- Step Wall :      9.7, Total Wall :    120.9 at Sun Jul  3 23:14:52 2016
+ Step CPU :      41.8, Total CPU :     525.4 of Master node
+ Step Wall :      3.5, Total Wall :     44.1 at Sun Sep  4 02:39:14 2016
 
  Optimization Cycle  11    Maximum gradient =   0.000693    RMS gradient =   0.000182
 
@@ -3673,8 +3673,8 @@
    H         -0.0061223     0.0175878    -0.0216614
    H          0.0076764    -0.0091937    -0.0162661
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :    1449.4 of Master node
- Step Wall :      0.0, Total Wall :    121.0 at Sun Jul  3 23:14:52 2016
+ Step CPU :       0.1, Total CPU :     525.5 of Master node
+ Step Wall :      0.0, Total Wall :     44.2 at Sun Sep  4 02:39:14 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -3710,8 +3710,8 @@
 
  Nuclear repulsion energy =  1431.54375508 a.u.
 
- Step CPU :       0.0, Total CPU :    1449.4 of Master node
- Step Wall :      0.0, Total Wall :    121.0 at Sun Jul  3 23:14:52 2016
+ Step CPU :       0.0, Total CPU :     525.5 of Master node
+ Step Wall :      0.0, Total Wall :     44.2 at Sun Sep  4 02:39:14 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -3724,7 +3724,7 @@
     SCF Iteration
  ====================
  Iter SubIt   Total Energy      Delta Energy      Delta Density     DIIS Error
-   1    1   -1531.459751187   -1531.459751187      0.017325750      0.017887575
+   1    1   -1531.459751187   -1531.459751187      0.017325750      0.017887576
    2    2   -1531.461939418      -0.002188231      0.005610156      0.003660450
    3    3   -1531.462222428      -0.000283010      0.003500310      0.001257831
    4    4   -1531.462268109      -0.000045681      0.001029736      0.000305714
@@ -3740,8 +3740,8 @@
     RHF Energy =   -1531.462271775 a.u.
  -----------------------------------------
 
- Step CPU :      12.0, Total CPU :    1461.4 of Master node
- Step Wall :      1.0, Total Wall :    122.0 at Sun Jul  3 23:14:53 2016
+ Step CPU :       4.3, Total CPU :     529.8 of Master node
+ Step Wall :      0.4, Total Wall :     44.5 at Sun Sep  4 02:39:15 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -3813,8 +3813,8 @@
    H         -0.0000229    -0.0000099    -0.0000127
    H         -0.0000220     0.0000038     0.0000183
  ----------------------------------------------------
- Step CPU :     116.8, Total CPU :    1578.2 of Master node
- Step Wall :      9.7, Total Wall :    131.7 at Sun Jul  3 23:15:03 2016
+ Step CPU :      41.5, Total CPU :     571.3 of Master node
+ Step Wall :      3.5, Total Wall :     48.0 at Sun Sep  4 02:39:18 2016
 
  Optimization Cycle  12    Maximum gradient =   0.000235    RMS gradient =   0.000086
 
@@ -3992,8 +3992,8 @@
    H         -0.0000320     0.0050166    -0.0102515
    H          0.0002413    -0.0043093    -0.0084200
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :    1578.3 of Master node
- Step Wall :      0.0, Total Wall :    131.7 at Sun Jul  3 23:15:03 2016
+ Step CPU :       0.1, Total CPU :     571.4 of Master node
+ Step Wall :      0.0, Total Wall :     48.0 at Sun Sep  4 02:39:18 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -4029,8 +4029,8 @@
 
  Nuclear repulsion energy =  1431.62310876 a.u.
 
- Step CPU :       0.0, Total CPU :    1578.3 of Master node
- Step Wall :      0.0, Total Wall :    131.7 at Sun Jul  3 23:15:03 2016
+ Step CPU :       0.0, Total CPU :     571.5 of Master node
+ Step Wall :      0.0, Total Wall :     48.0 at Sun Sep  4 02:39:18 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -4058,8 +4058,8 @@
     RHF Energy =   -1531.462303331 a.u.
  -----------------------------------------
 
- Step CPU :      10.6, Total CPU :    1588.9 of Master node
- Step Wall :      0.9, Total Wall :    132.6 at Sun Jul  3 23:15:04 2016
+ Step CPU :       3.8, Total CPU :     575.3 of Master node
+ Step Wall :      0.3, Total Wall :     48.4 at Sun Sep  4 02:39:19 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -4131,8 +4131,8 @@
    H         -0.0000270     0.0000045     0.0000149
    H         -0.0000044     0.0000074     0.0000054
  ----------------------------------------------------
- Step CPU :     116.6, Total CPU :    1705.6 of Master node
- Step Wall :      9.7, Total Wall :    142.3 at Sun Jul  3 23:15:13 2016
+ Step CPU :      41.2, Total CPU :     616.5 of Master node
+ Step Wall :      3.5, Total Wall :     51.9 at Sun Sep  4 02:39:22 2016
 
  Optimization Cycle  13    Maximum gradient =   0.000105    RMS gradient =   0.000035
 
@@ -4310,8 +4310,8 @@
    H          0.0023968     0.0014793    -0.0062819
    H         -0.0020346    -0.0021425    -0.0056840
  ----------------------------------------------------
- Step CPU :       0.1, Total CPU :    1705.7 of Master node
- Step Wall :      0.0, Total Wall :    142.3 at Sun Jul  3 23:15:13 2016
+ Step CPU :       0.1, Total CPU :     616.6 of Master node
+ Step Wall :      0.0, Total Wall :     51.9 at Sun Sep  4 02:39:22 2016
 
  ----------------------------------------------------
           Molecular Geometry (Angstrom)
@@ -4347,8 +4347,8 @@
 
  Nuclear repulsion energy =  1431.53950463 a.u.
 
- Step CPU :       0.0, Total CPU :    1705.7 of Master node
- Step Wall :      0.0, Total Wall :    142.3 at Sun Jul  3 23:15:13 2016
+ Step CPU :       0.0, Total CPU :     616.6 of Master node
+ Step Wall :      0.0, Total Wall :     51.9 at Sun Sep  4 02:39:22 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -4375,8 +4375,8 @@
     RHF Energy =   -1531.462303534 a.u.
  -----------------------------------------
 
- Step CPU :       9.4, Total CPU :    1715.1 of Master node
- Step Wall :      0.8, Total Wall :    143.1 at Sun Jul  3 23:15:14 2016
+ Step CPU :       3.4, Total CPU :     620.0 of Master node
+ Step Wall :      0.3, Total Wall :     52.2 at Sun Sep  4 02:39:22 2016
 
  ----------------------------------------------
    MP2 energy gradient calculation 
@@ -4448,8 +4448,8 @@
    H         -0.0000075     0.0000043     0.0000239
    H          0.0000113     0.0000029     0.0000022
  ----------------------------------------------------
- Step CPU :     116.6, Total CPU :    1831.7 of Master node
- Step Wall :      9.7, Total Wall :    152.8 at Sun Jul  3 23:15:24 2016
+ Step CPU :      41.2, Total CPU :     661.2 of Master node
+ Step Wall :      3.5, Total Wall :     55.7 at Sun Sep  4 02:39:26 2016
 
  Optimization Cycle  14    Maximum gradient =   0.000079    RMS gradient =   0.000028
 
@@ -5433,12 +5433,12 @@
    H          4.3287246     1.4993460    -0.5213150
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :    1831.8 of Master node
- Step Wall :      0.0, Total Wall :    152.9 at Sun Jul  3 23:15:24 2016
+ Step CPU :       0.1, Total CPU :     661.3 of Master node
+ Step Wall :      0.0, Total Wall :     55.7 at Sun Sep  4 02:39:26 2016
 
- Total CPU time :     1831.8 seconds
- Total Wall time:      152.9 seconds
-                 ( 0 days  0 hours  2 minutes 32.9 seconds)
- The job finished at Sun Jul  3 23:15:24 2016
- Used memory :    746 MB
+ Total CPU time :      661.4 seconds
+ Total Wall time:       55.7 seconds
+                 ( 0 days  0 hours  0 minutes 55.7 seconds)
+ The job finished at Sun Sep  4 02:39:26 2016
+ Used memory :    251 MB
  Your calculation finished with  0 warning(s).

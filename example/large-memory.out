@@ -1,13 +1,13 @@
  *******************************************
     Scalable Molecular Analysis Solver for
       High performance computing systems
-            SMASH Version 2.0.0     
+            SMASH Version 2.1.0     
            written by K. ISHIMURA
  *******************************************
 
- The job started at Sun Jul  3 23:09:05 2016
- Master node is hpcs01.local
- Number of processes =     1
+ The job started at Sun Sep  4 01:58:30 2016
+ Master node is hpcs03.local
+ Number of processes =     3
  Number of threads   =    12
 
  -------------------------------------------------------------------------
@@ -215,8 +215,8 @@
        unlimit
        setenv OMP_STACKSIZE 1G
 
- Step CPU :       3.8, Total CPU :       3.8 of Master node
- Step Wall :      0.4, Total Wall :      0.4 at Sun Jul  3 23:09:06 2016
+ Step CPU :       2.7, Total CPU :       2.7 of Master node
+ Step Wall :      0.2, Total Wall :      0.2 at Sun Sep  4 01:58:30 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -243,7 +243,7 @@
   12   11   -2875.139335737      -0.000000009      0.000039197      0.000013533
   13   12   -2875.139335738      -0.000000001      0.000016551      0.000007342
   14   13   -2875.139335737       0.000000001      0.000014539      0.000004055
-  15   14   -2875.139335738      -0.000000001      0.000005971      0.000001697
+  15   14   -2875.139335738       0.000000000      0.000005971      0.000001697
   16   15   -2875.139335739      -0.000000001      0.000002666      0.000000680
  -----------------------------------------
     SCF Converged.
@@ -327,8 +327,8 @@
    Alpha Virtual :      0.99708     1.00210     1.00312     1.02802     1.08848
    Alpha Virtual :      1.09320     1.09906     1.12906     1.13042     1.13791
  --------------------------------------------------------------------------------
- Step CPU :     559.9, Total CPU :     563.7 of Master node
- Step Wall :     46.7, Total Wall :     47.1 at Sun Jul  3 23:09:52 2016
+ Step CPU :     194.5, Total CPU :     197.2 of Master node
+ Step Wall :     16.2, Total Wall :     16.5 at Sun Sep  4 01:58:46 2016
 
  ----------------------------------------------
    MP2 calculation 
@@ -340,12 +340,9 @@
      Number of correlated occupied MOs =  164
      Number of active virtual MOs      =  135
  ----------------------------------------------
- == Multiple pass calculation ==
-    Number of passes :    2
-    Start first and second integral transformations of Pass    1
-    Start third and fourth integral transformations of Pass    1
-    Start first and second integral transformations of Pass    2
-    Start third and fourth integral transformations of Pass    2
+ == Single pass calculation ==
+    Start first and second integral transformations
+    Start third and fourth integral transformations
  -------------------------------------------------
    HF Energy                  =  -2875.139335739
    MP2 Correlation Energy     =     -3.320948925
@@ -353,8 +350,8 @@
    SCS-MP2 Correlation Energy =     -3.436950618
    HF + SCS-MP2 Energy        =  -2878.576286357
  -------------------------------------------------
- Step CPU :    1694.9, Total CPU :    2258.6 of Master node
- Step Wall :    141.4, Total Wall :    188.5 at Sun Jul  3 23:12:14 2016
+ Step CPU :     437.6, Total CPU :     634.7 of Master node
+ Step Wall :     36.7, Total Wall :     53.2 at Sun Sep  4 01:59:23 2016
 
   -------------------
     MO coefficients
@@ -3400,12 +3397,12 @@
        3.0951     1.1517    -1.1403     3.4938
   ----------------------------------------------
 
- Step CPU :       0.1, Total CPU :    2258.7 of Master node
- Step Wall :      0.0, Total Wall :    188.5 at Sun Jul  3 23:12:14 2016
+ Step CPU :       1.0, Total CPU :     635.8 of Master node
+ Step Wall :      0.9, Total Wall :     54.1 at Sun Sep  4 01:59:24 2016
 
- Total CPU time :     2258.8 seconds
- Total Wall time:      188.5 seconds
-                 ( 0 days  0 hours  3 minutes  8.5 seconds)
- The job finished at Sun Jul  3 23:12:14 2016
+ Total CPU time :      635.9 seconds
+ Total Wall time:       54.1 seconds
+                 ( 0 days  0 hours  0 minutes 54.1 seconds)
+ The job finished at Sun Sep  4 01:59:24 2016
  Used memory :   9999 MB
  Your calculation finished with  0 warning(s).

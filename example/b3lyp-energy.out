@@ -1,13 +1,13 @@
  *******************************************
     Scalable Molecular Analysis Solver for
       High performance computing systems
-            SMASH Version 2.0.0     
+            SMASH Version 2.1.0     
            written by K. ISHIMURA
  *******************************************
 
- The job started at Sun Jul  3 22:57:10 2016
- Master node is hpcs01.local
- Number of processes =     1
+ The job started at Sun Sep  4 01:43:29 2016
+ Master node is hpcs03.local
+ Number of processes =     3
  Number of threads   =    12
 
  -------------------------------------------------------------------------
@@ -240,8 +240,8 @@
        unlimit
        setenv OMP_STACKSIZE 1G
 
- Step CPU :       0.6, Total CPU :       0.6 of Master node
- Step Wall :      0.1, Total Wall :      0.1 at Sun Jul  3 22:57:10 2016
+ Step CPU :       2.3, Total CPU :       2.3 of Master node
+ Step Wall :      0.2, Total Wall :      0.2 at Sun Sep  4 01:43:30 2016
 
  --------------------------------------------------------------------------
    Restricted Hartree-Fock calculation
@@ -264,8 +264,8 @@
     RHF Energy =   -1549.792378036 a.u.
  -----------------------------------------
 
- Step CPU :     143.9, Total CPU :     144.5 of Master node
- Step Wall :     12.0, Total Wall :     12.1 at Sun Jul  3 22:57:22 2016
+ Step CPU :      49.3, Total CPU :      51.6 of Master node
+ Step Wall :      4.1, Total Wall :      4.3 at Sun Sep  4 01:43:34 2016
 
  --------------------------------------------------------------------------
    Restricted DFT calculation
@@ -364,8 +364,8 @@
    Alpha Virtual :      3.14660     3.15287     3.27970     3.40808     3.45394
    Alpha Virtual :      3.47040     3.67677     3.74452
  --------------------------------------------------------------------------------
- Step CPU :     487.9, Total CPU :     632.4 of Master node
- Step Wall :     40.7, Total Wall :     52.7 at Sun Jul  3 22:58:03 2016
+ Step CPU :     166.0, Total CPU :     217.7 of Master node
+ Step Wall :     13.8, Total Wall :     18.2 at Sun Sep  4 01:43:47 2016
 
   -------------------
     MO coefficients
@@ -2836,12 +2836,12 @@
       -0.6505     1.6603    -0.0355     1.7835
   ----------------------------------------------
 
- Step CPU :       0.2, Total CPU :     632.5 of Master node
- Step Wall :      0.0, Total Wall :     52.8 at Sun Jul  3 22:58:03 2016
+ Step CPU :       0.1, Total CPU :     217.8 of Master node
+ Step Wall :      0.0, Total Wall :     18.2 at Sun Sep  4 01:43:48 2016
 
- Total CPU time :      632.6 seconds
- Total Wall time:       52.8 seconds
-                 ( 0 days  0 hours  0 minutes 52.8 seconds)
- The job finished at Sun Jul  3 22:58:03 2016
- Used memory :     35 MB
+ Total CPU time :      218.0 seconds
+ Total Wall time:       18.2 seconds
+                 ( 0 days  0 hours  0 minutes 18.2 seconds)
+ The job finished at Sun Sep  4 01:43:48 2016
+ Used memory :     21 MB
  Your calculation finished with  0 warning(s).
