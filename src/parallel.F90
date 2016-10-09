@@ -477,3 +477,104 @@ end
 #endif
       return
 end
+
+
+!--------------------------------------------------------------
+  subroutine para_isendr(buff,num,idest,ntag,mpi_commin,ireq)
+!--------------------------------------------------------------
+!
+! Non-blocking MPI_Isend of real(8) data
+!
+#ifndef noMPI
+#ifndef ILP64
+      use mpi
+      implicit none
+      integer,intent(in) :: num, idest, ntag, mpi_commin
+      integer,intent(out) :: ireq
+      integer(selected_int_kind(9)) :: num4, idest4, ntag4, ireq4, mpi_comm4, ierr
+#else
+      implicit none
+      include "mpif.h"
+      integer,intent(in) :: num, idest, ntag, mpi_commin
+      integer,intent(out) :: ireq
+      integer(selected_int_kind(18)) :: num4, idest4, ntag4, ireq4, mpi_comm4, ierr
+#endif
+      real(8),intent(in) :: buff(*)
+!
+      num4= num
+      idest4= idest
+      ntag4= ntag
+      mpi_comm4= mpi_commin
+!
+      call mpi_isend(buff,num4,MPI_DOUBLE_PRECISION,idest4,ntag4,mpi_comm4,ireq4,ierr)
+!
+      ireq= ireq4
+#endif
+      return
+end
+
+
+!----------------------------------------------------------------
+  subroutine para_irecvr(buff,num,isource,ntag,mpi_commin,ireq)
+!----------------------------------------------------------------
+!
+! Non-blocking MPI_Irecv of real(8) data
+!
+#ifndef noMPI
+#ifndef ILP64
+      use mpi
+      implicit none
+      integer,intent(in) :: num, isource, ntag, mpi_commin
+      integer,intent(out) :: ireq
+      integer(selected_int_kind(9)) :: num4, isource4, ntag4, ireq4, mpi_comm4, ierr
+#else
+      implicit none
+      include "mpif.h"
+      integer,intent(in) :: num, isource, ntag, mpi_commin
+      integer,intent(out) :: ireq
+      integer(selected_int_kind(18)) :: num4, isource4, ntag4, ireq4, mpi_comm4, ierr
+#endif
+      real(8),intent(out) :: buff(*)
+!
+      num4= num
+      isource4= isource
+      ntag4= ntag
+      mpi_comm4= mpi_commin
+!
+      call mpi_irecv(buff,num4,MPI_DOUBLE_PRECISION,isource4,ntag4,mpi_comm4,ireq4,ierr)
+!
+      ireq= ireq4
+#endif
+      return
+end
+
+
+!-------------------------------------
+  subroutine para_waitall(nump,ireq)
+!-------------------------------------
+!
+!  MPI_Waitall
+!
+#ifndef noMPI
+#ifndef ILP64
+      use mpi
+      implicit none
+      integer,intent(in) :: nump, ireq(nump)
+      integer(selected_int_kind(9)) :: nump4, ireq4(nump), STATUS(MPI_STATUS_SIZE,nump), ierr
+#else
+      implicit none
+      include "mpif.h"
+      integer,intent(in) :: nump, ireq(nump)
+      integer(selected_int_kind(18)) :: nump4, ireq4(nump), STATUS(MPI_STATUS_SIZE,nump), ierr
+#endif
+      integer :: ii
+!
+      nump4= nump
+      do ii= 1,nump
+        ireq4(ii)= ireq(ii)
+      enddo
+!
+      call mpi_waitall(nump4,ireq4,STATUS,ierr)
+#endif
+      return
+end

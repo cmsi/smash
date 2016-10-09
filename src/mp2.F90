@@ -97,7 +97,7 @@
 ! Check available memory size and judge the number of passes
 !
       call memrest(msize)
-      memneed= max(nao*noac+noac*maxdim**3+noac*nao*maxdim**2,nao*nao*2)
+      memneed= max(nao*noac+noac*maxdim**3+noac*nao*maxdim**2,nao*nao*3)
       numocc3=(msize-memneed)/maxsize
 !
       if(numocc3 <= 0) then
@@ -194,7 +194,7 @@ end
       real(8),intent(in) :: cmo(nao,nao), energymo(nmo), xint(nshell*(nshell+1)/2)
       real(8),intent(inout) :: emp2st(2)
       real(8),allocatable :: trint2(:), cmowrk(:), trint1a(:), trint1b(:)
-      real(8),allocatable :: trint3(:), trint4(:)
+      real(8),allocatable :: trint3(:), trint4(:), recvint(:)
 !
       noac3= noac*(noac+1)/2
       nao2 = nao*nao
@@ -220,17 +220,17 @@ end
       deallocate(cmowrk,trint1a,trint1b)
       call memunset(nao*noac+noac*maxdim**3+mlsize*noac*nao)
 !
-      call memset(2*nao2)
-      allocate(trint3(nao2),trint4(nao2))
+      call memset(3*nao2)
+      allocate(trint3(nao2),trint4(nao2),recvint(nao2))
 !
 ! Third and fourth integral transformations and MP2 energy calculation
 !
       if(master) write(*,'("    Start third and fourth integral transformations")')
-      call mp2trans34(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,noac,nvac,ncore, &
-&                     idis,nproc,myrank,mpi_comm)
+      call mp2trans34(cmo(1,neleca+1),energymo,trint2,trint3,trint4,recvint,emp2st, &
+&                     noac,nvac,ncore,idis,nproc,myrank,mpi_comm)
 !
-      deallocate(trint3,trint4)
-      call memunset(2*nao2)
+      deallocate(trint3,trint4,recvint)
+      call memunset(3*nao2)
       deallocate(trint2)
       call memunset(maxsize*noac3)
 !
@@ -268,7 +268,7 @@ end
       real(8),intent(in) :: cmo(nao,nao), energymo(nmo), xint(nshell*(nshell+1)/2)
       real(8),intent(inout) :: emp2st(2)
       real(8),allocatable :: trint2(:), cmowrk(:), trint1a(:), trint1b(:)
-      real(8),allocatable :: trint3(:), trint4(:)
+      real(8),allocatable :: trint3(:), trint4(:), recvint(:)
 !
       noac3= noac*(noac+1)/2
       nao2 = nao*nao
@@ -335,18 +335,18 @@ end
         deallocate(cmowrk,trint1a,trint1b)
         call memunset(nao*noac+noac*maxdim**3+mlsize*noac*nao)
 !
-        call memset(2*nao2)
-        allocate(trint3(nao2),trint4(nao2))
+        call memset(3*nao2)
+        allocate(trint3(nao2),trint4(nao2),recvint(nao2))
 !
 ! Third and fourth integral transformations and MP2 energy calculation
 !
         if(master) &
 &         write(*,'("    Start third and fourth integral transformations of Pass",i5)')ipass
-        call mp2trans34m(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,nvac,ncore, &
-&                        idis,numij,ijindex(1,ipass),nproc,myrank,mpi_comm)
+        call mp2trans34m(cmo(1,neleca+1),energymo,trint2,trint3,trint4,recvint,emp2st, &
+&                        nvac,ncore,idis,numij,ijindex(1,ipass),nproc,myrank,mpi_comm)
 !
-        deallocate(trint3,trint4)
-        call memunset(2*nao2)
+        deallocate(trint3,trint4,recvint)
+        call memunset(3*nao2)
       enddo
       deallocate(trint2)
       call memunset(maxsize*numocc3)
@@ -446,10 +446,10 @@ end
 end
 
 
-!---------------------------------------------------------------------------------------
-  subroutine mp2trans34(cmovir,energymo,trint2,trint3,trint4,emp2st,noac,nvac,ncore, &
-&                       idis,nproc,myrank,mpi_comm)
-!---------------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
+  subroutine mp2trans34(cmovir,energymo,trint2,trint3,trint4,recvint,emp2st, &
+&                       noac,nvac,ncore,idis,nproc,myrank,mpi_comm)
+!-------------------------------------------------------------------------------
 !
 ! Driver of third and fourth integral transformations and MP2 energy calculation
 !
@@ -467,10 +467,13 @@ end
       implicit none
       integer,intent(in) :: noac, nvac, ncore, nproc, myrank, mpi_comm, idis(0:nproc-1,4)
       integer :: numrecv, iproc, irecv(0:nproc-1), noac3, ncycle, icycle, myij
+!ishimura
+      integer :: ireq(2*nproc)
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmovir(nao*nvac), energymo(nmo)
       real(8),intent(in) :: trint2(idis(myrank,3),noac*(noac+1)/2)
-      real(8),intent(out) :: trint3(nao*nao), trint4(nao*nao), emp2st(2)
+!ishimura
+      real(8),intent(out) :: trint3(nao*nao), trint4(nao*nao), recvint(nao*nao), emp2st(2)
 !
       numrecv= 1
       do iproc= 0,nproc-1
@@ -480,26 +483,41 @@ end
       noac3= noac*(noac+1)/2
       ncycle=(noac3-1)/nproc+1
 !
+!ishimura
+      call mp2int_isendrecv(trint2,recvint,1,irecv,noac3, &
+&                           idis,ireq,nproc,myrank,mpi_comm)
+      call mp2int_sort(recvint,trint4,1,noac3,idis,ireq,nproc,myrank,mpi_comm)
+!
       do icycle= 1,ncycle    
-        call mp2int_sendrecv(trint2,trint3,trint4,icycle,irecv,noac3, &
-&                            idis,nproc,myrank,mpi_comm)
+!ishimura
+!        call mp2int_sendrecv(trint2,trint3,trint4,icycle,irecv,noac3, &
+!&                            idis,nproc,myrank,mpi_comm)
+        if(icycle /= ncycle) &
+&         call mp2int_isendrecv(trint2,recvint,icycle+1,irecv,noac3, &
+&                               idis,ireq,nproc,myrank,mpi_comm)
 !
         myij=(icycle-1)*nproc+1+myrank
-        if(myij > noac3) cycle
+!ishimura
+!       if(myij > noac3) cycle
+        if(myij <= noac3) then
 !
 ! Third integral transformation
 !   (mi|lj) trint4[l,m] -> (ai|lj) trint3[l,a]
 !
-        call dgemm('N','N',nao,nvac,nao,one,trint4,nao,cmovir,nao,zero,trint3,nao)
+          call dgemm('N','N',nao,nvac,nao,one,trint4,nao,cmovir,nao,zero,trint3,nao)
 !
 ! Fourth integral transformation
 !   (ai|lj) trint3[l,a] -> (ai|bj) trint4[b,a]
 !
-        call dgemm('T','N',nvac,nvac,nao,one,cmovir,nao,trint3,nao,zero,trint4,nvac)
+          call dgemm('T','N',nvac,nvac,nao,one,cmovir,nao,trint3,nao,zero,trint4,nvac)
 !
 ! MP2 energy calculation
 !
-        call calcrmp2energy(trint4,energymo,emp2st,noac,nvac,ncore,icycle,nproc,myrank)
+          call calcrmp2energy(trint4,energymo,emp2st,noac,nvac,ncore,icycle,nproc,myrank)
+!ishimura
+        endif
+        if(icycle /= ncycle) &
+&         call mp2int_sort(recvint,trint4,icycle+1,noac3,idis,ireq,nproc,myrank,mpi_comm)
       enddo
       return
 end
@@ -936,10 +954,10 @@ end
 end
 
 
-!---------------------------------------------------------------------------------------
-  subroutine mp2trans34m(cmovir,energymo,trint2,trint3,trint4,emp2st,nvac,ncore, &
-&                        idis,numij,ijindex,nproc,myrank,mpi_comm)
-!---------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------
+  subroutine mp2trans34m(cmovir,energymo,trint2,trint3,trint4,recvint,emp2st, &
+&                        nvac,ncore,idis,numij,ijindex,nproc,myrank,mpi_comm)
+!--------------------------------------------------------------------------------
 !
 ! Driver of third and fourth integral transformations and MP2 energy calculation
 !
@@ -959,10 +977,11 @@ end
       integer,intent(in) :: nvac, ncore, nproc, myrank, mpi_comm, idis(0:nproc-1,4)
       integer,intent(in) :: numij, ijindex(4)
       integer :: numrecv, iproc, irecv(0:nproc-1), ncycle, icycle, myij
+      integer :: ireq(2*nproc)
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmovir(nao*nvac), energymo(nmo)
       real(8),intent(in) :: trint2(idis(myrank,3),numij)
-      real(8),intent(out) :: trint3(nao*nao), trint4(nao*nao), emp2st(2)
+      real(8),intent(out) :: trint3(nao*nao), trint4(nao*nao), recvint(nao*nao), emp2st(2)
 !
       numrecv= 1
       do iproc= 0,nproc-1
@@ -971,26 +990,41 @@ end
       enddo
       ncycle=(numij-1)/nproc+1
 !
+!ishimura
+      call mp2int_isendrecv(trint2,recvint,1,irecv,numij, &
+&                           idis,ireq,nproc,myrank,mpi_comm)
+      call mp2int_sort(recvint,trint4,1,numij,idis,ireq,nproc,myrank,mpi_comm)
+!
       do icycle= 1,ncycle    
-        call mp2int_sendrecv(trint2,trint3,trint4,icycle,irecv,numij, &
-&                            idis,nproc,myrank,mpi_comm)
+!ishimura
+!        call mp2int_sendrecv(trint2,trint3,trint4,icycle,irecv,numij, &
+!&                            idis,nproc,myrank,mpi_comm)
+        if(icycle /= ncycle) &
+&         call mp2int_isendrecv(trint2,recvint,icycle+1,irecv,numij, &
+&                               idis,ireq,nproc,myrank,mpi_comm)
 !
         myij=(icycle-1)*nproc+1+myrank
-        if(myij > numij) cycle
+!ishimura
+!       if(myij > numij) cycle
+        if(myij <= numij) then
 !
 ! Third integral transformation
 !   (mi|lj) trint4[l,m] -> (ai|lj) trint3[l,a]
 !
-        call dgemm('N','N',nao,nvac,nao,one,trint4,nao,cmovir,nao,zero,trint3,nao)
+          call dgemm('N','N',nao,nvac,nao,one,trint4,nao,cmovir,nao,zero,trint3,nao)
 !
 ! Fourth integral transformation
 !   (ai|lj) trint3[l,a] -> (ai|bj) trint4[b,a]
 !
-        call dgemm('T','N',nvac,nvac,nao,one,cmovir,nao,trint3,nao,zero,trint4,nvac)
+          call dgemm('T','N',nvac,nvac,nao,one,cmovir,nao,trint3,nao,zero,trint4,nvac)
 !
 ! MP2 energy calculation
 !
-        call calcrmp2energym(trint4,energymo,emp2st,nvac,ncore,icycle,ijindex,nproc,myrank)
+          call calcrmp2energym(trint4,energymo,emp2st,nvac,ncore,icycle,ijindex,nproc,myrank)
+        endif
+        if(icycle /= ncycle) &
+&         call mp2int_sort(recvint,trint4,icycle+1,numij,idis,ireq,nproc,myrank,mpi_comm)
+!
       enddo
       return
 end
@@ -1102,3 +1136,141 @@ end
       endif
       return
 end
+
+
+!------------------------------------------------------------------
+  subroutine mp2int_isendrecv(trint2,recvint,icycle,irecv,numij, &
+&                             idis,ireq,nproc,myrank,mpi_comm)
+!------------------------------------------------------------------
+!
+! Non-blocking communications of second transformed integrals (mi|lj)
+!
+! In  : trint2  (Second transformed integrals)
+!       icycle  (Mp2trans2 cycle number)
+!       irecv   (Numbers of receiving data)
+!       numij   (Number of active occupied MOs)
+!       idis    (Information for parallelization)
+! Out : recvint (Receiving data)
+!       ireq    (Request for MPI_Wait)
+      use modbasis, only : nao
+      implicit none
+      integer,intent(in) :: icycle, nproc, myrank, mpi_comm, irecv(0:nproc-1)
+      integer,intent(in) :: numij, idis(0:nproc-1,4)
+      integer,intent(out) :: ireq(0:nproc-1,2)
+      integer :: iproc, jproc, ijstart, myij, ij, nsend, nrecv
+      real(8),intent(in) :: trint2(idis(myrank,3),numij)
+      real(8),intent(out) :: recvint(nao*nao)
+!
+      jproc= myrank
+      ijstart=(icycle-1)*nproc+1
+      myij= ijstart+myrank
+!
+! Send and receive second transformed integrals
+!
+      if(nproc > 1) then
+        do iproc= myrank+1,nproc-1
+          jproc= jproc-1
+          if(jproc < 0) jproc= nproc-1
+          nsend= idis(myrank,3)
+          nrecv= idis(jproc,3)
+          ij= ijstart+iproc
+          if(ij > numij) then
+            nsend= 0
+            ij   = 1
+          endif
+          if(myij > numij) nrecv=0
+          call para_isendr(trint2(1,ij),nsend,iproc,myrank,mpi_comm,ireq(iproc,1))
+          call para_irecvr(recvint(irecv(jproc)),nrecv,jproc,jproc,mpi_comm,ireq(iproc,2))
+        enddo
+!
+        do iproc= 0, myrank-1
+          jproc= jproc-1
+          if(jproc < 0) jproc= nproc-1
+          nsend= idis(myrank,3)
+          nrecv= idis(jproc,3)
+          ij= ijstart+iproc
+          if(ij > numij) then
+            nsend= 0
+            ij   = 1
+          endif
+          if(myij > numij) nrecv=0
+          call para_isendr(trint2(1,ij),nsend,iproc,myrank,mpi_comm,ireq(iproc,1))
+          call para_irecvr(recvint(irecv(jproc)),nrecv,jproc,jproc,mpi_comm,ireq(iproc,2))
+        enddo
+!  
+        nsend= idis(myrank,3)
+        if(myij > numij) nsend= 0
+        call para_isendr(trint2(1,myij),nsend,myrank,myrank,mpi_comm,ireq(myrank,1))
+        call para_irecvr(recvint(irecv(myrank)),nsend,myrank,myrank,mpi_comm,ireq(myrank,2))
+      else
+        nsend= idis(myrank,3)
+        if(myij <= numij) call dcopy(nsend,trint2(1,myij),1,recvint(irecv(myrank)),1)
+      endif
+!
+      return
+end
+
+
+!--------------------------------------------------------------------------------------
+  subroutine mp2int_sort(recvint,trint4,icycle,numij,idis,ireq,nproc,myrank,mpi_comm)
+!--------------------------------------------------------------------------------------
+!
+! MPI_Waitall and sorting of receieved second-transformed integrals
+!
+      use modbasis, only : nao, nshell, mbf, locbf
+      implicit none
+      integer,intent(in) :: icycle, nproc, myrank, mpi_comm, numij
+      integer,intent(in) :: idis(0:nproc-1,4), ireq(2*nproc)
+      integer :: iproc, ijstart, myij, ish, ksh, nbfi, nbfk
+      integer :: locbfi, locbfk, ii, kk, ik, num, jcount
+      real(8),intent(in) :: recvint(nao*nao)
+      real(8),intent(out) :: trint4(nao,nao)
+!
+      ijstart=(icycle-1)*nproc+1
+      myij= ijstart+myrank
+!
+      if(nproc > 1) call para_waitall(2*nproc,ireq)
+!
+! Reorder of received data
+!
+      if(myij <= numij) then
+        ik= 0
+        do iproc= 0,nproc-1
+          ish= idis(iproc,1)
+          ksh= idis(iproc,2)
+          jcount= 0
+          do num= 1,idis(iproc,4)
+            nbfi= mbf(ish)
+            nbfk= mbf(ksh)
+            locbfi= locbf(ish)
+            locbfk= locbf(ksh)
+            do ii= 1,nbfi
+              do kk= 1,nbfk
+                ik= ik+1
+                trint4(locbfk+kk,locbfi+ii)= recvint(ik)
+              enddo
+            enddo
+!
+            if(jcount == iproc) then
+              ksh= ksh+2*nproc-1
+            else
+              ksh= ksh+nproc-1
+            endif
+            if(ksh > nshell) then
+              do ii= 1,nshell
+                ksh= ksh-nshell
+                ish= ish+1
+                if(ksh <= nshell) exit
+              enddo
+            endif
+            jcount= jcount+1
+            if(jcount == nproc) jcount= 0
+          enddo
+        enddo
+      endif
+!
+      return
+end
+
+
+
