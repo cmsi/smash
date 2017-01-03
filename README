@@ -8,10 +8,9 @@
   (SMASH) is open-source software for massively parallel quantum
   chemistry calculations. It is currently capable of energy, analytical
   gradient, and geometry optimization calculations of Hartree-Fock
-  theory and Density Functional Theory (DFT), and energy calculations
-  of Second-order Moller-Plesset (MP2) perturbation theory. DFT 
-  calculations can be performed on 100,000 CPU cores of K Computer
-  with high parallel efficiency.
+  theory and Density Functional Theory (DFT), and Second-order 
+  Moller-Plesset (MP2) perturbation theory. DFT calculations can be 
+  performed on 100,000 CPU cores of K Computer with high parallel efficiency.
   The Fortran 90/95 language is used with MPI and OpenMP for
   inter-node and intra-node parallelization, respectively. Supported
   platforms are x86-64/Linux with Intel or GNU compilers, and K Computer
