@@ -1,4 +1,4 @@
-! Copyright 2014  Kazuya Ishimura
+! Copyright 2014-2017  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -109,8 +109,8 @@ end
         coij(jprim,2)= coeff(jloc+jprim)
       enddo
 !
-      if((nangij(1) > 4).or.(nangij(2) > 4))then
-        write(*,'(" Error! This program supports up to g function in calcintst1c")')
+      if((nangij(1) > 6).or.(nangij(2) > 6))then
+        write(*,'(" Error! This program supports up to i function in calcintst1c.")')
         call exit
       endif
 !
@@ -182,8 +182,8 @@ end
       sintmp(1:ncartj,1:ncarti)= zero
       tintmp(1:ncartj,1:ncarti)= zero
 !
-      if((nangij(1) > 4).or.(nangij(2) > 4))then
-        write(*,'(" Error! This program supports up to g function in intst")')
+      if((nangij(1) > 6).or.(nangij(2) > 6))then
+        write(*,'(" Error! This program supports up to i function in intst.")')
         call abort
       endif
 !
@@ -550,7 +550,7 @@ end
 &                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
       else
         if((nangij(1) > 4).or.(nangij(2) > 4))then
-          write(*,'(" Error! This program supports up to g function in calcint1c")')
+          write(*,'(" Error! This program supports up to g function in calcint1c.")')
           call exit
         endif
 !
@@ -1847,7 +1847,7 @@ end
       sint(1:ncartj,1:ncarti)= zero
 !
       if((nangij(1) > 4).or.(nangij(2) > 4))then
-        write(*,'(" Error! This program supports up to g function in ints")')
+        write(*,'(" Error! This program supports up to g function in ints.")')
         call abort
       endif
 !
@@ -2000,7 +2000,7 @@ end
       enddo
 !
       if((nangij(1) > 4).or.(nangij(2) > 4))then
-        write(*,'(" Error! This program supports up to g function in calcintst1c")')
+        write(*,'(" Error! This program supports up to g function in calcintst1c.")')
         call exit
       endif
 !
@@ -2059,7 +2059,7 @@ end
       diptmp(1:ncartj,1:ncarti,1:3)= zero
 !
       if((nangij(1) > 4).or.(nangij(2) > 4))then
-        write(*,'(" Error! This program supports up to g function in intdipole")')
+        write(*,'(" Error! This program supports up to g function in intdipole.")')
         call abort
       endif
 !
@@ -2152,6 +2152,11 @@ end
       real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
       real(8),parameter :: sqrt7=2.645751311064590D+00, sqrt35=5.916079783099616D+00
       real(8),parameter :: sqrt35third=3.415650255319866D+00
+      real(8),parameter :: sqrt21=4.582575694955840D+00, sqrt63=7.937253933193772D+00
+      real(8),parameter :: sqrt105=1.024695076595960D+01, sqrt11=3.316624790355400D+00
+      real(8),parameter :: sqrt33=5.744562646538029D+00, sqrt99=9.949874371066200D+00
+      real(8),parameter :: sqrt231=1.519868415357066D+01, sqrt231fifth=6.797058187186571D+00
+      real(8),parameter :: sqrt385=1.962141687034858D+01
       real(8),parameter :: facf1=0.79056941504209483D+00 ! sqrt(5/2)/2
       real(8),parameter :: facf2=3.87298334620741688D+00 ! sqrt(15)
       real(8),parameter :: facf3=0.61237243569579452D+00 ! sqrt(3/2)/2
@@ -2242,6 +2247,57 @@ end
             onei(13,i)= onei(13,i)*sqrt35third
             onei(14,i)= onei(14,i)*sqrt7
           enddo
+! H function
+        case(21)
+          do i= 1,ncarti
+            onei( 2,i)= onei( 2,i)*three
+            onei( 3,i)= onei( 3,i)*three
+            onei( 4,i)= onei( 4,i)*sqrt21
+            onei( 5,i)= onei( 5,i)*sqrt63
+            onei( 6,i)= onei( 6,i)*sqrt21
+            onei( 7,i)= onei( 7,i)*sqrt21
+            onei( 8,i)= onei( 8,i)*sqrt105
+            onei( 9,i)= onei( 9,i)*sqrt105
+            onei(10,i)= onei(10,i)*sqrt21
+            onei(11,i)= onei(11,i)*three
+            onei(12,i)= onei(12,i)*sqrt63
+            onei(13,i)= onei(13,i)*sqrt105
+            onei(14,i)= onei(14,i)*sqrt63
+            onei(15,i)= onei(15,i)*three
+            onei(17,i)= onei(17,i)*three
+            onei(18,i)= onei(18,i)*sqrt21
+            onei(19,i)= onei(19,i)*sqrt21
+            onei(20,i)= onei(20,i)*three
+          enddo
+! I function
+        case(28)
+          do i= 1,ncarti
+            onei( 2,i)= onei( 2,i)*sqrt11
+            onei( 3,i)= onei( 3,i)*sqrt11
+            onei( 4,i)= onei( 4,i)*sqrt33
+            onei( 5,i)= onei( 5,i)*sqrt99
+            onei( 6,i)= onei( 6,i)*sqrt33
+            onei( 7,i)= onei( 7,i)*sqrt231fifth
+            onei( 8,i)= onei( 8,i)*sqrt231
+            onei( 9,i)= onei( 9,i)*sqrt231
+            onei(10,i)= onei(10,i)*sqrt231fifth
+            onei(11,i)= onei(11,i)*sqrt33
+            onei(12,i)= onei(12,i)*sqrt231
+            onei(13,i)= onei(13,i)*sqrt385
+            onei(14,i)= onei(14,i)*sqrt231
+            onei(15,i)= onei(15,i)*sqrt33
+            onei(16,i)= onei(16,i)*sqrt11
+            onei(17,i)= onei(17,i)*sqrt99
+            onei(18,i)= onei(18,i)*sqrt231
+            onei(19,i)= onei(19,i)*sqrt231
+            onei(20,i)= onei(20,i)*sqrt99
+            onei(21,i)= onei(21,i)*sqrt11
+            onei(23,i)= onei(23,i)*sqrt11
+            onei(24,i)= onei(24,i)*sqrt33
+            onei(25,i)= onei(25,i)*sqrt231fifth
+            onei(26,i)= onei(26,i)*sqrt33
+            onei(27,i)= onei(27,i)*sqrt11
+          enddo
       end select
 !
 ! Ket part
@@ -2320,6 +2376,57 @@ end
             onei(j,12)= onei(j,12)*sqrt7
             onei(j,13)= onei(j,13)*sqrt35third
             onei(j,14)= onei(j,14)*sqrt7
+          enddo
+! H function
+        case(21)
+          do j= 1,nbfj
+            onei(j, 2)= onei(j, 2)*three
+            onei(j, 3)= onei(j, 3)*three
+            onei(j, 4)= onei(j, 4)*sqrt21
+            onei(j, 5)= onei(j, 5)*sqrt63
+            onei(j, 6)= onei(j, 6)*sqrt21
+            onei(j, 7)= onei(j, 7)*sqrt21
+            onei(j, 8)= onei(j, 8)*sqrt105
+            onei(j, 9)= onei(j, 9)*sqrt105
+            onei(j,10)= onei(j,10)*sqrt21
+            onei(j,11)= onei(j,11)*three
+            onei(j,12)= onei(j,12)*sqrt63
+            onei(j,13)= onei(j,13)*sqrt105
+            onei(j,14)= onei(j,14)*sqrt63
+            onei(j,15)= onei(j,15)*three
+            onei(j,17)= onei(j,17)*three
+            onei(j,18)= onei(j,18)*sqrt21
+            onei(j,19)= onei(j,19)*sqrt21
+            onei(j,20)= onei(j,20)*three
+          enddo
+! I function
+        case(28)
+          do j= 1,nbfj
+            onei(j, 2)= onei(j, 2)*sqrt11
+            onei(j, 3)= onei(j, 3)*sqrt11
+            onei(j, 4)= onei(j, 4)*sqrt33
+            onei(j, 5)= onei(j, 5)*sqrt99
+            onei(j, 6)= onei(j, 6)*sqrt33
+            onei(j, 7)= onei(j, 7)*sqrt231fifth
+            onei(j, 8)= onei(j, 8)*sqrt231
+            onei(j, 9)= onei(j, 9)*sqrt231
+            onei(j,10)= onei(j,10)*sqrt231fifth
+            onei(j,11)= onei(j,11)*sqrt33
+            onei(j,12)= onei(j,12)*sqrt231
+            onei(j,13)= onei(j,13)*sqrt385
+            onei(j,14)= onei(j,14)*sqrt231
+            onei(j,15)= onei(j,15)*sqrt33
+            onei(j,16)= onei(j,16)*sqrt11
+            onei(j,17)= onei(j,17)*sqrt99
+            onei(j,18)= onei(j,18)*sqrt231
+            onei(j,19)= onei(j,19)*sqrt231
+            onei(j,20)= onei(j,20)*sqrt99
+            onei(j,21)= onei(j,21)*sqrt11
+            onei(j,23)= onei(j,23)*sqrt11
+            onei(j,24)= onei(j,24)*sqrt33
+            onei(j,25)= onei(j,25)*sqrt231fifth
+            onei(j,26)= onei(j,26)*sqrt33
+            onei(j,27)= onei(j,27)*sqrt11
           enddo
       end select
       return

@@ -801,6 +801,8 @@ end
                 mgentype(ishell)= 4
               case('H')
                 mgentype(ishell)= 5
+              case('I')
+                mgentype(ishell)= 6
               case('SP')
                 mgentype(ishell)  = 0
                 mgentype(ishell+1)= 1
