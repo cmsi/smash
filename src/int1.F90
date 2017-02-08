@@ -1846,8 +1846,8 @@ end
       ncartj= ncart(nangij(2))
       sint(1:ncartj,1:ncarti)= zero
 !
-      if((nangij(1) > 4).or.(nangij(2) > 4))then
-        write(*,'(" Error! This program supports up to g function in ints.")')
+      if((nangij(1) > 6).or.(nangij(2) > 6))then
+        write(*,'(" Error! This program supports up to i function in ints.")')
         call abort
       endif
 !
@@ -1999,8 +1999,8 @@ end
         coij(jprim,2)= coeff(jloc+jprim)
       enddo
 !
-      if((nangij(1) > 4).or.(nangij(2) > 4))then
-        write(*,'(" Error! This program supports up to g function in calcintst1c.")')
+      if((nangij(1) > 6).or.(nangij(2) > 6))then
+        write(*,'(" Error! This program supports up to i function in calcintdipole.")')
         call exit
       endif
 !
@@ -2058,8 +2058,8 @@ end
       ncartj= ncart(nangij(2))
       diptmp(1:ncartj,1:ncarti,1:3)= zero
 !
-      if((nangij(1) > 4).or.(nangij(2) > 4))then
-        write(*,'(" Error! This program supports up to g function in intdipole.")')
+      if((nangij(1) > 6).or.(nangij(2) > 6))then
+        write(*,'(" Error! This program supports up to i function in intdipole.")')
         call abort
       endif
 !
