@@ -549,8 +549,8 @@ end
         call int1cmd(cint,exij,coij,coordij,coord,znuc,natom, &
 &                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
       else
-        if((nangij(1) > 4).or.(nangij(2) > 4))then
-          write(*,'(" Error! This program supports up to g function in calcint1c.")')
+        if((nangij(1) > 6).or.(nangij(2) > 6))then
+          write(*,'(" Error! This program supports up to i function in calcint1c.")')
           call exit
         endif
 !
