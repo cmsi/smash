@@ -358,7 +358,7 @@ end
           if(mtype(ishell) == 6) write(*,'(4x,"I",i3)') mprim(ishell)
 !
           if(mtype(ishell) >  6) then
-            write(*,'(" Error! The subroutine writebasis supports up to h functions.")')
+            write(*,'(" Error! The subroutine writebasis supports up to g functions.")')
             call iabort
           endif 
 !
@@ -1259,8 +1259,8 @@ end
 &       'Gxyzz','Gxzzz','Gyyyy','Gyyyz','Gyyzz','Gyzzz','Gzzzz','G-4  ','G-3  ','G-2  ', &
 &       'G-1  ','G0   ','G+1  ','G+2  ','G+3  ','G+4  '/)
 !
-      if(maxval(mtype(1:nshell)) >= 5) then
-        if(master) write(*,'(" Sorry! This program can not display MOs of h functions now.")')
+      if(maxval(mtype(1:nshell)) > 6) then
+        if(master) write(*,'(" Sorry! This program can display MOs of up to i functions.")')
         return
       endif
 !

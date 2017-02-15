@@ -42,12 +42,14 @@
 !
         call int2phmd(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
 &                     mxprsh,threshex)
-      elseif((nangijkl(1)<=4).and.(nangijkl(2)<=4).and.(nangijkl(3)<=4).and.(nangijkl(4)<=4)) then
+      elseif((nangijkl(1)<=6).and.(nangijkl(2)<=6).and.(nangijkl(3)<=6).and.(nangijkl(4)<=6)) then
 !
 ! Rys quadrature scheme
 !
         call int2rys(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
 &                    mxprsh,threshex)
+!ishimura
+!       write(*,'(8f12.6)')twoeri(1:nbfijkl(4),1:nbfijkl(3),1:nbfijkl(2),1:nbfijkl(1))
       else
         write(*,'(" Error! Subroutine int2elec supports up to g function.")')
       endif
@@ -485,6 +487,11 @@ end
       real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
       real(8),parameter :: sqrt7=2.645751311064590D+00, sqrt35=5.916079783099616D+00
       real(8),parameter :: sqrt35third=3.415650255319866D+00
+      real(8),parameter :: sqrt21=4.582575694955840D+00, sqrt63=7.937253933193772D+00
+      real(8),parameter :: sqrt105=1.024695076595960D+01, sqrt11=3.316624790355400D+00
+      real(8),parameter :: sqrt33=5.744562646538029D+00, sqrt99=9.949874371066200D+00
+      real(8),parameter :: sqrt231=1.519868415357066D+01, sqrt231fifth=6.797058187186571D+00
+      real(8),parameter :: sqrt385=1.962141687034858D+01
       real(8),parameter :: facf1=0.79056941504209483D+00 ! sqrt(5/2)/2
       real(8),parameter :: facf2=3.87298334620741688D+00 ! sqrt(15)
       real(8),parameter :: facf3=0.61237243569579452D+00 ! sqrt(3/2)/2
@@ -604,6 +611,10 @@ end
           tval=ex12(1,ij)*ex34(1,kl)*ex41*(xyzab(1)*xyzab(1)+xyzab(2)*xyzab(2)+xyzab(3)*xyzab(3))
 !
           call rysquad(tval,trys,wrys,nroots)
+!ishimura
+!  write(*,*)"tval",tval,nroots
+!  write(*,'(5d15.7)')trys(1:nroots)
+!  write(*,'(5d15.7)')wrys(1:nroots)
           do iroot= 1,nroots
             b00 = ex41h*trys(iroot)
             b10 = ex43h-b10t*trys(iroot)
@@ -792,420 +803,658 @@ end
 !
 ! Adjust coefficients for over d funcions.
 !
-        if(nbfijkl(1) == 5)then
-          do j= 1,ncartijkl(2)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                do i= 1,6
-                  work(i)= eritmp(l,k,j,i)
-                enddo
-                eritmp(l,k,j,1)= work(2)*sqrt3
-                eritmp(l,k,j,2)= work(5)*sqrt3
-                eritmp(l,k,j,3)=(work(6)*two-work(1)-work(4))*half
-                eritmp(l,k,j,4)= work(3)*sqrt3
-                eritmp(l,k,j,5)=(work(1)-work(4))*sqrt3h
+      if(nbfijkl(1) == 5)then
+        do j= 1,ncartijkl(2)
+          do k= 1,ncartijkl(3)
+            do l= 1,ncartijkl(4)
+              do i= 1,6
+                work(i)= eritmp(l,k,j,i)
               enddo
+              eritmp(l,k,j,1)= work(2)*sqrt3
+              eritmp(l,k,j,2)= work(5)*sqrt3
+              eritmp(l,k,j,3)=(work(6)*two-work(1)-work(4))*half
+              eritmp(l,k,j,4)= work(3)*sqrt3
+              eritmp(l,k,j,5)=(work(1)-work(4))*sqrt3h
             enddo
           enddo
-        elseif(nbfijkl(1) == 6) then
-          do j= 1,ncartijkl(2)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                eritmp(l,k,j,2)= eritmp(l,k,j,2)*sqrt3
-                eritmp(l,k,j,3)= eritmp(l,k,j,3)*sqrt3
-                eritmp(l,k,j,5)= eritmp(l,k,j,5)*sqrt3
-              enddo
+        enddo
+      elseif(nbfijkl(1) == 6) then
+        do j= 1,ncartijkl(2)
+          do k= 1,ncartijkl(3)
+            do l= 1,ncartijkl(4)
+              eritmp(l,k,j,2)= eritmp(l,k,j,2)*sqrt3
+              eritmp(l,k,j,3)= eritmp(l,k,j,3)*sqrt3
+              eritmp(l,k,j,5)= eritmp(l,k,j,5)*sqrt3
             enddo
           enddo
+        enddo
 !
-        elseif(nbfijkl(1) == 7) then
-          do j= 1,ncartijkl(2)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                do i= 1,10
-                  work(i)= eritmp(l,k,j,i)
-                enddo
-                eritmp(l,k,j,1)=(-work(7)+three*work(2)                   )*facf1
-                eritmp(l,k,j,2)=  work(5)                                  *facf2
-                eritmp(l,k,j,3)=(-work(7)-work(2)+four*work(9)            )*facf3
-                eritmp(l,k,j,4)=( two*work(10)-three*work(3)-three*work(8))*half
-                eritmp(l,k,j,5)=(-work(1)-work(4)+four*work(6)            )*facf3
-                eritmp(l,k,j,6)=( work(3)-work(8)                         )*facf4
-                eritmp(l,k,j,7)=( work(1)-three*work(4)                   )*facf1
+      elseif(nbfijkl(1) == 7) then
+        do j= 1,ncartijkl(2)
+          do k= 1,ncartijkl(3)
+            do l= 1,ncartijkl(4)
+              do i= 1,10
+                work(i)= eritmp(l,k,j,i)
               enddo
+              eritmp(l,k,j,1)=(-work(7)+three*work(2)                   )*facf1
+              eritmp(l,k,j,2)=  work(5)                                  *facf2
+              eritmp(l,k,j,3)=(-work(7)-work(2)+four*work(9)            )*facf3
+              eritmp(l,k,j,4)=( two*work(10)-three*work(3)-three*work(8))*half
+              eritmp(l,k,j,5)=(-work(1)-work(4)+four*work(6)            )*facf3
+              eritmp(l,k,j,6)=( work(3)-work(8)                         )*facf4
+              eritmp(l,k,j,7)=( work(1)-three*work(4)                   )*facf1
             enddo
           enddo
-        elseif(nbfijkl(1) == 10) then
-          do j= 1,ncartijkl(2)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                eritmp(l,k,j, 2)= eritmp(l,k,j, 2)*sqrt5
-                eritmp(l,k,j, 3)= eritmp(l,k,j, 3)*sqrt5
-                eritmp(l,k,j, 4)= eritmp(l,k,j, 4)*sqrt5
-                eritmp(l,k,j, 5)= eritmp(l,k,j, 5)*sqrt15
-                eritmp(l,k,j, 6)= eritmp(l,k,j, 6)*sqrt5
-                eritmp(l,k,j, 8)= eritmp(l,k,j, 8)*sqrt5
-                eritmp(l,k,j, 9)= eritmp(l,k,j, 9)*sqrt5
-              enddo
+        enddo
+      elseif(nbfijkl(1) == 10) then
+        do j= 1,ncartijkl(2)
+          do k= 1,ncartijkl(3)
+            do l= 1,ncartijkl(4)
+              eritmp(l,k,j, 2)= eritmp(l,k,j, 2)*sqrt5
+              eritmp(l,k,j, 3)= eritmp(l,k,j, 3)*sqrt5
+              eritmp(l,k,j, 4)= eritmp(l,k,j, 4)*sqrt5
+              eritmp(l,k,j, 5)= eritmp(l,k,j, 5)*sqrt15
+              eritmp(l,k,j, 6)= eritmp(l,k,j, 6)*sqrt5
+              eritmp(l,k,j, 8)= eritmp(l,k,j, 8)*sqrt5
+              eritmp(l,k,j, 9)= eritmp(l,k,j, 9)*sqrt5
             enddo
           enddo
+        enddo
 !
-        elseif(nbfijkl(1) == 9) then
-          do j= 1,ncartijkl(2)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                do i= 1,15
-                  work(i)= eritmp(l,k,j,i)
-                enddo
-                eritmp(l,k,j,1)=(work(2)-work(7))*facg1
-                eritmp(l,k,j,2)=(-work(12)+work(5)*three)*facg2
-                eritmp(l,k,j,3)=(-work(2)-work(7)+work(9)*six)*facg3
-                eritmp(l,k,j,4)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
-                eritmp(l,k,j,5)=(work(1)*three+work(11)*three+work(15)*eight+work(4)*six &
-&                                -work(6)*p24-work(13)*p24)*eighth
-                eritmp(l,k,j,6)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
-                eritmp(l,k,j,7)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg5
-                eritmp(l,k,j,8)=(work(3)-work(8)*three)*facg2
-                eritmp(l,k,j,9)=(work(1)+work(11)-work(4)*six)*facg6
+      elseif(nbfijkl(1) == 9) then
+        do j= 1,ncartijkl(2)
+          do k= 1,ncartijkl(3)
+            do l= 1,ncartijkl(4)
+              do i= 1,15
+                work(i)= eritmp(l,k,j,i)
               enddo
+              eritmp(l,k,j,1)=(work(2)-work(7))*facg1
+              eritmp(l,k,j,2)=(-work(12)+work(5)*three)*facg2
+              eritmp(l,k,j,3)=(-work(2)-work(7)+work(9)*six)*facg3
+              eritmp(l,k,j,4)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
+              eritmp(l,k,j,5)=(work(1)*three+work(11)*three+work(15)*eight+work(4)*six &
+&                              -work(6)*p24-work(13)*p24)*eighth
+              eritmp(l,k,j,6)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
+              eritmp(l,k,j,7)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg5
+              eritmp(l,k,j,8)=(work(3)-work(8)*three)*facg2
+              eritmp(l,k,j,9)=(work(1)+work(11)-work(4)*six)*facg6
             enddo
           enddo
-        elseif(nbfijkl(1) ==15) then
-          do j= 1,ncartijkl(2)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                eritmp(l,k,j, 2)= eritmp(l,k,j, 2)*sqrt7
-                eritmp(l,k,j, 3)= eritmp(l,k,j, 3)*sqrt7
-                eritmp(l,k,j, 4)= eritmp(l,k,j, 4)*sqrt35third
-                eritmp(l,k,j, 5)= eritmp(l,k,j, 5)*sqrt35
-                eritmp(l,k,j, 6)= eritmp(l,k,j, 6)*sqrt35third
-                eritmp(l,k,j, 7)= eritmp(l,k,j, 7)*sqrt7
-                eritmp(l,k,j, 8)= eritmp(l,k,j, 8)*sqrt35
-                eritmp(l,k,j, 9)= eritmp(l,k,j, 9)*sqrt35
-                eritmp(l,k,j,10)= eritmp(l,k,j,10)*sqrt7
-                eritmp(l,k,j,12)= eritmp(l,k,j,12)*sqrt7
-                eritmp(l,k,j,13)= eritmp(l,k,j,13)*sqrt35third
-                eritmp(l,k,j,14)= eritmp(l,k,j,14)*sqrt7
-              enddo
+        enddo
+      elseif(nbfijkl(1) == 15) then
+        do j= 1,ncartijkl(2)
+          do k= 1,ncartijkl(3)
+            do l= 1,ncartijkl(4)
+              eritmp(l,k,j, 2)= eritmp(l,k,j, 2)*sqrt7
+              eritmp(l,k,j, 3)= eritmp(l,k,j, 3)*sqrt7
+              eritmp(l,k,j, 4)= eritmp(l,k,j, 4)*sqrt35third
+              eritmp(l,k,j, 5)= eritmp(l,k,j, 5)*sqrt35
+              eritmp(l,k,j, 6)= eritmp(l,k,j, 6)*sqrt35third
+              eritmp(l,k,j, 7)= eritmp(l,k,j, 7)*sqrt7
+              eritmp(l,k,j, 8)= eritmp(l,k,j, 8)*sqrt35
+              eritmp(l,k,j, 9)= eritmp(l,k,j, 9)*sqrt35
+              eritmp(l,k,j,10)= eritmp(l,k,j,10)*sqrt7
+              eritmp(l,k,j,12)= eritmp(l,k,j,12)*sqrt7
+              eritmp(l,k,j,13)= eritmp(l,k,j,13)*sqrt35third
+              eritmp(l,k,j,14)= eritmp(l,k,j,14)*sqrt7
             enddo
           enddo
-        endif
+        enddo
+!ishimura
+      elseif(nbfijkl(1) == 21) then
+        do j= 1,ncartijkl(2)
+          do k= 1,ncartijkl(3)
+            do l= 1,ncartijkl(4)
+              eritmp(l,k,j, 2)= eritmp(l,k,j, 2)*three
+              eritmp(l,k,j, 3)= eritmp(l,k,j, 3)*three
+              eritmp(l,k,j, 4)= eritmp(l,k,j, 4)*sqrt21
+              eritmp(l,k,j, 5)= eritmp(l,k,j, 5)*sqrt63
+              eritmp(l,k,j, 6)= eritmp(l,k,j, 6)*sqrt21
+              eritmp(l,k,j, 7)= eritmp(l,k,j, 7)*sqrt21
+              eritmp(l,k,j, 8)= eritmp(l,k,j, 8)*sqrt105
+              eritmp(l,k,j, 9)= eritmp(l,k,j, 9)*sqrt105
+              eritmp(l,k,j,10)= eritmp(l,k,j,10)*sqrt21
+              eritmp(l,k,j,11)= eritmp(l,k,j,11)*three
+              eritmp(l,k,j,12)= eritmp(l,k,j,12)*sqrt63
+              eritmp(l,k,j,13)= eritmp(l,k,j,13)*sqrt105
+              eritmp(l,k,j,14)= eritmp(l,k,j,14)*sqrt63
+              eritmp(l,k,j,15)= eritmp(l,k,j,15)*three
+              eritmp(l,k,j,17)= eritmp(l,k,j,17)*three
+              eritmp(l,k,j,18)= eritmp(l,k,j,18)*sqrt21
+              eritmp(l,k,j,19)= eritmp(l,k,j,19)*sqrt21
+              eritmp(l,k,j,20)= eritmp(l,k,j,20)*three
+            enddo
+          enddo
+        enddo
+      elseif(nbfijkl(1) == 28) then
+        do j= 1,ncartijkl(2)
+          do k= 1,ncartijkl(3)
+            do l= 1,ncartijkl(4)
+              eritmp(l,k,j, 2)= eritmp(l,k,j, 2)*sqrt11
+              eritmp(l,k,j, 3)= eritmp(l,k,j, 3)*sqrt11
+              eritmp(l,k,j, 4)= eritmp(l,k,j, 4)*sqrt33
+              eritmp(l,k,j, 5)= eritmp(l,k,j, 5)*sqrt99
+              eritmp(l,k,j, 6)= eritmp(l,k,j, 6)*sqrt33
+              eritmp(l,k,j, 7)= eritmp(l,k,j, 7)*sqrt231fifth
+              eritmp(l,k,j, 8)= eritmp(l,k,j, 8)*sqrt231
+              eritmp(l,k,j, 9)= eritmp(l,k,j, 9)*sqrt231
+              eritmp(l,k,j,10)= eritmp(l,k,j,10)*sqrt231fifth
+              eritmp(l,k,j,11)= eritmp(l,k,j,11)*sqrt33
+              eritmp(l,k,j,12)= eritmp(l,k,j,12)*sqrt231
+              eritmp(l,k,j,13)= eritmp(l,k,j,13)*sqrt385
+              eritmp(l,k,j,14)= eritmp(l,k,j,14)*sqrt231
+              eritmp(l,k,j,15)= eritmp(l,k,j,15)*sqrt33
+              eritmp(l,k,j,16)= eritmp(l,k,j,16)*sqrt11
+              eritmp(l,k,j,17)= eritmp(l,k,j,17)*sqrt99
+              eritmp(l,k,j,18)= eritmp(l,k,j,18)*sqrt231
+              eritmp(l,k,j,19)= eritmp(l,k,j,19)*sqrt231
+              eritmp(l,k,j,20)= eritmp(l,k,j,20)*sqrt99
+              eritmp(l,k,j,21)= eritmp(l,k,j,21)*sqrt11
+              eritmp(l,k,j,23)= eritmp(l,k,j,23)*sqrt11
+              eritmp(l,k,j,24)= eritmp(l,k,j,24)*sqrt33
+              eritmp(l,k,j,25)= eritmp(l,k,j,25)*sqrt231fifth
+              eritmp(l,k,j,26)= eritmp(l,k,j,26)*sqrt33
+              eritmp(l,k,j,27)= eritmp(l,k,j,27)*sqrt11
+            enddo
+          enddo
+        enddo
+      endif
 !
-        if(nbfijkl(2) == 5) then
-          do i= 1,nbfijkl(1)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                do j= 1,6
-                  work(j)= eritmp(l,k,j,i)
-                enddo
-                eritmp(l,k,1,i)= work(2)*sqrt3
-                eritmp(l,k,2,i)= work(5)*sqrt3
-                eritmp(l,k,3,i)=(work(6)*two-work(1)-work(4))*half
-                eritmp(l,k,4,i)= work(3)*sqrt3
-                eritmp(l,k,5,i)=(work(1)-work(4))*sqrt3h
+      if(nbfijkl(2) == 5) then
+        do i= 1,nbfijkl(1)
+          do k= 1,ncartijkl(3)
+            do l= 1,ncartijkl(4)
+              do j= 1,6
+                work(j)= eritmp(l,k,j,i)
               enddo
+              eritmp(l,k,1,i)= work(2)*sqrt3
+              eritmp(l,k,2,i)= work(5)*sqrt3
+              eritmp(l,k,3,i)=(work(6)*two-work(1)-work(4))*half
+              eritmp(l,k,4,i)= work(3)*sqrt3
+              eritmp(l,k,5,i)=(work(1)-work(4))*sqrt3h
             enddo
           enddo
-        elseif(nbfijkl(2) == 6) then
-          do i= 1,nbfijkl(1)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                eritmp(l,k,2,i)= eritmp(l,k,2,i)*sqrt3
-                eritmp(l,k,3,i)= eritmp(l,k,3,i)*sqrt3
-                eritmp(l,k,5,i)= eritmp(l,k,5,i)*sqrt3
-              enddo
+        enddo
+      elseif(nbfijkl(2) == 6) then
+        do i= 1,nbfijkl(1)
+          do k= 1,ncartijkl(3)
+            do l= 1,ncartijkl(4)
+              eritmp(l,k,2,i)= eritmp(l,k,2,i)*sqrt3
+              eritmp(l,k,3,i)= eritmp(l,k,3,i)*sqrt3
+              eritmp(l,k,5,i)= eritmp(l,k,5,i)*sqrt3
             enddo
           enddo
+        enddo
 !
-        elseif(nbfijkl(2) == 7) then
-          do i= 1,nbfijkl(1)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                do j= 1,10
-                  work(j)= eritmp(l,k,j,i)
-                enddo
-                eritmp(l,k,1,i)=(-work(7)+three*work(2)                   )*facf1
-                eritmp(l,k,2,i)=  work(5)                                  *facf2
-                eritmp(l,k,3,i)=(-work(7)-work(2)+four*work(9)            )*facf3
-                eritmp(l,k,4,i)=( two*work(10)-three*work(3)-three*work(8))*half
-                eritmp(l,k,5,i)=(-work(1)-work(4)+four*work(6)            )*facf3
-                eritmp(l,k,6,i)=( work(3)-work(8)                         )*facf4
-                eritmp(l,k,7,i)=( work(1)-three*work(4)                   )*facf1
+      elseif(nbfijkl(2) == 7) then
+        do i= 1,nbfijkl(1)
+          do k= 1,ncartijkl(3)
+            do l= 1,ncartijkl(4)
+              do j= 1,10
+                work(j)= eritmp(l,k,j,i)
               enddo
+              eritmp(l,k,1,i)=(-work(7)+three*work(2)                   )*facf1
+              eritmp(l,k,2,i)=  work(5)                                  *facf2
+              eritmp(l,k,3,i)=(-work(7)-work(2)+four*work(9)            )*facf3
+              eritmp(l,k,4,i)=( two*work(10)-three*work(3)-three*work(8))*half
+              eritmp(l,k,5,i)=(-work(1)-work(4)+four*work(6)            )*facf3
+              eritmp(l,k,6,i)=( work(3)-work(8)                         )*facf4
+              eritmp(l,k,7,i)=( work(1)-three*work(4)                   )*facf1
             enddo
           enddo
-        elseif(nbfijkl(2) == 10) then
-          do i= 1,nbfijkl(1)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                eritmp(l,k, 2,i)= eritmp(l,k, 2,i)*sqrt5
-                eritmp(l,k, 3,i)= eritmp(l,k, 3,i)*sqrt5
-                eritmp(l,k, 4,i)= eritmp(l,k, 4,i)*sqrt5
-                eritmp(l,k, 5,i)= eritmp(l,k, 5,i)*sqrt15
-                eritmp(l,k, 6,i)= eritmp(l,k, 6,i)*sqrt5
-                eritmp(l,k, 8,i)= eritmp(l,k, 8,i)*sqrt5
-                eritmp(l,k, 9,i)= eritmp(l,k, 9,i)*sqrt5
-              enddo
+        enddo
+      elseif(nbfijkl(2) == 10) then
+        do i= 1,nbfijkl(1)
+          do k= 1,ncartijkl(3)
+            do l= 1,ncartijkl(4)
+              eritmp(l,k, 2,i)= eritmp(l,k, 2,i)*sqrt5
+              eritmp(l,k, 3,i)= eritmp(l,k, 3,i)*sqrt5
+              eritmp(l,k, 4,i)= eritmp(l,k, 4,i)*sqrt5
+              eritmp(l,k, 5,i)= eritmp(l,k, 5,i)*sqrt15
+              eritmp(l,k, 6,i)= eritmp(l,k, 6,i)*sqrt5
+              eritmp(l,k, 8,i)= eritmp(l,k, 8,i)*sqrt5
+              eritmp(l,k, 9,i)= eritmp(l,k, 9,i)*sqrt5
             enddo
           enddo
+        enddo
 !
-        elseif(nbfijkl(2) == 9) then
-          do i= 1,nbfijkl(1)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                do j= 1,15
-                  work(j)= eritmp(l,k,j,i)
-                enddo
-                eritmp(l,k,1,i)=(work(2)-work(7))*facg1
-                eritmp(l,k,2,i)=(-work(12)+work(5)*three)*facg2
-                eritmp(l,k,3,i)=(-work(2)-work(7)+work(9)*six)*facg3
-                eritmp(l,k,4,i)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
-                eritmp(l,k,5,i)=(work(1)*three+work(11)*three+work(15)*eight+work(4)*six &
-&                                -work(6)*p24-work(13)*p24)*eighth
-                eritmp(l,k,6,i)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
-                eritmp(l,k,7,i)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg5
-                eritmp(l,k,8,i)=(work(3)-work(8)*three)*facg2
-                eritmp(l,k,9,i)=(work(1)+work(11)-work(4)*six)*facg6
+      elseif(nbfijkl(2) == 9) then
+        do i= 1,nbfijkl(1)
+          do k= 1,ncartijkl(3)
+            do l= 1,ncartijkl(4)
+              do j= 1,15
+                work(j)= eritmp(l,k,j,i)
               enddo
+              eritmp(l,k,1,i)=(work(2)-work(7))*facg1
+              eritmp(l,k,2,i)=(-work(12)+work(5)*three)*facg2
+              eritmp(l,k,3,i)=(-work(2)-work(7)+work(9)*six)*facg3
+              eritmp(l,k,4,i)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
+              eritmp(l,k,5,i)=(work(1)*three+work(11)*three+work(15)*eight+work(4)*six &
+&                              -work(6)*p24-work(13)*p24)*eighth
+              eritmp(l,k,6,i)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
+              eritmp(l,k,7,i)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg5
+              eritmp(l,k,8,i)=(work(3)-work(8)*three)*facg2
+              eritmp(l,k,9,i)=(work(1)+work(11)-work(4)*six)*facg6
             enddo
           enddo
-        elseif(nbfijkl(2) == 15) then
-          do i= 1,nbfijkl(1)
-            do k= 1,ncartijkl(3)
-              do l= 1,ncartijkl(4)
-                eritmp(l,k, 2,i)= eritmp(l,k, 2,i)*sqrt7
-                eritmp(l,k, 3,i)= eritmp(l,k, 3,i)*sqrt7
-                eritmp(l,k, 4,i)= eritmp(l,k, 4,i)*sqrt35third
-                eritmp(l,k, 5,i)= eritmp(l,k, 5,i)*sqrt35
-                eritmp(l,k, 6,i)= eritmp(l,k, 6,i)*sqrt35third
-                eritmp(l,k, 7,i)= eritmp(l,k, 7,i)*sqrt7
-                eritmp(l,k, 8,i)= eritmp(l,k, 8,i)*sqrt35
-                eritmp(l,k, 9,i)= eritmp(l,k, 9,i)*sqrt35
-                eritmp(l,k,10,i)= eritmp(l,k,10,i)*sqrt7
-                eritmp(l,k,12,i)= eritmp(l,k,12,i)*sqrt7
-                eritmp(l,k,13,i)= eritmp(l,k,13,i)*sqrt35third
-                eritmp(l,k,14,i)= eritmp(l,k,14,i)*sqrt7
-              enddo
+        enddo
+      elseif(nbfijkl(2) == 15) then
+        do i= 1,nbfijkl(1)
+          do k= 1,ncartijkl(3)
+            do l= 1,ncartijkl(4)
+              eritmp(l,k, 2,i)= eritmp(l,k, 2,i)*sqrt7
+              eritmp(l,k, 3,i)= eritmp(l,k, 3,i)*sqrt7
+              eritmp(l,k, 4,i)= eritmp(l,k, 4,i)*sqrt35third
+              eritmp(l,k, 5,i)= eritmp(l,k, 5,i)*sqrt35
+              eritmp(l,k, 6,i)= eritmp(l,k, 6,i)*sqrt35third
+              eritmp(l,k, 7,i)= eritmp(l,k, 7,i)*sqrt7
+              eritmp(l,k, 8,i)= eritmp(l,k, 8,i)*sqrt35
+              eritmp(l,k, 9,i)= eritmp(l,k, 9,i)*sqrt35
+              eritmp(l,k,10,i)= eritmp(l,k,10,i)*sqrt7
+              eritmp(l,k,12,i)= eritmp(l,k,12,i)*sqrt7
+              eritmp(l,k,13,i)= eritmp(l,k,13,i)*sqrt35third
+              eritmp(l,k,14,i)= eritmp(l,k,14,i)*sqrt7
             enddo
           enddo
-        endif
+        enddo
+!ishimura
+      elseif(nbfijkl(2) == 21) then
+        do i= 1,nbfijkl(1)
+          do k= 1,ncartijkl(3)
+            do l= 1,ncartijkl(4)
+              eritmp(l,k, 2,i)= eritmp(l,k, 2,i)*three
+              eritmp(l,k, 3,i)= eritmp(l,k, 3,i)*three
+              eritmp(l,k, 4,i)= eritmp(l,k, 4,i)*sqrt21
+              eritmp(l,k, 5,i)= eritmp(l,k, 5,i)*sqrt63
+              eritmp(l,k, 6,i)= eritmp(l,k, 6,i)*sqrt21
+              eritmp(l,k, 7,i)= eritmp(l,k, 7,i)*sqrt21
+              eritmp(l,k, 8,i)= eritmp(l,k, 8,i)*sqrt105
+              eritmp(l,k, 9,i)= eritmp(l,k, 9,i)*sqrt105
+              eritmp(l,k,10,i)= eritmp(l,k,10,i)*sqrt21
+              eritmp(l,k,11,i)= eritmp(l,k,11,i)*three
+              eritmp(l,k,12,i)= eritmp(l,k,12,i)*sqrt63
+              eritmp(l,k,13,i)= eritmp(l,k,13,i)*sqrt105
+              eritmp(l,k,14,i)= eritmp(l,k,14,i)*sqrt63
+              eritmp(l,k,15,i)= eritmp(l,k,15,i)*three
+              eritmp(l,k,17,i)= eritmp(l,k,17,i)*three
+              eritmp(l,k,18,i)= eritmp(l,k,18,i)*sqrt21
+              eritmp(l,k,19,i)= eritmp(l,k,19,i)*sqrt21
+              eritmp(l,k,20,i)= eritmp(l,k,20,i)*three
+            enddo
+          enddo
+        enddo
+      elseif(nbfijkl(2) == 28) then
+        do i= 1,nbfijkl(1)
+          do k= 1,ncartijkl(3)
+            do l= 1,ncartijkl(4)
+              eritmp(l,k, 2,i)= eritmp(l,k, 2,i)*sqrt11
+              eritmp(l,k, 3,i)= eritmp(l,k, 3,i)*sqrt11
+              eritmp(l,k, 4,i)= eritmp(l,k, 4,i)*sqrt33
+              eritmp(l,k, 5,i)= eritmp(l,k, 5,i)*sqrt99
+              eritmp(l,k, 6,i)= eritmp(l,k, 6,i)*sqrt33
+              eritmp(l,k, 7,i)= eritmp(l,k, 7,i)*sqrt231fifth
+              eritmp(l,k, 8,i)= eritmp(l,k, 8,i)*sqrt231
+              eritmp(l,k, 9,i)= eritmp(l,k, 9,i)*sqrt231
+              eritmp(l,k,10,i)= eritmp(l,k,10,i)*sqrt231fifth
+              eritmp(l,k,11,i)= eritmp(l,k,11,i)*sqrt33
+              eritmp(l,k,12,i)= eritmp(l,k,12,i)*sqrt231
+              eritmp(l,k,13,i)= eritmp(l,k,13,i)*sqrt385
+              eritmp(l,k,14,i)= eritmp(l,k,14,i)*sqrt231
+              eritmp(l,k,15,i)= eritmp(l,k,15,i)*sqrt33
+              eritmp(l,k,16,i)= eritmp(l,k,16,i)*sqrt11
+              eritmp(l,k,17,i)= eritmp(l,k,17,i)*sqrt99
+              eritmp(l,k,18,i)= eritmp(l,k,18,i)*sqrt231
+              eritmp(l,k,19,i)= eritmp(l,k,19,i)*sqrt231
+              eritmp(l,k,20,i)= eritmp(l,k,20,i)*sqrt99
+              eritmp(l,k,21,i)= eritmp(l,k,21,i)*sqrt11
+              eritmp(l,k,23,i)= eritmp(l,k,23,i)*sqrt11
+              eritmp(l,k,24,i)= eritmp(l,k,24,i)*sqrt33
+              eritmp(l,k,25,i)= eritmp(l,k,25,i)*sqrt231fifth
+              eritmp(l,k,26,i)= eritmp(l,k,26,i)*sqrt33
+              eritmp(l,k,27,i)= eritmp(l,k,27,i)*sqrt11
+            enddo
+          enddo
+        enddo
+      endif
 !
-        if(nbfijkl(3) == 5)then
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do l= 1,ncartijkl(4)
-                do k= 1,6
-                  work(k)= eritmp(l,k,j,i)
-                enddo
-                eritmp(l,1,j,i)= work(2)*sqrt3
-                eritmp(l,2,j,i)= work(5)*sqrt3
-                eritmp(l,3,j,i)=(work(6)*two-work(1)-work(4))*half
-                eritmp(l,4,j,i)= work(3)*sqrt3
-                eritmp(l,5,j,i)=(work(1)-work(4))*sqrt3h
+      if(nbfijkl(3) == 5)then
+        do i= 1,nbfijkl(1)
+          do j= 1,nbfijkl(2)
+            do l= 1,ncartijkl(4)
+              do k= 1,6
+                work(k)= eritmp(l,k,j,i)
               enddo
+              eritmp(l,1,j,i)= work(2)*sqrt3
+              eritmp(l,2,j,i)= work(5)*sqrt3
+              eritmp(l,3,j,i)=(work(6)*two-work(1)-work(4))*half
+              eritmp(l,4,j,i)= work(3)*sqrt3
+              eritmp(l,5,j,i)=(work(1)-work(4))*sqrt3h
             enddo
           enddo
-        elseif(nbfijkl(3) == 6)then
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do l= 1,ncartijkl(4)
-                eritmp(l,2,j,i)= eritmp(l,2,j,i)*sqrt3
-                eritmp(l,3,j,i)= eritmp(l,3,j,i)*sqrt3
-                eritmp(l,5,j,i)= eritmp(l,5,j,i)*sqrt3
-              enddo
+        enddo
+      elseif(nbfijkl(3) == 6)then
+        do i= 1,nbfijkl(1)
+          do j= 1,nbfijkl(2)
+            do l= 1,ncartijkl(4)
+              eritmp(l,2,j,i)= eritmp(l,2,j,i)*sqrt3
+              eritmp(l,3,j,i)= eritmp(l,3,j,i)*sqrt3
+              eritmp(l,5,j,i)= eritmp(l,5,j,i)*sqrt3
             enddo
           enddo
+        enddo
 !
-        elseif(nbfijkl(3) == 7)then
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do l= 1,ncartijkl(4)
-                do k= 1,10
-                  work(k)= eritmp(l,k,j,i)
-                enddo
-                eritmp(l,1,j,i)=(-work(7)+three*work(2)                   )*facf1
-                eritmp(l,2,j,i)=  work(5)                                  *facf2
-                eritmp(l,3,j,i)=(-work(7)-work(2)+four*work(9)            )*facf3
-                eritmp(l,4,j,i)=( two*work(10)-three*work(3)-three*work(8))*half
-                eritmp(l,5,j,i)=(-work(1)-work(4)+four*work(6)            )*facf3
-                eritmp(l,6,j,i)=( work(3)-work(8)                         )*facf4
-                eritmp(l,7,j,i)=( work(1)-three*work(4)                   )*facf1
+      elseif(nbfijkl(3) == 7)then
+        do i= 1,nbfijkl(1)
+          do j= 1,nbfijkl(2)
+            do l= 1,ncartijkl(4)
+              do k= 1,10
+                work(k)= eritmp(l,k,j,i)
               enddo
+              eritmp(l,1,j,i)=(-work(7)+three*work(2)                   )*facf1
+              eritmp(l,2,j,i)=  work(5)                                  *facf2
+              eritmp(l,3,j,i)=(-work(7)-work(2)+four*work(9)            )*facf3
+              eritmp(l,4,j,i)=( two*work(10)-three*work(3)-three*work(8))*half
+              eritmp(l,5,j,i)=(-work(1)-work(4)+four*work(6)            )*facf3
+              eritmp(l,6,j,i)=( work(3)-work(8)                         )*facf4
+              eritmp(l,7,j,i)=( work(1)-three*work(4)                   )*facf1
             enddo
           enddo
-        elseif(nbfijkl(3) == 10)then
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do l= 1,ncartijkl(4)
-                eritmp(l, 2,j,i)= eritmp(l, 2,j,i)*sqrt5
-                eritmp(l, 3,j,i)= eritmp(l, 3,j,i)*sqrt5
-                eritmp(l, 4,j,i)= eritmp(l, 4,j,i)*sqrt5
-                eritmp(l, 5,j,i)= eritmp(l, 5,j,i)*sqrt15
-                eritmp(l, 6,j,i)= eritmp(l, 6,j,i)*sqrt5
-                eritmp(l, 8,j,i)= eritmp(l, 8,j,i)*sqrt5
-                eritmp(l, 9,j,i)= eritmp(l, 9,j,i)*sqrt5
-              enddo
+        enddo
+      elseif(nbfijkl(3) == 10)then
+        do i= 1,nbfijkl(1)
+          do j= 1,nbfijkl(2)
+            do l= 1,ncartijkl(4)
+              eritmp(l, 2,j,i)= eritmp(l, 2,j,i)*sqrt5
+              eritmp(l, 3,j,i)= eritmp(l, 3,j,i)*sqrt5
+              eritmp(l, 4,j,i)= eritmp(l, 4,j,i)*sqrt5
+              eritmp(l, 5,j,i)= eritmp(l, 5,j,i)*sqrt15
+              eritmp(l, 6,j,i)= eritmp(l, 6,j,i)*sqrt5
+              eritmp(l, 8,j,i)= eritmp(l, 8,j,i)*sqrt5
+              eritmp(l, 9,j,i)= eritmp(l, 9,j,i)*sqrt5
             enddo
           enddo
+        enddo
 !
-        elseif(nbfijkl(3) == 9)then
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do l= 1,ncartijkl(4)
-                do k= 1,15
-                  work(k)= eritmp(l,k,j,i)
-                enddo
-                eritmp(l,1,j,i)=(work(2)-work(7))*facg1
-                eritmp(l,2,j,i)=(-work(12)+work(5)*three)*facg2
-                eritmp(l,3,j,i)=(-work(2)-work(7)+work(9)*six)*facg3
-                eritmp(l,4,j,i)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
-                eritmp(l,5,j,i)=(work(1)*three+work(11)*three+work(15)*eight+work(4)*six &
-&                                -work(6)*p24-work(13)*p24)*eighth
-                eritmp(l,6,j,i)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
-                eritmp(l,7,j,i)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg5
-                eritmp(l,8,j,i)=(work(3)-work(8)*three)*facg2
-                eritmp(l,9,j,i)=(work(1)+work(11)-work(4)*six)*facg6
+      elseif(nbfijkl(3) == 9)then
+        do i= 1,nbfijkl(1)
+          do j= 1,nbfijkl(2)
+            do l= 1,ncartijkl(4)
+              do k= 1,15
+                work(k)= eritmp(l,k,j,i)
               enddo
+              eritmp(l,1,j,i)=(work(2)-work(7))*facg1
+              eritmp(l,2,j,i)=(-work(12)+work(5)*three)*facg2
+              eritmp(l,3,j,i)=(-work(2)-work(7)+work(9)*six)*facg3
+              eritmp(l,4,j,i)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
+              eritmp(l,5,j,i)=(work(1)*three+work(11)*three+work(15)*eight+work(4)*six &
+&                              -work(6)*p24-work(13)*p24)*eighth
+              eritmp(l,6,j,i)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
+              eritmp(l,7,j,i)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg5
+              eritmp(l,8,j,i)=(work(3)-work(8)*three)*facg2
+              eritmp(l,9,j,i)=(work(1)+work(11)-work(4)*six)*facg6
             enddo
           enddo
-        elseif(nbfijkl(3) == 15)then
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do l= 1,ncartijkl(4)
-                eritmp(l, 2,j,i)= eritmp(l, 2,j,i)*sqrt7
-                eritmp(l, 3,j,i)= eritmp(l, 3,j,i)*sqrt7
-                eritmp(l, 4,j,i)= eritmp(l, 4,j,i)*sqrt35third
-                eritmp(l, 5,j,i)= eritmp(l, 5,j,i)*sqrt35
-                eritmp(l, 6,j,i)= eritmp(l, 6,j,i)*sqrt35third
-                eritmp(l, 7,j,i)= eritmp(l, 7,j,i)*sqrt7
-                eritmp(l, 8,j,i)= eritmp(l, 8,j,i)*sqrt35
-                eritmp(l, 9,j,i)= eritmp(l, 9,j,i)*sqrt35
-                eritmp(l,10,j,i)= eritmp(l,10,j,i)*sqrt7
-                eritmp(l,12,j,i)= eritmp(l,12,j,i)*sqrt7
-                eritmp(l,13,j,i)= eritmp(l,13,j,i)*sqrt35third
-                eritmp(l,14,j,i)= eritmp(l,14,j,i)*sqrt7
-              enddo
+        enddo
+      elseif(nbfijkl(3) == 15)then
+        do i= 1,nbfijkl(1)
+          do j= 1,nbfijkl(2)
+            do l= 1,ncartijkl(4)
+              eritmp(l, 2,j,i)= eritmp(l, 2,j,i)*sqrt7
+              eritmp(l, 3,j,i)= eritmp(l, 3,j,i)*sqrt7
+              eritmp(l, 4,j,i)= eritmp(l, 4,j,i)*sqrt35third
+              eritmp(l, 5,j,i)= eritmp(l, 5,j,i)*sqrt35
+              eritmp(l, 6,j,i)= eritmp(l, 6,j,i)*sqrt35third
+              eritmp(l, 7,j,i)= eritmp(l, 7,j,i)*sqrt7
+              eritmp(l, 8,j,i)= eritmp(l, 8,j,i)*sqrt35
+              eritmp(l, 9,j,i)= eritmp(l, 9,j,i)*sqrt35
+              eritmp(l,10,j,i)= eritmp(l,10,j,i)*sqrt7
+              eritmp(l,12,j,i)= eritmp(l,12,j,i)*sqrt7
+              eritmp(l,13,j,i)= eritmp(l,13,j,i)*sqrt35third
+              eritmp(l,14,j,i)= eritmp(l,14,j,i)*sqrt7
             enddo
           enddo
-        endif
+        enddo
+!ishimura
+      elseif(nbfijkl(3) == 21)then
+        do i= 1,nbfijkl(1)
+          do j= 1,nbfijkl(2)
+            do l= 1,ncartijkl(4)
+              eritmp(l, 2,j,i)= eritmp(l, 2,j,i)*three
+              eritmp(l, 3,j,i)= eritmp(l, 3,j,i)*three
+              eritmp(l, 4,j,i)= eritmp(l, 4,j,i)*sqrt21
+              eritmp(l, 5,j,i)= eritmp(l, 5,j,i)*sqrt63
+              eritmp(l, 6,j,i)= eritmp(l, 6,j,i)*sqrt21
+              eritmp(l, 7,j,i)= eritmp(l, 7,j,i)*sqrt21
+              eritmp(l, 8,j,i)= eritmp(l, 8,j,i)*sqrt105
+              eritmp(l, 9,j,i)= eritmp(l, 9,j,i)*sqrt105
+              eritmp(l,10,j,i)= eritmp(l,10,j,i)*sqrt21
+              eritmp(l,11,j,i)= eritmp(l,11,j,i)*three
+              eritmp(l,12,j,i)= eritmp(l,12,j,i)*sqrt63
+              eritmp(l,13,j,i)= eritmp(l,13,j,i)*sqrt105
+              eritmp(l,14,j,i)= eritmp(l,14,j,i)*sqrt63
+              eritmp(l,15,j,i)= eritmp(l,15,j,i)*three
+              eritmp(l,17,j,i)= eritmp(l,17,j,i)*three
+              eritmp(l,18,j,i)= eritmp(l,18,j,i)*sqrt21
+              eritmp(l,19,j,i)= eritmp(l,19,j,i)*sqrt21
+              eritmp(l,20,j,i)= eritmp(l,20,j,i)*three
+            enddo
+          enddo
+        enddo
+      elseif(nbfijkl(3) == 28)then
+        do i= 1,nbfijkl(1)
+          do j= 1,nbfijkl(2)
+            do l= 1,ncartijkl(4)
+              eritmp(l, 2,j,i)= eritmp(l, 2,j,i)*sqrt11
+              eritmp(l, 3,j,i)= eritmp(l, 3,j,i)*sqrt11
+              eritmp(l, 4,j,i)= eritmp(l, 4,j,i)*sqrt33
+              eritmp(l, 5,j,i)= eritmp(l, 5,j,i)*sqrt99
+              eritmp(l, 6,j,i)= eritmp(l, 6,j,i)*sqrt33
+              eritmp(l, 7,j,i)= eritmp(l, 7,j,i)*sqrt231fifth
+              eritmp(l, 8,j,i)= eritmp(l, 8,j,i)*sqrt231
+              eritmp(l, 9,j,i)= eritmp(l, 9,j,i)*sqrt231
+              eritmp(l,10,j,i)= eritmp(l,10,j,i)*sqrt231fifth
+              eritmp(l,11,j,i)= eritmp(l,11,j,i)*sqrt33
+              eritmp(l,12,j,i)= eritmp(l,12,j,i)*sqrt231
+              eritmp(l,13,j,i)= eritmp(l,13,j,i)*sqrt385
+              eritmp(l,14,j,i)= eritmp(l,14,j,i)*sqrt231
+              eritmp(l,15,j,i)= eritmp(l,15,j,i)*sqrt33
+              eritmp(l,16,j,i)= eritmp(l,16,j,i)*sqrt11
+              eritmp(l,17,j,i)= eritmp(l,17,j,i)*sqrt99
+              eritmp(l,18,j,i)= eritmp(l,18,j,i)*sqrt231
+              eritmp(l,19,j,i)= eritmp(l,19,j,i)*sqrt231
+              eritmp(l,20,j,i)= eritmp(l,20,j,i)*sqrt99
+              eritmp(l,21,j,i)= eritmp(l,21,j,i)*sqrt11
+              eritmp(l,23,j,i)= eritmp(l,23,j,i)*sqrt11
+              eritmp(l,24,j,i)= eritmp(l,24,j,i)*sqrt33
+              eritmp(l,25,j,i)= eritmp(l,25,j,i)*sqrt231fifth
+              eritmp(l,26,j,i)= eritmp(l,26,j,i)*sqrt33
+              eritmp(l,27,j,i)= eritmp(l,27,j,i)*sqrt11
+            enddo
+          enddo
+        enddo
+      endif
 !
-        if(nbfijkl(4) <= 3)then
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do k= 1,nbfijkl(3)
-                do l= 1,nbfijkl(4)
-                  twoeri(l,k,j,i)= eritmp(l,k,j,i)
-                enddo
+      if(nbfijkl(4) <= 3)then
+        do i= 1,nbfijkl(1)
+          do j= 1,nbfijkl(2)
+            do k= 1,nbfijkl(3)
+              do l= 1,nbfijkl(4)
+                twoeri(l,k,j,i)= eritmp(l,k,j,i)
               enddo
             enddo
           enddo
-        elseif(nbfijkl(4) == 5)then
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do k= 1,nbfijkl(3)
-                do l= 1,6
-                  work(l)= eritmp(l,k,j,i)
-                enddo
-                twoeri(1,k,j,i)= work(2)*sqrt3
-                twoeri(2,k,j,i)= work(5)*sqrt3
-                twoeri(3,k,j,i)=(work(6)*two-work(1)-work(4))*half
-                twoeri(4,k,j,i)= work(3)*sqrt3
-                twoeri(5,k,j,i)=(work(1)-work(4))*sqrt3h
+        enddo
+      elseif(nbfijkl(4) == 5)then
+        do i= 1,nbfijkl(1)
+          do j= 1,nbfijkl(2)
+            do k= 1,nbfijkl(3)
+              do l= 1,6
+                work(l)= eritmp(l,k,j,i)
               enddo
+              twoeri(1,k,j,i)= work(2)*sqrt3
+              twoeri(2,k,j,i)= work(5)*sqrt3
+              twoeri(3,k,j,i)=(work(6)*two-work(1)-work(4))*half
+              twoeri(4,k,j,i)= work(3)*sqrt3
+              twoeri(5,k,j,i)=(work(1)-work(4))*sqrt3h
             enddo
           enddo
-        elseif(nbfijkl(4) == 6)then
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do k= 1,nbfijkl(3)
-                twoeri(1,k,j,i)= eritmp(1,k,j,i)
-                twoeri(2,k,j,i)= eritmp(2,k,j,i)*sqrt3
-                twoeri(3,k,j,i)= eritmp(3,k,j,i)*sqrt3
-                twoeri(4,k,j,i)= eritmp(4,k,j,i)
-                twoeri(5,k,j,i)= eritmp(5,k,j,i)*sqrt3
-                twoeri(6,k,j,i)= eritmp(6,k,j,i)
-              enddo
+        enddo
+      elseif(nbfijkl(4) == 6)then
+        do i= 1,nbfijkl(1)
+          do j= 1,nbfijkl(2)
+            do k= 1,nbfijkl(3)
+              twoeri(1,k,j,i)= eritmp(1,k,j,i)
+              twoeri(2,k,j,i)= eritmp(2,k,j,i)*sqrt3
+              twoeri(3,k,j,i)= eritmp(3,k,j,i)*sqrt3
+              twoeri(4,k,j,i)= eritmp(4,k,j,i)
+              twoeri(5,k,j,i)= eritmp(5,k,j,i)*sqrt3
+              twoeri(6,k,j,i)= eritmp(6,k,j,i)
             enddo
           enddo
+        enddo
 !
-        elseif(nbfijkl(4) == 7)then
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do k= 1,nbfijkl(3)
-                do l= 1,10
-                  work(l)= eritmp(l,k,j,i)
-                enddo
-                twoeri(1,k,j,i)=(-work(7)+three*work(2)                   )*facf1
-                twoeri(2,k,j,i)=  work(5)                                  *facf2
-                twoeri(3,k,j,i)=(-work(7)-work(2)+four*work(9)            )*facf3
-                twoeri(4,k,j,i)=( two*work(10)-three*work(3)-three*work(8))*half
-                twoeri(5,k,j,i)=(-work(1)-work(4)+four*work(6)            )*facf3
-                twoeri(6,k,j,i)=( work(3)-work(8)                         )*facf4
-                twoeri(7,k,j,i)=( work(1)-three*work(4)                   )*facf1
+      elseif(nbfijkl(4) == 7)then
+        do i= 1,nbfijkl(1)
+          do j= 1,nbfijkl(2)
+            do k= 1,nbfijkl(3)
+              do l= 1,10
+                work(l)= eritmp(l,k,j,i)
               enddo
+              twoeri(1,k,j,i)=(-work(7)+three*work(2)                   )*facf1
+              twoeri(2,k,j,i)=  work(5)                                  *facf2
+              twoeri(3,k,j,i)=(-work(7)-work(2)+four*work(9)            )*facf3
+              twoeri(4,k,j,i)=( two*work(10)-three*work(3)-three*work(8))*half
+              twoeri(5,k,j,i)=(-work(1)-work(4)+four*work(6)            )*facf3
+              twoeri(6,k,j,i)=( work(3)-work(8)                         )*facf4
+              twoeri(7,k,j,i)=( work(1)-three*work(4)                   )*facf1
             enddo
           enddo
-        elseif(nbfijkl(4) == 10)then
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do k= 1,nbfijkl(3)
-                twoeri( 1,k,j,i)= eritmp( 1,k,j,i)
-                twoeri( 2,k,j,i)= eritmp( 2,k,j,i)*sqrt5
-                twoeri( 3,k,j,i)= eritmp( 3,k,j,i)*sqrt5
-                twoeri( 4,k,j,i)= eritmp( 4,k,j,i)*sqrt5
-                twoeri( 5,k,j,i)= eritmp( 5,k,j,i)*sqrt15
-                twoeri( 6,k,j,i)= eritmp( 6,k,j,i)*sqrt5
-                twoeri( 7,k,j,i)= eritmp( 7,k,j,i)
-                twoeri( 8,k,j,i)= eritmp( 8,k,j,i)*sqrt5
-                twoeri( 9,k,j,i)= eritmp( 9,k,j,i)*sqrt5
-                twoeri(10,k,j,i)= eritmp(10,k,j,i)
-              enddo
+        enddo
+      elseif(nbfijkl(4) == 10)then
+        do i= 1,nbfijkl(1)
+          do j= 1,nbfijkl(2)
+            do k= 1,nbfijkl(3)
+              twoeri( 1,k,j,i)= eritmp( 1,k,j,i)
+              twoeri( 2,k,j,i)= eritmp( 2,k,j,i)*sqrt5
+              twoeri( 3,k,j,i)= eritmp( 3,k,j,i)*sqrt5
+              twoeri( 4,k,j,i)= eritmp( 4,k,j,i)*sqrt5
+              twoeri( 5,k,j,i)= eritmp( 5,k,j,i)*sqrt15
+              twoeri( 6,k,j,i)= eritmp( 6,k,j,i)*sqrt5
+              twoeri( 7,k,j,i)= eritmp( 7,k,j,i)
+              twoeri( 8,k,j,i)= eritmp( 8,k,j,i)*sqrt5
+              twoeri( 9,k,j,i)= eritmp( 9,k,j,i)*sqrt5
+              twoeri(10,k,j,i)= eritmp(10,k,j,i)
             enddo
           enddo
+        enddo
 !
-        elseif(nbfijkl(4) == 9)then
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do k= 1,nbfijkl(3)
-                do l= 1,15
-                  work(l)= eritmp(l,k,j,i)
-                enddo
-                twoeri(1,k,j,i)=(work(2)-work(7))*facg1
-                twoeri(2,k,j,i)=(-work(12)+work(5)*three)*facg2
-                twoeri(3,k,j,i)=(-work(2)-work(7)+work(9)*six)*facg3
-                twoeri(4,k,j,i)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
-                twoeri(5,k,j,i)=(work(1)*three+work(11)*three+work(15)*eight+work(4)*six &
-&                                -work(6)*p24-work(13)*p24)*eighth
-                twoeri(6,k,j,i)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
-                twoeri(7,k,j,i)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg5
-                twoeri(8,k,j,i)=(work(3)-work(8)*three)*facg2
-                twoeri(9,k,j,i)=(work(1)+work(11)-work(4)*six)*facg6
+      elseif(nbfijkl(4) == 9)then
+        do i= 1,nbfijkl(1)
+          do j= 1,nbfijkl(2)
+            do k= 1,nbfijkl(3)
+              do l= 1,15
+                work(l)= eritmp(l,k,j,i)
               enddo
+              twoeri(1,k,j,i)=(work(2)-work(7))*facg1
+              twoeri(2,k,j,i)=(-work(12)+work(5)*three)*facg2
+              twoeri(3,k,j,i)=(-work(2)-work(7)+work(9)*six)*facg3
+              twoeri(4,k,j,i)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
+              twoeri(5,k,j,i)=(work(1)*three+work(11)*three+work(15)*eight+work(4)*six &
+&                              -work(6)*p24-work(13)*p24)*eighth
+              twoeri(6,k,j,i)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
+              twoeri(7,k,j,i)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg5
+              twoeri(8,k,j,i)=(work(3)-work(8)*three)*facg2
+              twoeri(9,k,j,i)=(work(1)+work(11)-work(4)*six)*facg6
             enddo
           enddo
-        elseif(nbfijkl(4) == 15)then
-          do i= 1,nbfijkl(1)
-            do j= 1,nbfijkl(2)
-              do k= 1,nbfijkl(3)
-                twoeri( 1,k,j,i)= eritmp( 1,k,j,i)
-                twoeri( 2,k,j,i)= eritmp( 2,k,j,i)*sqrt7
-                twoeri( 3,k,j,i)= eritmp( 3,k,j,i)*sqrt7
-                twoeri( 4,k,j,i)= eritmp( 4,k,j,i)*sqrt35third
-                twoeri( 5,k,j,i)= eritmp( 5,k,j,i)*sqrt35
-                twoeri( 6,k,j,i)= eritmp( 6,k,j,i)*sqrt35third
-                twoeri( 7,k,j,i)= eritmp( 7,k,j,i)*sqrt7
-                twoeri( 8,k,j,i)= eritmp( 8,k,j,i)*sqrt35
-                twoeri( 9,k,j,i)= eritmp( 9,k,j,i)*sqrt35
-                twoeri(10,k,j,i)= eritmp(10,k,j,i)*sqrt7
-                twoeri(11,k,j,i)= eritmp(11,k,j,i)
-                twoeri(12,k,j,i)= eritmp(12,k,j,i)*sqrt7
-                twoeri(13,k,j,i)= eritmp(13,k,j,i)*sqrt35third
-                twoeri(14,k,j,i)= eritmp(14,k,j,i)*sqrt7
-                twoeri(15,k,j,i)= eritmp(15,k,j,i)
-              enddo
+        enddo
+      elseif(nbfijkl(4) == 15)then
+        do i= 1,nbfijkl(1)
+          do j= 1,nbfijkl(2)
+            do k= 1,nbfijkl(3)
+              twoeri( 1,k,j,i)= eritmp( 1,k,j,i)
+              twoeri( 2,k,j,i)= eritmp( 2,k,j,i)*sqrt7
+              twoeri( 3,k,j,i)= eritmp( 3,k,j,i)*sqrt7
+              twoeri( 4,k,j,i)= eritmp( 4,k,j,i)*sqrt35third
+              twoeri( 5,k,j,i)= eritmp( 5,k,j,i)*sqrt35
+              twoeri( 6,k,j,i)= eritmp( 6,k,j,i)*sqrt35third
+              twoeri( 7,k,j,i)= eritmp( 7,k,j,i)*sqrt7
+              twoeri( 8,k,j,i)= eritmp( 8,k,j,i)*sqrt35
+              twoeri( 9,k,j,i)= eritmp( 9,k,j,i)*sqrt35
+              twoeri(10,k,j,i)= eritmp(10,k,j,i)*sqrt7
+              twoeri(11,k,j,i)= eritmp(11,k,j,i)
+              twoeri(12,k,j,i)= eritmp(12,k,j,i)*sqrt7
+              twoeri(13,k,j,i)= eritmp(13,k,j,i)*sqrt35third
+              twoeri(14,k,j,i)= eritmp(14,k,j,i)*sqrt7
+              twoeri(15,k,j,i)= eritmp(15,k,j,i)
             enddo
           enddo
-        endif
+        enddo
+!ishimura
+      elseif(nbfijkl(4) == 21)then
+        do i= 1,nbfijkl(1)
+          do j= 1,nbfijkl(2)
+            do k= 1,nbfijkl(3)
+              twoeri( 1,k,j,i)= eritmp( 1,k,j,i)
+              twoeri( 2,k,j,i)= eritmp( 2,k,j,i)*three
+              twoeri( 3,k,j,i)= eritmp( 3,k,j,i)*three
+              twoeri( 4,k,j,i)= eritmp( 4,k,j,i)*sqrt21
+              twoeri( 5,k,j,i)= eritmp( 5,k,j,i)*sqrt63
+              twoeri( 6,k,j,i)= eritmp( 6,k,j,i)*sqrt21
+              twoeri( 7,k,j,i)= eritmp( 7,k,j,i)*sqrt21
+              twoeri( 8,k,j,i)= eritmp( 8,k,j,i)*sqrt105
+              twoeri( 9,k,j,i)= eritmp( 9,k,j,i)*sqrt105
+              twoeri(10,k,j,i)= eritmp(10,k,j,i)*sqrt21
+              twoeri(11,k,j,i)= eritmp(11,k,j,i)*three
+              twoeri(12,k,j,i)= eritmp(12,k,j,i)*sqrt63
+              twoeri(13,k,j,i)= eritmp(13,k,j,i)*sqrt105
+              twoeri(14,k,j,i)= eritmp(14,k,j,i)*sqrt63
+              twoeri(15,k,j,i)= eritmp(15,k,j,i)*three
+              twoeri(16,k,j,i)= eritmp(16,k,j,i)
+              twoeri(17,k,j,i)= eritmp(17,k,j,i)*three
+              twoeri(18,k,j,i)= eritmp(18,k,j,i)*sqrt21
+              twoeri(19,k,j,i)= eritmp(19,k,j,i)*sqrt21
+              twoeri(20,k,j,i)= eritmp(20,k,j,i)*three
+              twoeri(21,k,j,i)= eritmp(21,k,j,i)
+            enddo
+          enddo
+        enddo
+      elseif(nbfijkl(4) == 28)then
+        do i= 1,nbfijkl(1)
+          do j= 1,nbfijkl(2)
+            do k= 1,nbfijkl(3)
+              twoeri( 1,k,j,i)= eritmp( 1,k,j,i)
+              twoeri( 2,k,j,i)= eritmp( 2,k,j,i)*sqrt11
+              twoeri( 3,k,j,i)= eritmp( 3,k,j,i)*sqrt11
+              twoeri( 4,k,j,i)= eritmp( 4,k,j,i)*sqrt33
+              twoeri( 5,k,j,i)= eritmp( 5,k,j,i)*sqrt99
+              twoeri( 6,k,j,i)= eritmp( 6,k,j,i)*sqrt33
+              twoeri( 7,k,j,i)= eritmp( 7,k,j,i)*sqrt231fifth
+              twoeri( 8,k,j,i)= eritmp( 8,k,j,i)*sqrt231
+              twoeri( 9,k,j,i)= eritmp( 9,k,j,i)*sqrt231
+              twoeri(10,k,j,i)= eritmp(10,k,j,i)*sqrt231fifth
+              twoeri(11,k,j,i)= eritmp(11,k,j,i)*sqrt33
+              twoeri(12,k,j,i)= eritmp(12,k,j,i)*sqrt231
+              twoeri(13,k,j,i)= eritmp(13,k,j,i)*sqrt385
+              twoeri(14,k,j,i)= eritmp(14,k,j,i)*sqrt231
+              twoeri(15,k,j,i)= eritmp(15,k,j,i)*sqrt33
+              twoeri(16,k,j,i)= eritmp(16,k,j,i)*sqrt11
+              twoeri(17,k,j,i)= eritmp(17,k,j,i)*sqrt99
+              twoeri(18,k,j,i)= eritmp(18,k,j,i)*sqrt231
+              twoeri(19,k,j,i)= eritmp(19,k,j,i)*sqrt231
+              twoeri(20,k,j,i)= eritmp(20,k,j,i)*sqrt99
+              twoeri(21,k,j,i)= eritmp(21,k,j,i)*sqrt11
+              twoeri(22,k,j,i)= eritmp(22,k,j,i)
+              twoeri(23,k,j,i)= eritmp(23,k,j,i)*sqrt11
+              twoeri(24,k,j,i)= eritmp(24,k,j,i)*sqrt33
+              twoeri(25,k,j,i)= eritmp(25,k,j,i)*sqrt231fifth
+              twoeri(26,k,j,i)= eritmp(26,k,j,i)*sqrt33
+              twoeri(27,k,j,i)= eritmp(27,k,j,i)*sqrt11
+              twoeri(28,k,j,i)= eritmp(28,k,j,i)
+            enddo
+          enddo
+        enddo
+      endif
 !
       return
 end
