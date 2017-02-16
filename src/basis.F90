@@ -361,21 +361,23 @@ end
                 locbf(ishell+1)= locbf(ishell)+15
               endif
             case(5)
-              if(spher) then
-                mbf(ishell)= 11
-                locbf(ishell+1)= locbf(ishell)+11
-              else
+!ishimura
+!             if(spher) then
+!               mbf(ishell)= 11
+!               locbf(ishell+1)= locbf(ishell)+11
+!             else
                 mbf(ishell)= 21
                 locbf(ishell+1)= locbf(ishell)+21
-              endif
+!             endif
             case(6)
-              if(spher) then
-                mbf(ishell)= 13
-                locbf(ishell+1)= locbf(ishell)+13
-              else
+!ishimura
+!             if(spher) then
+!               mbf(ishell)= 13
+!               locbf(ishell+1)= locbf(ishell)+13
+!             else
                 mbf(ishell)= 28
                 locbf(ishell+1)= locbf(ishell)+28
-              endif
+!             endif
             case default
               write(*,'(" Error! This program supports up to i function.")')
               call iabort
