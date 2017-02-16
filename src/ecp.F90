@@ -35,8 +35,8 @@
       maxdim= maxfunc(maxbasis)
       llmax= maxval(maxangecp(1:natom))
       if(llmax >= 5) then
-        write(*,'(" This program supports up to SPDFG core potentials.")')
-        call iabort
+        write(*,'("Error! This program supports up to SPDFG core potentials.")')
+        call exit
       endif
       maxecpdim= max(maxbasis,llmax-1)
       numtbasis=(maxecpdim+1)*(maxecpdim+2)*(maxecpdim+3)/6
@@ -136,9 +136,9 @@ end
       jloc  = locprim(jsh)
       jlocbf= locbf(jsh)
 !
-      if((nangij(1) > 4).or.(nangij(2) > 4))then
-        write(*,'(" Error! This program supports up to g function in calcintecp")')
-        call iabort
+      if((nangij(1) > 6).or.(nangij(2) > 6))then
+        write(*,'(" Error! This program supports up to i function in calcintecp")')
+        call exit
       endif
 !
       do i= 1,3
@@ -270,6 +270,11 @@ end
       real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
       real(8),parameter :: sqrt7=2.645751311064590D+00, sqrt35=5.916079783099616D+00
       real(8),parameter :: sqrt35third=3.415650255319866D+00
+      real(8),parameter :: sqrt21=4.582575694955840D+00, sqrt63=7.937253933193772D+00
+      real(8),parameter :: sqrt105=1.024695076595960D+01, sqrt11=3.316624790355400D+00
+      real(8),parameter :: sqrt33=5.744562646538029D+00, sqrt99=9.949874371066200D+00
+      real(8),parameter :: sqrt231=1.519868415357066D+01, sqrt231fifth=6.797058187186571D+00
+      real(8),parameter :: sqrt385=1.962141687034858D+01
       real(8),parameter :: facf1=0.79056941504209483D+00 ! sqrt(5/2)/2
       real(8),parameter :: facf2=3.87298334620741688D+00 ! sqrt(15)
       real(8),parameter :: facf3=0.61237243569579452D+00 ! sqrt(3/2)/2
@@ -449,6 +454,65 @@ end
             ecptmp(14,ii)= work( 9)*sqrt7
             ecptmp(15,ii)= work( 3)
           enddo
+! H function
+        case(21)
+          do ii= 1,ncarti
+            work(1:21)= ecptmp(1:21,ii)
+            ecptmp( 1,ii)= work( 1)
+            ecptmp( 2,ii)= work( 2)*three
+            ecptmp( 3,ii)= work( 3)*three
+            ecptmp( 4,ii)= work( 4)*sqrt21
+            ecptmp( 5,ii)= work( 5)*sqrt63
+            ecptmp( 6,ii)= work( 6)*sqrt21
+            ecptmp( 7,ii)= work( 7)*sqrt21
+            ecptmp( 8,ii)= work( 8)*sqrt105
+            ecptmp( 9,ii)= work( 9)*sqrt105
+            ecptmp(10,ii)= work(10)*sqrt21
+            ecptmp(11,ii)= work(11)*three
+            ecptmp(12,ii)= work(12)*sqrt63
+            ecptmp(13,ii)= work(13)*sqrt105
+            ecptmp(14,ii)= work(14)*sqrt63
+            ecptmp(15,ii)= work(15)*three
+            ecptmp(16,ii)= work(16)
+            ecptmp(17,ii)= work(17)*three
+            ecptmp(18,ii)= work(18)*sqrt21
+            ecptmp(19,ii)= work(19)*sqrt21
+            ecptmp(20,ii)= work(20)*three
+            ecptmp(21,ii)= work(21)
+          enddo
+! I function
+        case(28)
+          do ii= 1,ncarti
+            work(1:28)= ecptmp(1:28,ii)
+            ecptmp( 1,ii)= work( 1)
+            ecptmp( 2,ii)= work( 2)*sqrt11
+            ecptmp( 3,ii)= work( 3)*sqrt11
+            ecptmp( 4,ii)= work( 4)*sqrt33
+            ecptmp( 5,ii)= work( 5)*sqrt99
+            ecptmp( 6,ii)= work( 6)*sqrt33
+            ecptmp( 7,ii)= work( 7)*sqrt231fifth
+            ecptmp( 8,ii)= work( 8)*sqrt231
+            ecptmp( 9,ii)= work( 9)*sqrt231
+            ecptmp(10,ii)= work(10)*sqrt231fifth
+            ecptmp(11,ii)= work(11)*sqrt33
+            ecptmp(12,ii)= work(12)*sqrt231
+            ecptmp(13,ii)= work(13)*sqrt385
+            ecptmp(14,ii)= work(14)*sqrt231
+            ecptmp(15,ii)= work(15)*sqrt33
+            ecptmp(16,ii)= work(16)*sqrt11
+            ecptmp(17,ii)= work(17)*sqrt99
+            ecptmp(18,ii)= work(18)*sqrt231
+            ecptmp(19,ii)= work(19)*sqrt231
+            ecptmp(20,ii)= work(20)*sqrt99
+            ecptmp(21,ii)= work(21)*sqrt11
+            ecptmp(22,ii)= work(22)
+            ecptmp(23,ii)= work(23)*sqrt11
+            ecptmp(24,ii)= work(24)*sqrt33
+            ecptmp(25,ii)= work(25)*sqrt231fifth
+            ecptmp(26,ii)= work(26)*sqrt33
+            ecptmp(27,ii)= work(27)*sqrt11
+            ecptmp(28,ii)= work(28)
+          enddo
       end select
 !
 ! Ket part
@@ -540,6 +604,65 @@ end
             ecptmp(jj,14)= work( 9)*sqrt7
             ecptmp(jj,15)= work( 3)
           enddo
+! H function
+        case(21)
+          do jj= 1,nbfij(2)
+            work(1:21)= ecptmp(jj,1:21)
+            ecptmp(jj, 1)= work( 1)
+            ecptmp(jj, 2)= work( 2)*three
+            ecptmp(jj, 3)= work( 3)*three
+            ecptmp(jj, 4)= work( 4)*sqrt21
+            ecptmp(jj, 5)= work( 5)*sqrt63
+            ecptmp(jj, 6)= work( 6)*sqrt21
+            ecptmp(jj, 7)= work( 7)*sqrt21
+            ecptmp(jj, 8)= work( 8)*sqrt105
+            ecptmp(jj, 9)= work( 9)*sqrt105
+            ecptmp(jj,10)= work(10)*sqrt21
+            ecptmp(jj,11)= work(11)*three
+            ecptmp(jj,12)= work(12)*sqrt63
+            ecptmp(jj,13)= work(13)*sqrt105
+            ecptmp(jj,14)= work(14)*sqrt63
+            ecptmp(jj,15)= work(15)*three
+            ecptmp(jj,16)= work(16)
+            ecptmp(jj,17)= work(17)*three
+            ecptmp(jj,18)= work(18)*sqrt21
+            ecptmp(jj,19)= work(19)*sqrt21
+            ecptmp(jj,20)= work(20)*three
+            ecptmp(jj,21)= work(21)
+          enddo
+! I function
+        case(28)
+          do jj= 1,nbfij(2)
+            work(1:28)= ecptmp(jj,1:28)
+            ecptmp(jj, 1)= work( 1)
+            ecptmp(jj, 2)= work( 2)*sqrt11
+            ecptmp(jj, 3)= work( 3)*sqrt11
+            ecptmp(jj, 4)= work( 4)*sqrt33
+            ecptmp(jj, 5)= work( 5)*sqrt99
+            ecptmp(jj, 6)= work( 6)*sqrt33
+            ecptmp(jj, 7)= work( 7)*sqrt231fifth
+            ecptmp(jj, 8)= work( 8)*sqrt231
+            ecptmp(jj, 9)= work( 9)*sqrt231
+            ecptmp(jj,10)= work(10)*sqrt231fifth
+            ecptmp(jj,11)= work(11)*sqrt33
+            ecptmp(jj,12)= work(12)*sqrt231
+            ecptmp(jj,13)= work(13)*sqrt385
+            ecptmp(jj,14)= work(14)*sqrt231
+            ecptmp(jj,15)= work(15)*sqrt33
+            ecptmp(jj,16)= work(16)*sqrt11
+            ecptmp(jj,17)= work(17)*sqrt99
+            ecptmp(jj,18)= work(18)*sqrt231
+            ecptmp(jj,19)= work(19)*sqrt231
+            ecptmp(jj,20)= work(20)*sqrt99
+            ecptmp(jj,21)= work(21)*sqrt11
+            ecptmp(jj,22)= work(22)
+            ecptmp(jj,23)= work(23)*sqrt11
+            ecptmp(jj,24)= work(24)*sqrt33
+            ecptmp(jj,25)= work(25)*sqrt231fifth
+            ecptmp(jj,26)= work(26)*sqrt33
+            ecptmp(jj,27)= work(27)*sqrt11
+            ecptmp(jj,28)= work(28)
+          enddo
       end select
 !
       do ii= 1,nbfij(1)
@@ -578,6 +701,11 @@ end
       real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
       real(8),parameter :: sqrt7=2.645751311064590D+00, sqrt35=5.916079783099616D+00
       real(8),parameter :: sqrt35third=3.415650255319866D+00
+      real(8),parameter :: sqrt21=4.582575694955840D+00, sqrt63=7.937253933193772D+00
+      real(8),parameter :: sqrt105=1.024695076595960D+01, sqrt11=3.316624790355400D+00
+      real(8),parameter :: sqrt33=5.744562646538029D+00, sqrt99=9.949874371066200D+00
+      real(8),parameter :: sqrt231=1.519868415357066D+01, sqrt231fifth=6.797058187186571D+00
+      real(8),parameter :: sqrt385=1.962141687034858D+01
       real(8),parameter :: facf1=0.79056941504209483D+00 ! sqrt(5/2)/2
       real(8),parameter :: facf2=3.87298334620741688D+00 ! sqrt(15)
       real(8),parameter :: facf3=0.61237243569579452D+00 ! sqrt(3/2)/2
@@ -922,6 +1050,65 @@ end
             ecptmp(14,ii)= work( 9)*sqrt7
             ecptmp(15,ii)= work( 3)
           enddo
+! H function
+        case(21)
+          do ii= 1,ncarti
+            work(1:21)= ecptmp(1:21,ii)
+            ecptmp( 1,ii)= work( 1)
+            ecptmp( 2,ii)= work( 2)*three
+            ecptmp( 3,ii)= work( 3)*three
+            ecptmp( 4,ii)= work( 4)*sqrt21
+            ecptmp( 5,ii)= work( 5)*sqrt63
+            ecptmp( 6,ii)= work( 6)*sqrt21
+            ecptmp( 7,ii)= work( 7)*sqrt21
+            ecptmp( 8,ii)= work( 8)*sqrt105
+            ecptmp( 9,ii)= work( 9)*sqrt105
+            ecptmp(10,ii)= work(10)*sqrt21
+            ecptmp(11,ii)= work(11)*three
+            ecptmp(12,ii)= work(12)*sqrt63
+            ecptmp(13,ii)= work(13)*sqrt105
+            ecptmp(14,ii)= work(14)*sqrt63
+            ecptmp(15,ii)= work(15)*three
+            ecptmp(16,ii)= work(16)
+            ecptmp(17,ii)= work(17)*three
+            ecptmp(18,ii)= work(18)*sqrt21
+            ecptmp(19,ii)= work(19)*sqrt21
+            ecptmp(20,ii)= work(20)*three
+            ecptmp(21,ii)= work(21)
+          enddo
+! I function
+        case(28)
+          do ii= 1,ncarti
+            work(1:28)= ecptmp(1:28,ii)
+            ecptmp( 1,ii)= work( 1)
+            ecptmp( 2,ii)= work( 2)*sqrt11
+            ecptmp( 3,ii)= work( 3)*sqrt11
+            ecptmp( 4,ii)= work( 4)*sqrt33
+            ecptmp( 5,ii)= work( 5)*sqrt99
+            ecptmp( 6,ii)= work( 6)*sqrt33
+            ecptmp( 7,ii)= work( 7)*sqrt231fifth
+            ecptmp( 8,ii)= work( 8)*sqrt231
+            ecptmp( 9,ii)= work( 9)*sqrt231
+            ecptmp(10,ii)= work(10)*sqrt231fifth
+            ecptmp(11,ii)= work(11)*sqrt33
+            ecptmp(12,ii)= work(12)*sqrt231
+            ecptmp(13,ii)= work(13)*sqrt385
+            ecptmp(14,ii)= work(14)*sqrt231
+            ecptmp(15,ii)= work(15)*sqrt33
+            ecptmp(16,ii)= work(16)*sqrt11
+            ecptmp(17,ii)= work(17)*sqrt99
+            ecptmp(18,ii)= work(18)*sqrt231
+            ecptmp(19,ii)= work(19)*sqrt231
+            ecptmp(20,ii)= work(20)*sqrt99
+            ecptmp(21,ii)= work(21)*sqrt11
+            ecptmp(22,ii)= work(22)
+            ecptmp(23,ii)= work(23)*sqrt11
+            ecptmp(24,ii)= work(24)*sqrt33
+            ecptmp(25,ii)= work(25)*sqrt231fifth
+            ecptmp(26,ii)= work(26)*sqrt33
+            ecptmp(27,ii)= work(27)*sqrt11
+            ecptmp(28,ii)= work(28)
+          enddo
       end select
 !
 ! Ket part
@@ -1013,6 +1200,65 @@ end
             ecptmp(jj,14)= work( 9)*sqrt7
             ecptmp(jj,15)= work( 3)
           enddo
+! H function
+        case(21)
+          do jj= 1,nbfij(2)
+            work(1:21)= ecptmp(jj,1:21)
+            ecptmp(jj, 1)= work( 1)
+            ecptmp(jj, 2)= work( 2)*three
+            ecptmp(jj, 3)= work( 3)*three
+            ecptmp(jj, 4)= work( 4)*sqrt21
+            ecptmp(jj, 5)= work( 5)*sqrt63
+            ecptmp(jj, 6)= work( 6)*sqrt21
+            ecptmp(jj, 7)= work( 7)*sqrt21
+            ecptmp(jj, 8)= work( 8)*sqrt105
+            ecptmp(jj, 9)= work( 9)*sqrt105
+            ecptmp(jj,10)= work(10)*sqrt21
+            ecptmp(jj,11)= work(11)*three
+            ecptmp(jj,12)= work(12)*sqrt63
+            ecptmp(jj,13)= work(13)*sqrt105
+            ecptmp(jj,14)= work(14)*sqrt63
+            ecptmp(jj,15)= work(15)*three
+            ecptmp(jj,16)= work(16)
+            ecptmp(jj,17)= work(17)*three
+            ecptmp(jj,18)= work(18)*sqrt21
+            ecptmp(jj,19)= work(19)*sqrt21
+            ecptmp(jj,20)= work(20)*three
+            ecptmp(jj,21)= work(21)
+          enddo
+! I function
+        case(28)
+          do jj= 1,nbfij(2)
+            work(1:28)= ecptmp(jj,1:28)
+            ecptmp(jj, 1)= work( 1)
+            ecptmp(jj, 2)= work( 2)*sqrt11
+            ecptmp(jj, 3)= work( 3)*sqrt11
+            ecptmp(jj, 4)= work( 4)*sqrt33
+            ecptmp(jj, 5)= work( 5)*sqrt99
+            ecptmp(jj, 6)= work( 6)*sqrt33
+            ecptmp(jj, 7)= work( 7)*sqrt231fifth
+            ecptmp(jj, 8)= work( 8)*sqrt231
+            ecptmp(jj, 9)= work( 9)*sqrt231
+            ecptmp(jj,10)= work(10)*sqrt231fifth
+            ecptmp(jj,11)= work(11)*sqrt33
+            ecptmp(jj,12)= work(12)*sqrt231
+            ecptmp(jj,13)= work(13)*sqrt385
+            ecptmp(jj,14)= work(14)*sqrt231
+            ecptmp(jj,15)= work(15)*sqrt33
+            ecptmp(jj,16)= work(16)*sqrt11
+            ecptmp(jj,17)= work(17)*sqrt99
+            ecptmp(jj,18)= work(18)*sqrt231
+            ecptmp(jj,19)= work(19)*sqrt231
+            ecptmp(jj,20)= work(20)*sqrt99
+            ecptmp(jj,21)= work(21)*sqrt11
+            ecptmp(jj,22)= work(22)
+            ecptmp(jj,23)= work(23)*sqrt11
+            ecptmp(jj,24)= work(24)*sqrt33
+            ecptmp(jj,25)= work(25)*sqrt231fifth
+            ecptmp(jj,26)= work(26)*sqrt33
+            ecptmp(jj,27)= work(27)*sqrt11
+            ecptmp(jj,28)= work(28)
+          enddo
       end select
 !
       do ii= 1,nbfij(1)
@@ -1057,6 +1303,11 @@ end
       real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
       real(8),parameter :: sqrt7=2.645751311064590D+00, sqrt35=5.916079783099616D+00
       real(8),parameter :: sqrt35third=3.415650255319866D+00
+      real(8),parameter :: sqrt21=4.582575694955840D+00, sqrt63=7.937253933193772D+00
+      real(8),parameter :: sqrt105=1.024695076595960D+01, sqrt11=3.316624790355400D+00
+      real(8),parameter :: sqrt33=5.744562646538029D+00, sqrt99=9.949874371066200D+00
+      real(8),parameter :: sqrt231=1.519868415357066D+01, sqrt231fifth=6.797058187186571D+00
+      real(8),parameter :: sqrt385=1.962141687034858D+01
       real(8),parameter :: facf1=0.79056941504209483D+00 ! sqrt(5/2)/2
       real(8),parameter :: facf2=3.87298334620741688D+00 ! sqrt(15)
       real(8),parameter :: facf3=0.61237243569579452D+00 ! sqrt(3/2)/2
@@ -1490,6 +1741,65 @@ end
             ecptmp(14,ii)= work( 9)*sqrt7
             ecptmp(15,ii)= work( 3)
           enddo
+! H function
+        case(21)
+          do ii= 1,ncarti
+            work(1:21)= ecptmp(1:21,ii)
+            ecptmp( 1,ii)= work( 1)
+            ecptmp( 2,ii)= work( 2)*three
+            ecptmp( 3,ii)= work( 3)*three
+            ecptmp( 4,ii)= work( 4)*sqrt21
+            ecptmp( 5,ii)= work( 5)*sqrt63
+            ecptmp( 6,ii)= work( 6)*sqrt21
+            ecptmp( 7,ii)= work( 7)*sqrt21
+            ecptmp( 8,ii)= work( 8)*sqrt105
+            ecptmp( 9,ii)= work( 9)*sqrt105
+            ecptmp(10,ii)= work(10)*sqrt21
+            ecptmp(11,ii)= work(11)*three
+            ecptmp(12,ii)= work(12)*sqrt63
+            ecptmp(13,ii)= work(13)*sqrt105
+            ecptmp(14,ii)= work(14)*sqrt63
+            ecptmp(15,ii)= work(15)*three
+            ecptmp(16,ii)= work(16)
+            ecptmp(17,ii)= work(17)*three
+            ecptmp(18,ii)= work(18)*sqrt21
+            ecptmp(19,ii)= work(19)*sqrt21
+            ecptmp(20,ii)= work(20)*three
+            ecptmp(21,ii)= work(21)
+          enddo
+! I function
+        case(28)
+          do ii= 1,ncarti
+            work(1:28)= ecptmp(1:28,ii)
+            ecptmp( 1,ii)= work( 1)
+            ecptmp( 2,ii)= work( 2)*sqrt11
+            ecptmp( 3,ii)= work( 3)*sqrt11
+            ecptmp( 4,ii)= work( 4)*sqrt33
+            ecptmp( 5,ii)= work( 5)*sqrt99
+            ecptmp( 6,ii)= work( 6)*sqrt33
+            ecptmp( 7,ii)= work( 7)*sqrt231fifth
+            ecptmp( 8,ii)= work( 8)*sqrt231
+            ecptmp( 9,ii)= work( 9)*sqrt231
+            ecptmp(10,ii)= work(10)*sqrt231fifth
+            ecptmp(11,ii)= work(11)*sqrt33
+            ecptmp(12,ii)= work(12)*sqrt231
+            ecptmp(13,ii)= work(13)*sqrt385
+            ecptmp(14,ii)= work(14)*sqrt231
+            ecptmp(15,ii)= work(15)*sqrt33
+            ecptmp(16,ii)= work(16)*sqrt11
+            ecptmp(17,ii)= work(17)*sqrt99
+            ecptmp(18,ii)= work(18)*sqrt231
+            ecptmp(19,ii)= work(19)*sqrt231
+            ecptmp(20,ii)= work(20)*sqrt99
+            ecptmp(21,ii)= work(21)*sqrt11
+            ecptmp(22,ii)= work(22)
+            ecptmp(23,ii)= work(23)*sqrt11
+            ecptmp(24,ii)= work(24)*sqrt33
+            ecptmp(25,ii)= work(25)*sqrt231fifth
+            ecptmp(26,ii)= work(26)*sqrt33
+            ecptmp(27,ii)= work(27)*sqrt11
+            ecptmp(28,ii)= work(28)
+          enddo
       end select
 !
 ! Ket part
@@ -1580,6 +1890,65 @@ end
             ecptmp(jj,13)= work(12)*sqrt35third
             ecptmp(jj,14)= work( 9)*sqrt7
             ecptmp(jj,15)= work( 3)
+          enddo
+! H function
+        case(21)
+          do jj= 1,nbfij(2)
+            work(1:21)= ecptmp(jj,1:21)
+            ecptmp(jj, 1)= work( 1)
+            ecptmp(jj, 2)= work( 2)*three
+            ecptmp(jj, 3)= work( 3)*three
+            ecptmp(jj, 4)= work( 4)*sqrt21
+            ecptmp(jj, 5)= work( 5)*sqrt63
+            ecptmp(jj, 6)= work( 6)*sqrt21
+            ecptmp(jj, 7)= work( 7)*sqrt21
+            ecptmp(jj, 8)= work( 8)*sqrt105
+            ecptmp(jj, 9)= work( 9)*sqrt105
+            ecptmp(jj,10)= work(10)*sqrt21
+            ecptmp(jj,11)= work(11)*three
+            ecptmp(jj,12)= work(12)*sqrt63
+            ecptmp(jj,13)= work(13)*sqrt105
+            ecptmp(jj,14)= work(14)*sqrt63
+            ecptmp(jj,15)= work(15)*three
+            ecptmp(jj,16)= work(16)
+            ecptmp(jj,17)= work(17)*three
+            ecptmp(jj,18)= work(18)*sqrt21
+            ecptmp(jj,19)= work(19)*sqrt21
+            ecptmp(jj,20)= work(20)*three
+            ecptmp(jj,21)= work(21)
+          enddo
+! I function
+        case(28)
+          do jj= 1,nbfij(2)
+            work(1:28)= ecptmp(jj,1:28)
+            ecptmp(jj, 1)= work( 1)
+            ecptmp(jj, 2)= work( 2)*sqrt11
+            ecptmp(jj, 3)= work( 3)*sqrt11
+            ecptmp(jj, 4)= work( 4)*sqrt33
+            ecptmp(jj, 5)= work( 5)*sqrt99
+            ecptmp(jj, 6)= work( 6)*sqrt33
+            ecptmp(jj, 7)= work( 7)*sqrt231fifth
+            ecptmp(jj, 8)= work( 8)*sqrt231
+            ecptmp(jj, 9)= work( 9)*sqrt231
+            ecptmp(jj,10)= work(10)*sqrt231fifth
+            ecptmp(jj,11)= work(11)*sqrt33
+            ecptmp(jj,12)= work(12)*sqrt231
+            ecptmp(jj,13)= work(13)*sqrt385
+            ecptmp(jj,14)= work(14)*sqrt231
+            ecptmp(jj,15)= work(15)*sqrt33
+            ecptmp(jj,16)= work(16)*sqrt11
+            ecptmp(jj,17)= work(17)*sqrt99
+            ecptmp(jj,18)= work(18)*sqrt231
+            ecptmp(jj,19)= work(19)*sqrt231
+            ecptmp(jj,20)= work(20)*sqrt99
+            ecptmp(jj,21)= work(21)*sqrt11
+            ecptmp(jj,22)= work(22)
+            ecptmp(jj,23)= work(23)*sqrt11
+            ecptmp(jj,24)= work(24)*sqrt33
+            ecptmp(jj,25)= work(25)*sqrt231fifth
+            ecptmp(jj,26)= work(26)*sqrt33
+            ecptmp(jj,27)= work(27)*sqrt11
+            ecptmp(jj,28)= work(28)
           enddo
       end select
 !
@@ -2389,8 +2758,8 @@ end
       maxdim= maxecpdim*4
 !
       if(maxdim > 24) then
-        write(*,'(" Error! This program supports up to I function in Subroutine ecpxyz!")')
-        call iabort
+        write(*,'(" Error! This program supports up to i function in Subroutine ecpxyz!")')
+        call exit
       endif
 !
       denom= three
@@ -2512,7 +2881,7 @@ end
       enddo
       if(icount > nterm1) then
         write(*,'(" Error! Icount exceeds",i8," in Subroutine ecpangint1!")')nterm1
-        call iabort
+        call exit
       endif
 !
       return
@@ -2594,7 +2963,7 @@ end
       enddo
       if(icount > nterm2) then
         write(*,'(" Error! Icount exceeds",i8," in Subroutine ecpangint2!")')nterm2
-        call iabort
+        call exit
       endif
 !
       return
@@ -3451,7 +3820,7 @@ end
           enddo
         case default
           write(*,*)"lmax=",lmax
-          call abort
+          call exit
       end select
 !
       return
@@ -3643,8 +4012,8 @@ end
         denomab= one/xkakb
         denomab2= denomab*denomab
         if(lemax > 6) then
-          write(*,'(" Error! Lemax TOO BIG, lemax=",i3)')lemax
-          call abort
+          write(*,'(" Error! Lemax is too big, lemax=",i3)')lemax
+          call exit
         endif
         do ii= 1,15
           rho(ii)= zero
@@ -3711,11 +4080,11 @@ end
         if(alpha*beta > abthresh) then
           if(nangecp > 2) then
             write(*,'(" Error! Nangecp is too big,",i3,", lemax=",i3,".")')nangecp,lemax
-            call abort
+            call exit
           endif
         endif
       elseif(lemax > 6) then
-        call abort
+        call exit
       endif
 !
       nn= nangecp
