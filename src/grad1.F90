@@ -62,9 +62,6 @@
       do i= 1,3*natom
         egrad(i)= egrad(i)+egrad1(i)*two
       enddo
-!ishimura
-  write(*,'("1-e gradient")')
-  write(*,'(3d21.12)')egrad
 !
 ! Add ECP derivative terms
 !

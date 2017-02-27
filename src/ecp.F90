@@ -34,8 +34,12 @@
       maxbasis= maxval(mtype(1:nshell))
       maxdim= maxfunc(maxbasis)
       llmax= maxval(maxangecp(1:natom))
+      if(maxbasis >= 6) then
+        write(*,'(" Error! This program supports up to h function in ecp calculation.")')
+        call exit
+      endif
       if(llmax >= 5) then
-        write(*,'("Error! This program supports up to SPDFG core potentials.")')
+        write(*,'(" Error! This program supports up to SPDFG core potentials.")')
         call exit
       endif
       maxecpdim= max(maxbasis,llmax-1)
