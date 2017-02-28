@@ -121,20 +121,37 @@ end
       integer :: i, j, k, l, iatom, jatom, katom, latom, iloc, jloc, kloc, lloc, ider
       integer :: nangijkl(4), nbfijkl(4), nprimijkl(4)
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00, three=3.0D+00
-      real(8),parameter :: four=4.0D+00, sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
+      real(8),parameter :: four=4.0D+00, five=5.0D+00, six=6.0D+00, eight=8.0D+00, p24=24.0D+00
+      real(8),parameter :: third=3.333333333333333D-01, eighth=0.125D+00
+      real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
       real(8),parameter :: sqrtthird=0.5773502691896258D+00, sqrtfifth=0.4472135954999579D+00
       real(8),parameter :: sqrt3fifth=0.7745966692414834D+00, sqrtseventh=0.3779644730092272D+00 
       real(8),parameter :: sqrtinv35=0.1690308509457033D+00, sqrt3inv35=0.2927700218845599D+00
       real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
+      real(8),parameter :: sqrt7=2.645751311064591D+00, sqrt35=5.916079783099616D+00
+      real(8),parameter :: sqrt35third=3.415650255319866D+00
+      real(8),parameter :: sqrtinv15=2.581988897471611D-01, sqrtinv21=2.182178902359924D-01
+      real(8),parameter :: sqrtinv63=1.259881576697424D-01, sqrtinv105=9.759000729485332D-02
+      real(8),parameter :: sqrtinv11=3.015113445777636D-01, sqrtinv33=1.740776559556978D-01
+      real(8),parameter :: sqrtinv99=1.005037815259212D-01, sqrtinv231=6.579516949597690D-02
+      real(8),parameter :: sqrtinv385=5.096471914376255D-02, sqrt5inv231=1.471224715841249D-01
+      real(8),parameter :: sqrt21=4.582575694955840D+00, sqrt63=7.937253933193772D+00
+      real(8),parameter :: sqrt105=1.024695076595960D+01
       real(8),parameter :: facf1=0.79056941504209483D+00 ! sqrt(5/2)/2
       real(8),parameter :: facf2=3.87298334620741688D+00 ! sqrt(15)
       real(8),parameter :: facf3=0.61237243569579452D+00 ! sqrt(3/2)/2
       real(8),parameter :: facf4=1.93649167310370844D+00 ! sqrt(15)/2
+      real(8),parameter :: facg1=2.95803989154980802D+00 ! sqrt(35)/2
+      real(8),parameter :: facg2=2.09165006633518887D+00 ! sqrt(35/2)/2
+      real(8),parameter :: facg3=1.11803398874989484D+00 ! sqrt(5)/2
+      real(8),parameter :: facg4=0.79056941504209483D+00 ! sqrt(5/2)/2
+      real(8),parameter :: facg5=0.55901699437494742D+00 ! sqrt(5)/4
+      real(8),parameter :: facg6=0.73950997288745200D+00 ! sqrt(35)/8
       real(8),intent(in) :: pdmtrx(maxdim,maxdim,maxdim,maxdim)
       real(8),intent(out) :: twoeri(maxgraddim,maxgraddim,maxgraddim,maxgraddim)
       real(8),intent(out) :: dtwoeri(maxdim,maxdim,maxdim,maxdim,3)
       real(8),intent(inout) :: egrad2(3,natom)
-      real(8) :: gradtwo(3,4), xyzijkl(3,4), exijkl(mxprsh,4), coijkl(mxprsh,4), work(10)
+      real(8) :: gradtwo(3,4), xyzijkl(3,4), exijkl(mxprsh,4), coijkl(mxprsh,4), work(15)
 !
       iatom= locatom(ish)
       jatom= locatom(jsh)
@@ -142,7 +159,7 @@ end
       latom= locatom(lsh)
 !
       if((iatom == jatom).and.(iatom == katom).and.(iatom == latom)) return
-      gradtwo= zero
+      gradtwo(:,:)= zero
 !
       nangijkl(1)= mtype(ish)
       nangijkl(2)= mtype(jsh)
@@ -288,8 +305,130 @@ end
               enddo
             enddo
           enddo
+        case(5)
+          do i= 1,nbfijkl(1)
+            do j= 1,nbfijkl(2)
+              do k= 1,nbfijkl(3)
+                dtwoeri( 1,k,j,i,1)= twoeri( 1,k,j,i)
+                dtwoeri( 2,k,j,i,1)= twoeri( 2,k,j,i)*third
+                dtwoeri( 3,k,j,i,1)= twoeri( 3,k,j,i)*third
+                dtwoeri( 4,k,j,i,1)= twoeri( 4,k,j,i)*sqrtinv21
+                dtwoeri( 5,k,j,i,1)= twoeri( 5,k,j,i)*sqrtinv63
+                dtwoeri( 6,k,j,i,1)= twoeri( 6,k,j,i)*sqrtinv21
+                dtwoeri( 7,k,j,i,1)= twoeri( 7,k,j,i)*sqrtinv21
+                dtwoeri( 8,k,j,i,1)= twoeri( 8,k,j,i)*sqrtinv105
+                dtwoeri( 9,k,j,i,1)= twoeri( 9,k,j,i)*sqrtinv105
+                dtwoeri(10,k,j,i,1)= twoeri(10,k,j,i)*sqrtinv21
+                dtwoeri(11,k,j,i,1)= twoeri(11,k,j,i)*third
+                dtwoeri(12,k,j,i,1)= twoeri(12,k,j,i)*sqrtinv63
+                dtwoeri(13,k,j,i,1)= twoeri(13,k,j,i)*sqrtinv105
+                dtwoeri(14,k,j,i,1)= twoeri(14,k,j,i)*sqrtinv63
+                dtwoeri(15,k,j,i,1)= twoeri(15,k,j,i)*third
+                dtwoeri( 1,k,j,i,2)= twoeri( 2,k,j,i)*third
+                dtwoeri( 2,k,j,i,2)= twoeri( 4,k,j,i)*sqrtinv21
+                dtwoeri( 3,k,j,i,2)= twoeri( 5,k,j,i)*sqrtinv63
+                dtwoeri( 4,k,j,i,2)= twoeri( 7,k,j,i)*sqrtinv21
+                dtwoeri( 5,k,j,i,2)= twoeri( 8,k,j,i)*sqrtinv105
+                dtwoeri( 6,k,j,i,2)= twoeri( 9,k,j,i)*sqrtinv105
+                dtwoeri( 7,k,j,i,2)= twoeri(11,k,j,i)*third
+                dtwoeri( 8,k,j,i,2)= twoeri(12,k,j,i)*sqrtinv63
+                dtwoeri( 9,k,j,i,2)= twoeri(13,k,j,i)*sqrtinv105
+                dtwoeri(10,k,j,i,2)= twoeri(14,k,j,i)*sqrtinv63
+                dtwoeri(11,k,j,i,2)= twoeri(16,k,j,i)
+                dtwoeri(12,k,j,i,2)= twoeri(17,k,j,i)*third
+                dtwoeri(13,k,j,i,2)= twoeri(18,k,j,i)*sqrtinv21
+                dtwoeri(14,k,j,i,2)= twoeri(19,k,j,i)*sqrtinv21
+                dtwoeri(15,k,j,i,2)= twoeri(20,k,j,i)*third
+                dtwoeri( 1,k,j,i,3)= twoeri( 3,k,j,i)*third
+                dtwoeri( 2,k,j,i,3)= twoeri( 5,k,j,i)*sqrtinv63
+                dtwoeri( 3,k,j,i,3)= twoeri( 6,k,j,i)*sqrtinv21
+                dtwoeri( 4,k,j,i,3)= twoeri( 8,k,j,i)*sqrtinv105
+                dtwoeri( 5,k,j,i,3)= twoeri( 9,k,j,i)*sqrtinv105
+                dtwoeri( 6,k,j,i,3)= twoeri(10,k,j,i)*sqrtinv21
+                dtwoeri( 7,k,j,i,3)= twoeri(12,k,j,i)*sqrtinv63
+                dtwoeri( 8,k,j,i,3)= twoeri(13,k,j,i)*sqrtinv105
+                dtwoeri( 9,k,j,i,3)= twoeri(14,k,j,i)*sqrtinv63
+                dtwoeri(10,k,j,i,3)= twoeri(15,k,j,i)*third
+                dtwoeri(11,k,j,i,3)= twoeri(17,k,j,i)*third
+                dtwoeri(12,k,j,i,3)= twoeri(18,k,j,i)*sqrtinv21
+                dtwoeri(13,k,j,i,3)= twoeri(19,k,j,i)*sqrtinv21
+                dtwoeri(14,k,j,i,3)= twoeri(20,k,j,i)*third
+                dtwoeri(15,k,j,i,3)= twoeri(21,k,j,i)
+              enddo
+            enddo
+          enddo
+        case(6)
+          do i= 1,nbfijkl(1)
+            do j= 1,nbfijkl(2)
+              do k= 1,nbfijkl(3)
+                dtwoeri( 1,k,j,i,1)= twoeri( 1,k,j,i)
+                dtwoeri( 2,k,j,i,1)= twoeri( 2,k,j,i)*sqrtinv11
+                dtwoeri( 3,k,j,i,1)= twoeri( 3,k,j,i)*sqrtinv11
+                dtwoeri( 4,k,j,i,1)= twoeri( 4,k,j,i)*sqrtinv33
+                dtwoeri( 5,k,j,i,1)= twoeri( 5,k,j,i)*sqrtinv99
+                dtwoeri( 6,k,j,i,1)= twoeri( 6,k,j,i)*sqrtinv33
+                dtwoeri( 7,k,j,i,1)= twoeri( 7,k,j,i)*sqrt5inv231
+                dtwoeri( 8,k,j,i,1)= twoeri( 8,k,j,i)*sqrtinv231
+                dtwoeri( 9,k,j,i,1)= twoeri( 9,k,j,i)*sqrtinv231
+                dtwoeri(10,k,j,i,1)= twoeri(10,k,j,i)*sqrt5inv231
+                dtwoeri(11,k,j,i,1)= twoeri(11,k,j,i)*sqrtinv33
+                dtwoeri(12,k,j,i,1)= twoeri(12,k,j,i)*sqrtinv231
+                dtwoeri(13,k,j,i,1)= twoeri(13,k,j,i)*sqrtinv385
+                dtwoeri(14,k,j,i,1)= twoeri(14,k,j,i)*sqrtinv231
+                dtwoeri(15,k,j,i,1)= twoeri(15,k,j,i)*sqrtinv33
+                dtwoeri(16,k,j,i,1)= twoeri(16,k,j,i)*sqrtinv11
+                dtwoeri(17,k,j,i,1)= twoeri(17,k,j,i)*sqrtinv99
+                dtwoeri(18,k,j,i,1)= twoeri(18,k,j,i)*sqrtinv231
+                dtwoeri(19,k,j,i,1)= twoeri(19,k,j,i)*sqrtinv231
+                dtwoeri(20,k,j,i,1)= twoeri(20,k,j,i)*sqrtinv99
+                dtwoeri(21,k,j,i,1)= twoeri(21,k,j,i)*sqrtinv11
+                dtwoeri( 1,k,j,i,2)= twoeri( 2,k,j,i)*sqrtinv11
+                dtwoeri( 2,k,j,i,2)= twoeri( 4,k,j,i)*sqrtinv33
+                dtwoeri( 3,k,j,i,2)= twoeri( 5,k,j,i)*sqrtinv99
+                dtwoeri( 4,k,j,i,2)= twoeri( 7,k,j,i)*sqrt5inv231
+                dtwoeri( 5,k,j,i,2)= twoeri( 8,k,j,i)*sqrtinv231
+                dtwoeri( 6,k,j,i,2)= twoeri( 9,k,j,i)*sqrtinv231
+                dtwoeri( 7,k,j,i,2)= twoeri(11,k,j,i)*sqrtinv33
+                dtwoeri( 8,k,j,i,2)= twoeri(12,k,j,i)*sqrtinv231
+                dtwoeri( 9,k,j,i,2)= twoeri(13,k,j,i)*sqrtinv385
+                dtwoeri(10,k,j,i,2)= twoeri(14,k,j,i)*sqrtinv231
+                dtwoeri(11,k,j,i,2)= twoeri(16,k,j,i)*sqrtinv11 
+                dtwoeri(12,k,j,i,2)= twoeri(17,k,j,i)*sqrtinv99 
+                dtwoeri(13,k,j,i,2)= twoeri(18,k,j,i)*sqrtinv231
+                dtwoeri(14,k,j,i,2)= twoeri(19,k,j,i)*sqrtinv231
+                dtwoeri(15,k,j,i,2)= twoeri(20,k,j,i)*sqrtinv99
+                dtwoeri(16,k,j,i,2)= twoeri(22,k,j,i)
+                dtwoeri(17,k,j,i,2)= twoeri(23,k,j,i)*sqrtinv11
+                dtwoeri(18,k,j,i,2)= twoeri(24,k,j,i)*sqrtinv33
+                dtwoeri(19,k,j,i,2)= twoeri(25,k,j,i)*sqrt5inv231
+                dtwoeri(20,k,j,i,2)= twoeri(26,k,j,i)*sqrtinv33
+                dtwoeri(21,k,j,i,2)= twoeri(27,k,j,i)*sqrtinv11
+                dtwoeri( 1,k,j,i,3)= twoeri( 3,k,j,i)*sqrtinv11
+                dtwoeri( 2,k,j,i,3)= twoeri( 5,k,j,i)*sqrtinv99
+                dtwoeri( 3,k,j,i,3)= twoeri( 6,k,j,i)*sqrtinv33
+                dtwoeri( 4,k,j,i,3)= twoeri( 8,k,j,i)*sqrtinv231
+                dtwoeri( 5,k,j,i,3)= twoeri( 9,k,j,i)*sqrtinv231
+                dtwoeri( 6,k,j,i,3)= twoeri(10,k,j,i)*sqrt5inv231
+                dtwoeri( 7,k,j,i,3)= twoeri(12,k,j,i)*sqrtinv231
+                dtwoeri( 8,k,j,i,3)= twoeri(13,k,j,i)*sqrtinv385
+                dtwoeri( 9,k,j,i,3)= twoeri(14,k,j,i)*sqrtinv231
+                dtwoeri(10,k,j,i,3)= twoeri(15,k,j,i)*sqrtinv33
+                dtwoeri(11,k,j,i,3)= twoeri(17,k,j,i)*sqrtinv99
+                dtwoeri(12,k,j,i,3)= twoeri(18,k,j,i)*sqrtinv231
+                dtwoeri(13,k,j,i,3)= twoeri(19,k,j,i)*sqrtinv231
+                dtwoeri(14,k,j,i,3)= twoeri(20,k,j,i)*sqrtinv99
+                dtwoeri(15,k,j,i,3)= twoeri(21,k,j,i)*sqrtinv11
+                dtwoeri(16,k,j,i,3)= twoeri(23,k,j,i)*sqrtinv11
+                dtwoeri(17,k,j,i,3)= twoeri(24,k,j,i)*sqrtinv33
+                dtwoeri(18,k,j,i,3)= twoeri(25,k,j,i)*sqrt5inv231
+                dtwoeri(19,k,j,i,3)= twoeri(26,k,j,i)*sqrtinv33
+                dtwoeri(20,k,j,i,3)= twoeri(27,k,j,i)*sqrtinv11
+                dtwoeri(21,k,j,i,3)= twoeri(28,k,j,i)
+              enddo
+            enddo
+          enddo
         case default
-          write(*,'(" Error! This program supports up to f function in calcd2eri")')
+          write(*,'(" Error! This program supports up to h function in calcd2eri")')
           call iabort
       end select
 !
@@ -411,6 +550,166 @@ end
                 enddo
               enddo
             endif
+!ishimura
+          case(3)
+            do i= 1,nbfijkl(1)
+              do j= 1,nbfijkl(2)
+                do k= 1,nbfijkl(3)
+                  dtwoeri( 1,k,j,i,1)= dtwoeri( 1,k,j,i,1)-twoeri( 1,k,j,i)*four
+                  dtwoeri( 2,k,j,i,1)= dtwoeri( 2,k,j,i,1)-twoeri( 2,k,j,i)*three*sqrtfifth
+                  dtwoeri( 3,k,j,i,1)= dtwoeri( 3,k,j,i,1)-twoeri( 3,k,j,i)*three*sqrtfifth
+                  dtwoeri( 4,k,j,i,1)= dtwoeri( 4,k,j,i,1)-twoeri( 4,k,j,i)*two*sqrtfifth
+                  dtwoeri( 5,k,j,i,1)= dtwoeri( 5,k,j,i,1)-twoeri( 5,k,j,i)*two*sqrtinv15
+                  dtwoeri( 6,k,j,i,1)= dtwoeri( 6,k,j,i,1)-twoeri( 6,k,j,i)*two*sqrtfifth
+                  dtwoeri( 7,k,j,i,1)= dtwoeri( 7,k,j,i,1)-twoeri( 7,k,j,i)
+                  dtwoeri( 8,k,j,i,1)= dtwoeri( 8,k,j,i,1)-twoeri( 8,k,j,i)*sqrtfifth
+                  dtwoeri( 9,k,j,i,1)= dtwoeri( 9,k,j,i,1)-twoeri( 9,k,j,i)*sqrtfifth
+                  dtwoeri(10,k,j,i,1)= dtwoeri(10,k,j,i,1)-twoeri(10,k,j,i)
+                  dtwoeri( 2,k,j,i,2)= dtwoeri( 2,k,j,i,2)-twoeri( 1,k,j,i)
+                  dtwoeri( 4,k,j,i,2)= dtwoeri( 4,k,j,i,2)-twoeri( 2,k,j,i)*two*sqrtfifth
+                  dtwoeri( 5,k,j,i,2)= dtwoeri( 5,k,j,i,2)-twoeri( 3,k,j,i)*sqrtfifth
+                  dtwoeri( 7,k,j,i,2)= dtwoeri( 7,k,j,i,2)-twoeri( 4,k,j,i)*three*sqrtfifth
+                  dtwoeri( 8,k,j,i,2)= dtwoeri( 8,k,j,i,2)-twoeri( 5,k,j,i)*two*sqrtinv15
+                  dtwoeri( 9,k,j,i,2)= dtwoeri( 9,k,j,i,2)-twoeri( 6,k,j,i)*sqrtfifth
+                  dtwoeri(11,k,j,i,2)= dtwoeri(11,k,j,i,2)-twoeri( 7,k,j,i)*four
+                  dtwoeri(12,k,j,i,2)= dtwoeri(12,k,j,i,2)-twoeri( 8,k,j,i)*three*sqrtfifth
+                  dtwoeri(13,k,j,i,2)= dtwoeri(13,k,j,i,2)-twoeri( 9,k,j,i)*two*sqrtfifth
+                  dtwoeri(14,k,j,i,2)= dtwoeri(14,k,j,i,2)-twoeri(10,k,j,i)
+                  dtwoeri( 3,k,j,i,3)= dtwoeri( 3,k,j,i,3)-twoeri( 1,k,j,i)
+                  dtwoeri( 5,k,j,i,3)= dtwoeri( 5,k,j,i,3)-twoeri( 2,k,j,i)*sqrtfifth
+                  dtwoeri( 6,k,j,i,3)= dtwoeri( 6,k,j,i,3)-twoeri( 3,k,j,i)*two*sqrtfifth
+                  dtwoeri( 8,k,j,i,3)= dtwoeri( 8,k,j,i,3)-twoeri( 4,k,j,i)*sqrtfifth
+                  dtwoeri( 9,k,j,i,3)= dtwoeri( 9,k,j,i,3)-twoeri( 5,k,j,i)*two*sqrtinv15
+                  dtwoeri(10,k,j,i,3)= dtwoeri(10,k,j,i,3)-twoeri( 6,k,j,i)*three*sqrtfifth
+                  dtwoeri(12,k,j,i,3)= dtwoeri(12,k,j,i,3)-twoeri( 7,k,j,i)
+                  dtwoeri(13,k,j,i,3)= dtwoeri(13,k,j,i,3)-twoeri( 8,k,j,i)*two*sqrtfifth
+                  dtwoeri(14,k,j,i,3)= dtwoeri(14,k,j,i,3)-twoeri( 9,k,j,i)*three*sqrtfifth
+                  dtwoeri(15,k,j,i,3)= dtwoeri(15,k,j,i,3)-twoeri(10,k,j,i)*four
+                enddo
+              enddo
+            enddo
+            if(mbf(lsh) == 9) then
+              do ider= 1,3
+                do i= 1,nbfijkl(1)
+                  do j= 1,nbfijkl(2)
+                    do k= 1,nbfijkl(3)
+                      do l= 1,15
+                        work(l)= dtwoeri(l,k,j,i,ider)
+                      enddo
+                      dtwoeri(1,k,j,i,ider)=(work(2)-work(7))*facg1
+                      dtwoeri(2,k,j,i,ider)=(-work(12)+work(5)*three)*facg2
+                      dtwoeri(3,k,j,i,ider)=(-work(2)-work(7)+work(9)*six)*facg3
+                      dtwoeri(4,k,j,i,ider)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
+                      dtwoeri(5,k,j,i,ider)=(work(1)*three+work(11)*three+work(15)*eight &
+&                                           +work(4)*six-work(6)*p24-work(13)*p24)*eighth
+                      dtwoeri(6,k,j,i,ider)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
+                      dtwoeri(7,k,j,i,ider)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg5
+                      dtwoeri(8,k,j,i,ider)=(work(3)-work(8)*three)*facg2
+                      dtwoeri(9,k,j,i,ider)=(work(1)+work(11)-work(4)*six)*facg6
+                    enddo
+                  enddo
+                enddo
+              enddo
+            else
+              do ider= 1,3
+                do i= 1,nbfijkl(1)
+                  do j= 1,nbfijkl(2)
+                    do k= 1,nbfijkl(3)
+                      dtwoeri( 2,k,j,i,ider)= dtwoeri( 2,k,j,i,ider)*sqrt7
+                      dtwoeri( 3,k,j,i,ider)= dtwoeri( 3,k,j,i,ider)*sqrt7
+                      dtwoeri( 4,k,j,i,ider)= dtwoeri( 4,k,j,i,ider)*sqrt35third
+                      dtwoeri( 5,k,j,i,ider)= dtwoeri( 5,k,j,i,ider)*sqrt35
+                      dtwoeri( 6,k,j,i,ider)= dtwoeri( 6,k,j,i,ider)*sqrt35third
+                      dtwoeri( 7,k,j,i,ider)= dtwoeri( 7,k,j,i,ider)*sqrt7
+                      dtwoeri( 8,k,j,i,ider)= dtwoeri( 8,k,j,i,ider)*sqrt35
+                      dtwoeri( 9,k,j,i,ider)= dtwoeri( 9,k,j,i,ider)*sqrt35
+                      dtwoeri(10,k,j,i,ider)= dtwoeri(10,k,j,i,ider)*sqrt7
+                      dtwoeri(12,k,j,i,ider)= dtwoeri(12,k,j,i,ider)*sqrt7
+                      dtwoeri(13,k,j,i,ider)= dtwoeri(13,k,j,i,ider)*sqrt35third
+                      dtwoeri(14,k,j,i,ider)= dtwoeri(14,k,j,i,ider)*sqrt7
+                    enddo
+                  enddo
+                enddo
+              enddo
+            endif
+          case(4)
+            do i= 1,nbfijkl(1)
+              do j= 1,nbfijkl(2)
+                do k= 1,nbfijkl(3)
+                  dtwoeri( 1,k,j,i,1)= dtwoeri( 1,k,j,i,1)-twoeri( 1,k,j,i)*five
+                  dtwoeri( 2,k,j,i,1)= dtwoeri( 2,k,j,i,1)-twoeri( 2,k,j,i)*four*sqrtseventh
+                  dtwoeri( 3,k,j,i,1)= dtwoeri( 3,k,j,i,1)-twoeri( 3,k,j,i)*four*sqrtseventh
+                  dtwoeri( 4,k,j,i,1)= dtwoeri( 4,k,j,i,1)-twoeri( 4,k,j,i)*three*sqrt3inv35
+                  dtwoeri( 5,k,j,i,1)= dtwoeri( 5,k,j,i,1)-twoeri( 5,k,j,i)*three*sqrtinv35
+                  dtwoeri( 6,k,j,i,1)= dtwoeri( 6,k,j,i,1)-twoeri( 6,k,j,i)*three*sqrt3inv35
+                  dtwoeri( 7,k,j,i,1)= dtwoeri( 7,k,j,i,1)-twoeri( 7,k,j,i)*two*sqrtseventh
+                  dtwoeri( 8,k,j,i,1)= dtwoeri( 8,k,j,i,1)-twoeri( 8,k,j,i)*two*sqrtinv35
+                  dtwoeri( 9,k,j,i,1)= dtwoeri( 9,k,j,i,1)-twoeri( 9,k,j,i)*two*sqrtinv35
+                  dtwoeri(10,k,j,i,1)= dtwoeri(10,k,j,i,1)-twoeri(10,k,j,i)*two*sqrtseventh
+                  dtwoeri(11,k,j,i,1)= dtwoeri(11,k,j,i,1)-twoeri(11,k,j,i)
+                  dtwoeri(12,k,j,i,1)= dtwoeri(12,k,j,i,1)-twoeri(12,k,j,i)*sqrtseventh
+                  dtwoeri(13,k,j,i,1)= dtwoeri(13,k,j,i,1)-twoeri(13,k,j,i)*sqrt3inv35
+                  dtwoeri(14,k,j,i,1)= dtwoeri(14,k,j,i,1)-twoeri(14,k,j,i)*sqrtseventh
+                  dtwoeri(15,k,j,i,1)= dtwoeri(15,k,j,i,1)-twoeri(15,k,j,i)
+                  dtwoeri( 2,k,j,i,2)= dtwoeri( 2,k,j,i,2)-twoeri( 1,k,j,i)
+                  dtwoeri( 4,k,j,i,2)= dtwoeri( 4,k,j,i,2)-twoeri( 2,k,j,i)*two*sqrtseventh
+                  dtwoeri( 5,k,j,i,2)= dtwoeri( 5,k,j,i,2)-twoeri( 3,k,j,i)*sqrtseventh
+                  dtwoeri( 7,k,j,i,2)= dtwoeri( 7,k,j,i,2)-twoeri( 4,k,j,i)*three*sqrt3inv35
+                  dtwoeri( 8,k,j,i,2)= dtwoeri( 8,k,j,i,2)-twoeri( 5,k,j,i)*two*sqrtinv35
+                  dtwoeri( 9,k,j,i,2)= dtwoeri( 9,k,j,i,2)-twoeri( 6,k,j,i)*sqrt3inv35
+                  dtwoeri(11,k,j,i,2)= dtwoeri(11,k,j,i,2)-twoeri( 7,k,j,i)*four*sqrtseventh
+                  dtwoeri(12,k,j,i,2)= dtwoeri(12,k,j,i,2)-twoeri( 8,k,j,i)*three*sqrtinv35
+                  dtwoeri(13,k,j,i,2)= dtwoeri(13,k,j,i,2)-twoeri( 9,k,j,i)*two*sqrtinv35
+                  dtwoeri(14,k,j,i,2)= dtwoeri(14,k,j,i,2)-twoeri(10,k,j,i)*sqrtseventh
+                  dtwoeri(16,k,j,i,2)= dtwoeri(16,k,j,i,2)-twoeri(11,k,j,i)*five
+                  dtwoeri(17,k,j,i,2)= dtwoeri(17,k,j,i,2)-twoeri(12,k,j,i)*four*sqrtseventh
+                  dtwoeri(18,k,j,i,2)= dtwoeri(18,k,j,i,2)-twoeri(13,k,j,i)*three*sqrt3inv35
+                  dtwoeri(19,k,j,i,2)= dtwoeri(19,k,j,i,2)-twoeri(14,k,j,i)*two*sqrtseventh
+                  dtwoeri(20,k,j,i,2)= dtwoeri(20,k,j,i,2)-twoeri(15,k,j,i)
+                  dtwoeri( 3,k,j,i,3)= dtwoeri( 3,k,j,i,3)-twoeri( 1,k,j,i)
+                  dtwoeri( 5,k,j,i,3)= dtwoeri( 5,k,j,i,3)-twoeri( 2,k,j,i)*sqrtseventh
+                  dtwoeri( 6,k,j,i,3)= dtwoeri( 6,k,j,i,3)-twoeri( 3,k,j,i)*two*sqrtseventh
+                  dtwoeri( 8,k,j,i,3)= dtwoeri( 8,k,j,i,3)-twoeri( 4,k,j,i)*sqrt3inv35
+                  dtwoeri( 9,k,j,i,3)= dtwoeri( 9,k,j,i,3)-twoeri( 5,k,j,i)*two*sqrtinv35
+                  dtwoeri(10,k,j,i,3)= dtwoeri(10,k,j,i,3)-twoeri( 6,k,j,i)*three*sqrt3inv35
+                  dtwoeri(12,k,j,i,3)= dtwoeri(12,k,j,i,3)-twoeri( 7,k,j,i)*sqrtseventh
+                  dtwoeri(13,k,j,i,3)= dtwoeri(13,k,j,i,3)-twoeri( 8,k,j,i)*two*sqrtinv35
+                  dtwoeri(14,k,j,i,3)= dtwoeri(14,k,j,i,3)-twoeri( 9,k,j,i)*three*sqrtinv35
+                  dtwoeri(15,k,j,i,3)= dtwoeri(15,k,j,i,3)-twoeri(10,k,j,i)*four*sqrtseventh
+                  dtwoeri(17,k,j,i,3)= dtwoeri(17,k,j,i,3)-twoeri(11,k,j,i)
+                  dtwoeri(18,k,j,i,3)= dtwoeri(18,k,j,i,3)-twoeri(12,k,j,i)*two*sqrtseventh
+                  dtwoeri(19,k,j,i,3)= dtwoeri(19,k,j,i,3)-twoeri(13,k,j,i)*three*sqrt3inv35
+                  dtwoeri(20,k,j,i,3)= dtwoeri(20,k,j,i,3)-twoeri(14,k,j,i)*four*sqrtseventh
+                  dtwoeri(21,k,j,i,3)= dtwoeri(21,k,j,i,3)-twoeri(15,k,j,i)*five
+                enddo
+              enddo
+            enddo
+            do ider= 1,3
+              do i= 1,nbfijkl(1)
+                do j= 1,nbfijkl(2)
+                  do k= 1,nbfijkl(3)
+                    dtwoeri( 2,k,j,i,ider)= dtwoeri( 2,k,j,i,ider)*three
+                    dtwoeri( 3,k,j,i,ider)= dtwoeri( 3,k,j,i,ider)*three
+                    dtwoeri( 4,k,j,i,ider)= dtwoeri( 4,k,j,i,ider)*sqrt21
+                    dtwoeri( 5,k,j,i,ider)= dtwoeri( 5,k,j,i,ider)*sqrt63
+                    dtwoeri( 6,k,j,i,ider)= dtwoeri( 6,k,j,i,ider)*sqrt21
+                    dtwoeri( 7,k,j,i,ider)= dtwoeri( 7,k,j,i,ider)*sqrt21
+                    dtwoeri( 8,k,j,i,ider)= dtwoeri( 8,k,j,i,ider)*sqrt105
+                    dtwoeri( 9,k,j,i,ider)= dtwoeri( 9,k,j,i,ider)*sqrt105
+                    dtwoeri(10,k,j,i,ider)= dtwoeri(10,k,j,i,ider)*sqrt21
+                    dtwoeri(11,k,j,i,ider)= dtwoeri(11,k,j,i,ider)*three
+                    dtwoeri(12,k,j,i,ider)= dtwoeri(12,k,j,i,ider)*sqrt63
+                    dtwoeri(13,k,j,i,ider)= dtwoeri(13,k,j,i,ider)*sqrt105
+                    dtwoeri(14,k,j,i,ider)= dtwoeri(14,k,j,i,ider)*sqrt63
+                    dtwoeri(15,k,j,i,ider)= dtwoeri(15,k,j,i,ider)*three
+                    dtwoeri(17,k,j,i,ider)= dtwoeri(17,k,j,i,ider)*three
+                    dtwoeri(18,k,j,i,ider)= dtwoeri(18,k,j,i,ider)*sqrt21
+                    dtwoeri(19,k,j,i,ider)= dtwoeri(19,k,j,i,ider)*sqrt21
+                    dtwoeri(20,k,j,i,ider)= dtwoeri(20,k,j,i,ider)*three
+                  enddo
+                enddo
+              enddo
+            enddo
         end select
       endif
 !
@@ -533,8 +832,130 @@ end
               enddo
             enddo
           enddo
+        case(5)
+          do i= 1,nbfijkl(1)
+            do j= 1,nbfijkl(2)
+              do l= 1,nbfijkl(4)
+                dtwoeri(l, 1,j,i,1)= twoeri(l, 1,j,i)
+                dtwoeri(l, 2,j,i,1)= twoeri(l, 2,j,i)*third
+                dtwoeri(l, 3,j,i,1)= twoeri(l, 3,j,i)*third
+                dtwoeri(l, 4,j,i,1)= twoeri(l, 4,j,i)*sqrtinv21
+                dtwoeri(l, 5,j,i,1)= twoeri(l, 5,j,i)*sqrtinv63
+                dtwoeri(l, 6,j,i,1)= twoeri(l, 6,j,i)*sqrtinv21
+                dtwoeri(l, 7,j,i,1)= twoeri(l, 7,j,i)*sqrtinv21
+                dtwoeri(l, 8,j,i,1)= twoeri(l, 8,j,i)*sqrtinv105
+                dtwoeri(l, 9,j,i,1)= twoeri(l, 9,j,i)*sqrtinv105
+                dtwoeri(l,10,j,i,1)= twoeri(l,10,j,i)*sqrtinv21
+                dtwoeri(l,11,j,i,1)= twoeri(l,11,j,i)*third
+                dtwoeri(l,12,j,i,1)= twoeri(l,12,j,i)*sqrtinv63
+                dtwoeri(l,13,j,i,1)= twoeri(l,13,j,i)*sqrtinv105
+                dtwoeri(l,14,j,i,1)= twoeri(l,14,j,i)*sqrtinv63
+                dtwoeri(l,15,j,i,1)= twoeri(l,15,j,i)*third
+                dtwoeri(l, 1,j,i,2)= twoeri(l, 2,j,i)*third
+                dtwoeri(l, 2,j,i,2)= twoeri(l, 4,j,i)*sqrtinv21
+                dtwoeri(l, 3,j,i,2)= twoeri(l, 5,j,i)*sqrtinv63
+                dtwoeri(l, 4,j,i,2)= twoeri(l, 7,j,i)*sqrtinv21
+                dtwoeri(l, 5,j,i,2)= twoeri(l, 8,j,i)*sqrtinv105
+                dtwoeri(l, 6,j,i,2)= twoeri(l, 9,j,i)*sqrtinv105
+                dtwoeri(l, 7,j,i,2)= twoeri(l,11,j,i)*third
+                dtwoeri(l, 8,j,i,2)= twoeri(l,12,j,i)*sqrtinv63
+                dtwoeri(l, 9,j,i,2)= twoeri(l,13,j,i)*sqrtinv105
+                dtwoeri(l,10,j,i,2)= twoeri(l,14,j,i)*sqrtinv63
+                dtwoeri(l,11,j,i,2)= twoeri(l,16,j,i)
+                dtwoeri(l,12,j,i,2)= twoeri(l,17,j,i)*third
+                dtwoeri(l,13,j,i,2)= twoeri(l,18,j,i)*sqrtinv21
+                dtwoeri(l,14,j,i,2)= twoeri(l,19,j,i)*sqrtinv21
+                dtwoeri(l,15,j,i,2)= twoeri(l,20,j,i)*third
+                dtwoeri(l, 1,j,i,3)= twoeri(l, 3,j,i)*third
+                dtwoeri(l, 2,j,i,3)= twoeri(l, 5,j,i)*sqrtinv63
+                dtwoeri(l, 3,j,i,3)= twoeri(l, 6,j,i)*sqrtinv21
+                dtwoeri(l, 4,j,i,3)= twoeri(l, 8,j,i)*sqrtinv105
+                dtwoeri(l, 5,j,i,3)= twoeri(l, 9,j,i)*sqrtinv105
+                dtwoeri(l, 6,j,i,3)= twoeri(l,10,j,i)*sqrtinv21
+                dtwoeri(l, 7,j,i,3)= twoeri(l,12,j,i)*sqrtinv63
+                dtwoeri(l, 8,j,i,3)= twoeri(l,13,j,i)*sqrtinv105
+                dtwoeri(l, 9,j,i,3)= twoeri(l,14,j,i)*sqrtinv63
+                dtwoeri(l,10,j,i,3)= twoeri(l,15,j,i)*third
+                dtwoeri(l,11,j,i,3)= twoeri(l,17,j,i)*third
+                dtwoeri(l,12,j,i,3)= twoeri(l,18,j,i)*sqrtinv21
+                dtwoeri(l,13,j,i,3)= twoeri(l,19,j,i)*sqrtinv21
+                dtwoeri(l,14,j,i,3)= twoeri(l,20,j,i)*third
+                dtwoeri(l,15,j,i,3)= twoeri(l,21,j,i)
+              enddo
+            enddo
+          enddo
+        case(6)
+          do i= 1,nbfijkl(1)
+            do j= 1,nbfijkl(2)
+              do l= 1,nbfijkl(4)
+                dtwoeri(l, 1,j,i,1)= twoeri(l, 1,j,i)
+                dtwoeri(l, 2,j,i,1)= twoeri(l, 2,j,i)*sqrtinv11
+                dtwoeri(l, 3,j,i,1)= twoeri(l, 3,j,i)*sqrtinv11
+                dtwoeri(l, 4,j,i,1)= twoeri(l, 4,j,i)*sqrtinv33
+                dtwoeri(l, 5,j,i,1)= twoeri(l, 5,j,i)*sqrtinv99
+                dtwoeri(l, 6,j,i,1)= twoeri(l, 6,j,i)*sqrtinv33
+                dtwoeri(l, 7,j,i,1)= twoeri(l, 7,j,i)*sqrt5inv231
+                dtwoeri(l, 8,j,i,1)= twoeri(l, 8,j,i)*sqrtinv231
+                dtwoeri(l, 9,j,i,1)= twoeri(l, 9,j,i)*sqrtinv231
+                dtwoeri(l,10,j,i,1)= twoeri(l,10,j,i)*sqrt5inv231
+                dtwoeri(l,11,j,i,1)= twoeri(l,11,j,i)*sqrtinv33
+                dtwoeri(l,12,j,i,1)= twoeri(l,12,j,i)*sqrtinv231
+                dtwoeri(l,13,j,i,1)= twoeri(l,13,j,i)*sqrtinv385
+                dtwoeri(l,14,j,i,1)= twoeri(l,14,j,i)*sqrtinv231
+                dtwoeri(l,15,j,i,1)= twoeri(l,15,j,i)*sqrtinv33
+                dtwoeri(l,16,j,i,1)= twoeri(l,16,j,i)*sqrtinv11
+                dtwoeri(l,17,j,i,1)= twoeri(l,17,j,i)*sqrtinv99
+                dtwoeri(l,18,j,i,1)= twoeri(l,18,j,i)*sqrtinv231
+                dtwoeri(l,19,j,i,1)= twoeri(l,19,j,i)*sqrtinv231
+                dtwoeri(l,20,j,i,1)= twoeri(l,20,j,i)*sqrtinv99
+                dtwoeri(l,21,j,i,1)= twoeri(l,21,j,i)*sqrtinv11
+                dtwoeri(l, 1,j,i,2)= twoeri(l, 2,j,i)*sqrtinv11
+                dtwoeri(l, 2,j,i,2)= twoeri(l, 4,j,i)*sqrtinv33
+                dtwoeri(l, 3,j,i,2)= twoeri(l, 5,j,i)*sqrtinv99
+                dtwoeri(l, 4,j,i,2)= twoeri(l, 7,j,i)*sqrt5inv231
+                dtwoeri(l, 5,j,i,2)= twoeri(l, 8,j,i)*sqrtinv231
+                dtwoeri(l, 6,j,i,2)= twoeri(l, 9,j,i)*sqrtinv231
+                dtwoeri(l, 7,j,i,2)= twoeri(l,11,j,i)*sqrtinv33
+                dtwoeri(l, 8,j,i,2)= twoeri(l,12,j,i)*sqrtinv231
+                dtwoeri(l, 9,j,i,2)= twoeri(l,13,j,i)*sqrtinv385
+                dtwoeri(l,10,j,i,2)= twoeri(l,14,j,i)*sqrtinv231
+                dtwoeri(l,11,j,i,2)= twoeri(l,16,j,i)*sqrtinv11
+                dtwoeri(l,12,j,i,2)= twoeri(l,17,j,i)*sqrtinv99
+                dtwoeri(l,13,j,i,2)= twoeri(l,18,j,i)*sqrtinv231
+                dtwoeri(l,14,j,i,2)= twoeri(l,19,j,i)*sqrtinv231
+                dtwoeri(l,15,j,i,2)= twoeri(l,20,j,i)*sqrtinv99
+                dtwoeri(l,16,j,i,2)= twoeri(l,22,j,i)
+                dtwoeri(l,17,j,i,2)= twoeri(l,23,j,i)*sqrtinv11
+                dtwoeri(l,18,j,i,2)= twoeri(l,24,j,i)*sqrtinv33
+                dtwoeri(l,19,j,i,2)= twoeri(l,25,j,i)*sqrt5inv231
+                dtwoeri(l,20,j,i,2)= twoeri(l,26,j,i)*sqrtinv33
+                dtwoeri(l,21,j,i,2)= twoeri(l,27,j,i)*sqrtinv11
+                dtwoeri(l, 1,j,i,3)= twoeri(l, 3,j,i)*sqrtinv11
+                dtwoeri(l, 2,j,i,3)= twoeri(l, 5,j,i)*sqrtinv99
+                dtwoeri(l, 3,j,i,3)= twoeri(l, 6,j,i)*sqrtinv33
+                dtwoeri(l, 4,j,i,3)= twoeri(l, 8,j,i)*sqrtinv231
+                dtwoeri(l, 5,j,i,3)= twoeri(l, 9,j,i)*sqrtinv231
+                dtwoeri(l, 6,j,i,3)= twoeri(l,10,j,i)*sqrt5inv231
+                dtwoeri(l, 7,j,i,3)= twoeri(l,12,j,i)*sqrtinv231
+                dtwoeri(l, 8,j,i,3)= twoeri(l,13,j,i)*sqrtinv385
+                dtwoeri(l, 9,j,i,3)= twoeri(l,14,j,i)*sqrtinv231
+                dtwoeri(l,10,j,i,3)= twoeri(l,15,j,i)*sqrtinv33
+                dtwoeri(l,11,j,i,3)= twoeri(l,17,j,i)*sqrtinv99
+                dtwoeri(l,12,j,i,3)= twoeri(l,18,j,i)*sqrtinv231
+                dtwoeri(l,13,j,i,3)= twoeri(l,19,j,i)*sqrtinv231
+                dtwoeri(l,14,j,i,3)= twoeri(l,20,j,i)*sqrtinv99
+                dtwoeri(l,15,j,i,3)= twoeri(l,21,j,i)*sqrtinv11
+                dtwoeri(l,16,j,i,3)= twoeri(l,23,j,i)*sqrtinv11
+                dtwoeri(l,17,j,i,3)= twoeri(l,24,j,i)*sqrtinv33
+                dtwoeri(l,18,j,i,3)= twoeri(l,25,j,i)*sqrt5inv231
+                dtwoeri(l,19,j,i,3)= twoeri(l,26,j,i)*sqrtinv33
+                dtwoeri(l,20,j,i,3)= twoeri(l,27,j,i)*sqrtinv11
+                dtwoeri(l,21,j,i,3)= twoeri(l,28,j,i)
+              enddo
+            enddo
+          enddo
         case default
-          write(*,'(" Error! This program supports up to f function in calcd2eri")')
+          write(*,'(" Error! This program supports up to h function in calcd2eri")')
           call iabort
       end select
 !
@@ -656,6 +1077,165 @@ end
                 enddo
               enddo
             endif
+          case(3)
+            do i= 1,nbfijkl(1)
+              do j= 1,nbfijkl(2)
+                do l= 1,nbfijkl(4)
+                  dtwoeri(l, 1,j,i,1)= dtwoeri(l, 1,j,i,1)-twoeri(l, 1,j,i)*four
+                  dtwoeri(l, 2,j,i,1)= dtwoeri(l, 2,j,i,1)-twoeri(l, 2,j,i)*three*sqrtfifth
+                  dtwoeri(l, 3,j,i,1)= dtwoeri(l, 3,j,i,1)-twoeri(l, 3,j,i)*three*sqrtfifth
+                  dtwoeri(l, 4,j,i,1)= dtwoeri(l, 4,j,i,1)-twoeri(l, 4,j,i)*two*sqrtfifth
+                  dtwoeri(l, 5,j,i,1)= dtwoeri(l, 5,j,i,1)-twoeri(l, 5,j,i)*two*sqrtinv15
+                  dtwoeri(l, 6,j,i,1)= dtwoeri(l, 6,j,i,1)-twoeri(l, 6,j,i)*two*sqrtfifth
+                  dtwoeri(l, 7,j,i,1)= dtwoeri(l, 7,j,i,1)-twoeri(l, 7,j,i)
+                  dtwoeri(l, 8,j,i,1)= dtwoeri(l, 8,j,i,1)-twoeri(l, 8,j,i)*sqrtfifth
+                  dtwoeri(l, 9,j,i,1)= dtwoeri(l, 9,j,i,1)-twoeri(l, 9,j,i)*sqrtfifth
+                  dtwoeri(l,10,j,i,1)= dtwoeri(l,10,j,i,1)-twoeri(l,10,j,i)
+                  dtwoeri(l, 2,j,i,2)= dtwoeri(l, 2,j,i,2)-twoeri(l, 1,j,i)
+                  dtwoeri(l, 4,j,i,2)= dtwoeri(l, 4,j,i,2)-twoeri(l, 2,j,i)*two*sqrtfifth
+                  dtwoeri(l, 5,j,i,2)= dtwoeri(l, 5,j,i,2)-twoeri(l, 3,j,i)*sqrtfifth
+                  dtwoeri(l, 7,j,i,2)= dtwoeri(l, 7,j,i,2)-twoeri(l, 4,j,i)*three*sqrtfifth
+                  dtwoeri(l, 8,j,i,2)= dtwoeri(l, 8,j,i,2)-twoeri(l, 5,j,i)*two*sqrtinv15
+                  dtwoeri(l, 9,j,i,2)= dtwoeri(l, 9,j,i,2)-twoeri(l, 6,j,i)*sqrtfifth
+                  dtwoeri(l,11,j,i,2)= dtwoeri(l,11,j,i,2)-twoeri(l, 7,j,i)*four
+                  dtwoeri(l,12,j,i,2)= dtwoeri(l,12,j,i,2)-twoeri(l, 8,j,i)*three*sqrtfifth
+                  dtwoeri(l,13,j,i,2)= dtwoeri(l,13,j,i,2)-twoeri(l, 9,j,i)*two*sqrtfifth
+                  dtwoeri(l,14,j,i,2)= dtwoeri(l,14,j,i,2)-twoeri(l,10,j,i)
+                  dtwoeri(l, 3,j,i,3)= dtwoeri(l, 3,j,i,3)-twoeri(l, 1,j,i)
+                  dtwoeri(l, 5,j,i,3)= dtwoeri(l, 5,j,i,3)-twoeri(l, 2,j,i)*sqrtfifth
+                  dtwoeri(l, 6,j,i,3)= dtwoeri(l, 6,j,i,3)-twoeri(l, 3,j,i)*two*sqrtfifth
+                  dtwoeri(l, 8,j,i,3)= dtwoeri(l, 8,j,i,3)-twoeri(l, 4,j,i)*sqrtfifth
+                  dtwoeri(l, 9,j,i,3)= dtwoeri(l, 9,j,i,3)-twoeri(l, 5,j,i)*two*sqrtinv15
+                  dtwoeri(l,10,j,i,3)= dtwoeri(l,10,j,i,3)-twoeri(l, 6,j,i)*three*sqrtfifth
+                  dtwoeri(l,12,j,i,3)= dtwoeri(l,12,j,i,3)-twoeri(l, 7,j,i)
+                  dtwoeri(l,13,j,i,3)= dtwoeri(l,13,j,i,3)-twoeri(l, 8,j,i)*two*sqrtfifth
+                  dtwoeri(l,14,j,i,3)= dtwoeri(l,14,j,i,3)-twoeri(l, 9,j,i)*three*sqrtfifth
+                  dtwoeri(l,15,j,i,3)= dtwoeri(l,15,j,i,3)-twoeri(l,10,j,i)*four
+                enddo
+              enddo
+            enddo
+            if(mbf(ksh) == 9) then
+              do ider= 1,3
+                do i= 1,nbfijkl(1)
+                  do j= 1,nbfijkl(2)
+                    do l= 1,nbfijkl(4)
+                      do k= 1,15
+                        work(k)= dtwoeri(l,k,j,i,ider)
+                      enddo
+                      dtwoeri(l,1,j,i,ider)=(work(2)-work(7))*facg1
+                      dtwoeri(l,2,j,i,ider)=(-work(12)+work(5)*three)*facg2
+                      dtwoeri(l,3,j,i,ider)=(-work(2)-work(7)+work(9)*six)*facg3
+                      dtwoeri(l,4,j,i,ider)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
+                      dtwoeri(l,5,j,i,ider)=(work(1)*three+work(11)*three+work(15)*eight &
+&                                           +work(4)*six-work(6)*p24-work(13)*p24)*eighth
+                      dtwoeri(l,6,j,i,ider)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
+                      dtwoeri(l,7,j,i,ider)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg5
+                      dtwoeri(l,8,j,i,ider)=(work(3)-work(8)*three)*facg2
+                      dtwoeri(l,9,j,i,ider)=(work(1)+work(11)-work(4)*six)*facg6
+                    enddo
+                  enddo
+                enddo
+              enddo
+            else
+              do ider= 1,3
+                do i= 1,nbfijkl(1)
+                  do j= 1,nbfijkl(2)
+                    do l= 1,nbfijkl(4)
+                      dtwoeri(l, 2,j,i,ider)= dtwoeri(l, 2,j,i,ider)*sqrt7
+                      dtwoeri(l, 3,j,i,ider)= dtwoeri(l, 3,j,i,ider)*sqrt7
+                      dtwoeri(l, 4,j,i,ider)= dtwoeri(l, 4,j,i,ider)*sqrt35third
+                      dtwoeri(l, 5,j,i,ider)= dtwoeri(l, 5,j,i,ider)*sqrt35
+                      dtwoeri(l, 6,j,i,ider)= dtwoeri(l, 6,j,i,ider)*sqrt35third
+                      dtwoeri(l, 7,j,i,ider)= dtwoeri(l, 7,j,i,ider)*sqrt7
+                      dtwoeri(l, 8,j,i,ider)= dtwoeri(l, 8,j,i,ider)*sqrt35
+                      dtwoeri(l, 9,j,i,ider)= dtwoeri(l, 9,j,i,ider)*sqrt35
+                      dtwoeri(l,10,j,i,ider)= dtwoeri(l,10,j,i,ider)*sqrt7
+                      dtwoeri(l,12,j,i,ider)= dtwoeri(l,12,j,i,ider)*sqrt7
+                      dtwoeri(l,13,j,i,ider)= dtwoeri(l,13,j,i,ider)*sqrt35third
+                      dtwoeri(l,14,j,i,ider)= dtwoeri(l,14,j,i,ider)*sqrt7
+                    enddo
+                  enddo
+                enddo
+              enddo
+            endif
+          case(4)
+            do i= 1,nbfijkl(1)
+              do j= 1,nbfijkl(2)
+                do l= 1,nbfijkl(4)
+                  dtwoeri(l, 1,j,i,1)= dtwoeri(l, 1,j,i,1)-twoeri(l, 1,j,i)*five
+                  dtwoeri(l, 2,j,i,1)= dtwoeri(l, 2,j,i,1)-twoeri(l, 2,j,i)*four*sqrtseventh
+                  dtwoeri(l, 3,j,i,1)= dtwoeri(l, 3,j,i,1)-twoeri(l, 3,j,i)*four*sqrtseventh
+                  dtwoeri(l, 4,j,i,1)= dtwoeri(l, 4,j,i,1)-twoeri(l, 4,j,i)*three*sqrt3inv35
+                  dtwoeri(l, 5,j,i,1)= dtwoeri(l, 5,j,i,1)-twoeri(l, 5,j,i)*three*sqrtinv35
+                  dtwoeri(l, 6,j,i,1)= dtwoeri(l, 6,j,i,1)-twoeri(l, 6,j,i)*three*sqrt3inv35
+                  dtwoeri(l, 7,j,i,1)= dtwoeri(l, 7,j,i,1)-twoeri(l, 7,j,i)*two*sqrtseventh
+                  dtwoeri(l, 8,j,i,1)= dtwoeri(l, 8,j,i,1)-twoeri(l, 8,j,i)*two*sqrtinv35
+                  dtwoeri(l, 9,j,i,1)= dtwoeri(l, 9,j,i,1)-twoeri(l, 9,j,i)*two*sqrtinv35
+                  dtwoeri(l,10,j,i,1)= dtwoeri(l,10,j,i,1)-twoeri(l,10,j,i)*two*sqrtseventh
+                  dtwoeri(l,11,j,i,1)= dtwoeri(l,11,j,i,1)-twoeri(l,11,j,i)
+                  dtwoeri(l,12,j,i,1)= dtwoeri(l,12,j,i,1)-twoeri(l,12,j,i)*sqrtseventh
+                  dtwoeri(l,13,j,i,1)= dtwoeri(l,13,j,i,1)-twoeri(l,13,j,i)*sqrt3inv35
+                  dtwoeri(l,14,j,i,1)= dtwoeri(l,14,j,i,1)-twoeri(l,14,j,i)*sqrtseventh
+                  dtwoeri(l,15,j,i,1)= dtwoeri(l,15,j,i,1)-twoeri(l,15,j,i)
+                  dtwoeri(l, 2,j,i,2)= dtwoeri(l, 2,j,i,2)-twoeri(l, 1,j,i)
+                  dtwoeri(l, 4,j,i,2)= dtwoeri(l, 4,j,i,2)-twoeri(l, 2,j,i)*two*sqrtseventh
+                  dtwoeri(l, 5,j,i,2)= dtwoeri(l, 5,j,i,2)-twoeri(l, 3,j,i)*sqrtseventh
+                  dtwoeri(l, 7,j,i,2)= dtwoeri(l, 7,j,i,2)-twoeri(l, 4,j,i)*three*sqrt3inv35
+                  dtwoeri(l, 8,j,i,2)= dtwoeri(l, 8,j,i,2)-twoeri(l, 5,j,i)*two*sqrtinv35
+                  dtwoeri(l, 9,j,i,2)= dtwoeri(l, 9,j,i,2)-twoeri(l, 6,j,i)*sqrt3inv35
+                  dtwoeri(l,11,j,i,2)= dtwoeri(l,11,j,i,2)-twoeri(l, 7,j,i)*four*sqrtseventh
+                  dtwoeri(l,12,j,i,2)= dtwoeri(l,12,j,i,2)-twoeri(l, 8,j,i)*three*sqrtinv35
+                  dtwoeri(l,13,j,i,2)= dtwoeri(l,13,j,i,2)-twoeri(l, 9,j,i)*two*sqrtinv35
+                  dtwoeri(l,14,j,i,2)= dtwoeri(l,14,j,i,2)-twoeri(l,10,j,i)*sqrtseventh
+                  dtwoeri(l,16,j,i,2)= dtwoeri(l,16,j,i,2)-twoeri(l,11,j,i)*five
+                  dtwoeri(l,17,j,i,2)= dtwoeri(l,17,j,i,2)-twoeri(l,12,j,i)*four*sqrtseventh
+                  dtwoeri(l,18,j,i,2)= dtwoeri(l,18,j,i,2)-twoeri(l,13,j,i)*three*sqrt3inv35
+                  dtwoeri(l,19,j,i,2)= dtwoeri(l,19,j,i,2)-twoeri(l,14,j,i)*two*sqrtseventh
+                  dtwoeri(l,20,j,i,2)= dtwoeri(l,20,j,i,2)-twoeri(l,15,j,i)
+                  dtwoeri(l, 3,j,i,3)= dtwoeri(l, 3,j,i,3)-twoeri(l, 1,j,i)
+                  dtwoeri(l, 5,j,i,3)= dtwoeri(l, 5,j,i,3)-twoeri(l, 2,j,i)*sqrtseventh
+                  dtwoeri(l, 6,j,i,3)= dtwoeri(l, 6,j,i,3)-twoeri(l, 3,j,i)*two*sqrtseventh
+                  dtwoeri(l, 8,j,i,3)= dtwoeri(l, 8,j,i,3)-twoeri(l, 4,j,i)*sqrt3inv35
+                  dtwoeri(l, 9,j,i,3)= dtwoeri(l, 9,j,i,3)-twoeri(l, 5,j,i)*two*sqrtinv35
+                  dtwoeri(l,10,j,i,3)= dtwoeri(l,10,j,i,3)-twoeri(l, 6,j,i)*three*sqrt3inv35
+                  dtwoeri(l,12,j,i,3)= dtwoeri(l,12,j,i,3)-twoeri(l, 7,j,i)*sqrtseventh
+                  dtwoeri(l,13,j,i,3)= dtwoeri(l,13,j,i,3)-twoeri(l, 8,j,i)*two*sqrtinv35
+                  dtwoeri(l,14,j,i,3)= dtwoeri(l,14,j,i,3)-twoeri(l, 9,j,i)*three*sqrtinv35
+                  dtwoeri(l,15,j,i,3)= dtwoeri(l,15,j,i,3)-twoeri(l,10,j,i)*four*sqrtseventh
+                  dtwoeri(l,17,j,i,3)= dtwoeri(l,17,j,i,3)-twoeri(l,11,j,i)
+                  dtwoeri(l,18,j,i,3)= dtwoeri(l,18,j,i,3)-twoeri(l,12,j,i)*two*sqrtseventh
+                  dtwoeri(l,19,j,i,3)= dtwoeri(l,19,j,i,3)-twoeri(l,13,j,i)*three*sqrt3inv35
+                  dtwoeri(l,20,j,i,3)= dtwoeri(l,20,j,i,3)-twoeri(l,14,j,i)*four*sqrtseventh
+                  dtwoeri(l,21,j,i,3)= dtwoeri(l,21,j,i,3)-twoeri(l,15,j,i)*five
+                enddo
+              enddo
+            enddo
+            do ider= 1,3
+              do i= 1,nbfijkl(1)
+                do j= 1,nbfijkl(2)
+                  do l= 1,nbfijkl(4)
+                    dtwoeri(l, 2,j,i,ider)= dtwoeri(l, 2,j,i,ider)*three
+                    dtwoeri(l, 3,j,i,ider)= dtwoeri(l, 3,j,i,ider)*three
+                    dtwoeri(l, 4,j,i,ider)= dtwoeri(l, 4,j,i,ider)*sqrt21
+                    dtwoeri(l, 5,j,i,ider)= dtwoeri(l, 5,j,i,ider)*sqrt63
+                    dtwoeri(l, 6,j,i,ider)= dtwoeri(l, 6,j,i,ider)*sqrt21
+                    dtwoeri(l, 7,j,i,ider)= dtwoeri(l, 7,j,i,ider)*sqrt21
+                    dtwoeri(l, 8,j,i,ider)= dtwoeri(l, 8,j,i,ider)*sqrt105
+                    dtwoeri(l, 9,j,i,ider)= dtwoeri(l, 9,j,i,ider)*sqrt105
+                    dtwoeri(l,10,j,i,ider)= dtwoeri(l,10,j,i,ider)*sqrt21
+                    dtwoeri(l,11,j,i,ider)= dtwoeri(l,11,j,i,ider)*three
+                    dtwoeri(l,12,j,i,ider)= dtwoeri(l,12,j,i,ider)*sqrt63
+                    dtwoeri(l,13,j,i,ider)= dtwoeri(l,13,j,i,ider)*sqrt105
+                    dtwoeri(l,14,j,i,ider)= dtwoeri(l,14,j,i,ider)*sqrt63
+                    dtwoeri(l,15,j,i,ider)= dtwoeri(l,15,j,i,ider)*three
+                    dtwoeri(l,17,j,i,ider)= dtwoeri(l,17,j,i,ider)*three
+                    dtwoeri(l,18,j,i,ider)= dtwoeri(l,18,j,i,ider)*sqrt21
+                    dtwoeri(l,19,j,i,ider)= dtwoeri(l,19,j,i,ider)*sqrt21
+                    dtwoeri(l,20,j,i,ider)= dtwoeri(l,20,j,i,ider)*three
+                  enddo
+                enddo
+              enddo
+            enddo
         end select
       endif
 !
@@ -778,8 +1358,130 @@ end
               enddo
             enddo
           enddo
+        case(5)
+          do i= 1,nbfijkl(1)
+            do k= 1,nbfijkl(3)
+              do l= 1,nbfijkl(4)
+                dtwoeri(l,k, 1,i,1)= twoeri(l,k, 1,i)
+                dtwoeri(l,k, 2,i,1)= twoeri(l,k, 2,i)*third
+                dtwoeri(l,k, 3,i,1)= twoeri(l,k, 3,i)*third
+                dtwoeri(l,k, 4,i,1)= twoeri(l,k, 4,i)*sqrtinv21
+                dtwoeri(l,k, 5,i,1)= twoeri(l,k, 5,i)*sqrtinv63
+                dtwoeri(l,k, 6,i,1)= twoeri(l,k, 6,i)*sqrtinv21
+                dtwoeri(l,k, 7,i,1)= twoeri(l,k, 7,i)*sqrtinv21
+                dtwoeri(l,k, 8,i,1)= twoeri(l,k, 8,i)*sqrtinv105
+                dtwoeri(l,k, 9,i,1)= twoeri(l,k, 9,i)*sqrtinv105
+                dtwoeri(l,k,10,i,1)= twoeri(l,k,10,i)*sqrtinv21
+                dtwoeri(l,k,11,i,1)= twoeri(l,k,11,i)*third
+                dtwoeri(l,k,12,i,1)= twoeri(l,k,12,i)*sqrtinv63
+                dtwoeri(l,k,13,i,1)= twoeri(l,k,13,i)*sqrtinv105
+                dtwoeri(l,k,14,i,1)= twoeri(l,k,14,i)*sqrtinv63
+                dtwoeri(l,k,15,i,1)= twoeri(l,k,15,i)*third
+                dtwoeri(l,k, 1,i,2)= twoeri(l,k, 2,i)*third
+                dtwoeri(l,k, 2,i,2)= twoeri(l,k, 4,i)*sqrtinv21
+                dtwoeri(l,k, 3,i,2)= twoeri(l,k, 5,i)*sqrtinv63
+                dtwoeri(l,k, 4,i,2)= twoeri(l,k, 7,i)*sqrtinv21
+                dtwoeri(l,k, 5,i,2)= twoeri(l,k, 8,i)*sqrtinv105
+                dtwoeri(l,k, 6,i,2)= twoeri(l,k, 9,i)*sqrtinv105
+                dtwoeri(l,k, 7,i,2)= twoeri(l,k,11,i)*third
+                dtwoeri(l,k, 8,i,2)= twoeri(l,k,12,i)*sqrtinv63
+                dtwoeri(l,k, 9,i,2)= twoeri(l,k,13,i)*sqrtinv105
+                dtwoeri(l,k,10,i,2)= twoeri(l,k,14,i)*sqrtinv63
+                dtwoeri(l,k,11,i,2)= twoeri(l,k,16,i)
+                dtwoeri(l,k,12,i,2)= twoeri(l,k,17,i)*third
+                dtwoeri(l,k,13,i,2)= twoeri(l,k,18,i)*sqrtinv21
+                dtwoeri(l,k,14,i,2)= twoeri(l,k,19,i)*sqrtinv21
+                dtwoeri(l,k,15,i,2)= twoeri(l,k,20,i)*third
+                dtwoeri(l,k, 1,i,3)= twoeri(l,k, 3,i)*third
+                dtwoeri(l,k, 2,i,3)= twoeri(l,k, 5,i)*sqrtinv63
+                dtwoeri(l,k, 3,i,3)= twoeri(l,k, 6,i)*sqrtinv21
+                dtwoeri(l,k, 4,i,3)= twoeri(l,k, 8,i)*sqrtinv105
+                dtwoeri(l,k, 5,i,3)= twoeri(l,k, 9,i)*sqrtinv105
+                dtwoeri(l,k, 6,i,3)= twoeri(l,k,10,i)*sqrtinv21
+                dtwoeri(l,k, 7,i,3)= twoeri(l,k,12,i)*sqrtinv63
+                dtwoeri(l,k, 8,i,3)= twoeri(l,k,13,i)*sqrtinv105
+                dtwoeri(l,k, 9,i,3)= twoeri(l,k,14,i)*sqrtinv63
+                dtwoeri(l,k,10,i,3)= twoeri(l,k,15,i)*third
+                dtwoeri(l,k,11,i,3)= twoeri(l,k,17,i)*third
+                dtwoeri(l,k,12,i,3)= twoeri(l,k,18,i)*sqrtinv21
+                dtwoeri(l,k,13,i,3)= twoeri(l,k,19,i)*sqrtinv21
+                dtwoeri(l,k,14,i,3)= twoeri(l,k,20,i)*third
+                dtwoeri(l,k,15,i,3)= twoeri(l,k,21,i)
+              enddo
+            enddo
+          enddo
+        case(6)
+          do i= 1,nbfijkl(1)
+            do k= 1,nbfijkl(3)
+              do l= 1,nbfijkl(4)
+                dtwoeri(l,k, 1,i,1)= twoeri(l,k, 1,i)
+                dtwoeri(l,k, 2,i,1)= twoeri(l,k, 2,i)*sqrtinv11
+                dtwoeri(l,k, 3,i,1)= twoeri(l,k, 3,i)*sqrtinv11
+                dtwoeri(l,k, 4,i,1)= twoeri(l,k, 4,i)*sqrtinv33
+                dtwoeri(l,k, 5,i,1)= twoeri(l,k, 5,i)*sqrtinv99
+                dtwoeri(l,k, 6,i,1)= twoeri(l,k, 6,i)*sqrtinv33
+                dtwoeri(l,k, 7,i,1)= twoeri(l,k, 7,i)*sqrt5inv231
+                dtwoeri(l,k, 8,i,1)= twoeri(l,k, 8,i)*sqrtinv231
+                dtwoeri(l,k, 9,i,1)= twoeri(l,k, 9,i)*sqrtinv231
+                dtwoeri(l,k,10,i,1)= twoeri(l,k,10,i)*sqrt5inv231
+                dtwoeri(l,k,11,i,1)= twoeri(l,k,11,i)*sqrtinv33
+                dtwoeri(l,k,12,i,1)= twoeri(l,k,12,i)*sqrtinv231
+                dtwoeri(l,k,13,i,1)= twoeri(l,k,13,i)*sqrtinv385
+                dtwoeri(l,k,14,i,1)= twoeri(l,k,14,i)*sqrtinv231
+                dtwoeri(l,k,15,i,1)= twoeri(l,k,15,i)*sqrtinv33
+                dtwoeri(l,k,16,i,1)= twoeri(l,k,16,i)*sqrtinv11
+                dtwoeri(l,k,17,i,1)= twoeri(l,k,17,i)*sqrtinv99
+                dtwoeri(l,k,18,i,1)= twoeri(l,k,18,i)*sqrtinv231
+                dtwoeri(l,k,19,i,1)= twoeri(l,k,19,i)*sqrtinv231
+                dtwoeri(l,k,20,i,1)= twoeri(l,k,20,i)*sqrtinv99
+                dtwoeri(l,k,21,i,1)= twoeri(l,k,21,i)*sqrtinv11
+                dtwoeri(l,k, 1,i,2)= twoeri(l,k, 2,i)*sqrtinv11
+                dtwoeri(l,k, 2,i,2)= twoeri(l,k, 4,i)*sqrtinv33
+                dtwoeri(l,k, 3,i,2)= twoeri(l,k, 5,i)*sqrtinv99
+                dtwoeri(l,k, 4,i,2)= twoeri(l,k, 7,i)*sqrt5inv231
+                dtwoeri(l,k, 5,i,2)= twoeri(l,k, 8,i)*sqrtinv231
+                dtwoeri(l,k, 6,i,2)= twoeri(l,k, 9,i)*sqrtinv231
+                dtwoeri(l,k, 7,i,2)= twoeri(l,k,11,i)*sqrtinv33
+                dtwoeri(l,k, 8,i,2)= twoeri(l,k,12,i)*sqrtinv231
+                dtwoeri(l,k, 9,i,2)= twoeri(l,k,13,i)*sqrtinv385
+                dtwoeri(l,k,10,i,2)= twoeri(l,k,14,i)*sqrtinv231
+                dtwoeri(l,k,11,i,2)= twoeri(l,k,16,i)*sqrtinv11
+                dtwoeri(l,k,12,i,2)= twoeri(l,k,17,i)*sqrtinv99
+                dtwoeri(l,k,13,i,2)= twoeri(l,k,18,i)*sqrtinv231
+                dtwoeri(l,k,14,i,2)= twoeri(l,k,19,i)*sqrtinv231
+                dtwoeri(l,k,15,i,2)= twoeri(l,k,20,i)*sqrtinv99
+                dtwoeri(l,k,16,i,2)= twoeri(l,k,22,i)
+                dtwoeri(l,k,17,i,2)= twoeri(l,k,23,i)*sqrtinv11
+                dtwoeri(l,k,18,i,2)= twoeri(l,k,24,i)*sqrtinv33
+                dtwoeri(l,k,19,i,2)= twoeri(l,k,25,i)*sqrt5inv231
+                dtwoeri(l,k,20,i,2)= twoeri(l,k,26,i)*sqrtinv33
+                dtwoeri(l,k,21,i,2)= twoeri(l,k,27,i)*sqrtinv11
+                dtwoeri(l,k, 1,i,3)= twoeri(l,k, 3,i)*sqrtinv11
+                dtwoeri(l,k, 2,i,3)= twoeri(l,k, 5,i)*sqrtinv99
+                dtwoeri(l,k, 3,i,3)= twoeri(l,k, 6,i)*sqrtinv33
+                dtwoeri(l,k, 4,i,3)= twoeri(l,k, 8,i)*sqrtinv231
+                dtwoeri(l,k, 5,i,3)= twoeri(l,k, 9,i)*sqrtinv231
+                dtwoeri(l,k, 6,i,3)= twoeri(l,k,10,i)*sqrt5inv231
+                dtwoeri(l,k, 7,i,3)= twoeri(l,k,12,i)*sqrtinv231
+                dtwoeri(l,k, 8,i,3)= twoeri(l,k,13,i)*sqrtinv385
+                dtwoeri(l,k, 9,i,3)= twoeri(l,k,14,i)*sqrtinv231
+                dtwoeri(l,k,10,i,3)= twoeri(l,k,15,i)*sqrtinv33
+                dtwoeri(l,k,11,i,3)= twoeri(l,k,17,i)*sqrtinv99
+                dtwoeri(l,k,12,i,3)= twoeri(l,k,18,i)*sqrtinv231
+                dtwoeri(l,k,13,i,3)= twoeri(l,k,19,i)*sqrtinv231
+                dtwoeri(l,k,14,i,3)= twoeri(l,k,20,i)*sqrtinv99
+                dtwoeri(l,k,15,i,3)= twoeri(l,k,21,i)*sqrtinv11
+                dtwoeri(l,k,16,i,3)= twoeri(l,k,23,i)*sqrtinv11
+                dtwoeri(l,k,17,i,3)= twoeri(l,k,24,i)*sqrtinv33
+                dtwoeri(l,k,18,i,3)= twoeri(l,k,25,i)*sqrt5inv231
+                dtwoeri(l,k,19,i,3)= twoeri(l,k,26,i)*sqrtinv33
+                dtwoeri(l,k,20,i,3)= twoeri(l,k,27,i)*sqrtinv11
+                dtwoeri(l,k,21,i,3)= twoeri(l,k,28,i)
+              enddo
+            enddo
+          enddo
         case default
-          write(*,'(" Error! This program supports up to f function in calcd2eri")')
+          write(*,'(" Error! This program supports up to h function in calcd2eri")')
           call iabort
       end select
 !
@@ -901,6 +1603,165 @@ end
                 enddo
               enddo
             endif
+          case(3)
+            do i= 1,nbfijkl(1)
+              do k= 1,nbfijkl(3)
+                do l= 1,nbfijkl(4)
+                  dtwoeri(l,k, 1,i,1)= dtwoeri(l,k, 1,i,1)-twoeri(l,k, 1,i)*four
+                  dtwoeri(l,k, 2,i,1)= dtwoeri(l,k, 2,i,1)-twoeri(l,k, 2,i)*three*sqrtfifth
+                  dtwoeri(l,k, 3,i,1)= dtwoeri(l,k, 3,i,1)-twoeri(l,k, 3,i)*three*sqrtfifth
+                  dtwoeri(l,k, 4,i,1)= dtwoeri(l,k, 4,i,1)-twoeri(l,k, 4,i)*two*sqrtfifth
+                  dtwoeri(l,k, 5,i,1)= dtwoeri(l,k, 5,i,1)-twoeri(l,k, 5,i)*two*sqrtinv15
+                  dtwoeri(l,k, 6,i,1)= dtwoeri(l,k, 6,i,1)-twoeri(l,k, 6,i)*two*sqrtfifth
+                  dtwoeri(l,k, 7,i,1)= dtwoeri(l,k, 7,i,1)-twoeri(l,k, 7,i)
+                  dtwoeri(l,k, 8,i,1)= dtwoeri(l,k, 8,i,1)-twoeri(l,k, 8,i)*sqrtfifth
+                  dtwoeri(l,k, 9,i,1)= dtwoeri(l,k, 9,i,1)-twoeri(l,k, 9,i)*sqrtfifth
+                  dtwoeri(l,k,10,i,1)= dtwoeri(l,k,10,i,1)-twoeri(l,k,10,i)
+                  dtwoeri(l,k, 2,i,2)= dtwoeri(l,k, 2,i,2)-twoeri(l,k, 1,i)
+                  dtwoeri(l,k, 4,i,2)= dtwoeri(l,k, 4,i,2)-twoeri(l,k, 2,i)*two*sqrtfifth
+                  dtwoeri(l,k, 5,i,2)= dtwoeri(l,k, 5,i,2)-twoeri(l,k, 3,i)*sqrtfifth
+                  dtwoeri(l,k, 7,i,2)= dtwoeri(l,k, 7,i,2)-twoeri(l,k, 4,i)*three*sqrtfifth
+                  dtwoeri(l,k, 8,i,2)= dtwoeri(l,k, 8,i,2)-twoeri(l,k, 5,i)*two*sqrtinv15
+                  dtwoeri(l,k, 9,i,2)= dtwoeri(l,k, 9,i,2)-twoeri(l,k, 6,i)*sqrtfifth
+                  dtwoeri(l,k,11,i,2)= dtwoeri(l,k,11,i,2)-twoeri(l,k, 7,i)*four
+                  dtwoeri(l,k,12,i,2)= dtwoeri(l,k,12,i,2)-twoeri(l,k, 8,i)*three*sqrtfifth
+                  dtwoeri(l,k,13,i,2)= dtwoeri(l,k,13,i,2)-twoeri(l,k, 9,i)*two*sqrtfifth
+                  dtwoeri(l,k,14,i,2)= dtwoeri(l,k,14,i,2)-twoeri(l,k,10,i)
+                  dtwoeri(l,k, 3,i,3)= dtwoeri(l,k, 3,i,3)-twoeri(l,k, 1,i)
+                  dtwoeri(l,k, 5,i,3)= dtwoeri(l,k, 5,i,3)-twoeri(l,k, 2,i)*sqrtfifth
+                  dtwoeri(l,k, 6,i,3)= dtwoeri(l,k, 6,i,3)-twoeri(l,k, 3,i)*two*sqrtfifth
+                  dtwoeri(l,k, 8,i,3)= dtwoeri(l,k, 8,i,3)-twoeri(l,k, 4,i)*sqrtfifth
+                  dtwoeri(l,k, 9,i,3)= dtwoeri(l,k, 9,i,3)-twoeri(l,k, 5,i)*two*sqrtinv15
+                  dtwoeri(l,k,10,i,3)= dtwoeri(l,k,10,i,3)-twoeri(l,k, 6,i)*three*sqrtfifth
+                  dtwoeri(l,k,12,i,3)= dtwoeri(l,k,12,i,3)-twoeri(l,k, 7,i)
+                  dtwoeri(l,k,13,i,3)= dtwoeri(l,k,13,i,3)-twoeri(l,k, 8,i)*two*sqrtfifth
+                  dtwoeri(l,k,14,i,3)= dtwoeri(l,k,14,i,3)-twoeri(l,k, 9,i)*three*sqrtfifth
+                  dtwoeri(l,k,15,i,3)= dtwoeri(l,k,15,i,3)-twoeri(l,k,10,i)*four
+                enddo
+              enddo
+            enddo
+            if(mbf(jsh) == 9) then
+              do ider= 1,3
+                do i= 1,nbfijkl(1)
+                  do k= 1,nbfijkl(3)
+                    do l= 1,nbfijkl(4)
+                      do j= 1,15
+                        work(j)= dtwoeri(l,k,j,i,ider)
+                      enddo
+                      dtwoeri(l,k,1,i,ider)=(work(2)-work(7))*facg1
+                      dtwoeri(l,k,2,i,ider)=(-work(12)+work(5)*three)*facg2
+                      dtwoeri(l,k,3,i,ider)=(-work(2)-work(7)+work(9)*six)*facg3
+                      dtwoeri(l,k,4,i,ider)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
+                      dtwoeri(l,k,5,i,ider)=(work(1)*three+work(11)*three+work(15)*eight &
+&                                           +work(4)*six-work(6)*p24-work(13)*p24)*eighth
+                      dtwoeri(l,k,6,i,ider)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
+                      dtwoeri(l,k,7,i,ider)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg5
+                      dtwoeri(l,k,8,i,ider)=(work(3)-work(8)*three)*facg2
+                      dtwoeri(l,k,9,i,ider)=(work(1)+work(11)-work(4)*six)*facg6
+                    enddo
+                  enddo
+                enddo
+              enddo
+            else
+              do ider= 1,3
+                do i= 1,nbfijkl(1)
+                  do k= 1,nbfijkl(3)
+                    do l= 1,nbfijkl(4)
+                      dtwoeri(l,k, 2,i,ider)= dtwoeri(l,k, 2,i,ider)*sqrt7
+                      dtwoeri(l,k, 3,i,ider)= dtwoeri(l,k, 3,i,ider)*sqrt7
+                      dtwoeri(l,k, 4,i,ider)= dtwoeri(l,k, 4,i,ider)*sqrt35third
+                      dtwoeri(l,k, 5,i,ider)= dtwoeri(l,k, 5,i,ider)*sqrt35
+                      dtwoeri(l,k, 6,i,ider)= dtwoeri(l,k, 6,i,ider)*sqrt35third
+                      dtwoeri(l,k, 7,i,ider)= dtwoeri(l,k, 7,i,ider)*sqrt7
+                      dtwoeri(l,k, 8,i,ider)= dtwoeri(l,k, 8,i,ider)*sqrt35
+                      dtwoeri(l,k, 9,i,ider)= dtwoeri(l,k, 9,i,ider)*sqrt35
+                      dtwoeri(l,k,10,i,ider)= dtwoeri(l,k,10,i,ider)*sqrt7
+                      dtwoeri(l,k,12,i,ider)= dtwoeri(l,k,12,i,ider)*sqrt7
+                      dtwoeri(l,k,13,i,ider)= dtwoeri(l,k,13,i,ider)*sqrt35third
+                      dtwoeri(l,k,14,i,ider)= dtwoeri(l,k,14,i,ider)*sqrt7
+                    enddo
+                  enddo
+                enddo
+              enddo
+            endif
+          case(4)
+            do i= 1,nbfijkl(1)
+              do k= 1,nbfijkl(3)
+                do l= 1,nbfijkl(4)
+                  dtwoeri(l,k, 1,i,1)= dtwoeri(l,k, 1,i,1)-twoeri(l,k, 1,i)*five
+                  dtwoeri(l,k, 2,i,1)= dtwoeri(l,k, 2,i,1)-twoeri(l,k, 2,i)*four*sqrtseventh
+                  dtwoeri(l,k, 3,i,1)= dtwoeri(l,k, 3,i,1)-twoeri(l,k, 3,i)*four*sqrtseventh
+                  dtwoeri(l,k, 4,i,1)= dtwoeri(l,k, 4,i,1)-twoeri(l,k, 4,i)*three*sqrt3inv35
+                  dtwoeri(l,k, 5,i,1)= dtwoeri(l,k, 5,i,1)-twoeri(l,k, 5,i)*three*sqrtinv35
+                  dtwoeri(l,k, 6,i,1)= dtwoeri(l,k, 6,i,1)-twoeri(l,k, 6,i)*three*sqrt3inv35
+                  dtwoeri(l,k, 7,i,1)= dtwoeri(l,k, 7,i,1)-twoeri(l,k, 7,i)*two*sqrtseventh
+                  dtwoeri(l,k, 8,i,1)= dtwoeri(l,k, 8,i,1)-twoeri(l,k, 8,i)*two*sqrtinv35
+                  dtwoeri(l,k, 9,i,1)= dtwoeri(l,k, 9,i,1)-twoeri(l,k, 9,i)*two*sqrtinv35
+                  dtwoeri(l,k,10,i,1)= dtwoeri(l,k,10,i,1)-twoeri(l,k,10,i)*two*sqrtseventh
+                  dtwoeri(l,k,11,i,1)= dtwoeri(l,k,11,i,1)-twoeri(l,k,11,i)
+                  dtwoeri(l,k,12,i,1)= dtwoeri(l,k,12,i,1)-twoeri(l,k,12,i)*sqrtseventh
+                  dtwoeri(l,k,13,i,1)= dtwoeri(l,k,13,i,1)-twoeri(l,k,13,i)*sqrt3inv35
+                  dtwoeri(l,k,14,i,1)= dtwoeri(l,k,14,i,1)-twoeri(l,k,14,i)*sqrtseventh
+                  dtwoeri(l,k,15,i,1)= dtwoeri(l,k,15,i,1)-twoeri(l,k,15,i)
+                  dtwoeri(l,k, 2,i,2)= dtwoeri(l,k, 2,i,2)-twoeri(l,k, 1,i)
+                  dtwoeri(l,k, 4,i,2)= dtwoeri(l,k, 4,i,2)-twoeri(l,k, 2,i)*two*sqrtseventh
+                  dtwoeri(l,k, 5,i,2)= dtwoeri(l,k, 5,i,2)-twoeri(l,k, 3,i)*sqrtseventh
+                  dtwoeri(l,k, 7,i,2)= dtwoeri(l,k, 7,i,2)-twoeri(l,k, 4,i)*three*sqrt3inv35
+                  dtwoeri(l,k, 8,i,2)= dtwoeri(l,k, 8,i,2)-twoeri(l,k, 5,i)*two*sqrtinv35
+                  dtwoeri(l,k, 9,i,2)= dtwoeri(l,k, 9,i,2)-twoeri(l,k, 6,i)*sqrt3inv35
+                  dtwoeri(l,k,11,i,2)= dtwoeri(l,k,11,i,2)-twoeri(l,k, 7,i)*four*sqrtseventh
+                  dtwoeri(l,k,12,i,2)= dtwoeri(l,k,12,i,2)-twoeri(l,k, 8,i)*three*sqrtinv35
+                  dtwoeri(l,k,13,i,2)= dtwoeri(l,k,13,i,2)-twoeri(l,k, 9,i)*two*sqrtinv35
+                  dtwoeri(l,k,14,i,2)= dtwoeri(l,k,14,i,2)-twoeri(l,k,10,i)*sqrtseventh
+                  dtwoeri(l,k,16,i,2)= dtwoeri(l,k,16,i,2)-twoeri(l,k,11,i)*five
+                  dtwoeri(l,k,17,i,2)= dtwoeri(l,k,17,i,2)-twoeri(l,k,12,i)*four*sqrtseventh
+                  dtwoeri(l,k,18,i,2)= dtwoeri(l,k,18,i,2)-twoeri(l,k,13,i)*three*sqrt3inv35
+                  dtwoeri(l,k,19,i,2)= dtwoeri(l,k,19,i,2)-twoeri(l,k,14,i)*two*sqrtseventh
+                  dtwoeri(l,k,20,i,2)= dtwoeri(l,k,20,i,2)-twoeri(l,k,15,i)
+                  dtwoeri(l,k, 3,i,3)= dtwoeri(l,k, 3,i,3)-twoeri(l,k, 1,i)
+                  dtwoeri(l,k, 5,i,3)= dtwoeri(l,k, 5,i,3)-twoeri(l,k, 2,i)*sqrtseventh
+                  dtwoeri(l,k, 6,i,3)= dtwoeri(l,k, 6,i,3)-twoeri(l,k, 3,i)*two*sqrtseventh
+                  dtwoeri(l,k, 8,i,3)= dtwoeri(l,k, 8,i,3)-twoeri(l,k, 4,i)*sqrt3inv35
+                  dtwoeri(l,k, 9,i,3)= dtwoeri(l,k, 9,i,3)-twoeri(l,k, 5,i)*two*sqrtinv35
+                  dtwoeri(l,k,10,i,3)= dtwoeri(l,k,10,i,3)-twoeri(l,k, 6,i)*three*sqrt3inv35
+                  dtwoeri(l,k,12,i,3)= dtwoeri(l,k,12,i,3)-twoeri(l,k, 7,i)*sqrtseventh
+                  dtwoeri(l,k,13,i,3)= dtwoeri(l,k,13,i,3)-twoeri(l,k, 8,i)*two*sqrtinv35
+                  dtwoeri(l,k,14,i,3)= dtwoeri(l,k,14,i,3)-twoeri(l,k, 9,i)*three*sqrtinv35
+                  dtwoeri(l,k,15,i,3)= dtwoeri(l,k,15,i,3)-twoeri(l,k,10,i)*four*sqrtseventh
+                  dtwoeri(l,k,17,i,3)= dtwoeri(l,k,17,i,3)-twoeri(l,k,11,i)
+                  dtwoeri(l,k,18,i,3)= dtwoeri(l,k,18,i,3)-twoeri(l,k,12,i)*two*sqrtseventh
+                  dtwoeri(l,k,19,i,3)= dtwoeri(l,k,19,i,3)-twoeri(l,k,13,i)*three*sqrt3inv35
+                  dtwoeri(l,k,20,i,3)= dtwoeri(l,k,20,i,3)-twoeri(l,k,14,i)*four*sqrtseventh
+                  dtwoeri(l,k,21,i,3)= dtwoeri(l,k,21,i,3)-twoeri(l,k,15,i)*five
+                enddo
+              enddo
+            enddo
+            do ider= 1,3
+              do i= 1,nbfijkl(1)
+                do k= 1,nbfijkl(3)
+                  do l= 1,nbfijkl(4)
+                    dtwoeri(l,k, 2,i,ider)= dtwoeri(l,k, 2,i,ider)*three
+                    dtwoeri(l,k, 3,i,ider)= dtwoeri(l,k, 3,i,ider)*three
+                    dtwoeri(l,k, 4,i,ider)= dtwoeri(l,k, 4,i,ider)*sqrt21
+                    dtwoeri(l,k, 5,i,ider)= dtwoeri(l,k, 5,i,ider)*sqrt63
+                    dtwoeri(l,k, 6,i,ider)= dtwoeri(l,k, 6,i,ider)*sqrt21
+                    dtwoeri(l,k, 7,i,ider)= dtwoeri(l,k, 7,i,ider)*sqrt21
+                    dtwoeri(l,k, 8,i,ider)= dtwoeri(l,k, 8,i,ider)*sqrt105
+                    dtwoeri(l,k, 9,i,ider)= dtwoeri(l,k, 9,i,ider)*sqrt105
+                    dtwoeri(l,k,10,i,ider)= dtwoeri(l,k,10,i,ider)*sqrt21
+                    dtwoeri(l,k,11,i,ider)= dtwoeri(l,k,11,i,ider)*three
+                    dtwoeri(l,k,12,i,ider)= dtwoeri(l,k,12,i,ider)*sqrt63
+                    dtwoeri(l,k,13,i,ider)= dtwoeri(l,k,13,i,ider)*sqrt105
+                    dtwoeri(l,k,14,i,ider)= dtwoeri(l,k,14,i,ider)*sqrt63
+                    dtwoeri(l,k,15,i,ider)= dtwoeri(l,k,15,i,ider)*three
+                    dtwoeri(l,k,17,i,ider)= dtwoeri(l,k,17,i,ider)*three
+                    dtwoeri(l,k,18,i,ider)= dtwoeri(l,k,18,i,ider)*sqrt21
+                    dtwoeri(l,k,19,i,ider)= dtwoeri(l,k,19,i,ider)*sqrt21
+                    dtwoeri(l,k,20,i,ider)= dtwoeri(l,k,20,i,ider)*three
+                  enddo
+                enddo
+              enddo
+            enddo
         end select
       endif
 !
