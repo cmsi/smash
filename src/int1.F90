@@ -58,6 +58,10 @@
       call para_allreducer(hstmat2,hstmat1,num,mpi_comm)
       call para_allreducer(hstmat3,hstmat2,num,mpi_comm)
       call para_allreducer(hstmat4,hstmat3,num,mpi_comm)
+!ishimura
+!do ish=1,nao
+!write(*,'(10f10.7)')hstmat2(ish*(ish-1)/2+1:ish*(ish+1)/2)
+!enddo
 !
       return
 end
@@ -2147,7 +2151,9 @@ end
       integer,intent(in) :: nbfi, nbfj, ncarti
       integer :: i, j
       real(8),parameter :: half=0.5D+00, two=2.0D+00, three=3.0D+00, four=4.0D+00
-      real(8),parameter :: six=6.0D+00, eight=8.0D+00, p24=24.0D+00, eighth=0.125D+00
+      real(8),parameter :: five=5.0D+00, six=6.0D+00, eight=8.0D+00, ten=10.0D+00
+      real(8),parameter :: twelve=12.0D+00, p15=15.0D+00, p24=24.0D+00, p30=30.0D+00
+      real(8),parameter :: p40=40.0D+00, eighth=0.125D+00
       real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
       real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
       real(8),parameter :: sqrt7=2.645751311064590D+00, sqrt35=5.916079783099616D+00
@@ -2167,6 +2173,11 @@ end
       real(8),parameter :: facg4=0.79056941504209483D+00 ! sqrt(5/2)/2
       real(8),parameter :: facg5=0.55901699437494742D+00 ! sqrt(5)/4
       real(8),parameter :: facg6=0.73950997288745200D+00 ! sqrt(35)/8
+      real(8),parameter :: fach1=0.70156076002011400D+00 ! sqrt(63/2)/8
+      real(8),parameter :: fach2=2.21852991866235601D+00 ! sqrt(315)/8
+      real(8),parameter :: fach3=0.52291251658379721D+00 ! sqrt(35/2)/8
+      real(8),parameter :: fach4=2.56173769148989959D+00 ! sqrt(105)/4
+      real(8),parameter :: fach5=0.48412291827592711D+00 ! sqrt(15)/8
       real(8),intent(inout) :: onei(28,28)
       real(8) :: work(28)
 !
@@ -2248,6 +2259,26 @@ end
             onei(14,i)= onei(14,i)*sqrt7
           enddo
 ! H function
+        case(11)
+          do i= 1,ncarti
+            do j= 1,21
+              work(j)= onei(j,i)
+            enddo
+            onei( 1,i)=(work(2)*five-work(7)*ten+work(16))*fach1
+            onei( 2,i)=(work(5)*four-work(12)*four)*fach2
+            onei( 3,i)=(-work(2)*three-work(7)*two+work(9)*p24+work(16)-work(18)*eight)*fach3
+            onei( 4,i)=(-work(5)*two-work(12)*two+work(14)*four)*fach4
+            onei( 5,i)=(work(2)+work(7)*two-work(9)*twelve+work(16)-work(18)*twelve &
+&                      +work(20)*eight)*fach5
+            onei( 6,i)=(work(3)*p15+work(8)*p30-work(10)*p40+work(17)*p15-work(19)*p40 &
+&                      +work(21)*eight)*eighth
+            onei( 7,i)=(work(1)+work(4)*two-work(6)*twelve+work(11)-work(13)*twelve &
+&                      +work(15)*eight)*fach5
+            onei( 8,i)=(-work(3)+work(10)*two+work(17)-work(19)*two)*fach4
+            onei( 9,i)=(-work(1)+work(4)*two+work(6)*eight+work(11)*three-work(13)*p24)*fach3
+            onei(10,i)=(work(3)-work(8)*six+work(17))*fach2
+            onei(11,i)=(work(1)-work(4)*ten+work(11)*five)*fach1
+          enddo
         case(21)
           do i= 1,ncarti
             onei( 2,i)= onei( 2,i)*three
@@ -2378,6 +2409,26 @@ end
             onei(j,14)= onei(j,14)*sqrt7
           enddo
 ! H function
+        case(11)
+          do j= 1,nbfj
+            do i= 1,21
+              work(i)= onei(j,i)
+            enddo
+            onei(j, 1)=(work(2)*five-work(7)*ten+work(16))*fach1
+            onei(j, 2)=(work(5)*four-work(12)*four)*fach2
+            onei(j, 3)=(-work(2)*three-work(7)*two+work(9)*p24+work(16)-work(18)*eight)*fach3
+            onei(j, 4)=(-work(5)*two-work(12)*two+work(14)*four)*fach4
+            onei(j, 5)=(work(2)+work(7)*two-work(9)*twelve+work(16)-work(18)*twelve &
+&                      +work(20)*eight)*fach5
+            onei(j, 6)=(work(3)*p15+work(8)*p30-work(10)*p40+work(17)*p15-work(19)*p40 &
+&                      +work(21)*eight)*eighth
+            onei(j, 7)=(work(1)+work(4)*two-work(6)*twelve+work(11)-work(13)*twelve &
+&                      +work(15)*eight)*fach5
+            onei(j, 8)=(-work(3)+work(10)*two+work(17)-work(19)*two)*fach4
+            onei(j, 9)=(-work(1)+work(4)*two+work(6)*eight+work(11)*three-work(13)*p24)*fach3
+            onei(j,10)=(work(3)-work(8)*six+work(17))*fach2
+            onei(j,11)=(work(1)-work(4)*ten+work(11)*five)*fach1
+          enddo
         case(21)
           do j= 1,nbfj
             onei(j, 2)= onei(j, 2)*three

@@ -269,7 +269,9 @@ end
       integer :: ii, jj, i2, j2, mx, my, mz, mu, nlm
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),parameter :: half=0.5D+00, two=2.0D+00, three=3.0D+00, four=4.0D+00
-      real(8),parameter :: six=6.0D+00, eight=8.0D+00, p24=24.0D+00, eighth=0.125D+00
+      real(8),parameter :: five=5.0D+00, six=6.0D+00, eight=8.0D+00, ten=10.0D+00
+      real(8),parameter :: twelve=12.0D+00, p15=15.0D+00, p24=24.0D+00, p30=30.0D+00
+      real(8),parameter :: p40=40.0D+00, eighth=0.125D+00
       real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
       real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
       real(8),parameter :: sqrt7=2.645751311064590D+00, sqrt35=5.916079783099616D+00
@@ -289,6 +291,11 @@ end
       real(8),parameter :: facg4=0.79056941504209483D+00 ! sqrt(5/2)/2
       real(8),parameter :: facg5=0.55901699437494742D+00 ! sqrt(5)/4
       real(8),parameter :: facg6=0.73950997288745200D+00 ! sqrt(35)/8
+      real(8),parameter :: fach1=0.70156076002011400D+00 ! sqrt(63/2)/8
+      real(8),parameter :: fach2=2.21852991866235601D+00 ! sqrt(315)/8
+      real(8),parameter :: fach3=0.52291251658379721D+00 ! sqrt(35/2)/8
+      real(8),parameter :: fach4=2.56173769148989959D+00 ! sqrt(105)/4
+      real(8),parameter :: fach5=0.48412291827592711D+00 ! sqrt(15)/8
       real(8),intent(in) :: exij(mxprsh,2), coij(mxprsh,2),exkecp(mxprsh,6)
       real(8),intent(in) :: cokecp(mxprsh,6), term0ecp(*), xyzintecp(0:24,0:24,0:24)
       real(8),intent(out) :: ecpint(len1,len1)
@@ -459,6 +466,24 @@ end
             ecptmp(15,ii)= work( 3)
           enddo
 ! H function
+        case(11)
+          do ii= 1,ncarti
+            work(1:21)= ecptmp(1:21,ii)
+            ecptmp( 1,ii)=(work(2)*five-work(7)*ten+work(16))*fach1
+            ecptmp( 2,ii)=(work(5)*four-work(12)*four)*fach2
+            ecptmp( 3,ii)=(-work(2)*three-work(7)*two+work(9)*p24+work(16)-work(18)*eight)*fach3
+            ecptmp( 4,ii)=(-work(5)*two-work(12)*two+work(14)*four)*fach4
+            ecptmp( 5,ii)=(work(2)+work(7)*two-work(9)*twelve+work(16)-work(18)*twelve &
+&                         +work(20)*eight)*fach5
+            ecptmp( 6,ii)=(work(3)*p15+work(8)*p30-work(10)*p40+work(17)*p15-work(19)*p40 &
+&                         +work(21)*eight)*eighth
+            ecptmp( 7,ii)=(work(1)+work(4)*two-work(6)*twelve+work(11)-work(13)*twelve &
+&                         +work(15)*eight)*fach5
+            ecptmp( 8,ii)=(-work(3)+work(10)*two+work(17)-work(19)*two)*fach4
+            ecptmp( 9,ii)=(-work(1)+work(4)*two+work(6)*eight+work(11)*three-work(13)*p24)*fach3
+            ecptmp(10,ii)=(work(3)-work(8)*six+work(17))*fach2
+            ecptmp(11,ii)=(work(1)-work(4)*ten+work(11)*five)*fach1
+          enddo
         case(21)
           do ii= 1,ncarti
             work(1:21)= ecptmp(1:21,ii)
@@ -609,6 +634,24 @@ end
             ecptmp(jj,15)= work( 3)
           enddo
 ! H function
+        case(11)
+          do jj= 1,nbfij(2)
+            work(1:21)= ecptmp(jj,1:21)
+            ecptmp(jj, 1)=(work(2)*five-work(7)*ten+work(16))*fach1
+            ecptmp(jj, 2)=(work(5)*four-work(12)*four)*fach2
+            ecptmp(jj, 3)=(-work(2)*three-work(7)*two+work(9)*p24+work(16)-work(18)*eight)*fach3
+            ecptmp(jj, 4)=(-work(5)*two-work(12)*two+work(14)*four)*fach4
+            ecptmp(jj, 5)=(work(2)+work(7)*two-work(9)*twelve+work(16)-work(18)*twelve &
+&                         +work(20)*eight)*fach5
+            ecptmp(jj, 6)=(work(3)*p15+work(8)*p30-work(10)*p40+work(17)*p15-work(19)*p40 &
+&                         +work(21)*eight)*eighth
+            ecptmp(jj, 7)=(work(1)+work(4)*two-work(6)*twelve+work(11)-work(13)*twelve &
+&                         +work(15)*eight)*fach5
+            ecptmp(jj, 8)=(-work(3)+work(10)*two+work(17)-work(19)*two)*fach4
+            ecptmp(jj, 9)=(-work(1)+work(4)*two+work(6)*eight+work(11)*three-work(13)*p24)*fach3
+            ecptmp(jj,10)=(work(3)-work(8)*six+work(17))*fach2
+            ecptmp(jj,11)=(work(1)-work(4)*ten+work(11)*five)*fach1
+          enddo
         case(21)
           do jj= 1,nbfij(2)
             work(1:21)= ecptmp(jj,1:21)
@@ -3540,7 +3583,7 @@ end
       if(ll == 0)then
         if(alpha >= athresh) then
           np1= nn+1
-          IF(np1 == 2) then
+          if(np1 == 2) then
             radtmp= sqrtpi*xp1*erf(alpha)/alpha
           else
             dawrad=dawson(alpha)

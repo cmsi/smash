@@ -361,14 +361,13 @@ end
                 locbf(ishell+1)= locbf(ishell)+15
               endif
             case(5)
-!ishimura
-!             if(spher) then
-!               mbf(ishell)= 11
-!               locbf(ishell+1)= locbf(ishell)+11
-!             else
+              if(spher) then
+                mbf(ishell)= 11
+                locbf(ishell+1)= locbf(ishell)+11
+              else
                 mbf(ishell)= 21
                 locbf(ishell+1)= locbf(ishell)+21
-!             endif
+              endif
             case(6)
 !ishimura
 !             if(spher) then
