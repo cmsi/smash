@@ -481,8 +481,11 @@ end
       integer :: ii, jj, kk, ll, ix, iy, iz, jx, jy, jz, kx, ky, kz, lx, ly, lz, icount, nn
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
       real(8),parameter :: three=3.0D+00, four=4.0D+00, five=5.0D+00, six=6.0D+00
-      real(8),parameter :: eight=8.0D+00, ten=10.0D+00, twelve=12.0D+00, p15=15.0D+00
-      real(8),parameter :: p24=24.0D+00, p30=30.0D+00, p40=40.0D+00, eighth=0.125D+00
+      real(8),parameter :: eight=8.0D+00, p9=9.0D+00, ten=10.0D+00, twelve=12.0D+00
+      real(8),parameter :: p15=15.0D+00, p16=16.0D+00, p18=18.0D+00, p20=20.0D+00 
+      real(8),parameter :: p24=24.0D+00, p30=30.0D+00, p32=32.0D+00, p40=40.0D+00
+      real(8),parameter :: p60=60.0D+00, p90=90.0D+00, p120=1.2D+02, p180=1.8D+02
+      real(8),parameter :: eighth=0.125D+00, sixteenth=6.25D-02
       real(8),parameter :: pi52=0.3498683665524973D+02 ! 2.0*pi**2.5
       real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
       real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
@@ -508,6 +511,12 @@ end
       real(8),parameter :: fach3=0.52291251658379721D+00 ! sqrt(35/2)/8
       real(8),parameter :: fach4=2.56173769148989959D+00 ! sqrt(105)/4
       real(8),parameter :: fach5=0.48412291827592711D+00 ! sqrt(15)/8
+      real(8),parameter :: faci1=0.67169328938139615D+00 ! sqrt(231/2)/16
+      real(8),parameter :: faci2=2.32681380862328561D+00 ! sqrt(693/2)/8
+      real(8),parameter :: faci3=0.49607837082461073D+00 ! sqrt(63)/16
+      real(8),parameter :: faci4=0.90571104663683991D+00 ! sqrt(105/2)/8
+      real(8),parameter :: faci5=0.45285552331841995D+00 ! sqrt(105/2)/16
+      real(8),parameter :: faci6=0.57282196186948000D+00 ! sqrt(21)/8
       real(8),intent(in) :: exijkl(mxprsh,4), coijkl(mxprsh,4), xyzijkl(3,4), threshex
       real(8),intent(out) :: twoeri(maxdim,maxdim,maxdim,maxdim)
       real(8),intent(out) :: eritmp(ncartijkl(4),ncartijkl(3),ncartijkl(2),ncartijkl(1))
@@ -958,6 +967,38 @@ end
             enddo
           enddo
         enddo
+      elseif(nbfijkl(1) == 13) then
+        do j= 1,ncartijkl(2)
+          do k= 1,ncartijkl(3)
+            do l= 1,ncartijkl(4)
+              do i= 1,28
+                work(i)= eritmp(l,k,j,i)
+              enddo
+              eritmp(l,k,j, 1)=(work(2)*six-work(7)*p20+work(16)*six)*faci1
+              eritmp(l,k,j, 2)=(work(5)*five-work(12)*ten+work(23))*faci2
+              eritmp(l,k,j, 3)=(-work(2)*four+work(9)*p40+work(16)*four-work(18)*p40)*faci3
+              eritmp(l,k,j, 4)=(-work(5)*p9-work(12)*six+work(14)*p24+work(23)*three &
+&                              -work(25)*eight)*faci4
+              eritmp(l,k,j, 5)=(work(2)*two+work(7)*four-work(9)*p32+work(16)*two &
+&                              -work(18)*p32+work(20)*p32)*faci5
+              eritmp(l,k,j, 6)=(work(5)*five+work(12)*ten-work(14)*p20+work(23)*five &
+&                              -work(25)*p20+work(27)*eight)*faci6
+              eritmp(l,k,j, 7)=(-work(1)*five-work(4)*p15+work(6)*p90-work(11)*p15 &
+&                              +work(13)*p180-work(15)*p120-work(22)*five+work(24)*p90 &
+&                              -work(26)*p120+work(28)*p16)*sixteenth
+              eritmp(l,k,j, 8)=(work(3)*five+work(8)*ten-work(10)*p20+work(17)*five &
+&                              -work(19)*p20+work(21)*eight)*faci6
+              eritmp(l,k,j, 9)=(work(1)+work(4)-work(6)*p16-work(11)+work(15)*p16 &
+&                              -work(22)+work(24)*p16-work(26)*p16)*faci5
+              eritmp(l,k,j,10)=(-work(3)*three+work(8)*six+work(10)*eight+work(17)*p9 &
+&                              -work(19)*p24)*faci4
+              eritmp(l,k,j,11)=(-work(1)+work(4)*five+work(6)*ten+work(11)*five &
+&                              -work(13)*p60-work(22)+work(24)*ten)*faci3
+              eritmp(l,k,j,12)=(work(3)-work(8)*ten+work(17)*five)*faci2
+              eritmp(l,k,j,13)=(work(1)-work(4)*p15+work(11)*p15-work(22))*faci1
+            enddo
+          enddo
+        enddo
       elseif(nbfijkl(1) == 28) then
         do j= 1,ncartijkl(2)
           do k= 1,ncartijkl(3)
@@ -1141,6 +1182,38 @@ end
             enddo
           enddo
         enddo
+      elseif(nbfijkl(2) == 13) then
+        do i= 1,nbfijkl(1)
+          do k= 1,ncartijkl(3)
+            do l= 1,ncartijkl(4)
+              do j= 1,28
+                work(j)= eritmp(l,k,j,i)
+              enddo
+              eritmp(l,k, 1,i)=(work(2)*six-work(7)*p20+work(16)*six)*faci1
+              eritmp(l,k, 2,i)=(work(5)*five-work(12)*ten+work(23))*faci2
+              eritmp(l,k, 3,i)=(-work(2)*four+work(9)*p40+work(16)*four-work(18)*p40)*faci3
+              eritmp(l,k, 4,i)=(-work(5)*p9-work(12)*six+work(14)*p24+work(23)*three &
+&                              -work(25)*eight)*faci4
+              eritmp(l,k, 5,i)=(work(2)*two+work(7)*four-work(9)*p32+work(16)*two &
+&                              -work(18)*p32+work(20)*p32)*faci5
+              eritmp(l,k, 6,i)=(work(5)*five+work(12)*ten-work(14)*p20+work(23)*five &
+&                              -work(25)*p20+work(27)*eight)*faci6
+              eritmp(l,k, 7,i)=(-work(1)*five-work(4)*p15+work(6)*p90-work(11)*p15 &
+&                              +work(13)*p180-work(15)*p120-work(22)*five+work(24)*p90 &
+&                              -work(26)*p120+work(28)*p16)*sixteenth
+              eritmp(l,k, 8,i)=(work(3)*five+work(8)*ten-work(10)*p20+work(17)*five &
+&                              -work(19)*p20+work(21)*eight)*faci6
+              eritmp(l,k, 9,i)=(work(1)+work(4)-work(6)*p16-work(11)+work(15)*p16 &
+&                              -work(22)+work(24)*p16-work(26)*p16)*faci5
+              eritmp(l,k,10,i)=(-work(3)*three+work(8)*six+work(10)*eight+work(17)*p9 &
+&                              -work(19)*p24)*faci4
+              eritmp(l,k,11,i)=(-work(1)+work(4)*five+work(6)*ten+work(11)*five &
+&                              -work(13)*p60-work(22)+work(24)*ten)*faci3
+              eritmp(l,k,12,i)=(work(3)-work(8)*ten+work(17)*five)*faci2
+              eritmp(l,k,13,i)=(work(1)-work(4)*p15+work(11)*p15-work(22))*faci1
+            enddo
+          enddo
+        enddo
       elseif(nbfijkl(2) == 28) then
         do i= 1,nbfijkl(1)
           do k= 1,ncartijkl(3)
@@ -1321,6 +1394,38 @@ end
               eritmp(l,18,j,i)= eritmp(l,18,j,i)*sqrt21
               eritmp(l,19,j,i)= eritmp(l,19,j,i)*sqrt21
               eritmp(l,20,j,i)= eritmp(l,20,j,i)*three
+            enddo
+          enddo
+        enddo
+      elseif(nbfijkl(3) == 13)then
+        do i= 1,nbfijkl(1)
+          do j= 1,nbfijkl(2)
+            do l= 1,ncartijkl(4)
+              do k= 1,28
+                work(k)= eritmp(l,k,j,i)
+              enddo
+              eritmp(l, 1,j,i)=(work(2)*six-work(7)*p20+work(16)*six)*faci1
+              eritmp(l, 2,j,i)=(work(5)*five-work(12)*ten+work(23))*faci2
+              eritmp(l, 3,j,i)=(-work(2)*four+work(9)*p40+work(16)*four-work(18)*p40)*faci3
+              eritmp(l, 4,j,i)=(-work(5)*p9-work(12)*six+work(14)*p24+work(23)*three &
+&                              -work(25)*eight)*faci4
+              eritmp(l, 5,j,i)=(work(2)*two+work(7)*four-work(9)*p32+work(16)*two &
+&                              -work(18)*p32+work(20)*p32)*faci5
+              eritmp(l, 6,j,i)=(work(5)*five+work(12)*ten-work(14)*p20+work(23)*five &
+&                              -work(25)*p20+work(27)*eight)*faci6
+              eritmp(l, 7,j,i)=(-work(1)*five-work(4)*p15+work(6)*p90-work(11)*p15 &
+&                              +work(13)*p180-work(15)*p120-work(22)*five+work(24)*p90 &
+&                              -work(26)*p120+work(28)*p16)*sixteenth
+              eritmp(l, 8,j,i)=(work(3)*five+work(8)*ten-work(10)*p20+work(17)*five &
+&                              -work(19)*p20+work(21)*eight)*faci6
+              eritmp(l, 9,j,i)=(work(1)+work(4)-work(6)*p16-work(11)+work(15)*p16 &
+&                              -work(22)+work(24)*p16-work(26)*p16)*faci5
+              eritmp(l,10,j,i)=(-work(3)*three+work(8)*six+work(10)*eight+work(17)*p9 &
+&                              -work(19)*p24)*faci4
+              eritmp(l,11,j,i)=(-work(1)+work(4)*five+work(6)*ten+work(11)*five &
+&                              -work(13)*p60-work(22)+work(24)*ten)*faci3
+              eritmp(l,12,j,i)=(work(3)-work(8)*ten+work(17)*five)*faci2
+              eritmp(l,13,j,i)=(work(1)-work(4)*p15+work(11)*p15-work(22))*faci1
             enddo
           enddo
         enddo
@@ -1526,6 +1631,38 @@ end
               twoeri(19,k,j,i)= eritmp(19,k,j,i)*sqrt21
               twoeri(20,k,j,i)= eritmp(20,k,j,i)*three
               twoeri(21,k,j,i)= eritmp(21,k,j,i)
+            enddo
+          enddo
+        enddo
+      elseif(nbfijkl(4) == 13)then
+        do i= 1,nbfijkl(1)
+          do j= 1,nbfijkl(2)
+            do k= 1,nbfijkl(3)
+              do l= 1,28
+                work(l)= eritmp(l,k,j,i)
+              enddo
+              twoeri( 1,k,j,i)=(work(2)*six-work(7)*p20+work(16)*six)*faci1
+              twoeri( 2,k,j,i)=(work(5)*five-work(12)*ten+work(23))*faci2
+              twoeri( 3,k,j,i)=(-work(2)*four+work(9)*p40+work(16)*four-work(18)*p40)*faci3
+              twoeri( 4,k,j,i)=(-work(5)*p9-work(12)*six+work(14)*p24+work(23)*three &
+&                              -work(25)*eight)*faci4
+              twoeri( 5,k,j,i)=(work(2)*two+work(7)*four-work(9)*p32+work(16)*two &
+&                              -work(18)*p32+work(20)*p32)*faci5
+              twoeri( 6,k,j,i)=(work(5)*five+work(12)*ten-work(14)*p20+work(23)*five &
+&                              -work(25)*p20+work(27)*eight)*faci6
+              twoeri( 7,k,j,i)=(-work(1)*five-work(4)*p15+work(6)*p90-work(11)*p15 &
+&                              +work(13)*p180-work(15)*p120-work(22)*five+work(24)*p90 &
+&                              -work(26)*p120+work(28)*p16)*sixteenth
+              twoeri( 8,k,j,i)=(work(3)*five+work(8)*ten-work(10)*p20+work(17)*five &
+&                              -work(19)*p20+work(21)*eight)*faci6
+              twoeri( 9,k,j,i)=(work(1)+work(4)-work(6)*p16-work(11)+work(15)*p16 &
+&                              -work(22)+work(24)*p16-work(26)*p16)*faci5
+              twoeri(10,k,j,i)=(-work(3)*three+work(8)*six+work(10)*eight+work(17)*p9 &
+&                              -work(19)*p24)*faci4
+              twoeri(11,k,j,i)=(-work(1)+work(4)*five+work(6)*ten+work(11)*five &
+&                              -work(13)*p60-work(22)+work(24)*ten)*faci3
+              twoeri(12,k,j,i)=(work(3)-work(8)*ten+work(17)*five)*faci2
+              twoeri(13,k,j,i)=(work(1)-work(4)*p15+work(11)*p15-work(22))*faci1
             enddo
           enddo
         enddo
