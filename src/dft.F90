@@ -635,11 +635,13 @@ end
       use modthresh, only : threshex
       implicit none
       integer :: icount, ish, numprim, iatom, iprim, nang, nbf, ilocbf, ii, jj
-      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
-      real(8),parameter :: two=2.0D+00, three=3.0D+00, four=4.0D+00
-      real(8),parameter :: five=5.0D+00, six=6.0D+00, eight=8.0D+00, ten=10.0D+00
-      real(8),parameter :: twelve=12.0D+00, p15=15.0D+00, p24=24.0D+00, p30=30.0D+00
-      real(8),parameter :: p40=40.0D+00, eighth=0.125D+00
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
+      real(8),parameter :: three=3.0D+00, four=4.0D+00, five=5.0D+00, six=6.0D+00
+      real(8),parameter :: eight=8.0D+00, p9=9.0D+00, ten=10.0D+00, twelve=12.0D+00
+      real(8),parameter :: p15=15.0D+00, p16=16.0D+00, p18=18.0D+00, p20=20.0D+00
+      real(8),parameter :: p24=24.0D+00, p30=30.0D+00, p32=32.0D+00, p40=40.0D+00
+      real(8),parameter :: p60=60.0D+00, p90=90.0D+00, p120=1.2D+02, p180=1.8D+02
+      real(8),parameter :: eighth=0.125D+00, sixteenth=6.25D-02
       real(8),parameter :: sqrt3=1.73205080756888D+00, sqrt3h=8.660254037844386D-01
       real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
       real(8),parameter :: sqrt7=2.645751311064590D+00, sqrt35=5.916079783099616D+00
@@ -664,6 +666,12 @@ end
       real(8),parameter :: fach3=0.52291251658379721D+00 ! sqrt(35/2)/8
       real(8),parameter :: fach4=2.56173769148989959D+00 ! sqrt(105)/4
       real(8),parameter :: fach5=0.48412291827592711D+00 ! sqrt(15)/8
+      real(8),parameter :: faci1=0.67169328938139615D+00 ! sqrt(231/2)/16
+      real(8),parameter :: faci2=2.32681380862328561D+00 ! sqrt(693/2)/8
+      real(8),parameter :: faci3=0.49607837082461073D+00 ! sqrt(63)/16
+      real(8),parameter :: faci4=0.90571104663683991D+00 ! sqrt(105/2)/8
+      real(8),parameter :: faci5=0.45285552331841995D+00 ! sqrt(105/2)/16
+      real(8),parameter :: faci6=0.57282196186948000D+00 ! sqrt(21)/8
       real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom), transcmo(neleca,nao), aocutoff
       real(8),intent(out) :: vao(nao,4), vmo(neleca,4)
       real(8) :: expval, fac, tmp(28,4), xx, yy, zz, xy, xz, yz, xxx, xxy, xxz, xyy, xyz
@@ -674,6 +682,7 @@ end
       real(8) :: xxxxyy, xxxxyz, xxxxzz, xxxyyy, xxxyyz, xxxyzz, xxxzzz, xxyyyy, xxyyyz
       real(8) :: xxyyzz, xxyzzz, xxzzzz, xyyyyy, xyyyyz, xyyyzz, xyyzzz, xyzzzz, xzzzzz
       real(8) :: yyyyyy, yyyyyz, yyyyzz, yyyzzz, yyzzzz, yzzzzz, zzzzzz
+      real(8) :: xyz3(10), xyz5(21), xyz7(36)
 !
       vao(:,:)= zero
       vmo(:,:)= zero
@@ -1289,8 +1298,287 @@ end
               endif
             enddo
 !
+! I function
+!
+          case(6)
+            do iprim= 1,numprim
+              icount= icount+1
+              if(ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
+              xx= xyzpt(1,iatom)*xyzpt(1,iatom)
+              xy= xyzpt(1,iatom)*xyzpt(2,iatom)
+              xz= xyzpt(1,iatom)*xyzpt(3,iatom)
+              yy= xyzpt(2,iatom)*xyzpt(2,iatom)
+              yz= xyzpt(2,iatom)*xyzpt(3,iatom)
+              zz= xyzpt(3,iatom)*xyzpt(3,iatom)
+              xyz3( 1)= xyzpt(1,iatom)*xyzpt(1,iatom)*xyzpt(1,iatom)
+              xyz3( 2)= xyzpt(1,iatom)*xyzpt(1,iatom)*xyzpt(2,iatom)
+              xyz3( 3)= xyzpt(1,iatom)*xyzpt(1,iatom)*xyzpt(3,iatom)
+              xyz3( 4)= xyzpt(1,iatom)*xyzpt(2,iatom)*xyzpt(2,iatom)
+              xyz3( 5)= xyzpt(1,iatom)*xyzpt(2,iatom)*xyzpt(3,iatom)
+              xyz3( 6)= xyzpt(1,iatom)*xyzpt(3,iatom)*xyzpt(3,iatom)
+              xyz3( 7)= xyzpt(2,iatom)*xyzpt(2,iatom)*xyzpt(2,iatom)
+              xyz3( 8)= xyzpt(2,iatom)*xyzpt(2,iatom)*xyzpt(3,iatom)
+              xyz3( 9)= xyzpt(2,iatom)*xyzpt(3,iatom)*xyzpt(3,iatom)
+              xyz3(10)= xyzpt(3,iatom)*xyzpt(3,iatom)*xyzpt(3,iatom)
+              xyz5( 1)= xyz3( 1)*xx
+              xyz5( 2)= xyz3( 1)*xy
+              xyz5( 3)= xyz3( 1)*xz
+              xyz5( 4)= xyz3( 1)*yy
+              xyz5( 5)= xyz3( 1)*yz
+              xyz5( 6)= xyz3( 1)*zz
+              xyz5( 7)= xyz3( 2)*yy
+              xyz5( 8)= xyz3( 2)*yz
+              xyz5( 9)= xyz3( 2)*zz
+              xyz5(10)= xyz3( 3)*zz
+              xyz5(11)= xyz3( 4)*yy
+              xyz5(12)= xyz3( 4)*yz
+              xyz5(13)= xyz3( 4)*zz
+              xyz5(14)= xyz3( 5)*zz
+              xyz5(15)= xyz3( 6)*zz
+              xyz5(16)= xyz3( 7)*yy
+              xyz5(17)= xyz3( 7)*yz
+              xyz5(18)= xyz3( 7)*zz
+              xyz5(19)= xyz3( 8)*zz
+              xyz5(20)= xyz3( 9)*zz
+              xyz5(21)= xyz3(10)*zz
+              fac= ex(icount)*two
+              xyz7( 1)=-xyz5( 1)*xx*fac
+              xyz7( 2)=-xyz5( 1)*xy*fac
+              xyz7( 3)=-xyz5( 1)*xz*fac
+              xyz7( 4)=-xyz5( 1)*yy*fac
+              xyz7( 5)=-xyz5( 1)*yz*fac
+              xyz7( 6)=-xyz5( 1)*zz*fac
+              xyz7( 7)=-xyz5( 2)*yy*fac
+              xyz7( 8)=-xyz5( 2)*yz*fac
+              xyz7( 9)=-xyz5( 2)*zz*fac
+              xyz7(10)=-xyz5( 3)*zz*fac
+              xyz7(11)=-xyz5( 4)*yy*fac
+              xyz7(12)=-xyz5( 4)*yz*fac
+              xyz7(13)=-xyz5( 4)*zz*fac
+              xyz7(14)=-xyz5( 6)*yz*fac
+              xyz7(15)=-xyz5( 6)*zz*fac
+              xyz7(16)=-xyz5( 7)*yy*fac
+              xyz7(17)=-xyz5( 7)*yz*fac
+              xyz7(18)=-xyz5( 7)*zz*fac
+              xyz7(19)=-xyz5(10)*yy*fac
+              xyz7(20)=-xyz5(10)*yz*fac
+              xyz7(21)=-xyz5(10)*zz*fac
+              xyz7(22)=-xyz5(11)*yy*fac
+              xyz7(23)=-xyz5(11)*yz*fac
+              xyz7(24)=-xyz5(11)*zz*fac
+              xyz7(25)=-xyz5(14)*yy*fac
+              xyz7(26)=-xyz5(14)*yz*fac
+              xyz7(27)=-xyz5(14)*zz*fac
+              xyz7(28)=-xyz5(15)*zz*fac
+              xyz7(29)=-xyz5(16)*yy*fac
+              xyz7(30)=-xyz5(16)*yz*fac
+              xyz7(31)=-xyz5(16)*zz*fac
+              xyz7(32)=-xyz5(19)*yy*fac
+              xyz7(33)=-xyz5(19)*yz*fac
+              xyz7(34)=-xyz5(19)*zz*fac
+              xyz7(35)=-xyz5(21)*yz*fac
+              xyz7(36)=-xyz5(21)*zz*fac
+              tmp( 1,1)= expval*xyz5( 1)*xyzpt(1,iatom)
+              tmp( 2,1)= expval*xyz5( 1)*xyzpt(2,iatom)
+              tmp( 3,1)= expval*xyz5( 1)*xyzpt(3,iatom)
+              tmp( 4,1)= expval*xyz5( 2)*xyzpt(2,iatom)
+              tmp( 5,1)= expval*xyz5( 2)*xyzpt(3,iatom)
+              tmp( 6,1)= expval*xyz5( 3)*xyzpt(3,iatom)
+              tmp( 7,1)= expval*xyz5( 4)*xyzpt(2,iatom)
+              tmp( 8,1)= expval*xyz5( 4)*xyzpt(3,iatom)
+              tmp( 9,1)= expval*xyz5( 5)*xyzpt(3,iatom)
+              tmp(10,1)= expval*xyz5( 6)*xyzpt(3,iatom)
+              tmp(11,1)= expval*xyz5( 7)*xyzpt(2,iatom)
+              tmp(12,1)= expval*xyz5( 7)*xyzpt(3,iatom)
+              tmp(13,1)= expval*xyz5( 8)*xyzpt(3,iatom)
+              tmp(14,1)= expval*xyz5( 9)*xyzpt(3,iatom)
+              tmp(15,1)= expval*xyz5(10)*xyzpt(3,iatom)
+              tmp(16,1)= expval*xyz5(11)*xyzpt(2,iatom)
+              tmp(17,1)= expval*xyz5(11)*xyzpt(3,iatom)
+              tmp(18,1)= expval*xyz5(12)*xyzpt(3,iatom)
+              tmp(19,1)= expval*xyz5(13)*xyzpt(3,iatom)
+              tmp(20,1)= expval*xyz5(14)*xyzpt(3,iatom)
+              tmp(21,1)= expval*xyz5(15)*xyzpt(3,iatom)
+              tmp(22,1)= expval*xyz5(16)*xyzpt(2,iatom)
+              tmp(23,1)= expval*xyz5(16)*xyzpt(3,iatom)
+              tmp(24,1)= expval*xyz5(17)*xyzpt(3,iatom)
+              tmp(25,1)= expval*xyz5(18)*xyzpt(3,iatom)
+              tmp(26,1)= expval*xyz5(19)*xyzpt(3,iatom)
+              tmp(27,1)= expval*xyz5(20)*xyzpt(3,iatom)
+              tmp(28,1)= expval*xyz5(21)*xyzpt(3,iatom)
+              tmp( 1,2)= expval*(xyz5( 1)*six  +xyz7( 1))
+              tmp( 2,2)= expval*(xyz5( 2)*five +xyz7( 2))
+              tmp( 3,2)= expval*(xyz5( 3)*five +xyz7( 3))
+              tmp( 4,2)= expval*(xyz5( 4)*four +xyz7( 4))
+              tmp( 5,2)= expval*(xyz5( 5)*four +xyz7( 5))
+              tmp( 6,2)= expval*(xyz5( 6)*four +xyz7( 6))
+              tmp( 7,2)= expval*(xyz5( 7)*three+xyz7( 7))
+              tmp( 8,2)= expval*(xyz5( 8)*three+xyz7( 8))
+              tmp( 9,2)= expval*(xyz5( 9)*three+xyz7( 9))
+              tmp(10,2)= expval*(xyz5(10)*three+xyz7(10))
+              tmp(11,2)= expval*(xyz5(11)*two  +xyz7(11))
+              tmp(12,2)= expval*(xyz5(12)*two  +xyz7(12))
+              tmp(13,2)= expval*(xyz5(13)*two  +xyz7(13))
+              tmp(14,2)= expval*(xyz5(14)*two  +xyz7(14))
+              tmp(15,2)= expval*(xyz5(15)*two  +xyz7(15))
+              tmp(16,2)= expval*(xyz5(16)      +xyz7(16))
+              tmp(17,2)= expval*(xyz5(17)      +xyz7(17))
+              tmp(18,2)= expval*(xyz5(18)      +xyz7(18))
+              tmp(19,2)= expval*(xyz5(19)      +xyz7(19))
+              tmp(20,2)= expval*(xyz5(20)      +xyz7(20))
+              tmp(21,2)= expval*(xyz5(21)      +xyz7(21))
+              tmp(22,2)= expval*(              +xyz7(22))
+              tmp(23,2)= expval*(              +xyz7(23))
+              tmp(24,2)= expval*(              +xyz7(24))
+              tmp(25,2)= expval*(              +xyz7(25))
+              tmp(26,2)= expval*(              +xyz7(26))
+              tmp(27,2)= expval*(              +xyz7(27))
+              tmp(28,2)= expval*(              +xyz7(28))
+              tmp( 1,3)= expval*(              +xyz7( 2))
+              tmp( 2,3)= expval*(xyz5( 1)      +xyz7( 4))
+              tmp( 3,3)= expval*(              +xyz7( 5))
+              tmp( 4,3)= expval*(xyz5( 2)*two  +xyz7( 7))
+              tmp( 5,3)= expval*(xyz5( 3)      +xyz7( 8))
+              tmp( 6,3)= expval*(              +xyz7( 9))
+              tmp( 7,3)= expval*(xyz5( 4)*three+xyz7(11))
+              tmp( 8,3)= expval*(xyz5( 5)*two  +xyz7(12))
+              tmp( 9,3)= expval*(xyz5( 6)      +xyz7(13))
+              tmp(10,3)= expval*(              +xyz7(14))
+              tmp(11,3)= expval*(xyz5( 7)*four +xyz7(16))
+              tmp(12,3)= expval*(xyz5( 8)*three+xyz7(17))
+              tmp(13,3)= expval*(xyz5( 9)*two  +xyz7(18))
+              tmp(14,3)= expval*(xyz5(10)      +xyz7(19))
+              tmp(15,3)= expval*(              +xyz7(20))
+              tmp(16,3)= expval*(xyz5(11)*five +xyz7(22))
+              tmp(17,3)= expval*(xyz5(12)*four +xyz7(23))
+              tmp(18,3)= expval*(xyz5(13)*three+xyz7(24))
+              tmp(19,3)= expval*(xyz5(14)*two  +xyz7(25))
+              tmp(20,3)= expval*(xyz5(15)      +xyz7(26))
+              tmp(21,3)= expval*(              +xyz7(27))
+              tmp(22,3)= expval*(xyz5(16)*six  +xyz7(29))
+              tmp(23,3)= expval*(xyz5(17)*five +xyz7(30))
+              tmp(24,3)= expval*(xyz5(18)*four +xyz7(31))
+              tmp(25,3)= expval*(xyz5(19)*three+xyz7(32))
+              tmp(26,3)= expval*(xyz5(20)*two  +xyz7(33))
+              tmp(27,3)= expval*(xyz5(21)      +xyz7(34))
+              tmp(28,3)= expval*(              +xyz7(35))
+              tmp( 1,4)= expval*(              +xyz7( 3))
+              tmp( 2,4)= expval*(              +xyz7( 5))
+              tmp( 3,4)= expval*(xyz5( 1)      +xyz7( 6))
+              tmp( 4,4)= expval*(              +xyz7( 8))
+              tmp( 5,4)= expval*(xyz5( 2)      +xyz7( 9))
+              tmp( 6,4)= expval*(xyz5( 3)*two  +xyz7(10))
+              tmp( 7,4)= expval*(              +xyz7(12))
+              tmp( 8,4)= expval*(xyz5( 4)      +xyz7(13))
+              tmp( 9,4)= expval*(xyz5( 5)*two  +xyz7(14))
+              tmp(10,4)= expval*(xyz5( 6)*three+xyz7(15))
+              tmp(11,4)= expval*(              +xyz7(17))
+              tmp(12,4)= expval*(xyz5( 7)      +xyz7(18))
+              tmp(13,4)= expval*(xyz5( 8)*two  +xyz7(19))
+              tmp(14,4)= expval*(xyz5( 9)*three+xyz7(20))
+              tmp(15,4)= expval*(xyz5(10)*four +xyz7(21))
+              tmp(16,4)= expval*(              +xyz7(23))
+              tmp(17,4)= expval*(xyz5(11)      +xyz7(24))
+              tmp(18,4)= expval*(xyz5(12)*two  +xyz7(25))
+              tmp(19,4)= expval*(xyz5(13)*three+xyz7(26))
+              tmp(20,4)= expval*(xyz5(14)*four +xyz7(27))
+              tmp(21,4)= expval*(xyz5(15)*five +xyz7(28))
+              tmp(22,4)= expval*(              +xyz7(30))
+              tmp(23,4)= expval*(xyz5(16)      +xyz7(31))
+              tmp(24,4)= expval*(xyz5(17)*two  +xyz7(32))
+              tmp(25,4)= expval*(xyz5(18)*three+xyz7(33))
+              tmp(26,4)= expval*(xyz5(19)*four +xyz7(34))
+              tmp(27,4)= expval*(xyz5(20)*five +xyz7(35))
+              tmp(28,4)= expval*(xyz5(21)*six  +xyz7(36))
+              if(nbf == 28) then
+                do jj= 1,4
+                  vao(ilocbf+ 1,jj)= vao(ilocbf+ 1,jj)+tmp( 1,jj)
+                  vao(ilocbf+ 2,jj)= vao(ilocbf+ 2,jj)+tmp( 2,jj)*sqrt11
+                  vao(ilocbf+ 3,jj)= vao(ilocbf+ 3,jj)+tmp( 3,jj)*sqrt11
+                  vao(ilocbf+ 4,jj)= vao(ilocbf+ 4,jj)+tmp( 4,jj)*sqrt33
+                  vao(ilocbf+ 5,jj)= vao(ilocbf+ 5,jj)+tmp( 5,jj)*sqrt99
+                  vao(ilocbf+ 6,jj)= vao(ilocbf+ 6,jj)+tmp( 6,jj)*sqrt33
+                  vao(ilocbf+ 7,jj)= vao(ilocbf+ 7,jj)+tmp( 7,jj)*sqrt231fifth
+                  vao(ilocbf+ 8,jj)= vao(ilocbf+ 8,jj)+tmp( 8,jj)*sqrt231
+                  vao(ilocbf+ 9,jj)= vao(ilocbf+ 9,jj)+tmp( 9,jj)*sqrt231
+                  vao(ilocbf+10,jj)= vao(ilocbf+10,jj)+tmp(10,jj)*sqrt231fifth
+                  vao(ilocbf+11,jj)= vao(ilocbf+11,jj)+tmp(11,jj)*sqrt33
+                  vao(ilocbf+12,jj)= vao(ilocbf+12,jj)+tmp(12,jj)*sqrt231
+                  vao(ilocbf+13,jj)= vao(ilocbf+13,jj)+tmp(13,jj)*sqrt385
+                  vao(ilocbf+14,jj)= vao(ilocbf+14,jj)+tmp(14,jj)*sqrt231
+                  vao(ilocbf+15,jj)= vao(ilocbf+15,jj)+tmp(15,jj)*sqrt33
+                  vao(ilocbf+16,jj)= vao(ilocbf+16,jj)+tmp(16,jj)*sqrt11
+                  vao(ilocbf+17,jj)= vao(ilocbf+17,jj)+tmp(17,jj)*sqrt99
+                  vao(ilocbf+18,jj)= vao(ilocbf+18,jj)+tmp(18,jj)*sqrt231
+                  vao(ilocbf+19,jj)= vao(ilocbf+19,jj)+tmp(19,jj)*sqrt231
+                  vao(ilocbf+20,jj)= vao(ilocbf+20,jj)+tmp(20,jj)*sqrt99
+                  vao(ilocbf+21,jj)= vao(ilocbf+21,jj)+tmp(21,jj)*sqrt11
+                  vao(ilocbf+22,jj)= vao(ilocbf+22,jj)+tmp(22,jj)
+                  vao(ilocbf+23,jj)= vao(ilocbf+23,jj)+tmp(23,jj)*sqrt11
+                  vao(ilocbf+24,jj)= vao(ilocbf+24,jj)+tmp(24,jj)*sqrt33
+                  vao(ilocbf+25,jj)= vao(ilocbf+25,jj)+tmp(25,jj)*sqrt231fifth
+                  vao(ilocbf+26,jj)= vao(ilocbf+26,jj)+tmp(26,jj)*sqrt33
+                  vao(ilocbf+27,jj)= vao(ilocbf+27,jj)+tmp(27,jj)*sqrt11
+                  vao(ilocbf+28,jj)= vao(ilocbf+28,jj)+tmp(28,jj)
+                enddo
+              else
+                do jj= 1,4
+                  vao(ilocbf+ 1,jj)= vao(ilocbf+ 1,jj) &
+&                                  +(tmp(2,jj)*six-tmp(7,jj)*p20+tmp(16,jj)*six)*faci1
+                  vao(ilocbf+ 2,jj)= vao(ilocbf+ 2,jj) &
+&                                  +(tmp(5,jj)*five-tmp(12,jj)*ten+tmp(23,jj))*faci2
+                  vao(ilocbf+ 3,jj)= vao(ilocbf+ 3,jj) &
+&                                  +(-tmp(2,jj)*four+tmp(9,jj)*p40+tmp(16,jj)*four &
+&                                   -tmp(18,jj)*p40)*faci3
+                  vao(ilocbf+ 4,jj)= vao(ilocbf+ 4,jj) &
+&                                  +(-tmp(5,jj)*p9-tmp(12,jj)*six+tmp(14,jj)*p24 &
+&                                   +tmp(23,jj)*three-tmp(25,jj)*eight)*faci4
+                  vao(ilocbf+ 5,jj)= vao(ilocbf+ 5,jj) &
+&                                  +(tmp(2,jj)*two+tmp(7,jj)*four-tmp(9,jj)*p32 &
+&                                   +tmp(16,jj)*two-tmp(18,jj)*p32+tmp(20,jj)*p32)*faci5
+                  vao(ilocbf+ 6,jj)= vao(ilocbf+ 6,jj) &
+&                                  +(tmp(5,jj)*five+tmp(12,jj)*ten-tmp(14,jj)*p20 &
+&                                   +tmp(23,jj)*five-tmp(25,jj)*p20+tmp(27,jj)*eight)*faci6
+                  vao(ilocbf+ 7,jj)= vao(ilocbf+ 7,jj) &
+&                                  +(-tmp(1,jj)*five-tmp(4,jj)*p15+tmp(6,jj)*p90 &
+&                                   -tmp(11,jj)*p15+tmp(13,jj)*p180-tmp(15,jj)*p120 &
+&                                   -tmp(22,jj)*five+tmp(24,jj)*p90-tmp(26,jj)*p120 &
+&                                   +tmp(28,jj)*p16)*sixteenth
+                  vao(ilocbf+ 8,jj)= vao(ilocbf+ 8,jj) &
+&                                  +(tmp(3,jj)*five+tmp(8,jj)*ten-tmp(10,jj)*p20 &
+&                                   +tmp(17,jj)*five-tmp(19,jj)*p20+tmp(21,jj)*eight)*faci6
+                  vao(ilocbf+ 9,jj)= vao(ilocbf+ 9,jj) &
+&                                  +(tmp(1,jj)+tmp(4,jj)-tmp(6,jj)*p16-tmp(11,jj) &
+&                                   +tmp(15,jj)*p16-tmp(22,jj)+tmp(24,jj)*p16 &
+&                                   -tmp(26,jj)*p16)*faci5
+                  vao(ilocbf+10,jj)= vao(ilocbf+10,jj) &
+&                                  +(-tmp(3,jj)*three+tmp(8,jj)*six+tmp(10,jj)*eight &
+&                                   +tmp(17,jj)*p9-tmp(19,jj)*p24)*faci4
+                  vao(ilocbf+11,jj)= vao(ilocbf+11,jj) &
+&                                  +(-tmp(1,jj)+tmp(4,jj)*five+tmp(6,jj)*ten+tmp(11,jj)*five &
+&                                   -tmp(13,jj)*p60-tmp(22,jj)+tmp(24,jj)*ten)*faci3
+                  vao(ilocbf+12,jj)= vao(ilocbf+12,jj) &
+&                                  +(tmp(3,jj)-tmp(8,jj)*ten+tmp(17,jj)*five)*faci2
+                  vao(ilocbf+13,jj)= vao(ilocbf+13,jj) &
+&                                  +(tmp(1,jj)-tmp(4,jj)*p15+tmp(11,jj)*p15-tmp(22,jj))*faci1
+                enddo
+              endif
+            enddo
+!
+            do ii= 1,nbf
+              if(abs(vao(ilocbf+ii,1))+abs(vao(ilocbf+ii,2)) &
+&               +abs(vao(ilocbf+ii,3))+abs(vao(ilocbf+ii,4)) > aocutoff) then
+                do jj= 1,neleca
+                  vmo(jj,1)= vmo(jj,1)+vao(ilocbf+ii,1)*transcmo(jj,ilocbf+ii)
+                  vmo(jj,2)= vmo(jj,2)+vao(ilocbf+ii,2)*transcmo(jj,ilocbf+ii)
+                  vmo(jj,3)= vmo(jj,3)+vao(ilocbf+ii,3)*transcmo(jj,ilocbf+ii)
+                  vmo(jj,4)= vmo(jj,4)+vao(ilocbf+ii,4)*transcmo(jj,ilocbf+ii)
+                enddo
+              endif
+            enddo
           case default
-            write(*,'(" Error! Subroutine Gridraomo supports up to g functions.")')
+            write(*,'(" Error! Subroutine Gridraomo supports up to i functions.")')
             call iabort
         end select
       enddo
