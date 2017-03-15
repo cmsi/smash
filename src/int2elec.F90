@@ -915,7 +915,7 @@ end
             enddo
           enddo
         enddo
-!ishimura
+!
       elseif(nbfijkl(1) == 11) then
         do j= 1,ncartijkl(2)
           do k= 1,ncartijkl(3)
@@ -967,6 +967,7 @@ end
             enddo
           enddo
         enddo
+!
       elseif(nbfijkl(1) == 13) then
         do j= 1,ncartijkl(2)
           do k= 1,ncartijkl(3)
@@ -1130,7 +1131,7 @@ end
             enddo
           enddo
         enddo
-!ishimura
+!
       elseif(nbfijkl(2) == 11) then
         do i= 1,nbfijkl(1)
           do k= 1,ncartijkl(3)
@@ -1182,6 +1183,7 @@ end
             enddo
           enddo
         enddo
+!
       elseif(nbfijkl(2) == 13) then
         do i= 1,nbfijkl(1)
           do k= 1,ncartijkl(3)
@@ -1345,7 +1347,7 @@ end
             enddo
           enddo
         enddo
-!ishimura
+!
       elseif(nbfijkl(3) == 11)then
         do i= 1,nbfijkl(1)
           do j= 1,nbfijkl(2)
@@ -1397,6 +1399,7 @@ end
             enddo
           enddo
         enddo
+!
       elseif(nbfijkl(3) == 13)then
         do i= 1,nbfijkl(1)
           do j= 1,nbfijkl(2)
@@ -1579,7 +1582,7 @@ end
             enddo
           enddo
         enddo
-!ishimura
+!
       elseif(nbfijkl(4) == 11)then
         do i= 1,nbfijkl(1)
           do j= 1,nbfijkl(2)
@@ -1634,6 +1637,7 @@ end
             enddo
           enddo
         enddo
+!
       elseif(nbfijkl(4) == 13)then
         do i= 1,nbfijkl(1)
           do j= 1,nbfijkl(2)
