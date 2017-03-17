@@ -630,12 +630,50 @@ end
 ! Calculate closed-shell AO and MO values for a grid point
 !
       use modmolecule, only : natom, neleca
+      use modbasis, only : nao
+      implicit none
+      integer :: ii, jj
+      real(8),parameter :: zero=0.0D+00
+      real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom), transcmo(neleca,nao), aocutoff
+      real(8),intent(out) :: vao(nao,4), vmo(neleca,4)
+!
+! Calculate AO values for a grid point
+!
+      vao(:,:)= zero
+      call gridao(vao,xyzpt,rsqrd)
+!
+! Calculate MO values for a grid point
+!
+      vmo(:,:)= zero
+      do ii= 1,nao
+        if(abs(vao(ii,1))+abs(vao(ii,2)) &
+&         +abs(vao(ii,3))+abs(vao(ii,4)) > aocutoff) then
+          do jj= 1,neleca
+            vmo(jj,1)= vmo(jj,1)+vao(ii,1)*transcmo(jj,ii)
+            vmo(jj,2)= vmo(jj,2)+vao(ii,2)*transcmo(jj,ii)
+            vmo(jj,3)= vmo(jj,3)+vao(ii,3)*transcmo(jj,ii)
+            vmo(jj,4)= vmo(jj,4)+vao(ii,4)*transcmo(jj,ii)
+          enddo
+        endif
+      enddo
+!
+      return
+end
+
+
+!-------------------------------------
+  subroutine gridao(vao,xyzpt,rsqrd)
+!-------------------------------------
+!
+! Calculate AO values for a grid point
+!
+      use modmolecule, only : natom
       use modbasis, only : ex, coeff, nshell, nao, locbf, locatom, &
 &                          mprim, mbf, mtype
       use modthresh, only : threshex
       implicit none
       integer :: icount, ish, numprim, iatom, iprim, nang, nbf, ilocbf, ii, jj
-      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
+      real(8),parameter :: half=0.5D+00, one=1.0D+00, two=2.0D+00
       real(8),parameter :: three=3.0D+00, four=4.0D+00, five=5.0D+00, six=6.0D+00
       real(8),parameter :: eight=8.0D+00, p9=9.0D+00, ten=10.0D+00, twelve=12.0D+00
       real(8),parameter :: p15=15.0D+00, p16=16.0D+00, p18=18.0D+00, p20=20.0D+00
@@ -672,13 +710,11 @@ end
       real(8),parameter :: faci4=0.90571104663683991D+00 ! sqrt(105/2)/8
       real(8),parameter :: faci5=0.45285552331841995D+00 ! sqrt(105/2)/16
       real(8),parameter :: faci6=0.57282196186948000D+00 ! sqrt(21)/8
-      real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom), transcmo(neleca,nao), aocutoff
-      real(8),intent(out) :: vao(nao,4), vmo(neleca,4)
+      real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom)
+      real(8),intent(inout) :: vao(nao,4)
       real(8) :: expval, fac, tmp(28,4), xx, yy, zz, xy, xz, yz
       real(8) :: xyz3(10), xyz4(15), xyz5(21), xyz6(28), xyz7(36)
 !
-      vao(:,:)= zero
-      vmo(:,:)= zero
       icount= 0
       do ish= 1,nshell
         nang= mtype(ish)
@@ -695,21 +731,12 @@ end
               icount= icount+1
               if(ex(icount)*rsqrd(iatom) > threshex) cycle
               expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              vao(ilocbf+1,1)= vao(ilocbf+1,1)+expval
               fac= ex(icount)*expval*two
+              vao(ilocbf+1,1)= vao(ilocbf+1,1)+expval
               vao(ilocbf+1,2)= vao(ilocbf+1,2)-fac*xyzpt(1,iatom)
               vao(ilocbf+1,3)= vao(ilocbf+1,3)-fac*xyzpt(2,iatom)
               vao(ilocbf+1,4)= vao(ilocbf+1,4)-fac*xyzpt(3,iatom)
             enddo
-            if(abs(vao(ilocbf+1,1))+abs(vao(ilocbf+1,2)) &
-&             +abs(vao(ilocbf+1,3))+abs(vao(ilocbf+1,4)) > aocutoff) then
-              do jj= 1,neleca
-                vmo(jj,1)= vmo(jj,1)+vao(ilocbf+1,1)*transcmo(jj,ilocbf+1)
-                vmo(jj,2)= vmo(jj,2)+vao(ilocbf+1,2)*transcmo(jj,ilocbf+1)
-                vmo(jj,3)= vmo(jj,3)+vao(ilocbf+1,3)*transcmo(jj,ilocbf+1)
-                vmo(jj,4)= vmo(jj,4)+vao(ilocbf+1,4)*transcmo(jj,ilocbf+1)
-              enddo
-            endif
 !
 ! P function
 !
@@ -718,10 +745,10 @@ end
               icount= icount+1
               if(ex(icount)*rsqrd(iatom) > threshex) cycle
               expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
+              fac= ex(icount)*expval*two
               vao(ilocbf+1,1)= vao(ilocbf+1,1)+expval*xyzpt(1,iatom)
               vao(ilocbf+2,1)= vao(ilocbf+2,1)+expval*xyzpt(2,iatom)
               vao(ilocbf+3,1)= vao(ilocbf+3,1)+expval*xyzpt(3,iatom)
-              fac= ex(icount)*expval*two
               xx= xyzpt(1,iatom)*xyzpt(1,iatom)
               yy= xyzpt(2,iatom)*xyzpt(2,iatom)
               zz= xyzpt(3,iatom)*xyzpt(3,iatom)
@@ -729,25 +756,14 @@ end
               xz= xyzpt(1,iatom)*xyzpt(3,iatom)
               yz= xyzpt(2,iatom)*xyzpt(3,iatom)
               vao(ilocbf+1,2)= vao(ilocbf+1,2)+expval-fac*xx
-              vao(ilocbf+2,2)= vao(ilocbf+2,2)               -fac*xy
-              vao(ilocbf+3,2)= vao(ilocbf+3,2)               -fac*xz
-              vao(ilocbf+1,3)= vao(ilocbf+1,3)               -fac*xy
+              vao(ilocbf+2,2)= vao(ilocbf+2,2)       -fac*xy
+              vao(ilocbf+3,2)= vao(ilocbf+3,2)       -fac*xz
+              vao(ilocbf+1,3)= vao(ilocbf+1,3)       -fac*xy
               vao(ilocbf+2,3)= vao(ilocbf+2,3)+expval-fac*yy
-              vao(ilocbf+3,3)= vao(ilocbf+3,3)               -fac*yz
-              vao(ilocbf+1,4)= vao(ilocbf+1,4)               -fac*xz
-              vao(ilocbf+2,4)= vao(ilocbf+2,4)               -fac*yz
+              vao(ilocbf+3,3)= vao(ilocbf+3,3)       -fac*yz
+              vao(ilocbf+1,4)= vao(ilocbf+1,4)       -fac*xz
+              vao(ilocbf+2,4)= vao(ilocbf+2,4)       -fac*yz
               vao(ilocbf+3,4)= vao(ilocbf+3,4)+expval-fac*zz
-            enddo
-            do ii= 1,3
-              if(abs(vao(ilocbf+ii,1))+abs(vao(ilocbf+ii,2)) &
-&               +abs(vao(ilocbf+ii,3))+abs(vao(ilocbf+ii,4)) > aocutoff) then
-                do jj= 1,neleca
-                  vmo(jj,1)= vmo(jj,1)+vao(ilocbf+ii,1)*transcmo(jj,ilocbf+ii)
-                  vmo(jj,2)= vmo(jj,2)+vao(ilocbf+ii,2)*transcmo(jj,ilocbf+ii)
-                  vmo(jj,3)= vmo(jj,3)+vao(ilocbf+ii,3)*transcmo(jj,ilocbf+ii)
-                  vmo(jj,4)= vmo(jj,4)+vao(ilocbf+ii,4)*transcmo(jj,ilocbf+ii)
-                enddo
-              endif
             enddo
 !
 ! D function
@@ -805,18 +821,6 @@ end
                   vao(ilocbf+3,jj)= vao(ilocbf+3,jj)+tmp(6,jj)-(tmp(1,jj)+tmp(4,jj))*half
                   vao(ilocbf+4,jj)= vao(ilocbf+4,jj)+tmp(3,jj)
                   vao(ilocbf+5,jj)= vao(ilocbf+5,jj)+(tmp(1,jj)-tmp(4,jj))*sqrt3h
-                enddo
-              endif
-            enddo
-!
-            do ii= 1,nbf
-              if(abs(vao(ilocbf+ii,1))+abs(vao(ilocbf+ii,2)) &
-&               +abs(vao(ilocbf+ii,3))+abs(vao(ilocbf+ii,4)) > aocutoff) then
-                do jj= 1,neleca
-                  vmo(jj,1)= vmo(jj,1)+vao(ilocbf+ii,1)*transcmo(jj,ilocbf+ii)
-                  vmo(jj,2)= vmo(jj,2)+vao(ilocbf+ii,2)*transcmo(jj,ilocbf+ii)
-                  vmo(jj,3)= vmo(jj,3)+vao(ilocbf+ii,3)*transcmo(jj,ilocbf+ii)
-                  vmo(jj,4)= vmo(jj,4)+vao(ilocbf+ii,4)*transcmo(jj,ilocbf+ii)
                 enddo
               endif
             enddo
@@ -913,18 +917,6 @@ end
                   vao(ilocbf+5,jj)= vao(ilocbf+5,jj)+(-tmp(1,jj)-tmp(4,jj)+four*tmp(6,jj))*facf3
                   vao(ilocbf+6,jj)= vao(ilocbf+6,jj)+( tmp(3,jj)-tmp(8,jj)               )*facf4
                   vao(ilocbf+7,jj)= vao(ilocbf+7,jj)+( tmp(1,jj)-three*tmp(4,jj)         )*facf1
-                enddo
-              endif
-            enddo
-!
-            do ii= 1,nbf
-              if(abs(vao(ilocbf+ii,1))+abs(vao(ilocbf+ii,2)) &
-&               +abs(vao(ilocbf+ii,3))+abs(vao(ilocbf+ii,4)) > aocutoff) then
-                do jj= 1,neleca
-                  vmo(jj,1)= vmo(jj,1)+vao(ilocbf+ii,1)*transcmo(jj,ilocbf+ii)
-                  vmo(jj,2)= vmo(jj,2)+vao(ilocbf+ii,2)*transcmo(jj,ilocbf+ii)
-                  vmo(jj,3)= vmo(jj,3)+vao(ilocbf+ii,3)*transcmo(jj,ilocbf+ii)
-                  vmo(jj,4)= vmo(jj,4)+vao(ilocbf+ii,4)*transcmo(jj,ilocbf+ii)
                 enddo
               endif
             enddo
@@ -1068,18 +1060,6 @@ end
 &                                                     -tmp(13,jj)*six)*facg5
                   vao(ilocbf+8,jj)= vao(ilocbf+8,jj)+(tmp(3,jj)-tmp(8,jj)*three)*facg2
                   vao(ilocbf+9,jj)= vao(ilocbf+9,jj)+(tmp(1,jj)+tmp(11,jj)-tmp(4,jj)*six)*facg6
-                enddo
-              endif
-            enddo
-!
-            do ii= 1,nbf
-              if(abs(vao(ilocbf+ii,1))+abs(vao(ilocbf+ii,2)) &
-&               +abs(vao(ilocbf+ii,3))+abs(vao(ilocbf+ii,4)) > aocutoff) then
-                do jj= 1,neleca
-                  vmo(jj,1)= vmo(jj,1)+vao(ilocbf+ii,1)*transcmo(jj,ilocbf+ii)
-                  vmo(jj,2)= vmo(jj,2)+vao(ilocbf+ii,2)*transcmo(jj,ilocbf+ii)
-                  vmo(jj,3)= vmo(jj,3)+vao(ilocbf+ii,3)*transcmo(jj,ilocbf+ii)
-                  vmo(jj,4)= vmo(jj,4)+vao(ilocbf+ii,4)*transcmo(jj,ilocbf+ii)
                 enddo
               endif
             enddo
@@ -1275,18 +1255,6 @@ end
                   vao(ilocbf+10,jj)= vao(ilocbf+10,jj)+(tmp(3,jj)-tmp(8,jj)*six+tmp(17,jj))*fach2
                   vao(ilocbf+11,jj)= vao(ilocbf+11,jj)+(tmp(1,jj)-tmp(4,jj)*ten &
 &                                                      +tmp(11,jj)*five)*fach1
-                enddo
-              endif
-            enddo
-!
-            do ii= 1,nbf
-              if(abs(vao(ilocbf+ii,1))+abs(vao(ilocbf+ii,2)) &
-&               +abs(vao(ilocbf+ii,3))+abs(vao(ilocbf+ii,4)) > aocutoff) then
-                do jj= 1,neleca
-                  vmo(jj,1)= vmo(jj,1)+vao(ilocbf+ii,1)*transcmo(jj,ilocbf+ii)
-                  vmo(jj,2)= vmo(jj,2)+vao(ilocbf+ii,2)*transcmo(jj,ilocbf+ii)
-                  vmo(jj,3)= vmo(jj,3)+vao(ilocbf+ii,3)*transcmo(jj,ilocbf+ii)
-                  vmo(jj,4)= vmo(jj,4)+vao(ilocbf+ii,4)*transcmo(jj,ilocbf+ii)
                 enddo
               endif
             enddo
@@ -1558,26 +1526,15 @@ end
                 enddo
               endif
             enddo
-!
-            do ii= 1,nbf
-              if(abs(vao(ilocbf+ii,1))+abs(vao(ilocbf+ii,2)) &
-&               +abs(vao(ilocbf+ii,3))+abs(vao(ilocbf+ii,4)) > aocutoff) then
-                do jj= 1,neleca
-                  vmo(jj,1)= vmo(jj,1)+vao(ilocbf+ii,1)*transcmo(jj,ilocbf+ii)
-                  vmo(jj,2)= vmo(jj,2)+vao(ilocbf+ii,2)*transcmo(jj,ilocbf+ii)
-                  vmo(jj,3)= vmo(jj,3)+vao(ilocbf+ii,3)*transcmo(jj,ilocbf+ii)
-                  vmo(jj,4)= vmo(jj,4)+vao(ilocbf+ii,4)*transcmo(jj,ilocbf+ii)
-                enddo
-              endif
-            enddo
           case default
-            write(*,'(" Error! Subroutine Gridraomo supports up to i functions.")')
+            write(*,'(" Error! Subroutine Gridao supports up to i functions.")')
             call iabort
         end select
       enddo
 !
       return
 end
+
 
 
 !-------------------------------------------------------------------------------
