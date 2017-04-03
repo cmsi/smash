@@ -121,7 +121,9 @@ end
       integer :: i, j, k, l, iatom, jatom, katom, latom, iloc, jloc, kloc, lloc, ider
       integer :: nangijkl(4), nbfijkl(4), nprimijkl(4)
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00, three=3.0D+00
-      real(8),parameter :: four=4.0D+00, five=5.0D+00, six=6.0D+00, eight=8.0D+00, p24=24.0D+00
+      real(8),parameter :: four=4.0D+00, five=5.0D+00, six=6.0D+00, eight=8.0D+00, ten=10.0D+00
+      real(8),parameter :: twelve=12.0D+00, p15=15.0D+00, p24=24.0D+00, p30=30.0D+00
+      real(8),parameter :: p40=40.0D+00
       real(8),parameter :: third=3.333333333333333D-01, eighth=0.125D+00
       real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
       real(8),parameter :: sqrtthird=0.5773502691896258D+00, sqrtfifth=0.4472135954999579D+00
@@ -147,11 +149,16 @@ end
       real(8),parameter :: facg4=0.79056941504209483D+00 ! sqrt(5/2)/2
       real(8),parameter :: facg5=0.55901699437494742D+00 ! sqrt(5)/4
       real(8),parameter :: facg6=0.73950997288745200D+00 ! sqrt(35)/8
+      real(8),parameter :: fach1=0.70156076002011400D+00 ! sqrt(63/2)/8
+      real(8),parameter :: fach2=2.21852991866235601D+00 ! sqrt(315)/8
+      real(8),parameter :: fach3=0.52291251658379721D+00 ! sqrt(35/2)/8
+      real(8),parameter :: fach4=2.56173769148989959D+00 ! sqrt(105)/4
+      real(8),parameter :: fach5=0.48412291827592711D+00 ! sqrt(15)/8
       real(8),intent(in) :: pdmtrx(maxdim,maxdim,maxdim,maxdim)
       real(8),intent(out) :: twoeri(maxgraddim,maxgraddim,maxgraddim,maxgraddim)
       real(8),intent(out) :: dtwoeri(maxdim,maxdim,maxdim,maxdim,3)
       real(8),intent(inout) :: egrad2(3,natom)
-      real(8) :: gradtwo(3,4), xyzijkl(3,4), exijkl(mxprsh,4), coijkl(mxprsh,4), work(15)
+      real(8) :: gradtwo(3,4), xyzijkl(3,4), exijkl(mxprsh,4), coijkl(mxprsh,4), work(21)
 !
       iatom= locatom(ish)
       jatom= locatom(jsh)
@@ -684,32 +691,62 @@ end
                 enddo
               enddo
             enddo
-            do ider= 1,3
-              do i= 1,nbfijkl(1)
-                do j= 1,nbfijkl(2)
-                  do k= 1,nbfijkl(3)
-                    dtwoeri( 2,k,j,i,ider)= dtwoeri( 2,k,j,i,ider)*three
-                    dtwoeri( 3,k,j,i,ider)= dtwoeri( 3,k,j,i,ider)*three
-                    dtwoeri( 4,k,j,i,ider)= dtwoeri( 4,k,j,i,ider)*sqrt21
-                    dtwoeri( 5,k,j,i,ider)= dtwoeri( 5,k,j,i,ider)*sqrt63
-                    dtwoeri( 6,k,j,i,ider)= dtwoeri( 6,k,j,i,ider)*sqrt21
-                    dtwoeri( 7,k,j,i,ider)= dtwoeri( 7,k,j,i,ider)*sqrt21
-                    dtwoeri( 8,k,j,i,ider)= dtwoeri( 8,k,j,i,ider)*sqrt105
-                    dtwoeri( 9,k,j,i,ider)= dtwoeri( 9,k,j,i,ider)*sqrt105
-                    dtwoeri(10,k,j,i,ider)= dtwoeri(10,k,j,i,ider)*sqrt21
-                    dtwoeri(11,k,j,i,ider)= dtwoeri(11,k,j,i,ider)*three
-                    dtwoeri(12,k,j,i,ider)= dtwoeri(12,k,j,i,ider)*sqrt63
-                    dtwoeri(13,k,j,i,ider)= dtwoeri(13,k,j,i,ider)*sqrt105
-                    dtwoeri(14,k,j,i,ider)= dtwoeri(14,k,j,i,ider)*sqrt63
-                    dtwoeri(15,k,j,i,ider)= dtwoeri(15,k,j,i,ider)*three
-                    dtwoeri(17,k,j,i,ider)= dtwoeri(17,k,j,i,ider)*three
-                    dtwoeri(18,k,j,i,ider)= dtwoeri(18,k,j,i,ider)*sqrt21
-                    dtwoeri(19,k,j,i,ider)= dtwoeri(19,k,j,i,ider)*sqrt21
-                    dtwoeri(20,k,j,i,ider)= dtwoeri(20,k,j,i,ider)*three
+            if(mbf(lsh) == 11) then
+              do ider= 1,3
+                do i= 1,nbfijkl(1)
+                  do j= 1,nbfijkl(2)
+                    do k= 1,nbfijkl(3)
+                      do l= 1,21
+                        work(l)= dtwoeri(l,k,j,i,ider)
+                      enddo
+                      dtwoeri( 1,k,j,i,ider)=(work(2)*five-work(7)*ten+work(16))*fach1
+                      dtwoeri( 2,k,j,i,ider)=(work(5)*four-work(12)*four)*fach2
+                      dtwoeri( 3,k,j,i,ider)=(-work(2)*three-work(7)*two+work(9)*p24 &
+&                                            +work(16)-work(18)*eight)*fach3
+                      dtwoeri( 4,k,j,i,ider)=(-work(5)*two-work(12)*two+work(14)*four)*fach4
+                      dtwoeri( 5,k,j,i,ider)=(work(2)+work(7)*two-work(9)*twelve+work(16) &
+&                                            -work(18)*twelve+work(20)*eight)*fach5
+                      dtwoeri( 6,k,j,i,ider)=(work(3)*p15+work(8)*p30-work(10)*p40 &
+&                                            +work(17)*p15-work(19)*p40+work(21)*eight)*eighth
+                      dtwoeri( 7,k,j,i,ider)=(work(1)+work(4)*two-work(6)*twelve+work(11) &
+&                                            -work(13)*twelve+work(15)*eight)*fach5
+                      dtwoeri( 8,k,j,i,ider)=(-work(3)+work(10)*two+work(17)-work(19)*two)*fach4
+                      dtwoeri( 9,k,j,i,ider)=(-work(1)+work(4)*two+work(6)*eight &
+&                                            +work(11)*three-work(13)*p24)*fach3
+                      dtwoeri(10,k,j,i,ider)=(work(3)-work(8)*six+work(17))*fach2
+                      dtwoeri(11,k,j,i,ider)=(work(1)-work(4)*ten+work(11)*five)*fach1
+                    enddo
                   enddo
                 enddo
               enddo
-            enddo
+            else
+              do ider= 1,3
+                do i= 1,nbfijkl(1)
+                  do j= 1,nbfijkl(2)
+                    do k= 1,nbfijkl(3)
+                      dtwoeri( 2,k,j,i,ider)= dtwoeri( 2,k,j,i,ider)*three
+                      dtwoeri( 3,k,j,i,ider)= dtwoeri( 3,k,j,i,ider)*three
+                      dtwoeri( 4,k,j,i,ider)= dtwoeri( 4,k,j,i,ider)*sqrt21
+                      dtwoeri( 5,k,j,i,ider)= dtwoeri( 5,k,j,i,ider)*sqrt63
+                      dtwoeri( 6,k,j,i,ider)= dtwoeri( 6,k,j,i,ider)*sqrt21
+                      dtwoeri( 7,k,j,i,ider)= dtwoeri( 7,k,j,i,ider)*sqrt21
+                      dtwoeri( 8,k,j,i,ider)= dtwoeri( 8,k,j,i,ider)*sqrt105
+                      dtwoeri( 9,k,j,i,ider)= dtwoeri( 9,k,j,i,ider)*sqrt105
+                      dtwoeri(10,k,j,i,ider)= dtwoeri(10,k,j,i,ider)*sqrt21
+                      dtwoeri(11,k,j,i,ider)= dtwoeri(11,k,j,i,ider)*three
+                      dtwoeri(12,k,j,i,ider)= dtwoeri(12,k,j,i,ider)*sqrt63
+                      dtwoeri(13,k,j,i,ider)= dtwoeri(13,k,j,i,ider)*sqrt105
+                      dtwoeri(14,k,j,i,ider)= dtwoeri(14,k,j,i,ider)*sqrt63
+                      dtwoeri(15,k,j,i,ider)= dtwoeri(15,k,j,i,ider)*three
+                      dtwoeri(17,k,j,i,ider)= dtwoeri(17,k,j,i,ider)*three
+                      dtwoeri(18,k,j,i,ider)= dtwoeri(18,k,j,i,ider)*sqrt21
+                      dtwoeri(19,k,j,i,ider)= dtwoeri(19,k,j,i,ider)*sqrt21
+                      dtwoeri(20,k,j,i,ider)= dtwoeri(20,k,j,i,ider)*three
+                    enddo
+                  enddo
+                enddo
+              enddo
+            endif
         end select
       endif
 !
@@ -1210,32 +1247,62 @@ end
                 enddo
               enddo
             enddo
-            do ider= 1,3
-              do i= 1,nbfijkl(1)
-                do j= 1,nbfijkl(2)
-                  do l= 1,nbfijkl(4)
-                    dtwoeri(l, 2,j,i,ider)= dtwoeri(l, 2,j,i,ider)*three
-                    dtwoeri(l, 3,j,i,ider)= dtwoeri(l, 3,j,i,ider)*three
-                    dtwoeri(l, 4,j,i,ider)= dtwoeri(l, 4,j,i,ider)*sqrt21
-                    dtwoeri(l, 5,j,i,ider)= dtwoeri(l, 5,j,i,ider)*sqrt63
-                    dtwoeri(l, 6,j,i,ider)= dtwoeri(l, 6,j,i,ider)*sqrt21
-                    dtwoeri(l, 7,j,i,ider)= dtwoeri(l, 7,j,i,ider)*sqrt21
-                    dtwoeri(l, 8,j,i,ider)= dtwoeri(l, 8,j,i,ider)*sqrt105
-                    dtwoeri(l, 9,j,i,ider)= dtwoeri(l, 9,j,i,ider)*sqrt105
-                    dtwoeri(l,10,j,i,ider)= dtwoeri(l,10,j,i,ider)*sqrt21
-                    dtwoeri(l,11,j,i,ider)= dtwoeri(l,11,j,i,ider)*three
-                    dtwoeri(l,12,j,i,ider)= dtwoeri(l,12,j,i,ider)*sqrt63
-                    dtwoeri(l,13,j,i,ider)= dtwoeri(l,13,j,i,ider)*sqrt105
-                    dtwoeri(l,14,j,i,ider)= dtwoeri(l,14,j,i,ider)*sqrt63
-                    dtwoeri(l,15,j,i,ider)= dtwoeri(l,15,j,i,ider)*three
-                    dtwoeri(l,17,j,i,ider)= dtwoeri(l,17,j,i,ider)*three
-                    dtwoeri(l,18,j,i,ider)= dtwoeri(l,18,j,i,ider)*sqrt21
-                    dtwoeri(l,19,j,i,ider)= dtwoeri(l,19,j,i,ider)*sqrt21
-                    dtwoeri(l,20,j,i,ider)= dtwoeri(l,20,j,i,ider)*three
+            if(mbf(ksh) == 11) then
+              do ider= 1,3
+                do i= 1,nbfijkl(1)
+                  do j= 1,nbfijkl(2)
+                    do l= 1,nbfijkl(4)
+                      do k= 1,21
+                        work(k)= dtwoeri(l,k,j,i,ider)
+                      enddo
+                      dtwoeri(l, 1,j,i,ider)=(work(2)*five-work(7)*ten+work(16))*fach1
+                      dtwoeri(l, 2,j,i,ider)=(work(5)*four-work(12)*four)*fach2
+                      dtwoeri(l, 3,j,i,ider)=(-work(2)*three-work(7)*two+work(9)*p24 &
+&                                            +work(16)-work(18)*eight)*fach3
+                      dtwoeri(l, 4,j,i,ider)=(-work(5)*two-work(12)*two+work(14)*four)*fach4
+                      dtwoeri(l, 5,j,i,ider)=(work(2)+work(7)*two-work(9)*twelve+work(16) &
+&                                            -work(18)*twelve+work(20)*eight)*fach5
+                      dtwoeri(l, 6,j,i,ider)=(work(3)*p15+work(8)*p30-work(10)*p40 &
+&                                            +work(17)*p15-work(19)*p40+work(21)*eight)*eighth
+                      dtwoeri(l, 7,j,i,ider)=(work(1)+work(4)*two-work(6)*twelve+work(11) &
+&                                            -work(13)*twelve+work(15)*eight)*fach5
+                      dtwoeri(l, 8,j,i,ider)=(-work(3)+work(10)*two+work(17)-work(19)*two)*fach4
+                      dtwoeri(l, 9,j,i,ider)=(-work(1)+work(4)*two+work(6)*eight &
+&                                            +work(11)*three-work(13)*p24)*fach3
+                      dtwoeri(l,10,j,i,ider)=(work(3)-work(8)*six+work(17))*fach2
+                      dtwoeri(l,11,j,i,ider)=(work(1)-work(4)*ten+work(11)*five)*fach1
+                    enddo
                   enddo
                 enddo
               enddo
-            enddo
+            else
+              do ider= 1,3
+                do i= 1,nbfijkl(1)
+                  do j= 1,nbfijkl(2)
+                    do l= 1,nbfijkl(4)
+                      dtwoeri(l, 2,j,i,ider)= dtwoeri(l, 2,j,i,ider)*three
+                      dtwoeri(l, 3,j,i,ider)= dtwoeri(l, 3,j,i,ider)*three
+                      dtwoeri(l, 4,j,i,ider)= dtwoeri(l, 4,j,i,ider)*sqrt21
+                      dtwoeri(l, 5,j,i,ider)= dtwoeri(l, 5,j,i,ider)*sqrt63
+                      dtwoeri(l, 6,j,i,ider)= dtwoeri(l, 6,j,i,ider)*sqrt21
+                      dtwoeri(l, 7,j,i,ider)= dtwoeri(l, 7,j,i,ider)*sqrt21
+                      dtwoeri(l, 8,j,i,ider)= dtwoeri(l, 8,j,i,ider)*sqrt105
+                      dtwoeri(l, 9,j,i,ider)= dtwoeri(l, 9,j,i,ider)*sqrt105
+                      dtwoeri(l,10,j,i,ider)= dtwoeri(l,10,j,i,ider)*sqrt21
+                      dtwoeri(l,11,j,i,ider)= dtwoeri(l,11,j,i,ider)*three
+                      dtwoeri(l,12,j,i,ider)= dtwoeri(l,12,j,i,ider)*sqrt63
+                      dtwoeri(l,13,j,i,ider)= dtwoeri(l,13,j,i,ider)*sqrt105
+                      dtwoeri(l,14,j,i,ider)= dtwoeri(l,14,j,i,ider)*sqrt63
+                      dtwoeri(l,15,j,i,ider)= dtwoeri(l,15,j,i,ider)*three
+                      dtwoeri(l,17,j,i,ider)= dtwoeri(l,17,j,i,ider)*three
+                      dtwoeri(l,18,j,i,ider)= dtwoeri(l,18,j,i,ider)*sqrt21
+                      dtwoeri(l,19,j,i,ider)= dtwoeri(l,19,j,i,ider)*sqrt21
+                      dtwoeri(l,20,j,i,ider)= dtwoeri(l,20,j,i,ider)*three
+                    enddo
+                  enddo
+                enddo
+              enddo
+            endif
         end select
       endif
 !
@@ -1736,32 +1803,62 @@ end
                 enddo
               enddo
             enddo
-            do ider= 1,3
-              do i= 1,nbfijkl(1)
-                do k= 1,nbfijkl(3)
-                  do l= 1,nbfijkl(4)
-                    dtwoeri(l,k, 2,i,ider)= dtwoeri(l,k, 2,i,ider)*three
-                    dtwoeri(l,k, 3,i,ider)= dtwoeri(l,k, 3,i,ider)*three
-                    dtwoeri(l,k, 4,i,ider)= dtwoeri(l,k, 4,i,ider)*sqrt21
-                    dtwoeri(l,k, 5,i,ider)= dtwoeri(l,k, 5,i,ider)*sqrt63
-                    dtwoeri(l,k, 6,i,ider)= dtwoeri(l,k, 6,i,ider)*sqrt21
-                    dtwoeri(l,k, 7,i,ider)= dtwoeri(l,k, 7,i,ider)*sqrt21
-                    dtwoeri(l,k, 8,i,ider)= dtwoeri(l,k, 8,i,ider)*sqrt105
-                    dtwoeri(l,k, 9,i,ider)= dtwoeri(l,k, 9,i,ider)*sqrt105
-                    dtwoeri(l,k,10,i,ider)= dtwoeri(l,k,10,i,ider)*sqrt21
-                    dtwoeri(l,k,11,i,ider)= dtwoeri(l,k,11,i,ider)*three
-                    dtwoeri(l,k,12,i,ider)= dtwoeri(l,k,12,i,ider)*sqrt63
-                    dtwoeri(l,k,13,i,ider)= dtwoeri(l,k,13,i,ider)*sqrt105
-                    dtwoeri(l,k,14,i,ider)= dtwoeri(l,k,14,i,ider)*sqrt63
-                    dtwoeri(l,k,15,i,ider)= dtwoeri(l,k,15,i,ider)*three
-                    dtwoeri(l,k,17,i,ider)= dtwoeri(l,k,17,i,ider)*three
-                    dtwoeri(l,k,18,i,ider)= dtwoeri(l,k,18,i,ider)*sqrt21
-                    dtwoeri(l,k,19,i,ider)= dtwoeri(l,k,19,i,ider)*sqrt21
-                    dtwoeri(l,k,20,i,ider)= dtwoeri(l,k,20,i,ider)*three
+            if(mbf(jsh) == 11) then
+              do ider= 1,3
+                do i= 1,nbfijkl(1)
+                  do k= 1,nbfijkl(3)
+                    do l= 1,nbfijkl(4)
+                      do j= 1,21
+                        work(j)= dtwoeri(l,k,j,i,ider)
+                      enddo
+                      dtwoeri(l,k, 1,i,ider)=(work(2)*five-work(7)*ten+work(16))*fach1
+                      dtwoeri(l,k, 2,i,ider)=(work(5)*four-work(12)*four)*fach2
+                      dtwoeri(l,k, 3,i,ider)=(-work(2)*three-work(7)*two+work(9)*p24 &
+&                                            +work(16)-work(18)*eight)*fach3
+                      dtwoeri(l,k, 4,i,ider)=(-work(5)*two-work(12)*two+work(14)*four)*fach4
+                      dtwoeri(l,k, 5,i,ider)=(work(2)+work(7)*two-work(9)*twelve+work(16) &
+&                                            -work(18)*twelve+work(20)*eight)*fach5
+                      dtwoeri(l,k, 6,i,ider)=(work(3)*p15+work(8)*p30-work(10)*p40 &
+&                                            +work(17)*p15-work(19)*p40+work(21)*eight)*eighth
+                      dtwoeri(l,k, 7,i,ider)=(work(1)+work(4)*two-work(6)*twelve+work(11) &
+&                                            -work(13)*twelve+work(15)*eight)*fach5
+                      dtwoeri(l,k, 8,i,ider)=(-work(3)+work(10)*two+work(17)-work(19)*two)*fach4
+                      dtwoeri(l,k, 9,i,ider)=(-work(1)+work(4)*two+work(6)*eight &
+&                                            +work(11)*three-work(13)*p24)*fach3
+                      dtwoeri(l,k,10,i,ider)=(work(3)-work(8)*six+work(17))*fach2
+                      dtwoeri(l,k,11,i,ider)=(work(1)-work(4)*ten+work(11)*five)*fach1
+                    enddo
                   enddo
                 enddo
               enddo
-            enddo
+            else
+              do ider= 1,3
+                do i= 1,nbfijkl(1)
+                  do k= 1,nbfijkl(3)
+                    do l= 1,nbfijkl(4)
+                      dtwoeri(l,k, 2,i,ider)= dtwoeri(l,k, 2,i,ider)*three
+                      dtwoeri(l,k, 3,i,ider)= dtwoeri(l,k, 3,i,ider)*three
+                      dtwoeri(l,k, 4,i,ider)= dtwoeri(l,k, 4,i,ider)*sqrt21
+                      dtwoeri(l,k, 5,i,ider)= dtwoeri(l,k, 5,i,ider)*sqrt63
+                      dtwoeri(l,k, 6,i,ider)= dtwoeri(l,k, 6,i,ider)*sqrt21
+                      dtwoeri(l,k, 7,i,ider)= dtwoeri(l,k, 7,i,ider)*sqrt21
+                      dtwoeri(l,k, 8,i,ider)= dtwoeri(l,k, 8,i,ider)*sqrt105
+                      dtwoeri(l,k, 9,i,ider)= dtwoeri(l,k, 9,i,ider)*sqrt105
+                      dtwoeri(l,k,10,i,ider)= dtwoeri(l,k,10,i,ider)*sqrt21
+                      dtwoeri(l,k,11,i,ider)= dtwoeri(l,k,11,i,ider)*three
+                      dtwoeri(l,k,12,i,ider)= dtwoeri(l,k,12,i,ider)*sqrt63
+                      dtwoeri(l,k,13,i,ider)= dtwoeri(l,k,13,i,ider)*sqrt105
+                      dtwoeri(l,k,14,i,ider)= dtwoeri(l,k,14,i,ider)*sqrt63
+                      dtwoeri(l,k,15,i,ider)= dtwoeri(l,k,15,i,ider)*three
+                      dtwoeri(l,k,17,i,ider)= dtwoeri(l,k,17,i,ider)*three
+                      dtwoeri(l,k,18,i,ider)= dtwoeri(l,k,18,i,ider)*sqrt21
+                      dtwoeri(l,k,19,i,ider)= dtwoeri(l,k,19,i,ider)*sqrt21
+                      dtwoeri(l,k,20,i,ider)= dtwoeri(l,k,20,i,ider)*three
+                    enddo
+                  enddo
+                enddo
+              enddo
+            endif
         end select
       endif
 !

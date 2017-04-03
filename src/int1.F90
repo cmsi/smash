@@ -59,9 +59,9 @@
       call para_allreducer(hstmat3,hstmat2,num,mpi_comm)
       call para_allreducer(hstmat4,hstmat3,num,mpi_comm)
 !ishimura
-do ish=1,nao
-write(*,'(10f10.7)')hstmat2(ish*(ish-1)/2+1:ish*(ish+1)/2)
-enddo
+!do ish=1,nao
+!write(*,'(10f10.7)')hstmat2(ish*(ish-1)/2+1:ish*(ish+1)/2)
+!enddo
 !
       return
 end
@@ -2152,7 +2152,7 @@ end
       integer :: i, j
       real(8),parameter :: half=0.5D+00, two=2.0D+00, three=3.0D+00, four=4.0D+00
       real(8),parameter :: five=5.0D+00, six=6.0D+00, eight=8.0D+00, p9=9.0D+00, ten=10.0D+00
-      real(8),parameter :: twelve=12.0D+00, p15=15.0D+00, p16=16.0D+00, p18=18.0D+00
+      real(8),parameter :: twelve=12.0D+00, p15=15.0D+00, p16=16.0D+00
       real(8),parameter :: p20=20.0D+00, p24=24.0D+00, p30=30.0D+00, p32=32.0D+00
       real(8),parameter :: p40=40.0D+00, p60=60.0D+00, p90=90.0D+00, p120=1.2D+02
       real(8),parameter :: p180=1.8D+02, eighth=0.125D+00, sixteenth=6.25D-02
