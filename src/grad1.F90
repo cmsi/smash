@@ -2634,7 +2634,7 @@ end
       real(8) :: xyz(3), rij, rij2, exi, exj, ci, cj, ex1, ex2, ex3, ex4, fac, rc, tval
       real(8) :: pixyz(3), pijxyz(3), pcxyz(3), xyzpijk(3,3), trys(13), wrys(13)
       real(8) :: cx(0:6,0:6,7,2), cy(0:6,0:6,7,2), cz(0:6,0:6,7,2), ww, xyzint(3)
-      real(8) :: dcint1(28,28,3), work(21)
+      real(8) :: dcint1(28,28,3)
       logical,intent(in) :: iandj
       data ncart /1,3,6,10,15,21,28/
 !
