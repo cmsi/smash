@@ -98,7 +98,9 @@ end
       integer :: iprim, jprim, i, j, k, ii, ncart(0:6)
       integer :: ijkatom(3), nangkecp(mxprsh,6), nprimkecp(6), lmaxecp
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, half=0.5D+00, three=3.0D+00
-      real(8),parameter :: four=4.0D+00, five=5.0D+00, six=6.0D+00, eight=8.0D+00, p24=24.0D+00
+      real(8),parameter :: four=4.0D+00, five=5.0D+00, six=6.0D+00, eight=8.0D+00, ten=10.0D+00
+      real(8),parameter :: twelve=12.0D+00, p15=15.0D+00, p24=24.0D+00, p30=30.0D+00
+      real(8),parameter :: p40=40.0D+00
       real(8),parameter :: third=3.333333333333333D-01, eighth=0.125D+00
       real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
       real(8),parameter :: sqrtthird=0.5773502691896258D+00, sqrtfifth=0.4472135954999579D+00
@@ -124,6 +126,11 @@ end
       real(8),parameter :: facg4=0.79056941504209483D+00 ! sqrt(5/2)/2
       real(8),parameter :: facg5=0.55901699437494742D+00 ! sqrt(5)/4
       real(8),parameter :: facg6=0.73950997288745200D+00 ! sqrt(35)/8
+      real(8),parameter :: fach1=0.70156076002011400D+00 ! sqrt(63/2)/8
+      real(8),parameter :: fach2=2.21852991866235601D+00 ! sqrt(315)/8
+      real(8),parameter :: fach3=0.52291251658379721D+00 ! sqrt(35/2)/8
+      real(8),parameter :: fach4=2.56173769148989959D+00 ! sqrt(105)/4
+      real(8),parameter :: fach5=0.48412291827592711D+00 ! sqrt(15)/8
       real(8),intent(in) :: fulldmtrx(nao,nao), term1ecp(nterm1), term2ecp(nterm2)
       real(8),intent(in) :: term0ecp(*), xyzintecp(25*25*25)
       real(8),intent(inout) :: egrad1(3,natom)
@@ -469,6 +476,30 @@ end
                 decpint(12,i,k)= decpint(12,i,k)*sqrt7
                 decpint(13,i,k)= decpint(13,i,k)*sqrt35third
                 decpint(14,i,k)= decpint(14,i,k)*sqrt7
+              enddo
+            enddo
+          case(11)
+            do k= 1,3
+              do i= 1,nbfij(1)
+                do j= 1,21
+                  work(j)= decpint(j,i,k)
+                enddo
+                decpint( 1,i,k)=(work(2)*five-work(7)*ten+work(16))*fach1
+                decpint( 2,i,k)=(work(5)*four-work(12)*four)*fach2
+                decpint( 3,i,k)=(-work(2)*three-work(7)*two+work(9)*p24+work(16) &
+&                               -work(18)*eight)*fach3
+                decpint( 4,i,k)=(-work(5)*two-work(12)*two+work(14)*four)*fach4
+                decpint( 5,i,k)=(work(2)+work(7)*two-work(9)*twelve+work(16)-work(18)*twelve &
+&                               +work(20)*eight)*fach5
+                decpint( 6,i,k)=(work(3)*p15+work(8)*p30-work(10)*p40+work(17)*p15 &
+&                               -work(19)*p40+work(21)*eight)*eighth
+                decpint( 7,i,k)=(work(1)+work(4)*two-work(6)*twelve+work(11)-work(13)*twelve &
+&                               +work(15)*eight)*fach5
+                decpint( 8,i,k)=(-work(3)+work(10)*two+work(17)-work(19)*two)*fach4
+                decpint( 9,i,k)=(-work(1)+work(4)*two+work(6)*eight+work(11)*three &
+&                               -work(13)*p24)*fach3
+                decpint(10,i,k)=(work(3)-work(8)*six+work(17))*fach2
+                decpint(11,i,k)=(work(1)-work(4)*ten+work(11)*five)*fach1
               enddo
             enddo
           case(21)
