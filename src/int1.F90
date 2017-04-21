@@ -58,10 +58,6 @@
       call para_allreducer(hstmat2,hstmat1,num,mpi_comm)
       call para_allreducer(hstmat3,hstmat2,num,mpi_comm)
       call para_allreducer(hstmat4,hstmat3,num,mpi_comm)
-!ishimura
-!do ish=1,nao
-!write(*,'(10f10.7)')hstmat2(ish*(ish-1)/2+1:ish*(ish+1)/2)
-!enddo
 !
       return
 end

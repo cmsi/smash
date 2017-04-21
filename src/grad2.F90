@@ -557,7 +557,6 @@ end
                 enddo
               enddo
             endif
-!ishimura
           case(3)
             do i= 1,nbfijkl(1)
               do j= 1,nbfijkl(2)

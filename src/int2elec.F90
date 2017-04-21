@@ -48,8 +48,6 @@
 !
         call int2rys(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
 &                    mxprsh,threshex)
-!ishimura
-!       write(*,'(8f12.6)')twoeri(1:nbfijkl(4),1:nbfijkl(3),1:nbfijkl(2),1:nbfijkl(1))
       else
         write(*,'(" Error! Subroutine int2elec supports up to g function.")')
       endif
@@ -626,10 +624,6 @@ end
           tval=ex12(1,ij)*ex34(1,kl)*ex41*(xyzab(1)*xyzab(1)+xyzab(2)*xyzab(2)+xyzab(3)*xyzab(3))
 !
           call rysquad(tval,trys,wrys,nroots)
-!ishimura
-!  write(*,*)"tval",tval,nroots
-!  write(*,'(5d15.7)')trys(1:nroots)
-!  write(*,'(5d15.7)')wrys(1:nroots)
           do iroot= 1,nroots
             b00 = ex41h*trys(iroot)
             b10 = ex43h-b10t*trys(iroot)
