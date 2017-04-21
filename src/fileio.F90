@@ -358,7 +358,7 @@ end
           if(mtype(ishell) == 6) write(*,'(4x,"I",i3)') mprim(ishell)
 !
           if(mtype(ishell) >  6) then
-            write(*,'(" Error! The subroutine writebasis supports up to g functions.")')
+            write(*,'(" Error! The subroutine writebasis supports up to i functions.")')
             call iabort
           endif 
 !
@@ -1251,7 +1251,7 @@ end
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
 &       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
 !
-      character(len=7) :: anglabel(105)= &
+      character(len=7) :: anglabel(129)= &
 &     (/'S      ','Px     ','Py     ','Pz     ','Dxx    ','Dxy    ','Dxz    ','Dyy    ', &
 &       'Dyz    ','Dzz    ','D-2    ','D-1    ','D0     ','D+1    ','D+2    ','Fxxx   ', &
 &       'Fxxy   ','Fxxz   ','Fxyy   ','Fxyz   ','Fxzz   ','Fyyy   ','Fyyz   ','Fyzz   ', &
@@ -1261,11 +1261,14 @@ end
 &       'G-3    ','G-2    ','G-1    ','G0     ','G+1    ','G+2    ','G+3    ','G+4    ', &
 &       'Hxxxxx ','Hxxxxy ','Hxxxxz ','Hxxxyy ','Hxxxyz ','Hxxxzz ','Hxxyyy ','Hxxyyz ', &
 &       'Hxxyzz ','Hxxzzz ','Hxyyyy ','Hxyyyz ','Hxyyzz ','Hxyzzz ','Hxzzzz ','Hyyyyy ', &
-&       'Hyyyyz ','Hyyyzz ','Hyyzzz ','Hyzzzz ','Hzzzzz ','Ixxxxxx','Ixxxxxy','Ixxxxxz', &
-&       'Ixxxxyy','Ixxxxyz','Ixxxxzz','Ixxxyyy','Ixxxyyz','Ixxxyzz','Ixxxzzz','Ixxyyyy', &
-&       'Ixxyyyz','Ixxyyzz','Ixxyzzz','Ixxzzzz','Ixyyyyy','Ixyyyyz','Ixyyyzz','Ixyyzzz', &
-&       'Ixyzzzz','Ixzzzzz','Iyyyyyy','Iyyyyyz','Iyyyyzz','Iyyyzzz','Iyyzzzz','Iyzzzzz', &
-&       'Izzzzzz'/)
+&       'Hyyyyz ','Hyyyzz ','Hyyzzz ','Hyzzzz ','Hzzzzz ','H-5    ','H-4    ','H-3    ', &
+&       'H-2    ','H-1    ','H0     ','H+1    ','H+2    ','H+3    ','H+4    ','H+5    ', &
+&       'Ixxxxxx','Ixxxxxy','Ixxxxxz','Ixxxxyy','Ixxxxyz','Ixxxxzz','Ixxxyyy','Ixxxyyz', &
+&       'Ixxxyzz','Ixxxzzz','Ixxyyyy','Ixxyyyz','Ixxyyzz','Ixxyzzz','Ixxzzzz','Ixyyyyy', &
+&       'Ixyyyyz','Ixyyyzz','Ixyyzzz','Ixyzzzz','Ixzzzzz','Iyyyyyy','Iyyyyyz','Iyyyyzz', &
+&       'Iyyyzzz','Iyyzzzz','Iyzzzzz','Izzzzzz','I-6    ','I-5    ','I-4    ','I-3    ', &
+&       'I-2    ','I-1    ','I0     ','I+1    ','I+2    ','I+3    ','I+4    ','I+5    ', &
+&       'I+6    '/)
 !
       if(maxval(mtype(1:nshell)) > 6) then
         if(master) write(*,'(" Sorry! This program can display MOs of up to i functions.")')
@@ -1340,19 +1343,37 @@ end
               iao= iao+15
             endif
           case(5)
-            bflabel(iao:iao+20)= anglabel(57:77)
-            if(locatom(ii) /= iatom) then
-              iatom= locatom(ii)
-              write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
+            if(spher) then
+              bflabel(iao:iao+10)= anglabel(78:88)
+              if(locatom(ii) /= iatom) then
+                iatom= locatom(ii)
+                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
+              endif
+              iao= iao+11
+            else
+              bflabel(iao:iao+20)= anglabel(57:77)
+              if(locatom(ii) /= iatom) then
+                iatom= locatom(ii)
+                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
+              endif
+              iao= iao+21
             endif
-            iao= iao+21
           case(6)
-            bflabel(iao:iao+27)= anglabel(78:105)
-            if(locatom(ii) /= iatom) then
-              iatom= locatom(ii)
-              write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
+            if(spher) then
+              bflabel(iao:iao+12)= anglabel(117:129)
+              if(locatom(ii) /= iatom) then
+                iatom= locatom(ii)
+                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
+              endif
+              iao= iao+13
+            else
+              bflabel(iao:iao+27)= anglabel(89:116)
+              if(locatom(ii) /= iatom) then
+                iatom= locatom(ii)
+                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
+              endif
+              iao= iao+28
             endif
-            iao= iao+28
         end select
       enddo
 !
