@@ -1,4 +1,4 @@
-! Copyright 2014  Kazuya Ishimura
+! Copyright 2014-2017  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@
       logical :: converged
 !
       call setparallel
-      version='2.1.0'
+      version='2.2.0'
 !
       if(master) then
         write(*,&
