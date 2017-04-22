@@ -1692,7 +1692,7 @@ end
       implicit none
       integer,intent(in) :: ndim, nproc, myrank, mpi_comm
       integer :: ii, jj, maxmo
-      real(8),parameter :: zero=0.0D+00, one=1.0D+00, pm6=1.0D-06
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, pm5=1.0D-05
       real(8),intent(in) :: overinv(nao,nao), overlap(nao,nao_g)
       real(8),intent(out) :: cmo(nao,nao), work1(ndim,nao_g), work2(nao,nao_g)
       real(8),intent(out) :: work3(nao_g,nao_g), eigen(nao_g)
@@ -1717,7 +1717,7 @@ end
 !
 !$OMP parallel do private(eigeninv)
       do ii= 1,nmo_g
-        if(eigen(ii) > pm6) then
+        if(eigen(ii) > pm5) then
           eigeninv= one/sqrt(eigen(ii))
         else
           eigeninv= zero

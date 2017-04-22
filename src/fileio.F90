@@ -358,7 +358,7 @@ end
           if(mtype(ishell) == 6) write(*,'(4x,"I",i3)') mprim(ishell)
 !
           if(mtype(ishell) >  6) then
-            write(*,'(" Error! The subroutine writebasis supports up to h functions.")')
+            write(*,'(" Error! The subroutine writebasis supports up to i functions.")')
             call iabort
           endif 
 !
@@ -801,6 +801,8 @@ end
                 mgentype(ishell)= 4
               case('H')
                 mgentype(ishell)= 5
+              case('I')
+                mgentype(ishell)= 6
               case('SP')
                 mgentype(ishell)  = 0
                 mgentype(ishell+1)= 1
@@ -1237,7 +1239,7 @@ end
       integer :: minmo, maxmo, imin, imax, ii, jj, kk, iao, iatom
       real(8),intent(in) :: cmo(nao,nao), eigen(nmo)
       character(len=8) :: atomlabel(mxao)
-      character(len=5) :: bflabel(mxao)
+      character(len=7) :: bflabel(mxao)
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
 &       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
@@ -1249,16 +1251,27 @@ end
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
 &       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
 !
-      character(len=5) :: anglabel(56)= &
-&     (/'S    ','Px   ','Py   ','Pz   ','Dxx  ','Dxy  ','Dxz  ','Dyy  ','Dyz  ','Dzz  ', &
-&       'D-2  ','D-1  ','D0   ','D+1  ','D+2  ','Fxxx ','Fxxy ','Fxxz ','Fxyy ','Fxyz ', &
-&       'Fxzz ','Fyyy ','Fyyz ','Fyzz ','Fzzz ','F-3  ','F-2  ','F-1  ','F0   ','F+1  ', &
-&       'F+2  ','F+3  ','Gxxxx','Gxxxy','Gxxxz','Gxxyy','Gxxyz','Gxxzz','Gxyyy','Gxyyz', &
-&       'Gxyzz','Gxzzz','Gyyyy','Gyyyz','Gyyzz','Gyzzz','Gzzzz','G-4  ','G-3  ','G-2  ', &
-&       'G-1  ','G0   ','G+1  ','G+2  ','G+3  ','G+4  '/)
+      character(len=7) :: anglabel(129)= &
+&     (/'S      ','Px     ','Py     ','Pz     ','Dxx    ','Dxy    ','Dxz    ','Dyy    ', &
+&       'Dyz    ','Dzz    ','D-2    ','D-1    ','D0     ','D+1    ','D+2    ','Fxxx   ', &
+&       'Fxxy   ','Fxxz   ','Fxyy   ','Fxyz   ','Fxzz   ','Fyyy   ','Fyyz   ','Fyzz   ', &
+&       'Fzzz   ','F-3    ','F-2    ','F-1    ','F0     ','F+1    ','F+2    ','F+3    ', &
+&       'Gxxxx  ','Gxxxy  ','Gxxxz  ','Gxxyy  ','Gxxyz  ','Gxxzz  ','Gxyyy  ','Gxyyz  ', &
+&       'Gxyzz  ','Gxzzz  ','Gyyyy  ','Gyyyz  ','Gyyzz  ','Gyzzz  ','Gzzzz  ','G-4    ', &
+&       'G-3    ','G-2    ','G-1    ','G0     ','G+1    ','G+2    ','G+3    ','G+4    ', &
+&       'Hxxxxx ','Hxxxxy ','Hxxxxz ','Hxxxyy ','Hxxxyz ','Hxxxzz ','Hxxyyy ','Hxxyyz ', &
+&       'Hxxyzz ','Hxxzzz ','Hxyyyy ','Hxyyyz ','Hxyyzz ','Hxyzzz ','Hxzzzz ','Hyyyyy ', &
+&       'Hyyyyz ','Hyyyzz ','Hyyzzz ','Hyzzzz ','Hzzzzz ','H-5    ','H-4    ','H-3    ', &
+&       'H-2    ','H-1    ','H0     ','H+1    ','H+2    ','H+3    ','H+4    ','H+5    ', &
+&       'Ixxxxxx','Ixxxxxy','Ixxxxxz','Ixxxxyy','Ixxxxyz','Ixxxxzz','Ixxxyyy','Ixxxyyz', &
+&       'Ixxxyzz','Ixxxzzz','Ixxyyyy','Ixxyyyz','Ixxyyzz','Ixxyzzz','Ixxzzzz','Ixyyyyy', &
+&       'Ixyyyyz','Ixyyyzz','Ixyyzzz','Ixyzzzz','Ixzzzzz','Iyyyyyy','Iyyyyyz','Iyyyyzz', &
+&       'Iyyyzzz','Iyyzzzz','Iyzzzzz','Izzzzzz','I-6    ','I-5    ','I-4    ','I-3    ', &
+&       'I-2    ','I-1    ','I0     ','I+1    ','I+2    ','I+3    ','I+4    ','I+5    ', &
+&       'I+6    '/)
 !
-      if(maxval(mtype(1:nshell)) >= 5) then
-        if(master) write(*,'(" Sorry! This program can not display MOs of h functions now.")')
+      if(maxval(mtype(1:nshell)) > 6) then
+        if(master) write(*,'(" Sorry! This program can display MOs of up to i functions.")')
         return
       endif
 !
@@ -1329,21 +1342,53 @@ end
               endif
               iao= iao+15
             endif
+          case(5)
+            if(spher) then
+              bflabel(iao:iao+10)= anglabel(78:88)
+              if(locatom(ii) /= iatom) then
+                iatom= locatom(ii)
+                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
+              endif
+              iao= iao+11
+            else
+              bflabel(iao:iao+20)= anglabel(57:77)
+              if(locatom(ii) /= iatom) then
+                iatom= locatom(ii)
+                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
+              endif
+              iao= iao+21
+            endif
+          case(6)
+            if(spher) then
+              bflabel(iao:iao+12)= anglabel(117:129)
+              if(locatom(ii) /= iatom) then
+                iatom= locatom(ii)
+                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
+              endif
+              iao= iao+13
+            else
+              bflabel(iao:iao+27)= anglabel(89:116)
+              if(locatom(ii) /= iatom) then
+                iatom= locatom(ii)
+                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
+              endif
+              iao= iao+28
+            endif
         end select
       enddo
 !
-      minmo=max(1,neleca-20)
-      maxmo=min(nmo,neleca+20)
+      minmo=max(1,neleca-15)
+      maxmo=min(nmo,neleca+15)
       imin= minmo
       imax= minmo+4
       if(master) then
         do ii= 1,(maxmo-minmo-1)/5+1
           if(imax > maxmo) imax= maxmo
           write(*,*)
-          write(*,'(18x,5(5x,i4,2x))')(jj,jj=imin,imax)
-          write(*,'(18x,5f11.4)')(eigen(jj),jj=imin,imax)
+          write(*,'(20x,5(5x,i4,2x))')(jj,jj=imin,imax)
+          write(*,'(20x,5f11.4)')(eigen(jj),jj=imin,imax)
           do kk= 1,nao
-            write(*,'(i5,a8,a5,5f11.4)')kk,atomlabel(kk),bflabel(kk),(cmo(kk,jj),jj=imin,imax)
+            write(*,'(i5,a8,a7,5f11.4)')kk,atomlabel(kk),bflabel(kk),(cmo(kk,jj),jj=imin,imax)
           enddo
           imin= imin+5
           imax= imax+5

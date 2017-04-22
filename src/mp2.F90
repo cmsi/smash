@@ -1102,3 +1102,139 @@ end
       endif
       return
 end
+
+
+!------------------------------------------------------------------
+  subroutine mp2int_isendrecv(trint2,recvint,icycle,irecv,numij, &
+&                             idis,ireq,nproc,myrank,mpi_comm)
+!------------------------------------------------------------------
+!
+! Non-blocking communications of second transformed integrals (mi|lj)
+!
+! In  : trint2  (Second transformed integrals)
+!       icycle  (Mp2trans2 cycle number)
+!       irecv   (Numbers of receiving data)
+!       numij   (Number of active occupied MOs)
+!       idis    (Information for parallelization)
+! Out : recvint (Receiving data)
+!       ireq    (Request for MPI_Wait)
+      use modbasis, only : nao
+      implicit none
+      integer,intent(in) :: icycle, nproc, myrank, mpi_comm, irecv(0:nproc-1)
+      integer,intent(in) :: numij, idis(0:nproc-1,4)
+      integer,intent(out) :: ireq(0:nproc-1,2)
+      integer :: iproc, jproc, ijstart, myij, ij, nsend, nrecv
+      real(8),intent(in) :: trint2(idis(myrank,3),numij)
+      real(8),intent(out) :: recvint(nao*nao)
+!
+      jproc= myrank
+      ijstart=(icycle-1)*nproc+1
+      myij= ijstart+myrank
+!
+! Send and receive second transformed integrals
+!
+      if(nproc > 1) then
+        do iproc= myrank+1,nproc-1
+          jproc= jproc-1
+          if(jproc < 0) jproc= nproc-1
+          nsend= idis(myrank,3)
+          nrecv= idis(jproc,3)
+          ij= ijstart+iproc
+          if(ij > numij) then
+            nsend= 0
+            ij   = 1
+          endif
+          if(myij > numij) nrecv=0
+          call para_isendr(trint2(1,ij),nsend,iproc,myrank,mpi_comm,ireq(iproc,1))
+          call para_irecvr(recvint(irecv(jproc)),nrecv,jproc,jproc,mpi_comm,ireq(iproc,2))
+        enddo
+!
+        do iproc= 0, myrank-1
+          jproc= jproc-1
+          if(jproc < 0) jproc= nproc-1
+          nsend= idis(myrank,3)
+          nrecv= idis(jproc,3)
+          ij= ijstart+iproc
+          if(ij > numij) then
+            nsend= 0
+            ij   = 1
+          endif
+          if(myij > numij) nrecv=0
+          call para_isendr(trint2(1,ij),nsend,iproc,myrank,mpi_comm,ireq(iproc,1))
+          call para_irecvr(recvint(irecv(jproc)),nrecv,jproc,jproc,mpi_comm,ireq(iproc,2))
+        enddo
+!  
+        nsend= idis(myrank,3)
+        if(myij > numij) nsend= 0
+        call para_isendr(trint2(1,myij),nsend,myrank,myrank,mpi_comm,ireq(myrank,1))
+        call para_irecvr(recvint(irecv(myrank)),nsend,myrank,myrank,mpi_comm,ireq(myrank,2))
+      else
+        nsend= idis(myrank,3)
+        if(myij <= numij) call dcopy(nsend,trint2(1,myij),1,recvint(irecv(myrank)),1)
+      endif
+!
+      return
+end
+
+
+!--------------------------------------------------------------------------------------
+  subroutine mp2int_sort(recvint,trint4,icycle,numij,idis,ireq,nproc,myrank,mpi_comm)
+!--------------------------------------------------------------------------------------
+!
+! MPI_Waitall and sorting of receieved second-transformed integrals
+!
+      use modbasis, only : nao, nshell, mbf, locbf
+      implicit none
+      integer,intent(in) :: icycle, nproc, myrank, mpi_comm, numij
+      integer,intent(in) :: idis(0:nproc-1,4), ireq(2*nproc)
+      integer :: iproc, ijstart, myij, ish, ksh, nbfi, nbfk
+      integer :: locbfi, locbfk, ii, kk, ik, num, jcount
+      real(8),intent(in) :: recvint(nao*nao)
+      real(8),intent(out) :: trint4(nao,nao)
+!
+      ijstart=(icycle-1)*nproc+1
+      myij= ijstart+myrank
+!
+      if(nproc > 1) call para_waitall(2*nproc,ireq)
+!
+! Reorder of received data
+!
+      if(myij <= numij) then
+        ik= 0
+        do iproc= 0,nproc-1
+          ish= idis(iproc,1)
+          ksh= idis(iproc,2)
+          jcount= 0
+          do num= 1,idis(iproc,4)
+            nbfi= mbf(ish)
+            nbfk= mbf(ksh)
+            locbfi= locbf(ish)
+            locbfk= locbf(ksh)
+            do ii= 1,nbfi
+              do kk= 1,nbfk
+                ik= ik+1
+                trint4(locbfk+kk,locbfi+ii)= recvint(ik)
+              enddo
+            enddo
+!
+            if(jcount == iproc) then
+              ksh= ksh+2*nproc-1
+            else
+              ksh= ksh+nproc-1
+            endif
+            if(ksh > nshell) then
+              do ii= 1,nshell
+                ksh= ksh-nshell
+                ish= ish+1
+                if(ksh <= nshell) exit
+              enddo
+            endif
+            jcount= jcount+1
+            if(jcount == nproc) jcount= 0
+          enddo
+        enddo
+      endif
+!
+      return
+end
+

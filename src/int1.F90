@@ -1,4 +1,4 @@
-! Copyright 2014  Kazuya Ishimura
+! Copyright 2014-2017  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -109,8 +109,8 @@ end
         coij(jprim,2)= coeff(jloc+jprim)
       enddo
 !
-      if((nangij(1) > 4).or.(nangij(2) > 4))then
-        write(*,'(" Error! This program supports up to g function in calcintst1c")')
+      if((nangij(1) > 6).or.(nangij(2) > 6))then
+        write(*,'(" Error! This program supports up to i function in calcintst1c.")')
         call exit
       endif
 !
@@ -182,8 +182,8 @@ end
       sintmp(1:ncartj,1:ncarti)= zero
       tintmp(1:ncartj,1:ncarti)= zero
 !
-      if((nangij(1) > 4).or.(nangij(2) > 4))then
-        write(*,'(" Error! This program supports up to g function in intst")')
+      if((nangij(1) > 6).or.(nangij(2) > 6))then
+        write(*,'(" Error! This program supports up to i function in intst.")')
         call abort
       endif
 !
@@ -549,8 +549,8 @@ end
         call int1cmd(cint,exij,coij,coordij,coord,znuc,natom, &
 &                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
       else
-        if((nangij(1) > 4).or.(nangij(2) > 4))then
-          write(*,'(" Error! This program supports up to g function in calcint1c")')
+        if((nangij(1) > 6).or.(nangij(2) > 6))then
+          write(*,'(" Error! This program supports up to i function in calcint1c.")')
           call exit
         endif
 !
@@ -1846,8 +1846,8 @@ end
       ncartj= ncart(nangij(2))
       sint(1:ncartj,1:ncarti)= zero
 !
-      if((nangij(1) > 4).or.(nangij(2) > 4))then
-        write(*,'(" Error! This program supports up to g function in ints")')
+      if((nangij(1) > 6).or.(nangij(2) > 6))then
+        write(*,'(" Error! This program supports up to i function in ints.")')
         call abort
       endif
 !
@@ -1999,8 +1999,8 @@ end
         coij(jprim,2)= coeff(jloc+jprim)
       enddo
 !
-      if((nangij(1) > 4).or.(nangij(2) > 4))then
-        write(*,'(" Error! This program supports up to g function in calcintst1c")')
+      if((nangij(1) > 6).or.(nangij(2) > 6))then
+        write(*,'(" Error! This program supports up to i function in calcintdipole.")')
         call exit
       endif
 !
@@ -2058,8 +2058,8 @@ end
       ncartj= ncart(nangij(2))
       diptmp(1:ncartj,1:ncarti,1:3)= zero
 !
-      if((nangij(1) > 4).or.(nangij(2) > 4))then
-        write(*,'(" Error! This program supports up to g function in intdipole")')
+      if((nangij(1) > 6).or.(nangij(2) > 6))then
+        write(*,'(" Error! This program supports up to i function in intdipole.")')
         call abort
       endif
 !
@@ -2147,11 +2147,20 @@ end
       integer,intent(in) :: nbfi, nbfj, ncarti
       integer :: i, j
       real(8),parameter :: half=0.5D+00, two=2.0D+00, three=3.0D+00, four=4.0D+00
-      real(8),parameter :: six=6.0D+00, eight=8.0D+00, p24=24.0D+00, eighth=0.125D+00
+      real(8),parameter :: five=5.0D+00, six=6.0D+00, eight=8.0D+00, p9=9.0D+00, ten=10.0D+00
+      real(8),parameter :: twelve=12.0D+00, p15=15.0D+00, p16=16.0D+00
+      real(8),parameter :: p20=20.0D+00, p24=24.0D+00, p30=30.0D+00, p32=32.0D+00
+      real(8),parameter :: p40=40.0D+00, p60=60.0D+00, p90=90.0D+00, p120=1.2D+02
+      real(8),parameter :: p180=1.8D+02, eighth=0.125D+00, sixteenth=6.25D-02
       real(8),parameter :: sqrt3=1.732050807568877D+00, sqrt3h=8.660254037844386D-01
       real(8),parameter :: sqrt5=2.236067977499790D+00, sqrt15=3.872983346207417D+00
       real(8),parameter :: sqrt7=2.645751311064590D+00, sqrt35=5.916079783099616D+00
       real(8),parameter :: sqrt35third=3.415650255319866D+00
+      real(8),parameter :: sqrt21=4.582575694955840D+00, sqrt63=7.937253933193772D+00
+      real(8),parameter :: sqrt105=1.024695076595960D+01, sqrt11=3.316624790355400D+00
+      real(8),parameter :: sqrt33=5.744562646538029D+00, sqrt99=9.949874371066200D+00
+      real(8),parameter :: sqrt231=1.519868415357066D+01, sqrt231fifth=6.797058187186571D+00
+      real(8),parameter :: sqrt385=1.962141687034858D+01
       real(8),parameter :: facf1=0.79056941504209483D+00 ! sqrt(5/2)/2
       real(8),parameter :: facf2=3.87298334620741688D+00 ! sqrt(15)
       real(8),parameter :: facf3=0.61237243569579452D+00 ! sqrt(3/2)/2
@@ -2162,6 +2171,17 @@ end
       real(8),parameter :: facg4=0.79056941504209483D+00 ! sqrt(5/2)/2
       real(8),parameter :: facg5=0.55901699437494742D+00 ! sqrt(5)/4
       real(8),parameter :: facg6=0.73950997288745200D+00 ! sqrt(35)/8
+      real(8),parameter :: fach1=0.70156076002011400D+00 ! sqrt(63/2)/8
+      real(8),parameter :: fach2=2.21852991866235601D+00 ! sqrt(315)/8
+      real(8),parameter :: fach3=0.52291251658379721D+00 ! sqrt(35/2)/8
+      real(8),parameter :: fach4=2.56173769148989959D+00 ! sqrt(105)/4
+      real(8),parameter :: fach5=0.48412291827592711D+00 ! sqrt(15)/8
+      real(8),parameter :: faci1=0.67169328938139615D+00 ! sqrt(231/2)/16
+      real(8),parameter :: faci2=2.32681380862328561D+00 ! sqrt(693/2)/8
+      real(8),parameter :: faci3=0.49607837082461073D+00 ! sqrt(63)/16
+      real(8),parameter :: faci4=0.90571104663683991D+00 ! sqrt(105/2)/8
+      real(8),parameter :: faci5=0.45285552331841995D+00 ! sqrt(105/2)/16
+      real(8),parameter :: faci6=0.57282196186948000D+00 ! sqrt(21)/8
       real(8),intent(inout) :: onei(28,28)
       real(8) :: work(28)
 !
@@ -2242,6 +2262,105 @@ end
             onei(13,i)= onei(13,i)*sqrt35third
             onei(14,i)= onei(14,i)*sqrt7
           enddo
+! H function
+        case(11)
+          do i= 1,ncarti
+            do j= 1,21
+              work(j)= onei(j,i)
+            enddo
+            onei( 1,i)=(work(2)*five-work(7)*ten+work(16))*fach1
+            onei( 2,i)=(work(5)*four-work(12)*four)*fach2
+            onei( 3,i)=(-work(2)*three-work(7)*two+work(9)*p24+work(16)-work(18)*eight)*fach3
+            onei( 4,i)=(-work(5)*two-work(12)*two+work(14)*four)*fach4
+            onei( 5,i)=(work(2)+work(7)*two-work(9)*twelve+work(16)-work(18)*twelve &
+&                      +work(20)*eight)*fach5
+            onei( 6,i)=(work(3)*p15+work(8)*p30-work(10)*p40+work(17)*p15-work(19)*p40 &
+&                      +work(21)*eight)*eighth
+            onei( 7,i)=(work(1)+work(4)*two-work(6)*twelve+work(11)-work(13)*twelve &
+&                      +work(15)*eight)*fach5
+            onei( 8,i)=(-work(3)+work(10)*two+work(17)-work(19)*two)*fach4
+            onei( 9,i)=(-work(1)+work(4)*two+work(6)*eight+work(11)*three-work(13)*p24)*fach3
+            onei(10,i)=(work(3)-work(8)*six+work(17))*fach2
+            onei(11,i)=(work(1)-work(4)*ten+work(11)*five)*fach1
+          enddo
+        case(21)
+          do i= 1,ncarti
+            onei( 2,i)= onei( 2,i)*three
+            onei( 3,i)= onei( 3,i)*three
+            onei( 4,i)= onei( 4,i)*sqrt21
+            onei( 5,i)= onei( 5,i)*sqrt63
+            onei( 6,i)= onei( 6,i)*sqrt21
+            onei( 7,i)= onei( 7,i)*sqrt21
+            onei( 8,i)= onei( 8,i)*sqrt105
+            onei( 9,i)= onei( 9,i)*sqrt105
+            onei(10,i)= onei(10,i)*sqrt21
+            onei(11,i)= onei(11,i)*three
+            onei(12,i)= onei(12,i)*sqrt63
+            onei(13,i)= onei(13,i)*sqrt105
+            onei(14,i)= onei(14,i)*sqrt63
+            onei(15,i)= onei(15,i)*three
+            onei(17,i)= onei(17,i)*three
+            onei(18,i)= onei(18,i)*sqrt21
+            onei(19,i)= onei(19,i)*sqrt21
+            onei(20,i)= onei(20,i)*three
+          enddo
+! I function
+        case(13)
+          do i= 1,ncarti
+            do j= 1,28
+              work(j)= onei(j,i)
+            enddo
+            onei( 1,i)=(work(2)*six-work(7)*p20+work(16)*six)*faci1
+            onei( 2,i)=(work(5)*five-work(12)*ten+work(23))*faci2
+            onei( 3,i)=(-work(2)*four+work(9)*p40+work(16)*four-work(18)*p40)*faci3
+            onei( 4,i)=(-work(5)*p9-work(12)*six+work(14)*p24+work(23)*three &
+&                      -work(25)*eight)*faci4
+            onei( 5,i)=(work(2)*two+work(7)*four-work(9)*p32+work(16)*two &
+&                      -work(18)*p32+work(20)*p32)*faci5
+            onei( 6,i)=(work(5)*five+work(12)*ten-work(14)*p20+work(23)*five &
+&                      -work(25)*p20+work(27)*eight)*faci6
+            onei( 7,i)=(-work(1)*five-work(4)*p15+work(6)*p90-work(11)*p15 &
+&                      +work(13)*p180-work(15)*p120-work(22)*five+work(24)*p90 &
+&                      -work(26)*p120+work(28)*p16)*sixteenth
+            onei( 8,i)=(work(3)*five+work(8)*ten-work(10)*p20+work(17)*five &
+&                      -work(19)*p20+work(21)*eight)*faci6
+            onei( 9,i)=(work(1)+work(4)-work(6)*p16-work(11)+work(15)*p16 &
+&                      -work(22)+work(24)*p16-work(26)*p16)*faci5
+            onei(10,i)=(-work(3)*three+work(8)*six+work(10)*eight+work(17)*p9 &
+&                      -work(19)*p24)*faci4
+            onei(11,i)=(-work(1)+work(4)*five+work(6)*ten+work(11)*five &
+&                      -work(13)*p60-work(22)+work(24)*ten)*faci3
+            onei(12,i)=(work(3)-work(8)*ten+work(17)*five)*faci2
+            onei(13,i)=(work(1)-work(4)*p15+work(11)*p15-work(22))*faci1
+          enddo
+        case(28)
+          do i= 1,ncarti
+            onei( 2,i)= onei( 2,i)*sqrt11
+            onei( 3,i)= onei( 3,i)*sqrt11
+            onei( 4,i)= onei( 4,i)*sqrt33
+            onei( 5,i)= onei( 5,i)*sqrt99
+            onei( 6,i)= onei( 6,i)*sqrt33
+            onei( 7,i)= onei( 7,i)*sqrt231fifth
+            onei( 8,i)= onei( 8,i)*sqrt231
+            onei( 9,i)= onei( 9,i)*sqrt231
+            onei(10,i)= onei(10,i)*sqrt231fifth
+            onei(11,i)= onei(11,i)*sqrt33
+            onei(12,i)= onei(12,i)*sqrt231
+            onei(13,i)= onei(13,i)*sqrt385
+            onei(14,i)= onei(14,i)*sqrt231
+            onei(15,i)= onei(15,i)*sqrt33
+            onei(16,i)= onei(16,i)*sqrt11
+            onei(17,i)= onei(17,i)*sqrt99
+            onei(18,i)= onei(18,i)*sqrt231
+            onei(19,i)= onei(19,i)*sqrt231
+            onei(20,i)= onei(20,i)*sqrt99
+            onei(21,i)= onei(21,i)*sqrt11
+            onei(23,i)= onei(23,i)*sqrt11
+            onei(24,i)= onei(24,i)*sqrt33
+            onei(25,i)= onei(25,i)*sqrt231fifth
+            onei(26,i)= onei(26,i)*sqrt33
+            onei(27,i)= onei(27,i)*sqrt11
+          enddo
       end select
 !
 ! Ket part
@@ -2320,6 +2439,105 @@ end
             onei(j,12)= onei(j,12)*sqrt7
             onei(j,13)= onei(j,13)*sqrt35third
             onei(j,14)= onei(j,14)*sqrt7
+          enddo
+! H function
+        case(11)
+          do j= 1,nbfj
+            do i= 1,21
+              work(i)= onei(j,i)
+            enddo
+            onei(j, 1)=(work(2)*five-work(7)*ten+work(16))*fach1
+            onei(j, 2)=(work(5)*four-work(12)*four)*fach2
+            onei(j, 3)=(-work(2)*three-work(7)*two+work(9)*p24+work(16)-work(18)*eight)*fach3
+            onei(j, 4)=(-work(5)*two-work(12)*two+work(14)*four)*fach4
+            onei(j, 5)=(work(2)+work(7)*two-work(9)*twelve+work(16)-work(18)*twelve &
+&                      +work(20)*eight)*fach5
+            onei(j, 6)=(work(3)*p15+work(8)*p30-work(10)*p40+work(17)*p15-work(19)*p40 &
+&                      +work(21)*eight)*eighth
+            onei(j, 7)=(work(1)+work(4)*two-work(6)*twelve+work(11)-work(13)*twelve &
+&                      +work(15)*eight)*fach5
+            onei(j, 8)=(-work(3)+work(10)*two+work(17)-work(19)*two)*fach4
+            onei(j, 9)=(-work(1)+work(4)*two+work(6)*eight+work(11)*three-work(13)*p24)*fach3
+            onei(j,10)=(work(3)-work(8)*six+work(17))*fach2
+            onei(j,11)=(work(1)-work(4)*ten+work(11)*five)*fach1
+          enddo
+        case(21)
+          do j= 1,nbfj
+            onei(j, 2)= onei(j, 2)*three
+            onei(j, 3)= onei(j, 3)*three
+            onei(j, 4)= onei(j, 4)*sqrt21
+            onei(j, 5)= onei(j, 5)*sqrt63
+            onei(j, 6)= onei(j, 6)*sqrt21
+            onei(j, 7)= onei(j, 7)*sqrt21
+            onei(j, 8)= onei(j, 8)*sqrt105
+            onei(j, 9)= onei(j, 9)*sqrt105
+            onei(j,10)= onei(j,10)*sqrt21
+            onei(j,11)= onei(j,11)*three
+            onei(j,12)= onei(j,12)*sqrt63
+            onei(j,13)= onei(j,13)*sqrt105
+            onei(j,14)= onei(j,14)*sqrt63
+            onei(j,15)= onei(j,15)*three
+            onei(j,17)= onei(j,17)*three
+            onei(j,18)= onei(j,18)*sqrt21
+            onei(j,19)= onei(j,19)*sqrt21
+            onei(j,20)= onei(j,20)*three
+          enddo
+! I function
+        case(13)
+          do j= 1,nbfj
+            do i= 1,28
+              work(i)= onei(j,i)
+            enddo
+            onei(j, 1)=(work(2)*six-work(7)*p20+work(16)*six)*faci1
+            onei(j, 2)=(work(5)*five-work(12)*ten+work(23))*faci2
+            onei(j, 3)=(-work(2)*four+work(9)*p40+work(16)*four-work(18)*p40)*faci3
+            onei(j, 4)=(-work(5)*p9-work(12)*six+work(14)*p24+work(23)*three &
+&                      -work(25)*eight)*faci4
+            onei(j, 5)=(work(2)*two+work(7)*four-work(9)*p32+work(16)*two &
+&                      -work(18)*p32+work(20)*p32)*faci5
+            onei(j, 6)=(work(5)*five+work(12)*ten-work(14)*p20+work(23)*five &
+&                      -work(25)*p20+work(27)*eight)*faci6
+            onei(j, 7)=(-work(1)*five-work(4)*p15+work(6)*p90-work(11)*p15 &
+&                      +work(13)*p180-work(15)*p120-work(22)*five+work(24)*p90 &
+&                      -work(26)*p120+work(28)*p16)*sixteenth
+            onei(j, 8)=(work(3)*five+work(8)*ten-work(10)*p20+work(17)*five &
+&                      -work(19)*p20+work(21)*eight)*faci6
+            onei(j, 9)=(work(1)+work(4)-work(6)*p16-work(11)+work(15)*p16 &
+&                      -work(22)+work(24)*p16-work(26)*p16)*faci5
+            onei(j,10)=(-work(3)*three+work(8)*six+work(10)*eight+work(17)*p9 &
+&                      -work(19)*p24)*faci4
+            onei(j,11)=(-work(1)+work(4)*five+work(6)*ten+work(11)*five &
+&                      -work(13)*p60-work(22)+work(24)*ten)*faci3
+            onei(j,12)=(work(3)-work(8)*ten+work(17)*five)*faci2
+            onei(j,13)=(work(1)-work(4)*p15+work(11)*p15-work(22))*faci1
+          enddo
+        case(28)
+          do j= 1,nbfj
+            onei(j, 2)= onei(j, 2)*sqrt11
+            onei(j, 3)= onei(j, 3)*sqrt11
+            onei(j, 4)= onei(j, 4)*sqrt33
+            onei(j, 5)= onei(j, 5)*sqrt99
+            onei(j, 6)= onei(j, 6)*sqrt33
+            onei(j, 7)= onei(j, 7)*sqrt231fifth
+            onei(j, 8)= onei(j, 8)*sqrt231
+            onei(j, 9)= onei(j, 9)*sqrt231
+            onei(j,10)= onei(j,10)*sqrt231fifth
+            onei(j,11)= onei(j,11)*sqrt33
+            onei(j,12)= onei(j,12)*sqrt231
+            onei(j,13)= onei(j,13)*sqrt385
+            onei(j,14)= onei(j,14)*sqrt231
+            onei(j,15)= onei(j,15)*sqrt33
+            onei(j,16)= onei(j,16)*sqrt11
+            onei(j,17)= onei(j,17)*sqrt99
+            onei(j,18)= onei(j,18)*sqrt231
+            onei(j,19)= onei(j,19)*sqrt231
+            onei(j,20)= onei(j,20)*sqrt99
+            onei(j,21)= onei(j,21)*sqrt11
+            onei(j,23)= onei(j,23)*sqrt11
+            onei(j,24)= onei(j,24)*sqrt33
+            onei(j,25)= onei(j,25)*sqrt231fifth
+            onei(j,26)= onei(j,26)*sqrt33
+            onei(j,27)= onei(j,27)*sqrt11
           enddo
       end select
       return
