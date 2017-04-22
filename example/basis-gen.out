@@ -1,31 +1,3 @@
---------------------------------------------------------------------------
-A deprecated MCA variable value was specified in an MCA variable
-file.  Deprecated MCA variables should be avoided; they may disappear
-in future releases.
-
-  Deprecated variable: orte_rsh_agent
-  Source file:         /home/ishimura/openmpi/etc/openmpi-mca-params.conf
-  New variable:        plm_rsh_agent
---------------------------------------------------------------------------
---------------------------------------------------------------------------
-A deprecated MCA variable value was specified in an MCA variable
-file.  Deprecated MCA variables should be avoided; they may disappear
-in future releases.
-
-  Deprecated variable: orte_rsh_agent
-  Source file:         /home/ishimura/openmpi/etc/openmpi-mca-params.conf
-  New variable:        plm_rsh_agent
---------------------------------------------------------------------------
---------------------------------------------------------------------------
-[[12429,1],0]: A high-performance Open MPI point-to-point messaging module
-was unable to find any relevant network interfaces:
-
-Module: OpenFabrics (openib)
-  Host: smash01
-
-Another transport will be used instead, although this may result in
-lower performance.
---------------------------------------------------------------------------
  *******************************************
     Scalable Molecular Analysis Solver for
       High performance computing systems
