@@ -168,6 +168,10 @@
       threshatom           specifies the atom distance threshold.
                            (default : 2.0D-1)
 
+      octupole             controls dipole, quadrupole, and octupole calculations.
+              = .false.    Dipole only (default)
+              = .true.     Dipole, quadrupole, and octupole
+
     2.3 scf keywords
       scfconv              specifies the type of SCF convergence method.
               = DIIS       Pulay's DIIS interpolation (defalut)

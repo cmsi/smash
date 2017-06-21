@@ -2137,6 +2137,304 @@ end
 end
 
 
+!-------------------------------------------------------------------------------------------
+  subroutine calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm)
+!-------------------------------------------------------------------------------------------
+!
+! Driver of dipole, quadrupole, and octupole moment matrix calculation
+!
+! In  : dipcenter (Dipole moment center)
+! Out : dipmat    (Dipole moment matrix)
+!       quadpmat  (Quadrupole moment matrix)
+!       octpmat   (Octupole moment matrix)
+!       work      (Working matrix)
+!
+      use modbasis, only : nao, nshell, mtype
+      implicit none
+      integer,intent(in) :: nproc, myrank, mpi_comm
+      integer :: ish, jsh, maxfunc(0:6), maxbasis, maxdim
+      real(8),parameter :: zero=0.0D+00
+      real(8),intent(in) :: dipcenter(3)
+      real(8),intent(out) :: dipmat((nao*(nao+1))/2*3), quadpmat((nao*(nao+1))/2*6)
+      real(8),intent(out) :: octpmat((nao*(nao+1))/2*10), work((nao*(nao+1))/2*10)
+      data maxfunc/1,3,6,10,15,21,28/
+!
+      maxbasis= maxval(mtype(1:nshell))
+      maxdim= maxfunc(maxbasis)
+!
+      quadpmat(:)= zero
+      octpmat(:)= zero
+      work(:)= zero
+!
+!$OMP parallel
+      do ish= nshell-myrank,1,-nproc
+!$OMP do
+        do jsh= 1,ish
+          call calcintoctupole(quadpmat,octpmat,work,dipcenter,ish,jsh,maxdim)
+        enddo
+!$OMP enddo
+      enddo
+!$OMP end parallel
+!
+      call para_allreducer(quadpmat,dipmat,(nao*(nao+1))/2*3,mpi_comm)
+      call para_allreducer(octpmat,quadpmat,(nao*(nao+1))/2*6,mpi_comm)
+      call para_allreducer(work,octpmat,(nao*(nao+1))/2*10,mpi_comm)
+!
+      return
+end
+
+
+!-----------------------------------------------------------------------------
+  subroutine calcintoctupole(dipmat,quadpmat,octpmat,dipcenter,ish,jsh,len1)
+!-----------------------------------------------------------------------------
+!
+! Driver of dipole (j|r|i), quadrupole (j|r^2|i), and octupole (j|r^3|i) 
+! moment integrals
+!
+      use modparam, only : mxprsh
+      use modmolecule, only : coord
+      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
+      use modthresh, only : threshex
+      implicit none
+      integer,intent(in) :: ish, jsh, len1
+      integer :: nangij(2), nprimij(2), nbfij(2), iatom, jatom
+      integer :: iloc, jloc, ilocbf, jlocbf, iprim, jprim, i, j, ii, ij, maxj, kk
+      real(8),intent(in) :: dipcenter(3)
+      real(8),intent(out) :: dipmat((nao*(nao+1))/2,3), quadpmat((nao*(nao+1))/2,6)
+      real(8),intent(out) :: octpmat((nao*(nao+1))/2,10) 
+      real(8) :: exij(mxprsh,2), coij(mxprsh,2), coordijk(3,3)
+      real(8) :: dipint(len1,len1,3), quadpint(len1,len1,6), octpint(len1,len1,10)
+      logical :: iandj
+!
+      iandj=(ish == jsh)
+      nangij(1)= mtype(ish)
+      nangij(2)= mtype(jsh)
+      nprimij(1)= mprim(ish)
+      nprimij(2)= mprim(jsh)
+      nbfij(1)  = mbf(ish)
+      nbfij(2)  = mbf(jsh)
+      iatom = locatom(ish)
+      iloc  = locprim(ish)
+      ilocbf= locbf(ish)
+      jatom = locatom(jsh)
+      jloc  = locprim(jsh)
+      jlocbf= locbf(jsh)
+      do i= 1,3
+        coordijk(i,1)= coord(i,iatom)
+        coordijk(i,2)= coord(i,jatom)
+        coordijk(i,3)= dipcenter(i)
+      enddo
+      do iprim= 1,nprimij(1)
+        exij(iprim,1)= ex(iloc+iprim)
+        coij(iprim,1)= coeff(iloc+iprim)
+      enddo
+      do jprim= 1,nprimij(2)
+        exij(jprim,2)= ex(jloc+jprim)
+        coij(jprim,2)= coeff(jloc+jprim)
+      enddo
+!
+      if((nangij(1) > 6).or.(nangij(2) > 6))then
+        write(*,'(" Error! This program supports up to i function in calcintoctupole.")')
+        call exit
+      endif
+!
+! Dipole moment integrals
+!
+      call intoctupole(dipint,quadpint,octpint,exij,coij,coordijk, &
+&                      nprimij,nangij,nbfij,len1,mxprsh,threshex)
+!
+      maxj= nbfij(2)
+      do i= 1,nbfij(1)
+        if(iandj) maxj= i
+        ii= ilocbf+i
+        ij= ii*(ii-1)/2+jlocbf
+        do j= 1,maxj
+          dipmat(ij+j,1)= dipint(j,i,1)
+          dipmat(ij+j,2)= dipint(j,i,2)
+          dipmat(ij+j,3)= dipint(j,i,3)
+        enddo
+      enddo
+      do kk= 1,6
+        maxj= nbfij(2)
+        do i= 1,nbfij(1)
+          if(iandj) maxj= i
+          ii= ilocbf+i
+          ij= ii*(ii-1)/2+jlocbf
+          do j= 1,maxj
+            quadpmat(ij+j,kk)= quadpint(j,i,kk)
+          enddo
+        enddo
+      enddo
+      do kk= 1,10
+        maxj= nbfij(2)
+        do i= 1,nbfij(1)
+          if(iandj) maxj= i
+          ii= ilocbf+i
+          ij= ii*(ii-1)/2+jlocbf
+          do j= 1,maxj
+            octpmat(ij+j,kk)= octpint(j,i,kk)
+          enddo
+        enddo
+      enddo
+!
+      return
+end
+
+
+!-----------------------------------------------------------------------
+  subroutine intoctupole(dipint,quadpint,octpint,exij,coij,coordijk, &
+&                        nprimij,nangij,nbfij,len1,mxprsh,threshex)
+!-----------------------------------------------------------------------
+!
+! Calculate dipole, quadrupole, and octupole moment integrals
+!
+! In : exij     (Exponents of basis functions)
+!      coij     (Coefficients of basis functions)
+!      coordijk (x,y,z coordinates of basis functions and dipole center)
+!      nprimij  (Numbers of primitive functions)
+!      nangij   (Degrees of angular momentum)
+!      nbfij    (Numbers of basis functions)
+!      len1     (Dimension of dipint array)
+!      mxprsh   (Size of primitive fuction array)
+!      threshex (Threshold of exponential calculation)
+! Out: dipint(len1,len1,3) (Dipole integrals)
+!      quadpint(len1,len1,6) (Quadrupole integrals)
+!      octpint(len1,len1,10) (Octupole integrals)
+!
+      implicit none
+      integer,intent(in) :: nprimij(2), nangij(2), nbfij(2), mxprsh, len1
+      integer :: ncarti, ncartj, iprim, jprim, ii, jj, iang, jang, kang, kk
+      integer :: ncart(0:6), ix, iy, iz, jx, jy, jz
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, half=0.5D+00
+      real(8),intent(in) :: exij(mxprsh,2), coij(mxprsh,2), coordijk(3,3), threshex
+      real(8),intent(out) :: dipint(len1,len1,3), quadpint(len1,len1,6), octpint(len1,len1,10)
+      real(8) :: xyzij(3), rij, rij2, fac, exi, exj, ci, cj
+      real(8) :: ex1, ex2, ex3, xyzpijk(3,3), cij
+      real(8) :: xyzint(3), octx(0:6,0:6,0:3), octy(0:6,0:6,0:3), octz(0:6,0:6,0:3)
+      real(8) :: diptmp(28,28,3), quadptmp(28,28,6), octptmp(28,28,10)
+      data ncart /1,3,6,10,15,21,28/
+!
+      ncarti= ncart(nangij(1))
+      ncartj= ncart(nangij(2))
+      diptmp(1:ncartj,1:ncarti,1:3)= zero
+      quadptmp(1:ncartj,1:ncarti,1:6)= zero
+      octptmp(1:ncartj,1:ncarti,1:10)= zero
+!
+      if((nangij(1) > 6).or.(nangij(2) > 6))then
+        write(*,'(" Error! This program supports up to i function in intoctupole.")')
+        call abort
+      endif
+!
+      do ii= 1,3
+        xyzij(ii)= coordijk(ii,1)-coordijk(ii,2)
+      enddo
+      rij= xyzij(1)*xyzij(1)+xyzij(2)*xyzij(2)+xyzij(3)*xyzij(3)
+!
+! Calculate dipole, quadrupole, and octupole integrals for each primitive
+!
+      do iprim= 1,nprimij(1)
+        exi= exij(iprim,1)
+        ci = coij(iprim,1)
+        do jprim= 1,nprimij(2)
+          exj= exij(jprim,2)
+          ex1= exi+exj
+          ex2= one/ex1
+          rij2=rij*exi*exj*ex2
+          if(rij2 > threshex) cycle
+          ex3= sqrt(ex2)
+          fac= exp(-rij2)
+          do ii= 1,3
+            xyzpijk(ii,1)=-exj*xyzij(ii)*ex2
+            xyzpijk(ii,2)= exi*xyzij(ii)*ex2
+            xyzpijk(ii,3)=(exi*coordijk(ii,1)+exj*coordijk(ii,2))*ex2-coordijk(ii,3)
+          enddo
+          cj = coij(jprim,2)*fac
+!
+          do iang= 0,nangij(1)
+            do jang= 0,nangij(2)
+              do kang= 0,3
+                call ghquadd(xyzint,ex3,xyzpijk,iang,jang,kang)
+                octx(jang,iang,kang)= xyzint(1)*ex3
+                octy(jang,iang,kang)= xyzint(2)*ex3
+                octz(jang,iang,kang)= xyzint(3)*ex3
+              enddo
+            enddo
+          enddo
+          cij= ci*cj
+          ii= 0
+          do ix= nangij(1),0,-1
+            do iy= nangij(1)-ix,0,-1
+              iz= nangij(1)-ix-iy
+              ii= ii+1
+              jj= 0
+              do jx= nangij(2),0,-1
+                do jy= nangij(2)-jx,0,-1
+                  jz= nangij(2)-jx-jy
+                  jj= jj+1
+                  diptmp(jj,ii,1)= diptmp(jj,ii,1)+cij*octx(jx,ix,1)*octy(jy,iy,0)*octz(jz,iz,0)
+                  diptmp(jj,ii,2)= diptmp(jj,ii,2)+cij*octx(jx,ix,0)*octy(jy,iy,1)*octz(jz,iz,0)
+                  diptmp(jj,ii,3)= diptmp(jj,ii,3)+cij*octx(jx,ix,0)*octy(jy,iy,0)*octz(jz,iz,1)
+                  quadptmp(jj,ii,1)= quadptmp(jj,ii,1)+cij*octx(jx,ix,2)*octy(jy,iy,0)*octz(jz,iz,0)
+                  quadptmp(jj,ii,2)= quadptmp(jj,ii,2)+cij*octx(jx,ix,1)*octy(jy,iy,1)*octz(jz,iz,0)
+                  quadptmp(jj,ii,3)= quadptmp(jj,ii,3)+cij*octx(jx,ix,1)*octy(jy,iy,0)*octz(jz,iz,1)
+                  quadptmp(jj,ii,4)= quadptmp(jj,ii,4)+cij*octx(jx,ix,0)*octy(jy,iy,2)*octz(jz,iz,0)
+                  quadptmp(jj,ii,5)= quadptmp(jj,ii,5)+cij*octx(jx,ix,0)*octy(jy,iy,1)*octz(jz,iz,1)
+                  quadptmp(jj,ii,6)= quadptmp(jj,ii,6)+cij*octx(jx,ix,0)*octy(jy,iy,0)*octz(jz,iz,2)
+                  octptmp(jj,ii, 1)= octptmp(jj,ii, 1)+cij*octx(jx,ix,3)*octy(jy,iy,0)*octz(jz,iz,0)
+                  octptmp(jj,ii, 2)= octptmp(jj,ii, 2)+cij*octx(jx,ix,2)*octy(jy,iy,1)*octz(jz,iz,0)
+                  octptmp(jj,ii, 3)= octptmp(jj,ii, 3)+cij*octx(jx,ix,2)*octy(jy,iy,0)*octz(jz,iz,1)
+                  octptmp(jj,ii, 4)= octptmp(jj,ii, 4)+cij*octx(jx,ix,1)*octy(jy,iy,2)*octz(jz,iz,0)
+                  octptmp(jj,ii, 5)= octptmp(jj,ii, 5)+cij*octx(jx,ix,1)*octy(jy,iy,1)*octz(jz,iz,1)
+                  octptmp(jj,ii, 6)= octptmp(jj,ii, 6)+cij*octx(jx,ix,1)*octy(jy,iy,0)*octz(jz,iz,2)
+                  octptmp(jj,ii, 7)= octptmp(jj,ii, 7)+cij*octx(jx,ix,0)*octy(jy,iy,3)*octz(jz,iz,0)
+                  octptmp(jj,ii, 8)= octptmp(jj,ii, 8)+cij*octx(jx,ix,0)*octy(jy,iy,2)*octz(jz,iz,1)
+                  octptmp(jj,ii, 9)= octptmp(jj,ii, 9)+cij*octx(jx,ix,0)*octy(jy,iy,1)*octz(jz,iz,2)
+                  octptmp(jj,ii,10)= octptmp(jj,ii,10)+cij*octx(jx,ix,0)*octy(jy,iy,0)*octz(jz,iz,3)
+                enddo
+              enddo
+            enddo
+          enddo
+        enddo
+      enddo
+!
+      if((nbfij(1) >= 5).or.(nbfij(2) >= 5)) then
+        do kk= 1,3
+          call nrmlz1(diptmp(1,1,kk),nbfij(1),nbfij(2),ncarti)
+        enddo
+        do kk= 1,6
+          call nrmlz1(quadptmp(1,1,kk),nbfij(1),nbfij(2),ncarti)
+        enddo
+        do kk= 1,10
+          call nrmlz1(octptmp(1,1,kk),nbfij(1),nbfij(2),ncarti)
+        enddo
+      endif
+!
+      do kk= 1,3
+        do ii= 1,nbfij(1)
+          do jj= 1,nbfij(2)
+            dipint(jj,ii,kk)= diptmp(jj,ii,kk)
+          enddo
+        enddo
+      enddo
+      do kk= 1,6
+        do ii= 1,nbfij(1)
+          do jj= 1,nbfij(2)
+            quadpint(jj,ii,kk)= quadptmp(jj,ii,kk)
+          enddo
+        enddo
+      enddo
+      do kk= 1,10
+        do ii= 1,nbfij(1)
+          do jj= 1,nbfij(2)
+            octpint(jj,ii,kk)= octptmp(jj,ii,kk)
+          enddo
+        enddo
+      enddo
+!
+      return
+end
+
+
 !-------------------------------------------
   subroutine nrmlz1(onei,nbfi,nbfj,ncarti)
 !-------------------------------------------

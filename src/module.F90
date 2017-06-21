@@ -329,6 +329,14 @@ end
 end
 
 
+!-----------------
+  module modprop
+!-----------------
+      implicit none
+      logical :: octupole
+end
+
+
 !----------------
   module modecp
 !----------------

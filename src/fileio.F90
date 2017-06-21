@@ -34,16 +34,17 @@
       use moddft, only : nrad, nleb, bqrad
       use modecp, only : ecp, flagecp
       use modmp2, only : ncore, nvfz, maxmp2diis, maxmp2iter
+      use modprop, only : octupole
       implicit none
       integer,intent(in) :: mpi_comm
       integer :: myrank, ii, llen, intarray(16), info
       real(8) :: realarray(23)
       character(len=254) :: line
       character(len=16) :: chararray(9), mem=''
-      logical :: logarray(4)
+      logical :: logarray(5)
       namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp
       namelist /control/ precision, cutint2, spher, guess, iprint, bohr, check, threshover, &
-&                        threshatom
+&                        threshatom, octupole
       namelist /scf/ scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub, &
 &                    threshdiis, threshsoscf, threshqc
       namelist /opt/ nopt, optconv, cartesian
@@ -202,13 +203,14 @@
         logarray(2)= bohr
         logarray(3)= flagecp
         logarray(4)= cartesian
+        logarray(5)= octupole
       endif
 !
       call para_bcastc(chararray,16*9,0,mpi_comm)
       call para_bcastc(check,64,0,mpi_comm)
       call para_bcastr(realarray,23,0,mpi_comm)
       call para_bcasti(intarray,16,0,mpi_comm)
-      call para_bcastl(logarray,4,0,mpi_comm)
+      call para_bcastl(logarray,5,0,mpi_comm)
 !
       natom= intarray(1)
 !
@@ -267,6 +269,7 @@
       bohr    = logarray(2)
       flagecp = logarray(3)
       cartesian=logarray(4)
+      octupole =logarray(5)
 !
       return
 end
@@ -463,6 +466,7 @@ end
       use modunit, only : bohr
       use modguess, only : guess
       use modthresh, only : precision
+      use modprop, only : octupole
       implicit none
 !
       if(master) then
@@ -483,7 +487,8 @@ end
 &                  memmax/125000, scftype, precision
         write(*,'("   Charge  = ",F11.1," ,  Multi   = ",i12,     " ,  Spher    = ",l1)') &
 &                  charge, multi, spher
-        write(*,'("   Bohr    = ",l1,11x,",  Guess   = ",a12)') bohr, guess
+        write(*,'("   Bohr    = ",l1,11x,",  Guess   = ",a12,     " ,  Octupole = ",l1)') &
+&                  bohr, guess, octupole
         if(runtype == 'OPTIMIZE') &
 &       write(*,'("   Nopt    =  ",i10," ,  Optconv = ",1p,D12.1," ,  Cartesian= ",l1)') &
 &                  nopt, optconv, cartesian

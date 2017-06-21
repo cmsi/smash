@@ -214,6 +214,7 @@ end
       use modjob, only : scftype, runtype, method
       use modmolecule, only : multi, charge
       use modmp2, only : ncore, nvfz, maxmp2diis, maxmp2iter
+      use modprop, only : octupole
       implicit none
 !
       nwarn  = 0
@@ -271,6 +272,7 @@ end
       guess='HUCKEL'
       ecp=''
       check=''
+      octupole=.false.
 !
       return
 end
@@ -399,6 +401,7 @@ end
       use modprint, only : iprint
       use modscf, only : dconv
       use modthresh, only : cutint2, threshover
+      use modprop, only : octupole
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
@@ -499,13 +502,25 @@ end
 !
       call calcrmulliken(dmtrx,smtrx)
 !
+! Calculate dipole, quadrupole, and octupole moments
+!
+      if(octupole) then
+        call memset(nao3*29)
+        allocate(work(nao3*29))
+        call calcroctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrx, &
+&                          nproc1,myrank1,mpi_comm1)
+        deallocate(work)
+        call memunset(nao3*29)
+      else
+!
 ! Calculate dipole moment
 !
-      call memset(nao3*6)
-      allocate(work(nao3*6))
-      call calcrdipole(work,work(nao3*3+1),dmtrx,nproc1,myrank1,mpi_comm1)
-      deallocate(work)
-      call memunset(nao3*6)
+        call memset(nao3*6)
+        allocate(work(nao3*6))
+        call calcrdipole(work,work(nao3*3+1),dmtrx,nproc1,myrank1,mpi_comm1)
+        deallocate(work)
+        call memunset(nao3*6)
+      endif
 !
 ! Write checkpoint file
 !
@@ -543,6 +558,7 @@ end
       use modprint, only : iprint
       use modscf, only : dconv
       use modthresh, only : cutint2, threshover
+      use modprop, only : octupole
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
@@ -645,13 +661,25 @@ end
 !
       call calcumulliken(dmtrxa,dmtrxb,smtrx)
 !
+! Calculate dipole, quadrupole, and octupole moments
+!
+      if(octupole) then
+        call memset(nao3*29)
+        allocate(work(nao3*29))
+        call calcuoctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrxa,dmtrxb, &
+&                          nproc1,myrank1,mpi_comm1)
+        deallocate(work)
+        call memunset(nao3*29)
+      else
+!
 ! Calculate dipole moment
 !
-      call memset(nao3*6)
-      allocate(work(nao3*6))
-      call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1)
-      deallocate(work)
-      call memunset(nao3*6)
+        call memset(nao3*6)
+        allocate(work(nao3*6))
+        call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1)
+        deallocate(work)
+        call memunset(nao3*6)
+      endif
 !
 ! Write checkpoint file
 !
@@ -688,6 +716,7 @@ end
       use modprint, only : iprint
       use modscf, only : dconv
       use modthresh, only : cutint2, threshover
+      use modprop, only : octupole
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
@@ -817,13 +846,25 @@ end
 !
       call calcrmulliken(dmtrx,smtrx)
 !
+! Calculate dipole, quadrupole, and octupole moments
+!
+      if(octupole) then
+        call memset(nao3*29)
+        allocate(work(nao3*29))
+        call calcroctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrx, &
+&                          nproc1,myrank1,mpi_comm1)
+        deallocate(work)
+        call memunset(nao3*29)
+      else
+!
 ! Calculate dipole moment
 !
-      call memset(nao3*6)
-      allocate(work(nao3*6))
-      call calcrdipole(work,work(nao3*3+1),dmtrx,nproc1,myrank1,mpi_comm1)
-      deallocate(work)
-      call memunset(nao3*6)
+        call memset(nao3*6)
+        allocate(work(nao3*6))
+        call calcrdipole(work,work(nao3*3+1),dmtrx,nproc1,myrank1,mpi_comm1)
+        deallocate(work)
+        call memunset(nao3*6)
+      endif
 !
 ! Write checkpoint file
 !
@@ -861,6 +902,7 @@ end
       use modprint, only : iprint
       use modscf, only : dconv
       use modthresh, only : cutint2, threshover
+      use modprop, only : octupole
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
@@ -995,13 +1037,25 @@ end
 !
       call calcumulliken(dmtrxa,dmtrxb,smtrx)
 !
+! Calculate dipole, quadrupole, and octupole moments
+!
+      if(octupole) then
+        call memset(nao3*29)
+        allocate(work(nao3*29))
+        call calcuoctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrxa,dmtrxb, &
+&                          nproc1,myrank1,mpi_comm1)
+        deallocate(work)
+        call memunset(nao3*29)
+      else
+!
 ! Calculate dipole moment
 !
-      call memset(nao3*6)
-      allocate(work(nao3*6))
-      call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1)
-      deallocate(work)
-      call memunset(nao3*6)
+        call memset(nao3*6)
+        allocate(work(nao3*6))
+        call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1)
+        deallocate(work)
+        call memunset(nao3*6)
+      endif
 !
 ! Write checkpoint file
 !
@@ -1041,6 +1095,7 @@ end
       use modprint, only : iprint
       use modscf, only : dconv
       use modthresh, only : cutint2, threshover
+      use modprop, only : octupole
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer,allocatable :: iredun(:)
@@ -1272,13 +1327,25 @@ end
 !
       call calcrmulliken(dmtrx,smtrx)
 !
+! Calculate dipole, quadrupole, and octupole moments
+!
+      if(octupole) then
+        call memset(nao3*29)
+        allocate(work(nao3,29))
+        call calcroctupole(work,work(1,4),work(1,10),work(1,20),dmtrx, &
+&                          nproc1,myrank1,mpi_comm1)
+        deallocate(work)
+        call memunset(nao3*29)
+      else
+!
 ! Calculate dipole moment
 !
-      call memset(nao3*6)
-      allocate(work(nao3,6))
-      call calcrdipole(work,work(1,4),dmtrx,nproc1,myrank1,mpi_comm1)
-      deallocate(work)
-      call memunset(nao3*6)
+        call memset(nao3*6)
+        allocate(work(nao3,6))
+        call calcrdipole(work,work(1,4),dmtrx,nproc1,myrank1,mpi_comm1)
+        deallocate(work)
+        call memunset(nao3*6)
+      endif
 !
 ! Write optimized geometry
 !
@@ -1346,6 +1413,7 @@ end
       use modprint, only : iprint
       use modscf, only : dconv
       use modthresh, only : cutint2, threshover
+      use modprop, only : octupole
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer,allocatable :: iredun(:)
@@ -1583,13 +1651,25 @@ end
 !
       call calcumulliken(dmtrxa,dmtrxb,smtrx)
 !
+! Calculate dipole, quadrupole, and octupole moments
+!
+      if(octupole) then
+        call memset(nao3*29)
+        allocate(work(nao3,29))
+        call calcuoctupole(work,work(1,4),work(1,10),work(1,20),dmtrxa,dmtrxb, &
+&                          nproc1,myrank1,mpi_comm1)
+        deallocate(work)
+        call memunset(nao3*29)
+      else
+!
 ! Calculate dipole moment
 !
-      call memset(nao3*6)
-      allocate(work(nao3,6))
-      call calcudipole(work,work(1,4),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1)
-      deallocate(work)
-      call memunset(nao3*6)
+        call memset(nao3*6)
+        allocate(work(nao3,6))
+        call calcudipole(work,work(1,4),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1)
+        deallocate(work)
+        call memunset(nao3*6)
+      endif
 !
 ! Write optimized geometry
 !

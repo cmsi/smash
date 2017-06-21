@@ -1257,11 +1257,183 @@ end
 !
       if(master) then
         write(*,'("  ----------------------------------------------")')
-        write(*,'("                   Dipole Momemt")')
+        write(*,'("                Dipole Momemt (Debye)")')
         write(*,'("         X          Y          Z       Total")')
         write(*,'("  ----------------------------------------------")')
         write(*,'(2x,4f11.4)')xdip, ydip, zdip, totaldip
         write(*,'("  ----------------------------------------------",/)')
+      endif
+!
+      return
+end
+
+
+!-----------------------------------------------------------------
+  subroutine calcroctupole(dipmat,quadpmat,octpmat,work,dmtrx, &
+&                          nproc,myrank,mpi_comm)
+!-----------------------------------------------------------------
+!
+! Driver of dipole, quadrupole, and octupole moment calculation for closed-shell
+!
+      use modparallel, only : master
+      use modbasis, only : nao
+      use modunit, only : todebye, toang
+      use modmolecule, only : natom, coord, znuc
+      implicit none
+      integer,intent(in) :: nproc, myrank, mpi_comm
+      integer :: iatom, ii
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00, two=2.0D+00, three=3.0D+00
+      real(8),parameter :: four=4.0D+00, five=5.0D+00
+      real(8),intent(in) :: dmtrx((nao*(nao+1))/2)
+      real(8),intent(out) :: dipmat((nao*(nao+1))/2,3), quadpmat((nao*(nao+1))/2,6)
+      real(8),intent(out) :: octpmat((nao*(nao+1))/2,10), work((nao*(nao+1))/2*10)
+      real(8) :: dipcenter(3), xdip, ydip, zdip, totaldip, tridot
+      real(8) :: xdipplus, ydipplus, zdipplus, xdipminus, ydipminus, zdipminus
+      real(8) :: xxquadpplus, xyquadpplus, xzquadpplus, yyquadpplus, yzquadpplus, zzquadpplus
+      real(8) :: xxquadpminus, xyquadpminus, xzquadpminus, yyquadpminus, yzquadpminus, zzquadpminus
+      real(8) :: xxquadp, xyquadp, xzquadp, yyquadp, yzquadp, zzquadp, quadp(6), facp
+      real(8) :: xxxoctpplus, xxyoctpplus, xxzoctpplus, xyyoctpplus, xyzoctpplus, xzzoctpplus
+      real(8) :: yyyoctpplus, yyzoctpplus, yzzoctpplus, zzzoctpplus
+      real(8) :: xxxoctpminus, xxyoctpminus, xxzoctpminus, xyyoctpminus, xyzoctpminus, xzzoctpminus
+      real(8) :: yyyoctpminus, yyzoctpminus, yzzoctpminus, zzzoctpminus
+      real(8) :: xxxoctp, xxyoctp, xxzoctp, xyyoctp, xyzoctp, xzzoctp
+      real(8) :: yyyoctp, yyzoctp, yzzoctp, zzzoctp, octp(10), faco
+!
+! Nuclear part
+!
+      xdipplus= zero
+      ydipplus= zero
+      zdipplus= zero
+      xxquadpplus= zero
+      xyquadpplus= zero
+      xzquadpplus= zero
+      yyquadpplus= zero
+      yzquadpplus= zero
+      zzquadpplus= zero
+      xxxoctpplus= zero
+      xxyoctpplus= zero
+      xxzoctpplus= zero
+      xyyoctpplus= zero
+      xyzoctpplus= zero
+      xzzoctpplus= zero
+      yyyoctpplus= zero
+      yyzoctpplus= zero
+      yzzoctpplus= zero
+      zzzoctpplus= zero
+!
+      do iatom= 1,natom
+        xdipplus= xdipplus+coord(1,iatom)*znuc(iatom)
+        ydipplus= ydipplus+coord(2,iatom)*znuc(iatom)
+        zdipplus= zdipplus+coord(3,iatom)*znuc(iatom)
+        xxquadpplus= xxquadpplus+coord(1,iatom)*coord(1,iatom)*znuc(iatom)
+        xyquadpplus= xyquadpplus+coord(1,iatom)*coord(2,iatom)*znuc(iatom)
+        xzquadpplus= xzquadpplus+coord(1,iatom)*coord(3,iatom)*znuc(iatom)
+        yyquadpplus= yyquadpplus+coord(2,iatom)*coord(2,iatom)*znuc(iatom)
+        yzquadpplus= yzquadpplus+coord(2,iatom)*coord(3,iatom)*znuc(iatom)
+        zzquadpplus= zzquadpplus+coord(3,iatom)*coord(3,iatom)*znuc(iatom)
+        xxxoctpplus= xxxoctpplus+coord(1,iatom)*coord(1,iatom)*coord(1,iatom)*znuc(iatom)
+        xxyoctpplus= xxyoctpplus+coord(1,iatom)*coord(1,iatom)*coord(2,iatom)*znuc(iatom)
+        xxzoctpplus= xxzoctpplus+coord(1,iatom)*coord(1,iatom)*coord(3,iatom)*znuc(iatom)
+        xyyoctpplus= xyyoctpplus+coord(1,iatom)*coord(2,iatom)*coord(2,iatom)*znuc(iatom)
+        xyzoctpplus= xyzoctpplus+coord(1,iatom)*coord(2,iatom)*coord(3,iatom)*znuc(iatom)
+        xzzoctpplus= xzzoctpplus+coord(1,iatom)*coord(3,iatom)*coord(3,iatom)*znuc(iatom)
+        yyyoctpplus= yyyoctpplus+coord(2,iatom)*coord(2,iatom)*coord(2,iatom)*znuc(iatom)
+        yyzoctpplus= yyzoctpplus+coord(2,iatom)*coord(2,iatom)*coord(3,iatom)*znuc(iatom)
+        yzzoctpplus= yzzoctpplus+coord(2,iatom)*coord(3,iatom)*coord(3,iatom)*znuc(iatom)
+        zzzoctpplus= zzzoctpplus+coord(3,iatom)*coord(3,iatom)*coord(3,iatom)*znuc(iatom)
+      enddo
+!
+! Electron part
+!
+      dipcenter(:)= zero
+!
+      call calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm)
+!
+      xdipminus=-tridot(dmtrx,dipmat(1,1),nao)
+      ydipminus=-tridot(dmtrx,dipmat(1,2),nao)
+      zdipminus=-tridot(dmtrx,dipmat(1,3),nao)
+      xxquadpminus=-tridot(dmtrx,quadpmat(1,1),nao)
+      xyquadpminus=-tridot(dmtrx,quadpmat(1,2),nao)
+      xzquadpminus=-tridot(dmtrx,quadpmat(1,3),nao)
+      yyquadpminus=-tridot(dmtrx,quadpmat(1,4),nao)
+      yzquadpminus=-tridot(dmtrx,quadpmat(1,5),nao)
+      zzquadpminus=-tridot(dmtrx,quadpmat(1,6),nao)
+      xxxoctpminus=-tridot(dmtrx,octpmat(1, 1),nao)
+      xxyoctpminus=-tridot(dmtrx,octpmat(1, 2),nao)
+      xxzoctpminus=-tridot(dmtrx,octpmat(1, 3),nao)
+      xyyoctpminus=-tridot(dmtrx,octpmat(1, 4),nao)
+      xyzoctpminus=-tridot(dmtrx,octpmat(1, 5),nao)
+      xzzoctpminus=-tridot(dmtrx,octpmat(1, 6),nao)
+      yyyoctpminus=-tridot(dmtrx,octpmat(1, 7),nao)
+      yyzoctpminus=-tridot(dmtrx,octpmat(1, 8),nao)
+      yzzoctpminus=-tridot(dmtrx,octpmat(1, 9),nao)
+      zzzoctpminus=-tridot(dmtrx,octpmat(1,10),nao)
+!
+! Sum Nuclear and Electron parts
+!
+      facp= todebye*toang*half
+      faco= todebye*toang*toang*half
+      xdip=(xdipplus+xdipminus)*todebye
+      ydip=(ydipplus+ydipminus)*todebye
+      zdip=(zdipplus+zdipminus)*todebye
+      xxquadp=(xxquadpplus+xxquadpminus)*facp
+      xyquadp=(xyquadpplus+xyquadpminus)*facp
+      xzquadp=(xzquadpplus+xzquadpminus)*facp
+      yyquadp=(yyquadpplus+yyquadpminus)*facp
+      yzquadp=(yzquadpplus+yzquadpminus)*facp
+      zzquadp=(zzquadpplus+zzquadpminus)*facp
+      xxxoctp=(xxxoctpplus+xxxoctpminus)*faco
+      xxyoctp=(xxyoctpplus+xxyoctpminus)*faco
+      xxzoctp=(xxzoctpplus+xxzoctpminus)*faco
+      xyyoctp=(xyyoctpplus+xyyoctpminus)*faco
+      xyzoctp=(xyzoctpplus+xyzoctpminus)*faco
+      xzzoctp=(xzzoctpplus+xzzoctpminus)*faco
+      yyyoctp=(yyyoctpplus+yyyoctpminus)*faco
+      yyzoctp=(yyzoctpplus+yyzoctpminus)*faco
+      yzzoctp=(yzzoctpplus+yzzoctpminus)*faco
+      zzzoctp=(zzzoctpplus+zzzoctpminus)*faco
+      totaldip= sqrt(xdip*xdip+ydip*ydip+zdip*zdip)
+!
+      quadp(1)= xxquadp*two-yyquadp    -zzquadp
+      quadp(2)= xyquadp*three
+      quadp(3)= xzquadp*three
+      quadp(4)=-xxquadp    +yyquadp*two-zzquadp
+      quadp(5)= yzquadp*three
+      quadp(6)=-xxquadp    -yyquadp    +zzquadp*two
+      octp( 1)= xxxoctp*two  -xyyoctp*three-xzzoctp*three
+      octp( 2)= xxyoctp*four -yyyoctp      -yzzoctp
+      octp( 3)= xxzoctp*four -yyzoctp      -zzzoctp
+      octp( 4)=-xxxoctp      +xyyoctp*four -xzzoctp
+      octp( 5)= xyzoctp*five
+      octp( 6)=-xxxoctp      -xyyoctp      +xzzoctp*four
+      octp( 7)=-xxyoctp*three+yyyoctp*two  -yzzoctp*three
+      octp( 8)=-xxzoctp      +yyzoctp*four -zzzoctp
+      octp( 9)=-xxyoctp      -yyyoctp      +yzzoctp*four
+      octp(10)=-xxzoctp*three-yyzoctp*three+zzzoctp*two
+!
+      if(master) then
+        write(*,'("  ----------------------------------------------")')
+        write(*,'("                Dipole Momemt (Debye)")')
+        write(*,'("         X          Y          Z       Total")')
+        write(*,'("  ----------------------------------------------")')
+        write(*,'(2x,4f11.4)')xdip, ydip, zdip, totaldip
+        write(*,'("  ----------------------------------------------",/)')
+        write(*,'("  --------------------------------------------------------------------")')
+        write(*,'("                Quadrupole Momemt (Debye*Angstrom)")')
+        write(*,'("         XX         XY         XZ         YY         YZ         ZZ")')
+        write(*,'("  --------------------------------------------------------------------")')
+        write(*,'(2x,6f11.4)')(quadp(ii),ii=1,6)
+        write(*,'("  --------------------------------------------------------------------",/)')
+        write(*,'("  ---------------------------------------------------------")')
+        write(*,'("                Octupole Momemt (Debye*Angstrom^2)")')
+        write(*,'("        XXX        XXY        XXZ       XYY        XYZ")')
+        write(*,'("  ---------------------------------------------------------")')
+        write(*,'(2x,5f11.4)')(octp(ii),ii=1,5)
+        write(*,'("  ---------------------------------------------------------")')
+        write(*,'("        XZZ        YYY        YYZ       YZZ        ZZZ")')
+        write(*,'("  ---------------------------------------------------------")')
+        write(*,'(2x,5f11.4)')(octp(ii),ii=6,10)
+        write(*,'("  ---------------------------------------------------------",/)')
       endif
 !
       return
@@ -1318,11 +1490,187 @@ end
 !
       if(master) then
         write(*,'("  ----------------------------------------------")')
-        write(*,'("                   Dipole Momemt")')
+        write(*,'("                Dipole Momemt (Debye)")')
         write(*,'("         X          Y          Z       Total")')
         write(*,'("  ----------------------------------------------")')
         write(*,'(2x,4f11.4)')xdip, ydip, zdip, totaldip
         write(*,'("  ----------------------------------------------",/)')
+      endif
+!
+      return
+end
+
+
+!-------------------------------------------------------------------------
+  subroutine calcuoctupole(dipmat,quadpmat,octpmat,work,dmtrxa,dmtrxb, &
+&                          nproc,myrank,mpi_comm)
+!-------------------------------------------------------------------------
+!
+! Driver of dipole, quadrupole, and octupole moment calculation for open-shell
+!
+      use modparallel, only : master
+      use modbasis, only : nao
+      use modunit, only : todebye, toang
+      use modmolecule, only : natom, coord, znuc
+      implicit none
+      integer,intent(in) :: nproc, myrank, mpi_comm
+      integer :: iatom, ii
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00, two=2.0D+00, three=3.0D+00
+      real(8),parameter :: four=4.0D+00, five=5.0D+00
+      real(8),intent(in) :: dmtrxa((nao*(nao+1))/2), dmtrxb((nao*(nao+1))/2)
+      real(8),intent(out) :: dipmat((nao*(nao+1))/2,3), quadpmat((nao*(nao+1))/2,6)
+      real(8),intent(out) :: octpmat((nao*(nao+1))/2,10), work((nao*(nao+1))/2*10)
+      real(8) :: dipcenter(3), xdip, ydip, zdip, totaldip, tridot
+      real(8) :: xdipplus, ydipplus, zdipplus, xdipminus, ydipminus, zdipminus
+      real(8) :: xxquadpplus, xyquadpplus, xzquadpplus, yyquadpplus, yzquadpplus, zzquadpplus
+      real(8) :: xxquadpminus, xyquadpminus, xzquadpminus, yyquadpminus, yzquadpminus, zzquadpminus
+      real(8) :: xxquadp, xyquadp, xzquadp, yyquadp, yzquadp, zzquadp, quadp(6), facp
+      real(8) :: xxxoctpplus, xxyoctpplus, xxzoctpplus, xyyoctpplus, xyzoctpplus, xzzoctpplus
+      real(8) :: yyyoctpplus, yyzoctpplus, yzzoctpplus, zzzoctpplus
+      real(8) :: xxxoctpminus, xxyoctpminus, xxzoctpminus, xyyoctpminus, xyzoctpminus, xzzoctpminus
+      real(8) :: yyyoctpminus, yyzoctpminus, yzzoctpminus, zzzoctpminus
+      real(8) :: xxxoctp, xxyoctp, xxzoctp, xyyoctp, xyzoctp, xzzoctp
+      real(8) :: yyyoctp, yyzoctp, yzzoctp, zzzoctp, octp(10), faco
+!
+! Nuclear part
+!
+      xdipplus= zero
+      ydipplus= zero
+      zdipplus= zero
+      xxquadpplus= zero
+      xyquadpplus= zero
+      xzquadpplus= zero
+      yyquadpplus= zero
+      yzquadpplus= zero
+      zzquadpplus= zero
+      xxxoctpplus= zero
+      xxyoctpplus= zero
+      xxzoctpplus= zero
+      xyyoctpplus= zero
+      xyzoctpplus= zero
+      xzzoctpplus= zero
+      yyyoctpplus= zero
+      yyzoctpplus= zero
+      yzzoctpplus= zero
+      zzzoctpplus= zero
+!
+      do iatom= 1,natom
+        xdipplus= xdipplus+coord(1,iatom)*znuc(iatom)
+        ydipplus= ydipplus+coord(2,iatom)*znuc(iatom)
+        zdipplus= zdipplus+coord(3,iatom)*znuc(iatom)
+        xxquadpplus= xxquadpplus+coord(1,iatom)*coord(1,iatom)*znuc(iatom)
+        xyquadpplus= xyquadpplus+coord(1,iatom)*coord(2,iatom)*znuc(iatom)
+        xzquadpplus= xzquadpplus+coord(1,iatom)*coord(3,iatom)*znuc(iatom)
+        yyquadpplus= yyquadpplus+coord(2,iatom)*coord(2,iatom)*znuc(iatom)
+        yzquadpplus= yzquadpplus+coord(2,iatom)*coord(3,iatom)*znuc(iatom)
+        zzquadpplus= zzquadpplus+coord(3,iatom)*coord(3,iatom)*znuc(iatom)
+        xxxoctpplus= xxxoctpplus+coord(1,iatom)*coord(1,iatom)*coord(1,iatom)*znuc(iatom)
+        xxyoctpplus= xxyoctpplus+coord(1,iatom)*coord(1,iatom)*coord(2,iatom)*znuc(iatom)
+        xxzoctpplus= xxzoctpplus+coord(1,iatom)*coord(1,iatom)*coord(3,iatom)*znuc(iatom)
+        xyyoctpplus= xyyoctpplus+coord(1,iatom)*coord(2,iatom)*coord(2,iatom)*znuc(iatom)
+        xyzoctpplus= xyzoctpplus+coord(1,iatom)*coord(2,iatom)*coord(3,iatom)*znuc(iatom)
+        xzzoctpplus= xzzoctpplus+coord(1,iatom)*coord(3,iatom)*coord(3,iatom)*znuc(iatom)
+        yyyoctpplus= yyyoctpplus+coord(2,iatom)*coord(2,iatom)*coord(2,iatom)*znuc(iatom)
+        yyzoctpplus= yyzoctpplus+coord(2,iatom)*coord(2,iatom)*coord(3,iatom)*znuc(iatom)
+        yzzoctpplus= yzzoctpplus+coord(2,iatom)*coord(3,iatom)*coord(3,iatom)*znuc(iatom)
+        zzzoctpplus= zzzoctpplus+coord(3,iatom)*coord(3,iatom)*coord(3,iatom)*znuc(iatom)
+      enddo
+!
+! Electron part
+!
+      dipcenter(:)= zero
+!
+      call calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm)
+!
+      do ii= 1,nao*(nao+1)/2
+        work(ii)= dmtrxa(ii)+dmtrxb(ii)
+      enddo
+!
+      xdipminus=-tridot(work,dipmat(1,1),nao)
+      ydipminus=-tridot(work,dipmat(1,2),nao)
+      zdipminus=-tridot(work,dipmat(1,3),nao)
+      xxquadpminus=-tridot(work,quadpmat(1,1),nao)
+      xyquadpminus=-tridot(work,quadpmat(1,2),nao)
+      xzquadpminus=-tridot(work,quadpmat(1,3),nao)
+      yyquadpminus=-tridot(work,quadpmat(1,4),nao)
+      yzquadpminus=-tridot(work,quadpmat(1,5),nao)
+      zzquadpminus=-tridot(work,quadpmat(1,6),nao)
+      xxxoctpminus=-tridot(work,octpmat(1, 1),nao)
+      xxyoctpminus=-tridot(work,octpmat(1, 2),nao)
+      xxzoctpminus=-tridot(work,octpmat(1, 3),nao)
+      xyyoctpminus=-tridot(work,octpmat(1, 4),nao)
+      xyzoctpminus=-tridot(work,octpmat(1, 5),nao)
+      xzzoctpminus=-tridot(work,octpmat(1, 6),nao)
+      yyyoctpminus=-tridot(work,octpmat(1, 7),nao)
+      yyzoctpminus=-tridot(work,octpmat(1, 8),nao)
+      yzzoctpminus=-tridot(work,octpmat(1, 9),nao)
+      zzzoctpminus=-tridot(work,octpmat(1,10),nao)
+!
+! Sum Nuclear and Electron parts
+!
+      facp= todebye*toang*half
+      faco= todebye*toang*toang*half
+      xdip=(xdipplus+xdipminus)*todebye
+      ydip=(ydipplus+ydipminus)*todebye
+      zdip=(zdipplus+zdipminus)*todebye
+      xxquadp=(xxquadpplus+xxquadpminus)*facp
+      xyquadp=(xyquadpplus+xyquadpminus)*facp
+      xzquadp=(xzquadpplus+xzquadpminus)*facp
+      yyquadp=(yyquadpplus+yyquadpminus)*facp
+      yzquadp=(yzquadpplus+yzquadpminus)*facp
+      zzquadp=(zzquadpplus+zzquadpminus)*facp
+      xxxoctp=(xxxoctpplus+xxxoctpminus)*faco
+      xxyoctp=(xxyoctpplus+xxyoctpminus)*faco
+      xxzoctp=(xxzoctpplus+xxzoctpminus)*faco
+      xyyoctp=(xyyoctpplus+xyyoctpminus)*faco
+      xyzoctp=(xyzoctpplus+xyzoctpminus)*faco
+      xzzoctp=(xzzoctpplus+xzzoctpminus)*faco
+      yyyoctp=(yyyoctpplus+yyyoctpminus)*faco
+      yyzoctp=(yyzoctpplus+yyzoctpminus)*faco
+      yzzoctp=(yzzoctpplus+yzzoctpminus)*faco
+      zzzoctp=(zzzoctpplus+zzzoctpminus)*faco
+      totaldip= sqrt(xdip*xdip+ydip*ydip+zdip*zdip)
+!
+      quadp(1)= xxquadp*two-yyquadp    -zzquadp
+      quadp(2)= xyquadp*three
+      quadp(3)= xzquadp*three
+      quadp(4)=-xxquadp    +yyquadp*two-zzquadp
+      quadp(5)= yzquadp*three
+      quadp(6)=-xxquadp    -yyquadp    +zzquadp*two
+      octp( 1)= xxxoctp*two  -xyyoctp*three-xzzoctp*three
+      octp( 2)= xxyoctp*four -yyyoctp      -yzzoctp
+      octp( 3)= xxzoctp*four -yyzoctp      -zzzoctp
+      octp( 4)=-xxxoctp      +xyyoctp*four -xzzoctp
+      octp( 5)= xyzoctp*five
+      octp( 6)=-xxxoctp      -xyyoctp      +xzzoctp*four
+      octp( 7)=-xxyoctp*three+yyyoctp*two  -yzzoctp*three
+      octp( 8)=-xxzoctp      +yyzoctp*four -zzzoctp
+      octp( 9)=-xxyoctp      -yyyoctp      +yzzoctp*four
+      octp(10)=-xxzoctp*three-yyzoctp*three+zzzoctp*two
+!
+      if(master) then
+        write(*,'("  ----------------------------------------------")')
+        write(*,'("                Dipole Momemt (Debye)")')
+        write(*,'("         X          Y          Z       Total")')
+        write(*,'("  ----------------------------------------------")')
+        write(*,'(2x,4f11.4)')xdip, ydip, zdip, totaldip
+        write(*,'("  ----------------------------------------------",/)')
+        write(*,'("  --------------------------------------------------------------------")')
+        write(*,'("                Quadrupole Momemt (Debye*Angstrom)")')
+        write(*,'("         XX         XY         XZ         YY         YZ         ZZ")')
+        write(*,'("  --------------------------------------------------------------------")')
+        write(*,'(2x,6f11.4)')(quadp(ii),ii=1,6)
+        write(*,'("  --------------------------------------------------------------------",/)')
+        write(*,'("  ---------------------------------------------------------")')
+        write(*,'("                Octupole Momemt (Debye*Angstrom^2)")')
+        write(*,'("        XXX        XXY        XXZ       XYY        XYZ")')
+        write(*,'("  ---------------------------------------------------------")')
+        write(*,'(2x,5f11.4)')(octp(ii),ii=1,5)
+        write(*,'("  ---------------------------------------------------------")')
+        write(*,'("        XZZ        YYY        YYZ       YZZ        ZZZ")')
+        write(*,'("  ---------------------------------------------------------")')
+        write(*,'(2x,5f11.4)')(octp(ii),ii=6,10)
+        write(*,'("  ---------------------------------------------------------",/)')
       endif
 !
       return
