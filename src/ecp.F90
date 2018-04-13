@@ -27,9 +27,11 @@
       integer,intent(in) :: nproc, myrank
       integer :: maxfunc(0:6)=(/1,3,6,10,15,21,28/)
       integer :: maxbasis, numtbasis, maxdim, llmax, maxecpdim, nsizecp1, nsizecp2, ish, jsh
-      integer,allocatable :: label1ecp(:), num1ecp(:), label2ecp(:), num2ecp(:)
+!     integer :: label1ecp(nterm1*9), num1ecp(nsizecp1), label2ecp(nterm2*6), num2ecp(nsizecp2)
+      integer :: label1ecp(nterm1*9), num1ecp(1597), label2ecp(nterm2*6), num2ecp(897)
       real(8),intent(inout) :: hstmat2((nao*(nao+1))/2)
-      real(8),allocatable :: term1ecp(:), term2ecp(:), term0ecp(:), xyzintecp(:)
+!     real(8) :: term1ecp(nterm1), term2ecp(nterm2), term0ecp(nsizecp2), xyzintecp(25*25*25)
+      real(8) :: term1ecp(nterm1), term2ecp(nterm2), term0ecp(897), xyzintecp(25*25*25)
 !
       maxbasis= maxval(mtype(1:nshell))
       maxdim= maxfunc(maxbasis)
@@ -47,9 +49,9 @@
       nsizecp1=(numtbasis*numtbasis+numtbasis)/2+1
       nsizecp2= llmax*llmax*numtbasis+1
 !
-      call memset(nterm1*10+nterm2*7+nsizecp1+nsizecp2*2+25*25*25)
-      allocate(term1ecp(nterm1),term2ecp(nterm2),term0ecp(nsizecp2),xyzintecp(25*25*25), &
-&              label1ecp(nterm1*9),label2ecp(nterm2*6),num1ecp(nsizecp1),num2ecp(nsizecp2))
+!      call memset(nterm1*10+nterm2*7+nsizecp1+nsizecp2*2+25*25*25)
+!      allocate(term1ecp(nterm1),term2ecp(nterm2),term0ecp(nsizecp2),xyzintecp(25*25*25), &
+!&              label1ecp(nterm1*9),label2ecp(nterm2*6),num1ecp(nsizecp1),num2ecp(nsizecp2))
 !
 ! Prepare intermediate integrals for ECP
 !
@@ -67,9 +69,9 @@
       enddo
 !$OMP end parallel
 !
-      deallocate(term1ecp,term2ecp,term0ecp,xyzintecp, &
-&                label1ecp,label2ecp,num1ecp,num2ecp)
-      call memunset(nterm1*10+nterm2*7+nsizecp1+nsizecp2*2+25*25*25)
+!      deallocate(term1ecp,term2ecp,term0ecp,xyzintecp, &
+!&                label1ecp,label2ecp,num1ecp,num2ecp)
+!      call memunset(nterm1*10+nterm2*7+nsizecp1+nsizecp2*2+25*25*25)
 !
       return
 end
