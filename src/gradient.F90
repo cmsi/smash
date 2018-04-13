@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !---------------------------------------------------------------------------
-  subroutine calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
+  subroutine calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
 !---------------------------------------------------------------------------
 !
 ! Driver of RHF energy gradient calculation
@@ -21,7 +21,9 @@
       use modparallel, only : master
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom, neleca, numatomic
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc1, myrank1, mpi_comm1
       integer :: nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
@@ -50,7 +52,7 @@
 !
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
-      call memset(nao2+nao3+natom*3)
+      call memset(nao2+nao3+natom*3,datacomp)
       allocate(fulldmtrx(nao2),ewdmtrx(nao3),egradtmp(natom*3))
 !
       egradtmp(:)= zero
@@ -91,14 +93,14 @@
 ! Unset arrays
 !
       deallocate(fulldmtrx,ewdmtrx,egradtmp)
-      call memunset(nao2+nao3+natom*3)
+      call memunset(nao2+nao3+natom*3,datacomp)
 !
       return
 end
 
 
 !--------------------------------------------------------------------------------------------
-  subroutine calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1)
+  subroutine calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
 !--------------------------------------------------------------------------------------------
 !
 ! Driver of UHF energy gradient calculation
@@ -106,7 +108,9 @@ end
       use modparallel, only : master
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom, neleca, nelecb, numatomic
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc1, myrank1, mpi_comm1
       integer :: nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
@@ -136,7 +140,7 @@ end
 !
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
-      call memset(nao2*2+nao3+natom*3)
+      call memset(nao2*2+nao3+natom*3,datacomp)
       allocate(fulldmtrx1(nao2),fulldmtrx2(nao2),ewdmtrx(nao3),egradtmp(natom*3))
 !
       egradtmp(:)= zero
@@ -178,14 +182,14 @@ end
 ! Unset arrays
 !
       deallocate(fulldmtrx1,fulldmtrx2,ewdmtrx,egradtmp)
-      call memunset(nao2*2+nao3+natom*3)
+      call memunset(nao2*2+nao3+natom*3,datacomp)
 !
       return
 end
 
 
 !----------------------------------------------------------------------------
-  subroutine calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
+  subroutine calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
 !----------------------------------------------------------------------------
 !
 ! Driver of closed-shell DFT energy gradient calculation
@@ -197,7 +201,9 @@ end
       use modatom, only : atomrad
       use modparam, only : tobohr
       use moddft, only : idftex, idftcor, hfexchange
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc1, myrank1, mpi_comm1
       integer :: nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j, iatom
       real(8),parameter :: zero=0.0D+00
@@ -229,9 +235,9 @@ end
 !
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
-      call memset(nao2+nao3+natom*3)
+      call memset(nao2+nao3+natom*3,datacomp)
       allocate(fulldmtrx(nao2),ewdmtrx(nao3),egradtmp(3,natom))
-      call memset(natom*natom*9+natom*13+nrad*2+nleb*4+nleb*nrad*natom+nao*10+neleca*(nao+4))
+      call memset(natom*natom*9+natom*13+nrad*2+nleb*4+nleb*nrad*natom+nao*10+neleca*(nao+4),datacomp)
       allocate(atomvec(5*natom*natom),surface(natom*natom),radpt(2*nrad),angpt(4*nleb), &
 &              rad(natom),ptweight(nleb*nrad*natom),xyzpt(3*natom),rsqrd(natom),rr(natom), &
 &              uvec(3*natom),vao(10*nao),vmo(4*neleca),dweight(3*natom), &
@@ -294,16 +300,16 @@ end
 &                rad,ptweight,xyzpt,rsqrd,rr, &
 &                uvec,vao,vmo,dweight, &
 &                dpa,pa,work)
-      call memunset(natom*natom*9+natom*13+nrad*2+nleb*4+nleb*nrad*natom+nao*10+neleca*(nao+4))
+      call memunset(natom*natom*9+natom*13+nrad*2+nleb*4+nleb*nrad*natom+nao*10+neleca*(nao+4),datacomp)
       deallocate(fulldmtrx,ewdmtrx,egradtmp)
-      call memunset(nao2+nao3+natom*3)
+      call memunset(nao2+nao3+natom*3,datacomp)
 !
       return
 end
 
 
 !---------------------------------------------------------------------------------------------
-  subroutine calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1)
+  subroutine calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
 !---------------------------------------------------------------------------------------------
 !
 ! Driver of open-shell DFT energy gradient calculation
@@ -315,7 +321,9 @@ end
       use modatom, only : atomrad
       use modparam, only : tobohr
       use moddft, only : idftex, idftcor, hfexchange
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer :: nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j, iatom
       integer,intent(in) :: nproc1, myrank1, mpi_comm1
       real(8),parameter :: zero=0.0D+00
@@ -348,10 +356,10 @@ end
 !
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
-      call memset(nao2*2+nao3+natom*3)
+      call memset(nao2*2+nao3+natom*3,datacomp)
       allocate(fulldmtrx1(nao2),fulldmtrx2(nao2),ewdmtrx(nao3),egradtmp(3,natom))
       call memset(natom*natom*9+natom*13+nrad*2+nleb*4+nleb*nrad*natom+nao*10 &
-&                +neleca*4+nelecb*4+(neleca+nelecb)*nao)
+&                +neleca*4+nelecb*4+(neleca+nelecb)*nao,datacomp)
       allocate(atomvec(5*natom*natom),surface(natom*natom),radpt(2*nrad),angpt(4*nleb), &
 &              rad(natom),ptweight(nleb*nrad*natom),xyzpt(3*natom),rsqrd(natom),rr(natom), &
 &              uvec(3*natom),vao(10*nao),vmoa(4*neleca),vmob(4*nelecb), &
@@ -416,9 +424,9 @@ end
 &                uvec,vao,vmoa,vmob, &
 &                dweight,dpa,pa,work)
       call memunset(natom*natom*9+natom*13+nrad*2+nleb*4+nleb*nrad*natom+nao*10 &
-&                  +neleca*4+nelecb*4+(neleca+nelecb)*nao)
+&                  +neleca*4+nelecb*4+(neleca+nelecb)*nao,datacomp)
       deallocate(fulldmtrx1,fulldmtrx2,ewdmtrx,egradtmp)
-      call memunset(nao2*2+nao3+natom*3)
+      call memunset(nao2*2+nao3+natom*3,datacomp)
 !
       return
 end

@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !-------------------------------------------------------------------------
-  subroutine calcgradrmp2(cmo,energymo,xint,egrad,nproc,myrank,mpi_comm)
+  subroutine calcgradrmp2(cmo,energymo,xint,egrad,nproc,myrank,mpi_comm,datacomp)
 !-------------------------------------------------------------------------
 !
 ! Main driver of closed-shell MP2 energy gradient calculation
@@ -28,7 +28,9 @@
       use modmolecule, only : nmo, natom, neleca, numatomic
       use modenergy, only : escf, emp2, escsmp2
       use modmp2, only : ncore, nvfz, maxmp2diis
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: maxfunc(0:7), maxdim, maxgraddim, nocc, nvir, noac, nvac, icount, ish, jsh
       integer :: idis(0:nproc-1,8), iproc, nvac2, numab, numov, maxsize, numirecv
@@ -167,7 +169,7 @@
       call memrest(msize)
       if((msize < memmin16).and.master) then
         write(*,'(" Error! Available memory size for MP2 energy gradient is small!")')
-        call memset(memmin16)
+        call memset(memmin16,datacomp)
         call iabort
       endif
 !
@@ -197,7 +199,7 @@
         endif
         call mp2gradmulti(emp2st,egradtmp,egrad,cmo,energymo,xint,nocc,noac,nvir,nvac, &
 &                         ncore,nvfz,maxsize,maxdim,maxgraddim,idis,npass,numi,numab,numirecv, &
-&                         nproc,myrank,mpi_comm)
+&                         nproc,myrank,mpi_comm,datacomp)
       endif
 !
       call para_allreducer(emp2st,emp2stsum,2,mpi_comm)
@@ -234,7 +236,7 @@ end
 !-------------------------------------------------------------------------------------------------
   subroutine mp2gradmulti(emp2st,egrad,egradtmp,cmo,energymo,xint,nocc,noac,nvir,nvac, &
 &                         ncore,nvfz,maxsize,maxdim,maxgraddim,idis,npass,numi,numab,numirecv, &
-&                         nproc,myrank,mpi_comm)
+&                         nproc,myrank,mpi_comm,datacomp)
 !-------------------------------------------------------------------------------------------------
 !
 ! Driver of single pass MP2 energy calculation
@@ -264,7 +266,9 @@ end
       use modbasis, only : nshell, nao
       use modmolecule, only : nmo, natom
       use modmp2, only : maxmp2diis
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nocc, noac, nvir, nvac, ncore, nvfz, maxsize, maxdim, maxgraddim
       integer,intent(in) :: nproc, myrank, mpi_comm, idis(0:nproc-1,8), npass
       integer,intent(in) :: numi, numab, numirecv
@@ -289,10 +293,10 @@ end
       nvir2= nvir*nvir
       numitrans= numi
 ! mem1
-      call memset(nocc2+nvir2+nocc*nvac+nocc*nvir+nao2)
+      call memset(nocc2+nvir2+nocc*nvac+nocc*nvir+nao2,datacomp)
       allocate(wij(nocc2),wab(nvir2),wai(nocc*nvac),xlai(nocc*nvir),pmn(nao2))
 ! mem2
-      call memset(maxsize*nocc*numi+nocc3+nvir2)
+      call memset(maxsize*nocc*numi+nocc3+nvir2,datacomp)
       allocate(trint2(maxsize*noac*numi),trint2core(maxsize*ncore*numi),pij(nocc3),pab(nvir2))
 !
       call memrest(msize)
@@ -320,14 +324,14 @@ end
 ! AO intengral generation and first and second integral transformations
 !
 ! mem3
-        call memset(nao*noac+numi*maxdim**3+mlsize*nao*numi)
+        call memset(nao*noac+numi*maxdim**3+mlsize*nao*numi,datacomp)
         allocate(cmowrk(nao*noac),trint1a(numi*maxdim**3),trint1b(mlsize*nao*numi))
 !
         call mp2gradtrans12(cmo,cmowrk,trint1a,trint1b,trint2,trint2core,xint,istart,mlsize, &
 &                           noac,ncore,maxdim,numitrans,idis,nproc,myrank)
 !
         deallocate(cmowrk,trint1a,trint1b)
-        call memunset(nao*noac+numi*maxdim**3+mlsize*nao*numi)
+        call memunset(nao*noac+numi*maxdim**3+mlsize*nao*numi,datacomp)
 !ishimura
 !call tstamp(1)
 !
@@ -335,7 +339,7 @@ end
 ! MP2 energy, Pij, Pab, Wij[I], Wab[I], Wai[I](=Lai3), Tijab half back-transformation calculations
 !
 ! mem4
-        call memset(2*nproc*maxsize+nao2+nocc*nvac+2*numab*noac*numirecv+2*numab)
+        call memset(2*nproc*maxsize+nao2+nocc*nvac+2*numab*noac*numirecv+2*numab,datacomp)
         allocate(xaibj(nproc*maxsize),xaikj(nocc*nvac),tijab(nao2),recvint(2*numab*noac*numirecv), &
 &                sendint(2*numab),recvt(nproc*maxsize),storet(noac*maxsize))
 !
@@ -346,7 +350,7 @@ end
 !
         deallocate(xaibj,xaikj,tijab,recvint, &
 &                  sendint,recvt,storet)
-        call memunset(2*nproc*maxsize+nao2+nocc*nvac+2*numab*noac*numirecv+2*numab)
+        call memunset(2*nproc*maxsize+nao2+nocc*nvac+2*numab*noac*numirecv+2*numab,datacomp)
 !ishimura
 !call tstamp(1)
 !
@@ -357,7 +361,7 @@ end
         call memrest(msize)
         mlsize2=(msize-nao*numi-2*nao2)/(nao*(numi+1))
         if(mlsize2 > maxsize) mlsize2= maxsize
-        call memset(numi*mlsize2*nao+nao*numi+2*nao2+nao*mlsize2)
+        call memset(numi*mlsize2*nao+nao*numi+2*nao2+nao*mlsize2,datacomp)
         allocate(tisml(numi*mlsize2*nao),xlmi(nao*numi),xlmn(nao2),work1(nao2),work2(nao*mlsize2))
 !
         if(ipass /= npass) then
@@ -371,16 +375,16 @@ end
         endif
 !
         deallocate(tisml,xlmi,xlmn,work1,work2)
-        call memunset(numi*mlsize2*nao+nao*numi+2*nao2+nao*mlsize2)
+        call memunset(numi*mlsize2*nao+nao*numi+2*nao2+nao*mlsize2,datacomp)
 !ishimura
 !call tstamp(1)
       enddo
 !
       deallocate(trint2,trint2core,pij,pab)
-      call memunset(maxsize*nocc*numi+nocc3+nvir2)
+      call memunset(maxsize*nocc*numi+nocc3+nvir2,datacomp)
 ! mem6
       call memset(2*nocc*nvir+2*nao3+nshell*(nshell+1)/2+2*idis(myrank,7)*maxmp2diis &
-&                 +maxmp2diis*(maxmp2diis+1)/2+2*nao2)
+&                 +maxmp2diis*(maxmp2diis+1)/2+2*nao2,datacomp)
       allocate(pai(nocc*nvir),paiprev(nocc*nvir),pls(nao3),pmax(nshell*(nshell+1)/2), &
 &              paifock(nao3),errdiis(idis(myrank,7)*maxmp2diis), &
 &              paidiis(idis(myrank,7)*maxmp2diis),diismtrx(maxmp2diis*(maxmp2diis+1)/2), &
@@ -412,10 +416,10 @@ end
 &                paidiis,diismtrx, &
 &                work1,work2)
       call memunset(2*nocc*nvir+2*nao3+nshell*(nshell+1)/2+2*idis(myrank,7)*maxmp2diis &
-&                   +maxmp2diis*(maxmp2diis+1)/2+2*nao2)
+&                   +maxmp2diis*(maxmp2diis+1)/2+2*nao2,datacomp)
 !
       deallocate(wij,wab,wai,xlai,pmn)
-      call memunset(nocc2+nvir2+nocc*nvac+nocc*nvir+nao2)
+      call memunset(nocc2+nvir2+nocc*nvac+nocc*nvir+nao2,datacomp)
 !
       return
 end

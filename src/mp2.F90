@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !---------------------------------------------------------------
-  subroutine calcrmp2(cmo,energymo,xint,nproc,myrank,mpi_comm)
+  subroutine calcrmp2(cmo,energymo,xint,nproc,myrank,mpi_comm,datacomp)
 !---------------------------------------------------------------
 !
 ! Driver of restricted MP2 calculation
@@ -27,7 +27,9 @@
       use modmolecule, only : neleca, nmo
       use modenergy, only : escf, emp2, escsmp2
       use modmp2, only : ncore, nvfz
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: maxdim, noac, nvac, noac3, iproc, icount
       integer :: idis(0:nproc-1,4), maxsize, ish, jsh, msize, memneed
@@ -102,7 +104,7 @@
 !
       if(numocc3 <= 0) then
         if(master) then
-          call memset(maxsize+memneed)
+          call memset(maxsize+memneed,datacomp)
           call iabort
         endif
 !
@@ -111,7 +113,7 @@
       elseif(numocc3 >= noac3) then
         if(master) write(*,'(" == Single pass calculation ==")')
         call mp2single(emp2st,cmo,energymo,xint,noac,nvac,ncore,maxsize,maxdim,idis, &
-&                      nproc,myrank,mpi_comm)
+&                      nproc,myrank,mpi_comm,datacomp)
 !
 ! Multiple pass
 !
@@ -123,7 +125,7 @@
           write(*,'("    Number of passes :",i5)')npass
         endif
         call mp2multi(emp2st,cmo,energymo,xint,noac,nvac,ncore,maxsize,maxdim,idis, &
-&                     npass,numocc3,nproc,myrank,mpi_comm)
+&                     npass,numocc3,nproc,myrank,mpi_comm,datacomp)
       endif
 !
       call para_allreducer(emp2st,emp2stsum,2,mpi_comm)
@@ -168,7 +170,7 @@ end
 
 !---------------------------------------------------------------------------------------
   subroutine mp2single(emp2st,cmo,energymo,xint,noac,nvac,ncore,maxsize,maxdim,idis, &
-&                      nproc,myrank,mpi_comm)
+&                      nproc,myrank,mpi_comm,datacomp)
 !---------------------------------------------------------------------------------------
 !
 ! Driver of single pass MP2 energy calculation
@@ -187,7 +189,9 @@ end
       use modparallel, only : master
       use modbasis, only : nshell, nao
       use modmolecule, only : neleca, nmo
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: noac, nvac, ncore, maxsize, maxdim, nproc, myrank, mpi_comm
       integer,intent(in) :: idis(0:nproc-1,4)
       integer :: noac3, nao2, msize, mlsize
@@ -199,7 +203,7 @@ end
       noac3= noac*(noac+1)/2
       nao2 = nao*nao
 !
-      call memset(maxsize*noac3)
+      call memset(maxsize*noac3,datacomp)
       allocate(trint2(maxsize*noac3))
       call memrest(msize)
       mlsize=(msize-nao*noac-noac*maxdim**3)/(noac*nao)
@@ -208,7 +212,7 @@ end
       elseif(mlsize < maxdim*maxdim) then
         mlsize= maxdim*maxdim
       endif
-      call memset(nao*noac+noac*maxdim**3+mlsize*noac*nao)
+      call memset(nao*noac+noac*maxdim**3+mlsize*noac*nao,datacomp)
       allocate(cmowrk(nao*noac),trint1a(noac*maxdim**3),trint1b(mlsize*noac*nao))
 !
 ! AO intengral generation and first and second integral transformations
@@ -218,9 +222,9 @@ end
 &                     mlsize,noac,maxdim,idis,nproc,myrank)
 !
       deallocate(cmowrk,trint1a,trint1b)
-      call memunset(nao*noac+noac*maxdim**3+mlsize*noac*nao)
+      call memunset(nao*noac+noac*maxdim**3+mlsize*noac*nao,datacomp)
 !
-      call memset(2*nao2)
+      call memset(2*nao2,datacomp)
       allocate(trint3(nao2),trint4(nao2))
 !
 ! Third and fourth integral transformations and MP2 energy calculation
@@ -230,9 +234,9 @@ end
 &                     idis,nproc,myrank,mpi_comm)
 !
       deallocate(trint3,trint4)
-      call memunset(2*nao2)
+      call memunset(2*nao2,datacomp)
       deallocate(trint2)
-      call memunset(maxsize*noac3)
+      call memunset(maxsize*noac3,datacomp)
 !
       return
 end
@@ -240,10 +244,10 @@ end
 
 !---------------------------------------------------------------------------------------
   subroutine mp2multi(emp2st,cmo,energymo,xint,noac,nvac,ncore,maxsize,maxdim,idis, &
-&                     npass,numocc3,nproc,myrank,mpi_comm)
+&                     npass,numocc3,nproc,myrank,mpi_comm,datacomp)
 !---------------------------------------------------------------------------------------
 !
-! Driver of single pass MP2 energy calculation
+! Driver of multiple pass MP2 energy calculation
 !
 ! In  : cmo     (MO coefficient matrix)
 !       energymo(MO energies)
@@ -261,7 +265,9 @@ end
       use modparallel, only : master
       use modbasis, only : nshell, nao
       use modmolecule, only : neleca, nmo
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: noac, nvac, ncore, maxsize, maxdim, nproc, myrank, mpi_comm
       integer,intent(in) :: idis(0:nproc-1,4), npass, numocc3
       integer :: noac3, nao2, msize, mlsize, ijindex(4,npass), icount, ipass, moi, moj, numij
@@ -306,7 +312,7 @@ end
         ijindex(2,ipass)=moj
       enddo
 !
-      call memset(maxsize*numocc3)
+      call memset(maxsize*numocc3,datacomp)
       allocate(trint2(maxsize*numocc3))
       call memrest(msize)
       mlsize=(msize-nao*noac-noac*maxdim**3)/(noac*nao)
@@ -322,7 +328,7 @@ end
       numij= numocc3
       do ipass= 1,npass
         if(ipass == npass) numij= noac3-(npass-1)*numocc3
-        call memset(nao*noac+noac*maxdim**3+mlsize*noac*nao)
+        call memset(nao*noac+noac*maxdim**3+mlsize*noac*nao,datacomp)
         allocate(cmowrk(nao*noac),trint1a(noac*maxdim**3),trint1b(mlsize*noac*nao))
 !
 ! AO intengral generation and first and second integral transformations
@@ -333,9 +339,9 @@ end
 &                        mlsize,noac,maxdim,idis,numij,ijindex(1,ipass),nproc,myrank)
 !
         deallocate(cmowrk,trint1a,trint1b)
-        call memunset(nao*noac+noac*maxdim**3+mlsize*noac*nao)
+        call memunset(nao*noac+noac*maxdim**3+mlsize*noac*nao,datacomp)
 !
-        call memset(2*nao2)
+        call memset(2*nao2,datacomp)
         allocate(trint3(nao2),trint4(nao2))
 !
 ! Third and fourth integral transformations and MP2 energy calculation
@@ -346,10 +352,10 @@ end
 &                        idis,numij,ijindex(1,ipass),nproc,myrank,mpi_comm)
 !
         deallocate(trint3,trint4)
-        call memunset(2*nao2)
+        call memunset(2*nao2,datacomp)
       enddo
       deallocate(trint2)
-      call memunset(maxsize*numocc3)
+      call memunset(maxsize*numocc3,datacomp)
 !
       return
 end

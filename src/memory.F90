@@ -54,14 +54,16 @@ end
 
 
 !---------------------------
-  subroutine memset(msize)
+  subroutine memset(msize,datacomp)
 !---------------------------
 !
 ! Allocate requested memory size, "msize".
 !
       use modparallel, only : master
       use modmemory, only : memmax, memused, memusedmax
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: msize
 !
       if(msize < 0) then
@@ -82,7 +84,7 @@ end
 
 
 !-----------------------------
-  subroutine memunset(msize)
+  subroutine memunset(msize,datacomp)
 !-----------------------------
 !
 ! Deallocate requested memory size, "msize".
@@ -90,12 +92,16 @@ end
       use modparallel, only : master
       use modmemory, only : memused
       use modwarn, only : nwarn
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: msize
 !
       memused= memused-msize
       if(memused < 0) then
+!ishimura
         nwarn= nwarn+1
+        datacomp%nwarn= datacomp%nwarn+1
         if(master) write(*,'(" Warning! Msize in memunset is less than 0.")')
       endif
       return

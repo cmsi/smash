@@ -76,18 +76,18 @@
       select case(scfconv)
         case('DIIS')
           call memset(nao2+nao3*3+nshell3+isize3*maxdiis+isize1+isize2*maxdiis &
-&                    +maxdiis*(maxdiis+1)/2)
+&                    +maxdiis*(maxdiis+1)/2,datacomp)
           allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
 &                  fockdiis(isize3*maxdiis), errdiis(isize2*maxdiis), &
 &                  diismtrx(maxdiis*(maxdiis+1)/2),work2(isize1))
         case('SOSCF')
-          call memset(nao2+nao3*3+nshell3+nocc*nvir*3*maxsoscf+isize1)
+          call memset(nao2+nao3*3+nshell3+nocc*nvir*3*maxsoscf+isize1,datacomp)
           allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
                    hstart(nocc*nvir),sograd(nocc*nvir,maxsoscf),sodisp(nocc*nvir*maxsoscf), &
 &                  sovecy(nocc*nvir*(maxsoscf-1)),work2(isize1))
         case('QC')
           call memset(nao2*2+nao3*2+nshell3+(nocc*nvir+1)*(maxqcdiagsub+1)*2+maxqcdiagsub**2 &
-&                    +maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub)
+&                    +maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub,datacomp)
           allocate(fock(nao2),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
                    qcvec((nocc*nvir+1)*(maxqcdiagsub+1)*2),qcmat(maxqcdiagsub**2), &
 &                  qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2),qceigen(maxqcdiagsub), &
@@ -324,18 +324,18 @@
       select case(scfconv)
         case('DIIS')
           call memunset(nao2+nao3*3+nshell3+isize3*maxdiis+isize1+isize2*maxdiis+ &
-&                       maxdiis*(maxdiis+1)/2)
+&                       maxdiis*(maxdiis+1)/2,datacomp)
           deallocate(fock,fockprev,dmtrxprev,dmax,work, &
 &                    fockdiis,errdiis, &
 &                    diismtrx,work2)
         case('SOSCF')
-          call memunset(nao2+nao3*3+nshell3+nocc*nvir*3*maxsoscf+isize1)
+          call memunset(nao2+nao3*3+nshell3+nocc*nvir*3*maxsoscf+isize1,datacomp)
           deallocate(fock,fockprev,dmtrxprev,dmax,work, &
                      hstart,sograd,sodisp, &
 &                    sovecy,work2)
         case('QC')
           call memunset(nao2*2+nao3*2+nshell3+(nocc*nvir+1)*(maxqcdiagsub+1)*2+maxqcdiagsub**2 &
-&                      +maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub)
+&                      +maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub,datacomp)
           deallocate(fock,fockprev,dmtrxprev,dmax,work, &
 &                    qcvec,qcmat, &
 &                    qcmatsave,qceigen, &
@@ -949,7 +949,7 @@ end
       select case(scfconv)
         case('DIIS')
           call memset(nao2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
-&                    +nao*4+nocc*4+isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2)
+&                    +nao*4+nocc*4+isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2,datacomp)
           allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
 &                  fockd(nao3),rad(natom),atomvec(5*natom*natom),surface(natom*natom), &
 &                  radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb),xyzpt(3*natom), &
@@ -957,7 +957,7 @@ end
 &                  errdiis(isize2*maxdiis),diismtrx(maxdiis*(maxdiis+1)/2),work2(isize1))
         case('SOSCF')
           call memset(nao2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
-&                    +nao*4+nocc*4+isize1+nocc*nvir*3*maxsoscf)
+&                    +nao*4+nocc*4+isize1+nocc*nvir*3*maxsoscf,datacomp)
           allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
 &                  fockd(nao3),rad(natom),atomvec(5*natom*natom),surface(natom*natom), &
 &                  radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb),xyzpt(3*natom), &
@@ -968,7 +968,7 @@ end
           isize1= max(isize1,nao2)
           call memset(nao2*2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
 &                    +nao*4+nocc*4+isize1+(nocc*nvir+1)*(maxqcdiagsub+1)*2 &
-&                    +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub)
+&                    +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub,datacomp)
           allocate(fock(nao2),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
 &                  fockd(nao3),rad(natom),atomvec(5*natom*natom),surface(natom*natom), &
 &                  radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb),xyzpt(3*natom), &
@@ -1239,7 +1239,7 @@ end
 &                    rsqrd,vao,vmo,fockdiis, &
 &                    errdiis,diismtrx,work2)
           call memunset(nao2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
-&                      +nao*4+nocc*4+isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2)
+&                      +nao*4+nocc*4+isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2,datacomp)
         case('SOSCF')
           deallocate(fock,fockprev,dmtrxprev,dmax,work, &
 &                    fockd,rad,atomvec,surface, &
@@ -1248,7 +1248,7 @@ end
 &                    hstart,sograd,sodisp, &
 &                    sovecy)
           call memunset(nao2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
-&                      +nao*4+nocc*4+isize1+nocc*nvir*3*maxsoscf)
+&                      +nao*4+nocc*4+isize1+nocc*nvir*3*maxsoscf,datacomp)
         case('QC')
           deallocate(fock,fockprev,dmtrxprev,dmax,work, &
 &                    fockd,rad,atomvec,surface, &
@@ -1258,7 +1258,7 @@ end
 &                    qcmatsave,qceigen,qcgmn)
           call memunset(nao2*2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
 &                      +nao*4+nocc*4+isize1+(nocc*nvir+1)*(maxqcdiagsub+1)*2 &
-&                      +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub)
+&                      +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub,datacomp)
       end select
 !
       return
@@ -1341,7 +1341,7 @@ end
       select case(scfconv)
         case('DIIS')
           call memset(nao3*8+nshell3+isize3*maxdiis*2+isize1+isize2*maxdiis*2 &
-&                    +maxdiis*(maxdiis+1)/2+isize2)
+&                    +maxdiis*(maxdiis+1)/2+isize2,datacomp)
           allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3), &
 &                  fockdiisa(isize3*maxdiis),fockdiisb(isize3*maxdiis),errdiisa(isize2*maxdiis),&
@@ -1349,7 +1349,7 @@ end
 &                  work(nao3*2),work2(isize1),work3(isize2))
         case('SOSCF')
           call memset(nao3*8+nshell3+nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf &
-&                    +isize1+isize2)
+&                    +isize1+isize2,datacomp)
           allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3), &
 &                  hstarta(nocca*nvira),hstartb(noccb*nvirb), &
@@ -1359,7 +1359,7 @@ end
 &                  work(nao3*2),work2(isize1),work3(isize2))
         case('QC')
           call memset(nao2*4+nao3*8+(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
-&                    +maxqcdiagsub**2+maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub)
+&                    +maxqcdiagsub**2+maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub,datacomp)
           allocate(focka(nao2),fockb(nao2),fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3), &
 &                  qcvec((nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2), &
@@ -1653,7 +1653,7 @@ end
 &                    errdiisb,diismtrx, &
 &                    work,work2,work3)
           call memunset(nao3*8+nshell3+isize3*maxdiis*2+isize1+isize2*maxdiis*2 &
-&                      +maxdiis*(maxdiis+1)/2+isize2)
+&                      +maxdiis*(maxdiis+1)/2+isize2,datacomp)
         case('SOSCF')
           deallocate(focka,fockb,fockpreva,fockprevb, &
 &                    dmtrxpreva,dmtrxprevb,dmax, &
@@ -1663,7 +1663,7 @@ end
 &                    sovecya,sovecyb, &
 &                    work,work2,work3)
           call memunset(nao3*8+nshell3+nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf &
-&                      +isize1+isize2)
+&                      +isize1+isize2,datacomp)
         case('QC')
           deallocate(focka,fockb,fockpreva,fockprevb, &
 &                    dmtrxpreva,dmtrxprevb,dmax, &
@@ -1672,7 +1672,7 @@ end
 &                    qceigen,qcgmna,qcgmnb, &
 &                    work,work2,work3)
           call memunset(nao2*4+nao3*8+(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
-&                      +maxqcdiagsub**2+maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub)
+&                      +maxqcdiagsub**2+maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub,datacomp)
       end select
 !
       return
@@ -2039,7 +2039,7 @@ end
         case('DIIS')
           call memset(nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
 &                    +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize3*maxdiis*2+isize1 &
-&                    +isize2*maxdiis*2+maxdiis*(maxdiis+1)/2+idis(myrank2+1,3))
+&                    +isize2*maxdiis*2+maxdiis*(maxdiis+1)/2+idis(myrank2+1,3),datacomp)
           allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(numwork), &
 &                  fockda(nao3),fockdb(nao3),rad(natom),atomvec(5*natom*natom), &
@@ -2051,7 +2051,7 @@ end
         case('SOSCF')
           call memset(nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
 &                    +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1+idis(myrank2+1,3) &
-&                    +nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf)
+&                    +nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf,datacomp)
           allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(numwork), &
 &                  fockda(nao3),fockdb(nao3),rad(natom),atomvec(5*natom*natom), &
@@ -2067,7 +2067,7 @@ end
           call memset(nao2*3+nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
 &                    +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1 &
 &                    +(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
-&                    +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub)
+&                    +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub,datacomp)
           allocate(focka(nao2),fockb(nao2),fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(numwork), &
 &                  fockda(nao3),fockdb(nao3),rad(natom),atomvec(5*natom*natom), &
@@ -2395,7 +2395,7 @@ end
 &                    work3)
           call memunset(nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
 &                      +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize3*maxdiis*2+isize1 &
-&                      +isize2*maxdiis*2+maxdiis*(maxdiis+1)/2+idis(myrank2+1,3))
+&                      +isize2*maxdiis*2+maxdiis*(maxdiis+1)/2+idis(myrank2+1,3),datacomp)
         case('SOSCF')
           deallocate(focka,fockb,fockpreva,fockprevb, &
 &                    dmtrxpreva,dmtrxprevb,dmax,work, &
@@ -2409,7 +2409,7 @@ end
 &                    sovecya,sovecyb)
           call memunset(nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
 &                      +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1+idis(myrank2+1,3) &
-&                      +nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf)
+&                      +nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf,datacomp)
         case('QC')
           deallocate(focka,fockb,fockpreva,fockprevb, &
 &                    dmtrxpreva,dmtrxprevb,dmax,work, &
@@ -2422,7 +2422,7 @@ end
           call memunset(nao2*3+nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
 &                      +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1 &
 &                      +(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
-&                      +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub)
+&                      +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub,datacomp)
       end select
       return
 end

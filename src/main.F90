@@ -423,7 +423,7 @@ end
 !
 ! Set arrays 1
 !
-      call memset(nao3*4+nao2*2+nshell3+nao)
+      call memset(nao3*4+nao2*2+nshell3+nao,datacomp)
       allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2),dmtrx(nao3),&
 &              xint(nshell3),energymo(nao))
 !
@@ -436,7 +436,7 @@ end
 !
 ! Set arrays 2
 !
-      call memset(nao2*2)
+      call memset(nao2*2,datacomp)
       allocate(overinv(nao2),work(nao2))
 !
 ! Calculate overlap and 1-electron integrals
@@ -451,12 +451,12 @@ end
 ! Calculate initial MOs
 !
       call guessmo(cmo,cmo,overinv,h1mtrx,ortho, &
-&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
 !
 ! Unset arrays 2
 !
       deallocate(overinv,work)
-      call memunset(nao2*2)
+      call memunset(nao2*2,datacomp)
       call tstamp(1)
 !
 ! Start SCF
@@ -487,7 +487,7 @@ end
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
-        call calcrmp2(cmo,energymo,xint,nproc1,myrank1,mpi_comm1)
+        call calcrmp2(cmo,energymo,xint,nproc1,myrank1,mpi_comm1,datacomp)
         call tstamp(1)
       else
         if(master) then
@@ -512,21 +512,21 @@ end
 ! Calculate dipole, quadrupole, and octupole moments
 !
       if(octupole) then
-        call memset(nao3*29)
+        call memset(nao3*29,datacomp)
         allocate(work(nao3*29))
         call calcroctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrx, &
 &                          nproc1,myrank1,mpi_comm1)
         deallocate(work)
-        call memunset(nao3*29)
+        call memunset(nao3*29,datacomp)
       else
 !
 ! Calculate dipole moment
 !
-        call memset(nao3*6)
+        call memset(nao3*6,datacomp)
         allocate(work(nao3*6))
         call calcrdipole(work,work(nao3*3+1),dmtrx,nproc1,myrank1,mpi_comm1)
         deallocate(work)
-        call memunset(nao3*6)
+        call memunset(nao3*6,datacomp)
       endif
 !
 ! Write checkpoint file
@@ -537,7 +537,7 @@ end
 !
       deallocate(h1mtrx,smtrx,tmtrx,cmo,ortho,dmtrx, &
 &                xint,energymo)
-      call memunset(nao3*4+nao2*2+nshell3+nao)
+      call memunset(nao3*4+nao2*2+nshell3+nao,datacomp)
       call tstamp(1)
       return
 end
@@ -581,7 +581,7 @@ end
 !
 ! Set arrays 1
 !
-      call memset(nao3*5+nao2*3+nshell3+nao*2)
+      call memset(nao3*5+nao2*3+nshell3+nao*2,datacomp)
       allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),cmob(nao2),ortho(nao2),&
 &              dmtrxa(nao3),dmtrxb(nao3),xint(nshell3),energymoa(nao),energymob(nao))
 !
@@ -594,7 +594,7 @@ end
 !
 ! Set arrays 2
 !
-      call memset(nao2*2)
+      call memset(nao2*2,datacomp)
       allocate(overinv(nao2),work(nao2))
 !
 ! Calculate overlap and 1-electron integrals
@@ -609,12 +609,12 @@ end
 ! Calculate initial MOs
 !
       call guessmo(cmoa,cmob,overinv,h1mtrx,ortho, &
-&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
 !
 ! Unset arrays 2
 !
       deallocate(overinv,work)
-      call memunset(nao2*2)
+      call memunset(nao2*2,datacomp)
       call tstamp(1)
 !
 ! Start SCF
@@ -672,21 +672,21 @@ end
 ! Calculate dipole, quadrupole, and octupole moments
 !
       if(octupole) then
-        call memset(nao3*29)
+        call memset(nao3*29,datacomp)
         allocate(work(nao3*29))
         call calcuoctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrxa,dmtrxb, &
 &                          nproc1,myrank1,mpi_comm1)
         deallocate(work)
-        call memunset(nao3*29)
+        call memunset(nao3*29,datacomp)
       else
 !
 ! Calculate dipole moment
 !
-        call memset(nao3*6)
+        call memset(nao3*6,datacomp)
         allocate(work(nao3*6))
         call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1)
         deallocate(work)
-        call memunset(nao3*6)
+        call memunset(nao3*6,datacomp)
       endif
 !
 ! Write checkpoint file
@@ -697,7 +697,7 @@ end
 !
       deallocate(h1mtrx,smtrx,tmtrx,cmoa,cmob,ortho, &
 &                dmtrxa,dmtrxb,xint,energymoa,energymob)
-      call memunset(nao3*5+nao2*3+nshell3+nao*2)
+      call memunset(nao3*5+nao2*3+nshell3+nao*2,datacomp)
       return
 end
 
@@ -742,7 +742,7 @@ end
 !
 ! Set arrays 1
 !
-      call memset(nao3*4+nao2*2+nshell3+nao)
+      call memset(nao3*4+nao2*2+nshell3+nao,datacomp)
       allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2),dmtrx(nao3),&
 &              xint(nshell3),energymo(nao))
 !
@@ -755,7 +755,7 @@ end
 !
 ! Set arrays 2
 !
-      call memset(nao2*2)
+      call memset(nao2*2,datacomp)
       allocate(overinv(nao2),work(nao2))
 !
 ! Calculate overlap and 1-electron integrals
@@ -770,12 +770,12 @@ end
 ! Calculate initial MOs
 !
       call guessmo(cmo,cmo,overinv,h1mtrx,ortho, &
-&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
 !
 ! Unset arrays 2
 !
       deallocate(overinv,work)
-      call memunset(nao2*2)
+      call memunset(nao2*2,datacomp)
       call tstamp(1)
 !
 ! Start SCF
@@ -810,19 +810,19 @@ end
 !
 ! Set arrays 3
 !
-      call memset(natom*3)
+      call memset(natom*3,datacomp)
       allocate(egrad(natom*3))
 !
 ! Calculate energy gradient
 !
       if(method == 'HARTREE-FOCK') then
-        call calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
+        call calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
         call tstamp(1)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
-        call calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
+        call calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
         call tstamp(1)
       elseif(method == 'MP2') then
-        call calcgradrmp2(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
+        call calcgradrmp2(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
         call tstamp(1)
       else
         if(master) then
@@ -840,7 +840,7 @@ end
 ! Unset arrays 3
 !
       deallocate(egrad)
-      call memunset(natom*3)
+      call memunset(natom*3,datacomp)
 !
 ! Print MOs
 !
@@ -858,21 +858,21 @@ end
 ! Calculate dipole, quadrupole, and octupole moments
 !
       if(octupole) then
-        call memset(nao3*29)
+        call memset(nao3*29,datacomp)
         allocate(work(nao3*29))
         call calcroctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrx, &
 &                          nproc1,myrank1,mpi_comm1)
         deallocate(work)
-        call memunset(nao3*29)
+        call memunset(nao3*29,datacomp)
       else
 !
 ! Calculate dipole moment
 !
-        call memset(nao3*6)
+        call memset(nao3*6,datacomp)
         allocate(work(nao3*6))
         call calcrdipole(work,work(nao3*3+1),dmtrx,nproc1,myrank1,mpi_comm1)
         deallocate(work)
-        call memunset(nao3*6)
+        call memunset(nao3*6,datacomp)
       endif
 !
 ! Write checkpoint file
@@ -883,7 +883,7 @@ end
 !
       deallocate(h1mtrx,smtrx,tmtrx,cmo,ortho,dmtrx, &
 &                xint,energymo)
-      call memunset(nao3*4+nao2*2+nshell3+nao)
+      call memunset(nao3*4+nao2*2+nshell3+nao,datacomp)
       call tstamp(1)
       return
 end
@@ -929,7 +929,7 @@ end
 !
 ! Set arrays 1
 !
-      call memset(nao3*5+nao2*3+nshell3+nao*2)
+      call memset(nao3*5+nao2*3+nshell3+nao*2,datacomp)
       allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),cmob(nao2),ortho(nao2),&
 &              dmtrxa(nao3),dmtrxb(nao3),xint(nshell3),energymoa(nao),energymob(nao))
 !
@@ -942,7 +942,7 @@ end
 !
 ! Set arrays 2
 !
-      call memset(nao2*2)
+      call memset(nao2*2,datacomp)
       allocate(overinv(nao2),work(nao2))
 !
 ! Calculate overlap and 1-electron integrals
@@ -957,12 +957,12 @@ end
 ! Calculate initial MOs
 !
       call guessmo(cmoa,cmob,overinv,h1mtrx,ortho, &
-&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
 !
 ! Unset arrays 2
 !
       deallocate(overinv,work)
-      call memunset(nao2*2)
+      call memunset(nao2*2,datacomp)
       call tstamp(1)
 !
 ! Start SCF
@@ -1002,15 +1002,15 @@ end
 !
 ! Set arrays 3
 !
-      call memset(natom*3)
+      call memset(natom*3,datacomp)
       allocate(egrad(natom*3))
 !
 ! Calculate energy gradient
 !
       if(method == 'HARTREE-FOCK') then
-        call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1)
+        call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
-        call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1)
+        call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
       else
         if(master) then
           write(*,'(" Error! This program does not support method= ",a16," in energy gradient.")') &
@@ -1028,7 +1028,7 @@ end
 ! Unset arrays 3
 !
       deallocate(egrad)
-      call memunset(natom*3)
+      call memunset(natom*3,datacomp)
 !
 ! Print MOs
 !
@@ -1050,21 +1050,21 @@ end
 ! Calculate dipole, quadrupole, and octupole moments
 !
       if(octupole) then
-        call memset(nao3*29)
+        call memset(nao3*29,datacomp)
         allocate(work(nao3*29))
         call calcuoctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrxa,dmtrxb, &
 &                          nproc1,myrank1,mpi_comm1)
         deallocate(work)
-        call memunset(nao3*29)
+        call memunset(nao3*29,datacomp)
       else
 !
 ! Calculate dipole moment
 !
-        call memset(nao3*6)
+        call memset(nao3*6,datacomp)
         allocate(work(nao3*6))
         call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1)
         deallocate(work)
-        call memunset(nao3*6)
+        call memunset(nao3*6,datacomp)
       endif
 !
 ! Write checkpoint file
@@ -1075,7 +1075,7 @@ end
 !
       deallocate(h1mtrx,smtrx,tmtrx,cmoa,cmob,ortho, &
 &                dmtrxa,dmtrxb,xint,energymoa,energymob)
-      call memunset(nao3*5+nao2*3+nshell3+nao*2)
+      call memunset(nao3*5+nao2*3+nshell3+nao*2,datacomp)
       call tstamp(1)
       return
 end
@@ -1133,15 +1133,15 @@ end
 !
       if(.not.cartesian) then
         isizered= natom*4*10
-        call memset(isizered)
+        call memset(isizered,datacomp)
         allocate(iredun(isizered))
         do ii= 1,10
           call setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed)
           if(.not.exceed) exit
-          call memunset(isizered)
+          call memunset(isizered,datacomp)
           deallocate(iredun)
           isizered= isizered*2
-          call memset(isizered)
+          call memset(isizered,datacomp)
           allocate(iredun(isizered))
           if(ii == 10) then
             write(*,'(" Error! The array size for redundant coordinate is too large.")')
@@ -1154,17 +1154,17 @@ end
 !
 ! Set arrays for energy
 !
-      call memset(nao3*4+nao2*2+nshell3+nao)
+      call memset(nao3*4+nao2*2+nshell3+nao,datacomp)
       allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2),dmtrx(nao3), &
 &              xint(nshell3),energymo(nao))
 !
 ! Set arrays for energy gradient and geometry optimization
 !
       if(cartesian) then
-        call memset(natom3*2+natom3*(natom3+1)/2)
+        call memset(natom3*2+natom3*(natom3+1)/2,datacomp)
         allocate(egrad(natom3),egradold(natom3),ehess(natom3*(natom3+1)/2))
       else
-        call memset(natom3+numredun*4+numredun*(numredun+1)/2)
+        call memset(natom3+numredun*4+numredun*(numredun+1)/2,datacomp)
         allocate(egrad(natom3),coordredun(numredun*2),egradredun(numredun*2), &
 &                ehess(numredun*(numredun+1)/2))
       endif
@@ -1186,7 +1186,7 @@ end
 !
 ! Set work arrays 1
 !
-        call memset(nao2*2)
+        call memset(nao2*2,datacomp)
         allocate(overinv(nao2),work(nao,nao))
 !
 ! Calculate overlap and 1-electron integrals
@@ -1202,13 +1202,13 @@ end
 !
         if(iopt == 1) then
           call guessmo(cmo,cmo,overinv,h1mtrx,ortho, &
-&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         endif
 !
 ! Unset work arrays 1
 !
         deallocate(overinv,work)
-        call memunset(nao2*2)
+        call memunset(nao2*2,datacomp)
         call tstamp(1)
 !
 ! Calculate energy
@@ -1244,13 +1244,13 @@ end
 ! Calculate energy gradient
 !
         if(method == 'HARTREE-FOCK') then
-          call calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
+          call calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
           call tstamp(1)
         elseif((idftex >= 1).or.(idftcor >= 1)) then
-          call calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
+          call calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
           call tstamp(1)
         elseif(method == 'MP2') then
-          call calcgradrmp2(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1)
+          call calcgradrmp2(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
           call tstamp(1)
         else
           if(master) then
@@ -1280,10 +1280,10 @@ end
 ! Set work arrays 2
 !
         if(cartesian) then
-          call memset(natom3*3)
+          call memset(natom3*3,datacomp)
           allocate(workv(natom3*3))
         else
-          call memset(maxredun*maxredun*4+maxredun*3)
+          call memset(maxredun*maxredun*4+maxredun*3,datacomp)
           allocate(work(maxredun*maxredun,4),workv(maxredun*3))
         endif
 !
@@ -1303,10 +1303,10 @@ end
 !
         if(cartesian) then
           deallocate(workv)
-          call memunset(natom3*3)
+          call memunset(natom3*3,datacomp)
         else
           deallocate(work,workv)
-          call memunset(maxredun*maxredun*4+maxredun*3)
+          call memunset(maxredun*maxredun*4+maxredun*3,datacomp)
         endif
 !
 ! Set guess MO calculation flag from Huckel to projection
@@ -1341,21 +1341,21 @@ end
 ! Calculate dipole, quadrupole, and octupole moments
 !
       if(octupole) then
-        call memset(nao3*29)
+        call memset(nao3*29,datacomp)
         allocate(work(nao3,29))
         call calcroctupole(work,work(1,4),work(1,10),work(1,20),dmtrx, &
 &                          nproc1,myrank1,mpi_comm1)
         deallocate(work)
-        call memunset(nao3*29)
+        call memunset(nao3*29,datacomp)
       else
 !
 ! Calculate dipole moment
 !
-        call memset(nao3*6)
+        call memset(nao3*6,datacomp)
         allocate(work(nao3,6))
         call calcrdipole(work,work(1,4),dmtrx,nproc1,myrank1,mpi_comm1)
         deallocate(work)
-        call memunset(nao3*6)
+        call memunset(nao3*6,datacomp)
       endif
 !
 ! Write optimized geometry
@@ -1375,24 +1375,24 @@ end
 !
       if(cartesian) then
         deallocate(egrad,egradold,ehess)
-        call memunset(natom3*2+natom3*(natom3+1)/2)
+        call memunset(natom3*2+natom3*(natom3+1)/2,datacomp)
       else
         deallocate(egrad,coordredun,egradredun, &
 &                  ehess)
-        call memunset(natom3+numredun*4+numredun*(numredun+1)/2)
+        call memunset(natom3+numredun*4+numredun*(numredun+1)/2,datacomp)
       endif
 !
 ! Unset arrays for energy
 !
       deallocate(h1mtrx,smtrx,tmtrx,cmo,ortho,dmtrx, &
 &                xint,energymo)
-      call memunset(nao3*4+nao2*2+nshell3+nao)
+      call memunset(nao3*4+nao2*2+nshell3+nao,datacomp)
 !
 ! Unset array for redundant coordinate
 !
       if(.not.cartesian) then
         deallocate(iredun)
-        call memunset(isizered)
+        call memunset(isizered,datacomp)
       endif
 !
       call tstamp(1)
@@ -1452,15 +1452,15 @@ end
 !
       if(.not.cartesian) then
         isizered= natom*4*10
-        call memset(isizered)
+        call memset(isizered,datacomp)
         allocate(iredun(isizered))
         do ii= 1,10
           call setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed)
           if(.not.exceed) exit
-          call memunset(isizered)
+          call memunset(isizered,datacomp)
           deallocate(iredun)
           isizered= isizered*2
-          call memset(isizered)
+          call memset(isizered,datacomp)
           allocate(iredun(isizered))
           if(ii == 10) then
             write(*,'(" Error! The array size for redundant coordinate is too large.")')
@@ -1473,17 +1473,17 @@ end
 !
 ! Set arrays for energy
 !
-      call memset(nao3*5+nao2*3+nshell3+nao*2)
+      call memset(nao3*5+nao2*3+nshell3+nao*2,datacomp)
       allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),cmob(nao2),ortho(nao2), &
 &              dmtrxa(nao3),dmtrxb(nao3),xint(nshell3),energymoa(nao),energymob(nao))
 !
 ! Set arrays for energy gradient and geometry optimization
 !
       if(cartesian) then
-        call memset(natom3*2+natom3*(natom3+1)/2)
+        call memset(natom3*2+natom3*(natom3+1)/2,datacomp)
         allocate(egrad(natom3),egradold(natom3),ehess(natom3*(natom3+1)/2))
       else
-        call memset(natom3+numredun*4+numredun*(numredun+1)/2)
+        call memset(natom3+numredun*4+numredun*(numredun+1)/2,datacomp)
         allocate(egrad(natom3),coordredun(numredun*2),egradredun(numredun*2), &
 &                ehess(numredun*(numredun+1)/2))
       endif
@@ -1505,7 +1505,7 @@ end
 !
 ! Set arrays 1
 !
-        call memset(nao2*2)
+        call memset(nao2*2,datacomp)
         allocate(overinv(nao,nao),work(nao,nao))
 !
 ! Calculate overlap and 1-electron integrals
@@ -1521,13 +1521,13 @@ end
 !
         if(iopt == 1) then
           call guessmo(cmoa,cmob,overinv,h1mtrx,ortho, &
-&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         endif
 !
 ! Unset arrays 1
 !
         deallocate(overinv,work)
-        call memunset(nao2*2)
+        call memunset(nao2*2,datacomp)
         call tstamp(1)
 !
 ! Calculate energy
@@ -1568,9 +1568,9 @@ end
 ! Calculate energy gradient
 !
         if(method == 'HARTREE-FOCK') then
-          call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1)
+          call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
         elseif((idftex >= 1).or.(idftcor >= 1)) then
-          call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1)
+          call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
         else
           if(master) then
             write(*,'(" Error! This program does not support method= ",a16," in energy gradient.")') &
@@ -1601,10 +1601,10 @@ end
 ! Set work arrays 2
 !
         if(cartesian) then
-          call memset(natom3*3)
+          call memset(natom3*3,datacomp)
           allocate(workv(natom3*3))
         else
-          call memset(maxredun*maxredun*4+maxredun*3)
+          call memset(maxredun*maxredun*4+maxredun*3,datacomp)
           allocate(work(maxredun*maxredun,4),workv(maxredun*3))
         endif
 !
@@ -1624,10 +1624,10 @@ end
 !
         if(cartesian) then
           deallocate(workv)
-          call memunset(natom3*3)
+          call memunset(natom3*3,datacomp)
         else
           deallocate(work,workv)
-          call memunset(maxredun*maxredun*4+maxredun*3)
+          call memunset(maxredun*maxredun*4+maxredun*3,datacomp)
         endif
 !
 ! Set guess MO calculation flag from Huckel to projection
@@ -1666,21 +1666,21 @@ end
 ! Calculate dipole, quadrupole, and octupole moments
 !
       if(octupole) then
-        call memset(nao3*29)
+        call memset(nao3*29,datacomp)
         allocate(work(nao3,29))
         call calcuoctupole(work,work(1,4),work(1,10),work(1,20),dmtrxa,dmtrxb, &
 &                          nproc1,myrank1,mpi_comm1)
         deallocate(work)
-        call memunset(nao3*29)
+        call memunset(nao3*29,datacomp)
       else
 !
 ! Calculate dipole moment
 !
-        call memset(nao3*6)
+        call memset(nao3*6,datacomp)
         allocate(work(nao3,6))
         call calcudipole(work,work(1,4),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1)
         deallocate(work)
-        call memunset(nao3*6)
+        call memunset(nao3*6,datacomp)
       endif
 !
 ! Write optimized geometry
@@ -1700,25 +1700,25 @@ end
 !
       if(cartesian) then
         deallocate(egrad,egradold,ehess)
-        call memunset(natom3*2+natom3*(natom3+1)/2)
+        call memunset(natom3*2+natom3*(natom3+1)/2,datacomp)
       else
         deallocate(egrad,coordredun,egradredun, &
 &                ehess)
-        call memunset(natom3+numredun*4+numredun*(numredun+1)/2)
+        call memunset(natom3+numredun*4+numredun*(numredun+1)/2,datacomp)
       endif
 !
 ! Unset arrays for energy
 !
       deallocate(h1mtrx,smtrx,tmtrx,cmoa,cmob,ortho, &
 &                dmtrxa,dmtrxb,xint,energymoa,energymob)
-      call memunset(nao3*5+nao2*3+nshell3+nao*2)
+      call memunset(nao3*5+nao2*3+nshell3+nao*2,datacomp)
       call tstamp(1)
 !
 ! Unset array for redundant coordinate
 !
       if(.not.cartesian) then
         deallocate(iredun)
-        call memunset(isizered)
+        call memunset(isizered,datacomp)
       endif
 !
       return
