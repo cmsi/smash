@@ -200,11 +200,9 @@ end
 #ifndef noMPI
 #ifndef ILP64
       use mpi
-      use modparallel, only : checkintsize
       implicit none
       integer(selected_int_kind(9)) :: num4, irank4, mpi_comm4, ierr
 #else
-      use modparallel, only : checkintsize
       implicit none
       include "mpif.h"
       integer(selected_int_kind(18)) :: num4, irank4, mpi_comm4, ierr
@@ -212,6 +210,15 @@ end
       integer,intent(in) :: num, irank, mpi_commin
       integer,intent(inout) :: ibuff(*)
       integer :: isize
+!
+      interface checkintsize
+        subroutine checkintsize4(isize)
+          integer(selected_int_kind(9)),intent(out) :: isize
+        end subroutine checkintsize4
+        subroutine checkintsize8(isize)
+          integer(selected_int_kind(18)),intent(out) :: isize
+        end subroutine checkintsize8
+      end interface checkintsize
 !
       num4= num
       irank4= irank
@@ -355,11 +362,9 @@ end
 #ifndef noMPI
 #ifndef ILP64
       use mpi
-      use modparallel, only : checkintsize
       implicit none
       integer(selected_int_kind(9)) :: num4, mpi_comm4, ierr
 #else
-      use modparallel, only : checkintsize
       implicit none
       include "mpif.h"
       integer(selected_int_kind(18)) :: num4, mpi_comm4, ierr
@@ -368,6 +373,15 @@ end
       integer,intent(in) :: sbuff(*)
       integer,intent(out) :: rbuff(*)
       integer :: isize
+!
+      interface checkintsize
+        subroutine checkintsize4(isize)
+          integer(selected_int_kind(9)),intent(out) :: isize
+        end subroutine checkintsize4
+        subroutine checkintsize8(isize)
+          integer(selected_int_kind(18)),intent(out) :: isize
+        end subroutine checkintsize8
+      end interface checkintsize
 !
       num4= num
       mpi_comm4= mpi_commin

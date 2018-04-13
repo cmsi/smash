@@ -55,15 +55,6 @@ end
       integer :: nproc1, myrank1, nproc2, myrank2, mpi_comm1, mpi_comm2
       logical :: master
 !
-      interface checkintsize
-        subroutine checkintsize4(isize)
-          integer(selected_int_kind(9)),intent(out) :: isize
-        end subroutine checkintsize4
-        subroutine checkintsize8(isize)
-          integer(selected_int_kind(18)),intent(out) :: isize
-        end subroutine checkintsize8
-      end interface checkintsize
-!
 end
 
 
