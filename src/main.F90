@@ -41,7 +41,7 @@
 &             " *******************************************",/)') version
       endif
       call tstamp(0,datacomp)
-      call parallelinfo
+      call parallelinfo(datacomp)
 !
 ! Read input file and set details
 !
