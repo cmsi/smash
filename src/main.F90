@@ -40,7 +40,7 @@
 &             "           written by K. ISHIMURA",/,&
 &             " *******************************************",/)') version
       endif
-      call tstamp(0)
+      call tstamp(0,datacomp)
       call parallelinfo
 !
 ! Read input file and set details
@@ -82,7 +82,7 @@
 !
       call para_finalize
       call memcheck(datacomp)
-      call tstamp(2)
+      call tstamp(2,datacomp)
       if(master) then
 !ishimura
         write(*,'(" Used memory :",1x,i6," MB")')memusedmax/125000
@@ -457,7 +457,7 @@ end
 !
       deallocate(overinv,work)
       call memunset(nao2*2,datacomp)
-      call tstamp(1)
+      call tstamp(1,datacomp)
 !
 ! Start SCF
 !
@@ -465,7 +465,7 @@ end
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         call writeeigenvalue(energymo,energymo,1)
-        call tstamp(1)
+        call tstamp(1,datacomp)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
         if(guess == 'HUCKEL') then
           savedconv= dconv
@@ -476,19 +476,19 @@ end
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
           dconv= savedconv
           cutint2= savecutint2
-          call tstamp(1)
+          call tstamp(1,datacomp)
         endif
         call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         call writeeigenvalue(energymo,energymo,1)
-        call tstamp(1)
+        call tstamp(1,datacomp)
       elseif(method == 'MP2') then
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         call writeeigenvalue(energymo,energymo,1)
-        call tstamp(1)
+        call tstamp(1,datacomp)
         call calcrmp2(cmo,energymo,xint,nproc1,myrank1,mpi_comm1,datacomp)
-        call tstamp(1)
+        call tstamp(1,datacomp)
       else
         if(master) then
           write(*,'(" Error! This program does not support method= ",a16,".")')method
@@ -538,7 +538,7 @@ end
       deallocate(h1mtrx,smtrx,tmtrx,cmo,ortho,dmtrx, &
 &                xint,energymo)
       call memunset(nao3*4+nao2*2+nshell3+nao,datacomp)
-      call tstamp(1)
+      call tstamp(1,datacomp)
       return
 end
 
@@ -615,7 +615,7 @@ end
 !
       deallocate(overinv,work)
       call memunset(nao2*2,datacomp)
-      call tstamp(1)
+      call tstamp(1,datacomp)
 !
 ! Start SCF
 !
@@ -623,7 +623,7 @@ end
         call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         call writeeigenvalue(energymoa,energymob,2)
-        call tstamp(1)
+        call tstamp(1,datacomp)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
         if(guess == 'HUCKEL') then
           savedconv= dconv
@@ -634,12 +634,12 @@ end
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
           dconv= savedconv
           cutint2= savecutint2
-          call tstamp(1)
+          call tstamp(1,datacomp)
         endif
         call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         call writeeigenvalue(energymoa,energymob,2)
-        call tstamp(1)
+        call tstamp(1,datacomp)
 !     elseif(method == 'MP2') then
 !       call calcuhf(h1mtrx,cmoa,ortho,smtrx,xint,energymoa)
 !       call tstamp(1)
@@ -776,7 +776,7 @@ end
 !
       deallocate(overinv,work)
       call memunset(nao2*2,datacomp)
-      call tstamp(1)
+      call tstamp(1,datacomp)
 !
 ! Start SCF
 !
@@ -784,7 +784,7 @@ end
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         call writeeigenvalue(energymo,energymo,1)
-        call tstamp(1)
+        call tstamp(1,datacomp)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
         if(guess == 'HUCKEL') then
           savedconv= dconv
@@ -795,12 +795,12 @@ end
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
           dconv= savedconv
           cutint2= savecutint2
-          call tstamp(1)
+          call tstamp(1,datacomp)
         endif
         call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         call writeeigenvalue(energymo,energymo,1)
-        call tstamp(1)
+        call tstamp(1,datacomp)
       else
         if(master) then
           write(*,'(" Error! This program does not support method= ",a16,".")')method
@@ -817,13 +817,13 @@ end
 !
       if(method == 'HARTREE-FOCK') then
         call calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
-        call tstamp(1)
+        call tstamp(1,datacomp)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
         call calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
-        call tstamp(1)
+        call tstamp(1,datacomp)
       elseif(method == 'MP2') then
         call calcgradrmp2(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
-        call tstamp(1)
+        call tstamp(1,datacomp)
       else
         if(master) then
           write(*,'(" Error! This program does not support method= ",a16,".")')method
@@ -884,7 +884,7 @@ end
       deallocate(h1mtrx,smtrx,tmtrx,cmo,ortho,dmtrx, &
 &                xint,energymo)
       call memunset(nao3*4+nao2*2+nshell3+nao,datacomp)
-      call tstamp(1)
+      call tstamp(1,datacomp)
       return
 end
 
@@ -963,7 +963,7 @@ end
 !
       deallocate(overinv,work)
       call memunset(nao2*2,datacomp)
-      call tstamp(1)
+      call tstamp(1,datacomp)
 !
 ! Start SCF
 !
@@ -971,7 +971,7 @@ end
         call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         call writeeigenvalue(energymoa,energymob,2)
-        call tstamp(1)
+        call tstamp(1,datacomp)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
         if(guess == 'HUCKEL') then
           savedconv= dconv
@@ -982,12 +982,12 @@ end
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
           dconv= savedconv
           cutint2= savecutint2
-          call tstamp(1)
+          call tstamp(1,datacomp)
         endif
         call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         call writeeigenvalue(energymoa,energymob,2)
-        call tstamp(1)
+        call tstamp(1,datacomp)
 !     elseif(method == 'MP2') then
 !       call calcuhf(h1mtrx,cmoa,ortho,smtrx,xint,energymoa)
 !       call tstamp(1)
@@ -1076,7 +1076,7 @@ end
       deallocate(h1mtrx,smtrx,tmtrx,cmoa,cmob,ortho, &
 &                dmtrxa,dmtrxb,xint,energymoa,energymob)
       call memunset(nao3*5+nao2*3+nshell3+nao*2,datacomp)
-      call tstamp(1)
+      call tstamp(1,datacomp)
       return
 end
 
@@ -1208,7 +1208,7 @@ end
 !
         deallocate(overinv,work)
         call memunset(nao2*2,datacomp)
-        call tstamp(1)
+        call tstamp(1,datacomp)
 !
 ! Calculate energy
 !
@@ -1216,7 +1216,7 @@ end
           call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1)
-          call tstamp(1)
+          call tstamp(1,datacomp)
         elseif((idftex >= 1).or.(idftcor >= 1)) then
           if((iopt == 1).and.(guess == 'HUCKEL')) then
             savedconv= dconv
@@ -1227,12 +1227,12 @@ end
 &                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
             dconv= savedconv
             cutint2= savecutint2
-            call tstamp(1)
+            call tstamp(1,datacomp)
           endif
           call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                       nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1)
-          call tstamp(1)
+          call tstamp(1,datacomp)
         else
           if(master) then
             write(*,'(" Error! This program does not support method= ",a16,".")')method
@@ -1244,13 +1244,13 @@ end
 !
         if(method == 'HARTREE-FOCK') then
           call calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
-          call tstamp(1)
+          call tstamp(1,datacomp)
         elseif((idftex >= 1).or.(idftcor >= 1)) then
           call calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
-          call tstamp(1)
+          call tstamp(1,datacomp)
         elseif(method == 'MP2') then
           call calcgradrmp2(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
-          call tstamp(1)
+          call tstamp(1,datacomp)
         else
           if(master) then
             write(*,'(" Error! This program does not support method= ",a16,".")')method
@@ -1317,7 +1317,7 @@ end
           datacomp%nwarn= datacomp%nwarn+1
           exit
         endif
-        call tstamp(1)
+        call tstamp(1,datacomp)
       enddo
 !
 ! End of optimization cycle 
@@ -1394,7 +1394,7 @@ end
         call memunset(isizered,datacomp)
       endif
 !
-      call tstamp(1)
+      call tstamp(1,datacomp)
       return
 end
 
@@ -1526,7 +1526,7 @@ end
 !
         deallocate(overinv,work)
         call memunset(nao2*2,datacomp)
-        call tstamp(1)
+        call tstamp(1,datacomp)
 !
 ! Calculate energy
 !
@@ -1534,7 +1534,7 @@ end
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2)
-          call tstamp(1)
+          call tstamp(1,datacomp)
         elseif((idftex >= 1).or.(idftcor >= 1)) then
           if((iopt == 1).and.(guess == 'HUCKEL')) then
             savedconv= dconv
@@ -1545,12 +1545,12 @@ end
 &                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
             dconv= savedconv
             cutint2= savecutint2
-            call tstamp(1)
+            call tstamp(1,datacomp)
           endif
           call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                       nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2)
-          call tstamp(1)
+          call tstamp(1,datacomp)
 !       elseif(method == 'MP2') then
 !         call calcuhf(h1mtrx,cmoa,ortho,smtrx,xint,energymoa)
 !         call tstamp(1)
@@ -1576,7 +1576,7 @@ end
             call iabort
           endif
         endif
-        call tstamp(1)
+        call tstamp(1,datacomp)
 !
 ! Calculate maximum and root mean square gradient values
 !
@@ -1637,7 +1637,7 @@ end
           datacomp%nwarn= datacomp%nwarn+1
           exit
         endif
-        call tstamp(1)
+        call tstamp(1,datacomp)
       enddo
 !
 ! End of optimization cycle 
@@ -1710,7 +1710,7 @@ end
       deallocate(h1mtrx,smtrx,tmtrx,cmoa,cmob,ortho, &
 &                dmtrxa,dmtrxb,xint,energymoa,energymob)
       call memunset(nao3*5+nao2*3+nshell3+nao*2,datacomp)
-      call tstamp(1)
+      call tstamp(1,datacomp)
 !
 ! Unset array for redundant coordinate
 !
