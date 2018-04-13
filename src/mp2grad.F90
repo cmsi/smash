@@ -166,7 +166,7 @@
       memmin345=max(mem3+mem3i,mem4,mem5+mem5i)
       memmin16= max(mem1+mem2+mem2i+memmin345,mem1+mem6)
 !
-      call memrest(msize)
+      call memrest(msize,datacomp)
       if((msize < memmin16).and.master) then
         write(*,'(" Error! Available memory size for MP2 energy gradient is small!")')
         call memset(memmin16,datacomp)
@@ -299,7 +299,7 @@ end
       call memset(maxsize*nocc*numi+nocc3+nvir2,datacomp)
       allocate(trint2(maxsize*noac*numi),trint2core(maxsize*ncore*numi),pij(nocc3),pab(nvir2))
 !
-      call memrest(msize)
+      call memrest(msize,datacomp)
       mlsize=(msize-nao*noac-numi*maxdim**3)/(nao*numi)
       if(mlsize > maxsize) then
         mlsize= maxsize
@@ -358,7 +358,7 @@ end
 ! Lai1,2,4, tnsml*(mn|ls)', PiJ, Wij[II], and Wab[II] calculations
 !
 ! mem5
-        call memrest(msize)
+        call memrest(msize,datacomp)
         mlsize2=(msize-nao*numi-2*nao2)/(nao*(numi+1))
         if(mlsize2 > maxsize) mlsize2= maxsize
         call memset(numi*mlsize2*nao+nao*numi+2*nao2+nao*mlsize2,datacomp)

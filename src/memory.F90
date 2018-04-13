@@ -132,13 +132,15 @@ end
 
 
 !----------------------------
-  subroutine memrest(msize)
+  subroutine memrest(msize,datacomp)
 !----------------------------
 !
 ! Check available memory size
 !
       use modmemory, only : memmax, memused
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(out) :: msize
 !
       msize= memmax-memused

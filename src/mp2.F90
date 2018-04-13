@@ -98,7 +98,7 @@
 !
 ! Check available memory size and judge the number of passes
 !
-      call memrest(msize)
+      call memrest(msize,datacomp)
       memneed= max(nao*noac+noac*maxdim**3+noac*nao*maxdim**2,nao*nao*2)
       numocc3=(msize-memneed)/maxsize
 !
@@ -205,7 +205,7 @@ end
 !
       call memset(maxsize*noac3,datacomp)
       allocate(trint2(maxsize*noac3))
-      call memrest(msize)
+      call memrest(msize,datacomp)
       mlsize=(msize-nao*noac-noac*maxdim**3)/(noac*nao)
       if(mlsize > maxsize) then
         mlsize= maxsize
@@ -314,7 +314,7 @@ end
 !
       call memset(maxsize*numocc3,datacomp)
       allocate(trint2(maxsize*numocc3))
-      call memrest(msize)
+      call memrest(msize,datacomp)
       mlsize=(msize-nao*noac-noac*maxdim**3)/(noac*nao)
       if(mlsize > maxsize) then
         mlsize= maxsize
