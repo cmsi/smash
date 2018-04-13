@@ -437,7 +437,7 @@ end
       type typecomp
         integer :: memmax=1000000000, memused=0, memusedmax=0
         integer :: iwall0, iwall1
-        integer :: nwarn=0
+        integer :: nwarn
         integer :: nproc1, myrank1, nproc2, myrank2, mpi_comm1, mpi_comm2
         real(8) :: cpu0, cpu1
         logical :: master

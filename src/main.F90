@@ -93,6 +93,16 @@
         else
           write(*,'(" Your calculation finished with",i3," warning(s).")')nwarn
         endif
+!ishimura
+        write(*,'(" Used memory :",1x,i6," MB")')memusedmax/125000
+        if((runtype =='OPTIMIZE').and.(.not.converged))then
+          write(*,'(/," ============================================================")')
+          write(*,'("  Geometry optimization did not finish with",i3," warning(s)!")')datacomp%nwarn
+          write(*,'(" ============================================================")')
+        else
+          write(*,'(" Your calculation finished with",i3," warning(s).")')datacomp%nwarn
+        endif
+
       endif
 end program main
 
@@ -165,7 +175,7 @@ end
 !
 ! Set number of electrons
 !
-      call setelectron
+      call setelectron(datacomp)
 !
 ! Reset defaults after reading input file
 !
@@ -173,7 +183,7 @@ end
 !
 ! Set functional information and adjust the number of DFT grids
 !
-      call setdft
+      call setdft(datacomp)
 !
 ! Set functional information and adjust the number of DFT grids
 !
@@ -336,7 +346,7 @@ end
 
 
 !-------------------------
-  subroutine setelectron
+  subroutine setelectron(datacomp)
 !-------------------------
 !
 ! Set number of electrons
@@ -346,7 +356,9 @@ end
       use modecp, only : flagecp, izcore
       use modjob, only : scftype
       use modwarn, only : nwarn
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer :: nume, ii
 !
 ! Calculate total number of electrons
@@ -371,6 +383,8 @@ end
         if(master) write(*,'(" Warning! SCFtype changes from RHF to UHF.")')
         scftype = 'UHF'
         nwarn= nwarn+1
+!ishimura
+        datacomp%nwarn= datacomp%nwarn+1
       endif
 !
       neleca=(nume+multi-1)/2
@@ -1316,6 +1330,8 @@ end
         if((iopt == nopt).and.master) then
           write(*,'("Warning! Geometry did not converge.")')
           nwarn= nwarn+1
+!ishimura
+          datacomp%nwarn= datacomp%nwarn+1
           exit
         endif
         call tstamp(1)
@@ -1637,6 +1653,8 @@ end
         if((iopt == nopt).and.master) then
           write(*,'("Warning! Geometry did not converge.")')
           nwarn= nwarn+1
+!ishimura
+          datacomp%nwarn= datacomp%nwarn+1
           exit
         endif
         call tstamp(1)
@@ -1784,7 +1802,7 @@ end
 
 
 !--------------------
-  subroutine setdft
+  subroutine setdft(datacomp)
 !--------------------
 !
 ! Set functional information
@@ -1797,7 +1815,9 @@ end
       use modjob, only : method
       use modwarn, only : nwarn
       use modbasis, only : nao
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer :: ii, maxelem
 !
       do ii= 1,9
@@ -1825,6 +1845,8 @@ end
         maxelem= maxval(numatomic(1:natom))
         if(((maxelem >= 55).or.(nao >= 2000)).and.((nrad == 96).and.(nleb == 302))) then
           nwarn= nwarn+1
+!ishimura
+          datacomp%nwarn= datacomp%nwarn+1
           if(master) write(*,'(" Warning! The number of DFT grids may not be enough.")')
         endif
       endif
