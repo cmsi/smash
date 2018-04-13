@@ -18,7 +18,8 @@
 !
 ! Set maximum memory size
 !
-      use modmemory, only : memmax, memory
+      use modmemory, only : memmax
+      use modjob, only : memory
       implicit none
       integer :: lock, locm, locg, loct, locb
 !

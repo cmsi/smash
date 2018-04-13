@@ -199,7 +199,7 @@ end
       use modiofile, only : check
       use modwarn, only : nwarn
       use modguess, only : spher_g, guess
-      use modmemory, only : memmax, memused, memusedmax, memory
+      use modmemory, only : memmax, memused, memusedmax
       use modprint, only : iprint
       use modbasis, only : spher, basis
       use modscf, only : maxiter, dconv, fdiff, scfconv, maxdiis, maxsoscf, maxqc, &
@@ -210,7 +210,7 @@ end
       use moddft, only : idftex, idftcor, nrad, nleb, bqrad
       use modopt, only : nopt, optconv, cartesian
       use modecp, only : ecp, flagecp
-      use modjob, only : scftype, runtype, method, bohr
+      use modjob, only : scftype, runtype, method, bohr, memory
       use modmolecule, only : multi, charge
       use modmp2, only : ncore, nvfz, maxmp2diis, maxmp2iter
       use modprop, only : octupole

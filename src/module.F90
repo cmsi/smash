@@ -36,6 +36,7 @@ end
 !----------------
       implicit none
       character(len=16) :: method, runtype, scftype
+      character(len=16) :: memory!, mem
       logical :: bohr
 end
 
@@ -129,7 +130,6 @@ end
   module modmemory
 !-------------------
       integer :: memmax, memused, memusedmax
-      character(len=16) :: memory, mem
 end
 
 

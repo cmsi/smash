@@ -21,8 +21,7 @@
       use modiofile, only : input, check, maxline
       use modbasis, only : basis, spher
       use modmolecule, only : numatomic, natom, coord, znuc, charge, multi
-      use modjob, only : method, runtype, scftype, bohr
-      use modmemory, only : memory
+      use modjob, only : method, runtype, scftype, bohr, memory
       use modthresh, only : precision, cutint2, threshdiis, threshsoscf, threshqc, threshweight, &
 &                           threshrho, threshdfock, threshdftao, threshover, threshatom, &
 &                           threshmp2cphf
