@@ -35,7 +35,6 @@
       use modenergy, only : enuc, escf, escfe
       use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis
       use modjob, only : iprint
-      use modwarn, only : nwarn
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -145,8 +144,6 @@
 !
         if((nao /= nmo).and.master) then
           write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
-!ishimura
-          nwarn= nwarn+1
           datacomp%nwarn= datacomp%nwarn+1
         endif
 !
@@ -905,7 +902,6 @@ end
 &                           threshweight, threshrho, threshdfock, threshdftao
       use modjob, only : iprint
       use modparam, only : tobohr
-      use modwarn, only : nwarn
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -1042,8 +1038,6 @@ end
 !
         if((nao /= nmo).and.master) then
           write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
-!ishimura
-          nwarn= nwarn+1
           datacomp%nwarn= datacomp%nwarn+1
         endif
 !
@@ -1291,7 +1285,6 @@ end
       use modenergy, only : enuc, escf, escfe
       use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis
       use modjob, only : iprint
-      use modwarn, only : nwarn
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -1421,8 +1414,6 @@ end
 !
         if((nao /= nmo).and.master) then
           write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
-!ishimura
-          nwarn= nwarn+1
           datacomp%nwarn= datacomp%nwarn+1
         endif
 !
@@ -1983,7 +1974,6 @@ end
 &                           threshweight, threshrho, threshdfock, threshdftao
       use modjob, only : iprint
       use modparam, only : tobohr
-      use modwarn, only : nwarn
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -2145,8 +2135,6 @@ end
 !
         if((nao /= nmo).and.master) then
           write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
-!ishimura
-          nwarn= nwarn+1
           datacomp%nwarn= datacomp%nwarn+1
         endif
 !

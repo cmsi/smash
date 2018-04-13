@@ -22,7 +22,6 @@
       use modmolecule, only : natom, coord, znuc
       use modthresh, only : threshatom
       use modenergy, only : enuc
-      use modwarn, only : nwarn
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -43,8 +42,6 @@
             enuc= enuc+chrgij/rr
             if((rr <= threshatom).and.master) then
               write(*,'("Warning! Distance of Atoms",i4," and",i4," is short!")') iatom, jatom
-!ishimura
-              nwarn= nwarn+1
               datacomp%nwarn= datacomp%nwarn+1
             endif       
           else

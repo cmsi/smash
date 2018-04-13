@@ -181,17 +181,6 @@ end
 end
 
 
-!-----------------
-  module modwarn
-!-----------------
-!
-! nwarn : number of warnings
-!
-      implicit none
-      integer :: nwarn
-end
-
-
 !------------------
   module modguess
 !------------------

@@ -20,7 +20,6 @@
 ! for High performance computing systems (SMASH).
 !
       use modparallel, only : master, nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
-      use modwarn, only : nwarn
       use modmemory, only : memusedmax
       use modjob, only : runtype, scftype
       use modiofile, only : input, icheck, check, version
@@ -85,14 +84,6 @@
       call memcheck(datacomp)
       call tstamp(2)
       if(master) then
-        write(*,'(" Used memory :",1x,i6," MB")')memusedmax/125000
-        if((runtype =='OPTIMIZE').and.(.not.converged))then
-          write(*,'(/," ============================================================")')
-          write(*,'("  Geometry optimization did not finish with",i3," warning(s)!")')nwarn
-          write(*,'(" ============================================================")')
-        else
-          write(*,'(" Your calculation finished with",i3," warning(s).")')nwarn
-        endif
 !ishimura
         write(*,'(" Used memory :",1x,i6," MB")')memusedmax/125000
         if((runtype =='OPTIMIZE').and.(.not.converged))then
@@ -211,7 +202,6 @@ end
 ! Set defaults before reading input file
 !
       use modiofile, only : check
-      use modwarn, only : nwarn
       use modguess, only : spher_g, guess
       use modmemory, only : memmax, memused, memusedmax
       use modbasis, only : spher, basis
@@ -231,7 +221,6 @@ end
       implicit none
       type(typecomp),intent(inout) :: datacomp
 !
-      nwarn  = 0
       memmax = 1000000000
       memused= 0
       memusedmax= 0
@@ -355,7 +344,6 @@ end
       use modmolecule, only : numatomic, neleca, nelecb, natom, multi, charge
       use modecp, only : flagecp, izcore
       use modjob, only : scftype
-      use modwarn, only : nwarn
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -382,8 +370,6 @@ end
       if((scftype == 'RHF').and.(multi /= 1)) then
         if(master) write(*,'(" Warning! SCFtype changes from RHF to UHF.")')
         scftype = 'UHF'
-        nwarn= nwarn+1
-!ishimura
         datacomp%nwarn= datacomp%nwarn+1
       endif
 !
@@ -1112,7 +1098,6 @@ end
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom, coord, coordold
       use modopt, only : nopt, optconv, cartesian
-      use modwarn, only : nwarn
       use modjob, only : method, iprint
       use moddft, only : idftex, idftcor
       use modguess, only : guess
@@ -1329,8 +1314,6 @@ end
 !
         if((iopt == nopt).and.master) then
           write(*,'("Warning! Geometry did not converge.")')
-          nwarn= nwarn+1
-!ishimura
           datacomp%nwarn= datacomp%nwarn+1
           exit
         endif
@@ -1433,7 +1416,6 @@ end
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom, coord, coordold
       use modopt, only : nopt, optconv, cartesian
-      use modwarn, only : nwarn
       use modjob, only : method, iprint
       use moddft, only : idftex, idftcor
       use modguess, only : guess
@@ -1652,8 +1634,6 @@ end
 !
         if((iopt == nopt).and.master) then
           write(*,'("Warning! Geometry did not converge.")')
-          nwarn= nwarn+1
-!ishimura
           datacomp%nwarn= datacomp%nwarn+1
           exit
         endif
@@ -1813,7 +1793,6 @@ end
       use modatom, only : atomrad
       use modmolecule, only : natom, numatomic
       use modjob, only : method
-      use modwarn, only : nwarn
       use modbasis, only : nao
       use modtype, only : typecomp
       implicit none
@@ -1844,8 +1823,6 @@ end
       if((idftex >= 1).or.(idftcor >= 1)) then
         maxelem= maxval(numatomic(1:natom))
         if(((maxelem >= 55).or.(nao >= 2000)).and.((nrad == 96).and.(nleb == 302))) then
-          nwarn= nwarn+1
-!ishimura
           datacomp%nwarn= datacomp%nwarn+1
           if(master) write(*,'(" Warning! The number of DFT grids may not be enough.")')
         endif

@@ -548,7 +548,6 @@ end
       use modmolecule, only : numatomic, natom, coord, znuc
       use modparam, only : mxatom, tobohr
       use modopt, only : cartesian
-      use modwarn, only : nwarn
       use modjob, only : runtype, bohr
       use modtype, only : typecomp
       implicit none
@@ -662,8 +661,6 @@ end
           if((minatomic <= 0).and.(.not.cartesian)) then
             cartesian=.true.
             write(*,'(" Warning! Cartesian coordinate is used during geometry optimization.")')
-!ishimura
-            nwarn= nwarn+1
             datacomp%nwarn= datacomp%nwarn+1
           endif
         endif

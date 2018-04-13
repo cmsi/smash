@@ -91,7 +91,6 @@ end
 !
       use modparallel, only : master
       use modmemory, only : memused
-      use modwarn, only : nwarn
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -99,8 +98,6 @@ end
 !
       memused= memused-msize
       if(memused < 0) then
-!ishimura
-        nwarn= nwarn+1
         datacomp%nwarn= datacomp%nwarn+1
         if(master) write(*,'(" Warning! Msize in memunset is less than 0.")')
       endif
@@ -116,14 +113,11 @@ end
 !
       use modmemory, only : memused
       use modparallel, only : master
-      use modwarn, only : nwarn
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
 !
       if(memused /= 0) then
-!ishimura
-        nwarn= nwarn+1
         datacomp%nwarn= datacomp%nwarn+1
         if(master) write(*,'(" Warning! Memory deallocation is not completed.")')
       endif
