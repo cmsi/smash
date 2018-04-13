@@ -201,7 +201,6 @@ end
       use modguess, only : spher_g, guess
       use modmemory, only : memmax, memused, memusedmax, memory
       use modprint, only : iprint
-      use modunit, only : bohr
       use modbasis, only : spher, basis
       use modscf, only : maxiter, dconv, fdiff, scfconv, maxdiis, maxsoscf, maxqc, &
 &                        maxqcdiag, maxqcdiagsub, extrap
@@ -211,7 +210,7 @@ end
       use moddft, only : idftex, idftcor, nrad, nleb, bqrad
       use modopt, only : nopt, optconv, cartesian
       use modecp, only : ecp, flagecp
-      use modjob, only : scftype, runtype, method
+      use modjob, only : scftype, runtype, method, bohr
       use modmolecule, only : multi, charge
       use modmp2, only : ncore, nvfz, maxmp2diis, maxmp2iter
       use modprop, only : octupole

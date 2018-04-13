@@ -195,7 +195,7 @@ end
       use modmolecule, only : natom, neleca, numatomic
       use moddft, only : nrad, nleb
       use modatom, only : atomrad
-      use modunit, only : tobohr
+      use modparam, only : tobohr
       use moddft, only : idftex, idftcor, hfexchange
       implicit none
       integer,intent(in) :: nproc1, myrank1, mpi_comm1
@@ -313,7 +313,7 @@ end
       use modmolecule, only : natom, neleca, nelecb, numatomic
       use moddft, only : nrad, nleb
       use modatom, only : atomrad
-      use modunit, only : tobohr
+      use modparam, only : tobohr
       use moddft, only : idftex, idftcor, hfexchange
       implicit none
       integer :: nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j, iatom

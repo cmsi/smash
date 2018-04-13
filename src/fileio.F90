@@ -21,7 +21,7 @@
       use modiofile, only : input, check, maxline
       use modbasis, only : basis, spher
       use modmolecule, only : numatomic, natom, coord, znuc, charge, multi
-      use modjob, only : method, runtype, scftype
+      use modjob, only : method, runtype, scftype, bohr
       use modmemory, only : memory
       use modthresh, only : precision, cutint2, threshdiis, threshsoscf, threshqc, threshweight, &
 &                           threshrho, threshdfock, threshdftao, threshover, threshatom, &
@@ -30,7 +30,6 @@
       use modprint, only : iprint
       use modscf, only : scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
       use modopt, only : nopt, optconv, cartesian
-      use modunit, only : bohr
       use moddft, only : nrad, nleb, bqrad
       use modecp, only : ecp, flagecp
       use modmp2, only : ncore, nvfz, maxmp2diis, maxmp2iter
@@ -283,7 +282,7 @@ end
 !
       use modparallel, only : master
       use modmolecule, only : numatomic, natom, coord
-      use modunit, only : toang
+      use modparam, only : toang
       implicit none
       integer :: i, j
       character(len=3) :: table(-9:112)= &
@@ -461,9 +460,8 @@ end
       use modmolecule, only : natom, neleca, nelecb, charge, multi
       use modbasis, only : nshell, nao, nprim, basis, spher
       use modmemory, only : memmax
-      use modjob, only : method, runtype, scftype
+      use modjob, only : method, runtype, scftype, bohr
       use modopt, only : nopt, optconv, cartesian
-      use modunit, only : bohr
       use modguess, only : guess
       use modthresh, only : precision
       use modprop, only : octupole
@@ -548,11 +546,10 @@ end
       use modparallel, only : master
       use modiofile, only : input, icheck, maxline
       use modmolecule, only : numatomic, natom, coord, znuc
-      use modunit, only : tobohr, bohr
-      use modparam, only : mxatom
+      use modparam, only : mxatom, tobohr
       use modopt, only : cartesian
       use modwarn, only : nwarn
-      use modjob, only : runtype
+      use modjob, only : runtype, bohr
       implicit none
       integer :: ii, jj, minatomic
       real(8),parameter :: zero=0.0D+00

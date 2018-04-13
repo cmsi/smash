@@ -26,6 +26,8 @@
       integer,parameter :: mxprim=20000
       integer,parameter :: mxprsh=30
       integer,parameter :: mxang=7
+      real(8),parameter :: toang= 0.5291772108D+00, tobohr= 1.889726125D+00
+      real(8),parameter :: todebye= 2.541746D+00
 end
 
 
@@ -34,15 +36,6 @@ end
 !----------------
       implicit none
       character(len=16) :: method, runtype, scftype
-end
-
-
-!-----------------
-  module modunit
-!-----------------
-      implicit none
-      real(8),parameter :: toang= 0.5291772108D+00, tobohr= 1.889726125D+00
-      real(8),parameter :: todebye= 2.541746D+00
       logical :: bohr
 end
 

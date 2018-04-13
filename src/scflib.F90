@@ -1215,7 +1215,7 @@ end
 !
       use modparallel, only : master
       use modbasis, only : nao
-      use modunit, only : todebye
+      use modparam, only : todebye
       use modmolecule, only : natom, coord, znuc
       implicit none
       integer,intent(in) :: nproc, myrank, mpi_comm
@@ -1277,7 +1277,7 @@ end
 !
       use modparallel, only : master
       use modbasis, only : nao
-      use modunit, only : todebye, toang
+      use modparam, only : todebye, toang
       use modmolecule, only : natom, coord, znuc
       implicit none
       integer,intent(in) :: nproc, myrank, mpi_comm
@@ -1448,7 +1448,7 @@ end
 !
       use modparallel, only : master
       use modbasis, only : nao
-      use modunit, only : todebye
+      use modparam, only : todebye
       use modmolecule, only : natom, coord, znuc
       implicit none
       integer,intent(in) :: nproc, myrank, mpi_comm
@@ -1510,7 +1510,7 @@ end
 !
       use modparallel, only : master
       use modbasis, only : nao
-      use modunit, only : todebye, toang
+      use modparam, only : todebye, toang
       use modmolecule, only : natom, coord, znuc
       implicit none
       integer,intent(in) :: nproc, myrank, mpi_comm

@@ -95,7 +95,7 @@ end
 !
       use modparallel, only : master
       use modmolecule, only : coord, natom, numatomic
-      use modunit, only : tobohr
+      use modparam, only : tobohr
       implicit none
       integer,parameter :: maxconnect=13
       integer,intent(in) :: isizered
@@ -416,7 +416,7 @@ end
 !
       use modparallel, only : master
       use modprint, only : iprint
-      use modunit, only : toang
+      use modparam, only : toang
       use modmolecule, only : numatomic
       implicit none
       integer,intent(in) :: natom3, iopt, nproc, myrank, mpi_comm
@@ -519,7 +519,7 @@ end
 !
       use modparallel, only : master
       use modprint, only : iprint
-      use modunit, only : toang, tobohr
+      use modparam, only : toang, tobohr
       use modmolecule, only : numatomic, natom
       implicit none
       integer,parameter :: maxiterdx=100, maxiterrfo=1000
