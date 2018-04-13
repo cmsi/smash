@@ -410,7 +410,7 @@ end
 
 !------------------------------------------------------------------------------------
   subroutine calcnewcoord(coord,coordold,egrad,egradold,ehess,displc,natom3,iopt, &
-&                         nproc,myrank,mpi_comm)
+&                         nproc,myrank,mpi_comm,datacomp)
 !------------------------------------------------------------------------------------
 !
 ! Calculate new Cartesian coordinate with gradient and hessian
@@ -419,7 +419,9 @@ end
       use modjob, only : iprint
       use modparam, only : toang
       use modmolecule, only : numatomic
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: natom3, iopt, nproc, myrank, mpi_comm
       integer :: i, j, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, third=0.3333333333333333D+00
@@ -460,7 +462,7 @@ end
           work(j,i)=ehess(ii+j)
         enddo
       enddo
-      call diag('V','U',natom3,work,natom3,eigen,nproc,myrank,mpi_comm)
+      call diag('V','U',natom3,work,natom3,eigen,nproc,myrank,mpi_comm,datacomp)
 !
       do i=1,natom3
         eigen(i)= one/eigen(i)
@@ -505,7 +507,7 @@ end
   subroutine calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess,work1, &
 &                            work2,work3,work4,workv,iopt,iredun,isizered, &
 &                            maxredun,numbond,numangle,numtorsion,numredun, &
-&                            nproc,myrank,mpi_comm)
+&                            nproc,myrank,mpi_comm,datacomp)
 !---------------------------------------------------------------------------------------
 !
 ! Calculate new Cartesian coordinate with gradient, hessian and redundant coordinate
@@ -522,7 +524,9 @@ end
       use modjob, only : iprint
       use modparam, only : toang, tobohr
       use modmolecule, only : numatomic, natom
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,parameter :: maxiterdx=100, maxiterrfo=1000
       integer,intent(in) :: iopt, isizered, maxredun, iredun(4,isizered/4)
       integer,intent(in) :: numbond, numangle, numtorsion, numredun, nproc, myrank, mpi_comm
@@ -586,7 +590,7 @@ end
 !
 ! Calculate G-inverse and K-matrix
 !
-      call diag('V','U',numredun,work2,maxredun,workv(1,3),nproc,myrank,mpi_comm)
+      call diag('V','U',numredun,work2,maxredun,workv(1,3),nproc,myrank,mpi_comm,datacomp)
       numdim=0
       do ii= 1,numredun
         if(abs(workv(ii,3)) >= 1.0D-5) then
@@ -683,7 +687,7 @@ end
 &                zero,work1,maxredun)
       call dgemm('T','N',numdim,numdim,numredun,one,work2(1,numredun-numdim+1),maxredun, &
 &                work1,maxredun,zero,work4,maxredun)
-      call diag('V','U',numdim,work4,maxredun,workv(1,3),nproc,myrank,mpi_comm)
+      call diag('V','U',numdim,work4,maxredun,workv(1,3),nproc,myrank,mpi_comm,datacomp)
 !
 ! Calculate K*(orthogonal basis)
 !
@@ -776,7 +780,7 @@ end
 !
 !   Calculate G-inverse
 !
-        call diag('V','U',numredun,work2,maxredun,workv(1,1),nproc,myrank,mpi_comm)
+        call diag('V','U',numredun,work2,maxredun,workv(1,1),nproc,myrank,mpi_comm,datacomp)
         numdim=0
         do ii= 1,numredun
           if(abs(workv(ii,1)) >= 1.0D-5) then

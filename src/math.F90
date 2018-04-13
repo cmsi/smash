@@ -37,7 +37,7 @@ end
 
 
 !-----------------------------------------------------------------------------------------
-  subroutine mtrxcanon(ortho,overlap,eigen,ndim,newdim,threshover,nproc,myrank,mpi_comm)
+  subroutine mtrxcanon(ortho,overlap,eigen,ndim,newdim,threshover,nproc,myrank,mpi_comm,datacomp)
 !-----------------------------------------------------------------------------------------
 !
 ! Calculate canonicalization matrix
@@ -45,7 +45,9 @@ end
 ! The ortho matrix satisfiles (Ortho)-daggar * S * (Ortho) = I
 ! where S is the overlap matrix.
 !
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: ndim, nproc, myrank, mpi_comm
       integer,intent(out) :: newdim
       integer :: i, j, icount
@@ -57,7 +59,7 @@ end
 !
 ! Diagonalize ortho matrix
 !
-      call diag('V','U',ndim,overlap,ndim,eigen,nproc,myrank,mpi_comm)
+      call diag('V','U',ndim,overlap,ndim,eigen,nproc,myrank,mpi_comm,datacomp)
 !
 ! Eliminate eigenvectors with small eigenvalues
 !
@@ -173,13 +175,15 @@ end
 
 
 !-------------------------------------------------------------------------
-  subroutine diag(jobz,uplo,ndim,vector,lda,eigen,nproc,myrank,mpi_comm)
+  subroutine diag(jobz,uplo,ndim,vector,lda,eigen,nproc,myrank,mpi_comm,datacomp)
 !-------------------------------------------------------------------------
 !
 ! Diagonalize matrix
 !
       use modparallel, only : master
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: ndim, lda, nproc, myrank, mpi_comm
       integer :: info
       integer, allocatable :: iwork(:)
@@ -194,11 +198,11 @@ end
 !     call dsyev(jobz,uplo,ndim,vector,lda,eigen,work,ndim*ndim,info)
 !     deallocate(work)
 !     call memunset(ndim*ndim)
-      call memset(3*ndim*ndim+45*ndim)
+      call memset(3*ndim*ndim+45*ndim,datacomp)
       allocate(iwork(10*ndim),work(3*ndim*ndim+35*ndim))
       call dsyevd(jobz,uplo,ndim,vector,lda,eigen,work,3*ndim*ndim+35*ndim,iwork,10*ndim,info)
       deallocate(iwork,work)
-      call memunset(3*ndim*ndim+45*ndim)
+      call memunset(3*ndim*ndim+45*ndim,datacomp)
 !
       if(info /= 0) then
         if(master)write(*,'(" Error! Diagonalization failed, info =",i5)')info
@@ -209,7 +213,7 @@ end
 
 
 !----------------------------------------------------------------------------------------------
-  subroutine mtrxcanoninv(ortho,overinv,overlap,ndim,newdim,threshover,nproc,myrank,mpi_comm)
+  subroutine mtrxcanoninv(ortho,overinv,overlap,ndim,newdim,threshover,nproc,myrank,mpi_comm,datacomp)
 !----------------------------------------------------------------------------------------------
 !
 ! Calculate canonicalization matrix and inverse matrix of overlap
@@ -217,7 +221,9 @@ end
 ! The ortho matrix satisfiles (Ortho)-daggar * S * (Ortho) = I
 ! where S is the overlap matrix.
 !
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: ndim, nproc, myrank, mpi_comm
       integer,intent(out) :: newdim
       integer :: i, j, icount
@@ -225,16 +231,11 @@ end
       real(8),intent(in) :: threshover
       real(8),intent(out) :: ortho(ndim,ndim), overinv(ndim,ndim)
       real(8),intent(inout) :: overlap(ndim,ndim)
-      real(8),allocatable :: eigen(:), ecanon(:)
-!
-! Set arrays
-!
-      call memset(ndim*2)
-      allocate(eigen(ndim),ecanon(ndim))
+      real(8) :: eigen(ndim), ecanon(ndim)
 !
 ! Diagonalize ortho matrix
 !
-      call diag('V','U',ndim,overlap,ndim,eigen,nproc,myrank,mpi_comm)
+      call diag('V','U',ndim,overlap,ndim,eigen,nproc,myrank,mpi_comm,datacomp)
 !
 ! Eliminate eigenvectors with small eigenvalues
 !
@@ -276,10 +277,6 @@ end
 !$OMP enddo
 !$OMP end parallel
 !
-! Unset arrays
-!
-      call memunset(ndim*2)
-      deallocate(eigen,ecanon)
       return
 end
 

@@ -125,7 +125,7 @@ end
 !
 ! Calculate Extended Huckel method
 !
-      call calchuckelg(hmo,eigen,nproc,myrank,mpi_comm)
+      call calchuckelg(hmo,eigen,nproc,myrank,mpi_comm,datacomp)
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
@@ -133,7 +133,7 @@ end
 !
 ! Project orbitals from Huckel to SCF
 !
-      call projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,nproc,myrank,mpi_comm)
+      call projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,nproc,myrank,mpi_comm,datacomp)
       deallocate(hmo,overlap,work1,work2,eigen)
       call memunset(2*nao_g2+2*nao*nao_g+nao_g,datacomp)
       return
@@ -141,7 +141,7 @@ end
 
 
 !----------------------------------------------------------
-  subroutine calchuckelg(hmo,eigen,nproc,myrank,mpi_comm)
+  subroutine calchuckelg(hmo,eigen,nproc,myrank,mpi_comm,datacomp)
 !----------------------------------------------------------
 !
 ! Driver of extended Huckel calculation for guess generation
@@ -151,7 +151,9 @@ end
       use modparallel, only : master
       use modguess, only : nao_g, nmo_g
       use modjob, only : iprint
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(out) :: hmo(nao_g*nao_g), eigen(nao_g)
@@ -171,7 +173,7 @@ end
 !
 ! Diagonalize extended Huckel matrix
 !
-      call diag('V','U',nao_g,hmo,nao_g,eigen,nproc,myrank,mpi_comm)
+      call diag('V','U',nao_g,hmo,nao_g,eigen,nproc,myrank,mpi_comm,datacomp)
 !
       if(master.and.(iprint >= 3)) then
         write(*,'("   Eigenvalues of Huckel guess")')
@@ -184,7 +186,7 @@ end
 
 
 !--------------------------------------------------------------
-  subroutine calchuckelgcore(hmo,eigen,nproc,myrank,mpi_comm)
+  subroutine calchuckelgcore(hmo,eigen,nproc,myrank,mpi_comm,datacomp)
 !--------------------------------------------------------------
 !
 ! Driver of extended Huckel calculation for only core orbitals
@@ -192,7 +194,9 @@ end
 ! Out : hmo (extended Huckel orbitals)
 !
       use modguess, only : nao_gcore
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(out) :: hmo(nao_gcore*nao_gcore), eigen(nao_gcore)
@@ -212,14 +216,14 @@ end
 !
 ! Diagonalize extended Huckel matrix
 !
-      call diag('V','U',nao_gcore,hmo,nao_gcore,eigen,nproc,myrank,mpi_comm)
+      call diag('V','U',nao_gcore,hmo,nao_gcore,eigen,nproc,myrank,mpi_comm,datacomp)
 !
       return
 end
 
 
 !----------------------------------------------------------------------------------------
-  subroutine projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,nproc,myrank,mpi_comm)
+  subroutine projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,nproc,myrank,mpi_comm,datacomp)
 !----------------------------------------------------------------------------------------
 !
 ! Project orbitals from Huckel to SCF
@@ -232,7 +236,9 @@ end
 !
       use modguess, only : nao_g, nmo_g
       use modbasis, only : nao
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: i, j, nskip
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, small=1.0D-5
@@ -256,7 +262,7 @@ end
 !
 ! Calculate (C2t*S12t*S11^-1*S12*C2)^-1/2
 !
-      call diag('V','U',nmo_g,work1,nao_g,eigen,nproc,myrank,mpi_comm)
+      call diag('V','U',nmo_g,work1,nao_g,eigen,nproc,myrank,mpi_comm,datacomp)
 !
       nskip= 0
       do i= 1,nmo_g
@@ -1491,7 +1497,7 @@ end
 !
 ! Project orbitals from previous basis to current basis
 !
-      call projectmo2(cmo,overinv,overlap,work1,work2,eigen,ndim,nproc,myrank,mpi_comm)
+      call projectmo2(cmo,overinv,overlap,work1,work2,eigen,ndim,nproc,myrank,mpi_comm,datacomp)
 !
 ! Unset arrays
 !
@@ -1503,7 +1509,7 @@ end
 
 
 !------------------------------------------------------------------------------------------
-  subroutine projectmo2(cmo,overinv,overlap,work1,work2,eigen,ndim,nproc,myrank,mpi_comm)
+  subroutine projectmo2(cmo,overinv,overlap,work1,work2,eigen,ndim,nproc,myrank,mpi_comm,datacomp)
 !------------------------------------------------------------------------------------------
 !
 ! Project orbitals from previous basis to current basis
@@ -1517,7 +1523,9 @@ end
 !
       use modguess, only : nao_g
       use modbasis, only : nao
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: ndim, nproc, myrank, mpi_comm
       integer :: i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
@@ -1544,7 +1552,7 @@ end
 !
 ! Calculate (C2t*S12t*S11^-1*S12*C2)^-1/2
 !
-      call diag('V','U',ndim,work1,ndim,eigen,nproc,myrank,mpi_comm)
+      call diag('V','U',ndim,work1,ndim,eigen,nproc,myrank,mpi_comm,datacomp)
 !$OMP parallel do private(eigeninv)
       do i= 1,ndim
         eigeninv= one/sqrt(eigen(i))
@@ -1634,7 +1642,7 @@ end
         allocate(coremo(nao_gcore,nao_gcore),work1(nao_g*nao_gcore),work2(nao_g*nao_gcore), &
 &                work3(nao_g*nao_gcore),eigen(nao_gcore))
         call calccoremo(cmoa_g,cmob_g,coremo,work1,work2,work3,eigen,scftype_g, &
-&                       nproc2,myrank2,mpi_comm2)
+&                       nproc2,myrank2,mpi_comm2,datacomp)
         call memunset(nao_gcore*(nao_gcore+nao_g*3+1),datacomp)
         deallocate(coremo,work1,work2,work3,eigen)
         nmo_g= nmo_g-ncore
@@ -1654,13 +1662,13 @@ end
 ! Project orbitals from previous basis to current basis
 !
       call projectmo3(cmoa,cmoa_g,overinv,overlap,work1,work2,work3,eigen, &
-&                     ndim,nproc2,myrank2,mpi_comm2)
+&                     ndim,nproc2,myrank2,mpi_comm2,datacomp)
       if(scftype == 'UHF') then
         if(scftype_g == 'RHF') then
           call dcopy(nao*nao,cmoa,1,cmob,1)
         elseif(scftype_g == 'UHF') then
           call projectmo3(cmob,cmob_g,overinv,overlap,work1,work2,work3,eigen, &
-&                         ndim,nproc2,myrank2,mpi_comm2)
+&                         ndim,nproc2,myrank2,mpi_comm2,datacomp)
         endif
       endif
 !
@@ -1684,7 +1692,7 @@ end
 
 !-----------------------------------------------------------------------------
   subroutine projectmo3(cmo,cmo_g,overinv,overlap,work1,work2,work3,eigen, &
-&                       ndim,nproc,myrank,mpi_comm)
+&                       ndim,nproc,myrank,mpi_comm,datacomp)
 !-----------------------------------------------------------------------------
 !
 ! Project orbitals from previous basis to current basis
@@ -1697,7 +1705,9 @@ end
 !
       use modguess, only : nao_g, nmo_g
       use modbasis, only : nao
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: ndim, nproc, myrank, mpi_comm
       integer :: ii, jj, maxmo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, pm5=1.0D-05
@@ -1721,7 +1731,7 @@ end
 !
 ! Calculate (C2t*S12t*S11^-1*S12*C2)^-1/2
 !
-      call diag('V','U',nmo_g,cmo_g,nao_g,eigen,nproc,myrank,mpi_comm)
+      call diag('V','U',nmo_g,cmo_g,nao_g,eigen,nproc,myrank,mpi_comm,datacomp)
 !
 !$OMP parallel do private(eigeninv)
       do ii= 1,nmo_g
@@ -1749,14 +1759,16 @@ end
 
 !------------------------------------------------------------------------------------
   subroutine calccoremo(cmoa_g,cmob_g,coremo,overlap,work2,work3,eigen,scftype_g, &
-&                       nproc,myrank,mpi_comm)
+&                       nproc,myrank,mpi_comm,datacomp)
 !------------------------------------------------------------------------------------
 !
 ! Calculate and remove core orbitals corresponding ECP
 !
       use modguess, only : nao_g, nmo_g, nao_gcore
       use modjob, only : scftype
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ii, jj, idamax, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
@@ -1769,7 +1781,7 @@ end
 !
 ! Calculate Extended Huckel method
 !
-      call calchuckelgcore(coremo,eigen,nproc,myrank,mpi_comm)
+      call calchuckelgcore(coremo,eigen,nproc,myrank,mpi_comm,datacomp)
 !
 ! Calculate overlap integrals between core-guess basis and guess bases
 !
@@ -1860,7 +1872,7 @@ end
       call memset(isize+nao,datacomp)
       allocate(work2(isize),eigen(nao))
 !
-      call diagfock(h1mtrx,work,ortho,cmo,work2,eigen,idis,nproc,myrank,mpi_comm)
+      call diagfock(h1mtrx,work,ortho,cmo,work2,eigen,idis,nproc,myrank,mpi_comm,datacomp)
 !
       deallocate(work2,eigen)
       call memunset(isize+nao,datacomp)
@@ -2098,7 +2110,7 @@ end
 !
 ! Calculate orthogonalization matrix
 !
-      call mtrxcanon(ortho,work,eigen,nao_g,nmo_g,threshover,nproc,myrank,mpi_comm)
+      call mtrxcanon(ortho,work,eigen,nao_g,nmo_g,threshover,nproc,myrank,mpi_comm,datacomp)
 !
 ! Set parameters
 !
@@ -2130,7 +2142,7 @@ end
 ! Diagonalize Hamiltonian matrix
 !
         call canonicalize(dftb1,ortho,work,nao_g,nmo_g)
-        call diag('V','U',nmo_g,dftb1,nao_g,eigen,nproc,myrank,mpi_comm)
+        call diag('V','U',nmo_g,dftb1,nao_g,eigen,nproc,myrank,mpi_comm,datacomp)
         call dgemm('N','N',nao_g,nmo_g,nmo_g,one,ortho,nao_g,dftb1,nao_g,zero,dftbmo,nao_g)
 !
 ! Calculate new Mulliken charge

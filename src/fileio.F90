@@ -450,7 +450,7 @@ end
 
 
 !----------------------------
-  subroutine writecondition
+  subroutine writecondition(datacomp)
 !----------------------------
 !
 ! Write computational conditions
@@ -459,13 +459,14 @@ end
       use modiofile, only : check
       use modmolecule, only : natom, neleca, nelecb, charge, multi
       use modbasis, only : nshell, nao, nprim, basis, spher
-      use modmemory, only : memmax
       use modjob, only : method, runtype, scftype, bohr
       use modopt, only : nopt, optconv, cartesian
       use modguess, only : guess
       use modthresh, only : precision
       use modprop, only : octupole
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
 !
       if(master) then
 !
@@ -482,7 +483,7 @@ end
         write(*,'("   Runtype = ",a12,  ",  Method  = ",a12,     " ,  Basis    = ",a12)') &
 &                  runtype, method, basis
         write(*,'("   Memory  =",i10, "MB ,  SCFtype = ",a12,     " ,  Precision= ",a12)') &
-&                  memmax/125000, scftype, precision
+&                  datacomp%memmax/125000, scftype, precision
         write(*,'("   Charge  = ",F11.1," ,  Multi   = ",i12,     " ,  Spher    = ",l1)') &
 &                  charge, multi, spher
         write(*,'("   Bohr    = ",l1,11x,",  Guess   = ",a12,     " ,  Octupole = ",l1)') &

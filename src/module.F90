@@ -124,13 +124,6 @@ end
 end
 
 
-!-------------------
-  module modmemory
-!-------------------
-      integer :: memmax, memused, memusedmax
-end
-
-
 !------------------
   module modbasis
 !------------------

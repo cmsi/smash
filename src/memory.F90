@@ -13,14 +13,15 @@
 ! limitations under the License.
 !
 !-----------------------
-  subroutine maxmemset
+  subroutine maxmemset(datacomp)
 !-----------------------
 !
 ! Set maximum memory size
 !
-      use modmemory, only : memmax
       use modjob, only : memory
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer :: lock, locm, locg, loct, locb
 !
       if(len_trim(memory) /= 0) then
@@ -30,23 +31,23 @@
         loct=scan(memory,'T')
         locb=scan(memory,'B')
         if(lock /= 0) then
-          read(memory(1:lock-1),*)memmax
-          memmax=memmax*125
+          read(memory(1:lock-1),*)datacomp%memmax
+          datacomp%memmax=datacomp%memmax*125
         elseif(locm /= 0) then
-          read(memory(1:locm-1),*)memmax
-          memmax=memmax*125000
+          read(memory(1:locm-1),*)datacomp%memmax
+          datacomp%memmax=datacomp%memmax*125000
         elseif(locg /= 0) then
-          read(memory(1:locg-1),*)memmax
-          memmax=memmax*125000000
+          read(memory(1:locg-1),*)datacomp%memmax
+          datacomp%memmax=datacomp%memmax*125000000
         elseif(loct /= 0) then
-          read(memory(1:loct-1),*)memmax
-          memmax=memmax*125000000*1000
+          read(memory(1:loct-1),*)datacomp%memmax
+          datacomp%memmax=datacomp%memmax*125000000*1000
         elseif(locb /= 0) then
-          read(memory(1:locb-1),*)memmax
-          memmax=memmax/8
+          read(memory(1:locb-1),*)datacomp%memmax
+          datacomp%memmax=datacomp%memmax/8
         else
-          read(memory,*)memmax
-          memmax=memmax/8
+          read(memory,*)datacomp%memmax
+          datacomp%memmax=datacomp%memmax/8
         endif
       endif
       return
@@ -60,7 +61,6 @@ end
 ! Allocate requested memory size, "msize".
 !
       use modparallel, only : master
-      use modmemory, only : memmax, memused, memusedmax
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -70,15 +70,16 @@ end
         if(master) write(*,'(" Required memory size is negative!",i6,"MB")')msize/125000
         call iabort
       endif
-      memused= memused+msize
-      if(memused > memmax) then
+      datacomp%memused= datacomp%memused+msize
+      if(datacomp%memused > datacomp%memmax) then
         if(master) then
           write(*,'(" Error! Required memory size exceeds.")')
-          write(*,'(" Required:",i6,"MB,  Available:",i6,"MB")')memused/125000, memmax/125000
+          write(*,'(" Required:",i6,"MB,  Available:",i6,"MB")') &
+&               datacomp%memused/125000, datacomp%memmax/125000
         endif
         call iabort
       endif
-      memusedmax=max(memusedmax,memused)
+      datacomp%memusedmax=max(datacomp%memusedmax,datacomp%memused)
       return
 end
 
@@ -90,14 +91,13 @@ end
 ! Deallocate requested memory size, "msize".
 !
       use modparallel, only : master
-      use modmemory, only : memused
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: msize
 !
-      memused= memused-msize
-      if(memused < 0) then
+      datacomp%memused= datacomp%memused-msize
+      if(datacomp%memused < 0) then
         datacomp%nwarn= datacomp%nwarn+1
         if(master) write(*,'(" Warning! Msize in memunset is less than 0.")')
       endif
@@ -111,13 +111,12 @@ end
 !
 ! Check memory deallocation
 !
-      use modmemory, only : memused
       use modparallel, only : master
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
 !
-      if(memused /= 0) then
+      if(datacomp%memused /= 0) then
         datacomp%nwarn= datacomp%nwarn+1
         if(master) write(*,'(" Warning! Memory deallocation is not completed.")')
       endif
@@ -131,13 +130,12 @@ end
 !
 ! Check available memory size
 !
-      use modmemory, only : memmax, memused
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
       integer,intent(out) :: msize
 !
-      msize= memmax-memused
+      msize= datacomp%memmax-datacomp%memused
       return
 end
 

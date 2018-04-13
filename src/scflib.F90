@@ -1757,13 +1757,15 @@ end
 !--------------------------------------------------------------------------------------------
   subroutine rhfqc(fock,cmo,qcrmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
 &                  qcwork,work,hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,maxqcdiag, &
-&                  maxqcdiagsub,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                  maxqcdiagsub,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
 !--------------------------------------------------------------------------------------------
 !
 ! Driver of Davidson diagonalization for quadratically convergent of RHF
 !
       use modparallel, only : master
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nao, nmo, nocc, nvir, nshell, maxdim, maxqcdiag, maxqcdiagsub
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: itdav, itqcdiag, ii, ij, jj, kk, ia, ib, istart, icount
@@ -1877,7 +1879,7 @@ end
 !
 ! Diagonalize small matrix
 !
-        call diag('V','U',itdav,qcmat,maxqcdiagsub,qceigen,nproc2,myrank2,mpi_comm2)
+        call diag('V','U',itdav,qcmat,maxqcdiagsub,qceigen,nproc2,myrank2,mpi_comm2,datacomp)
 !
 ! Form correction vector
 !
@@ -2063,13 +2065,15 @@ end
 &                  qcmat,qcmatsave,qceigen,overlap,xint, &
 &                  qcworka,qcworkb,work,hfexchange,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
 &                  maxdim,maxqcdiag,maxqcdiagsub,threshqc, &
-&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
 !---------------------------------------------------------------------------------------------
 !
 ! Driver of Davidson diagonalization for quadratically convergent of UHF
 !
       use modparallel, only : master
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nao, nmo, nocca, noccb, nvira, nvirb, nshell, maxdim, maxqcdiag
       integer,intent(in) :: maxqcdiagsub, nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: itdav, itqcdiag, ii, ij, jj, kk, ia, ib, istart, icount
@@ -2225,7 +2229,7 @@ end
 !
 ! Diagonalize small matrix
 !
-        call diag('V','U',itdav,qcmat,maxqcdiagsub,qceigen,nproc2,myrank2,mpi_comm2)
+        call diag('V','U',itdav,qcmat,maxqcdiagsub,qceigen,nproc2,myrank2,mpi_comm2,datacomp)
 !
 ! Form correction vector
 !

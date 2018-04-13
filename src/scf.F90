@@ -210,13 +210,13 @@
 !
 ! Diagonalize Fock matrix
 !
-            call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+            call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2,datacomp)
 !
 ! Approximated Second-order SCF method
 !
           case('SOSCF')
             if((itsoscf == 0).or.(convsoscf)) then
-              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2,datacomp)
               sogradmax= zero
               itsoscf= itsoscf+1
             else
@@ -230,7 +230,7 @@
 &                                nao,nmo,sodispmax,idis,nproc2,myrank2,mpi_comm2)
                 itsoscf= itsoscf+1
               else
-                call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+                call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2,datacomp)
               endif
             endif
 !
@@ -238,15 +238,15 @@
 !
           case('QC')
             if((itqc == 0).or.(convqc)) then
-              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2,datacomp)
               itqc= itqc+1
             elseif(itqc == maxqc) then
-              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2,datacomp)
               itqc= 1
             else
               call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
 &                        work,work2,one,nao,nmo,nocc,nvir,nshell,maxdim,maxqcdiag, &
-&                        maxqcdiagsub,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                        maxqcdiagsub,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
               itqc= itqc+1
             endif
         end select
@@ -344,7 +344,7 @@ end
 
 
 !----------------------------------------------------------------------------------
-  subroutine diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc,myrank,mpi_comm)
+  subroutine diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc,myrank,mpi_comm,datacomp)
 !----------------------------------------------------------------------------------
 !
 ! Driver of Fock matrix diagonalization
@@ -356,7 +356,9 @@ end
 !
       use modbasis, only : nao
       use modmolecule, only : nmo
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm, idis(nproc,14)
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: fock(nao*(nao+1)/2), ortho(nao,nao)
@@ -369,7 +371,7 @@ end
 !
 ! Diagonalize canonicalized matrix
 !
-        call diag('V','U',nmo,work,nao,eigen,nproc,myrank,mpi_comm)
+        call diag('V','U',nmo,work,nao,eigen,nproc,myrank,mpi_comm,datacomp)
 !
 ! Backtransform to AO basis
 !
@@ -1115,13 +1117,13 @@ end
 !
 ! Diagonalize Fock matrix
 !
-            call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+            call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2,datacomp)
 !
 ! Approximated Second-order SCF method
 !
           case('SOSCF')
             if((itsoscf == 0).or.(convsoscf)) then
-              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2,datacomp)
               sogradmax= zero
               itsoscf= itsoscf+1
             else
@@ -1135,7 +1137,7 @@ end
 &                                nao,nmo,sodispmax,idis,nproc2,myrank2,mpi_comm2)
                 itsoscf= itsoscf+1
               else
-                call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+                call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2,datacomp)
               endif
             endif
 !
@@ -1143,15 +1145,15 @@ end
 !
           case('QC')
             if((itqc == 0).or.(convqc)) then
-              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2,datacomp)
               itqc= itqc+1
             elseif((itqc == maxqc)) then
-              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2,datacomp)
               itqc= 1
             else
               call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
 &                        work,work2,hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,maxqcdiag, &
-&                        maxqcdiagsub,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                        maxqcdiagsub,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
               itqc= itqc+1
             endif
         end select
@@ -1490,15 +1492,15 @@ end
 !
 ! Diagonalize Fock matrix
 !
-            call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
-            call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+            call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2,datacomp)
+            call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2,datacomp)
 !
 ! Approximated Second-order SCF method
 !
           case('SOSCF')
             if((itsoscf == 0).or.(convsoscf)) then
-              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
-              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2,datacomp)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2,datacomp)
               sogradmax= zero
               itsoscf= itsoscf+1
             else
@@ -1527,8 +1529,8 @@ end
 &                                  nao,nmo,sodispmax,idis,nproc2,myrank2,mpi_comm2)
                 itsoscf= itsoscf+1
               else
-                call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
-                call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+                call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2,datacomp)
+                call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2,datacomp)
               endif
             endif
 !
@@ -1536,19 +1538,19 @@ end
 !
           case('QC')
             if((itqc == 0).or.(convqc)) then
-              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
-              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2,datacomp)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2,datacomp)
               itqc= itqc+1
             elseif((itqc == maxqc)) then
-              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
-              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2,datacomp)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2,datacomp)
               itqc= 1
             else
               call uhfqc(focka,fockb,cmoa,cmob,dmax,qcgmna,qcgmnb,qcvec, &
 &                        qcmat,qcmatsave,qceigen,overlap,xint, &
 &                        work,work2,work3,one,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
 &                        maxdim,maxqcdiag,maxqcdiagsub,threshqc, &
-&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
               itqc= itqc+1
             endif
         end select
@@ -2223,15 +2225,15 @@ end
 !
 ! Diagonalize Fock matrix
 !
-            call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
-            call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+            call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2,datacomp)
+            call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2,datacomp)
 !
 ! Approximated Second-order SCF method
 !
           case('SOSCF')
             if((itsoscf == 0).or.(convsoscf)) then
-              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
-              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2,datacomp)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2,datacomp)
               sogradmax= zero
               itsoscf= itsoscf+1
             else
@@ -2260,8 +2262,8 @@ end
 &                                  nao,nmo,sodispmax,idis,nproc2,myrank2,mpi_comm2)
                 itsoscf= itsoscf+1
               else
-                call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
-                call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+                call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2,datacomp)
+                call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2,datacomp)
               endif
             endif
 !
@@ -2269,19 +2271,19 @@ end
 !
           case('QC')
             if((itqc == 0).or.(convqc)) then
-              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
-              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2,datacomp)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2,datacomp)
               itqc= itqc+1
             elseif((itqc == maxqc)) then
-              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
-              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2,datacomp)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2,datacomp)
               itqc= 1
             else
               call uhfqc(focka,fockb,cmoa,cmob,dmax,qcgmna,qcgmnb,qcvec, &
 &                        qcmat,qcmatsave,qceigen,overlap,xint, &
 &                        work,work2,work3,hfexchange,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
 &                        maxdim,maxqcdiag,maxqcdiagsub,threshqc, &
-&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
               itqc= itqc+1
             endif
         end select

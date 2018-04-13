@@ -20,7 +20,6 @@
 ! for High performance computing systems (SMASH).
 !
       use modparallel, only : master, nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
-      use modmemory, only : memusedmax
       use modjob, only : runtype, scftype
       use modiofile, only : input, icheck, check, version
       use modtype, only : typecomp
@@ -84,7 +83,7 @@
       call memcheck(datacomp)
       call tstamp(2,datacomp)
       if(datacomp%master) then
-        write(*,'(" Used memory :",1x,i6," MB")')memusedmax/125000
+        write(*,'(" Used memory :",1x,i6," MB")')datacomp%memusedmax/125000
         if((runtype =='OPTIMIZE').and.(.not.converged))then
           write(*,'(/," ============================================================")')
           write(*,'("  Geometry optimization did not finish with",i3," warning(s)!")')datacomp%nwarn
@@ -171,7 +170,7 @@ end
 !
 ! Set maximum memory size
 !
-      call maxmemset
+      call maxmemset(datacomp)
 !
 ! Set number of electrons
 !
@@ -191,7 +190,7 @@ end
 !
 ! Write input data
 !
-      call writecondition
+      call writecondition(datacomp)
       call writegeom
       call writebasis
       if(flagecp) call writeecp
@@ -212,7 +211,6 @@ end
 !
       use modiofile, only : check
       use modguess, only : spher_g, guess
-      use modmemory, only : memmax, memused, memusedmax
       use modbasis, only : spher, basis
       use modscf, only : maxiter, dconv, fdiff, scfconv, maxdiis, maxsoscf, maxqc, &
 &                        maxqcdiag, maxqcdiagsub, extrap
@@ -230,9 +228,10 @@ end
       implicit none
       type(typecomp),intent(inout) :: datacomp
 !
-      memmax = 1000000000
-      memused= 0
-      memusedmax= 0
+      datacomp%nwarn= 0
+      datacomp%memmax = 1000000000
+      datacomp%memused= 0
+      datacomp%memusedmax= 0
       memory = ''
       maxiter= 150
       maxdiis= 20
@@ -285,8 +284,6 @@ end
       ecp=''
       check=''
       octupole=.false.
-!
-      datacomp%nwarn= 0
 !
       return
 end
@@ -455,7 +452,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2,datacomp)
 !
 ! Calculate initial MOs
 !
@@ -613,7 +610,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2,datacomp)
 !
 ! Calculate initial MOs
 !
@@ -774,7 +771,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2,datacomp)
 !
 ! Calculate initial MOs
 !
@@ -961,7 +958,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2,datacomp)
 !
 ! Calculate initial MOs
 !
@@ -1204,7 +1201,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
         call fullmtrx(smtrx,work,nao)
-        call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2)
+        call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2,datacomp)
 !
 ! Calculate initial MOs
 !
@@ -1299,12 +1296,12 @@ end
 !
         if(cartesian) then
           call calcnewcoord(coord,coordold,egrad,egradold,ehess,workv,natom3,iopt, &
-&                           nproc2,myrank2,mpi_comm2)
+&                           nproc2,myrank2,mpi_comm2,datacomp)
         else
           call calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
 &                              work(1,2),work(1,3),work(1,4),workv,iopt,iredun,isizered, &
 &                              maxredun,numbond,numangle,numtorsion,numredun, &
-&                              nproc2,myrank2,mpi_comm2)
+&                              nproc2,myrank2,mpi_comm2,datacomp)
         endif
 !
 ! Unset work arrays 2
@@ -1522,7 +1519,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
         call fullmtrx(smtrx,work,nao)
-        call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2)
+        call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2,datacomp)
 !
 ! Calculate initial MOs
 !
@@ -1619,12 +1616,12 @@ end
 !
         if(cartesian) then
           call calcnewcoord(coord,coordold,egrad,egradold,ehess,workv,natom3,iopt, &
-&                           nproc2,myrank2,mpi_comm2)
+&                           nproc2,myrank2,mpi_comm2,datacomp)
         else
           call calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
 &                              work(1,2),work(1,3),work(1,4),workv,iopt,iredun,isizered, &
 &                              maxredun,numbond,numangle,numtorsion,numredun, &
-&                              nproc2,myrank2,mpi_comm2)
+&                              nproc2,myrank2,mpi_comm2,datacomp)
         endif
 !
 ! Unset work arrays 2
