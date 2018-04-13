@@ -13,21 +13,21 @@
 ! limitations under the License.
 !
 !--------------------------------
-  subroutine setbasis(mpi_comm)
+  subroutine setbasis(datacomp)
 !--------------------------------
 !
 ! Driver of setting basis functions
 !
-      use modparallel, only : master
       use modmolecule, only : natom, numatomic
       use modbasis, only : basis, locprim, locbf, locatom, mprim, mbf, mtype, &
 &                          nshell, nao, nprim, ex, coeff, coeffinp
       use modecp, only : flagecp
+      use modtype, only : typecomp
       implicit none
-      integer,intent(in) :: mpi_comm
+      type(typecomp),intent(inout) :: datacomp
       integer :: ishell, iatom, i
 !
-      if(master) then
+      if(datacomp%master) then
         locprim(1)=0
         locbf(1)=0
         ishell= 0
@@ -83,7 +83,7 @@
             enddo
           case('LANL2DZ')
             if(.not.flagecp) then
-              if(master) write(*,'(" Error! ECP is not set!.")')
+              if(datacomp%master) write(*,'(" Error! ECP is not set!.")')
               call iabort
             endif
             do iatom= 1, natom
@@ -107,19 +107,19 @@
         nshell= ishell
       endif
 !
-      call para_bcasti(nshell,1,0,mpi_comm)
-      call para_bcasti(locprim,nshell+1,0,mpi_comm)
-      call para_bcasti(locbf  ,nshell+1,0,mpi_comm)
-      call para_bcasti(locatom,nshell  ,0,mpi_comm)
+      call para_bcasti(nshell,1,0,datacomp%mpi_comm1)
+      call para_bcasti(locprim,nshell+1,0,datacomp%mpi_comm1)
+      call para_bcasti(locbf  ,nshell+1,0,datacomp%mpi_comm1)
+      call para_bcasti(locatom,nshell  ,0,datacomp%mpi_comm1)
 !
       nao= locbf(nshell+1)
       nprim= locprim(nshell+1)
 !
-      call para_bcastr(ex   ,nprim,0,mpi_comm)
-      call para_bcastr(coeff,nprim,0,mpi_comm)
-      call para_bcasti(mprim,nshell,0,mpi_comm)
-      call para_bcasti(mbf  ,nshell,0,mpi_comm)
-      call para_bcasti(mtype,nshell,0,mpi_comm)
+      call para_bcastr(ex   ,nprim,0,datacomp%mpi_comm1)
+      call para_bcastr(coeff,nprim,0,datacomp%mpi_comm1)
+      call para_bcasti(mprim,nshell,0,datacomp%mpi_comm1)
+      call para_bcasti(mbf  ,nshell,0,datacomp%mpi_comm1)
+      call para_bcasti(mtype,nshell,0,datacomp%mpi_comm1)
 !
       do i= 1,nprim
         coeffinp(i)= coeff(i)

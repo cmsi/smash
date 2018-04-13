@@ -13,16 +13,16 @@
 ! limitations under the License.
 !
 !------------------------------
-  subroutine setecp(mpi_comm)
+  subroutine setecp(datacomp)
 !------------------------------
 !
 ! Driver of setting ecp functions
 !
-      use modparallel, only : master
       use modecp, only : ecp, maxangecp, izcore, locecp, mprimecp, execp, coeffecp, mtypeecp
       use modmolecule, only : natom, znuc
+      use modtype, only : typecomp
       implicit none
-      integer,intent(in) :: mpi_comm
+      type(typecomp),intent(inout) :: datacomp
       integer :: iatom, iprim
 !
       maxangecp(1:natom)= -1
@@ -31,7 +31,7 @@
       mprimecp(:,1:natom)= 0
       iprim= 0
 !
-      if(master) then
+      if(datacomp%master) then
         if((ecp == 'LANL2DZ').or.(ecp == 'LANL2MB')) then
           do iatom= 1,natom
             call ecplanl2(iatom,iprim)
@@ -45,14 +45,14 @@
         endif
       endif
 !
-      call para_bcasti(iprim,1,0,mpi_comm)
-      call para_bcasti(maxangecp,natom,0,mpi_comm)
-      call para_bcasti(izcore,natom,0,mpi_comm)
-      call para_bcasti(locecp(0,1),natom*6,0,mpi_comm)
-      call para_bcasti(mprimecp(0,1),natom*6,0,mpi_comm)
-      call para_bcastr(execp,iprim,0,mpi_comm)
-      call para_bcastr(coeffecp,iprim,0,mpi_comm)
-      call para_bcasti(mtypeecp,iprim,0,mpi_comm)
+      call para_bcasti(iprim,1,0,datacomp%mpi_comm1)
+      call para_bcasti(maxangecp,natom,0,datacomp%mpi_comm1)
+      call para_bcasti(izcore,natom,0,datacomp%mpi_comm1)
+      call para_bcasti(locecp(0,1),natom*6,0,datacomp%mpi_comm1)
+      call para_bcasti(mprimecp(0,1),natom*6,0,datacomp%mpi_comm1)
+      call para_bcastr(execp,iprim,0,datacomp%mpi_comm1)
+      call para_bcastr(coeffecp,iprim,0,datacomp%mpi_comm1)
+      call para_bcasti(mtypeecp,iprim,0,datacomp%mpi_comm1)
 ! 
       do iatom= 1,natom
         znuc(iatom)= znuc(iatom)-izcore(iatom)

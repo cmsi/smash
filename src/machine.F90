@@ -134,16 +134,17 @@ end
 
 
 !---------------------------
-  subroutine opencheckfile
+  subroutine opencheckfile(datacomp)
 !---------------------------
 !
 ! Open checkpoint file
 !
-      use modparallel, only : master
       use modiofile, only : icheck, check
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
 !
-      if(master) then
+      if(datacomp%master) then
         open(unit=icheck,file=check,form='unformatted',status='unknown')
       endif
 !

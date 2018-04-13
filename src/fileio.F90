@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !---------------------------------
-  subroutine readinput(mpi_comm,datacomp)
+  subroutine readinput(datacomp)
 !---------------------------------
 !
 ! Read input data and open checkpoint file if necessary
@@ -35,8 +35,7 @@
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: mpi_comm
-      integer :: myrank, ii, llen, intarray(16), info
+      integer :: ii, llen, intarray(16), info
       real(8) :: realarray(23)
       character(len=254) :: line
       character(len=16) :: chararray(9), mem=''
@@ -50,9 +49,7 @@
       namelist /dft/ nrad, nleb, threshweight, threshrho, threshdfock, threshdftao, bqrad
       namelist /mp2/ ncore, nvfz, maxmp2diis, maxmp2iter, threshmp2cphf
 !
-      call para_comm_rank(myrank,mpi_comm)
-
-      if(myrank == 0) then
+      if(datacomp%master) then
         do ii= 1,maxline
           read(*,'(a)',end=100) line
           line=adjustl(line)
@@ -138,7 +135,7 @@
 !
 ! Open checkpoint file
 !
-      if(check /= '') call opencheckfile
+      if(check /= '') call opencheckfile(datacomp)
 !
 ! Read geometry data
 !
@@ -149,7 +146,7 @@
       if(ecp =='NONE') ecp = ''
       if(ecp /= '') flagecp=.true.
 !
-      if(myrank == 0) then
+      if(datacomp%master) then
         chararray(1)= method
         chararray(2)= runtype
         chararray(3)= basis
@@ -205,17 +202,17 @@
         logarray(5)= octupole
       endif
 !
-      call para_bcastc(chararray,16*9,0,mpi_comm)
-      call para_bcastc(check,64,0,mpi_comm)
-      call para_bcastr(realarray,23,0,mpi_comm)
-      call para_bcasti(intarray,16,0,mpi_comm)
-      call para_bcastl(logarray,5,0,mpi_comm)
+      call para_bcastc(chararray,16*9,0,datacomp%mpi_comm1)
+      call para_bcastc(check,64,0,datacomp%mpi_comm1)
+      call para_bcastr(realarray,23,0,datacomp%mpi_comm1)
+      call para_bcasti(intarray,16,0,datacomp%mpi_comm1)
+      call para_bcastl(logarray,5,0,datacomp%mpi_comm1)
 !
       natom= intarray(1)
 !
-      call para_bcasti(numatomic,natom,0,mpi_comm)
-      call para_bcastr(coord(1,1),natom*3,0,mpi_comm)
-      call para_bcastr(znuc,natom,0,mpi_comm)
+      call para_bcasti(numatomic,natom,0,datacomp%mpi_comm1)
+      call para_bcastr(coord(1,1),natom*3,0,datacomp%mpi_comm1)
+      call para_bcastr(znuc,natom,0,datacomp%mpi_comm1)
 !
       method  = chararray(1)
       runtype = chararray(2)
@@ -275,15 +272,16 @@ end
 
 
 !-----------------------
-  subroutine writegeom 
+  subroutine writegeom(datacomp)
 !-----------------------
 !
 ! Write molecular geometry
 !
-      use modparallel, only : master
       use modmolecule, only : numatomic, natom, coord
       use modparam, only : toang
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer :: i, j
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
@@ -296,7 +294,7 @@ end
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
 &       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" ----------------------------------------------------")')
         write(*,'("          Molecular Geometry (Angstrom)")')
         write(*,'("  Atom            X             Y             Z")')
@@ -311,16 +309,17 @@ end
 
 
 !------------------------
-  subroutine writebasis
+  subroutine writebasis(datacomp)
 !------------------------
 !
 ! Write basis functions
 !
-      use modparallel, only : master
       use modmolecule, only : numatomic
       use modbasis, only : nshell, ex, coeffinp, locprim, locatom, mprim, mtype
       use modjob, only : iprint
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer :: iatom, ishell, iloc, iprim, jatomcheck(-9:112)=0
       logical :: second
       character(len=3) :: table(-9:112)= &
@@ -337,7 +336,7 @@ end
 ! Write basis functions
 !
       second=.false.
-      if(master.and.(iprint >= 1)) then
+      if(datacomp%master.and.(iprint >= 1)) then
         iatom= 0
         write(*,'(" -------------")')
         write(*,'("   Basis set")')
@@ -376,16 +375,17 @@ end
 
 
 !----------------------
-  subroutine writeecp
+  subroutine writeecp(datacomp)
 !----------------------
 !
 ! Write ECP functions
 !
-      use modparallel, only : master
       use modmolecule, only : numatomic, natom
       use modecp, only : maxangecp, mtypeecp, locecp, mprimecp, execp, coeffecp, izcore
       use modjob, only : iprint
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer :: iatom, ll, jprim, jloc, k, nprim, jatomcheck(-9:112)=0
       character(len=7) :: tblecp
       character(len=3) :: table(-9:112)= &
@@ -401,7 +401,7 @@ end
 !
 ! Write ECP functions
 !
-      if(master.and.(iprint >= 1)) then
+      if(datacomp%master.and.(iprint >= 1)) then
         write(*,'(" ----------------")')
         write(*,'("   ECP function")')
         write(*,'(" ----------------")')
@@ -455,7 +455,6 @@ end
 !
 ! Write computational conditions
 !
-      use modparallel, only : master
       use modiofile, only : check
       use modmolecule, only : natom, neleca, nelecb, charge, multi
       use modbasis, only : nshell, nao, nprim, basis, spher
@@ -468,7 +467,7 @@ end
       implicit none
       type(typecomp),intent(inout) :: datacomp
 !
-      if(master) then
+      if(datacomp%master) then
 !
 ! Check the numbers of electrons and basis functions
 !
@@ -544,7 +543,6 @@ end
 !
 ! Read atomic data
 !
-      use modparallel, only : master
       use modiofile, only : input, icheck, maxline
       use modmolecule, only : numatomic, natom, coord, znuc
       use modparam, only : mxatom, tobohr
@@ -579,7 +577,7 @@ end
 &       '91 ','92 ','93 ','94 ','95 ','96 ','97 ','98 ','99 ','100','101','102','103','104','105',&
 &       '106','107','108','109','110','111','112'/)
 !
-      if(master) then
+      if(datacomp%master) then
         rewind(input)
         do ii= 1,maxline
           read(input,'(a)',end=9999)line
@@ -1514,22 +1512,22 @@ end
 
 
 !---------------------------------
-  subroutine setcharge(mpi_comm)
+  subroutine setcharge(datacomp)
 !---------------------------------
 !
 ! Set atom charge
 !
-      use modparallel, only : master
       use modiofile, only : input, maxline
       use modmolecule, only : znuc, natom
       use modparam, only : mxatom
+      use modtype, only : typecomp
       implicit none
-      integer,intent(in) :: mpi_comm
+      type(typecomp),intent(inout) :: datacomp
       integer :: ii, jj, iatom
       real(8) :: znew
       character(len=254) :: line
 !
-      if(master) then
+      if(datacomp%master) then
         rewind(input)
         do ii= 1,maxline
           read(input,'(a)',end=200)line
@@ -1550,7 +1548,7 @@ end
       endif
  200  continue
 !
-      call para_bcastr(znuc,natom,0,mpi_comm)
+      call para_bcastr(znuc,natom,0,datacomp%mpi_comm1)
 !
       return
 end

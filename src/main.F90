@@ -44,7 +44,7 @@
 !
 ! Read input file and set details
 !
-      call setdetails(mpi_comm1,datacomp)
+      call setdetails(datacomp)
 !
 ! Start calculations
 !
@@ -139,17 +139,15 @@ end
 
 
 !----------------------------------
-  subroutine setdetails(mpi_comm,datacomp)
+  subroutine setdetails(datacomp)
 !----------------------------------
 !
 ! Read input file and set variables
 !
-      use modparallel, only : master
       use modecp, only : flagecp
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: mpi_comm
 !
 ! Set defaults before reading input file
 !
@@ -157,16 +155,16 @@ end
 !
 ! Read input data and open checkpoint file if necessary
 !
-      if(master) call opendatfile
-      call readinput(mpi_comm,datacomp)
+      if(datacomp%master) call opendatfile
+      call readinput(datacomp)
 !
 ! Set basis functions
 !
-      call setbasis(mpi_comm)
+      call setbasis(datacomp)
 !
 ! Set ECP functions
 !
-      if(flagecp) call setecp(mpi_comm)
+      if(flagecp) call setecp(datacomp)
 !
 ! Set maximum memory size
 !
@@ -178,7 +176,7 @@ end
 !
 ! Reset defaults after reading input file
 !
-      call setdefault2
+      call setdefault2(datacomp)
 !
 ! Set functional information and adjust the number of DFT grids
 !
@@ -191,13 +189,13 @@ end
 ! Write input data
 !
       call writecondition(datacomp)
-      call writegeom
-      call writebasis
-      if(flagecp) call writeecp
+      call writegeom(datacomp)
+      call writebasis(datacomp)
+      if(flagecp) call writeecp(datacomp)
 !
 ! Set atom charge including dummy atom
 !
-      call setcharge(mpi_comm)
+      call setcharge(datacomp)
 !
       return
 end
@@ -290,16 +288,17 @@ end
 
 
 !-------------------------
-  subroutine setdefault2
+  subroutine setdefault2(datacomp)
 !-------------------------
 !
 ! Reset defaults after reading input file
 !
-      use modparallel, only : master
       use modthresh, only : precision, cutint2, threshweight, threshrho, threshdfock, threshdftao
       use moddft, only : nrad, nleb
       use modscf, only : dconv
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       real(8),parameter :: zero= 0.0D+00
 
       select case(precision)
@@ -331,8 +330,8 @@ end
           if(nrad == 0) nrad= 72
           if(nleb == 0) nleb= 302
         case default
-          if(master) write(*,'(" Error! This program does not support precision= ", &
-&                          a16,".")') precision
+          if(datacomp%master) write(*,'(" Error! This program does not support precision= ", &
+&                                       a16,".")') precision
           call iabort
       end select
 !
@@ -346,7 +345,6 @@ end
 !
 ! Set number of electrons
 !
-      use modparallel, only : master
       use modmolecule, only : numatomic, neleca, nelecb, natom, multi, charge
       use modecp, only : flagecp, izcore
       use modjob, only : scftype
@@ -374,7 +372,7 @@ end
 ! Calculate numbers of alpha and beta electrons
 !
       if((scftype == 'RHF').and.(multi /= 1)) then
-        if(master) write(*,'(" Warning! SCFtype changes from RHF to UHF.")')
+        if(datacomp%master) write(*,'(" Warning! SCFtype changes from RHF to UHF.")')
         scftype = 'UHF'
         datacomp%nwarn= datacomp%nwarn+1
       endif
@@ -382,8 +380,8 @@ end
       neleca=(nume+multi-1)/2
       nelecb=(nume-multi+1)/2
       if((neleca+nelecb)/= nume) then
-        if(master) write(*,'(" Error! Spin multiplicity is ",i2, &
-&                               ", but number of elctrons is ",i5,".")')multi, nume
+        if(datacomp%master) write(*,'(" Error! Spin multiplicity is ",i2, &
+&                                     ", but number of elctrons is ",i5,".")')multi, nume
         call iabort
       endif
 !
@@ -1794,7 +1792,6 @@ end
 ! Set functional information
 ! Adjust the numbe of DFT grids when heavy elements are included
 !
-      use modparallel, only : master
       use moddft, only : idftex, idftcor, nrad, nleb, hfexchange, bqrad
       use modatom, only : atomrad
       use modmolecule, only : natom, numatomic
@@ -1820,7 +1817,7 @@ end
           hfexchange= 0.2D+00
         case('HARTREE-FOCK','MP2')
         case default
-          if(master) then
+          if(datacomp%master) then
             write(*,'(" Error! This program does not support method= ",a16,".")') method
             call iabort
           endif
@@ -1830,7 +1827,7 @@ end
         maxelem= maxval(numatomic(1:natom))
         if(((maxelem >= 55).or.(nao >= 2000)).and.((nrad == 96).and.(nleb == 302))) then
           datacomp%nwarn= datacomp%nwarn+1
-          if(master) write(*,'(" Warning! The number of DFT grids may not be enough.")')
+          if(datacomp%master) write(*,'(" Warning! The number of DFT grids may not be enough.")')
         endif
       endif
 !
