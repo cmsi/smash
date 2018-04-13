@@ -159,7 +159,7 @@ end
 ! Read input data and open checkpoint file if necessary
 !
       if(master) call opendatfile
-      call readinput(mpi_comm)
+      call readinput(mpi_comm,datacomp)
 !
 ! Set basis functions
 !

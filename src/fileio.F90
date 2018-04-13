@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !---------------------------------
-  subroutine readinput(mpi_comm)
+  subroutine readinput(mpi_comm,datacomp)
 !---------------------------------
 !
 ! Read input data and open checkpoint file if necessary
@@ -32,7 +32,9 @@
       use modecp, only : ecp, flagecp
       use modmp2, only : ncore, nvfz, maxmp2diis, maxmp2iter
       use modprop, only : octupole
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: mpi_comm
       integer :: myrank, ii, llen, intarray(16), info
       real(8) :: realarray(23)
@@ -140,7 +142,7 @@
 !
 ! Read geometry data
 !
-      call readatom
+      call readatom(datacomp)
 !
       if(runtype == 'OPT') runtype='OPTIMIZE'
       if(method == 'HF') method='HARTREE-FOCK'
@@ -536,7 +538,7 @@ end
 
 
 !----------------------
-  subroutine readatom
+  subroutine readatom(datacomp)
 !----------------------
 !
 ! Read atomic data
@@ -548,7 +550,9 @@ end
       use modopt, only : cartesian
       use modwarn, only : nwarn
       use modjob, only : runtype, bohr
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer :: ii, jj, minatomic
       real(8),parameter :: zero=0.0D+00
       character(len=16) :: cdummy
