@@ -77,15 +77,6 @@ end
 end
 
 
-!-------------------
-  module modtclock
-!-------------------
-      implicit none
-      integer ::  iwall0, iwall1
-      real(8) :: cpu0, cpu1
-end
-
-
 !---------------------
   module modmolecule
 !---------------------
