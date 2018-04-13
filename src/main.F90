@@ -82,7 +82,7 @@
       if(master.and.(check /= '')) close(unit=icheck)
 !
       call para_finalize
-      call memcheck
+      call memcheck(datacomp)
       call tstamp(2)
       if(master) then
         write(*,'(" Used memory :",1x,i6," MB")')memusedmax/125000

@@ -103,7 +103,7 @@ end
 
 
 !----------------------
-  subroutine memcheck
+  subroutine memcheck(datacomp)
 !----------------------
 !
 ! Check memory deallocation
@@ -111,9 +111,14 @@ end
       use modmemory, only : memused
       use modparallel, only : master
       use modwarn, only : nwarn
+      use modtype, only : typecomp
+      implicit none
+      type(typecomp),intent(inout) :: datacomp
 !
       if(memused /= 0) then
+!ishimura
         nwarn= nwarn+1
+        datacomp%nwarn= datacomp%nwarn+1
         if(master) write(*,'(" Warning! Memory deallocation is not completed.")')
       endif
       return
