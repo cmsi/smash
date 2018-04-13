@@ -28,10 +28,10 @@
       type(typecomp) :: datacomp
       logical :: converged
 !
-      call setparallel
+      call setparallel(datacomp)
       version='2.2.0'
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,&
 &           '(" *******************************************",/,&
 &             "    Scalable Molecular Analysis Solver for",/,&
@@ -57,7 +57,7 @@
         elseif(runtype == 'OPTIMIZE') then
           call calcrgeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         else
-          if(master) then
+          if(datacomp%master) then
             write(*,'(" Error! This program does not support runtype= ",a16,".")')runtype
             call iabort
           endif
@@ -71,20 +71,19 @@
           call calcugeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         endif
       else
-        if(master) write(*,'(" Error! SCFtype=",a16," is not supported.")')scftype
+        if(datacomp%master) write(*,'(" Error! SCFtype=",a16," is not supported.")')scftype
         call iabort
       endif
 !
 ! Close input.dat and checkpoint files
 !
-      if(master) close(unit=input,status='DELETE')
-      if(master.and.(check /= '')) close(unit=icheck)
+      if(datacomp%master) close(unit=input,status='DELETE')
+      if(datacomp%master.and.(check /= '')) close(unit=icheck)
 !
       call para_finalize
       call memcheck(datacomp)
       call tstamp(2,datacomp)
-      if(master) then
-!ishimura
+      if(datacomp%master) then
         write(*,'(" Used memory :",1x,i6," MB")')memusedmax/125000
         if((runtype =='OPTIMIZE').and.(.not.converged))then
           write(*,'(/," ============================================================")')
@@ -99,32 +98,42 @@ end program main
 
 
 !-------------------------
-  subroutine setparallel
+  subroutine setparallel(datacomp)
 !-------------------------
 !
 !  Initialize MPI execution environment
 !
       use modparallel, only : master, nproc1, nproc2, myrank1, myrank2, &
 &                             mpi_comm1, mpi_comm2
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
 !
 ! Initialize variables for parallelization
 !
-      master = .true.
+      datacomp%master = .true.
 !
 ! Start MPI parallelization and set mpi_comm1=MPI_COMM_WORLD
 !
-      call para_init(mpi_comm1)
-      call para_comm_size(nproc1,mpi_comm1)
-      call para_comm_rank(myrank1,mpi_comm1)
+      call para_init(datacomp%mpi_comm1)
+      call para_comm_size(datacomp%nproc1,datacomp%mpi_comm1)
+      call para_comm_rank(datacomp%myrank1,datacomp%mpi_comm1)
 !
-      nproc2= nproc1
-      myrank2= myrank1
-      mpi_comm2= mpi_comm1
+      datacomp%nproc2= datacomp%nproc1
+      datacomp%myrank2= datacomp%myrank1
+      datacomp%mpi_comm2= datacomp%mpi_comm1
 !
-      if(nproc1.gt.1) then
-        master =(myrank1 == 0)
+      if(datacomp%nproc1.gt.1) then
+        datacomp%master =(datacomp%myrank1 == 0)
       endif
+!ishimura
+      master= datacomp%master
+      nproc1= datacomp%nproc1
+      myrank1= datacomp%myrank1
+      mpi_comm1= datacomp%mpi_comm1
+      nproc2= datacomp%nproc2
+      myrank2= datacomp%myrank2
+      mpi_comm2= datacomp%mpi_comm2
 !
       return
 end

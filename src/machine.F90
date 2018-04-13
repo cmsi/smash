@@ -79,14 +79,15 @@ end
 
 
 !--------------------------
-  subroutine parallelinfo
+  subroutine parallelinfo(datacomp)
 !--------------------------
 !
 ! Write hostname of master node and numbers of processes and threads
 !
-      use modparallel, only : master, nproc1
+      use modtype, only : typecomp
 !$    use omp_lib
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer :: nthread, istat, hostnm, llen, len_trim
       character(len=64) :: hostname
 !
@@ -97,12 +98,12 @@ end
 !$OMP end master
 !$OMP end parallel
 !
-      if(master) then
+      if(datacomp%master) then
         istat= hostnm(hostname)
         llen= len_trim(hostname)
         write(*,'(" Master node is ",a)')hostname(1:llen)
 !
-        write(*,'(" Number of processes =",i6  )')nproc1
+        write(*,'(" Number of processes =",i6  )')datacomp%nproc1
         write(*,'(" Number of threads   =",i6,/)')nthread
       endif
       return
