@@ -428,3 +428,18 @@ end
 &             0,0,6,0,1,0,1,5,5,0,2,0,2,4,4,1,1,4,0,3,3,1,2,1,2,3,3,2/
 end
 
+
+!----------------------
+  module modtype
+!----------------------
+!
+      implicit none
+      type typecomp
+        integer :: memmax=1000000000, memused=0, memusedmax=0
+        integer :: iwall0, iwall1
+        integer :: nwarn=0
+        integer :: nproc1, myrank1, nproc2, myrank2, mpi_comm1, mpi_comm2
+        real(8) :: cpu0, cpu1
+        logical :: master
+      end type
+end module
