@@ -24,7 +24,9 @@
       use modmemory, only : memusedmax
       use modjob, only : runtype, scftype
       use modiofile, only : input, icheck, check, version
+      use modtype, only : typecomp
       implicit none
+      type(typecomp) :: datacomp
       logical :: converged
 !
       call setparallel
@@ -44,17 +46,17 @@
 !
 ! Read input file and set details
 !
-      call setdetails(mpi_comm1)
+      call setdetails(mpi_comm1,datacomp)
 !
 ! Start calculations
 !
       if(scftype == 'RHF') then
         if(runtype == 'ENERGY') then
-          call calcrenergy(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+          call calcrenergy(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         elseif(runtype == 'GRADIENT') then
-          call calcrgradient(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+          call calcrgradient(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         elseif(runtype == 'OPTIMIZE') then
-          call calcrgeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+          call calcrgeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         else
           if(master) then
             write(*,'(" Error! This program does not support runtype= ",a16,".")')runtype
@@ -63,11 +65,11 @@
         endif
       elseif(scftype == 'UHF') then
         if(runtype == 'ENERGY') then
-          call calcuenergy(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+          call calcuenergy(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         elseif(runtype == 'GRADIENT') then
-          call calcugradient(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+          call calcugradient(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         elseif(runtype == 'OPTIMIZE') then
-          call calcugeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+          call calcugeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         endif
       else
         if(master) write(*,'(" Error! SCFtype=",a16," is not supported.")')scftype
@@ -128,19 +130,21 @@ end
 
 
 !----------------------------------
-  subroutine setdetails(mpi_comm)
+  subroutine setdetails(mpi_comm,datacomp)
 !----------------------------------
 !
 ! Read input file and set variables
 !
       use modparallel, only : master
       use modecp, only : flagecp
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: mpi_comm
 !
 ! Set defaults before reading input file
 !
-      call setdefault1
+      call setdefault1(datacomp)
 !
 ! Read input data and open checkpoint file if necessary
 !
@@ -191,7 +195,7 @@ end
 
 
 !-------------------------
-  subroutine setdefault1
+  subroutine setdefault1(datacomp)
 !-------------------------
 !
 ! Set defaults before reading input file
@@ -213,7 +217,9 @@ end
       use modmolecule, only : multi, charge
       use modmp2, only : ncore, nvfz, maxmp2diis, maxmp2iter
       use modprop, only : octupole
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
 !
       nwarn  = 0
       memmax = 1000000000
@@ -271,6 +277,8 @@ end
       ecp=''
       check=''
       octupole=.false.
+!
+      datacomp%nwarn= 0
 !
       return
 end
@@ -378,7 +386,7 @@ end
 
 
 !----------------------------------------------------------------------------
-  subroutine calcrenergy(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+  subroutine calcrenergy(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
 !----------------------------------------------------------------------------
 !
 ! Driver of closed-shell energy calculation
@@ -399,7 +407,9 @@ end
       use modscf, only : dconv
       use modthresh, only : cutint2, threshover
       use modprop, only : octupole
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
@@ -419,7 +429,7 @@ end
 !
 ! Calculate nuclear repulsion energy
 !
-      call nucenergy
+      call nucenergy(datacomp)
       if(master) then
         write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
       endif
@@ -453,7 +463,7 @@ end
 !
       if(method == 'HARTREE-FOCK') then
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
@@ -463,18 +473,18 @@ end
           dconv= max(dconv,1.0D-2)
           cutint2= max(cutint2,1.0D-9)
           call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
           dconv= savedconv
           cutint2= savecutint2
           call tstamp(1)
         endif
         call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
       elseif(method == 'MP2') then
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
         call calcrmp2(cmo,energymo,xint,nproc1,myrank1,mpi_comm1)
@@ -534,7 +544,7 @@ end
 
 
 !----------------------------------------------------------------------------
-  subroutine calcuenergy(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+  subroutine calcuenergy(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
 !----------------------------------------------------------------------------
 !
 ! Driver of open-shell energy calculation
@@ -555,7 +565,9 @@ end
       use modscf, only : dconv
       use modthresh, only : cutint2, threshover
       use modprop, only : octupole
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
@@ -575,7 +587,7 @@ end
 !
 ! Calculate nuclear repulsion energy
 !
-      call nucenergy
+      call nucenergy(datacomp)
       if(master) then
         write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
       endif
@@ -609,7 +621,7 @@ end
 !
       if(method == 'HARTREE-FOCK') then
         call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
@@ -619,13 +631,13 @@ end
           dconv= max(dconv,1.0D-2)
           cutint2= max(cutint2,1.0D-9)
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
           dconv= savedconv
           cutint2= savecutint2
           call tstamp(1)
         endif
         call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
 !     elseif(method == 'MP2') then
@@ -691,7 +703,7 @@ end
 
 
 !------------------------------------------------------------------------------
-  subroutine calcrgradient(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+  subroutine calcrgradient(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
 !------------------------------------------------------------------------------
 !
 ! Driver of energy gradient calculation
@@ -712,7 +724,9 @@ end
       use modscf, only : dconv
       use modthresh, only : cutint2, threshover
       use modprop, only : octupole
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
@@ -734,7 +748,7 @@ end
 !
 ! Calculate nuclear repulsion energy
 !
-      call nucenergy
+      call nucenergy(datacomp)
       if(master) then
         write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
       endif
@@ -768,7 +782,7 @@ end
 !
       if((method == 'HARTREE-FOCK').or.(method == 'MP2')) then
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
@@ -778,13 +792,13 @@ end
           dconv= max(dconv,1.0D-2)
           cutint2= max(cutint2,1.0D-9)
           call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
           dconv= savedconv
           cutint2= savecutint2
           call tstamp(1)
         endif
         call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1)
       else
@@ -876,7 +890,7 @@ end
 
 
 !------------------------------------------------------------------------------
-  subroutine calcugradient(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+  subroutine calcugradient(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
 !------------------------------------------------------------------------------
 !
 ! Driver of open-shell energy gradient calculation
@@ -897,7 +911,9 @@ end
       use modscf, only : dconv
       use modthresh, only : cutint2, threshover
       use modprop, only : octupole
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
@@ -919,7 +935,7 @@ end
 !
 ! Calculate nuclear repulsion energy
 !
-      call nucenergy
+      call nucenergy(datacomp)
       if(master) then
         write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
       endif
@@ -953,7 +969,7 @@ end
 !
       if(method == 'HARTREE-FOCK') then
         call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
@@ -963,13 +979,13 @@ end
           dconv= max(dconv,1.0D-2)
           cutint2= max(cutint2,1.0D-9)
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
           dconv= savedconv
           cutint2= savecutint2
           call tstamp(1)
         endif
         call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
         call writeeigenvalue(energymoa,energymob,2)
         call tstamp(1)
 !     elseif(method == 'MP2') then
@@ -1066,7 +1082,7 @@ end
 
 
 !----------------------------------------------------------------------------------------
-  subroutine calcrgeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+  subroutine calcrgeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
 !----------------------------------------------------------------------------------------
 !
 ! Driver of geometry optimization calculation
@@ -1089,7 +1105,9 @@ end
       use modscf, only : dconv
       use modthresh, only : cutint2, threshover
       use modprop, only : octupole
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer,allocatable :: iredun(:)
       integer :: nao2, nao3, nshell3, natom3, ii, iopt
@@ -1161,7 +1179,7 @@ end
 !
 ! Calculate nuclear repulsion energy
 !
-        call nucenergy
+        call nucenergy(datacomp)
         if(master) then
           write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
         endif
@@ -1197,7 +1215,7 @@ end
 !
         if((method == 'HARTREE-FOCK').or.(method == 'MP2')) then
           call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1)
           call tstamp(1)
         elseif((idftex >= 1).or.(idftcor >= 1)) then
@@ -1207,13 +1225,13 @@ end
             dconv= max(dconv,1.0D-2)
             cutint2= max(cutint2,1.0D-9)
             call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
             dconv= savedconv
             cutint2= savecutint2
             call tstamp(1)
           endif
           call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                       nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                       nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1)
           call tstamp(1)
         else
@@ -1383,7 +1401,7 @@ end
 
 
 !----------------------------------------------------------------------------------------
-  subroutine calcugeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+  subroutine calcugeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
 !----------------------------------------------------------------------------------------
 !
 ! Driver of open-shell geometry optimization calculation
@@ -1406,7 +1424,9 @@ end
       use modscf, only : dconv
       use modthresh, only : cutint2, threshover
       use modprop, only : octupole
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer,allocatable :: iredun(:)
       integer :: nao2, nao3, nshell3, natom3, ii, iopt
@@ -1478,7 +1498,7 @@ end
 !
 ! Calculate nuclear repulsion energy
 !
-        call nucenergy
+        call nucenergy(datacomp)
         if(master) then
           write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
         endif
@@ -1514,7 +1534,7 @@ end
 !
         if(method == 'HARTREE-FOCK') then
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2)
           call tstamp(1)
         elseif((idftex >= 1).or.(idftcor >= 1)) then
@@ -1524,13 +1544,13 @@ end
             dconv= max(dconv,1.0D-2)
             cutint2= max(cutint2,1.0D-9)
             call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
             dconv= savedconv
             cutint2= savecutint2
             call tstamp(1)
           endif
           call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                       nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                       nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2)
           call tstamp(1)
 !       elseif(method == 'MP2') then

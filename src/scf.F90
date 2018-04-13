@@ -14,7 +14,7 @@
 !
 !------------------------------------------------------------------------
   subroutine calcrhf(h1mtrx,cmo,ortho,overlap,dmtrx,xint,eigen, &
-&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
 !------------------------------------------------------------------------
 !
 ! Driver of restricted Hartree-Fock calculation
@@ -36,7 +36,9 @@
       use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis
       use modjob, only : iprint
       use modwarn, only : nwarn
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
       integer :: itextra, itsoscf, itqc, nocc, nvir
@@ -143,7 +145,9 @@
 !
         if((nao /= nmo).and.master) then
           write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
+!ishimura
           nwarn= nwarn+1
+          datacomp%nwarn= datacomp%nwarn+1
         endif
 !
         write(*,'(" ====================")')
@@ -876,7 +880,7 @@ end
 
 !-------------------------------------------------------------------------
   subroutine calcrdft(h1mtrx,cmo,ortho,overlap,dmtrx,xint,eigen, &
-&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
 !-------------------------------------------------------------------------
 !
 ! Driver of restricted DFT calculation
@@ -902,7 +906,9 @@ end
       use modjob, only : iprint
       use modparam, only : tobohr
       use modwarn, only : nwarn
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
       integer :: itextra, itsoscf, itqc, nocc, nvir
@@ -1036,7 +1042,9 @@ end
 !
         if((nao /= nmo).and.master) then
           write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
+!ishimura
           nwarn= nwarn+1
+          datacomp%nwarn= datacomp%nwarn+1
         endif
 !
         write(*,'(" ====================")')
@@ -1259,7 +1267,7 @@ end
 
 !----------------------------------------------------------------------------------------
   subroutine calcuhf(h1mtrx,cmoa,cmob,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb, &
-&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
 !----------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted Hartree-Fock calculation
@@ -1284,7 +1292,9 @@ end
       use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis
       use modjob, only : iprint
       use modwarn, only : nwarn
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
       integer :: itextra, itsoscf, itqc, nocca, nvira, noccb, nvirb
@@ -1411,7 +1421,9 @@ end
 !
         if((nao /= nmo).and.master) then
           write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
+!ishimura
           nwarn= nwarn+1
+          datacomp%nwarn= datacomp%nwarn+1
         endif
 !
         write(*,'(" ====================")')
@@ -1943,7 +1955,7 @@ end
 
 !-----------------------------------------------------------------------------------------
   subroutine calcudft(h1mtrx,cmoa,cmob,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb, &
-&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
 !-----------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted DFT calculation
@@ -1972,7 +1984,9 @@ end
       use modjob, only : iprint
       use modparam, only : tobohr
       use modwarn, only : nwarn
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), numwork, iter, itsub, itdiis
       integer :: itextra, itsoscf, itqc, nocca, nvira, noccb, nvirb
@@ -2131,7 +2145,9 @@ end
 !
         if((nao /= nmo).and.master) then
           write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
+!ishimura
           nwarn= nwarn+1
+          datacomp%nwarn= datacomp%nwarn+1
         endif
 !
         write(*,'(" ====================")')
