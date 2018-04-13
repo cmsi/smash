@@ -662,7 +662,9 @@ end
           if((minatomic <= 0).and.(.not.cartesian)) then
             cartesian=.true.
             write(*,'(" Warning! Cartesian coordinate is used during geometry optimization.")')
+!ishimura
             nwarn= nwarn+1
+            datacomp%nwarn= datacomp%nwarn+1
           endif
         endif
       endif
