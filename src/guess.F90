@@ -146,7 +146,7 @@ end
 !
       use modparallel, only : master
       use modguess, only : nao_g, nmo_g
-      use modprint, only : iprint
+      use modjob, only : iprint
       implicit none
       integer,intent(in) :: nproc, myrank, mpi_comm
       real(8),parameter :: zero=0.0D+00, one=1.0D+00

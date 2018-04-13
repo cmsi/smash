@@ -415,7 +415,7 @@ end
 ! Calculate new Cartesian coordinate with gradient and hessian
 !
       use modparallel, only : master
-      use modprint, only : iprint
+      use modjob, only : iprint
       use modparam, only : toang
       use modmolecule, only : numatomic
       implicit none
@@ -518,7 +518,7 @@ end
 ! Covalent radii (Rb- Cn): P. Pyykko, M. Atsumi, Chem. Eur. J., 186 (2009) 15.
 !
       use modparallel, only : master
-      use modprint, only : iprint
+      use modjob, only : iprint
       use modparam, only : toang, tobohr
       use modmolecule, only : numatomic, natom
       implicit none

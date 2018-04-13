@@ -21,12 +21,11 @@
       use modiofile, only : input, check, maxline
       use modbasis, only : basis, spher
       use modmolecule, only : numatomic, natom, coord, znuc, charge, multi
-      use modjob, only : method, runtype, scftype, bohr, memory
+      use modjob, only : method, runtype, scftype, bohr, memory, iprint
       use modthresh, only : precision, cutint2, threshdiis, threshsoscf, threshqc, threshweight, &
 &                           threshrho, threshdfock, threshdftao, threshover, threshatom, &
 &                           threshmp2cphf
       use modguess, only : guess
-      use modprint, only : iprint
       use modscf, only : scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
       use modopt, only : nopt, optconv, cartesian
       use moddft, only : nrad, nleb, bqrad
@@ -318,7 +317,7 @@ end
       use modparallel, only : master
       use modmolecule, only : numatomic
       use modbasis, only : nshell, ex, coeffinp, locprim, locatom, mprim, mtype
-      use modprint, only : iprint
+      use modjob, only : iprint
       implicit none
       integer :: iatom, ishell, iloc, iprim, jatomcheck(-9:112)=0
       logical :: second
@@ -383,7 +382,7 @@ end
       use modparallel, only : master
       use modmolecule, only : numatomic, natom
       use modecp, only : maxangecp, mtypeecp, locecp, mprimecp, execp, coeffecp, izcore
-      use modprint, only : iprint
+      use modjob, only : iprint
       implicit none
       integer :: iatom, ll, jprim, jloc, k, nprim, jatomcheck(-9:112)=0
       character(len=7) :: tblecp
@@ -1192,7 +1191,7 @@ end
 !
       use modparallel, only : master
       use modmolecule, only : nmo, neleca, nelecb
-      use modprint, only : iprint
+      use modjob, only : iprint
       integer,intent(in) :: itype
       integer :: imo
       real(8),intent(in) :: eigena(nmo), eigenb(nmo)

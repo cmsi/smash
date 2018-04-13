@@ -34,7 +34,7 @@
 &                        maxqcdiagsub, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
       use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis
-      use modprint, only : iprint
+      use modjob, only : iprint
       use modwarn, only : nwarn
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
@@ -899,7 +899,7 @@ end
       use modenergy, only : enuc, escf, escfe
       use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
 &                           threshweight, threshrho, threshdfock, threshdftao
-      use modprint, only : iprint
+      use modjob, only : iprint
       use modparam, only : tobohr
       use modwarn, only : nwarn
       implicit none
@@ -1282,7 +1282,7 @@ end
 &                        maxqcdiagsub, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
       use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis
-      use modprint, only : iprint
+      use modjob, only : iprint
       use modwarn, only : nwarn
       implicit none
       integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
@@ -1969,7 +1969,7 @@ end
       use modenergy, only : enuc, escf, escfe
       use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
 &                           threshweight, threshrho, threshdfock, threshdftao
-      use modprint, only : iprint
+      use modjob, only : iprint
       use modparam, only : tobohr
       use modwarn, only : nwarn
       implicit none

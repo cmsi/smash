@@ -34,7 +34,14 @@ end
 !----------------
   module modjob
 !----------------
+!
+! iprint : print option
+!    = 0 : minimal output
+!    = 1 : standard output
+!    = 2 : verbose output
+!
       implicit none
+      integer :: iprint
       character(len=16) :: method, runtype, scftype
       character(len=16) :: memory!, mem
       logical :: bohr
