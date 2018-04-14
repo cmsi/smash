@@ -1879,7 +1879,7 @@ end
 !
 ! Diagonalize small matrix
 !
-        call diag('V','U',itdav,qcmat,maxqcdiagsub,qceigen,nproc2,myrank2,mpi_comm2,datacomp)
+        call diag('V','U',itdav,qcmat,maxqcdiagsub,qceigen,datacomp)
 !
 ! Form correction vector
 !
@@ -2229,7 +2229,7 @@ end
 !
 ! Diagonalize small matrix
 !
-        call diag('V','U',itdav,qcmat,maxqcdiagsub,qceigen,nproc2,myrank2,mpi_comm2,datacomp)
+        call diag('V','U',itdav,qcmat,maxqcdiagsub,qceigen,datacomp)
 !
 ! Form correction vector
 !

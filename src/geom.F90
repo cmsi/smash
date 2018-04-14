@@ -462,7 +462,7 @@ end
           work(j,i)=ehess(ii+j)
         enddo
       enddo
-      call diag('V','U',natom3,work,natom3,eigen,nproc,myrank,mpi_comm,datacomp)
+      call diag('V','U',natom3,work,natom3,eigen,datacomp)
 !
       do i=1,natom3
         eigen(i)= one/eigen(i)
@@ -590,7 +590,7 @@ end
 !
 ! Calculate G-inverse and K-matrix
 !
-      call diag('V','U',numredun,work2,maxredun,workv(1,3),nproc,myrank,mpi_comm,datacomp)
+      call diag('V','U',numredun,work2,maxredun,workv(1,3),datacomp)
       numdim=0
       do ii= 1,numredun
         if(abs(workv(ii,3)) >= 1.0D-5) then
@@ -687,7 +687,7 @@ end
 &                zero,work1,maxredun)
       call dgemm('T','N',numdim,numdim,numredun,one,work2(1,numredun-numdim+1),maxredun, &
 &                work1,maxredun,zero,work4,maxredun)
-      call diag('V','U',numdim,work4,maxredun,workv(1,3),nproc,myrank,mpi_comm,datacomp)
+      call diag('V','U',numdim,work4,maxredun,workv(1,3),datacomp)
 !
 ! Calculate K*(orthogonal basis)
 !
@@ -780,7 +780,7 @@ end
 !
 !   Calculate G-inverse
 !
-        call diag('V','U',numredun,work2,maxredun,workv(1,1),nproc,myrank,mpi_comm,datacomp)
+        call diag('V','U',numredun,work2,maxredun,workv(1,1),datacomp)
         numdim=0
         do ii= 1,numredun
           if(abs(workv(ii,1)) >= 1.0D-5) then

@@ -59,7 +59,7 @@ end
 !
 ! Diagonalize ortho matrix
 !
-      call diag('V','U',ndim,overlap,ndim,eigen,nproc,myrank,mpi_comm,datacomp)
+      call diag('V','U',ndim,overlap,ndim,eigen,datacomp)
 !
 ! Eliminate eigenvectors with small eigenvalues
 !
@@ -175,16 +175,15 @@ end
 
 
 !-------------------------------------------------------------------------
-  subroutine diag(jobz,uplo,ndim,vector,lda,eigen,nproc,myrank,mpi_comm,datacomp)
+  subroutine diag(jobz,uplo,ndim,vector,lda,eigen,datacomp)
 !-------------------------------------------------------------------------
 !
 ! Diagonalize matrix
 !
-      use modparallel, only : master
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: ndim, lda, nproc, myrank, mpi_comm
+      integer,intent(in) :: ndim, lda
       integer :: info
       integer, allocatable :: iwork(:)
       real(8),intent(out) :: eigen(lda)
@@ -205,7 +204,7 @@ end
       call memunset(3*ndim*ndim+45*ndim,datacomp)
 !
       if(info /= 0) then
-        if(master)write(*,'(" Error! Diagonalization failed, info =",i5)')info
+        if(datacomp%master)write(*,'(" Error! Diagonalization failed, info =",i5)')info
         call iabort
       endif
       return
@@ -235,7 +234,7 @@ end
 !
 ! Diagonalize ortho matrix
 !
-      call diag('V','U',ndim,overlap,ndim,eigen,nproc,myrank,mpi_comm,datacomp)
+      call diag('V','U',ndim,overlap,ndim,eigen,datacomp)
 !
 ! Eliminate eigenvectors with small eigenvalues
 !

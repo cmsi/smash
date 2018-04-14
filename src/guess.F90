@@ -172,7 +172,7 @@ end
 !
 ! Diagonalize extended Huckel matrix
 !
-      call diag('V','U',nao_g,hmo,nao_g,eigen,nproc,myrank,mpi_comm,datacomp)
+      call diag('V','U',nao_g,hmo,nao_g,eigen,datacomp)
 !
       if(datacomp%master.and.(iprint >= 3)) then
         write(*,'("   Eigenvalues of Huckel guess")')
@@ -215,7 +215,7 @@ end
 !
 ! Diagonalize extended Huckel matrix
 !
-      call diag('V','U',nao_gcore,hmo,nao_gcore,eigen,nproc,myrank,mpi_comm,datacomp)
+      call diag('V','U',nao_gcore,hmo,nao_gcore,eigen,datacomp)
 !
       return
 end
@@ -261,7 +261,7 @@ end
 !
 ! Calculate (C2t*S12t*S11^-1*S12*C2)^-1/2
 !
-      call diag('V','U',nmo_g,work1,nao_g,eigen,nproc,myrank,mpi_comm,datacomp)
+      call diag('V','U',nmo_g,work1,nao_g,eigen,datacomp)
 !
       nskip= 0
       do i= 1,nmo_g
@@ -1552,7 +1552,7 @@ end
 !
 ! Calculate (C2t*S12t*S11^-1*S12*C2)^-1/2
 !
-      call diag('V','U',ndim,work1,ndim,eigen,nproc,myrank,mpi_comm,datacomp)
+      call diag('V','U',ndim,work1,ndim,eigen,datacomp)
 !$OMP parallel do private(eigeninv)
       do i= 1,ndim
         eigeninv= one/sqrt(eigen(i))
@@ -1731,7 +1731,7 @@ end
 !
 ! Calculate (C2t*S12t*S11^-1*S12*C2)^-1/2
 !
-      call diag('V','U',nmo_g,cmo_g,nao_g,eigen,nproc,myrank,mpi_comm,datacomp)
+      call diag('V','U',nmo_g,cmo_g,nao_g,eigen,datacomp)
 !
 !$OMP parallel do private(eigeninv)
       do ii= 1,nmo_g
@@ -2141,7 +2141,7 @@ end
 ! Diagonalize Hamiltonian matrix
 !
         call canonicalize(dftb1,ortho,work,nao_g,nmo_g)
-        call diag('V','U',nmo_g,dftb1,nao_g,eigen,nproc,myrank,mpi_comm,datacomp)
+        call diag('V','U',nmo_g,dftb1,nao_g,eigen,datacomp)
         call dgemm('N','N',nao_g,nmo_g,nmo_g,one,ortho,nao_g,dftb1,nao_g,zero,dftbmo,nao_g)
 !
 ! Calculate new Mulliken charge
