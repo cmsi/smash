@@ -926,17 +926,17 @@ end
 
 
 !------------------------------------------------------------------------------------
-  subroutine readcheckinfo(scftype_g,charge_g,flagecp_g,neleca_g,nelecb_g,mpi_comm)
+  subroutine readcheckinfo(scftype_g,charge_g,flagecp_g,neleca_g,nelecb_g,datacomp)
 !------------------------------------------------------------------------------------
 !
 ! Read checkpoint information
 !
-      use modparallel, only : master
       use modiofile, only : icheck
       use modguess, only : nao_g, nmo_g, nshell_g, nprim_g
       use modmolecule, only : natom
+      use modtype, only : typecomp
       implicit none
-      integer,intent(in) :: mpi_comm
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(out) :: neleca_g, nelecb_g
       integer :: intarray(6), natom_g, idummy
       real(8),intent(out) :: charge_g
@@ -944,7 +944,7 @@ end
       character(len=16) :: cdummy
       logical,intent(out) :: flagecp_g
 !
-      if(master) then
+      if(datacomp%master) then
         rewind(icheck)
         read(icheck,end=9999)
         read(icheck,err=9998) scftype_g, natom_g, nao_g, nmo_g, nshell_g, nprim_g, neleca_g, &
@@ -960,10 +960,10 @@ end
         intarray(5)= nao_g
         intarray(6)= nprim_g
       endif
-      call para_bcasti(intarray,6,0,mpi_comm)
-      call para_bcastc(scftype_g,16,0,mpi_comm)
-      call para_bcastl(flagecp_g,1,0,mpi_comm)
-      call para_bcastr(charge_g,1,0,mpi_comm)
+      call para_bcasti(intarray,6,0,datacomp%mpi_comm1)
+      call para_bcastc(scftype_g,16,0,datacomp%mpi_comm1)
+      call para_bcastl(flagecp_g,1,0,datacomp%mpi_comm1)
+      call para_bcastr(charge_g,1,0,datacomp%mpi_comm1)
       nshell_g= intarray(1)
       nmo_g   = intarray(2)
       neleca_g= intarray(3)
@@ -982,25 +982,25 @@ end
 
 
 !--------------------------------------------------------------
-  subroutine readcheckguess(cmoa_g,cmob_g,scftype_g,mpi_comm)
+  subroutine readcheckguess(cmoa_g,cmob_g,scftype_g,datacomp)
 !--------------------------------------------------------------
 !
 ! Read guess basis functions and MOs from checkpoint file
 !
-      use modparallel, only : master
       use modiofile, only : icheck
       use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
 &                          ex_g, coeff_g, nao_g, coord_g, nmo_g, nshell_g, nprim_g
       use modmolecule, only : natom
       use modjob, only : scftype
+      use modtype, only : typecomp
       implicit none
-      integer,intent(in) :: mpi_comm
+      type(typecomp),intent(inout) :: datacomp
       integer :: ii, jj
       real(8),intent(out) :: cmoa_g(nao_g,nao_g), cmob_g(nao_g,nao_g)
       character(len=16),intent(in) :: scftype_g
       character(len=16) :: checkversion
 !
-      if(master) then
+      if(datacomp%master) then
         rewind(icheck)
         read(icheck) checkversion
         read(icheck)
@@ -1044,18 +1044,18 @@ end
 !
 ! Broadcast guess basis functions and MOs
 !
-      call para_bcasti(locprim_g,nshell_g,0,mpi_comm)
-      call para_bcasti(locbf_g  ,nshell_g,0,mpi_comm)
-      call para_bcasti(locatom_g,nshell_g,0,mpi_comm)
-      call para_bcastr(ex_g   ,nprim_g,0,mpi_comm)
-      call para_bcastr(coeff_g,nprim_g,0,mpi_comm)
-      call para_bcastr(coord_g,natom*3,0,mpi_comm)
-      call para_bcasti(mprim_g,nshell_g,0,mpi_comm)
-      call para_bcasti(mbf_g  ,nshell_g,0,mpi_comm)
-      call para_bcasti(mtype_g,nshell_g,0,mpi_comm)
-      call para_bcastr(cmoa_g,nao_g*nmo_g,0,mpi_comm)
+      call para_bcasti(locprim_g,nshell_g,0,datacomp%mpi_comm1)
+      call para_bcasti(locbf_g  ,nshell_g,0,datacomp%mpi_comm1)
+      call para_bcasti(locatom_g,nshell_g,0,datacomp%mpi_comm1)
+      call para_bcastr(ex_g   ,nprim_g,0,datacomp%mpi_comm1)
+      call para_bcastr(coeff_g,nprim_g,0,datacomp%mpi_comm1)
+      call para_bcastr(coord_g,natom*3,0,datacomp%mpi_comm1)
+      call para_bcasti(mprim_g,nshell_g,0,datacomp%mpi_comm1)
+      call para_bcasti(mbf_g  ,nshell_g,0,datacomp%mpi_comm1)
+      call para_bcasti(mtype_g,nshell_g,0,datacomp%mpi_comm1)
+      call para_bcastr(cmoa_g,nao_g*nmo_g,0,datacomp%mpi_comm1)
       if((scftype == 'UHF').and.(scftype_g == 'UHF')) then
-        call para_bcastr(cmob_g,nao_g*nmo_g,0,mpi_comm)
+        call para_bcastr(cmob_g,nao_g*nmo_g,0,datacomp%mpi_comm1)
       endif
 !
       return
