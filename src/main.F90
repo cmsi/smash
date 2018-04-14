@@ -19,7 +19,7 @@
 ! This is the main driver of Scalable Molecular Analysis Solver 
 ! for High performance computing systems (SMASH).
 !
-      use modparallel, only : master, nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
+      use modparallel, only : nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       use modjob, only : runtype, scftype
       use modiofile, only : input, icheck, check, version
       use modtype, only : typecomp
@@ -400,7 +400,6 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modparallel, only : master
       use modiofile, only : check
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
@@ -434,7 +433,7 @@ end
 ! Calculate nuclear repulsion energy
 !
       call nucenergy(datacomp)
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
       endif
 !
@@ -494,7 +493,7 @@ end
         call calcrmp2(cmo,energymo,xint,nproc1,myrank1,mpi_comm1,datacomp)
         call tstamp(1,datacomp)
       else
-        if(master) then
+        if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16,".")')method
           call iabort
         endif
@@ -502,7 +501,7 @@ end
 !
 ! Print MOs
 !
-      if(master.and.(iprint >= 2)) then
+      if(datacomp%master.and.(iprint >= 2)) then
         write(*,'("  -------------------")')
         write(*,'("    MO coefficients")')
         write(*,'("  -------------------")')
@@ -535,7 +534,7 @@ end
 !
 ! Write checkpoint file
 !
-      if(master.and.(check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo)
+      if(datacomp%master.and.(check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo)
 !
 ! Unset arrays 1
 !
@@ -558,7 +557,6 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modparallel, only : master
       use modiofile, only : check
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
@@ -592,7 +590,7 @@ end
 ! Calculate nuclear repulsion energy
 !
       call nucenergy(datacomp)
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
       endif
 !
@@ -650,7 +648,7 @@ end
 !       call calcump2(cmoa,energymoa,xint)
 !       call tstamp(1)
       else
-        if(master) then
+        if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16,".")')method
           call iabort
         endif
@@ -658,7 +656,7 @@ end
 !
 ! Print MOs
 !
-      if(master.and.(iprint >= 2)) then
+      if(datacomp%master.and.(iprint >= 2)) then
         write(*,'("  -------------------------")')
         write(*,'("    Alpha MO coefficients")')
         write(*,'("  -------------------------")')
@@ -695,7 +693,7 @@ end
 !
 ! Write checkpoint file
 !
-      if(master.and.(check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob)
+      if(datacomp%master.and.(check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob)
 !
 ! Unset arrays 1
 !
@@ -717,7 +715,6 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modparallel, only : master
       use modiofile, only : check
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
@@ -753,7 +750,7 @@ end
 ! Calculate nuclear repulsion energy
 !
       call nucenergy(datacomp)
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
       endif
 !
@@ -806,7 +803,7 @@ end
         call writeeigenvalue(energymo,energymo,1)
         call tstamp(1,datacomp)
       else
-        if(master) then
+        if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16,".")')method
           call iabort
         endif
@@ -829,7 +826,7 @@ end
         call calcgradrmp2(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
         call tstamp(1,datacomp)
       else
-        if(master) then
+        if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16,".")')method
           call iabort
         endif
@@ -838,7 +835,7 @@ end
 ! Calculate maximum and root mean square gradient values
 !
       call calcmaxgrad(egradmax,egradrms,egrad,natom*3)
-      if(master) write(*,'(" Maximum gradient =",f13.8,"  RMS gradient =",f13.8,/)') &
+      if(datacomp%master) write(*,'(" Maximum gradient =",f13.8,"  RMS gradient =",f13.8,/)') &
 &                      egradmax,egradrms
 !
 ! Unset arrays 3
@@ -848,7 +845,7 @@ end
 !
 ! Print MOs
 !
-      if(master.and.(iprint >= 2)) then
+      if(datacomp%master.and.(iprint >= 2)) then
         write(*,'("  -------------------")')
         write(*,'("    MO coefficients")')
         write(*,'("  -------------------")')
@@ -881,7 +878,7 @@ end
 !
 ! Write checkpoint file
 !
-      if(master.and.(check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo)
+      if(datacomp%master.and.(check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo)
 !
 ! Unset arrays 1
 !
@@ -904,7 +901,6 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modparallel, only : master
       use modiofile, only : check
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
@@ -940,7 +936,7 @@ end
 ! Calculate nuclear repulsion energy
 !
       call nucenergy(datacomp)
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
       endif
 !
@@ -998,7 +994,7 @@ end
 !       call calcump2(cmoa,energymoa,xint)
 !       call tstamp(1)
       else
-        if(master) then
+        if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16,".")')method
           call iabort
         endif
@@ -1016,7 +1012,7 @@ end
       elseif((idftex >= 1).or.(idftcor >= 1)) then
         call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
       else
-        if(master) then
+        if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16," in energy gradient.")') &
 &               method
           call iabort
@@ -1026,7 +1022,7 @@ end
 ! Calculate maximum and root mean square gradient values
 !
       call calcmaxgrad(egradmax,egradrms,egrad,natom*3)
-      if(master) write(*,'(" Maximum gradient =",f13.8,"  RMS gradient =",f13.8,/)') &
+      if(datacomp%master) write(*,'(" Maximum gradient =",f13.8,"  RMS gradient =",f13.8,/)') &
 &                      egradmax,egradrms
 !
 ! Unset arrays 3
@@ -1036,7 +1032,7 @@ end
 !
 ! Print MOs
 !
-      if(master.and.(iprint >= 2)) then
+      if(datacomp%master.and.(iprint >= 2)) then
         write(*,'("  -------------------------")')
         write(*,'("    Alpha MO coefficients")')
         write(*,'("  -------------------------")')
@@ -1073,7 +1069,7 @@ end
 !
 ! Write checkpoint file
 !
-      if(master.and.(check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob)
+      if(datacomp%master.and.(check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob)
 !
 ! Unset arrays 1
 !
@@ -1096,7 +1092,6 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modparallel, only : master
       use modiofile, only : check
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
@@ -1183,7 +1178,7 @@ end
 ! Calculate nuclear repulsion energy
 !
         call nucenergy(datacomp)
-        if(master) then
+        if(datacomp%master) then
           write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
         endif
 !
@@ -1238,7 +1233,7 @@ end
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1)
           call tstamp(1,datacomp)
         else
-          if(master) then
+          if(datacomp%master) then
             write(*,'(" Error! This program does not support method= ",a16,".")')method
             call iabort
           endif
@@ -1256,7 +1251,7 @@ end
           call calcgradrmp2(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
           call tstamp(1,datacomp)
         else
-          if(master) then
+          if(datacomp%master) then
             write(*,'(" Error! This program does not support method= ",a16,".")')method
             call iabort
           endif
@@ -1265,20 +1260,20 @@ end
 ! Calculate maximum and root mean square gradient values
 !
         call calcmaxgrad(egradmax,egradrms,egrad,natom3)
-        if(master) write(*,'(" Optimization Cycle",i4,4x,"Maximum gradient =",f11.6,4x, &
+        if(datacomp%master) write(*,'(" Optimization Cycle",i4,4x,"Maximum gradient =",f11.6,4x, &
 &                            "RMS gradient =",f11.6,/)') iopt,egradmax,egradrms
 !
 ! Check convergence
 !
         if((egradmax <= optconv).and.(egradrms <= optconv*third)) then
-          if(master) write(*,'(" Geometry converged.",/)')
+          if(datacomp%master) write(*,'(" Geometry converged.",/)')
           converged=.true.
           exit
         endif
 !
 ! Write checkpoint file
 !
-        if(master.and.(check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo)
+        if(datacomp%master.and.(check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo)
 !
 ! Set work arrays 2
 !
@@ -1316,7 +1311,7 @@ end
 !
         call setnextopt(coordold,natom,iopt)
 !
-        if((iopt == nopt).and.master) then
+        if((iopt == nopt).and.datacomp%master) then
           write(*,'("Warning! Geometry did not converge.")')
           datacomp%nwarn= datacomp%nwarn+1
           exit
@@ -1330,7 +1325,7 @@ end
 !
 ! Print MOs
 !
-      if(master.and.(iprint >= 2)) then
+      if(datacomp%master.and.(iprint >= 2)) then
         write(*,'("  -------------------")')
         write(*,'("    MO coefficients")')
         write(*,'("  -------------------")')
@@ -1363,7 +1358,7 @@ end
 !
 ! Write optimized geometry
 !
-      if(master.and.converged) then
+      if(datacomp%master.and.converged) then
         write(*,'(" ==========================")')
         write(*,'("     Optimized Geometry")')
         write(*,'(" ==========================")')
@@ -1372,7 +1367,7 @@ end
 !
 ! Write checkpoint file
 !
-      if(master.and.(check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo)
+      if(datacomp%master.and.(check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo)
 !
 ! Unset arrays for energy gradient and geometry optimization
 !
@@ -1414,7 +1409,6 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modparallel, only : master
       use modiofile, only : check
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
@@ -1501,7 +1495,7 @@ end
 ! Calculate nuclear repulsion energy
 !
         call nucenergy(datacomp)
-        if(master) then
+        if(datacomp%master) then
           write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
         endif
 !
@@ -1561,7 +1555,7 @@ end
 !         call calcump2(cmoa,energymoa,xint)
 !         call tstamp(1)
         else
-          if(master) then
+          if(datacomp%master) then
             write(*,'(" Error! This program does not support method= ",a16,".")')method
             call iabort
           endif
@@ -1574,7 +1568,7 @@ end
         elseif((idftex >= 1).or.(idftcor >= 1)) then
           call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
         else
-          if(master) then
+          if(datacomp%master) then
             write(*,'(" Error! This program does not support method= ",a16," in energy gradient.")') &
 &                 method
             call iabort
@@ -1585,17 +1579,17 @@ end
 ! Calculate maximum and root mean square gradient values
 !
         call calcmaxgrad(egradmax,egradrms,egrad,natom3)
-        if(master) write(*,'(" Optimization Cycle",i4,4x,"Maximum gradient =",f11.6,4x, &
+        if(datacomp%master) write(*,'(" Optimization Cycle",i4,4x,"Maximum gradient =",f11.6,4x, &
 &                            "RMS gradient =",f11.6,/)') iopt,egradmax,egradrms
 !
 ! Write checkpoint file
 !
-        if(master.and.(check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob)
+        if(datacomp%master.and.(check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob)
 !
 ! Check convergence
 !
         if((egradmax <= optconv).and.(egradrms <= optconv*third)) then
-          if(master) write(*,'(" Geometry converged.",/)')
+          if(datacomp%master) write(*,'(" Geometry converged.",/)')
           converged=.true.
           exit
         endif
@@ -1636,7 +1630,7 @@ end
 !
         call setnextopt(coordold,natom,iopt)
 !
-        if((iopt == nopt).and.master) then
+        if((iopt == nopt).and.datacomp%master) then
           write(*,'("Warning! Geometry did not converge.")')
           datacomp%nwarn= datacomp%nwarn+1
           exit
@@ -1650,7 +1644,7 @@ end
 !
 ! Print MOs
 !
-      if(master.and.(iprint >= 2)) then
+      if(datacomp%master.and.(iprint >= 2)) then
         write(*,'("  -------------------------")')
         write(*,'("    Alpha MO coefficients")')
         write(*,'("  -------------------------")')
@@ -1687,7 +1681,7 @@ end
 !
 ! Write optimized geometry
 !
-      if(master.and.converged) then
+      if(datacomp%master.and.converged) then
         write(*,'(" ==========================")')
         write(*,'("     Optimized Geometry")')
         write(*,'(" ==========================")')
@@ -1696,7 +1690,7 @@ end
 !
 ! Write checkpoint file
 !
-      if(master.and.(check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob)
+      if(datacomp%master.and.(check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob)
 !
 ! Unset arrays for energy gradient and geometry optimization
 !
