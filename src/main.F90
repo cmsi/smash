@@ -19,7 +19,6 @@
 ! This is the main driver of Scalable Molecular Analysis Solver 
 ! for High performance computing systems (SMASH).
 !
-      use modparallel, only : nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       use modjob, only : runtype, scftype
       use modiofile, only : input, icheck, check, version
       use modtype, only : typecomp
@@ -50,11 +49,11 @@
 !
       if(scftype == 'RHF') then
         if(runtype == 'ENERGY') then
-          call calcrenergy(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+          call calcrenergy(datacomp)
         elseif(runtype == 'GRADIENT') then
-          call calcrgradient(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+          call calcrgradient(datacomp)
         elseif(runtype == 'OPTIMIZE') then
-          call calcrgeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+          call calcrgeometry(converged,datacomp)
         else
           if(datacomp%master) then
             write(*,'(" Error! This program does not support runtype= ",a16,".")')runtype
@@ -63,11 +62,11 @@
         endif
       elseif(scftype == 'UHF') then
         if(runtype == 'ENERGY') then
-          call calcuenergy(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+          call calcuenergy(datacomp)
         elseif(runtype == 'GRADIENT') then
-          call calcugradient(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+          call calcugradient(datacomp)
         elseif(runtype == 'OPTIMIZE') then
-          call calcugeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+          call calcugeometry(converged,datacomp)
         endif
       else
         if(datacomp%master) write(*,'(" Error! SCFtype=",a16," is not supported.")')scftype
@@ -102,8 +101,6 @@ end program main
 !
 !  Initialize MPI execution environment
 !
-      use modparallel, only : nproc1, nproc2, myrank1, myrank2, &
-&                             mpi_comm1, mpi_comm2
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -125,13 +122,6 @@ end program main
       if(datacomp%nproc1.gt.1) then
         datacomp%master =(datacomp%myrank1 == 0)
       endif
-!ishimura
-      nproc1= datacomp%nproc1
-      myrank1= datacomp%myrank1
-      mpi_comm1= datacomp%mpi_comm1
-      nproc2= datacomp%nproc2
-      myrank2= datacomp%myrank2
-      mpi_comm2= datacomp%mpi_comm2
 !
       return
 end
@@ -389,7 +379,7 @@ end
 
 
 !----------------------------------------------------------------------------
-  subroutine calcrenergy(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+  subroutine calcrenergy(datacomp)
 !----------------------------------------------------------------------------
 !
 ! Driver of closed-shell energy calculation
@@ -412,7 +402,6 @@ end
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
       real(8), allocatable :: xint(:), energymo(:)
@@ -443,7 +432,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-      call oneei(h1mtrx,smtrx,tmtrx,work,nproc2,myrank2,mpi_comm2)
+      call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -463,8 +452,7 @@ end
 ! Start SCF
 !
       if(method == 'HARTREE-FOCK') then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datacomp)
         call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
@@ -473,22 +461,19 @@ end
           savecutint2= cutint2
           dconv= max(dconv,1.0D-2)
           cutint2= max(cutint2,1.0D-9)
-          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datacomp)
           dconv= savedconv
           cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
-        call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+        call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datacomp)
         call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
       elseif(method == 'MP2') then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datacomp)
         call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
-        call calcrmp2(cmo,energymo,xint,nproc1,myrank1,mpi_comm1,datacomp)
+        call calcrmp2(cmo,energymo,xint,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
         call tstamp(1,datacomp)
       else
         if(datacomp%master) then
@@ -516,7 +501,7 @@ end
         call memset(nao3*29,datacomp)
         allocate(work(nao3*29))
         call calcroctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrx, &
-&                          nproc1,myrank1,mpi_comm1,datacomp)
+&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*29,datacomp)
       else
@@ -525,7 +510,7 @@ end
 !
         call memset(nao3*6,datacomp)
         allocate(work(nao3*6))
-        call calcrdipole(work,work(nao3*3+1),dmtrx,nproc1,myrank1,mpi_comm1,datacomp)
+        call calcrdipole(work,work(nao3*3+1),dmtrx,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*6,datacomp)
       endif
@@ -619,8 +604,7 @@ end
 ! Start SCF
 !
       if(method == 'HARTREE-FOCK') then
-        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datacomp)
         call writeeigenvalue(energymoa,energymob,2,datacomp)
         call tstamp(1,datacomp)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
@@ -629,14 +613,12 @@ end
           savecutint2= cutint2
           dconv= max(dconv,1.0D-2)
           cutint2= max(cutint2,1.0D-9)
-          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datacomp)
           dconv= savedconv
           cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
-        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datacomp)
         call writeeigenvalue(energymoa,energymob,2,datacomp)
         call tstamp(1,datacomp)
 !     elseif(method == 'MP2') then
@@ -702,7 +684,7 @@ end
 
 
 !------------------------------------------------------------------------------
-  subroutine calcrgradient(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+  subroutine calcrgradient(datacomp)
 !------------------------------------------------------------------------------
 !
 ! Driver of energy gradient calculation
@@ -725,7 +707,6 @@ end
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
       real(8), allocatable :: xint(:), energymo(:)
@@ -758,7 +739,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-      call oneei(h1mtrx,smtrx,tmtrx,work,nproc2,myrank2,mpi_comm2)
+      call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -778,8 +759,7 @@ end
 ! Start SCF
 !
       if((method == 'HARTREE-FOCK').or.(method == 'MP2')) then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datacomp)
         call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
@@ -788,14 +768,12 @@ end
           savecutint2= cutint2
           dconv= max(dconv,1.0D-2)
           cutint2= max(cutint2,1.0D-9)
-          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datacomp)
           dconv= savedconv
           cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
-        call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+        call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datacomp)
         call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
       else
@@ -813,13 +791,13 @@ end
 ! Calculate energy gradient
 !
       if(method == 'HARTREE-FOCK') then
-        call calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
+        call calcgradrhf(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
         call tstamp(1,datacomp)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
-        call calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
+        call calcgradrdft(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
         call tstamp(1,datacomp)
       elseif(method == 'MP2') then
-        call calcgradrmp2(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
+        call calcgradrmp2(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
         call tstamp(1,datacomp)
       else
         if(datacomp%master) then
@@ -858,7 +836,7 @@ end
         call memset(nao3*29,datacomp)
         allocate(work(nao3*29))
         call calcroctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrx, &
-&                          nproc1,myrank1,mpi_comm1,datacomp)
+&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*29,datacomp)
       else
@@ -867,7 +845,7 @@ end
 !
         call memset(nao3*6,datacomp)
         allocate(work(nao3*6))
-        call calcrdipole(work,work(nao3*3+1),dmtrx,nproc1,myrank1,mpi_comm1,datacomp)
+        call calcrdipole(work,work(nao3*3+1),dmtrx,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*6,datacomp)
       endif
@@ -887,7 +865,7 @@ end
 
 
 !------------------------------------------------------------------------------
-  subroutine calcugradient(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+  subroutine calcugradient(datacomp)
 !------------------------------------------------------------------------------
 !
 ! Driver of open-shell energy gradient calculation
@@ -910,7 +888,6 @@ end
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
       real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), energymoa(:), energymob(:)
@@ -943,7 +920,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-      call oneei(h1mtrx,smtrx,tmtrx,work,nproc2,myrank2,mpi_comm2)
+      call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -963,8 +940,7 @@ end
 ! Start SCF
 !
       if(method == 'HARTREE-FOCK') then
-        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datacomp)
         call writeeigenvalue(energymoa,energymob,2,datacomp)
         call tstamp(1,datacomp)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
@@ -973,14 +949,12 @@ end
           savecutint2= cutint2
           dconv= max(dconv,1.0D-2)
           cutint2= max(cutint2,1.0D-9)
-          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datacomp)
           dconv= savedconv
           cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
-        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datacomp)
         call writeeigenvalue(energymoa,energymob,2,datacomp)
         call tstamp(1,datacomp)
 !     elseif(method == 'MP2') then
@@ -1003,9 +977,9 @@ end
 ! Calculate energy gradient
 !
       if(method == 'HARTREE-FOCK') then
-        call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
+        call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
-        call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
+        call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
       else
         if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16," in energy gradient.")') &
@@ -1048,7 +1022,7 @@ end
         call memset(nao3*29,datacomp)
         allocate(work(nao3*29))
         call calcuoctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrxa,dmtrxb, &
-&                          nproc1,myrank1,mpi_comm1,datacomp)
+&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*29,datacomp)
       else
@@ -1057,7 +1031,7 @@ end
 !
         call memset(nao3*6,datacomp)
         allocate(work(nao3*6))
-        call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1,datacomp)
+        call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*6,datacomp)
       endif
@@ -1077,7 +1051,7 @@ end
 
 
 !----------------------------------------------------------------------------------------
-  subroutine calcrgeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+  subroutine calcrgeometry(converged,datacomp)
 !----------------------------------------------------------------------------------------
 !
 ! Driver of geometry optimization calculation
@@ -1101,7 +1075,6 @@ end
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer,allocatable :: iredun(:)
       integer :: nao2, nao3, nshell3, natom3, ii, iopt
       integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
@@ -1184,7 +1157,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-        call oneei(h1mtrx,smtrx,tmtrx,work,nproc2,myrank2,mpi_comm2)
+        call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -1206,8 +1179,7 @@ end
 ! Calculate energy
 !
         if((method == 'HARTREE-FOCK').or.(method == 'MP2')) then
-          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datacomp)
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1,datacomp)
           call tstamp(1,datacomp)
         elseif((idftex >= 1).or.(idftcor >= 1)) then
@@ -1216,14 +1188,12 @@ end
             savecutint2= cutint2
             dconv= max(dconv,1.0D-2)
             cutint2= max(cutint2,1.0D-9)
-            call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+            call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datacomp)
             dconv= savedconv
             cutint2= savecutint2
             call tstamp(1,datacomp)
           endif
-          call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
-&                       nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+          call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datacomp)
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1,datacomp)
           call tstamp(1,datacomp)
         else
@@ -1236,13 +1206,13 @@ end
 ! Calculate energy gradient
 !
         if(method == 'HARTREE-FOCK') then
-          call calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
+          call calcgradrhf(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
           call tstamp(1,datacomp)
         elseif((idftex >= 1).or.(idftcor >= 1)) then
-          call calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
+          call calcgradrdft(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
           call tstamp(1,datacomp)
         elseif(method == 'MP2') then
-          call calcgradrmp2(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
+          call calcgradrmp2(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
           call tstamp(1,datacomp)
         else
           if(datacomp%master) then
@@ -1283,12 +1253,12 @@ end
 !
         if(cartesian) then
           call calcnewcoord(coord,coordold,egrad,egradold,ehess,workv,natom3,iopt, &
-&                           nproc2,myrank2,mpi_comm2,datacomp)
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
         else
           call calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
 &                              work(1,2),work(1,3),work(1,4),workv,iopt,iredun,isizered, &
 &                              maxredun,numbond,numangle,numtorsion,numredun, &
-&                              nproc2,myrank2,mpi_comm2,datacomp)
+&                              datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
         endif
 !
 ! Unset work arrays 2
@@ -1336,7 +1306,7 @@ end
         call memset(nao3*29,datacomp)
         allocate(work(nao3,29))
         call calcroctupole(work,work(1,4),work(1,10),work(1,20),dmtrx, &
-&                          nproc1,myrank1,mpi_comm1,datacomp)
+&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*29,datacomp)
       else
@@ -1345,7 +1315,7 @@ end
 !
         call memset(nao3*6,datacomp)
         allocate(work(nao3,6))
-        call calcrdipole(work,work(1,4),dmtrx,nproc1,myrank1,mpi_comm1,datacomp)
+        call calcrdipole(work,work(1,4),dmtrx,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*6,datacomp)
       endif
@@ -1393,7 +1363,7 @@ end
 
 
 !----------------------------------------------------------------------------------------
-  subroutine calcugeometry(converged,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+  subroutine calcugeometry(converged,datacomp)
 !----------------------------------------------------------------------------------------
 !
 ! Driver of open-shell geometry optimization calculation
@@ -1417,7 +1387,6 @@ end
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer,allocatable :: iredun(:)
       integer :: nao2, nao3, nshell3, natom3, ii, iopt
       integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
@@ -1500,7 +1469,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-        call oneei(h1mtrx,smtrx,tmtrx,work,nproc2,myrank2,mpi_comm2)
+        call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -1522,8 +1491,7 @@ end
 ! Calculate energy
 !
         if(method == 'HARTREE-FOCK') then
-          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datacomp)
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2,datacomp)
           call tstamp(1,datacomp)
         elseif((idftex >= 1).or.(idftcor >= 1)) then
@@ -1532,14 +1500,12 @@ end
             savecutint2= cutint2
             dconv= max(dconv,1.0D-2)
             cutint2= max(cutint2,1.0D-9)
-            call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+            call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datacomp)
             dconv= savedconv
             cutint2= savecutint2
             call tstamp(1,datacomp)
           endif
-          call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                       nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+          call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datacomp)
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2,datacomp)
           call tstamp(1,datacomp)
 !       elseif(method == 'MP2') then
@@ -1557,9 +1523,9 @@ end
 ! Calculate energy gradient
 !
         if(method == 'HARTREE-FOCK') then
-          call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
+          call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
         elseif((idftex >= 1).or.(idftcor >= 1)) then
-          call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
+          call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
         else
           if(datacomp%master) then
             write(*,'(" Error! This program does not support method= ",a16," in energy gradient.")') &
@@ -1601,12 +1567,12 @@ end
 !
         if(cartesian) then
           call calcnewcoord(coord,coordold,egrad,egradold,ehess,workv,natom3,iopt, &
-&                           nproc2,myrank2,mpi_comm2,datacomp)
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
         else
           call calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
 &                              work(1,2),work(1,3),work(1,4),workv,iopt,iredun,isizered, &
 &                              maxredun,numbond,numangle,numtorsion,numredun, &
-&                              nproc2,myrank2,mpi_comm2,datacomp)
+&                              datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
         endif
 !
 ! Unset work arrays 2
@@ -1658,7 +1624,7 @@ end
         call memset(nao3*29,datacomp)
         allocate(work(nao3,29))
         call calcuoctupole(work,work(1,4),work(1,10),work(1,20),dmtrxa,dmtrxb, &
-&                          nproc1,myrank1,mpi_comm1,datacomp)
+&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*29,datacomp)
       else
@@ -1667,7 +1633,7 @@ end
 !
         call memset(nao3*6,datacomp)
         allocate(work(nao3,6))
-        call calcudipole(work,work(1,4),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1,datacomp)
+        call calcudipole(work,work(1,4),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*6,datacomp)
       endif
