@@ -129,11 +129,11 @@ end
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
-      call calcover2(overlap,work1,nproc,myrank,mpi_comm)
+      call calcover2(overlap,work1,datacomp)
 !
 ! Project orbitals from Huckel to SCF
 !
-      call projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,nproc,myrank,mpi_comm,datacomp)
+      call projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,datacomp)
       deallocate(hmo,overlap,work1,work2,eigen)
       call memunset(2*nao_g2+2*nao*nao_g+nao_g,datacomp)
       return
@@ -222,7 +222,7 @@ end
 
 
 !----------------------------------------------------------------------------------------
-  subroutine projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,nproc,myrank,mpi_comm,datacomp)
+  subroutine projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,datacomp)
 !----------------------------------------------------------------------------------------
 !
 ! Project orbitals from Huckel to SCF
@@ -238,7 +238,6 @@ end
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: i, j, nskip
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, small=1.0D-5
       real(8),intent(in) :: overinv(nao,nao)
@@ -1140,7 +1139,7 @@ end
 
 
 !-----------------------------------------------------------
-  subroutine calcover2(overlap,work,nproc,myrank,mpi_comm)
+  subroutine calcover2(overlap,work,datacomp)
 !-----------------------------------------------------------
 !
 ! Driver of overlap integral calculation
@@ -1151,15 +1150,16 @@ end
 !
       use modbasis, only : nshell, nao
       use modguess, only : nshell_g, nao_g
+      use modtype, only : typecomp
       implicit none
-      integer,intent(in) :: nproc, myrank, mpi_comm
+      type(typecomp),intent(inout) :: datacomp
       integer :: ish, jsh
       real(8),parameter :: zero=0.0D+00
       real(8),intent(out) :: overlap(nao*nao_g), work(nao*nao_g)
 !
       work(:)= zero
 !$OMP parallel
-      do ish= nshell_g-myrank,1,-nproc
+      do ish= nshell_g-datacomp%myrank2,1,-datacomp%nproc2
 !$OMP do
         do jsh= 1,nshell
           call intover2(work,ish,jsh)
@@ -1168,13 +1168,13 @@ end
       enddo
 !$OMP end parallel
 !
-      call para_allreducer(work,overlap,nao*nao_g,mpi_comm)
+      call para_allreducer(work,overlap,nao*nao_g,datacomp%mpi_comm2)
       return
 end
 
 
 !---------------------------------------------------------------
-  subroutine calcover2core(overlap,work,nproc,myrank,mpi_comm)
+  subroutine calcover2core(overlap,work,datacomp)
 !---------------------------------------------------------------
 !
 ! Driver of overlap integral calculation for only core orbitals
@@ -1184,15 +1184,16 @@ end
 !       work    (work array)
 !
       use modguess, only : nshell_g, nao_g, nshell_gcore, nao_gcore
+      use modtype, only : typecomp
       implicit none
-      integer,intent(in) :: nproc, myrank, mpi_comm
+      type(typecomp),intent(inout) :: datacomp
       integer :: ish, jsh
       real(8),parameter :: zero=0.0D+00
       real(8),intent(out) :: overlap(nao_gcore*nao_g), work(nao_gcore*nao_g)
 !
       work(:)= zero
 !$OMP parallel
-      do ish= nshell_g-myrank,1,-nproc
+      do ish= nshell_g-datacomp%myrank2,1,-datacomp%nproc2
 !$OMP do
         do jsh= 1,nshell_gcore
           call intover2core(work,ish,jsh)
@@ -1201,7 +1202,7 @@ end
       enddo
 !$OMP end parallel
 !
-      call para_allreducer(work,overlap,nao_gcore*nao_g,mpi_comm)
+      call para_allreducer(work,overlap,nao_gcore*nao_g,datacomp%mpi_comm2)
       return
 end
 
@@ -1493,7 +1494,7 @@ end
 !
 ! Calculate overlap integrals between previous and present bases
 !
-      call calcover2(overlap(1,1),overlap(1,2),nproc,myrank,mpi_comm)
+      call calcover2(overlap(1,1),overlap(1,2),datacomp)
 !
 ! Project orbitals from previous basis to current basis
 !
@@ -1657,7 +1658,7 @@ end
 !
 ! Calculate overlap integrals between previous and present bases
 !
-      call calcover2(overlap,work2,nproc2,myrank2,mpi_comm2)
+      call calcover2(overlap,work2,datacomp)
 !
 ! Project orbitals from previous basis to current basis
 !
@@ -1785,7 +1786,7 @@ end
 !
 ! Calculate overlap integrals between core-guess basis and guess bases
 !
-      call calcover2core(overlap,work2,nproc,myrank,mpi_comm)
+      call calcover2core(overlap,work2,datacomp)
 !
 ! Calculate Cguess-t*Overlap*Ccore
 !
@@ -2044,7 +2045,7 @@ end
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
-      call calcover2(overlap,work1,nproc,myrank,mpi_comm)
+      call calcover2(overlap,work1,datacomp)
 !
 ! Project orbitals from Huckel to SCF
 !
