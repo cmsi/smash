@@ -40,13 +40,13 @@
       if(guess == 'HUCKEL') then
         if(datacomp%master) &
 &         write(*,'("   Guess MOs are generated using extended Huckel orbitals.")')
-        call huckelguess(cmoa,overinv,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+        call huckelguess(cmoa,overinv,datacomp)
         if(datacomp%master) write(*,*)
         if(scftype == 'UHF') call dcopy(nao*nao,cmoa,1,cmob,1)
 !
       elseif(guess == 'DFTB') then
         if(datacomp%master) write(*,'("   Guess MOs are generated using DFTB orbitals.")')
-        call dftbguess(cmoa,overinv,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+        call dftbguess(cmoa,overinv,datacomp)
         if(datacomp%master) write(*,*)
         if(scftype == 'UHF') call dcopy(nao*nao,cmoa,1,cmob,1)
 !
@@ -84,7 +84,7 @@ end
 
 
 !------------------------------------------------------------
-  subroutine huckelguess(cmo,overinv,nproc,myrank,mpi_comm,datacomp)
+  subroutine huckelguess(cmo,overinv,datacomp)
 !------------------------------------------------------------
 !
 ! Calculate initial guess MOs by extended Huckel
@@ -98,7 +98,6 @@ end
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: i, j, nao_g2
       real(8),intent(in):: overinv(nao*nao)
       real(8),intent(out):: cmo(nao*nao)
@@ -125,7 +124,7 @@ end
 !
 ! Calculate Extended Huckel method
 !
-      call calchuckelg(hmo,eigen,nproc,myrank,mpi_comm,datacomp)
+      call calchuckelg(hmo,eigen,datacomp)
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
@@ -141,7 +140,7 @@ end
 
 
 !----------------------------------------------------------
-  subroutine calchuckelg(hmo,eigen,nproc,myrank,mpi_comm,datacomp)
+  subroutine calchuckelg(hmo,eigen,datacomp)
 !----------------------------------------------------------
 !
 ! Driver of extended Huckel calculation for guess generation
@@ -153,7 +152,6 @@ end
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: nproc, myrank, mpi_comm
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(out) :: hmo(nao_g*nao_g), eigen(nao_g)
 !
@@ -1995,7 +1993,7 @@ end
 
 
 !----------------------------------------------------------
-  subroutine dftbguess(cmo,overinv,nproc,myrank,mpi_comm,datacomp)
+  subroutine dftbguess(cmo,overinv,datacomp)
 !----------------------------------------------------------
 !
 ! Calculate initial guess MOs by extended Huckel
@@ -2009,7 +2007,6 @@ end
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: i, j, nao_g2, nao_g3
       real(8),intent(in):: overinv(nao*nao)
       real(8),intent(out):: cmo(nao*nao)
@@ -2037,7 +2034,7 @@ end
 !
 ! Calculate Extended Huckel method
 !
-      call calcdftb(hmo,overlap,work1,work2,eigen,nproc,myrank,mpi_comm,datacomp)
+      call calcdftb(hmo,overlap,work1,work2,eigen,datacomp)
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
@@ -2045,7 +2042,7 @@ end
 !
 ! Project orbitals from Huckel to SCF
 !
-      call projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,nproc,myrank,mpi_comm)
+      call projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,datacomp)
       deallocate(hmo,overlap,work1,work2,eigen)
       call memunset(2*nao_g2+2*nao*nao_g+nao_g,datacomp)
       return
@@ -2053,7 +2050,7 @@ end
 
 
 !-----------------------------------------------------------------------------
-  subroutine calcdftb(dftbmo,overlap,ortho,work,eigen,nproc,myrank,mpi_comm,datacomp)
+  subroutine calcdftb(dftbmo,overlap,ortho,work,eigen,datacomp)
 !-----------------------------------------------------------------------------
 !
 ! Driver of DFTB calculation
@@ -2069,7 +2066,6 @@ end
       implicit none
       type(typecomp),intent(inout) :: datacomp
       integer,parameter :: maxiter=1000
-      integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ii, jj, nelecdftb(2), iter
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(out) :: dftbmo(nao_g,nao_g), overlap(nao_g,nao_g)
@@ -2106,7 +2102,7 @@ end
 !
 ! Calculate orthogonalization matrix
 !
-      call mtrxcanon(ortho,work,eigen,nao_g,nmo_g,threshover,nproc,myrank,mpi_comm,datacomp)
+      call mtrxcanon(ortho,work,eigen,nao_g,nmo_g,threshover,datacomp)
 !
 ! Set parameters
 !

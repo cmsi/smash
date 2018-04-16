@@ -37,7 +37,7 @@ end
 
 
 !-----------------------------------------------------------------------------------------
-  subroutine mtrxcanon(ortho,overlap,eigen,ndim,newdim,threshover,nproc,myrank,mpi_comm,datacomp)
+  subroutine mtrxcanon(ortho,overlap,eigen,ndim,newdim,threshover,datacomp)
 !-----------------------------------------------------------------------------------------
 !
 ! Calculate canonicalization matrix
@@ -48,7 +48,7 @@ end
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: ndim, nproc, myrank, mpi_comm
+      integer,intent(in) :: ndim
       integer,intent(out) :: newdim
       integer :: i, j, icount
       real(8),parameter :: one=1.0D+00
