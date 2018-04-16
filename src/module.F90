@@ -176,19 +176,6 @@ end
 end
 
 
-!------------------
-  module modprint
-!------------------
-!
-! iprint : print option
-!    = 0 : minimal output
-!    = 1 : standard output
-!    = 2 : verbose output
-!
-      integer :: iprint
-end
-
-
 !-------------------
   module modenergy
 !-------------------
