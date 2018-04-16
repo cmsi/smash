@@ -2351,7 +2351,7 @@ end
 !-------------------------------------------------------------------------------------------------
   subroutine gradrexcor(egrad,edftgrad,cmo,fulldmtrx,atomvec,surface,radpt,angpt,rad,ptweight, &
 &                       xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,transcmo,idftex,idftcor, &
-&                       nproc,myrank)
+&                       nproc,myrank,datacomp)
 !-------------------------------------------------------------------------------------------------
 !
 ! Driver of derivatives for closed-shell exchange-correlation terms
@@ -2360,7 +2360,9 @@ end
       use modmolecule, only : natom, neleca
       use moddft, only : nrad, nleb
       use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: idftex, idftcor, nproc, myrank
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
@@ -2433,7 +2435,7 @@ end
 ! Calculate weight derivative
 !
             sphweight=radweight*angpt(4,ileb)
-            call calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom)
+            call calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom,datacomp)
 !
             ptenergy= zero
             call calcexcor(excora,excora,ptenergy,rhoa,rhoa,grhoa,grhoa,one,idftex,idftcor,1)
@@ -2466,7 +2468,7 @@ end
 !------------------------------------------------------------------------------------------------
   subroutine graduexcor(egrad,edftgrad,cmoa,cmob,fulldmtrx1,fulldmtrx2,atomvec,surface,radpt, &
 &                       angpt,rad,ptweight,xyzpt,rsqrd,rr,uvec,vao,vmoa,vmob,dweight, &
-&                       dpa,pa,transcmoa,transcmob,idftex,idftcor,nproc,myrank)
+&                       dpa,pa,transcmoa,transcmob,idftex,idftcor,nproc,myrank,datacomp)
 !------------------------------------------------------------------------------------------------
 !
 ! Driver of derivatives for open-shell exchange-correlation terms
@@ -2475,7 +2477,9 @@ end
       use modmolecule, only : natom, neleca, nelecb
       use moddft, only : nrad, nleb
       use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: idftex, idftcor, nproc, myrank
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
@@ -2558,7 +2562,7 @@ end
 ! Calculate weight derivative
 !
             sphweight=radweight*angpt(4,ileb)
-            call calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom)
+            call calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom,datacomp)
 !
             ptenergy= zero
             call calcexcor(excora,excorb,ptenergy,rhoa,rhob,grhoa,grhob,one,idftex,idftcor,2)
@@ -2589,7 +2593,7 @@ end
 
 
 !-------------------------------------------------------------------------------------
-  subroutine calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,katom)
+  subroutine calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,katom,datacomp)
 !-------------------------------------------------------------------------------------
 !
 ! Calculate weight derivatives of grid points
@@ -2602,9 +2606,10 @@ end
 !       dpa      (work space (gradP))
 !       pa       (work space (P))
 !
-      use modparallel, only : master
       use modmolecule, only : natom
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: katom
       integer :: iatom, jatom, ii
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, oneh=1.5D+00, two=2.0D+00
@@ -2657,7 +2662,7 @@ end
             dpa(3,jatom,iatom)= -dcutij*dmuji(3)
           else
             if(abs(g4) > threshg4) then
-              if(master) write(*,'(" Error! The value G4 in calcdergridweight is large.")')
+              if(datacomp%master) write(*,'(" Error! The value G4 in calcdergridweight is large.")')
               call iabort
             endif
           endif
@@ -2668,7 +2673,7 @@ end
             dpa(3,iatom,iatom)= dpa(3,iatom,iatom)+dcutji*dmuji(3)
           else
             if(abs(g4) > threshg4) then
-              if(master) write(*,'(" Error! The value G4 in calcdergridweight is large.")')
+              if(datacomp%master) write(*,'(" Error! The value G4 in calcdergridweight is large.")')
               call iabort
             endif
           endif

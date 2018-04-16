@@ -102,7 +102,7 @@ end program main
 !
 !  Initialize MPI execution environment
 !
-      use modparallel, only : master, nproc1, nproc2, myrank1, myrank2, &
+      use modparallel, only : nproc1, nproc2, myrank1, myrank2, &
 &                             mpi_comm1, mpi_comm2
       use modtype, only : typecomp
       implicit none
@@ -126,7 +126,6 @@ end program main
         datacomp%master =(datacomp%myrank1 == 0)
       endif
 !ishimura
-      master= datacomp%master
       nproc1= datacomp%nproc1
       myrank1= datacomp%myrank1
       mpi_comm1= datacomp%mpi_comm1
@@ -155,7 +154,7 @@ end
 !
 ! Read input data and open checkpoint file if necessary
 !
-      if(datacomp%master) call opendatfile
+      if(datacomp%master) call opendatfile(datacomp)
       call readinput(datacomp)
 !
 ! Set basis functions
@@ -466,7 +465,7 @@ end
       if(method == 'HARTREE-FOCK') then
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
-        call writeeigenvalue(energymo,energymo,1)
+        call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
         if(guess == 'HUCKEL') then
@@ -482,12 +481,12 @@ end
         endif
         call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
-        call writeeigenvalue(energymo,energymo,1)
+        call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
       elseif(method == 'MP2') then
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
-        call writeeigenvalue(energymo,energymo,1)
+        call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
         call calcrmp2(cmo,energymo,xint,nproc1,myrank1,mpi_comm1,datacomp)
         call tstamp(1,datacomp)
@@ -504,12 +503,12 @@ end
         write(*,'("  -------------------")')
         write(*,'("    MO coefficients")')
         write(*,'("  -------------------")')
-        call writeeigenvector(cmo,energymo)
+        call writeeigenvector(cmo,energymo,datacomp)
       endif
 !
 ! Calculate Mulliken charge
 !
-      call calcrmulliken(dmtrx,smtrx)
+      call calcrmulliken(dmtrx,smtrx,datacomp,datacomp)
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
@@ -517,7 +516,7 @@ end
         call memset(nao3*29,datacomp)
         allocate(work(nao3*29))
         call calcroctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrx, &
-&                          nproc1,myrank1,mpi_comm1)
+&                          nproc1,myrank1,mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*29,datacomp)
       else
@@ -526,7 +525,7 @@ end
 !
         call memset(nao3*6,datacomp)
         allocate(work(nao3*6))
-        call calcrdipole(work,work(nao3*3+1),dmtrx,nproc1,myrank1,mpi_comm1)
+        call calcrdipole(work,work(nao3*3+1),dmtrx,nproc1,myrank1,mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*6,datacomp)
       endif
@@ -622,7 +621,7 @@ end
       if(method == 'HARTREE-FOCK') then
         call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
-        call writeeigenvalue(energymoa,energymob,2)
+        call writeeigenvalue(energymoa,energymob,2,datacomp)
         call tstamp(1,datacomp)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
         if(guess == 'HUCKEL') then
@@ -638,7 +637,7 @@ end
         endif
         call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
-        call writeeigenvalue(energymoa,energymob,2)
+        call writeeigenvalue(energymoa,energymob,2,datacomp)
         call tstamp(1,datacomp)
 !     elseif(method == 'MP2') then
 !       call calcuhf(h1mtrx,cmoa,ortho,smtrx,xint,energymoa)
@@ -658,16 +657,16 @@ end
         write(*,'("  -------------------------")')
         write(*,'("    Alpha MO coefficients")')
         write(*,'("  -------------------------")')
-        call writeeigenvector(cmoa,energymoa)
+        call writeeigenvector(cmoa,energymoa,datacomp)
         write(*,'("  ------------------------")')
         write(*,'("    Beta MO coefficients")')
         write(*,'("  ------------------------")')
-        call writeeigenvector(cmob,energymob)
+        call writeeigenvector(cmob,energymob,datacomp)
       endif
 !
 ! Calculate Mulliken charge
 !
-      call calcumulliken(dmtrxa,dmtrxb,smtrx)
+      call calcumulliken(dmtrxa,dmtrxb,smtrx,datacomp)
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
@@ -675,7 +674,7 @@ end
         call memset(nao3*29,datacomp)
         allocate(work(nao3*29))
         call calcuoctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrxa,dmtrxb, &
-&                          nproc1,myrank1,mpi_comm1)
+&                          nproc1,myrank1,mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*29,datacomp)
       else
@@ -684,7 +683,7 @@ end
 !
         call memset(nao3*6,datacomp)
         allocate(work(nao3*6))
-        call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1)
+        call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*6,datacomp)
       endif
@@ -781,7 +780,7 @@ end
       if((method == 'HARTREE-FOCK').or.(method == 'MP2')) then
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
-        call writeeigenvalue(energymo,energymo,1)
+        call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
         if(guess == 'HUCKEL') then
@@ -797,7 +796,7 @@ end
         endif
         call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
-        call writeeigenvalue(energymo,energymo,1)
+        call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
       else
         if(datacomp%master) then
@@ -846,12 +845,12 @@ end
         write(*,'("  -------------------")')
         write(*,'("    MO coefficients")')
         write(*,'("  -------------------")')
-        call writeeigenvector(cmo,energymo)
+        call writeeigenvector(cmo,energymo,datacomp)
       endif
 !
 ! Calculate Mulliken charge
 !
-      call calcrmulliken(dmtrx,smtrx)
+      call calcrmulliken(dmtrx,smtrx,datacomp)
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
@@ -859,7 +858,7 @@ end
         call memset(nao3*29,datacomp)
         allocate(work(nao3*29))
         call calcroctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrx, &
-&                          nproc1,myrank1,mpi_comm1)
+&                          nproc1,myrank1,mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*29,datacomp)
       else
@@ -868,7 +867,7 @@ end
 !
         call memset(nao3*6,datacomp)
         allocate(work(nao3*6))
-        call calcrdipole(work,work(nao3*3+1),dmtrx,nproc1,myrank1,mpi_comm1)
+        call calcrdipole(work,work(nao3*3+1),dmtrx,nproc1,myrank1,mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*6,datacomp)
       endif
@@ -966,7 +965,7 @@ end
       if(method == 'HARTREE-FOCK') then
         call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
-        call writeeigenvalue(energymoa,energymob,2)
+        call writeeigenvalue(energymoa,energymob,2,datacomp)
         call tstamp(1,datacomp)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
         if(guess == 'HUCKEL') then
@@ -982,7 +981,7 @@ end
         endif
         call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
-        call writeeigenvalue(energymoa,energymob,2)
+        call writeeigenvalue(energymoa,energymob,2,datacomp)
         call tstamp(1,datacomp)
 !     elseif(method == 'MP2') then
 !       call calcuhf(h1mtrx,cmoa,ortho,smtrx,xint,energymoa)
@@ -1032,16 +1031,16 @@ end
         write(*,'("  -------------------------")')
         write(*,'("    Alpha MO coefficients")')
         write(*,'("  -------------------------")')
-        call writeeigenvector(cmoa,energymoa)
+        call writeeigenvector(cmoa,energymoa,datacomp)
         write(*,'("  ------------------------")')
         write(*,'("    Beta MO coefficients")')
         write(*,'("  ------------------------")')
-        call writeeigenvector(cmob,energymob)
+        call writeeigenvector(cmob,energymob,datacomp)
       endif
 !
 ! Calculate Mulliken charge
 !
-      call calcumulliken(dmtrxa,dmtrxb,smtrx)
+      call calcumulliken(dmtrxa,dmtrxb,smtrx,datacomp)
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
@@ -1049,7 +1048,7 @@ end
         call memset(nao3*29,datacomp)
         allocate(work(nao3*29))
         call calcuoctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrxa,dmtrxb, &
-&                          nproc1,myrank1,mpi_comm1)
+&                          nproc1,myrank1,mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*29,datacomp)
       else
@@ -1058,7 +1057,7 @@ end
 !
         call memset(nao3*6,datacomp)
         allocate(work(nao3*6))
-        call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1)
+        call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*6,datacomp)
       endif
@@ -1130,7 +1129,7 @@ end
         call memset(isizered,datacomp)
         allocate(iredun(isizered))
         do ii= 1,10
-          call setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed)
+          call setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed,datacomp)
           if(.not.exceed) exit
           call memunset(isizered,datacomp)
           deallocate(iredun)
@@ -1209,7 +1208,7 @@ end
         if((method == 'HARTREE-FOCK').or.(method == 'MP2')) then
           call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
-          if(iopt == 1) call writeeigenvalue(energymo,energymo,1)
+          if(iopt == 1) call writeeigenvalue(energymo,energymo,1,datacomp)
           call tstamp(1,datacomp)
         elseif((idftex >= 1).or.(idftcor >= 1)) then
           if((iopt == 1).and.(guess == 'HUCKEL')) then
@@ -1225,7 +1224,7 @@ end
           endif
           call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                       nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
-          if(iopt == 1) call writeeigenvalue(energymo,energymo,1)
+          if(iopt == 1) call writeeigenvalue(energymo,energymo,1,datacomp)
           call tstamp(1,datacomp)
         else
           if(datacomp%master) then
@@ -1316,7 +1315,7 @@ end
 !
 ! End of optimization cycle 
 !
-      call writeeigenvalue(energymo,energymo,1)
+      call writeeigenvalue(energymo,energymo,1,datacomp)
 !
 ! Print MOs
 !
@@ -1324,12 +1323,12 @@ end
         write(*,'("  -------------------")')
         write(*,'("    MO coefficients")')
         write(*,'("  -------------------")')
-        call writeeigenvector(cmo,energymo)
+        call writeeigenvector(cmo,energymo,datacomp)
       endif
 !
 ! Calculate Mulliken charge
 !
-      call calcrmulliken(dmtrx,smtrx)
+      call calcrmulliken(dmtrx,smtrx,datacomp)
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
@@ -1337,7 +1336,7 @@ end
         call memset(nao3*29,datacomp)
         allocate(work(nao3,29))
         call calcroctupole(work,work(1,4),work(1,10),work(1,20),dmtrx, &
-&                          nproc1,myrank1,mpi_comm1)
+&                          nproc1,myrank1,mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*29,datacomp)
       else
@@ -1346,7 +1345,7 @@ end
 !
         call memset(nao3*6,datacomp)
         allocate(work(nao3,6))
-        call calcrdipole(work,work(1,4),dmtrx,nproc1,myrank1,mpi_comm1)
+        call calcrdipole(work,work(1,4),dmtrx,nproc1,myrank1,mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*6,datacomp)
       endif
@@ -1446,7 +1445,7 @@ end
         call memset(isizered,datacomp)
         allocate(iredun(isizered))
         do ii= 1,10
-          call setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed)
+          call setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed,datacomp)
           if(.not.exceed) exit
           call memunset(isizered,datacomp)
           deallocate(iredun)
@@ -1525,7 +1524,7 @@ end
         if(method == 'HARTREE-FOCK') then
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                      nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
-          if(iopt == 1) call writeeigenvalue(energymoa,energymob,2)
+          if(iopt == 1) call writeeigenvalue(energymoa,energymob,2,datacomp)
           call tstamp(1,datacomp)
         elseif((idftex >= 1).or.(idftcor >= 1)) then
           if((iopt == 1).and.(guess == 'HUCKEL')) then
@@ -1541,7 +1540,7 @@ end
           endif
           call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                       nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
-          if(iopt == 1) call writeeigenvalue(energymoa,energymob,2)
+          if(iopt == 1) call writeeigenvalue(energymoa,energymob,2,datacomp)
           call tstamp(1,datacomp)
 !       elseif(method == 'MP2') then
 !         call calcuhf(h1mtrx,cmoa,ortho,smtrx,xint,energymoa)
@@ -1634,7 +1633,7 @@ end
 !
 ! End of optimization cycle 
 !
-      call writeeigenvalue(energymoa,energymob,2)
+      call writeeigenvalue(energymoa,energymob,2,datacomp)
 !
 ! Print MOs
 !
@@ -1642,16 +1641,16 @@ end
         write(*,'("  -------------------------")')
         write(*,'("    Alpha MO coefficients")')
         write(*,'("  -------------------------")')
-        call writeeigenvector(cmoa,energymoa)
+        call writeeigenvector(cmoa,energymoa,datacomp)
         write(*,'("  ------------------------")')
         write(*,'("    Beta MO coefficients")')
         write(*,'("  ------------------------")')
-        call writeeigenvector(cmob,energymob)
+        call writeeigenvector(cmob,energymob,datacomp)
       endif
 !
 ! Calculate Mulliken charge
 !
-      call calcumulliken(dmtrxa,dmtrxb,smtrx)
+      call calcumulliken(dmtrxa,dmtrxb,smtrx,datacomp)
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
@@ -1659,7 +1658,7 @@ end
         call memset(nao3*29,datacomp)
         allocate(work(nao3,29))
         call calcuoctupole(work,work(1,4),work(1,10),work(1,20),dmtrxa,dmtrxb, &
-&                          nproc1,myrank1,mpi_comm1)
+&                          nproc1,myrank1,mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*29,datacomp)
       else
@@ -1668,7 +1667,7 @@ end
 !
         call memset(nao3*6,datacomp)
         allocate(work(nao3,6))
-        call calcudipole(work,work(1,4),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1)
+        call calcudipole(work,work(1,4),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*6,datacomp)
       endif

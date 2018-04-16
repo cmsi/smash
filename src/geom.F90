@@ -18,7 +18,6 @@
 !
 ! Calculate nuclear replusion energy
 !
-      use modparallel, only : master
       use modmolecule, only : natom, coord, znuc
       use modthresh, only : threshatom
       use modenergy, only : enuc
@@ -40,12 +39,12 @@
           chrgij= znuc(iatom)*znuc(jatom)
           if(rr /= zero) then
             enuc= enuc+chrgij/rr
-            if((rr <= threshatom).and.master) then
+            if((rr <= threshatom).and.datacomp%master) then
               write(*,'("Warning! Distance of Atoms",i4," and",i4," is short!")') iatom, jatom
               datacomp%nwarn= datacomp%nwarn+1
             endif       
           else
-            if((chrgij /= zero).and.master) then
+            if((chrgij /= zero).and.datacomp%master) then
               write(*,'("Error! Atoms",i4," and",i4," are the same position!")') iatom, jatom
               call iabort
             endif
@@ -88,16 +87,17 @@ end
 
 
 !-----------------------------------------------------------------------------------
-  subroutine setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed)
+  subroutine setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed,datacomp)
 !-----------------------------------------------------------------------------------
 !
 ! Set redundant internal coordinate
 ! Covalent radii (H - Cn): P. Pyykko, M. Atsumi, Chem. Eur. J., 186 (2009) 15.
 !
-      use modparallel, only : master
       use modmolecule, only : coord, natom, numatomic
       use modparam, only : tobohr
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,parameter :: maxconnect=13
       integer,intent(in) :: isizered
       integer,intent(out) :: iredun(4,isizered/4), numbond, numangle, numtorsion
@@ -131,11 +131,11 @@ end
       numbond= 0
       do iatom= 1,natom
         if(numatomic(iatom) > 112) then
-          if(master) &
+          if(datacomp%master) &
 &         write(*,'(" Error! This program supports up to Cn in Subroutine setredundantcoord.")')
           call iabort
         elseif(numatomic(iatom) < 1) then
-          if(master) &
+          if(datacomp%master) &
 &         write(*,'(" Error! This program does not support dummy and ghost atoms ", &
 &                   "in Subroutine setredundantcoord currently.")')
           call iabort
@@ -149,7 +149,7 @@ end
           if(rrij <= thresh) then
             icount= icount+1
             if(icount > maxconnect) then
-              if(master) write(*,'(" Error! There are too many atoms near Atom",i4,".")')iatom
+              if(datacomp%master) write(*,'(" Error! There are too many atoms near Atom",i4,".")')iatom
               call iabort
             endif
             ijpair(iatom,icount)= jatom
@@ -182,7 +182,7 @@ end
           exit mblock
         enddo mblock
 !
-     if(master.and.(numb /= 1)) then
+     if(datacomp%master.and.(numb /= 1)) then
        write(*,'(" There are",i3," moleclar blocks in redundant coordinate.")') numb
      endif
 !
@@ -210,7 +210,7 @@ end
               exit
             endif
             if(icount == maxconnect) then
-              if(master) write(*,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(1)
+              if(datacomp%master) write(*,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(1)
               call iabort
             endif
           enddo
@@ -220,7 +220,7 @@ end
               exit
             endif
             if(icount == maxconnect) then
-              if(master) write(*,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(2)
+              if(datacomp%master) write(*,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(2)
               call iabort
             endif
           enddo
@@ -415,7 +415,6 @@ end
 !
 ! Calculate new Cartesian coordinate with gradient and hessian
 !
-      use modparallel, only : master
       use modjob, only : iprint
       use modparam, only : toang
       use modmolecule, only : numatomic
@@ -487,7 +486,7 @@ end
 !
 ! Print delta xyz
 !
-      if(master.and.(iprint >= 2)) then
+      if(datacomp%master.and.(iprint >= 2)) then
         write(*,'(" ----------------------------------------------------")')
         write(*,'("          Delta xyz (Angstrom)")')
         write(*,'("  Atom            X             Y             Z")')
@@ -520,7 +519,6 @@ end
 ! Covalent raddi (H - Kr): H. B. Schlegel, Theoret. Chim. Acta, 333 (1984) 66.
 ! Covalent radii (Rb- Cn): P. Pyykko, M. Atsumi, Chem. Eur. J., 186 (2009) 15.
 !
-      use modparallel, only : master
       use modjob, only : iprint
       use modparam, only : toang, tobohr
       use modmolecule, only : numatomic, natom
@@ -706,14 +704,14 @@ end
         do ii= 1,numdim
           suml= suml+workv(ii,1)*workv(ii,1)/(rlambda-workv(ii,3))
         enddo
-        if(master.and.(iprint >= 3)) then
+        if(datacomp%master.and.(iprint >= 3)) then
           write(*,'(" Lambda iteration of RFO",i3,3x,"Lambda=",1p,d15.8,4x,"Sum=",1p,d15.8)') &
 &               iterrfo,rlambda,suml
         endif
         if(abs(rlambda-suml) <= convl) exit
         rlambda= suml
         if(iterrfo == maxiterrfo) then
-          if(master) write(*,'(" Error! RFO step in calcnewcoordred dit not converge.")')
+          if(datacomp%master) write(*,'(" Error! RFO step in calcnewcoordred dit not converge.")')
           call iabort
         endif
       enddo
@@ -746,7 +744,7 @@ end
 !
         rmsdx= sqrt(ddot(natom3,workv,1,workv,1)/natom3)
         rmsqx= sqrt(ddot(numredun,workv(1,2),1,workv(1,2),1)/numredun)
-        if(master.and.(iprint >= 3)) then
+        if(datacomp%master.and.(iprint >= 3)) then
           write(*,'(" Displacement Iteration",i3,2x,"RMS(Cart)=",1p,d10.3,4x, &
 &                   "RMS(Red)=",1p,d10.3)') iterdx, rmsdx, rmsqx
         endif
@@ -806,13 +804,13 @@ end
         call dgemv('N',natom3,numredun,one,work3,maxredun,workv(1,2),1,zero,workv,1)
 !
         if(iterdx == maxiterdx) then
-          if(master) then
+          if(datacomp%master) then
             write(*,'(" Error! Transformation from redundant to Cartesian did not converge.")')
           endif
           call iabort
         endif
       enddo
-      if(master) then
+      if(datacomp%master) then
         if(iprint >= 3) write(*,*)
         write(*,'(" ---------------------------------------------------------------")')
         write(*,'("   Redundant coordinate parameters (Angstrom and Degree)")')
@@ -846,7 +844,7 @@ end
 !
 ! Print delta xyz
 !
-      if(master.and.(iprint >= 2)) then
+      if(datacomp%master.and.(iprint >= 2)) then
         write(*,'(" ----------------------------------------------------")')
         write(*,'("          Delta xyz (Angstrom)")')
         write(*,'("  Atom            X             Y             Z")')

@@ -13,16 +13,17 @@
 ! limitations under the License.
 !
 !--------------------------------------------------------------------
-  subroutine gradoneei(egrad,egrad1,fulldmtrx,ewdmtrx,nproc,myrank)
+  subroutine gradoneei(egrad,egrad1,fulldmtrx,ewdmtrx,nproc,myrank,datacomp)
 !--------------------------------------------------------------------
 !
 ! Driver of derivatives for one-electron and overlap integrals
 !
-      use modparallel, only : master
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom
       use modecp, only : flagecp
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank
       integer :: ish, jsh, len1, i, maxfunc(0:6), maxbasis
       real(8),parameter :: zero=0.0D+00, two=2.0D+00
@@ -33,7 +34,8 @@
 !
       maxbasis= maxval(mtype(1:nshell))
       if(maxbasis > 6) then
-        if(master) write(*,'(" Error! This program supports up to h function in gradoneei")')
+        if(datacomp%master) &
+&         write(*,'(" Error! This program supports up to h function in gradoneei")')
         call iabort
       endif
       len1= maxfunc(maxbasis+1)

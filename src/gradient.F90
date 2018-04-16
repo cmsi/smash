@@ -18,7 +18,6 @@
 !
 ! Driver of RHF energy gradient calculation
 !
-      use modparallel, only : master
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom, neleca, numatomic
       use modtype, only : typecomp
@@ -42,7 +41,7 @@
 &       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
       data maxfunc/1,3,6,10,15,21,28,36/
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" --------------------------------------------")')
         write(*,'("   Hartree-Fock energy gradient calculation")')
         write(*,'(" --------------------------------------------")')
@@ -67,7 +66,7 @@
 !
 ! Calculate derivatives of one-electron integrals
 !
-      call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx,nproc1,myrank1)
+      call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx,nproc1,myrank1,datacomp)
 !
 ! Calculate derivatives for two-electron integrals
 !
@@ -79,7 +78,7 @@
 !
       call para_allreducer(egradtmp(1),egrad(1,1),3*natom,mpi_comm1)
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" ----------------------------------------------------")')
         write(*,'("          Gradient (Hartree/Bohr)")')
         write(*,'("  Atom            X             Y             Z")')
@@ -105,7 +104,6 @@ end
 !
 ! Driver of UHF energy gradient calculation
 !
-      use modparallel, only : master
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom, neleca, nelecb, numatomic
       use modtype, only : typecomp
@@ -130,7 +128,7 @@ end
 &       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
       data maxfunc/1,3,6,10,15,21,28,36/
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" ---------------------------------------------------------")')
         write(*,'("   Unrestricted Hartree-Fock energy gradient calculation")')
         write(*,'(" ---------------------------------------------------------")')
@@ -156,7 +154,7 @@ end
 !
 ! Calculate derivatives for one-electron integrals
 !
-      call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx,nproc1,myrank1)
+      call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx,nproc1,myrank1,datacomp)
 !
 ! Calculate derivatives for two-electron integrals
 !
@@ -168,7 +166,7 @@ end
 !
       call para_allreducer(egradtmp(1),egrad(1,1),3*natom,mpi_comm1)
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" ----------------------------------------------------")')
         write(*,'("          Gradient (Hartree/Bohr)")')
         write(*,'("  Atom            X             Y             Z")')
@@ -194,7 +192,6 @@ end
 !
 ! Driver of closed-shell DFT energy gradient calculation
 !
-      use modparallel, only : master
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom, neleca, numatomic
       use moddft, only : nrad, nleb
@@ -225,7 +222,7 @@ end
 &       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
       data maxfunc/1,3,6,10,15,21,28,36/
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" -----------------------------------")')
         write(*,'("   DFT energy gradient calculation")')
         write(*,'(" -----------------------------------")')
@@ -255,7 +252,7 @@ end
 !
 ! Calculate derivatives of one-electron integrals
 !
-      call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx,nproc1,myrank1)
+      call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx,nproc1,myrank1,datacomp)
 !
 ! Calculate DFT information
 !
@@ -279,11 +276,11 @@ end
 !
       call gradrexcor(egradtmp,egrad,cmo,fulldmtrx,atomvec,surface,radpt,angpt,rad,ptweight, &
 &                     xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,work,idftex,idftcor, &
-&                     nproc1,myrank1)
+&                     nproc1,myrank1,datacomp)
 !
       call para_allreducer(egradtmp(1,1),egrad(1,1),3*natom,mpi_comm1)
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" ----------------------------------------------------")')
         write(*,'("          Gradient (Hartree/Bohr)")')
         write(*,'("  Atom            X             Y             Z")')
@@ -314,7 +311,6 @@ end
 !
 ! Driver of open-shell DFT energy gradient calculation
 !
-      use modparallel, only : master
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom, neleca, nelecb, numatomic
       use moddft, only : nrad, nleb
@@ -346,7 +342,7 @@ end
 &       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
       data maxfunc/1,3,6,10,15,21,28,36/
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" ------------------------------------------------")')
         write(*,'("   Unrestricted DFT energy gradient calculation")')
         write(*,'(" ------------------------------------------------")')
@@ -378,7 +374,7 @@ end
 !
 ! Calculate derivatives of one-electron integrals
 !
-      call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx,nproc1,myrank1)
+      call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx,nproc1,myrank1,datacomp)
 !
 ! Calculate DFT information
 !
@@ -402,11 +398,11 @@ end
 !
       call graduexcor(egradtmp,egrad,cmoa,cmob,fulldmtrx1,fulldmtrx2,atomvec,surface,radpt, &
 &                     angpt,rad,ptweight,xyzpt,rsqrd,rr,uvec,vao,vmoa,vmob,dweight, &
-&                     dpa,pa,work,work(neleca*nao+1),idftex,idftcor,nproc1,myrank1)
+&                     dpa,pa,work,work(neleca*nao+1),idftex,idftcor,nproc1,myrank1,datacomp)
 !
       call para_allreducer(egradtmp(1,1),egrad(1,1),3*natom,mpi_comm1)
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" ----------------------------------------------------")')
         write(*,'("          Gradient (Hartree/Bohr)")')
         write(*,'("  Atom            X             Y             Z")')

@@ -264,7 +264,7 @@ end
 
 !-------------------------------------------------------------------------------
   subroutine fockextrap(fock,fockwork,work1,work2,work3,itextra,nao,maxdiis, &
-&                       idis,nproc,myrank,mpi_comm)
+&                       idis,nproc,myrank,mpi_comm,datacomp)
 !-------------------------------------------------------------------------------
 !
 ! Extrapolate Fock matrix
@@ -273,8 +273,9 @@ end
 ! InOut : fock    (Fock matrix)
 !         fockwork(Previous Fock and work matrix)
 !
-      use modparallel, only : master
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nao, maxdiis, nproc, myrank, mpi_comm, idis(nproc,14) 
       integer,intent(inout) :: itextra
       integer :: num, istart, i, iskip, nao3
@@ -288,7 +289,7 @@ end
       real(8) :: xyz(3), xy1, xy2, xy3, xy4
 !
       if(maxdiis < 6) then
-        if(master) then
+        if(datacomp%master) then
           write(*,'(" Set Maxdiis for more than 6.")')
           call iabort
         endif
@@ -1056,15 +1057,16 @@ end
 
 
 !------------------------------------------
-  subroutine calcrmulliken(dmtrx,overlap)
+  subroutine calcrmulliken(dmtrx,overlap,datacomp)
 !------------------------------------------
 !
 ! Execute Mulliken population analysis for closed-shell
 !
-      use modparallel, only : master
       use modmolecule, only : natom, znuc, numatomic
       use modbasis, only : locatom, nao, nshell, locbf, mbf
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer :: ii, jj, ij, ish, iatom, locbfi
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: dmtrx(nao*(nao+1)/2), overlap(nao*(nao+1)/2)
@@ -1112,7 +1114,7 @@ end
         totalgross= totalgross+znuc(iatom)-grossatom(iatom)
       enddo
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" -------------------------------------")')
         write(*,'("      Mulliken Population Analysis")')
         write(*,'("     Atom     Population     Charge")')
@@ -1132,15 +1134,16 @@ end
 
 
 !--------------------------------------------------
-  subroutine calcumulliken(dmtrxa,dmtrxb,overlap)
+  subroutine calcumulliken(dmtrxa,dmtrxb,overlap,datacomp)
 !--------------------------------------------------
 !
 ! Execute Mulliken population analysis for open-shell
 !
-      use modparallel, only : master
       use modmolecule, only : natom, znuc, numatomic
       use modbasis, only : locatom, nao, nshell, locbf, mbf
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer :: ii, jj, ij, ish, iatom, locbfi
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2), overlap(nao*(nao+1)/2)
@@ -1188,7 +1191,7 @@ end
         totalgross= totalgross+znuc(iatom)-grossatom(iatom)
       enddo
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" -------------------------------------")')
         write(*,'("      Mulliken Population Analysis")')
         write(*,'("     Atom     Population     Charge")')
@@ -1208,16 +1211,17 @@ end
 
 
 !------------------------------------------------------------------
-  subroutine calcrdipole(dipmat,work,dmtrx,nproc,myrank,mpi_comm)
+  subroutine calcrdipole(dipmat,work,dmtrx,nproc,myrank,mpi_comm,datacomp)
 !------------------------------------------------------------------
 !
 ! Driver of dipole moment calculation for closed-shell
 !
-      use modparallel, only : master
       use modbasis, only : nao
       use modparam, only : todebye
       use modmolecule, only : natom, coord, znuc
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: iatom
       real(8),parameter :: zero=0.0D+00
@@ -1255,7 +1259,7 @@ end
       zdip=(zdipplus+zdipminus)*todebye
       totaldip= sqrt(xdip*xdip+ydip*ydip+zdip*zdip)
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'("  ----------------------------------------------")')
         write(*,'("                Dipole Momemt (Debye)")')
         write(*,'("         X          Y          Z       Total")')
@@ -1270,16 +1274,17 @@ end
 
 !-----------------------------------------------------------------
   subroutine calcroctupole(dipmat,quadpmat,octpmat,work,dmtrx, &
-&                          nproc,myrank,mpi_comm)
+&                          nproc,myrank,mpi_comm,datacomp)
 !-----------------------------------------------------------------
 !
 ! Driver of dipole, quadrupole, and octupole moment calculation for closed-shell
 !
-      use modparallel, only : master
       use modbasis, only : nao
       use modparam, only : todebye, toang
       use modmolecule, only : natom, coord, znuc
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: iatom, ii
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, two=2.0D+00, three=3.0D+00
@@ -1411,7 +1416,7 @@ end
       octp( 9)=-xxyoctp      -yyyoctp      +yzzoctp*four
       octp(10)=-xxzoctp*three-yyzoctp*three+zzzoctp*two
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'("  ----------------------------------------------")')
         write(*,'("                Dipole Momemt (Debye)")')
         write(*,'("         X          Y          Z       Total")')
@@ -1441,16 +1446,17 @@ end
 
 
 !--------------------------------------------------------------------------
-  subroutine calcudipole(dipmat,work,dmtrxa,dmtrxb,nproc,myrank,mpi_comm)
+  subroutine calcudipole(dipmat,work,dmtrxa,dmtrxb,nproc,myrank,mpi_comm,datacomp)
 !--------------------------------------------------------------------------
 !
 ! Driver of dipole moment calculation for open-shell
 !
-      use modparallel, only : master
       use modbasis, only : nao
       use modparam, only : todebye
       use modmolecule, only : natom, coord, znuc
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: iatom
       real(8),parameter :: zero=0.0D+00
@@ -1488,7 +1494,7 @@ end
       zdip=(zdipplus+zdipminus)*todebye
       totaldip= sqrt(xdip*xdip+ydip*ydip+zdip*zdip)
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'("  ----------------------------------------------")')
         write(*,'("                Dipole Momemt (Debye)")')
         write(*,'("         X          Y          Z       Total")')
@@ -1503,16 +1509,17 @@ end
 
 !-------------------------------------------------------------------------
   subroutine calcuoctupole(dipmat,quadpmat,octpmat,work,dmtrxa,dmtrxb, &
-&                          nproc,myrank,mpi_comm)
+&                          nproc,myrank,mpi_comm,datacomp)
 !-------------------------------------------------------------------------
 !
 ! Driver of dipole, quadrupole, and octupole moment calculation for open-shell
 !
-      use modparallel, only : master
       use modbasis, only : nao
       use modparam, only : todebye, toang
       use modmolecule, only : natom, coord, znuc
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: iatom, ii
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, two=2.0D+00, three=3.0D+00
@@ -1648,7 +1655,7 @@ end
       octp( 9)=-xxyoctp      -yyyoctp      +yzzoctp*four
       octp(10)=-xxzoctp*three-yyzoctp*three+zzzoctp*two
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'("  ----------------------------------------------")')
         write(*,'("                Dipole Momemt (Debye)")')
         write(*,'("         X          Y          Z       Total")')

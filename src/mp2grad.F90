@@ -23,7 +23,6 @@
 !       xint    (Exchange integral matrix)
 ! Out : egrad   (MP2 energy gradients)
 !
-      use modparallel, only : master
       use modbasis, only : nao, nshell, mbf, mtype
       use modmolecule, only : nmo, natom, neleca, numatomic
       use modenergy, only : escf, emp2, escsmp2
@@ -65,7 +64,7 @@
       noac= nocc-ncore
       nvac= nvir-nvfz
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" ----------------------------------------------")')
         write(*,'("   MP2 energy gradient calculation ")')
         write(*,'(" ----------------------------------------------")')
@@ -167,7 +166,7 @@
       memmin16= max(mem1+mem2+mem2i+memmin345,mem1+mem6)
 !
       call memrest(msize,datacomp)
-      if((msize < memmin16).and.master) then
+      if((msize < memmin16).and.datacomp%master) then
         write(*,'(" Error! Available memory size for MP2 energy gradient is small!")')
         call memset(memmin16,datacomp)
         call iabort
@@ -183,13 +182,13 @@
       if(numi > noac) numi= noac
 !
       if(numi <= 0) then
-        if(master) then
+        if(datacomp%master) then
           write(*,'(" Error! Available memory size for MP2 energy gradient is small!")')
           call iabort
         endif
       else
         npass=(noac-1)/numi+1
-        if(master) then
+        if(datacomp%master) then
           if(npass == 1) then
             write(*,'(" == Single pass calculation ==")')
           else
@@ -206,7 +205,7 @@
       emp2= emp2stsum(1)+emp2stsum(2)
       escsmp2= emp2stsum(1)*p12+emp2stsum(2)/three
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" -------------------------------------------------")')
         write(*,'("   HF Energy                  =",f17.9)')escf
         write(*,'("   MP2 Correlation Energy     =",f17.9)')emp2
@@ -218,7 +217,7 @@
 !
       call para_allreducer(egradtmp,egrad,3*natom,mpi_comm)
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" ----------------------------------------------------")')
         write(*,'("          Gradient (Hartree/Bohr)")')
         write(*,'("  Atom            X             Y             Z")')
@@ -262,7 +261,6 @@ end
 !       egrad   (Partial MP2 energy gradients)
 ! Work: egradtmp(Work space for MP2 energy gradients)
 !
-      use modparallel, only : master
       use modbasis, only : nshell, nao
       use modmolecule, only : nmo, natom
       use modmp2, only : maxmp2diis
@@ -317,7 +315,7 @@ end
 ! Start multiple pass
 !
       do ipass= 1,npass
-        if(master) write(*,'("    Start Pass",i5)')ipass
+        if(datacomp%master) write(*,'("    Start Pass",i5)')ipass
         if(ipass == npass) numitrans= noac-(npass-1)*numi
         istart=(ipass-1)*numi
 !
@@ -393,7 +391,7 @@ end
 ! Solve CPHF equation and obtain Pai
 !
       call mp2gradcphf(pai,xlai,cmo,xint,energymo,paiprev,pls,pmax,paifock,errdiis,paidiis, &
-&                      diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm)
+&                      diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm,datacomp)
 !ishimura
 !call tstamp(1)
 !
@@ -407,7 +405,7 @@ end
 ! Calculate integral derivatives and their MP2 energy gradient
 !
       call mp2graddint(egrad,egradtmp,pmn,wij,wab,wai,xint,cmo,energymo,pls,work1,work2, &
-&                      nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm)
+&                      nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm,datacomp)
 !ishimura
 !call tstamp(1)
 !
@@ -1340,7 +1338,7 @@ end
 
 !------------------------------------------------------------------------------------------------
   subroutine mp2gradcphf(pai,xlai,cmo,xint,energymo,paiprev,pls,pmax,paifock,errdiis,paidiis, &
-&                        diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm)
+&                        diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm,datacomp)
 !------------------------------------------------------------------------------------------------
 !
 ! Solve CPHF equation for MP2 energy gradient
@@ -1358,12 +1356,12 @@ end
 !       paidiis   (Old Pai for DIIS)
 !       diismtrx  (DIIS matrix)
 !
-      use modparallel, only : master
       use modbasis, only : nao, nshell
       use modmp2, only : maxmp2diis, maxmp2iter
       use modthresh, only : threshmp2cphf
-      use modparallel, only : master
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nocc, nvir, maxdim, nproc, myrank, mpi_comm, idis(0:nproc-1,8)
       integer :: moa, moi, itdiis, iter, ii, ij, jj, ia
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
@@ -1455,12 +1453,12 @@ end
 !
         deltapai= sqrt(deltapai/(nocc*nvir))
 !ishimura
-        if(master) write(*,'(6x,"Cycle",i3,3x,"Z-Vector error=",1p,d11.3)')iter,deltapai
+        if(datacomp%master) write(*,'(6x,"Cycle",i3,3x,"Z-Vector error=",1p,d11.3)')iter,deltapai
         if(deltapai < threshmp2cphf) exit
 !
         if(itdiis == maxmp2diis) itdiis= 0
         if(iter == maxmp2iter) then
-          if(master) write(*,'(" Error! MP2 CPHF calculation did not converge.")')
+          if(datacomp%master) write(*,'(" Error! MP2 CPHF calculation did not converge.")')
           call iabort
         endif
 !
@@ -1627,7 +1625,7 @@ end
 
 !--------------------------------------------------------------------------------------------
   subroutine mp2graddint(egrad,egradtmp,pmn,wij,wab,wai,xint,cmo,energymo,wmn,pmnhf,work, &
-&                        nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm)
+&                        nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm,datacomp)
 !--------------------------------------------------------------------------------------------
 !
 ! Calculate integral derivatives and MP2 energy gradient
@@ -1644,7 +1642,9 @@ end
 !
       use modbasis, only : nao, nshell
       use modmolecule, only : natom
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nocc, nvir, maxdim, maxgraddim, nproc, myrank, mpi_comm
       integer :: ii, jj, ij, kk
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
@@ -1700,7 +1700,7 @@ end
 !
 ! Calculate derivatives of one-electron integrals
 !
-      call gradoneei(egradtmp,egradtmp2,pmn,wmn,nproc,myrank)
+      call gradoneei(egradtmp,egradtmp2,pmn,wmn,nproc,myrank,datacomp)
 !
       do ii= 1,3*natom
         egrad(ii)= egrad(ii)+egradtmp(ii)

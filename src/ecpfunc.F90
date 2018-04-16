@@ -37,7 +37,7 @@
             call ecplanl2(iatom,iprim)
           enddo
         elseif(ecp == 'GEN') then
-          call readecp
+          call readecp(datacomp)
           call setgenecp(iprim)
         else
           write(*,'(" Error! This program does not support ECP function,",a10,".")')ecp

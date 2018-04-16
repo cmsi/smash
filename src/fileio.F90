@@ -704,17 +704,18 @@ end
 
 
 !-----------------------
-  subroutine readbasis
+  subroutine readbasis(datacomp)
 !-----------------------
 !
 ! Read basis set
 !
-      use modparallel, only : master
       use modparam, only : mxprim, mxshell
       use modiofile, only : input, maxline
       use modbasis, only : exgen, coeffgen, locgenprim, mgenprim, mgentype, locgenshell, &
 &                          ngenshell, atombasis
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer :: ii, jj, iprim, ishell, ll, ielem(-9:112), nelem, kprim, numprim, natomshell
       character(len=3) :: element(-9:112)
       character(len=100) :: line
@@ -735,7 +736,7 @@ end
       iprim= 0
       ishell= 0
 !
-      if(master) then
+      if(datacomp%master) then
         rewind(input)
         do ii= 1,maxline
           read(input,'(a)',end=9999)line
@@ -1063,17 +1064,18 @@ end
 
 
 !---------------------
-  subroutine readecp
+  subroutine readecp(datacomp)
 !---------------------
 !
 ! Read basis set
 !
-      use modparallel, only : master
       use modparam, only : mxprim, mxshell
       use modiofile, only : input, maxline
       use modecp, only : exgenecp, coeffgenecp, maxgenangecp, izgencore, mgentypeecp, &
 &                        locgenecp, mgenprimecp, atomecp
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer :: ii, jj, iprim, ll, ielem(-9:112), nelem, jprim, numprim, lmax, ielec, iang
       character(len=3) :: element(-9:112)
       character(len=100) :: line
@@ -1093,7 +1095,7 @@ end
       maxgenangecp(:)= -1
       iprim= 0
 !
-      if(master) then
+      if(datacomp%master) then
         rewind(input)
         do ii= 1,maxline
           read(input,*,end=9999)line
@@ -1186,21 +1188,23 @@ end
 
 
 !--------------------------------------------------
-  subroutine writeeigenvalue(eigena,eigenb,itype)
+  subroutine writeeigenvalue(eigena,eigenb,itype,datacomp)
 !--------------------------------------------------
 !
 ! Write eigenvalues
 !
-      use modparallel, only : master
       use modmolecule, only : nmo, neleca, nelecb
       use modjob, only : iprint
+      use modtype, only : typecomp
+      implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: itype
       integer :: imo
       real(8),intent(in) :: eigena(nmo), eigenb(nmo)
 !
 ! Closed-shell
 !
-      if(master.and.(iprint >= 1)) then
+      if(datacomp%master.and.(iprint >= 1)) then
         if(itype == 1) then
           write(*,'(1x,80("-"))')
           write(*,'("   Eigenvalues (Hartree)")')
@@ -1228,16 +1232,17 @@ end
 
 
 !-----------------------------------------
-  subroutine writeeigenvector(cmo,eigen)
+  subroutine writeeigenvector(cmo,eigen,datacomp)
 !-----------------------------------------
 !
 ! Write eigenvalues
 !
-      use modparallel, only : master
       use modmolecule, only : nmo, neleca, numatomic
       use modbasis, only : nao, nshell, mtype, spher, locatom
       use modparam, only : mxao
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer :: minmo, maxmo, imin, imax, ii, jj, kk, iao, iatom
       real(8),intent(in) :: cmo(nao,nao), eigen(nmo)
       character(len=8) :: atomlabel(mxao)
@@ -1273,7 +1278,8 @@ end
 &       'I+6    '/)
 !
       if(maxval(mtype(1:nshell)) > 6) then
-        if(master) write(*,'(" Sorry! This program can display MOs of up to i functions.")')
+        if(datacomp%master) &
+&         write(*,'(" Sorry! This program can display MOs of up to i functions.")')
         return
       endif
 !
@@ -1383,7 +1389,7 @@ end
       maxmo=min(nmo,neleca+15)
       imin= minmo
       imax= minmo+4
-      if(master) then
+      if(datacomp%master) then
         do ii= 1,(maxmo-minmo-1)/5+1
           if(imax > maxmo) imax= maxmo
           write(*,*)

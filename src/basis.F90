@@ -94,7 +94,7 @@
               endif
             enddo
           case('GEN')
-            call readbasis
+            call readbasis(datacomp)
             call setgenbasis(ishell)
           case('CHECK')
             call setcheckbasis

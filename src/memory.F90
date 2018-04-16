@@ -60,19 +60,18 @@ end
 !
 ! Allocate requested memory size, "msize".
 !
-      use modparallel, only : master
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: msize
 !
       if(msize < 0) then
-        if(master) write(*,'(" Required memory size is negative!",i6,"MB")')msize/125000
+        if(datacomp%master) write(*,'(" Required memory size is negative!",i6,"MB")')msize/125000
         call iabort
       endif
       datacomp%memused= datacomp%memused+msize
       if(datacomp%memused > datacomp%memmax) then
-        if(master) then
+        if(datacomp%master) then
           write(*,'(" Error! Required memory size exceeds.")')
           write(*,'(" Required:",i6,"MB,  Available:",i6,"MB")') &
 &               datacomp%memused/125000, datacomp%memmax/125000
@@ -90,7 +89,6 @@ end
 !
 ! Deallocate requested memory size, "msize".
 !
-      use modparallel, only : master
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -99,7 +97,7 @@ end
       datacomp%memused= datacomp%memused-msize
       if(datacomp%memused < 0) then
         datacomp%nwarn= datacomp%nwarn+1
-        if(master) write(*,'(" Warning! Msize in memunset is less than 0.")')
+        if(datacomp%master) write(*,'(" Warning! Msize in memunset is less than 0.")')
       endif
       return
 end
@@ -111,14 +109,13 @@ end
 !
 ! Check memory deallocation
 !
-      use modparallel, only : master
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
 !
       if(datacomp%memused /= 0) then
         datacomp%nwarn= datacomp%nwarn+1
-        if(master) write(*,'(" Warning! Memory deallocation is not completed.")')
+        if(datacomp%master) write(*,'(" Warning! Memory deallocation is not completed.")')
       endif
       return
 end

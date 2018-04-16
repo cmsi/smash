@@ -22,7 +22,6 @@
 !       energymo(MO energies)
 !       xint    (Exchange integral matrix)
 !       
-      use modparallel, only : master
       use modbasis, only : nshell, nao, mbf
       use modmolecule, only : neleca, nmo
       use modenergy, only : escf, emp2, escsmp2
@@ -45,7 +44,7 @@
       nvac= nmo-neleca-nvfz
       noac3= noac*(noac+1)/2
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" ----------------------------------------------")')
         write(*,'("   MP2 calculation ")')
         write(*,'(" ----------------------------------------------")')
@@ -103,7 +102,7 @@
       numocc3=(msize-memneed)/maxsize
 !
       if(numocc3 <= 0) then
-        if(master) then
+        if(datacomp%master) then
           call memset(maxsize+memneed,datacomp)
           call iabort
         endif
@@ -111,7 +110,7 @@
 ! Single pass
 !
       elseif(numocc3 >= noac3) then
-        if(master) write(*,'(" == Single pass calculation ==")')
+        if(datacomp%master) write(*,'(" == Single pass calculation ==")')
         call mp2single(emp2st,cmo,energymo,xint,noac,nvac,ncore,maxsize,maxdim,idis, &
 &                      nproc,myrank,mpi_comm,datacomp)
 !
@@ -120,7 +119,7 @@
       else
         npass=(noac3-1)/numocc3+1
         numocc3=(noac3-1)/npass+1
-        if(master) then
+        if(datacomp%master) then
           write(*,'(" == Multiple pass calculation ==")')
           write(*,'("    Number of passes :",i5)')npass
         endif
@@ -132,7 +131,7 @@
       emp2= emp2stsum(1)+emp2stsum(2)
       escsmp2= emp2stsum(1)*p12+emp2stsum(2)/three
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" -------------------------------------------------")')
         write(*,'("   HF Energy                  =",f17.9)')escf
         write(*,'("   MP2 Correlation Energy     =",f17.9)')emp2
@@ -186,7 +185,6 @@ end
 !       idis    (Information for parallelization)
 ! Out : emp2st  (Partial MP2 energies)
 !
-      use modparallel, only : master
       use modbasis, only : nshell, nao
       use modmolecule, only : neleca, nmo
       use modtype, only : typecomp
@@ -217,7 +215,7 @@ end
 !
 ! AO intengral generation and first and second integral transformations
 !
-      if(master) write(*,'("    Start first and second integral transformations")')
+      if(datacomp%master) write(*,'("    Start first and second integral transformations")')
       call mp2trans12(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
 &                     mlsize,noac,maxdim,idis,nproc,myrank)
 !
@@ -229,7 +227,7 @@ end
 !
 ! Third and fourth integral transformations and MP2 energy calculation
 !
-      if(master) write(*,'("    Start third and fourth integral transformations")')
+      if(datacomp%master) write(*,'("    Start third and fourth integral transformations")')
       call mp2trans34(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,noac,nvac,ncore, &
 &                     idis,nproc,myrank,mpi_comm)
 !
@@ -262,7 +260,6 @@ end
 !       numocc3 (Number of active occupied MO pairs per pass)
 ! Out : emp2st  (Partial MP2 energies)
 !
-      use modparallel, only : master
       use modbasis, only : nshell, nao
       use modmolecule, only : neleca, nmo
       use modtype, only : typecomp
@@ -333,7 +330,7 @@ end
 !
 ! AO intengral generation and first and second integral transformations
 !
-        if(master) &
+        if(datacomp%master) &
 &         write(*,'("    Start first and second integral transformations of Pass",i5)')ipass
         call mp2trans12m(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
 &                        mlsize,noac,maxdim,idis,numij,ijindex(1,ipass),nproc,myrank)
@@ -346,7 +343,7 @@ end
 !
 ! Third and fourth integral transformations and MP2 energy calculation
 !
-        if(master) &
+        if(datacomp%master) &
 &         write(*,'("    Start third and fourth integral transformations of Pass",i5)')ipass
         call mp2trans34m(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,nvac,ncore, &
 &                        idis,numij,ijindex(1,ipass),nproc,myrank,mpi_comm)

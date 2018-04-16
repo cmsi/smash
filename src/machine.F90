@@ -21,7 +21,6 @@
 ! indext = 1 : at the end of a step
 ! indext = 2 : at the end of the program
 !
-      use modparallel, only : master
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -29,7 +28,7 @@
       real(8) :: cpu2, wall0, wall1, sec
       character(len=24) :: tdate
 !
-      if(.not.master) return
+      if(.not.datacomp%master) return
       if(indext == 0) then
         call cpu_time(datacomp%cpu0)
         call system_clock(datacomp%iwall0,iwrate,iwmax)
@@ -111,18 +110,19 @@ end
  
 
 !-------------------------
-  subroutine opendatfile
+  subroutine opendatfile(datacomp)
 !-------------------------
 !
 ! Open temporary file
 !
-      use modparallel, only : master
       use modiofile, only : input
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer(selected_int_kind(9)) :: getpid, iprocess
       character(len=30) :: filename
 !
-      if(master) then
+      if(datacomp%master) then
         iprocess= getpid()
         write(filename,*) iprocess
         filename= "input.dat"//adjustl(filename)
@@ -158,16 +158,11 @@ end
 !
 ! Abort the calculation
 !
-      use modparallel, only : master
       implicit none
       character(len=24) :: tdate
 !
-      if(master) then
-        write(*,'(" Calculation finished abnormally.")')
-        write(*,'(" The job finished at ",a)')tdate
-      else
-        call sleep(5)
-      endif  
+      write(*,'(" Calculation finished abnormally.")')
+      write(*,'(" The job finished at ",a)')tdate
       call para_abort
       call exit
 end

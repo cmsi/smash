@@ -27,7 +27,6 @@
 !       eigen   (MO energy)
 ! Inout : cmo   (MO coefficient matrix)
 !
-      use modparallel, only : master
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nmo
       use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
@@ -92,7 +91,7 @@
 &                  qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2),qceigen(maxqcdiagsub), &
 &                  qcgmn(nao3),work2(nao2))
         case default
-          if(master) then
+          if(datacomp%master) then
             write(*,'(" SCFConv=",a12,"is not supported.")') 
             call iabort
           endif
@@ -119,7 +118,7 @@
 !
       call calcschwarzeri(xint,work,maxdim,nproc2,myrank2,mpi_comm2)
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(1x,74("-"))')
         write(*,'("   Restricted Hartree-Fock calculation")')
         write(*,'(1x,74("-"))')
@@ -142,7 +141,7 @@
         end select
         write(*,'(1x,74("-"))')
 !
-        if((nao /= nmo).and.master) then
+        if((nao /= nmo).and.datacomp%master) then
           write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
           datacomp%nwarn= datacomp%nwarn+1
         endif
@@ -206,7 +205,7 @@
 !
             if(extrap.and.itdiis == 0) &
 &             call fockextrap(fock,fockdiis,work,cmo,dmtrx,itextra,nao,maxdiis, &
-&                             idis,nproc2,myrank2,mpi_comm2)
+&                             idis,nproc2,myrank2,mpi_comm2,datacomp)
 !
 ! Diagonalize Fock matrix
 !
@@ -264,15 +263,15 @@
             else
               itsub= itdiis
             endif
-            if(master) &
+            if(datacomp%master) &
 &             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
-            if(master) &
+            if(datacomp%master) &
 &             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
-            if(master) &
+            if(datacomp%master) &
 &             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,escf,deltae,diffmax
         end select
 !
@@ -298,7 +297,7 @@
         end select
 !
         if(iter == maxiter) then
-          if(master) then
+          if(datacomp%master) then
             write(*,'(" SCF did not converge.")')
             call iabort
           endif
@@ -306,10 +305,11 @@
         call dcopy(nao3,dmtrx,1,dmtrxprev,1)
         call dcopy(nao3,work,1,dmtrx,1)
         call cpu_time(time4)
-        if(master.and.(iprint >= 3)) write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
+        if(datacomp%master.and.(iprint >= 3)) &
+&         write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" -----------------------------------------")')
         write(*,'("    SCF Converged.")')
         write(*,'("    RHF Energy = ",f17.9," a.u.")')escf
@@ -892,7 +892,6 @@ end
 !       eigen   (MO energy)
 ! Inout : cmo   (MO coefficient matrix)
 !
-      use modparallel, only : master
       use moddft, only : idftex, idftcor, nrad, nleb, hfexchange
       use modatom, only : atomrad
       use modbasis, only : nshell, nao, mtype
@@ -974,7 +973,7 @@ end
 &                  qcvec((nocc*nvir+1)*(maxqcdiagsub+1)*2),qcmat(maxqcdiagsub*maxqcdiagsub), &
 &                  qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2),qceigen(maxqcdiagsub),qcgmn(nao3))
         case default
-          if(master) then
+          if(datacomp%master) then
             write(*,'(" SCFConv=",a12,"is not supported.")')
             call iabort
           endif
@@ -1011,7 +1010,7 @@ end
 !
       call calcschwarzeri(xint,work,maxdim,nproc2,myrank2,mpi_comm2)
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(1x,74("-"))')
         write(*,'("   Restricted DFT calculation")')
         write(*,'(1x,74("-"))')
@@ -1038,7 +1037,7 @@ end
         end select
         write(*,'(1x,74("-"))')
 !
-        if((nao /= nmo).and.master) then
+        if((nao /= nmo).and.datacomp%master) then
           write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
           datacomp%nwarn= datacomp%nwarn+1
         endif
@@ -1113,7 +1112,7 @@ end
 !
             if(extrap.and.itdiis == 0) &
 &             call fockextrap(fock,fockdiis,work,cmo,dmtrx,itextra,nao,maxdiis, &
-&                             idis,nproc2,myrank2,mpi_comm2)
+&                             idis,nproc2,myrank2,mpi_comm2,datacomp)
 !
 ! Diagonalize Fock matrix
 !
@@ -1171,15 +1170,15 @@ end
             else
               itsub= itdiis
             endif
-            if(master) &
+            if(datacomp%master) &
 &             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
-            if(master) &
+            if(datacomp%master) &
 &             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
-            if(master) &
+            if(datacomp%master) &
 &             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,escf,deltae,diffmax
         end select
 !
@@ -1205,7 +1204,7 @@ end
         end select
 !
         if(iter == maxiter) then
-          if(master) then
+          if(datacomp%master) then
             write(*,'(" SCF did not converge.")')
             call iabort
           endif
@@ -1213,10 +1212,11 @@ end
         call dcopy(nao3,dmtrx,1,dmtrxprev,1)
         call dcopy(nao3,work,1,dmtrx,1)
         call cpu_time(time4)
-        if(master.and.(iprint >= 3)) write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
+        if(datacomp%master.and.(iprint >= 3)) &
+&         write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" -----------------------------------------------------------")')
         write(*,'("    SCF Converged.")')
         write(*,'("    DFT Energy = ",f17.9," a.u.")')escf
@@ -1279,7 +1279,6 @@ end
 ! Inout : cmoa  (Alpha MO coefficient matrix)
 !         cmob  (Beta MO coefficient matrix)
 !
-      use modparallel, only : master
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nelecb, nmo
       use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
@@ -1362,7 +1361,7 @@ end
 &                  qceigen(maxqcdiagsub),qcgmna(nao3),qcgmnb(nao3), &
 &                  work(nao3*2),work2(nao2),work3(nao2))
         case default
-          if(master) then
+          if(datacomp%master) then
             write(*,'(" SCFConv=",a12,"is not supported.")')
             call iabort
           endif
@@ -1391,7 +1390,7 @@ end
 !
       call calcschwarzeri(xint,work,maxdim,nproc2,myrank2,mpi_comm2)
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(1x,74("-"))')
         write(*,'("   Unrestricted Hartree-Fock calculation")')
         write(*,'(1x,74("-"))')
@@ -1414,7 +1413,7 @@ end
         end select
         write(*,'(1x,74("-"))')
 !
-        if((nao /= nmo).and.master) then
+        if((nao /= nmo).and.datacomp%master) then
           write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
           datacomp%nwarn= datacomp%nwarn+1
         endif
@@ -1485,9 +1484,9 @@ end
 !
             if(extrap.and.itdiis == 0) then
               call fockextrap(focka,fockdiisa,work,cmoa,dmtrxa,itextra,nao,maxdiis, &
-&                             idis,nproc2,myrank2,mpi_comm2)
+&                             idis,nproc2,myrank2,mpi_comm2,datacomp)
               call fockextrap(fockb,fockdiisb,work,cmob,dmtrxb,itextra,nao,maxdiis, &
-&                             idis,nproc2,myrank2,mpi_comm2)
+&                             idis,nproc2,myrank2,mpi_comm2,datacomp)
             endif
 !
 ! Diagonalize Fock matrix
@@ -1570,15 +1569,15 @@ end
             else
               itsub= itdiis
             endif
-            if(master) &
+            if(datacomp%master) &
 &             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
-            if(master) &
+            if(datacomp%master) &
 &             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
-            if(master) &
+            if(datacomp%master) &
 &             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,escf,deltae,diffmax
         end select
 !
@@ -1604,7 +1603,7 @@ end
         end select
 !
         if(iter == maxiter) then
-          if(master) then
+          if(datacomp%master) then
             write(*,'(" SCF did not converge.")')
             call iabort
           endif
@@ -1614,10 +1613,11 @@ end
         call dcopy(nao3,work(1),1,dmtrxa,1)
         call dcopy(nao3,work(nao3+1),1,dmtrxb,1)
         call cpu_time(time4)
-        if(master.and.(iprint >= 3)) write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
+        if(datacomp%master.and.(iprint >= 3)) &
+&         write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" -----------------------------------------")')
         write(*,'("    SCF Converged.")')
         write(*,'("    UHF Energy = ",f17.9," a.u.")')escf
@@ -1629,7 +1629,7 @@ end
       call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,neleca,nelecb,nao, &
 &                   idis,nproc2,myrank2,mpi_comm2)
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" -------------------------------")')
         write(*,'("    Sz =",f7.3)')sz
         write(*,'("    S-squared =",f7.3)')s2
@@ -1964,7 +1964,6 @@ end
 ! Inout : cmoa  (Alpha MO coefficient matrix)
 !         cmob  (Beta MO coefficient matrix)
 !
-      use modparallel, only : master
       use moddft, only : idftex, idftcor, nrad, nleb, hfexchange
       use modatom, only : atomrad
       use modbasis, only : nshell, nao, mtype
@@ -2069,7 +2068,7 @@ end
 &                  qcmat(maxqcdiagsub**2),qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2), &
 &                  qceigen(maxqcdiagsub),qcgmna(nao3),qcgmnb(nao3),work2(isize1),work3(nao2))
         case default
-          if(master) then
+          if(datacomp%master) then
             write(*,'(" SCFConv=",a12,"is not supported.")')
             call iabort
           endif
@@ -2108,7 +2107,7 @@ end
 !
       call calcschwarzeri(xint,work,maxdim,nproc2,myrank2,mpi_comm2)
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(1x,74("-"))')
         write(*,'("   Unrestricted DFT calculation")')
         write(*,'(1x,74("-"))')
@@ -2135,7 +2134,7 @@ end
         end select
         write(*,'(1x,74("-"))')
 !
-        if((nao /= nmo).and.master) then
+        if((nao /= nmo).and.datacomp%master) then
           write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
           datacomp%nwarn= datacomp%nwarn+1
         endif
@@ -2218,9 +2217,9 @@ end
 !
             if(extrap.and.itdiis == 0) then
               call fockextrap(focka,fockdiisa,work,cmoa,dmtrxa,itextra,nao,maxdiis, &
-&                             idis,nproc2,myrank2,mpi_comm2)
+&                             idis,nproc2,myrank2,mpi_comm2,datacomp)
               call fockextrap(fockb,fockdiisb,work,cmob,dmtrxb,itextra,nao,maxdiis, &
-&                             idis,nproc2,myrank2,mpi_comm2)
+&                             idis,nproc2,myrank2,mpi_comm2,datacomp)
             endif
 !
 ! Diagonalize Fock matrix
@@ -2303,15 +2302,15 @@ end
             else
               itsub= itdiis
             endif
-            if(master) &
+            if(datacomp%master) &
 &             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
-            if(master) &
+            if(datacomp%master) &
 &             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
-            if(master) &
+            if(datacomp%master) &
 &             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,escf,deltae,diffmax
         end select
 !
@@ -2337,7 +2336,7 @@ end
         end select
 !
         if(iter == maxiter) then
-          if(master) then
+          if(datacomp%master) then
             write(*,'(" SCF did not converge.")')
             call iabort
           endif
@@ -2347,10 +2346,11 @@ end
         call dcopy(nao3,work(1),1,dmtrxa,1)
         call dcopy(nao3,work(nao3+1),1,dmtrxb,1)
         call cpu_time(time4)
-        if(master.and.(iprint >= 3)) write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
+        if(datacomp%master.and.(iprint >= 3)) &
+&         write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" -----------------------------------------------------------")')
         write(*,'("    SCF Converged.")')
         write(*,'("    DFT Energy = ",f17.9," a.u.")')escf
@@ -2364,7 +2364,7 @@ end
       call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,neleca,nelecb,nao, &
 &                   idis,nproc2,myrank2,mpi_comm2)
 !
-      if(master) then
+      if(datacomp%master) then
         write(*,'(" -------------------------------")')
         write(*,'("    Sz =",f7.3)')sz
         write(*,'("    S-squared =",f7.3)')s2
