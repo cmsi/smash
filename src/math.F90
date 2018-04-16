@@ -212,7 +212,7 @@ end
 
 
 !----------------------------------------------------------------------------------------------
-  subroutine mtrxcanoninv(ortho,overinv,overlap,ndim,newdim,threshover,nproc,myrank,mpi_comm,datacomp)
+  subroutine mtrxcanoninv(ortho,overinv,overlap,ndim,newdim,threshover,datacomp)
 !----------------------------------------------------------------------------------------------
 !
 ! Calculate canonicalization matrix and inverse matrix of overlap
@@ -223,7 +223,7 @@ end
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: ndim, nproc, myrank, mpi_comm
+      integer,intent(in) :: ndim
       integer,intent(out) :: newdim
       integer :: i, j, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00

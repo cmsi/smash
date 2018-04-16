@@ -449,7 +449,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2,datacomp)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,datacomp)
 !
 ! Calculate initial MOs
 !
@@ -605,7 +605,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2,datacomp)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,datacomp)
 !
 ! Calculate initial MOs
 !
@@ -764,7 +764,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2,datacomp)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,datacomp)
 !
 ! Calculate initial MOs
 !
@@ -949,7 +949,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2,datacomp)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,datacomp)
 !
 ! Calculate initial MOs
 !
@@ -1190,7 +1190,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
         call fullmtrx(smtrx,work,nao)
-        call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2,datacomp)
+        call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,datacomp)
 !
 ! Calculate initial MOs
 !
@@ -1506,7 +1506,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
         call fullmtrx(smtrx,work,nao)
-        call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,nproc2,myrank2,mpi_comm2,datacomp)
+        call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,datacomp)
 !
 ! Calculate initial MOs
 !

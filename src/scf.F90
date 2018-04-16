@@ -246,7 +246,7 @@
             else
               call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
 &                        work,work2,one,nao,nmo,nocc,nvir,nshell,maxdim,maxqcdiag, &
-&                        maxqcdiagsub,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+&                        maxqcdiagsub,threshqc,datacomp)
               itqc= itqc+1
             endif
         end select
@@ -1153,7 +1153,7 @@ end
             else
               call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
 &                        work,work2,hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,maxqcdiag, &
-&                        maxqcdiagsub,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+&                        maxqcdiagsub,threshqc,datacomp)
               itqc= itqc+1
             endif
         end select
@@ -1550,7 +1550,7 @@ end
 &                        qcmat,qcmatsave,qceigen,overlap,xint, &
 &                        work,work2,work3,one,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
 &                        maxdim,maxqcdiag,maxqcdiagsub,threshqc, &
-&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+&                        datacomp)
               itqc= itqc+1
             endif
         end select
@@ -2283,7 +2283,7 @@ end
 &                        qcmat,qcmatsave,qceigen,overlap,xint, &
 &                        work,work2,work3,hfexchange,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
 &                        maxdim,maxqcdiag,maxqcdiagsub,threshqc, &
-&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+&                        datacomp)
               itqc= itqc+1
             endif
         end select

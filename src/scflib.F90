@@ -1757,17 +1757,15 @@ end
 !--------------------------------------------------------------------------------------------
   subroutine rhfqc(fock,cmo,qcrmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
 &                  qcwork,work,hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,maxqcdiag, &
-&                  maxqcdiagsub,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+&                  maxqcdiagsub,threshqc,datacomp)
 !--------------------------------------------------------------------------------------------
 !
 ! Driver of Davidson diagonalization for quadratically convergent of RHF
 !
-      use modparallel, only : master
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nao, nmo, nocc, nvir, nshell, maxdim, maxqcdiag, maxqcdiagsub
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: itdav, itqcdiag, ii, ij, jj, kk, ia, ib, istart, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: overlap(nao*(nao+1)/2), xint(nshell*(nshell+1)/2)
@@ -1821,9 +1819,9 @@ end
 ! Calculate Gmn
 !
         call calcqcrmn(qcwork,qcvec,cmo,work,nao,nocc,nvir,itdav,maxqcdiagsub)
-        call calcrdmax(qcwork,qcrmax,work,nproc2,myrank2,mpi_comm2)
+        call calcrdmax(qcwork,qcrmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
         call formrdftfock(qcgmn,work,qcwork,qcrmax,xint,maxdim,hfexchange, &
-&                         nproc1,myrank1,mpi_comm1)
+&                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1)
 !
 ! Add two-electron integral contribution
 !
@@ -1896,7 +1894,7 @@ end
 !$OMP end parallel do
         qcnorm= sqrt(qcnorm)
 !
-        if(master) write(*,'(5x,"QC Cycle ",i2," : Norm = ",1p,d10.3)') itdav-1, qcnorm
+        if(datacomp%master) write(*,'(5x,"QC Cycle ",i2," : Norm = ",1p,d10.3)') itdav-1, qcnorm
 !
 ! Check convergence
 !
@@ -1950,7 +1948,7 @@ end
         endif
 !
         if(itqcdiag ==(maxqcdiag)) then
-          if(master) then
+          if(datacomp%master) then
             write(*,'(" Error! Number of iteration for Quadratically convergent ",&
 &                     "method exceeds maxqcdiag=",i3,".")') maxqcdiag
             write(*,'(" Set larger value for maxqcdiag in scf section.")')
@@ -2064,18 +2062,16 @@ end
   subroutine uhfqc(focka,fockb,cmoa,cmob,qcrmax,qcgmna,qcgmnb,qcvec, &
 &                  qcmat,qcmatsave,qceigen,overlap,xint, &
 &                  qcworka,qcworkb,work,hfexchange,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
-&                  maxdim,maxqcdiag,maxqcdiagsub,threshqc, &
-&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+&                  maxdim,maxqcdiag,maxqcdiagsub,threshqc,datacomp)
 !---------------------------------------------------------------------------------------------
 !
 ! Driver of Davidson diagonalization for quadratically convergent of UHF
 !
-      use modparallel, only : master
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nao, nmo, nocca, noccb, nvira, nvirb, nshell, maxdim, maxqcdiag
-      integer,intent(in) :: maxqcdiagsub, nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
+      integer,intent(in) :: maxqcdiagsub
       integer :: itdav, itqcdiag, ii, ij, jj, kk, ia, ib, istart, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: overlap(nao*(nao+1)/2), xint(nshell*(nshell+1)/2)
@@ -2148,9 +2144,9 @@ end
 !
         call calcqcurmn(qcworka,qcworkb,qcvec,cmoa,cmob,work,nao,nocca,noccb,nvira,nvirb, &
 &                       itdav,maxqcdiagsub)
-        call calcudmax(qcworka,qcworkb,qcrmax,work,nproc2,myrank2,mpi_comm2)
+        call calcudmax(qcworka,qcworkb,qcrmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
         call calcqcugmn(qcgmna,qcgmnb,work,qcworka,qcworkb,qcrmax,xint,hfexchange,maxdim, &
-&                       nao,nshell,nproc1,myrank1,mpi_comm1)
+&                       nao,nshell,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1)
 !
 ! Add two-electron integral contribution
 !
@@ -2246,7 +2242,7 @@ end
 !$OMP end parallel do
         qcnorm= sqrt(qcnorm)
 !
-        if(master) write(*,'(5x,"QC Cycle ",i2," : Norm = ",1p,d10.3)') itdav-1, qcnorm
+        if(datacomp%master) write(*,'(5x,"QC Cycle ",i2," : Norm = ",1p,d10.3)') itdav-1, qcnorm
 !
 ! Check convergence
 !
@@ -2295,7 +2291,7 @@ end
         if(qcnorm < threshqc) exit
 !
         if(itqcdiag ==(maxqcdiag)) then
-          if(master) then
+          if(datacomp%master) then
             write(*,'(" Error! Number of iteration for Quadratically convergent ",&
 &                     "method exceeds maxqcdiag=",i3,".")') maxqcdiag
             write(*,'(" Set larger value for maxqcdiag in scf section.")')
