@@ -31,8 +31,7 @@
       use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
 &                        maxqcdiagsub, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
-      use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis
-      use modjob, only : iprint
+      use modjob, only : iprint, threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -389,7 +388,7 @@ end
 ! Driver of Fock matrix formation from two-electron intgrals
 !
       use modbasis, only : nshell, nao
-      use modthresh, only : cutint2
+      use modjob, only : cutint2
       implicit none
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
@@ -487,7 +486,7 @@ end
 ! Form Fock matrix from two-electron intgrals
 !
       use modbasis, only : nao, mbf, locbf
-      use modthresh, only : cutint2
+      use modjob, only : cutint2
       implicit none
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nbfi, nbfj, nbfk, nbfl
@@ -635,7 +634,7 @@ end
 ! Driver of DFT Fock matrix formation from two-electron intgrals
 !
       use modbasis, only : nshell, nao
-      use modthresh, only : cutint2
+      use modjob, only : cutint2
       implicit none
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
@@ -733,7 +732,7 @@ end
 ! Form DFT Fock matrix from two-electron intgrals
 !
       use modbasis, only : nao, mbf, locbf
-      use modthresh, only : cutint2
+      use modjob, only : cutint2
       implicit none
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nbfi, nbfj, nbfk, nbfl
@@ -896,9 +895,8 @@ end
       use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
                          maxqcdiagsub, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
-      use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
-&                           threshweight, threshrho, threshdfock, threshdftao
-      use modjob, only : iprint
+      use modjob, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
+&                        threshweight, threshrho, threshdfock, threshdftao, iprint
       use modparam, only : tobohr
       use modtype, only : typecomp
       implicit none
@@ -1279,8 +1277,8 @@ end
       use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
 &                        maxqcdiagsub, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
-      use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis
-      use modjob, only : iprint
+      use modjob, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
+&                        iprint
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -1679,7 +1677,7 @@ end
 !       fock3  (Work space)
 !
       use modbasis, only : nshell, nao
-      use modthresh, only : cutint2
+      use modjob, only : cutint2
       implicit none
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
@@ -1780,7 +1778,7 @@ end
 ! Form unrestricted Fock matrix from two-electron intgrals
 !
       use modbasis, only : nao, mbf, locbf
-      use modthresh, only : cutint2
+      use modjob, only : cutint2
       implicit none
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nbfi, nbfj, nbfk, nbfl
@@ -1964,9 +1962,9 @@ end
       use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
 &                        maxqcdiagsub, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
-      use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
-&                           threshweight, threshrho, threshdfock, threshdftao
-      use modjob, only : iprint
+      use modjob, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
+&                        threshweight, threshrho, threshdfock, threshdftao, &
+&                        iprint
       use modparam, only : tobohr
       use modtype, only : typecomp
       implicit none
@@ -2424,7 +2422,7 @@ end
 !       fock3  (Work space)
 !
       use modbasis, only : nshell, nao
-      use modthresh, only : cutint2
+      use modjob, only : cutint2
       implicit none
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
@@ -2527,7 +2525,7 @@ end
 ! Form unrestricted DFT Fock matrix from two-electron intgrals
 !
       use modbasis, only : nao, mbf, locbf
-      use modthresh, only : cutint2
+      use modjob, only : cutint2
       implicit none
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nbfi, nbfj, nbfk, nbfl

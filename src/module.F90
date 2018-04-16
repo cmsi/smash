@@ -40,6 +40,16 @@ end
 !    = 0 : minimal output
 !    = 1 : standard output
 !    = 2 : verbose output
+! threshex    : threshold for overlap of two basis functions
+! threshover  : threshold for linear depencency of basis functions
+! threshatm   : threshold for distance of atoms
+! cutint2     : threshold for two-electron integrals
+! threshsoscf : threshold for second-order SCF
+! threshqc    : threshold for quadratically convergent SCF
+! threshweight: threshold for weight at a grid point
+! threshrho   : threshold for density at a grid point
+! threshdfock : threshold for functional at a grid point
+! threshmp2cphf : threshold for MP2-CPHF
 !
       implicit none
       integer :: iprint
@@ -49,6 +59,12 @@ end
       character(len=64) :: check
       logical :: bohr
       logical :: octupole
+      real(8),parameter :: threshex=30.0D+00
+      real(8) :: threshover, threshatom, threshdiis
+      real(8) :: cutint2, threshsoscf, threshqc
+      real(8) :: threshweight, threshrho, threshdfock, threshdftao
+      real(8) :: threshmp2cphf
+      character(len=16) :: precision
 end
 
 
@@ -71,31 +87,6 @@ end
       implicit none
       integer :: numatomic(mxatom), natom, neleca, nelecb, nmo, ncore, multi
       real(8) :: coord(3,mxatom), znuc(mxatom), coordold(3,mxatom), charge
-end
-
-
-!-------------------
-  module modthresh
-!-------------------
-!
-! threshex    : threshold for overlap of two basis functions
-! threshover  : threshold for linear depencency of basis functions
-! threshatm   : threshold for distance of atoms
-! cutint2     : threshold for two-electron integrals
-! threshsoscf : threshold for second-order SCF
-! threshqc    : threshold for quadratically convergent SCF
-! threshweight: threshold for weight at a grid point
-! threshrho   : threshold for density at a grid point
-! threshdfock : threshold for functional at a grid point
-! threshmp2cphf : threshold for MP2-CPHF
-!
-      implicit none
-      real(8),parameter :: threshex=30.0D+00
-      real(8) :: threshover, threshatom, threshdiis
-      real(8) :: cutint2, threshsoscf, threshqc
-      real(8) :: threshweight, threshrho, threshdfock, threshdftao 
-      real(8) :: threshmp2cphf
-      character(len=16) :: precision
 end
 
 

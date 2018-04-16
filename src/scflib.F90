@@ -2451,7 +2451,7 @@ end
 !
 ! Driver of Gmn matrix formation from two-electron intgrals
 !
-      use modthresh, only : cutint2
+      use modjob, only : cutint2
       implicit none
       integer,intent(in) :: nshell, nao, maxdim, nproc, myrank, mpi_comm
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
@@ -2553,7 +2553,7 @@ end
 ! Form Gmn matrix from two-electron intgrals
 !
       use modbasis, only : nao, mbf, locbf
-      use modthresh, only : cutint2
+      use modjob, only : cutint2
       implicit none
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nbfi, nbfj, nbfk, nbfl

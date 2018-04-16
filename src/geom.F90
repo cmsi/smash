@@ -19,7 +19,7 @@
 ! Calculate nuclear replusion energy
 !
       use modmolecule, only : natom, coord, znuc
-      use modthresh, only : threshatom
+      use modjob, only : threshatom
       use modenergy, only : enuc
       use modtype, only : typecomp
       implicit none

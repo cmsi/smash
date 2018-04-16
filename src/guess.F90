@@ -1215,7 +1215,7 @@ end
 ! Out : overlap (overlap integral of guess basis set)
 !
       use modparam, only : mxprsh
-      use modthresh, only : threshex
+      use modjob, only : threshex
       use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
 &                          ex_g, coeff_g, nao_g, coord_g
       implicit none
@@ -1280,7 +1280,7 @@ end
 ! Out : overlap (overlap integral of guess and SCF basis sets)
 !
       use modparam, only : mxprsh
-      use modthresh, only : threshex
+      use modjob, only : threshex
       use modmolecule, only : coord
       use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
       use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
@@ -1344,7 +1344,7 @@ end
 ! Out : overlap (overlap integral of guess basis set)
 !
       use modparam, only : mxprsh
-      use modthresh, only : threshex
+      use modjob, only : threshex
       use modguess, only : locatom_gcore, locprim_gcore, locbf_gcore, mprim_gcore, mbf_gcore, &
 &                          mtype_gcore, ex_gcore, coeff_gcore, nao_gcore, coord_g
       implicit none
@@ -1409,7 +1409,7 @@ end
 ! Out : overlap (overlap integral of core-guess and guess basis sets)
 !
       use modparam, only : mxprsh
-      use modthresh, only : threshex
+      use modjob, only : threshex
       use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
 &                          ex_g, coeff_g, nao_g, coord_g, &
 &                          locatom_gcore, locprim_gcore, locbf_gcore, mprim_gcore, &
@@ -2059,7 +2059,7 @@ end
 !       overlap,ortho,work,eigen (work space)
 !
       use modguess, only : nao_g, nmo_g, spher_g, coord_g, nshell_v
-      use modthresh, only : threshover
+      use modjob, only : threshover
       use modmolecule, only : coord, natom, neleca, nelecb
       use modtype, only : typecomp
       implicit none
@@ -2165,7 +2165,7 @@ end
       use modparam, only : mxprsh
       use modguess, only : nao_v, nshell_v, nao_g, locprim_g, locbf_g, locatom_g, mprim_g, &
 &                          mbf_g, mtype_g, ex_g, coeff_g, coord_g
-      use modthresh, only : threshex
+      use modjob, only : threshex
       use modmolecule, only : numatomic
       implicit none
       integer,parameter :: len1=5

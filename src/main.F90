@@ -200,13 +200,13 @@ end
       use modbasis, only : spher, basis
       use modscf, only : maxiter, dconv, fdiff, scfconv, maxdiis, maxsoscf, maxqc, &
 &                        maxqcdiag, maxqcdiagsub, extrap
-      use modthresh, only : precision, cutint2, threshsoscf, threshqc, threshover, threshatom, &
-&                           threshdiis, threshweight, threshrho, threshdfock, threshdftao, &
-&                           threshmp2cphf
       use moddft, only : idftex, idftcor, nrad, nleb, bqrad
       use modopt, only : nopt, optconv, cartesian
       use modecp, only : ecp, flagecp
-      use modjob, only : scftype, runtype, method, bohr, memory, iprint, octupole, check
+      use modjob, only : scftype, runtype, method, bohr, memory, iprint, octupole, check, &
+&                        precision, cutint2, threshsoscf, threshqc, threshover, threshatom, &
+&                        threshdiis, threshweight, threshrho, threshdfock, threshdftao, &
+&                        threshmp2cphf
       use modmolecule, only : multi, charge
       use modmp2, only : ncore, nvfz, maxmp2diis, maxmp2iter
       use modtype, only : typecomp
@@ -280,7 +280,7 @@ end
 !
 ! Reset defaults after reading input file
 !
-      use modthresh, only : precision, cutint2, threshweight, threshrho, threshdfock, threshdftao
+      use modjob, only : precision, cutint2, threshweight, threshrho, threshdfock, threshdftao
       use moddft, only : nrad, nleb
       use modscf, only : dconv
       use modtype, only : typecomp
@@ -390,11 +390,10 @@ end
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo
-      use modjob, only : method, iprint, octupole, check
+      use modjob, only : method, iprint, octupole, check, cutint2, threshover
       use moddft, only : idftex, idftcor
       use modguess, only : guess
       use modscf, only : dconv
-      use modthresh, only : cutint2, threshover
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -539,11 +538,10 @@ end
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo
-      use modjob, only : method, iprint, octupole, check
+      use modjob, only : method, iprint, octupole, check, cutint2, threshover
       use moddft, only : idftex, idftcor
       use modguess, only : guess
       use modscf, only : dconv
-      use modthresh, only : cutint2, threshover
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -690,11 +688,10 @@ end
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom
-      use modjob, only : method, iprint, octupole, check
+      use modjob, only : method, iprint, octupole, check, cutint2, threshover
       use moddft, only : idftex, idftcor
       use modguess, only : guess
       use modscf, only : dconv
-      use modthresh, only : cutint2, threshover
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -869,11 +866,10 @@ end
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom
-      use modjob, only : method, iprint, octupole, check
+      use modjob, only : method, iprint, octupole, check, cutint2, threshover
       use moddft, only : idftex, idftcor
       use modguess, only : guess
       use modscf, only : dconv
-      use modthresh, only : cutint2, threshover
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -1054,11 +1050,10 @@ end
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom, coord, coordold
       use modopt, only : nopt, optconv, cartesian
-      use modjob, only : method, iprint, octupole, check
+      use modjob, only : method, iprint, octupole, check, cutint2, threshover
       use moddft, only : idftex, idftcor
       use modguess, only : guess
       use modscf, only : dconv
-      use modthresh, only : cutint2, threshover
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -1362,11 +1357,10 @@ end
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom, coord, coordold
       use modopt, only : nopt, optconv, cartesian
-      use modjob, only : method, iprint, octupole, check
+      use modjob, only : method, iprint, octupole, check, cutint2, threshover
       use moddft, only : idftex, idftcor
       use modguess, only : guess
       use modscf, only : dconv
-      use modthresh, only : cutint2, threshover
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp

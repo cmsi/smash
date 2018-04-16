@@ -32,7 +32,7 @@
 ! Inout : egrad2    (Energy gradient values)
 !
       use modbasis, only : nshell, nao
-      use modthresh, only : cutint2
+      use modjob, only : cutint2
       use modmolecule, only : natom
       implicit none
       integer,intent(in) :: maxdim, maxgraddim, nproc, myrank, itype
@@ -114,7 +114,7 @@ end
       use modparam, only : mxprsh
       use modmolecule, only : coord, natom
       use modbasis, only : locatom, locprim, mprim, mbf, mtype, ex, coeff
-      use modthresh, only : threshex
+      use modjob, only : threshex
       implicit none
       integer,parameter :: ncart(0:6)=(/1,3,6,10,15,21,28/)
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim, maxgraddim

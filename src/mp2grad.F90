@@ -1358,7 +1358,7 @@ end
 !
       use modbasis, only : nao, nshell
       use modmp2, only : maxmp2diis, maxmp2iter
-      use modthresh, only : threshmp2cphf
+      use modjob, only : threshmp2cphf
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -1734,7 +1734,7 @@ end
 !
       use modbasis, only : nao, nshell, mbf, locbf
       use modmolecule, only : natom
-      use modthresh, only : cutint2
+      use modjob, only : cutint2
       implicit none
       integer,intent(in) :: numml, mlstart, mlend, numitrans, nocc, noac, ncore, nvir, maxdim
       integer,intent(in) :: maxgraddim, istart, nproc, myrank, idis(0:nproc-1,8)
@@ -1867,7 +1867,7 @@ end
 !
       use modbasis, only : nao, nshell, mbf, locbf
       use modmolecule, only : natom
-      use modthresh, only : cutint2
+      use modjob, only : cutint2
       implicit none
       integer,intent(in) :: numml, mlstart, mlend, numitrans, nocc, noac, ncore, nvir, maxdim
       integer,intent(in) :: maxgraddim, istart, nproc, myrank, idis(0:nproc-1,8)

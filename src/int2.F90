@@ -26,7 +26,7 @@
       use modparam, only : mxprsh
       use modmolecule, only : coord
       use modbasis, only : locatom, locprim, mprim, mbf, mtype, ex, coeff
-      use modthresh, only : threshex
+      use modjob, only : threshex
       implicit none
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nangijkl(4), nprimijkl(4), nbfijkl(4)

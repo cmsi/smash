@@ -21,10 +21,10 @@
       use modparam, only : maxline, input
       use modbasis, only : basis, spher
       use modmolecule, only : numatomic, natom, coord, znuc, charge, multi
-      use modjob, only : method, runtype, scftype, bohr, memory, iprint, octupole, check
-      use modthresh, only : precision, cutint2, threshdiis, threshsoscf, threshqc, threshweight, &
-&                           threshrho, threshdfock, threshdftao, threshover, threshatom, &
-&                           threshmp2cphf
+      use modjob, only : method, runtype, scftype, bohr, memory, iprint, octupole, check, &
+&                        precision, cutint2, threshdiis, threshsoscf, threshqc, threshweight, &
+&                        threshrho, threshdfock, threshdftao, threshover, threshatom, &
+&                        threshmp2cphf
       use modguess, only : guess
       use modscf, only : scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
       use modopt, only : nopt, optconv, cartesian
@@ -456,10 +456,9 @@ end
 !
       use modmolecule, only : natom, neleca, nelecb, charge, multi
       use modbasis, only : nshell, nao, nprim, basis, spher
-      use modjob, only : method, runtype, scftype, bohr, octupole, check
+      use modjob, only : method, runtype, scftype, bohr, octupole, check, precision
       use modopt, only : nopt, optconv, cartesian
       use modguess, only : guess
-      use modthresh, only : precision
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp

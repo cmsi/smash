@@ -192,7 +192,7 @@ end
 !
       use modparam, only : mxprsh
       use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
-      use modthresh, only : threshex
+      use modjob, only : threshex
       use modmolecule, only : natom, coord
       implicit none
       integer,intent(in) :: ish, jsh
@@ -339,7 +339,7 @@ end
 !
       use modparam, only : mxprsh
       use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
-      use modthresh, only : threshex
+      use modjob, only : threshex
       use modmolecule, only : natom, coord
       implicit none
       integer,intent(in) :: ish, jsh
@@ -523,7 +523,7 @@ end
 !
       use modparam, only : mxprsh
       use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
-      use modthresh, only : threshex
+      use modjob, only : threshex
       use modmolecule, only : natom, coord, znuc
       implicit none
       integer,intent(in) :: ish, jsh, len1
@@ -973,7 +973,7 @@ end
       use modparam, only : mxprsh
       use modmolecule, only : natom, coord, znuc
       use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
-      use modthresh, only : threshex
+      use modjob, only : threshex
       implicit none
       integer,intent(in) :: ish, jsh
       integer :: nangij(2), nprimij(2), nbfij(2), locbfij(2), iatom, jatom

@@ -528,7 +528,7 @@ end
 ! Inout : ish,ksh (Basis shell indices)
 !
       use modbasis, only : nao, nshell, mbf, locbf
-      use modthresh, only : cutint2
+      use modjob, only : cutint2
       implicit none
       integer,intent(in) :: maxdim, numi, mlshell, mlsize, nproc, myrank
       integer,intent(inout) :: ish, ksh, jcount

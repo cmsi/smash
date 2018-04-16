@@ -35,7 +35,7 @@
       use modmolecule, only : natom, neleca
       use moddft, only : nrad, nleb
       use modbasis, only : nao
-      use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
+      use modjob, only : threshweight, threshrho, threshdfock, threshdftao
       implicit none
       integer,intent(in) :: idftex, idftcor, nproc, myrank, mpi_comm
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
@@ -217,7 +217,7 @@ end
       use modmolecule, only : natom, neleca, nelecb
       use moddft, only : nrad, nleb
       use modbasis, only : nao
-      use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
+      use modjob, only : threshweight, threshrho, threshdfock, threshdftao
       implicit none
       integer,intent(in) :: idftex, idftcor, nproc, myrank, mpi_comm
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
@@ -713,7 +713,7 @@ end
       use modmolecule, only : natom
       use modbasis, only : ex, coeff, nshell, nao, locbf, locatom, &
 &                          mprim, mbf, mtype
-      use modthresh, only : threshex
+      use modjob, only : threshex
       implicit none
       integer :: icount, ish, numprim, iatom, iprim, nang, nbf, ilocbf, ii, jj
       real(8),parameter :: half=0.5D+00, one=1.0D+00, two=2.0D+00
@@ -1587,7 +1587,7 @@ end
 !
       use modmolecule, only : natom
       use modbasis, only : ex, coeff, nshell, nao, locbf, locatom, mprim, mbf, mtype
-      use modthresh, only : threshex
+      use modjob, only : threshex
       implicit none
       integer :: icount, ish, numprim, iatom, iprim, nang, nbf, iloc, ii, jj
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00, three=3.0D+00
@@ -2359,7 +2359,7 @@ end
       use modbasis, only : nao
       use modmolecule, only : natom, neleca
       use moddft, only : nrad, nleb
-      use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
+      use modjob, only : threshweight, threshrho, threshdfock, threshdftao
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -2476,7 +2476,7 @@ end
       use modbasis, only : nao
       use modmolecule, only : natom, neleca, nelecb
       use moddft, only : nrad, nleb
-      use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
+      use modjob, only : threshweight, threshrho, threshdfock, threshdftao
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
