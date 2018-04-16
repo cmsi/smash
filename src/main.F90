@@ -530,7 +530,7 @@ end
 
 
 !----------------------------------------------------------------------------
-  subroutine calcuenergy(nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2,datacomp)
+  subroutine calcuenergy(datacomp)
 !----------------------------------------------------------------------------
 !
 ! Driver of open-shell energy calculation
@@ -553,7 +553,6 @@ end
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
       real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), energymoa(:), energymob(:)
@@ -584,7 +583,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-      call oneei(h1mtrx,smtrx,tmtrx,work,nproc2,myrank2,mpi_comm2)
+      call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -656,7 +655,7 @@ end
         call memset(nao3*29,datacomp)
         allocate(work(nao3*29))
         call calcuoctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrxa,dmtrxb, &
-&                          nproc1,myrank1,mpi_comm1,datacomp)
+&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*29,datacomp)
       else
@@ -665,7 +664,7 @@ end
 !
         call memset(nao3*6,datacomp)
         allocate(work(nao3*6))
-        call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,nproc1,myrank1,mpi_comm1,datacomp)
+        call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
         deallocate(work)
         call memunset(nao3*6,datacomp)
       endif
@@ -1141,7 +1140,7 @@ end
 !
 ! Print geometry
 !
-        if(iopt >= 2) call writegeom
+        if(iopt >= 2) call writegeom(datacomp)
 !
 ! Calculate nuclear repulsion energy
 !
@@ -1252,13 +1251,11 @@ end
 ! Calculate new coordinate
 !
         if(cartesian) then
-          call calcnewcoord(coord,coordold,egrad,egradold,ehess,workv,natom3,iopt, &
-&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+          call calcnewcoord(coord,coordold,egrad,egradold,ehess,workv,natom3,iopt,datacomp)
         else
           call calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
 &                              work(1,2),work(1,3),work(1,4),workv,iopt,iredun,isizered, &
-&                              maxredun,numbond,numangle,numtorsion,numredun, &
-&                              datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+&                              maxredun,numbond,numangle,numtorsion,numredun,datacomp)
         endif
 !
 ! Unset work arrays 2
@@ -1326,7 +1323,7 @@ end
         write(*,'(" ==========================")')
         write(*,'("     Optimized Geometry")')
         write(*,'(" ==========================")')
-        call writegeom
+        call writegeom(datacomp)
       endif
 !
 ! Write checkpoint file
@@ -1453,7 +1450,7 @@ end
 !
 ! Print geometry
 !
-        if(iopt >= 2) call writegeom
+        if(iopt >= 2) call writegeom(datacomp)
 !
 ! Calculate nuclear repulsion energy
 !
@@ -1566,13 +1563,11 @@ end
 ! Calculate new coordinate
 !
         if(cartesian) then
-          call calcnewcoord(coord,coordold,egrad,egradold,ehess,workv,natom3,iopt, &
-&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+          call calcnewcoord(coord,coordold,egrad,egradold,ehess,workv,natom3,iopt,datacomp)
         else
           call calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
 &                              work(1,2),work(1,3),work(1,4),workv,iopt,iredun,isizered, &
-&                              maxredun,numbond,numangle,numtorsion,numredun, &
-&                              datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+&                              maxredun,numbond,numangle,numtorsion,numredun,datacomp)
         endif
 !
 ! Unset work arrays 2
@@ -1644,7 +1639,7 @@ end
         write(*,'(" ==========================")')
         write(*,'("     Optimized Geometry")')
         write(*,'(" ==========================")')
-        call writegeom
+        call writegeom(datacomp)
       endif
 !
 ! Write checkpoint file

@@ -409,8 +409,7 @@ end
 
 
 !------------------------------------------------------------------------------------
-  subroutine calcnewcoord(coord,coordold,egrad,egradold,ehess,displc,natom3,iopt, &
-&                         nproc,myrank,mpi_comm,datacomp)
+  subroutine calcnewcoord(coord,coordold,egrad,egradold,ehess,displc,natom3,iopt,datacomp)
 !------------------------------------------------------------------------------------
 !
 ! Calculate new Cartesian coordinate with gradient and hessian
@@ -421,7 +420,7 @@ end
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: natom3, iopt, nproc, myrank, mpi_comm
+      integer,intent(in) :: natom3, iopt
       integer :: i, j, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, third=0.3333333333333333D+00
       real(8),intent(inout) :: egrad(natom3), egradold(natom3), ehess(natom3*(natom3+1)/2)
@@ -505,8 +504,7 @@ end
 !---------------------------------------------------------------------------------------
   subroutine calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess,work1, &
 &                            work2,work3,work4,workv,iopt,iredun,isizered, &
-&                            maxredun,numbond,numangle,numtorsion,numredun, &
-&                            nproc,myrank,mpi_comm,datacomp)
+&                            maxredun,numbond,numangle,numtorsion,numredun,datacomp)
 !---------------------------------------------------------------------------------------
 !
 ! Calculate new Cartesian coordinate with gradient, hessian and redundant coordinate
@@ -527,7 +525,7 @@ end
       type(typecomp),intent(inout) :: datacomp
       integer,parameter :: maxiterdx=100, maxiterrfo=1000
       integer,intent(in) :: iopt, isizered, maxredun, iredun(4,isizered/4)
-      integer,intent(in) :: numbond, numangle, numtorsion, numredun, nproc, myrank, mpi_comm
+      integer,intent(in) :: numbond, numangle, numtorsion, numredun
       integer :: irow(112)
       integer :: natom3, ii, jj, ij, kk, iatom, jatom, katom, iterrfo, iterdx
       integer :: numdim
