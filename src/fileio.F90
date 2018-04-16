@@ -18,10 +18,10 @@
 !
 ! Read input data and open checkpoint file if necessary
 !
-      use modiofile, only : input, check, maxline
+      use modparam, only : maxline, input
       use modbasis, only : basis, spher
       use modmolecule, only : numatomic, natom, coord, znuc, charge, multi
-      use modjob, only : method, runtype, scftype, bohr, memory, iprint
+      use modjob, only : method, runtype, scftype, bohr, memory, iprint, octupole, check
       use modthresh, only : precision, cutint2, threshdiis, threshsoscf, threshqc, threshweight, &
 &                           threshrho, threshdfock, threshdftao, threshover, threshatom, &
 &                           threshmp2cphf
@@ -31,7 +31,6 @@
       use moddft, only : nrad, nleb, bqrad
       use modecp, only : ecp, flagecp
       use modmp2, only : ncore, nvfz, maxmp2diis, maxmp2iter
-      use modprop, only : octupole
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -455,14 +454,12 @@ end
 !
 ! Write computational conditions
 !
-      use modiofile, only : check
       use modmolecule, only : natom, neleca, nelecb, charge, multi
       use modbasis, only : nshell, nao, nprim, basis, spher
-      use modjob, only : method, runtype, scftype, bohr
+      use modjob, only : method, runtype, scftype, bohr, octupole, check
       use modopt, only : nopt, optconv, cartesian
       use modguess, only : guess
       use modthresh, only : precision
-      use modprop, only : octupole
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -543,9 +540,8 @@ end
 !
 ! Read atomic data
 !
-      use modiofile, only : input, icheck, maxline
       use modmolecule, only : numatomic, natom, coord, znuc
-      use modparam, only : mxatom, tobohr
+      use modparam, only : mxatom, tobohr, maxline, input, icheck
       use modopt, only : cartesian
       use modjob, only : runtype, bohr
       use modtype, only : typecomp
@@ -709,8 +705,7 @@ end
 !
 ! Read basis set
 !
-      use modparam, only : mxprim, mxshell
-      use modiofile, only : input, maxline
+      use modparam, only : mxprim, mxshell, maxline, input
       use modbasis, only : exgen, coeffgen, locgenprim, mgenprim, mgentype, locgenshell, &
 &                          ngenshell, atombasis
       use modtype, only : typecomp
@@ -865,10 +860,9 @@ end
 !
 ! Read basis set from checkpoint file
 !
-      use modiofile, only : icheck
       use modbasis, only : nshell, nao, nprim, ex, coeff, locprim, locbf, locatom, &
 &                          mprim, mbf, mtype
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxao, mxshell, mxprim, icheck
       implicit none
       integer :: idummy, ii
       character(len=16) :: checkversion, cdummy
@@ -932,7 +926,7 @@ end
 !
 ! Read checkpoint information
 !
-      use modiofile, only : icheck
+      use modparam, only : icheck
       use modguess, only : nao_g, nmo_g, nshell_g, nprim_g
       use modmolecule, only : natom
       use modtype, only : typecomp
@@ -988,7 +982,7 @@ end
 !
 ! Read guess basis functions and MOs from checkpoint file
 !
-      use modiofile, only : icheck
+      use modparam, only : icheck
       use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
 &                          ex_g, coeff_g, nao_g, coord_g, nmo_g, nshell_g, nprim_g
       use modmolecule, only : natom
@@ -1069,8 +1063,7 @@ end
 !
 ! Read basis set
 !
-      use modparam, only : mxprim, mxshell
-      use modiofile, only : input, maxline
+      use modparam, only : mxprim, mxshell, maxline, input
       use modecp, only : exgenecp, coeffgenecp, maxgenangecp, izgencore, mgentypeecp, &
 &                        locgenecp, mgenprimecp, atomecp
       use modtype, only : typecomp
@@ -1414,9 +1407,9 @@ end
 !
 ! Write checkpoint file
 !
-      use modiofile, only : icheck, version
+      use modparam, only : icheck
       use modmolecule, only : numatomic, natom, coord, nmo, neleca, nelecb, charge, multi, znuc
-      use modjob, only : method, runtype, scftype
+      use modjob, only : method, runtype, scftype, version
       use modbasis, only : nshell, nao, nprim, ex, coeffinp, locprim, locbf, locatom, &
 &                          mprim, mbf, mtype
       use modecp, only : flagecp
@@ -1523,9 +1516,8 @@ end
 !
 ! Set atom charge
 !
-      use modiofile, only : input, maxline
       use modmolecule, only : znuc, natom
-      use modparam, only : mxatom
+      use modparam, only : mxatom, maxline, input
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp

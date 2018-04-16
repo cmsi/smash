@@ -115,7 +115,7 @@ end
 !
 ! Open temporary file
 !
-      use modiofile, only : input
+      use modparam, only : input
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -139,7 +139,8 @@ end
 !
 ! Open checkpoint file
 !
-      use modiofile, only : icheck, check
+      use modparam, only : icheck
+      use modjob, only : check
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp

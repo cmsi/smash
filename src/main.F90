@@ -19,8 +19,8 @@
 ! This is the main driver of Scalable Molecular Analysis Solver 
 ! for High performance computing systems (SMASH).
 !
-      use modjob, only : runtype, scftype
-      use modiofile, only : input, icheck, check, version
+      use modparam, only : input, icheck
+      use modjob, only : runtype, scftype, check, version
       use modtype, only : typecomp
       implicit none
       type(typecomp) :: datacomp
@@ -196,7 +196,6 @@ end
 !
 ! Set defaults before reading input file
 !
-      use modiofile, only : check
       use modguess, only : spher_g, guess
       use modbasis, only : spher, basis
       use modscf, only : maxiter, dconv, fdiff, scfconv, maxdiis, maxsoscf, maxqc, &
@@ -207,10 +206,9 @@ end
       use moddft, only : idftex, idftcor, nrad, nleb, bqrad
       use modopt, only : nopt, optconv, cartesian
       use modecp, only : ecp, flagecp
-      use modjob, only : scftype, runtype, method, bohr, memory, iprint
+      use modjob, only : scftype, runtype, method, bohr, memory, iprint, octupole, check
       use modmolecule, only : multi, charge
       use modmp2, only : ncore, nvfz, maxmp2diis, maxmp2iter
-      use modprop, only : octupole
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -389,16 +387,14 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modiofile, only : check
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo
-      use modjob, only : method, iprint
+      use modjob, only : method, iprint, octupole, check
       use moddft, only : idftex, idftcor
       use modguess, only : guess
       use modscf, only : dconv
       use modthresh, only : cutint2, threshover
-      use modprop, only : octupole
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -540,16 +536,14 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modiofile, only : check
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo
-      use modjob, only : method, iprint
+      use modjob, only : method, iprint, octupole, check
       use moddft, only : idftex, idftcor
       use modguess, only : guess
       use modscf, only : dconv
       use modthresh, only : cutint2, threshover
-      use modprop, only : octupole
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -693,16 +687,14 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modiofile, only : check
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom
-      use modjob, only : method, iprint
+      use modjob, only : method, iprint, octupole, check
       use moddft, only : idftex, idftcor
       use modguess, only : guess
       use modscf, only : dconv
       use modthresh, only : cutint2, threshover
-      use modprop, only : octupole
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -874,16 +866,14 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modiofile, only : check
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom
-      use modjob, only : method, iprint
+      use modjob, only : method, iprint, octupole, check
       use moddft, only : idftex, idftcor
       use modguess, only : guess
       use modscf, only : dconv
       use modthresh, only : cutint2, threshover
-      use modprop, only : octupole
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -1060,17 +1050,15 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modiofile, only : check
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom, coord, coordold
       use modopt, only : nopt, optconv, cartesian
-      use modjob, only : method, iprint
+      use modjob, only : method, iprint, octupole, check
       use moddft, only : idftex, idftcor
       use modguess, only : guess
       use modscf, only : dconv
       use modthresh, only : cutint2, threshover
-      use modprop, only : octupole
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -1370,17 +1358,15 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modiofile, only : check
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom, coord, coordold
       use modopt, only : nopt, optconv, cartesian
-      use modjob, only : method, iprint
+      use modjob, only : method, iprint, octupole, check
       use moddft, only : idftex, idftcor
       use modguess, only : guess
       use modscf, only : dconv
       use modthresh, only : cutint2, threshover
-      use modprop, only : octupole
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
