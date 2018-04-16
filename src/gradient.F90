@@ -194,10 +194,9 @@ end
 !
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom, neleca, numatomic
-      use moddft, only : nrad, nleb
+      use modjob, only : nrad, nleb, idftex, idftcor, hfexchange
       use modatom, only : atomrad
       use modparam, only : tobohr
-      use moddft, only : idftex, idftcor, hfexchange
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -313,10 +312,9 @@ end
 !
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom, neleca, nelecb, numatomic
-      use moddft, only : nrad, nleb
+      use modjob, only : nrad, nleb, idftex, idftcor, hfexchange
       use modatom, only : atomrad
       use modparam, only : tobohr
-      use moddft, only : idftex, idftcor, hfexchange
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp

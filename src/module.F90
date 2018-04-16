@@ -71,6 +71,15 @@ end
       logical :: fdiff, extrap
       character(len=16) :: scfconv
 !
+      integer :: idftex, idftcor, nrad, nleb
+      real(8) :: hfexchange, bqrad(9)
+!
+      integer :: ncore, nvfz, maxmp2diis, maxmp2iter
+!
+      integer :: nopt
+      real(8) :: optconv
+      logical :: cartesian
+!
 !
 !
 end
@@ -193,24 +202,6 @@ end
 end
 
 
-
-!----------------
-  module moddft
-!----------------
-      implicit none
-      integer :: idftex, idftcor, nrad, nleb
-      real(8) :: hfexchange, bqrad(9)
-end
-
-
-!----------------
-  module modmp2
-!----------------
-      implicit none
-      integer :: ncore, nvfz, maxmp2diis, maxmp2iter
-end
-
-
 !-----------------
   module modatom
 !-----------------
@@ -237,16 +228,6 @@ end
 &     1.69D+00, 1.70D+00, 1.71D+00, 1.72D+00, 1.66D+00, 1.66D+00, 1.68D+00, 1.68D+00, 1.65D+00, &
 &     1.67D+00, 1.73D+00, 1.76D+00, 1.61D+00, 1.57D+00, 1.49D+00, 1.43D+00, 1.41D+00, 1.34D+00, &
 &     1.29D+00, 1.28D+00, 1.21D+00, 1.22D+00/
-end
-
-
-!----------------
-  module modopt
-!----------------
-      implicit none
-      integer :: nopt
-      real(8) :: optconv
-      logical :: cartesian
 end
 
 

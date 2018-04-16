@@ -25,7 +25,7 @@
       use modbasis, only : nshell, nao, mbf
       use modmolecule, only : neleca, nmo
       use modenergy, only : escf, emp2, escsmp2
-      use modmp2, only : ncore, nvfz
+      use modjob, only : ncore, nvfz
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp

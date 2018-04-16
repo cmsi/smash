@@ -26,7 +26,7 @@
       use modbasis, only : nao, nshell, mbf, mtype
       use modmolecule, only : nmo, natom, neleca, numatomic
       use modenergy, only : escf, emp2, escsmp2
-      use modmp2, only : ncore, nvfz, maxmp2diis
+      use modjob, only : ncore, nvfz, maxmp2diis
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -263,7 +263,7 @@ end
 !
       use modbasis, only : nshell, nao
       use modmolecule, only : nmo, natom
-      use modmp2, only : maxmp2diis
+      use modjob, only : maxmp2diis
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -1357,8 +1357,7 @@ end
 !       diismtrx  (DIIS matrix)
 !
       use modbasis, only : nao, nshell
-      use modmp2, only : maxmp2diis, maxmp2iter
-      use modjob, only : threshmp2cphf
+      use modjob, only : threshmp2cphf, maxmp2diis, maxmp2iter
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp

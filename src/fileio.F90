@@ -24,13 +24,12 @@
       use modjob, only : method, runtype, scftype, bohr, memory, iprint, octupole, check, &
 &                        precision, cutint2, threshdiis, threshsoscf, threshqc, threshweight, &
 &                        threshrho, threshdfock, threshdftao, threshover, threshatom, &
-&                        threshmp2cphf, &
+&                        threshmp2cphf, nrad, nleb, bqrad, &
+&                        ncore, nvfz, maxmp2diis, maxmp2iter, &
+&                        nopt, optconv, cartesian, &
 &                        scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
       use modguess, only : guess
-      use modopt, only : nopt, optconv, cartesian
-      use moddft, only : nrad, nleb, bqrad
       use modecp, only : ecp, flagecp
-      use modmp2, only : ncore, nvfz, maxmp2diis, maxmp2iter
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -456,8 +455,8 @@ end
 !
       use modmolecule, only : natom, neleca, nelecb, charge, multi
       use modbasis, only : nshell, nao, nprim, basis, spher
-      use modjob, only : method, runtype, scftype, bohr, octupole, check, precision
-      use modopt, only : nopt, optconv, cartesian
+      use modjob, only : method, runtype, scftype, bohr, octupole, check, precision, &
+&                        nopt, optconv, cartesian
       use modguess, only : guess
       use modtype, only : typecomp
       implicit none
@@ -541,8 +540,7 @@ end
 !
       use modmolecule, only : numatomic, natom, coord, znuc
       use modparam, only : mxatom, tobohr, maxline, input, icheck
-      use modopt, only : cartesian
-      use modjob, only : runtype, bohr
+      use modjob, only : runtype, bohr, cartesian
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp

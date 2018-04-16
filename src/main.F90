@@ -198,17 +198,16 @@ end
 !
       use modguess, only : spher_g, guess
       use modbasis, only : spher, basis
-      use moddft, only : idftex, idftcor, nrad, nleb, bqrad
-      use modopt, only : nopt, optconv, cartesian
       use modecp, only : ecp, flagecp
       use modjob, only : scftype, runtype, method, bohr, memory, iprint, octupole, check, &
 &                        precision, cutint2, threshsoscf, threshqc, threshover, threshatom, &
 &                        threshdiis, threshweight, threshrho, threshdfock, threshdftao, &
 &                        threshmp2cphf, &
 &                        maxiter, dconv, fdiff, scfconv, maxdiis, maxsoscf, maxqc, &
-&                        maxqcdiag, maxqcdiagsub, extrap
+&                        maxqcdiag, maxqcdiagsub, extrap, &
+&                        idftex, idftcor, nrad, nleb, bqrad, &
+&                        ncore, nvfz, maxmp2diis, maxmp2iter, nopt, optconv, cartesian
       use modmolecule, only : multi, charge
-      use modmp2, only : ncore, nvfz, maxmp2diis, maxmp2iter
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -281,8 +280,7 @@ end
 ! Reset defaults after reading input file
 !
       use modjob, only : precision, cutint2, threshweight, threshrho, threshdfock, threshdftao, &
-&                        dconv
-      use moddft, only : nrad, nleb
+&                        dconv, nrad, nleb
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -390,8 +388,8 @@ end
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo
-      use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv
-      use moddft, only : idftex, idftcor
+      use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
+&                        idftex, idftcor
       use modguess, only : guess
       use modtype, only : typecomp
       implicit none
@@ -537,8 +535,8 @@ end
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo
-      use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv
-      use moddft, only : idftex, idftcor
+      use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
+&                        idftex, idftcor
       use modguess, only : guess
       use modtype, only : typecomp
       implicit none
@@ -686,8 +684,8 @@ end
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom
-      use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv
-      use moddft, only : idftex, idftcor
+      use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
+&                        idftex, idftcor
       use modguess, only : guess
       use modtype, only : typecomp
       implicit none
@@ -863,8 +861,8 @@ end
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom
-      use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv
-      use moddft, only : idftex, idftcor
+      use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
+&                        idftex, idftcor
       use modguess, only : guess
       use modtype, only : typecomp
       implicit none
@@ -1045,9 +1043,8 @@ end
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom, coord, coordold
-      use modopt, only : nopt, optconv, cartesian
-      use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv
-      use moddft, only : idftex, idftcor
+      use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
+&                        idftex, idftcor, nopt, optconv, cartesian
       use modguess, only : guess
       use modtype, only : typecomp
       implicit none
@@ -1351,9 +1348,8 @@ end
       use modbasis, only : nao, nshell
       use modenergy, only : enuc
       use modmolecule, only : nmo, natom, coord, coordold
-      use modopt, only : nopt, optconv, cartesian
-      use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv
-      use moddft, only : idftex, idftcor
+      use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
+&                        idftex, idftcor, nopt, optconv, cartesian
       use modguess, only : guess
       use modtype, only : typecomp
       implicit none
@@ -1714,10 +1710,9 @@ end
 ! Set functional information
 ! Adjust the numbe of DFT grids when heavy elements are included
 !
-      use moddft, only : idftex, idftcor, nrad, nleb, hfexchange, bqrad
       use modatom, only : atomrad
       use modmolecule, only : natom, numatomic
-      use modjob, only : method
+      use modjob, only : method, idftex, idftcor, nrad, nleb, hfexchange, bqrad
       use modbasis, only : nao
       use modtype, only : typecomp
       implicit none
@@ -1763,7 +1758,7 @@ end
 !
 ! Set MP2 information
 !
-      use modmp2, only : ncore
+      use modjob, only : ncore
       implicit none
       integer :: ncorecalc
 !

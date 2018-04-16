@@ -888,7 +888,6 @@ end
 !       eigen   (MO energy)
 ! Inout : cmo   (MO coefficient matrix)
 !
-      use moddft, only : idftex, idftcor, nrad, nleb, hfexchange
       use modatom, only : atomrad
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nmo, natom, numatomic
@@ -896,7 +895,8 @@ end
       use modjob, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
 &                        threshweight, threshrho, threshdfock, threshdftao, iprint, &
 &                        maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
-&                        maxqcdiagsub, scfconv, extrap
+&                        maxqcdiagsub, scfconv, extrap, &
+&                        idftex, idftcor, nrad, nleb, hfexchange
       use modparam, only : tobohr
       use modtype, only : typecomp
       implicit none
@@ -1955,7 +1955,6 @@ end
 ! Inout : cmoa  (Alpha MO coefficient matrix)
 !         cmob  (Beta MO coefficient matrix)
 !
-      use moddft, only : idftex, idftcor, nrad, nleb, hfexchange
       use modatom, only : atomrad
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nelecb, nmo, natom, numatomic
@@ -1963,7 +1962,8 @@ end
       use modjob, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
 &                        threshweight, threshrho, threshdfock, threshdftao, iprint, &
 &                        maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
-&                        maxqcdiagsub, scfconv, extrap
+&                        maxqcdiagsub, scfconv, extrap, &
+&                        idftex, idftcor, nrad, nleb, hfexchange
       use modparam, only : tobohr
       use modtype, only : typecomp
       implicit none

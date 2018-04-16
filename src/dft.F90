@@ -33,9 +33,8 @@
 !       vao,vmo,xyzpt,work (work space)
 !
       use modmolecule, only : natom, neleca
-      use moddft, only : nrad, nleb
       use modbasis, only : nao
-      use modjob, only : threshweight, threshrho, threshdfock, threshdftao
+      use modjob, only : threshweight, threshrho, threshdfock, threshdftao, nrad, nleb
       implicit none
       integer,intent(in) :: idftex, idftcor, nproc, myrank, mpi_comm
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
@@ -215,9 +214,8 @@ end
 !       fock3 (Work space)
 !
       use modmolecule, only : natom, neleca, nelecb
-      use moddft, only : nrad, nleb
       use modbasis, only : nao
-      use modjob, only : threshweight, threshrho, threshdfock, threshdftao
+      use modjob, only : threshweight, threshrho, threshdfock, threshdftao, nrad, nleb
       implicit none
       integer,intent(in) :: idftex, idftcor, nproc, myrank, mpi_comm
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
@@ -555,7 +553,7 @@ end
 ! Out : ptweight  (weight of grid point)
 !       xyzpt, work (work space)
 !
-      use moddft, only : nrad, nleb
+      use modjob, only : nrad, nleb
       use modmolecule, only : natom
       implicit none
       integer,intent(in) :: nproc, myrank
@@ -2358,8 +2356,7 @@ end
 !
       use modbasis, only : nao
       use modmolecule, only : natom, neleca
-      use moddft, only : nrad, nleb
-      use modjob, only : threshweight, threshrho, threshdfock, threshdftao
+      use modjob, only : threshweight, threshrho, threshdfock, threshdftao, nrad, nleb
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -2475,8 +2472,7 @@ end
 !
       use modbasis, only : nao
       use modmolecule, only : natom, neleca, nelecb
-      use moddft, only : nrad, nleb
-      use modjob, only : threshweight, threshrho, threshdfock, threshdftao
+      use modjob, only : threshweight, threshrho, threshdfock, threshdftao, nrad, nleb
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
