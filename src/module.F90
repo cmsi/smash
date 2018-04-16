@@ -65,6 +65,14 @@ end
       real(8) :: threshweight, threshrho, threshdfock, threshdftao
       real(8) :: threshmp2cphf
       character(len=16) :: precision
+!
+      integer :: maxiter, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
+      real(8) :: dconv
+      logical :: fdiff, extrap
+      character(len=16) :: scfconv
+!
+!
+!
 end
 
 
@@ -184,19 +192,6 @@ end
       real(8) :: enuc, eelec, escf, escfe, emp2, escsmp2
 end
 
-
-!----------------
-  module modscf
-!----------------
-!
-! These variables are for SCF calculations.
-!
-      implicit none
-      integer :: maxiter, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
-      real(8) :: dconv
-      logical :: fdiff, extrap
-      character(len=16) :: scfconv
-end
 
 
 !----------------

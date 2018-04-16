@@ -28,10 +28,10 @@
 !
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nmo
-      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
-&                        maxqcdiagsub, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
-      use modjob, only : iprint, threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis
+      use modjob, only : iprint, threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
+&                        maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
+&                        maxqcdiagsub, scfconv, extrap
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -892,11 +892,11 @@ end
       use modatom, only : atomrad
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nmo, natom, numatomic
-      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
-                         maxqcdiagsub, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
       use modjob, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
-&                        threshweight, threshrho, threshdfock, threshdftao, iprint
+&                        threshweight, threshrho, threshdfock, threshdftao, iprint, &
+&                        maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
+&                        maxqcdiagsub, scfconv, extrap
       use modparam, only : tobohr
       use modtype, only : typecomp
       implicit none
@@ -1274,11 +1274,11 @@ end
 !
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nelecb, nmo
-      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
-&                        maxqcdiagsub, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
       use modjob, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
-&                        iprint
+&                        iprint, &
+&                        maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
+&                        maxqcdiagsub, scfconv, extrap
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -1959,12 +1959,11 @@ end
       use modatom, only : atomrad
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nelecb, nmo, natom, numatomic
-      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
-&                        maxqcdiagsub, scfconv, extrap
       use modenergy, only : enuc, escf, escfe
       use modjob, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
-&                        threshweight, threshrho, threshdfock, threshdftao, &
-&                        iprint
+&                        threshweight, threshrho, threshdfock, threshdftao, iprint, &
+&                        maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
+&                        maxqcdiagsub, scfconv, extrap
       use modparam, only : tobohr
       use modtype, only : typecomp
       implicit none

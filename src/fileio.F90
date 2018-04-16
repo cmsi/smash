@@ -24,9 +24,9 @@
       use modjob, only : method, runtype, scftype, bohr, memory, iprint, octupole, check, &
 &                        precision, cutint2, threshdiis, threshsoscf, threshqc, threshweight, &
 &                        threshrho, threshdfock, threshdftao, threshover, threshatom, &
-&                        threshmp2cphf
+&                        threshmp2cphf, &
+&                        scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
       use modguess, only : guess
-      use modscf, only : scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
       use modopt, only : nopt, optconv, cartesian
       use moddft, only : nrad, nleb, bqrad
       use modecp, only : ecp, flagecp
