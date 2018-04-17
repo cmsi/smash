@@ -133,7 +133,7 @@ end
 !
 ! Read input file and set variables
 !
-      use modecp, only : flagecp
+      use modjob, only : flagecp
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -198,14 +198,14 @@ end
 !
       use modguess, only : spher_g, guess
       use modbasis, only : spher, basis
-      use modecp, only : ecp, flagecp
+      use modecp, only : ecp
       use modjob, only : scftype, runtype, method, bohr, memory, iprint, octupole, check, &
 &                        precision, cutint2, threshsoscf, threshqc, threshover, threshatom, &
 &                        threshdiis, threshweight, threshrho, threshdfock, threshdftao, &
 &                        threshmp2cphf, &
 &                        maxiter, dconv, fdiff, scfconv, maxdiis, maxsoscf, maxqc, &
 &                        maxqcdiag, maxqcdiagsub, extrap, &
-&                        idftex, idftcor, nrad, nleb, bqrad, &
+&                        idftex, idftcor, nrad, nleb, bqrad, flagecp, &
 &                        ncore, nvfz, maxmp2diis, maxmp2iter, nopt, optconv, cartesian
       use modmolecule, only : multi, charge
       use modtype, only : typecomp
@@ -331,8 +331,8 @@ end
 ! Set number of electrons
 !
       use modmolecule, only : numatomic, neleca, nelecb, natom, multi, charge
-      use modecp, only : flagecp, izcore
-      use modjob, only : scftype
+      use modecp, only : izcore
+      use modjob, only : scftype, flagecp
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp

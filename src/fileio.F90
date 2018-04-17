@@ -26,10 +26,10 @@
 &                        threshrho, threshdfock, threshdftao, threshover, threshatom, &
 &                        threshmp2cphf, nrad, nleb, bqrad, &
 &                        ncore, nvfz, maxmp2diis, maxmp2iter, &
-&                        nopt, optconv, cartesian, &
+&                        nopt, optconv, cartesian, flagecp, &
 &                        scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
       use modguess, only : guess
-      use modecp, only : ecp, flagecp
+      use modecp, only : ecp
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -1406,10 +1406,9 @@ end
 !
       use modparam, only : icheck
       use modmolecule, only : numatomic, natom, coord, nmo, neleca, nelecb, charge, multi, znuc
-      use modjob, only : method, runtype, scftype, version
+      use modjob, only : method, runtype, scftype, version, flagecp
       use modbasis, only : nshell, nao, nprim, ex, coeffinp, locprim, locbf, locatom, &
 &                          mprim, mbf, mtype
-      use modecp, only : flagecp
       implicit none
       integer :: ii, jj
       real(8),intent(in) :: cmoa(nao,nao), dmtrxa(nao*(nao+1)/2), energymoa(nao)

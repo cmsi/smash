@@ -298,7 +298,8 @@ end
 ! Out : energy (ionization potential)
 !
       use modmolecule, only : natom, numatomic
-      use modecp, only : flagecp, izcore
+      use modjob, only : flagecp
+      use modecp, only : izcore
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp

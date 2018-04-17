@@ -80,6 +80,7 @@ end
       real(8) :: optconv
       logical :: cartesian
 !
+      logical :: flagecp
 !
 !
 end
@@ -233,7 +234,6 @@ end
       real(8) :: execp(mxprim), coeffecp(mxprim), zlm(581)
       real(8) :: exgenecp(mxprim), coeffgenecp(mxprim)
       character(lfunc) :: ecp, atomecp(-9:112)
-      logical :: flagecp
       data lmf/1, 2,3,4, 5,7,8,10,11, 12,14,16,18,20,22,23, 25,28,30,34,36,39,41,43,45,&
 &              47,50,53,57,61,64,67,70,72,76,78, 81,85,88,94,98,104,107,111,114,117,121,125,128,&
 &              131,135,139,145,151,157,163,167,171,175,178,184,188,194,197,&

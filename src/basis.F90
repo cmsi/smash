@@ -21,7 +21,7 @@
       use modmolecule, only : natom, numatomic
       use modbasis, only : basis, locprim, locbf, locatom, mprim, mbf, mtype, &
 &                          nshell, nao, nprim, ex, coeff, coeffinp
-      use modecp, only : flagecp
+      use modjob, only : flagecp
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -249,7 +249,7 @@ end
       use modbasis, only : locprim, locbf, locatom, mprim, mbf, mtype, &
 &                          ex, coeff, locgenprim, mgenprim, mgentype, &
 &                          locgenshell, ngenshell, exgen, coeffgen, atombasis, spher
-      use modecp, only : flagecp
+      use modjob, only : flagecp
       implicit none
       integer,intent(out) :: ishell
       integer :: iatom, nn, ii, jj, ll, lprim
@@ -1098,7 +1098,8 @@ end
 &                          mtype_g, spher_g, ex_gcore, coeff_gcore, locprim_gcore, &
 &                          locbf_gcore, locatom_gcore, mprim_gcore, mbf_gcore, mtype_gcore
       use modparam, only : mxao, mxshell, mxprim
-      use modecp, only : flagecp, izcore
+      use modjob, only : flagecp
+      use modecp, only : izcore
       implicit none
       integer,intent(in) :: iatom, itype
       integer,intent(inout):: ishell
@@ -9641,7 +9642,8 @@ end
       use modguess, only : ex_g, coeff_g, locprim_g, locbf_g, locatom_g, mprim_g, mbf_g, &
 &                          mtype_g, spher_g
       use modparam, only : mxao, mxshell, mxprim
-      use modecp, only : flagecp, izcore
+      use modjob, only : flagecp
+      use modecp, only : izcore
 !
       implicit none
       integer,intent(in) :: iatom, itype

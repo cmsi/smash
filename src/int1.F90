@@ -24,7 +24,7 @@
 !       hstmat4 (Work array)
 !
       use modbasis, only : nao, nshell, mtype
-      use modecp, only : flagecp
+      use modjob, only : flagecp
       implicit none
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh, num, maxfunc(0:6), maxbasis, maxdim

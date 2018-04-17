@@ -20,7 +20,7 @@
 !
       use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom
-      use modecp, only : flagecp
+      use modjob, only : flagecp
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
