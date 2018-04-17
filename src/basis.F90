@@ -1017,8 +1017,8 @@ end
 !            =2 (For extended Huckel calculation of only core orbitals)
 !
       use modmolecule, only : natom, numatomic
-      use modguess, only : locprim_g, locbf_g, nshell_v, nao_v, nprim_v, nshell_g, &
-&                          nao_g, nprim_g, nao_c, &
+      use modguess, only : locprim_g, locbf_g, nshell_v, nao_v, nshell_g, &
+&                          nao_g, nprim_g, &
 &                          locprim_gcore, locbf_gcore, nao_gcore, nprim_gcore, nshell_gcore
       implicit none
       integer,intent(in) :: itype
@@ -1044,7 +1044,6 @@ end
           enddo
           nshell_v= ishell
           nao_v   = locbf_g(ishell+1)
-          nprim_v = locprim_g(ishell+1)
 !
 ! Set core basis functions
 !
@@ -1057,7 +1056,6 @@ end
           enddo
           nshell_g= ishell
           nao_g   = locbf_g(ishell+1)
-          nao_c   = nao_g-nao_v
           nprim_g = locprim_g(ishell+1)
           call bsnrmlz_g
 !

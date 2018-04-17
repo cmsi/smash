@@ -212,7 +212,7 @@ end
 !
       use modparam, only : mxprim, mxshell, mxatom
       implicit none
-      integer :: nshell_v, nao_v, nprim_v, nmo_v, nshell_g, nao_g, nprim_g, nmo_g, nao_c
+      integer :: nshell_v, nao_v, nshell_g, nao_g, nprim_g, nmo_g
       integer :: locprim_g(mxshell+1), locbf_g(mxshell+1), locatom_g(mxshell)
       integer :: mprim_g(mxshell), mbf_g(mxshell), mtype_g(mxshell)
       integer :: nshell_gcore, nao_gcore, nprim_gcore
