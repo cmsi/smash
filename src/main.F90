@@ -386,8 +386,7 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modbasis, only : nao, nshell
-      use modenergy, only : enuc
-      use modmolecule, only : nmo
+      use modmolecule, only : nmo, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor
       use modguess, only : guess
@@ -533,8 +532,7 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modbasis, only : nao, nshell
-      use modenergy, only : enuc
-      use modmolecule, only : nmo
+      use modmolecule, only : nmo, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor
       use modguess, only : guess
@@ -682,8 +680,7 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modbasis, only : nao, nshell
-      use modenergy, only : enuc
-      use modmolecule, only : nmo, natom
+      use modmolecule, only : nmo, natom, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor
       use modguess, only : guess
@@ -859,8 +856,7 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modbasis, only : nao, nshell
-      use modenergy, only : enuc
-      use modmolecule, only : nmo, natom
+      use modmolecule, only : nmo, natom, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor
       use modguess, only : guess
@@ -1041,8 +1037,7 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modbasis, only : nao, nshell
-      use modenergy, only : enuc
-      use modmolecule, only : nmo, natom, coord, coordold
+      use modmolecule, only : nmo, natom, coord, coordold, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor, nopt, optconv, cartesian
       use modguess, only : guess
@@ -1346,8 +1341,7 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modbasis, only : nao, nshell
-      use modenergy, only : enuc
-      use modmolecule, only : nmo, natom, coord, coordold
+      use modmolecule, only : nmo, natom, coord, coordold, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor, nopt, optconv, cartesian
       use modguess, only : guess
@@ -1710,8 +1704,7 @@ end
 ! Set functional information
 ! Adjust the numbe of DFT grids when heavy elements are included
 !
-      use modatom, only : atomrad
-      use modmolecule, only : natom, numatomic
+      use modmolecule, only : natom, numatomic, atomrad
       use modjob, only : method, idftex, idftcor, nrad, nleb, hfexchange, bqrad
       use modbasis, only : nao
       use modtype, only : typecomp

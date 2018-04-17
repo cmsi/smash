@@ -359,8 +359,7 @@ end
 ! Out : atomvec (atom vector and distance)
 !       surface (surface shifting parameters)
 !
-      use modmolecule, only : natom, coord, numatomic
-      use modatom, only : atomrad
+      use modmolecule, only : natom, coord, numatomic, atomrad
       implicit none
       integer :: iatom, jatom, inum, jnum
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00

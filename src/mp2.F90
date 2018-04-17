@@ -23,8 +23,7 @@
 !       xint    (Exchange integral matrix)
 !       
       use modbasis, only : nshell, nao, mbf
-      use modmolecule, only : neleca, nmo
-      use modenergy, only : escf, emp2, escsmp2
+      use modmolecule, only : neleca, nmo, escf, emp2, escsmp2
       use modjob, only : ncore, nvfz
       use modtype, only : typecomp
       implicit none

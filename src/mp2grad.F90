@@ -24,8 +24,7 @@
 ! Out : egrad   (MP2 energy gradients)
 !
       use modbasis, only : nao, nshell, mbf, mtype
-      use modmolecule, only : nmo, natom, neleca, numatomic
-      use modenergy, only : escf, emp2, escsmp2
+      use modmolecule, only : nmo, natom, neleca, numatomic, escf, emp2, escsmp2
       use modjob, only : ncore, nvfz, maxmp2diis
       use modtype, only : typecomp
       implicit none

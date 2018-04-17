@@ -193,9 +193,8 @@ end
 ! Driver of closed-shell DFT energy gradient calculation
 !
       use modbasis, only : nshell, nao, mtype
-      use modmolecule, only : natom, neleca, numatomic
+      use modmolecule, only : natom, neleca, numatomic, atomrad
       use modjob, only : nrad, nleb, idftex, idftcor, hfexchange
-      use modatom, only : atomrad
       use modparam, only : tobohr
       use modtype, only : typecomp
       implicit none
@@ -311,9 +310,8 @@ end
 ! Driver of open-shell DFT energy gradient calculation
 !
       use modbasis, only : nshell, nao, mtype
-      use modmolecule, only : natom, neleca, nelecb, numatomic
+      use modmolecule, only : natom, neleca, nelecb, numatomic, atomrad
       use modjob, only : nrad, nleb, idftex, idftcor, hfexchange
-      use modatom, only : atomrad
       use modparam, only : tobohr
       use modtype, only : typecomp
       implicit none

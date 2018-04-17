@@ -27,8 +27,7 @@
 ! Inout : cmo   (MO coefficient matrix)
 !
       use modbasis, only : nshell, nao, mtype
-      use modmolecule, only : neleca, nmo
-      use modenergy, only : enuc, escf, escfe
+      use modmolecule, only : neleca, nmo, enuc, escf, escfe
       use modjob, only : iprint, threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
 &                        maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
 &                        maxqcdiagsub, scfconv, extrap
@@ -888,10 +887,8 @@ end
 !       eigen   (MO energy)
 ! Inout : cmo   (MO coefficient matrix)
 !
-      use modatom, only : atomrad
       use modbasis, only : nshell, nao, mtype
-      use modmolecule, only : neleca, nmo, natom, numatomic
-      use modenergy, only : enuc, escf, escfe
+      use modmolecule, only : neleca, nmo, natom, numatomic, enuc, escf, escfe, atomrad
       use modjob, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
 &                        threshweight, threshrho, threshdfock, threshdftao, iprint, &
 &                        maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
@@ -1273,8 +1270,7 @@ end
 !         cmob  (Beta MO coefficient matrix)
 !
       use modbasis, only : nshell, nao, mtype
-      use modmolecule, only : neleca, nelecb, nmo
-      use modenergy, only : enuc, escf, escfe
+      use modmolecule, only : neleca, nelecb, nmo, enuc, escf, escfe
       use modjob, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
 &                        iprint, &
 &                        maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
@@ -1955,10 +1951,8 @@ end
 ! Inout : cmoa  (Alpha MO coefficient matrix)
 !         cmob  (Beta MO coefficient matrix)
 !
-      use modatom, only : atomrad
       use modbasis, only : nshell, nao, mtype
-      use modmolecule, only : neleca, nelecb, nmo, natom, numatomic
-      use modenergy, only : enuc, escf, escfe
+      use modmolecule, only : neleca, nelecb, nmo, natom, numatomic, enuc, escf, escfe, atomrad
       use modjob, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
 &                        threshweight, threshrho, threshdfock, threshdftao, iprint, &
 &                        maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
