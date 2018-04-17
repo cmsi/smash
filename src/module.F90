@@ -82,6 +82,7 @@ end
 !
       logical :: flagecp
 !
+      character(len=16) :: guess
 !
 end
 
@@ -221,7 +222,6 @@ end
       real(8) :: ex_g(mxprim), coeff_g(mxprim), coord_g(3,mxatom)
       real(8) :: ex_gcore(mxprim), coeff_gcore(mxprim), coord_gcore(3,mxatom)
       logical :: spher_g
-      character(len=16) :: guess
 end
 
 

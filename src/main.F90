@@ -196,7 +196,7 @@ end
 !
 ! Set defaults before reading input file
 !
-      use modguess, only : spher_g, guess
+      use modguess, only : spher_g
       use modbasis, only : spher, basis, ecp
       use modjob, only : scftype, runtype, method, bohr, memory, iprint, octupole, check, &
 &                        precision, cutint2, threshsoscf, threshqc, threshover, threshatom, &
@@ -204,7 +204,7 @@ end
 &                        threshmp2cphf, &
 &                        maxiter, dconv, fdiff, scfconv, maxdiis, maxsoscf, maxqc, &
 &                        maxqcdiag, maxqcdiagsub, extrap, &
-&                        idftex, idftcor, nrad, nleb, bqrad, flagecp, &
+&                        idftex, idftcor, nrad, nleb, bqrad, flagecp, guess, &
 &                        ncore, nvfz, maxmp2diis, maxmp2iter, nopt, optconv, cartesian
       use modmolecule, only : multi, charge
       use modtype, only : typecomp
@@ -387,8 +387,7 @@ end
       use modbasis, only : nao, nshell
       use modmolecule, only : nmo, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
-&                        idftex, idftcor
-      use modguess, only : guess
+&                        idftex, idftcor, guess
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -533,8 +532,7 @@ end
       use modbasis, only : nao, nshell
       use modmolecule, only : nmo, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
-&                        idftex, idftcor
-      use modguess, only : guess
+&                        idftex, idftcor, guess
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -681,8 +679,7 @@ end
       use modbasis, only : nao, nshell
       use modmolecule, only : nmo, natom, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
-&                        idftex, idftcor
-      use modguess, only : guess
+&                        idftex, idftcor, guess
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -857,8 +854,7 @@ end
       use modbasis, only : nao, nshell
       use modmolecule, only : nmo, natom, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
-&                        idftex, idftcor
-      use modguess, only : guess
+&                        idftex, idftcor, guess
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -1038,8 +1034,7 @@ end
       use modbasis, only : nao, nshell
       use modmolecule, only : nmo, natom, coord, coordold, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
-&                        idftex, idftcor, nopt, optconv, cartesian
-      use modguess, only : guess
+&                        idftex, idftcor, nopt, optconv, cartesian, guess
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -1342,8 +1337,7 @@ end
       use modbasis, only : nao, nshell
       use modmolecule, only : nmo, natom, coord, coordold, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
-&                        idftex, idftcor, nopt, optconv, cartesian
-      use modguess, only : guess
+&                        idftex, idftcor, nopt, optconv, cartesian, guess
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -1647,7 +1641,8 @@ end
       use modbasis, only : ex, coeff, nshell, nao, nprim, locprim, locbf, &
 &                          locatom, mprim, mbf, mtype, spher
       use modguess, only : ex_g, coeff_g, nshell_g, nao_g, nmo_g, nprim_g, locprim_g, locbf_g, &
-&                          locatom_g, mprim_g, mbf_g, mtype_g, spher_g, coord_g, guess
+&                          locatom_g, mprim_g, mbf_g, mtype_g, spher_g, coord_g
+      use modjob, only : guess
       use modmolecule, only : nmo
       implicit none
       integer,intent(in) :: natom, iopt

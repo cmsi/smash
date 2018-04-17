@@ -22,9 +22,8 @@
 !        cmob    (Beta initial guess orbitals)
 ! Inout: overinv (Overlap integral inverse matrix, and then work space)
 !
-      use modguess, only : guess
       use modbasis, only : nao
-      use modjob, only : scftype
+      use modjob, only : scftype, guess
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp

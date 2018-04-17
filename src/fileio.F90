@@ -26,9 +26,8 @@
 &                        threshrho, threshdfock, threshdftao, threshover, threshatom, &
 &                        threshmp2cphf, nrad, nleb, bqrad, &
 &                        ncore, nvfz, maxmp2diis, maxmp2iter, &
-&                        nopt, optconv, cartesian, flagecp, &
+&                        nopt, optconv, cartesian, flagecp, guess, &
 &                        scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
-      use modguess, only : guess
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -455,8 +454,7 @@ end
       use modmolecule, only : natom, neleca, nelecb, charge, multi
       use modbasis, only : nshell, nao, nprim, basis, spher
       use modjob, only : method, runtype, scftype, bohr, octupole, check, precision, &
-&                        nopt, optconv, cartesian
-      use modguess, only : guess
+&                        nopt, optconv, cartesian, guess
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
