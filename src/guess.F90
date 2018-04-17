@@ -299,7 +299,7 @@ end
 !
       use modmolecule, only : natom, numatomic
       use modjob, only : flagecp
-      use modecp, only : izcore
+      use modbasis, only : izcore
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp

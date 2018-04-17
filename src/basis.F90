@@ -1099,7 +1099,7 @@ end
 &                          locbf_gcore, locatom_gcore, mprim_gcore, mbf_gcore, mtype_gcore
       use modparam, only : mxao, mxshell, mxprim
       use modjob, only : flagecp
-      use modecp, only : izcore
+      use modbasis, only : izcore
       implicit none
       integer,intent(in) :: iatom, itype
       integer,intent(inout):: ishell
@@ -9643,7 +9643,7 @@ end
 &                          mtype_g, spher_g
       use modparam, only : mxao, mxshell, mxprim
       use modjob, only : flagecp
-      use modecp, only : izcore
+      use modbasis, only : izcore
 !
       implicit none
       integer,intent(in) :: iatom, itype

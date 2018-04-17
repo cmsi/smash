@@ -150,7 +150,7 @@ end
 ! Calculate the number of core MOs
 !
       use modmolecule, only : natom, numatomic
-      use modecp, only : izcore
+      use modbasis, only : izcore
       implicit none
       integer :: ncorecalc, ncore, iatom, numcore(-9:137)
       data numcore/12*0, 8*1, 8*5, 18*9, 18*18, 32*27, 32*43, 19*59/

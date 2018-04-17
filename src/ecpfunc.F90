@@ -18,7 +18,7 @@
 !
 ! Driver of setting ecp functions
 !
-      use modecp, only : ecp, maxangecp, izcore, locecp, mprimecp, execp, coeffecp, mtypeecp
+      use modbasis, only : ecp, maxangecp, izcore, locecp, mprimecp, execp, coeffecp, mtypeecp
       use modmolecule, only : natom, znuc
       use modtype, only : typecomp
       implicit none
@@ -70,9 +70,9 @@ end
 ! This routine should be called only from master node.
 !
       use modmolecule, only : natom, numatomic
-      use modecp, only : maxangecp, izcore, mtypeecp, locecp, mprimecp, execp, coeffecp, &
-&                        maxgenangecp, izgencore, mgentypeecp, locgenecp, mgenprimecp, &
-&                        exgenecp, coeffgenecp, atomecp
+      use modbasis, only : maxangecp, izcore, mtypeecp, locecp, mprimecp, execp, coeffecp, &
+&                          maxgenangecp, izgencore, mgentypeecp, locgenecp, mgenprimecp, &
+&                          exgenecp, coeffgenecp, atomecp
       implicit none
       integer,intent(inout) :: iprim
       integer :: iatom, nn, lmax, iang, numprim, locgen, ii
@@ -121,7 +121,7 @@ end
 !
       use modmolecule, only : numatomic
       use modparam, only : mxprim
-      use modecp, only : maxangecp, izcore, mtypeecp, locecp, mprimecp, execp, coeffecp
+      use modbasis, only : maxangecp, izcore, mtypeecp, locecp, mprimecp, execp, coeffecp
       implicit none
       integer,intent(in) :: iatom
       integer,intent(inout) :: iprim

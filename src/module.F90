@@ -158,7 +158,7 @@ end
 ! locgenshell :  Starting address of basis shells
 ! ngenshell : Number of basis shells for an atom
 !
-      use modparam, only : mxprim, mxshell
+      use modparam, only : mxprim, mxshell, mxatom
       implicit none
       integer :: nshell, nao, nprim
       integer :: locprim(mxshell+1), locbf(mxshell+1), locatom(mxshell)
@@ -169,6 +169,14 @@ end
       real(8) :: exgen(mxprim), coeffgen(mxprim)
       character(len=16) :: basis, atombasis(-9:112)
       logical :: spher
+!
+      integer :: maxangecp(mxatom), izcore(mxatom)=0, mtypeecp(mxprim)
+      integer :: locecp(0:5,mxatom), mprimecp(0:5,mxatom)
+      integer :: maxgenangecp(-9:112), izgencore(-9:112), mgentypeecp(mxprim)
+      integer :: locgenecp(0:5,-9:112), mgenprimecp(0:5,-9:112)
+      real(8) :: execp(mxprim), coeffecp(mxprim)
+      real(8) :: exgenecp(mxprim), coeffgenecp(mxprim)
+      character(len=16) :: ecp, atomecp(-9:112)
 end
 
 
@@ -223,17 +231,10 @@ end
 !
 ! izcore    : number of core electrons per atom for ECP calculation
 !
-      use modparam, only : mxprim, mxshell, mxatom
       implicit none
-      integer,parameter :: lfunc=16, nterm1=625291, nterm2=26841
-      integer :: maxangecp(mxatom), izcore(mxatom)=0, mtypeecp(mxprim)
-      integer :: locecp(0:5,mxatom), mprimecp(0:5,mxatom)
-      integer :: maxgenangecp(-9:112), izgencore(-9:112), mgentypeecp(mxprim)
-      integer :: locgenecp(0:5,-9:112), mgenprimecp(0:5,-9:112)
+      integer,parameter :: nterm1=625291, nterm2=26841
       integer :: lmf(122), lmx(581), lmy(581), lmz(581), nbfirst(0:7), nx(84), ny(84), nz(84)
-      real(8) :: execp(mxprim), coeffecp(mxprim), zlm(581)
-      real(8) :: exgenecp(mxprim), coeffgenecp(mxprim)
-      character(lfunc) :: ecp, atomecp(-9:112)
+      real(8) :: zlm(581)
       data lmf/1, 2,3,4, 5,7,8,10,11, 12,14,16,18,20,22,23, 25,28,30,34,36,39,41,43,45,&
 &              47,50,53,57,61,64,67,70,72,76,78, 81,85,88,94,98,104,107,111,114,117,121,125,128,&
 &              131,135,139,145,151,157,163,167,171,175,178,184,188,194,197,&

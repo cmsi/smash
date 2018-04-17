@@ -20,8 +20,8 @@
 !
 ! Out  : hstmat2 (one electron Hamiltonian matrix)
 !
-      use modecp, only : nterm1, nterm2, maxangecp
-      use modbasis, only : nao, mtype, nshell
+      use modecp, only : nterm1, nterm2
+      use modbasis, only : nao, mtype, nshell, maxangecp
       use modmolecule, only : natom
       implicit none
       integer,intent(in) :: nproc, myrank
@@ -113,8 +113,9 @@ end
 !
       use modparam, only : mxprsh
       use modmolecule, only : natom, coord
-      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
-      use modecp, only : maxangecp, mtypeecp, locecp, mprimecp, execp, coeffecp, nterm1, nterm2
+      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao, &
+&                          maxangecp, mtypeecp, locecp, mprimecp, execp, coeffecp
+      use modecp, only : nterm1, nterm2
       implicit none
       integer,intent(in) :: label1ecp(nterm1*9), label2ecp(nterm2*6), num1ecp(*), num2ecp(*)
       integer,intent(in) :: numtbasis, ish, jsh, len1

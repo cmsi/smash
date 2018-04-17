@@ -19,7 +19,7 @@
 ! Read input data and open checkpoint file if necessary
 !
       use modparam, only : maxline, input
-      use modbasis, only : basis, spher
+      use modbasis, only : basis, spher, ecp
       use modmolecule, only : numatomic, natom, coord, znuc, charge, multi
       use modjob, only : method, runtype, scftype, bohr, memory, iprint, octupole, check, &
 &                        precision, cutint2, threshdiis, threshsoscf, threshqc, threshweight, &
@@ -29,7 +29,6 @@
 &                        nopt, optconv, cartesian, flagecp, &
 &                        scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
       use modguess, only : guess
-      use modecp, only : ecp
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -379,7 +378,7 @@ end
 ! Write ECP functions
 !
       use modmolecule, only : numatomic, natom
-      use modecp, only : maxangecp, mtypeecp, locecp, mprimecp, execp, coeffecp, izcore
+      use modbasis, only : maxangecp, mtypeecp, locecp, mprimecp, execp, coeffecp, izcore
       use modjob, only : iprint
       use modtype, only : typecomp
       implicit none
@@ -1061,8 +1060,8 @@ end
 ! Read basis set
 !
       use modparam, only : mxprim, mxshell, maxline, input
-      use modecp, only : exgenecp, coeffgenecp, maxgenangecp, izgencore, mgentypeecp, &
-&                        locgenecp, mgenprimecp, atomecp
+      use modbasis, only : exgenecp, coeffgenecp, maxgenangecp, izgencore, mgentypeecp, &
+&                          locgenecp, mgenprimecp, atomecp
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp

@@ -197,8 +197,7 @@ end
 ! Set defaults before reading input file
 !
       use modguess, only : spher_g, guess
-      use modbasis, only : spher, basis
-      use modecp, only : ecp
+      use modbasis, only : spher, basis, ecp
       use modjob, only : scftype, runtype, method, bohr, memory, iprint, octupole, check, &
 &                        precision, cutint2, threshsoscf, threshqc, threshover, threshatom, &
 &                        threshdiis, threshweight, threshrho, threshdfock, threshdftao, &
@@ -331,7 +330,7 @@ end
 ! Set number of electrons
 !
       use modmolecule, only : numatomic, neleca, nelecb, natom, multi, charge
-      use modecp, only : izcore
+      use modbasis, only : izcore
       use modjob, only : scftype, flagecp
       use modtype, only : typecomp
       implicit none
