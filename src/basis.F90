@@ -1019,7 +1019,7 @@ end
       use modmolecule, only : natom, numatomic
       use modguess, only : locprim_g, locbf_g, nshell_v, nao_v, nshell_g, &
 &                          nao_g, nprim_g, &
-&                          locprim_gcore, locbf_gcore, nao_gcore, nprim_gcore, nshell_gcore
+&                          locprim_gcore, locbf_gcore, nao_gcore, nshell_gcore
       implicit none
       integer,intent(in) :: itype
       integer :: ishell, iatom
@@ -1074,7 +1074,6 @@ end
           enddo
           nshell_gcore= ishell
           nao_gcore   = locbf_gcore(ishell+1)
-          nprim_gcore = locprim_gcore(ishell+1)
           call bsnrmlz_gcore
       end select
 !

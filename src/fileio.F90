@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !---------------------------------
-  subroutine readinput(datacomp)
+  subroutine readinput(databasis,datacomp)
 !---------------------------------
 !
 ! Read input data and open checkpoint file if necessary
@@ -28,8 +28,9 @@
 &                        ncore, nvfz, maxmp2diis, maxmp2iter, &
 &                        nopt, optconv, cartesian, flagecp, guess, &
 &                        scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(inout) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: ii, llen, intarray(16), info
       real(8) :: realarray(23)
@@ -83,6 +84,60 @@
             call iabort
           endif
         enddo
+!
+!       method
+!       runtype
+        basis    = databasis%basis
+!       scftype
+!       memory
+!       guess
+        ecp      = databasis%ecp
+!       scfconv
+!       precision
+!       charge
+!       cutint2
+!       dconv
+!       optconv
+!       threshdiis
+!       threshsoscf
+!       threshqc
+!       bqrad(1)
+!       bqrad(2)
+!       bqrad(3)
+!       bqrad(4)
+!       bqrad(5)
+!       bqrad(6)
+!       bqrad(7)
+!       bqrad(8)
+!       bqrad(9)
+!       threshweight
+!       threshrho
+!       threshdfock
+!       threshdftao
+!       threshover
+!       threshatom
+!       threshmp2cphf
+!       natom
+!       multi
+!       iprint
+!       maxiter
+!       maxdiis
+!       maxsoscf
+!       maxqc
+!       maxqcdiag
+!       maxqcdiagsub
+!       nopt
+!       nrad
+!       nleb
+!       ncore
+!       nvfz
+!       maxmp2diis
+!       maxmp2iter
+        spher       = databasis%spher
+!       bohr
+!       flagecp
+!       cartesian
+!       octupole
 !
 100     rewind(input)
         read(input,nml=job,end=110,iostat=info)
@@ -262,6 +317,59 @@
       flagecp = logarray(3)
       cartesian=logarray(4)
       octupole =logarray(5)
+!
+!     method  = chararray(1)
+!     runtype = chararray(2)
+      databasis%basis   = chararray(3)
+!     scftype = chararray(4)
+!     memory  = chararray(5)
+!     guess   = chararray(6)
+      databasis%ecp     = chararray(7)
+!     scfconv = chararray(8)
+!     precision=chararray(9)
+!     charge  = realarray( 1)
+!     cutint2 = realarray( 2)
+!     dconv   = realarray( 3)
+!     optconv = realarray( 4)
+!     threshdiis = realarray( 5)
+!     threshsoscf= realarray( 6)
+!     threshqc= realarray( 7)
+!     bqrad(1)= realarray( 8)
+!     bqrad(2)= realarray( 9)
+!     bqrad(3)= realarray(10)
+!     bqrad(4)= realarray(11)
+!     bqrad(5)= realarray(12)
+!     bqrad(6)= realarray(13)
+!     bqrad(7)= realarray(14)
+!     bqrad(8)= realarray(15)
+!     bqrad(9)= realarray(16)
+!     threshweight= realarray(17)
+!     threshrho   = realarray(18)
+!     threshdfock = realarray(19)
+!     threshdftao = realarray(20)
+!     threshover  = realarray(21)
+!     threshatom  = realarray(22)
+!     threshmp2cphf=realarray(23)
+!     multi   = intarray( 2)
+!     iprint  = intarray( 3)
+!     maxiter = intarray( 4)
+!     maxdiis = intarray( 5)
+!     maxsoscf= intarray( 6)
+!     maxqc   = intarray( 7)
+!     maxqcdiag=intarray( 8)
+!     maxqcdiagsub=intarray( 9)
+!     nopt    = intarray(10)
+!     nrad    = intarray(11)
+!     nleb    = intarray(12)
+!     ncore   = intarray(13)
+!     nvfz    = intarray(14)
+!     maxmp2diis= intarray(15)
+!     maxmp2iter= intarray(16)
+      databasis%spher   = logarray(1)
+!     bohr    = logarray(2)
+!     flagecp = logarray(3)
+!     cartesian=logarray(4)
+!     octupole =logarray(5)
 !
       return
 end

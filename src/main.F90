@@ -21,8 +21,9 @@
 !
       use modparam, only : input, icheck
       use modjob, only : runtype, scftype, check, version
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis) :: databasis
       type(typecomp) :: datacomp
       logical :: converged
 !
@@ -43,7 +44,7 @@
 !
 ! Read input file and set details
 !
-      call setdetails(datacomp)
+      call setdetails(databasis,datacomp)
 !
 ! Start calculations
 !
@@ -128,14 +129,15 @@ end
 
 
 !----------------------------------
-  subroutine setdetails(datacomp)
+  subroutine setdetails(databasis,datacomp)
 !----------------------------------
 !
 ! Read input file and set variables
 !
       use modjob, only : flagecp
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(inout) :: databasis
       type(typecomp),intent(inout) :: datacomp
 !
 ! Set defaults before reading input file
@@ -145,7 +147,7 @@ end
 ! Read input data and open checkpoint file if necessary
 !
       if(datacomp%master) call opendatfile(datacomp)
-      call readinput(datacomp)
+      call readinput(databasis,datacomp)
 !
 ! Set basis functions
 !

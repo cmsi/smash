@@ -216,11 +216,11 @@ end
       integer :: nshell_v, nao_v, nshell_g, nao_g, nprim_g, nmo_g
       integer :: locprim_g(mxshell+1), locbf_g(mxshell+1), locatom_g(mxshell)
       integer :: mprim_g(mxshell), mbf_g(mxshell), mtype_g(mxshell)
-      integer :: nshell_gcore, nao_gcore, nprim_gcore
+      integer :: nshell_gcore, nao_gcore
       integer :: locprim_gcore(mxshell+1), locbf_gcore(mxshell+1), locatom_gcore(mxshell)
       integer :: mprim_gcore(mxshell), mbf_gcore(mxshell), mtype_gcore(mxshell)
       real(8) :: ex_g(mxprim), coeff_g(mxprim), coord_g(3,mxatom)
-      real(8) :: ex_gcore(mxprim), coeff_gcore(mxprim), coord_gcore(3,mxatom)
+      real(8) :: ex_gcore(mxprim), coeff_gcore(mxprim)
       logical :: spher_g
 end
 
@@ -313,6 +313,7 @@ end
   module modtype
 !----------------------
 !
+      use modparam, only : mxprim, mxshell, mxatom
       implicit none
       type typecomp
         integer :: memmax=1000000000, memused=0, memusedmax=0
@@ -322,4 +323,24 @@ end
         real(8) :: cpu0, cpu1
         logical :: master
       end type
+!
+      type typebasis
+        integer :: nshell, nao, nprim
+        integer :: locprim(mxshell+1), locbf(mxshell+1), locatom(mxshell)
+        integer :: mprim(mxshell),  mbf(mxshell), mtype(mxshell)
+        integer :: locgenprim(mxshell+1), mgenprim(mxshell), mgentype(mxshell)
+        integer :: locgenshell(-9:112), ngenshell(-9:112)
+        real(8) :: ex(mxprim), coeff(mxprim), coeffinp(mxprim)
+        real(8) :: exgen(mxprim), coeffgen(mxprim)
+        character(len=16) :: basis='STO-3G', atombasis(-9:112)
+        logical :: spher=.true.
+!
+        integer :: maxangecp(mxatom), izcore(mxatom)=0, mtypeecp(mxprim)
+        integer :: locecp(0:5,mxatom), mprimecp(0:5,mxatom)
+        integer :: maxgenangecp(-9:112), izgencore(-9:112), mgentypeecp(mxprim)
+        integer :: locgenecp(0:5,-9:112), mgenprimecp(0:5,-9:112)
+        real(8) :: execp(mxprim), coeffecp(mxprim)
+        real(8) :: exgenecp(mxprim), coeffgenecp(mxprim)
+        character(len=16) :: ecp='', atomecp(-9:112)
+     end type
 end module
