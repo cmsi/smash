@@ -1161,18 +1161,20 @@ end
 
 
 !---------------------
-  subroutine readecp(datacomp)
+  subroutine readecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,datacomp)
 !---------------------
 !
 ! Read basis set
 !
       use modparam, only : mxprim, mxshell, maxline, input
-      use modbasis, only : exgenecp, coeffgenecp, maxgenangecp, izgencore, mgentypeecp, &
-&                          locgenecp, mgenprimecp, atomecp
+      use modbasis, only : exgenecp, coeffgenecp, mgentypeecp
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
+      integer,intent(out) :: locgenecp(0:5,-9:112), mgenprimecp(0:5,-9:112)
+      integer,intent(out) :: maxgenangecp(-9:112), izgencore(-9:112)
       integer :: ii, jj, iprim, ll, ielem(-9:112), nelem, jprim, numprim, lmax, ielec, iang
+      character(len=16),intent(out) :: atomecp(-9:112)
       character(len=3) :: element(-9:112)
       character(len=100) :: line
       character(len=16) :: symbol

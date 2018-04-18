@@ -24,6 +24,9 @@
       implicit none
       type(typecomp),intent(inout) :: datacomp
       integer :: iatom, iprim
+      integer :: locgenecp(0:5,-9:112), mgenprimecp(0:5,-9:112)
+      integer :: maxgenangecp(-9:112), izgencore(-9:112)
+      character(len=16) :: atomecp(-9:112)
 !
       maxangecp(1:natom)= -1
       izcore(1:natom)= 0
@@ -37,8 +40,8 @@
             call ecplanl2(iatom,iprim)
           enddo
         elseif(ecp == 'GEN') then
-          call readecp(datacomp)
-          call setgenecp(iprim)
+          call readecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,datacomp)
+          call setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim)
         else
           write(*,'(" Error! This program does not support ECP function,",a10,".")')ecp
           call iabort
@@ -63,7 +66,7 @@ end
 
 
 !------------------------------
-  subroutine setgenecp(iprim)
+  subroutine setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim)
 !------------------------------
 !
 ! Driver of setting ECP functions from input file
@@ -71,11 +74,13 @@ end
 !
       use modmolecule, only : natom, numatomic
       use modbasis, only : maxangecp, izcore, mtypeecp, locecp, mprimecp, execp, coeffecp, &
-&                          maxgenangecp, izgencore, mgentypeecp, locgenecp, mgenprimecp, &
-&                          exgenecp, coeffgenecp, atomecp
+&                          mgentypeecp, exgenecp, coeffgenecp
       implicit none
+      integer,intent(in) :: locgenecp(0:5,-9:112), mgenprimecp(0:5,-9:112)
+      integer,intent(in) :: maxgenangecp(-9:112), izgencore(-9:112)
       integer,intent(inout) :: iprim
       integer :: iatom, nn, lmax, iang, numprim, locgen, ii
+      character(len=16),intent(in) :: atomecp(-9:112)
 !
       iprim= 0
 !

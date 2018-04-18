@@ -164,19 +164,19 @@ end
       integer :: nshell, nao, nprim
       integer :: locprim(mxshell+1), locbf(mxshell+1), locatom(mxshell)
       integer :: mprim(mxshell),  mbf(mxshell), mtype(mxshell)
-      integer :: locgenprim(mxshell+1), mgenprim(mxshell), mgentype(mxshell)
       real(8) :: ex(mxprim), coeff(mxprim), coeffinp(mxprim)
-      real(8) :: exgen(mxprim), coeffgen(mxprim)
       character(len=16) :: basis
       logical :: spher
 !
       integer :: maxangecp(mxatom), izcore(mxatom)=0, mtypeecp(mxprim)
       integer :: locecp(0:5,mxatom), mprimecp(0:5,mxatom)
-      integer :: maxgenangecp(-9:112), izgencore(-9:112), mgentypeecp(mxprim)
-      integer :: locgenecp(0:5,-9:112), mgenprimecp(0:5,-9:112)
       real(8) :: execp(mxprim), coeffecp(mxprim)
+      character(len=16) :: ecp
+!
+      integer :: locgenprim(mxshell+1), mgenprim(mxshell), mgentype(mxshell)
+      real(8) :: exgen(mxprim), coeffgen(mxprim)
+      integer :: mgentypeecp(mxprim)
       real(8) :: exgenecp(mxprim), coeffgenecp(mxprim)
-      character(len=16) :: ecp, atomecp(-9:112)
 end
 
 
