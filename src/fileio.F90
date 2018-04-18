@@ -802,18 +802,19 @@ end
 
 
 !-----------------------
-  subroutine readbasis(datacomp)
+  subroutine readbasis(atombasis,locgenshell,ngenshell,datacomp)
 !-----------------------
 !
 ! Read basis set
 !
       use modparam, only : mxprim, mxshell, maxline, input
-      use modbasis, only : exgen, coeffgen, locgenprim, mgenprim, mgentype, locgenshell, &
-&                          ngenshell, atombasis
+      use modbasis, only : exgen, coeffgen, locgenprim, mgenprim, mgentype
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
+      integer,intent(out) :: locgenshell(-9:112), ngenshell(-9:112)
       integer :: ii, jj, iprim, ishell, ll, ielem(-9:112), nelem, kprim, numprim, natomshell
+      character(len=16),intent(out) :: atombasis(-9:112)
       character(len=3) :: element(-9:112)
       character(len=100) :: line
       character(len=16) :: symbol

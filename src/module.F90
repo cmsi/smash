@@ -165,10 +165,9 @@ end
       integer :: locprim(mxshell+1), locbf(mxshell+1), locatom(mxshell)
       integer :: mprim(mxshell),  mbf(mxshell), mtype(mxshell)
       integer :: locgenprim(mxshell+1), mgenprim(mxshell), mgentype(mxshell)
-      integer :: locgenshell(-9:112), ngenshell(-9:112)
       real(8) :: ex(mxprim), coeff(mxprim), coeffinp(mxprim)
       real(8) :: exgen(mxprim), coeffgen(mxprim)
-      character(len=16) :: basis, atombasis(-9:112)
+      character(len=16) :: basis
       logical :: spher
 !
       integer :: maxangecp(mxatom), izcore(mxatom)=0, mtypeecp(mxprim)
@@ -328,11 +327,12 @@ end
         integer :: nshell, nao, nprim
         integer :: locprim(mxshell+1), locbf(mxshell+1), locatom(mxshell)
         integer :: mprim(mxshell),  mbf(mxshell), mtype(mxshell)
-        integer :: locgenprim(mxshell+1), mgenprim(mxshell), mgentype(mxshell)
-        integer :: locgenshell(-9:112), ngenshell(-9:112)
         real(8) :: ex(mxprim), coeff(mxprim), coeffinp(mxprim)
+
+        integer :: locgenprim(mxshell+1), mgenprim(mxshell), mgentype(mxshell)
         real(8) :: exgen(mxprim), coeffgen(mxprim)
-        character(len=16) :: basis='STO-3G', atombasis(-9:112)
+
+        character(len=16) :: basis='STO-3G'
         logical :: spher=.true.
 !
         integer :: maxangecp(mxatom), izcore(mxatom)=0, mtypeecp(mxprim)

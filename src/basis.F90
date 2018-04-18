@@ -25,7 +25,9 @@
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
+      integer :: locgenshell(-9:112), ngenshell(-9:112)
       integer :: ishell, iatom, i
+      character(len=16) :: atombasis(-9:112)
 !
       if(datacomp%master) then
         locprim(1)=0
@@ -94,8 +96,8 @@
               endif
             enddo
           case('GEN')
-            call readbasis(datacomp)
-            call setgenbasis(ishell)
+            call readbasis(atombasis,locgenshell,ngenshell,datacomp)
+            call setgenbasis(atombasis,locgenshell,ngenshell,ishell)
           case('CHECK')
             call setcheckbasis
             ishell= nshell
@@ -239,7 +241,7 @@ end
 
 
 !---------------------------------
-  subroutine setgenbasis(ishell)
+  subroutine setgenbasis(atombasis,locgenshell,ngenshell,ishell)
 !---------------------------------
 !
 ! Driver of setting basis functions from input file
@@ -248,11 +250,13 @@ end
       use modmolecule, only : natom, numatomic
       use modbasis, only : locprim, locbf, locatom, mprim, mbf, mtype, &
 &                          ex, coeff, locgenprim, mgenprim, mgentype, &
-&                          locgenshell, ngenshell, exgen, coeffgen, atombasis, spher
+&                          exgen, coeffgen, spher
       use modjob, only : flagecp
       implicit none
+      integer,intent(in) :: locgenshell(-9:112), ngenshell(-9:112)
       integer,intent(out) :: ishell
       integer :: iatom, nn, ii, jj, ll, lprim
+      character(len=16),intent(in) :: atombasis(-9:112)
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
 &       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
