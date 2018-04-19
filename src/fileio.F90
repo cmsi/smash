@@ -808,7 +808,6 @@ end
 ! Read basis set
 !
       use modparam, only : mxprim, mxshell, maxline, input
-      use modbasis, only : exgen, coeffgen, locgenprim, mgenprim, mgentype
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(out) :: datagenbasis
@@ -888,37 +887,24 @@ end
             read(line,*,end=200,err=9998) symbol, numprim
             ishell= ishell+1
             natomshell= natomshell+1
-!ishimura
-            locgenprim(ishell)= iprim
-            mgenprim(ishell)= numprim
             datagenbasis%locprim(ishell)= iprim
             datagenbasis%mprim(ishell)= numprim
             select case(symbol)
               case('S')
-!ishimura
-                mgentype(ishell)= 0
                 datagenbasis%mtype(ishell)= 0
               case('P')
-                mgentype(ishell)= 1
                 datagenbasis%mtype(ishell)= 1
               case('D')
-                mgentype(ishell)= 2
                 datagenbasis%mtype(ishell)= 2
               case('F')
-                mgentype(ishell)= 3
                 datagenbasis%mtype(ishell)= 3
               case('G')
-                mgentype(ishell)= 4
                 datagenbasis%mtype(ishell)= 4
               case('H')
-                mgentype(ishell)= 5
                 datagenbasis%mtype(ishell)= 5
               case('I')
-                mgentype(ishell)= 6
                 datagenbasis%mtype(ishell)= 6
               case('SP')
-                mgentype(ishell)  = 0
-                mgentype(ishell+1)= 1
                 datagenbasis%mtype(ishell)  = 0
                 datagenbasis%mtype(ishell+1)= 1
               case default
@@ -928,31 +914,16 @@ end
             if(symbol /= 'SP') then
               do kprim= 1,numprim 
                 iprim= iprim+1
-!ishimura
-!               read(input,*,end=9998,err=9998) exgen(iprim), coeffgen(iprim)
                 read(input,*,end=9998,err=9998) datagenbasis%ex(iprim), datagenbasis%coeff(iprim)
-exgen(iprim)= datagenbasis%ex(iprim)
-coeffgen(iprim)= datagenbasis%coeff(iprim)
               enddo
             else
               do kprim= 1,numprim 
                 iprim= iprim+1
-!ishimura
-!                read(input,*,end=9998,err=9998) exgen(iprim), coeffgen(iprim), &
-!&                                                             coeffgen(iprim+numprim)
-!                exgen(iprim+numprim)= exgen(iprim)
                 read(input,*,end=9998,err=9998) datagenbasis%ex(iprim), datagenbasis%coeff(iprim), &
 &                                               datagenbasis%coeff(iprim+numprim)
                 datagenbasis%ex(iprim+numprim)= datagenbasis%ex(iprim)
-exgen(iprim)= datagenbasis%ex(iprim)
-coeffgen(iprim)= datagenbasis%coeff(iprim)
-coeffgen(iprim+numprim)= datagenbasis%coeff(iprim+numprim)
-                exgen(iprim+numprim)= exgen(iprim)
               enddo
               ishell= ishell+1
-!ishimura
-              locgenprim(ishell)= iprim
-              mgenprim(ishell)= numprim
               datagenbasis%locprim(ishell)= iprim
               datagenbasis%mprim(ishell)= numprim
               iprim= iprim+numprim

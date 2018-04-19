@@ -98,7 +98,7 @@
             enddo
           case('GEN')
             call readbasis(atombasis,locgenshell,ngenshell,datagenbasis,datacomp)
-            call setgenbasis(atombasis,locgenshell,ngenshell,ishell)
+            call setgenbasis(atombasis,locgenshell,ngenshell,ishell,datagenbasis)
           case('CHECK')
             call setcheckbasis
             ishell= nshell
@@ -242,7 +242,7 @@ end
 
 
 !---------------------------------
-  subroutine setgenbasis(atombasis,locgenshell,ngenshell,ishell)
+  subroutine setgenbasis(atombasis,locgenshell,ngenshell,ishell,datagenbasis)
 !---------------------------------
 !
 ! Driver of setting basis functions from input file
@@ -250,10 +250,11 @@ end
 !
       use modmolecule, only : natom, numatomic
       use modbasis, only : locprim, locbf, locatom, mprim, mbf, mtype, &
-&                          ex, coeff, locgenprim, mgenprim, mgentype, &
-&                          exgen, coeffgen, spher
+&                          ex, coeff, spher
       use modjob, only : flagecp
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: datagenbasis
       integer,intent(in) :: locgenshell(-9:112), ngenshell(-9:112)
       integer,intent(out) :: ishell
       integer :: iatom, nn, ii, jj, ll, lprim
@@ -325,16 +326,16 @@ end
         ll= locgenshell(nn)
         do ii= 1,ngenshell(nn)
           ishell= ishell+1 
-          lprim= locgenprim(ll+ii)
-          do jj= 1,mgenprim(ll+ii)
-            ex(locprim(ishell)+jj)= exgen(lprim+jj)
-            coeff(locprim(ishell)+jj)= coeffgen(lprim+jj)
+          lprim= datagenbasis%locprim(ll+ii)
+          do jj= 1,datagenbasis%mprim(ll+ii)
+            ex(locprim(ishell)+jj)= datagenbasis%ex(lprim+jj)
+            coeff(locprim(ishell)+jj)= datagenbasis%coeff(lprim+jj)
           enddo
-          mprim(ishell)= mgenprim(ll+ii)
-          mtype(ishell)= mgentype(ll+ii)
+          mprim(ishell)= datagenbasis%mprim(ll+ii)
+          mtype(ishell)= datagenbasis%mtype(ll+ii)
           locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+mgenprim(ll+ii)
-          select case(mgentype(ll+ii))
+          locprim(ishell+1)= locprim(ishell)+datagenbasis%mprim(ll+ii)
+          select case(datagenbasis%mtype(ll+ii))
             case(0)
               mbf(ishell)= 1
               locbf(ishell+1)= locbf(ishell)+1
