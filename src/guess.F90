@@ -150,7 +150,7 @@ end
 !
 ! Out : hmo (extended Huckel orbitals)
 !
-      use modguess, only : nao_g, nmo_g
+      use modguess, only : nmo_g
       use modjob, only : iprint
       use modtype, only : typebasis, typecomp
       implicit none
@@ -158,7 +158,7 @@ end
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nao_v
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
-      real(8),intent(out) :: hmo(nao_g*nao_g), eigen(nao_g)
+      real(8),intent(out) :: hmo(dataguessbs%nao*2), eigen(dataguessbs%nao)
 !
 ! Calculate overlap integrals
 ! (guess basis)x(guess basis)
@@ -175,14 +175,14 @@ end
 !
 ! Diagonalize extended Huckel matrix
 !
-      call diag('V','U',nao_g,hmo,nao_g,eigen,datacomp)
+      call diag('V','U',dataguessbs%nao,hmo,dataguessbs%nao,eigen,datacomp)
 !
       if(datacomp%master.and.(iprint >= 3)) then
         write(*,'("   Eigenvalues of Huckel guess")')
         write(*,'(4x,8f9.3)')eigen
       endif
 !
-      nmo_g= nao_g
+      nmo_g= dataguessbs%nao
       return
 end
 
