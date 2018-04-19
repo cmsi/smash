@@ -151,13 +151,6 @@ end
 ! mtype   : Type of a basis shell (s=0, p=1, d=2, f=3,...)
 ! basis   : Name of basis functions
 ! atombasis : Type of basis set for each atom
-! exgen : Exponents of basis functions from input file
-! coeffgen: Coefficients of basis functions from input file
-! locgenprim: Starting address of primitive basis functions for a shell from input file
-! mgenprim : Number of basis primitive functions for a shell from input file
-! mgentype : Type of a basis shell (s=0, p=1, d=2, f=3,...) from input file
-! locgenshell :  Starting address of basis shells
-! ngenshell : Number of basis shells for an atom
 !
       use modparam, only : mxprim, mxshell, mxatom
       implicit none

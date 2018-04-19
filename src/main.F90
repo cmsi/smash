@@ -151,7 +151,7 @@ end
 !
 ! Set basis functions
 !
-      call setbasis(datacomp)
+      call setbasis(databasis,datacomp)
 !
 ! Set ECP functions
 !

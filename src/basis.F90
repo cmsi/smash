@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !--------------------------------
-  subroutine setbasis(datacomp)
+  subroutine setbasis(databasis,datacomp)
 !--------------------------------
 !
 ! Driver of setting basis functions
@@ -24,6 +24,7 @@
       use modjob, only : flagecp
       use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(inout) :: databasis
       type(typecomp),intent(inout) :: datacomp
       type(typebasis) :: datagenbasis
       integer :: locgenshell(-9:112), ngenshell(-9:112)
@@ -31,14 +32,18 @@
       character(len=16) :: atombasis(-9:112)
 !
       if(datacomp%master) then
+!ishimura-start
         locprim(1)=0
         locbf(1)=0
+        databasis%locprim(1)=0
+        databasis%locbf(1)=0
+!ishimura-end
         ishell= 0
 !
         select case(basis)
           case('STO-3G')
             do iatom= 1, natom
-              call bssto3g(iatom,ishell)
+              call bssto3g(iatom,ishell,databasis)
             enddo
           case('3-21G')
             do iatom= 1, natom
@@ -107,7 +112,10 @@
             call iabort
         end select
 !
+!ishimura-start
         nshell= ishell
+        databasis%nshell= ishell
+!ishimura-end
       endif
 !
       call para_bcasti(nshell,1,0,datacomp%mpi_comm1)
@@ -394,7 +402,7 @@ end
 
 
 !-----------------------------------
-  subroutine bssto3g(iatom,ishell)
+  subroutine bssto3g(iatom,ishell,databasis)
 !-----------------------------------
 !
 ! Set basis functions of STO-3G
@@ -402,7 +410,9 @@ end
       use modmolecule, only : numatomic
       use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mbf, mtype, spher
       use modparam, only : mxao, mxshell, mxprim
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(inout) :: databasis
       integer,intent(in) :: iatom
       integer,intent(inout) :: ishell
       integer :: j
@@ -827,15 +837,27 @@ end
 !
       ishell= ishell+1
       do j= 1,3
+!ishimura-start
         ex(locprim(ishell)+j)= exsto(is(numatomic(iatom))+j)
         coeff(locprim(ishell)+j)= cssto(is(numatomic(iatom))+j)
+        databasis%ex(databasis%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j)
+        databasis%coeff(databasis%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j)
+!ishimura-end
       enddo
+!ishimura-start
       mprim(ishell)= 3
       mbf(ishell)= 1
       mtype(ishell)= 0
       locatom(ishell)= iatom
       locprim(ishell+1)= locprim(ishell)+3
       locbf(ishell+1) = locbf(ishell)+1
+      databasis%mprim(ishell)= 3
+      databasis%mbf(ishell)= 1
+      databasis%mtype(ishell)= 0
+      databasis%locatom(ishell)= iatom
+      databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
+      databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+!ishimura-end
 !
 ! Set 2SP functions
 !
@@ -843,27 +865,45 @@ end
 ! S function
         ishell= ishell+1
         do j= 1,3
+!ishimura-start
           ex(locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
           coeff(locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+3)
+          databasis%ex(databasis%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
+          databasis%coeff(databasis%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+3)
+!ishimura-end
         enddo
-        mprim(ishell)= 3
-        mbf(ishell)= 1
-        mtype(ishell)= 0
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+3
-        locbf(ishell+1) = locbf(ishell)+1
+!ishimura-start
+        databasis%mprim(ishell)= 3
+        databasis%mbf(ishell)= 1
+        databasis%mtype(ishell)= 0
+        databasis%locatom(ishell)= iatom
+        databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
+        databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+!ishimura-end
 ! P function
         ishell= ishell+1
         do j= 1,3
+!ishimura-start
           ex(locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
           coeff(locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j)
+          databasis%ex(databasis%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
+          databasis%coeff(databasis%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j)
+!ishimura-end
         enddo
+!ishimura-start
         mprim(ishell)= 3
         mbf(ishell)= 3
         mtype(ishell)= 1
         locatom(ishell)= iatom
         locprim(ishell+1)= locprim(ishell)+3
         locbf(ishell+1) = locbf(ishell)+3
+        databasis%mprim(ishell)= 3
+        databasis%mbf(ishell)= 3
+        databasis%mtype(ishell)= 1
+        databasis%locatom(ishell)= iatom
+        databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
+        databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+!ishimura-end
       endif
 !
 ! Set 3SP functions
@@ -872,27 +912,51 @@ end
 ! S function
         ishell= ishell+1
         do j= 1,3
+!ishimura-start
           ex(locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
           coeff(locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+6)
+          databasis%ex(databasis%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
+          databasis%coeff(databasis%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+6)
+!ishimura-end
         enddo
+!ishimura-start
         mprim(ishell)= 3
         mbf(ishell)= 1
         mtype(ishell)= 0
         locatom(ishell)= iatom
         locprim(ishell+1)= locprim(ishell)+3
         locbf(ishell+1) = locbf(ishell)+1
+        databasis%mprim(ishell)= 3
+        databasis%mbf(ishell)= 1
+        databasis%mtype(ishell)= 0
+        databasis%locatom(ishell)= iatom
+        databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
+        databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+!ishimura-end
 ! P function
         ishell= ishell+1
         do j= 1,3
+!ishimura-start
           ex(locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
           coeff(locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+3)
+          databasis%ex(databasis%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
+          databasis%coeff(databasis%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+3)
+!ishimura-end
         enddo
+!ishimura-start
         mprim(ishell)= 3
         mbf(ishell)= 3
         mtype(ishell)= 1
         locatom(ishell)= iatom
         locprim(ishell+1)= locprim(ishell)+3
         locbf(ishell+1) = locbf(ishell)+3
+        databasis%mprim(ishell)= 3
+        databasis%mbf(ishell)= 3
+        databasis%mtype(ishell)= 1
+        databasis%locatom(ishell)= iatom
+        databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
+        databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+!ishimura-end
       endif
 !
 ! Set 4SP functions
@@ -901,27 +965,51 @@ end
 ! S function
         ishell= ishell+1
         do j= 1,3
+!ishimura-start
           ex(locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
           coeff(locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+9)
+          databasis%ex(databasis%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
+          databasis%coeff(databasis%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+9)
+!ishimura-end
         enddo
+!ishimura-start
         mprim(ishell)= 3
         mbf(ishell)= 1
         mtype(ishell)= 0
         locatom(ishell)= iatom
         locprim(ishell+1)= locprim(ishell)+3
         locbf(ishell+1) = locbf(ishell)+1
+        databasis%mprim(ishell)= 3
+        databasis%mbf(ishell)= 1
+        databasis%mtype(ishell)= 0
+        databasis%locatom(ishell)= iatom
+        databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
+        databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+!ishimura-end
 ! P function
         ishell= ishell+1
         do j= 1,3
+!ishimura-start
           ex(locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
           coeff(locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+6)
+          databasis%ex(databasis%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
+          databasis%coeff(databasis%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+6)
+!ishimura-end
         enddo
+!ishimura-start
         mprim(ishell)= 3
         mbf(ishell)= 3
         mtype(ishell)= 1
         locatom(ishell)= iatom
         locprim(ishell+1)= locprim(ishell)+3
         locbf(ishell+1) = locbf(ishell)+3
+        databasis%mprim(ishell)= 3
+        databasis%mbf(ishell)= 3
+        databasis%mtype(ishell)= 1
+        databasis%locatom(ishell)= iatom
+        databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
+        databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+!ishimura-end
       endif
 !
 ! Set 3D functions
@@ -930,20 +1018,37 @@ end
 ! D function
         ishell= ishell+1
         do j= 1,3
+!ishimura-start
           ex(locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j)
           coeff(locprim(ishell)+j)= cdsto(id(numatomic(iatom))+j)
+          databasis%ex(databasis%locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j)
+          databasis%coeff(databasis%locprim(ishell)+j)= cdsto(id(numatomic(iatom))+j)
+!ishimura-end
         enddo
+!ishimura-start
         mprim(ishell)= 3
         mtype(ishell)= 2
         locatom(ishell)= iatom
         locprim(ishell+1)= locprim(ishell)+3
         if(spher) then
           mbf(ishell)= 5
-          locbf(ishell+1) = locbf(ishell)+5
+          locbf(ishell+1)= locbf(ishell)+5
         else
           mbf(ishell)= 6
-          locbf(ishell+1) = locbf(ishell)+6
+          locbf(ishell+1)= locbf(ishell)+6
         endif
+        databasis%mprim(ishell)= 3
+        databasis%mtype(ishell)= 2
+        databasis%locatom(ishell)= iatom
+        databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
+        if(spher) then
+          databasis%mbf(ishell)= 5
+          databasis%locbf(ishell+1)= databasis%locbf(ishell)+5
+        else
+          databasis%mbf(ishell)= 6
+          databasis%locbf(ishell+1)= databasis%locbf(ishell)+6
+        endif
+!ishimura-end
       endif
 !
 ! Set 5SP functions
@@ -952,27 +1057,51 @@ end
 ! S function
         ishell= ishell+1
         do j= 1,3
+!ishimura-start
           ex(locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+12)
           coeff(locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+12)
+          databasis%ex(databasis%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+12)
+          databasis%coeff(databasis%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+12)
+!ishimura-end
         enddo
+!ishimura-start
         mprim(ishell)= 3
         mbf(ishell)= 1
         mtype(ishell)= 0
         locatom(ishell)= iatom
         locprim(ishell+1)= locprim(ishell)+3
         locbf(ishell+1) = locbf(ishell)+1
+        databasis%mprim(ishell)= 3
+        databasis%mbf(ishell)= 1
+        databasis%mtype(ishell)= 0
+        databasis%locatom(ishell)= iatom
+        databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
+        databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+!ishimura-end
 ! P function
         ishell= ishell+1
         do j= 1,3
+!ishimura-start
           ex(locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+12)
           coeff(locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+9)
+          databasis%ex(databasis%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+12)
+          databasis%coeff(databasis%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+9)
+!ishimura-end
         enddo
+!ishimura-start
         mprim(ishell)= 3
         mbf(ishell)= 3
         mtype(ishell)= 1
         locatom(ishell)= iatom
         locprim(ishell+1)= locprim(ishell)+3
         locbf(ishell+1) = locbf(ishell)+3
+        databasis%mprim(ishell)= 3
+        databasis%mbf(ishell)= 3
+        databasis%mtype(ishell)= 1
+        databasis%locatom(ishell)= iatom
+        databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
+        databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+!ishimura-end
       endif
 !
 ! Set 3D functions
@@ -981,20 +1110,37 @@ end
 ! D function
         ishell= ishell+1
         do j= 1,3
+!ishimura-start
           ex(locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j+3)
           coeff(locprim(ishell)+j)= cdsto(id(numatomic(iatom))+j+3)
+          databasis%ex(databasis%locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j+3)
+          databasis%coeff(databasis%locprim(ishell)+j)= cdsto(id(numatomic(iatom))+j+3)
+!ishimura-end
         enddo
+!ishimura-start
         mprim(ishell)= 3
         mtype(ishell)= 2
         locatom(ishell)= iatom
         locprim(ishell+1)= locprim(ishell)+3
         if(spher) then
           mbf(ishell)= 5
-          locbf(ishell+1) = locbf(ishell)+5
+          locbf(ishell+1)= locbf(ishell)+5
         else
           mbf(ishell)= 6
-          locbf(ishell+1) = locbf(ishell)+6
+          locbf(ishell+1)= locbf(ishell)+6
         endif
+        databasis%mprim(ishell)= 3
+        databasis%mtype(ishell)= 2
+        databasis%locatom(ishell)= iatom
+        databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
+        if(spher) then
+          databasis%mbf(ishell)= 5
+          databasis%locbf(ishell+1)= databasis%locbf(ishell)+5
+        else
+          databasis%mbf(ishell)= 6
+          databasis%locbf(ishell+1)= databasis%locbf(ishell)+6
+        endif
+!ishimura-end
       endif
 !
       if(ishell > mxshell) then
