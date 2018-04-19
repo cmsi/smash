@@ -171,7 +171,7 @@ end
 !
 ! Form extended Huckel matrix
 !
-      call formhuckel(hmo,eigen,nao_v)
+      call formhuckel(hmo,eigen,dataguessbs%nao,nao_v)
 !
 ! Diagonalize extended Huckel matrix
 !
@@ -1020,7 +1020,7 @@ end
 
 
 !---------------------------------------
-  subroutine formhuckel(huckel,energy,nao_v)
+  subroutine formhuckel(huckel,energy,nao_g,nao_v)
 !---------------------------------------
 !
 ! Form extended Huckel matrix
@@ -1029,9 +1029,8 @@ end
 ! Inout: huckel[in] (overlap integral of guess basis set)
 !              [out](extended Huckel Hamiltonian)
 !
-      use modguess, only : nao_g
       implicit none
-      integer,intent(in) :: nao_v
+      integer,intent(in) :: nao_g, nao_v
       integer :: i, j
       real(8),parameter :: factor=0.875D+00  !(=1.75/2.0)
       real(8),parameter :: fdown=0.05D+00
