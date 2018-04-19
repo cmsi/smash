@@ -97,7 +97,7 @@ end
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer :: i, j, nao_g2
+      integer :: nao_v, ntmp, i, j, nao_g2
       real(8),intent(in):: overinv(nao*nao)
       real(8),intent(out):: cmo(nao*nao)
       real(8),allocatable :: hmo(:), overlap(:), work1(:), work2(:), eigen(:)
@@ -105,7 +105,7 @@ end
 ! Set basis functions
 !
       spher_g=.true.
-      call setbasis_g(1)
+      call setbasis_g(1,nao_v,ntmp)
 !
 ! Set coordinate
 !
@@ -123,7 +123,7 @@ end
 !
 ! Calculate Extended Huckel method
 !
-      call calchuckelg(hmo,eigen,datacomp)
+      call calchuckelg(hmo,eigen,nao_v,datacomp)
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
@@ -139,7 +139,7 @@ end
 
 
 !----------------------------------------------------------
-  subroutine calchuckelg(hmo,eigen,datacomp)
+  subroutine calchuckelg(hmo,eigen,nao_v,datacomp)
 !----------------------------------------------------------
 !
 ! Driver of extended Huckel calculation for guess generation
@@ -150,6 +150,7 @@ end
       use modjob, only : iprint
       use modtype, only : typecomp
       implicit none
+      integer,intent(in) :: nao_v
       type(typecomp),intent(inout) :: datacomp
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(out) :: hmo(nao_g*nao_g), eigen(nao_g)
@@ -165,7 +166,7 @@ end
 !
 ! Form extended Huckel matrix
 !
-      call formhuckel(hmo,eigen)
+      call formhuckel(hmo,eigen,nao_v)
 !
 ! Diagonalize extended Huckel matrix
 !
@@ -1011,7 +1012,7 @@ end
 
 
 !---------------------------------------
-  subroutine formhuckel(huckel,energy)
+  subroutine formhuckel(huckel,energy,nao_v)
 !---------------------------------------
 !
 ! Form extended Huckel matrix
@@ -1020,8 +1021,9 @@ end
 ! Inout: huckel[in] (overlap integral of guess basis set)
 !              [out](extended Huckel Hamiltonian)
 !
-      use modguess, only : nao_g, nao_v
+      use modguess, only : nao_g
       implicit none
+      integer,intent(in) :: nao_v
       integer :: i, j
       real(8),parameter :: factor=0.875D+00  !(=1.75/2.0)
       real(8),parameter :: fdown=0.05D+00
@@ -1585,7 +1587,7 @@ end
       implicit none
       type(typecomp),intent(inout) :: datacomp
       integer :: neleca_g, nelecb_g, nelect, nelect_g
-      integer :: ncore, ndim, max
+      integer :: ncore, ndim, ntmp, max
       real(8),intent(in) :: overinv(nao*nao)
       real(8),intent(inout) :: cmoa(nao*nao), cmob(nao*nao)
       real(8),allocatable :: cmoa_g(:,:), cmob_g(:,:)
@@ -1633,7 +1635,7 @@ end
       endif
 !
       if(ncore > 0) then
-        call setbasis_g(2)
+        call setbasis_g(2,ntmp,ntmp)
         call memset(nao_gcore*(nao_gcore+nao_g*3+1),datacomp)
         allocate(coremo(nao_gcore,nao_gcore),work1(nao_g*nao_gcore),work2(nao_g*nao_gcore), &
 &                work3(nao_g*nao_gcore),eigen(nao_gcore))
@@ -2006,7 +2008,7 @@ end
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer :: i, j, nao_g2, nao_g3
+      integer :: nao_v, nshell_v, i, j, nao_g2, nao_g3
       real(8),intent(in):: overinv(nao*nao)
       real(8),intent(out):: cmo(nao*nao)
       real(8),allocatable :: hmo(:), overlap(:), work1(:), work2(:), eigen(:)
@@ -2014,7 +2016,7 @@ end
 ! Set basis functions
 !
       spher_g=.true.
-      call setbasis_g(1)
+      call setbasis_g(1,nao_v,nshell_v)
 !
 ! Set coordinate
 !
@@ -2033,7 +2035,7 @@ end
 !
 ! Calculate Extended Huckel method
 !
-      call calcdftb(hmo,overlap,work1,work2,eigen,datacomp)
+      call calcdftb(hmo,overlap,work1,work2,eigen,nao_v,nshell_v,datacomp)
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
@@ -2049,7 +2051,7 @@ end
 
 
 !-----------------------------------------------------------------------------
-  subroutine calcdftb(dftbmo,overlap,ortho,work,eigen,datacomp)
+  subroutine calcdftb(dftbmo,overlap,ortho,work,eigen,nao_v,nshell_v,datacomp)
 !-----------------------------------------------------------------------------
 !
 ! Driver of DFTB calculation
@@ -2058,32 +2060,20 @@ end
 ! Out : dftbmo (DFTB MOs)
 !       overlap,ortho,work,eigen (work space)
 !
-      use modguess, only : nao_g, nmo_g, spher_g, coord_g, nshell_v
+      use modguess, only : nao_g, nmo_g, spher_g, coord_g
       use modjob, only : threshover
       use modmolecule, only : coord, natom, neleca, nelecb
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
       integer,parameter :: maxiter=1000
+      integer,intent(in) :: nao_v, nshell_v
       integer :: ii, jj, nelecdftb(2), iter
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(out) :: dftbmo(nao_g,nao_g), overlap(nao_g,nao_g)
       real(8),intent(out) :: ortho(nao_g,nao_g), work(nao_g,nao_g), eigen(nao_g)
       real(8),allocatable :: dftb0(:), dftb1(:), gamma12(:), uhub(:), qmulliken(:,:)
       real(8) :: qmax
-!
-! Set basis functions
-!
-      spher_g=.true.
-      call setbasis_g(1)
-!
-! Set coordinate
-!
-      do ii= 1,natom
-        do jj= 1,3
-          coord_g(jj,ii)=coord(jj,ii)
-        enddo
-      enddo
 !
       call memset(2*nao_g*nao_g+nshell_v*nshell_v+3*nshell_v,datacomp)
       allocate(dftb0(nao_g*nao_g),dftb1(nao_g*nao_g),gamma12(nshell_v*nshell_v), &
@@ -2106,18 +2096,18 @@ end
 ! Set parameters
 !
       call huckelip(eigen,1,datacomp)
-      call dftbip(eigen,uhub,datacomp)
+      call dftbip(eigen,uhub,datacomp,nshell_v)
       nelecdftb(1)= neleca
       nelecdftb(2)= nelecb
 !
 ! Calculate core Hamiltonian matrix for DFTB
 !
       dftb0=zero
-      call formdftb0(dftb0,overlap,eigen)
+      call formdftb0(dftb0,overlap,eigen,nao_v,nshell_v)
 !
 ! Calculate gamma12 calculation for DFTB
 !
-      call calcgamma12(gamma12,uhub)
+      call calcgamma12(gamma12,uhub,nshell_v)
 !
 ! Set initial Mulliken charge
 !
@@ -2128,7 +2118,7 @@ end
 !
 ! Calculate Hamiltonian matrix for DFTB
 !
-        call formdftb1(dftb1,overlap,qmulliken,gamma12)
+        call formdftb1(dftb1,overlap,qmulliken,gamma12,nshell_v)
 !
 ! Diagonalize Hamiltonian matrix
 !
@@ -2139,8 +2129,8 @@ end
 ! Calculate new Mulliken charge
 !
         qmulliken(1:nshell_v,2)= qmulliken(1:nshell_v,1)
-        call calcdftbmulliken(overlap,dftbmo,work,qmulliken,nelecdftb)
-        call diffqmulliken(qmulliken,qmax)
+        call calcdftbmulliken(overlap,dftbmo,work,qmulliken,nelecdftb,nshell_v)
+        call diffqmulliken(qmulliken,qmax,nshell_v)
         if(qmax < 1.0D-4) exit
         if(iter == maxiter) then
           if(datacomp%master) write(*,'(" Error! DFTB calculation did not converge.")')
@@ -2157,18 +2147,19 @@ end
 
 
 !---------------------------------------------
-  subroutine formdftb0(dftb0,overlap,energy)
+  subroutine formdftb0(dftb0,overlap,energy,nao_v,nshell_v)
 !---------------------------------------------
 !
 ! Form charge independent DFTB matrix elements
 !
       use modparam, only : mxprsh
-      use modguess, only : nao_v, nshell_v, nao_g, locprim_g, locbf_g, locatom_g, mprim_g, &
+      use modguess, only : nao_g, locprim_g, locbf_g, locatom_g, mprim_g, &
 &                          mbf_g, mtype_g, ex_g, coeff_g, coord_g
       use modjob, only : threshex
       use modmolecule, only : numatomic
       implicit none
       integer,parameter :: len1=5
+      integer,intent(in) :: nao_v, nshell_v
       integer :: ii, jj, ish, jsh, iprim, jprim, nangij(2), nprimij(2), nbfij(2)
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf
       real(8),parameter :: zero=0.0D+00, factor=0.875D+00, fdown=0.05D+00
@@ -2284,13 +2275,14 @@ end
 
 
 !--------------------------------------------------------
-  subroutine formdftb1(dftb1,overlap,qmulliken,gamma12)
+  subroutine formdftb1(dftb1,overlap,qmulliken,gamma12,nshell_v)
 !--------------------------------------------------------
 !
 ! Form charge dependent DFTB matrix elements
 !
-      use modguess, only : nao_g, locbf_g, mbf_g, nshell_v
+      use modguess, only : nao_g, locbf_g, mbf_g
       implicit none
+      integer,intent(in) :: nshell_v
       integer :: ish, jsh, ksh, nbfi, nbfj, ilocbf, jlocbf, ii, jj
       real(8),parameter :: zero=0.0D+00, half=0.5D+00
       real(8),intent(in) :: overlap(nao_g,nao_g), qmulliken(nshell_v), gamma12(nshell_v,nshell_v)
@@ -2322,14 +2314,15 @@ end
 
 
 !---------------------------------------
-  subroutine calcgamma12(gamma12,uhub)
+  subroutine calcgamma12(gamma12,uhub,nshell_v)
 !---------------------------------------
 !
 ! Driver of gamma12 calculation for DFTB
 !
-      use modguess, only : coord_g, locatom_g, nshell_v
+      use modguess, only : coord_g, locatom_g
       use modmolecule, only : numatomic
       implicit none
+      integer,intent(in) :: nshell_v
       integer :: iatom, jatom, ish, jsh
       real(8),intent(in) :: uhub(nshell_v)
       real(8),intent(out) :: gamma12(nshell_v,nshell_v)
@@ -2355,15 +2348,15 @@ end
 
 
 !--------------------------------------------------------------------
-  subroutine calcdftbmulliken(overlap,cmo,work,qmulliken,nelecdftb)
+  subroutine calcdftbmulliken(overlap,cmo,work,qmulliken,nelecdftb,nshell_v)
 !--------------------------------------------------------------------
 !
 ! Calculate Mulliken population for DFTB
 !
-      use modguess, only : nao_g, nshell_v, locbf_g, mbf_g, mtype_g, locatom_g
+      use modguess, only : nao_g, locbf_g, mbf_g, mtype_g, locatom_g
       use modmolecule, only : numatomic
       implicit none
-      integer,intent(in) :: nelecdftb(2)
+      integer,intent(in) :: nelecdftb(2), nshell_v
       integer :: ii, jj, ish, locbfi
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: overlap(nao_g,nao_g), cmo(nao_g,nao_g)
@@ -2438,13 +2431,13 @@ end
 
 
 !-------------------------------------------
-  subroutine diffqmulliken(qmulliken,qmax)
+  subroutine diffqmulliken(qmulliken,qmax,nshell_v)
 !-------------------------------------------
 !
 ! Calculate maximum absolute change of Mulliken charge
 !
-      use modguess, only : nshell_v
       implicit none
+      integer,intent(in) :: nshell_v
       integer :: ishell
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: qmulliken(nshell_v,2)
@@ -2514,16 +2507,17 @@ end
 
 
 !---------------------------------
-  subroutine dftbip(energy,uhub,datacomp)
+  subroutine dftbip(energy,uhub,datacomp,nshell_v)
 !---------------------------------
 !
 ! Set valence ionization potentials for DFTB
 !
       use modmolecule, only : natom, numatomic
-      use modguess, only : nao_g, nshell_v
+      use modguess, only : nao_g
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
+      integer,intent(in) :: nshell_v
       integer :: iao, iatom, i, ishell
       real(8),intent(inout) :: energy(nao_g), uhub(nshell_v)
       real(8) :: dftbips(84)= &

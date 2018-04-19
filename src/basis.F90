@@ -1012,7 +1012,7 @@ end
 
 
 !-------------------------------
-  subroutine setbasis_g(itype)
+  subroutine setbasis_g(itype,nao_v,nshell_v)
 !-------------------------------
 !
 ! Driver of setting basis functions for guess calculations
@@ -1021,11 +1021,12 @@ end
 !            =2 (For extended Huckel calculation of only core orbitals)
 !
       use modmolecule, only : natom, numatomic
-      use modguess, only : locprim_g, locbf_g, nshell_v, nao_v, nshell_g, &
+      use modguess, only : locprim_g, locbf_g, nshell_g, &
 &                          nao_g, nprim_g, &
 &                          locprim_gcore, locbf_gcore, nao_gcore, nshell_gcore
       implicit none
       integer,intent(in) :: itype
+      integer,intent(out) :: nao_v, nshell_v
       integer :: ishell, iatom
 !
       select case(itype)
