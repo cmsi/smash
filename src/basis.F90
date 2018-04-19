@@ -160,6 +160,25 @@ end
 end
 
 
+!---------------------
+  subroutine bsnrmlz1(databasis)
+!---------------------
+!
+! Normalize basis functions
+!
+      use modtype, only : typebasis
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      integer :: ishell
+!
+!$OMP parallel do
+      do ishell= 1,databasis%nshell
+        call bsnor(ishell,databasis%ex,databasis%coeff,databasis%locprim,databasis%mprim,databasis%mtype)
+      enddo
+!$OMP end parallel do
+      return
+end
+
 !--------------------------------------------------------
   subroutine bsnor(ishell,ex,coeff,locprim,mprim,mtype)
 !--------------------------------------------------------
@@ -1167,7 +1186,7 @@ end
 
 
 !-------------------------------
-  subroutine setbasis_g(itype,nao_v,nshell_v)
+  subroutine setbasis_g(nao_v,nshell_v,itype,dataguessbs)
 !-------------------------------
 !
 ! Driver of setting basis functions for guess calculations
@@ -1179,9 +1198,11 @@ end
       use modguess, only : locprim_g, locbf_g, nshell_g, &
 &                          nao_g, nprim_g, &
 &                          locprim_gcore, locbf_gcore, nao_gcore, nshell_gcore
+      use modtype, only : typebasis
       implicit none
-      integer,intent(in) :: itype
+      type(typebasis),intent(inout) :: dataguessbs
       integer,intent(out) :: nao_v, nshell_v
+      integer,intent(in) :: itype
       integer :: ishell, iatom
 !
       select case(itype)
@@ -1190,14 +1211,18 @@ end
 !
         case(1)
           ishell= 0
+!ishimura-start
           locprim_g(1)=0
           locbf_g(1)=0
+          dataguessbs%locprim(1)=0
+          dataguessbs%locbf(1)=0
+!ishimura-end
 !
 ! Set valence basis functions
 !
           do iatom= 1,natom
             if((numatomic(iatom) >= 1).and.(numatomic(iatom) <= 54)) then
-              call bssto3g_g(iatom,ishell,1)
+              call bssto3g_g(iatom,ishell,1,dataguessbs)
             elseif(numatomic(iatom) >= 55) then
               call bshuzmini6_g(iatom,ishell,1)
             endif
@@ -1209,32 +1234,47 @@ end
 !
           do iatom= 1,natom
             if((numatomic(iatom) >= 1).and.(numatomic(iatom) <= 54)) then
-              call bssto3g_g(iatom,ishell,2)
+              call bssto3g_g(iatom,ishell,2,dataguessbs)
             elseif(numatomic(iatom) >= 55) then
               call bshuzmini6_g(iatom,ishell,2)
             endif
           enddo
+!ishimura-start
           nshell_g= ishell
           nao_g   = locbf_g(ishell+1)
           nprim_g = locprim_g(ishell+1)
           call bsnrmlz_g
+          dataguessbs%nshell= ishell
+          dataguessbs%nao   = dataguessbs%locbf(ishell+1)
+          dataguessbs%nprim = dataguessbs%locprim(ishell+1)
+          call bsnrmlz1(dataguessbs)
+!ishimura-end
 !
 ! For extended Huckel calculation of only core orbitals
 !
         case(2)
           ishell= 0
+!ishimura-start
           locprim_gcore(1)=0
           locbf_gcore(1)=0
+          dataguessbs%locprim(1)=0
+          dataguessbs%locbf(1)=0
+!ishimura-end
           do iatom= 1,natom
             if((numatomic(iatom) >= 1).and.(numatomic(iatom) <= 54)) then
-              call bssto3g_g(iatom,ishell,3)
+              call bssto3g_g(iatom,ishell,3,dataguessbs)
             elseif(numatomic(iatom) >= 55) then
               call bshuzmini6_g(iatom,ishell,3)
             endif
           enddo
+!ishimura-start
           nshell_gcore= ishell
           nao_gcore   = locbf_gcore(ishell+1)
           call bsnrmlz_gcore
+          dataguessbs%nshell= ishell
+          dataguessbs%nao   = dataguessbs%locbf(ishell+1)
+          call bsnrmlz1(dataguessbs)
+!ishimura-end
       end select
 !
       return
@@ -1242,7 +1282,7 @@ end
 
 
 !-------------------------------------------
-  subroutine bssto3g_g(iatom,ishell,itype)
+  subroutine bssto3g_g(iatom,ishell,itype,dataguessbs)
 !-------------------------------------------
 !
 ! Set basis functions of STO-3G for guess calculation
@@ -1257,7 +1297,9 @@ end
       use modparam, only : mxao, mxshell, mxprim
       use modjob, only : flagecp
       use modbasis, only : izcore
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(inout) :: dataguessbs
       integer,intent(in) :: iatom, itype
       integer,intent(inout):: ishell
       integer :: j
@@ -1679,15 +1721,25 @@ end
           case(1:2)
             ishell= ishell+1
             do j= 1,3
+!ishimura
               ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j)
               coeff_g(locprim_g(ishell)+j)= cssto(is(numatomic(iatom))+j)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j)
             enddo
+!ishimura
             mprim_g(ishell)= 3
             mbf_g(ishell)= 1
             mtype_g(ishell)= 0
             locatom_g(ishell)= iatom
             locprim_g(ishell+1)= locprim_g(ishell)+3
             locbf_g(ishell+1) = locbf_g(ishell)+1
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 1
+            dataguessbs%mtype(ishell)= 0
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
 ! Li-Ne
           case(3:10)
 !   S function
@@ -1695,6 +1747,8 @@ end
             do j= 1,3
               ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
               coeff_g(locprim_g(ishell)+j)= cssto(is(numatomic(iatom))+j+3)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+3)
             enddo
             mprim_g(ishell)= 3
             mbf_g(ishell)= 1
@@ -1702,11 +1756,19 @@ end
             locatom_g(ishell)= iatom
             locprim_g(ishell+1)= locprim_g(ishell)+3
             locbf_g(ishell+1) = locbf_g(ishell)+1
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 1
+            dataguessbs%mtype(ishell)= 0
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
 !   P function
             ishell= ishell+1
             do j= 1,3
               ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
               coeff_g(locprim_g(ishell)+j)= cpsto(ip(numatomic(iatom))+j)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j)
             enddo
             mprim_g(ishell)= 3
             mbf_g(ishell)= 3
@@ -1714,6 +1776,12 @@ end
             locatom_g(ishell)= iatom
             locprim_g(ishell+1)= locprim_g(ishell)+3
             locbf_g(ishell+1) = locbf_g(ishell)+3
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 3
+            dataguessbs%mtype(ishell)= 1
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+3
 ! Na-Ar
           case(11:18)
 !   S function
@@ -1721,6 +1789,8 @@ end
             do j= 1,3
               ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
               coeff_g(locprim_g(ishell)+j)= cssto(is(numatomic(iatom))+j+6)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+6)
             enddo
             mprim_g(ishell)= 3
             mbf_g(ishell)= 1
@@ -1728,11 +1798,19 @@ end
             locatom_g(ishell)= iatom
             locprim_g(ishell+1)= locprim_g(ishell)+3
             locbf_g(ishell+1) = locbf_g(ishell)+1
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 1
+            dataguessbs%mtype(ishell)= 0
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
 !   P function
             ishell= ishell+1
             do j= 1,3
               ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
               coeff_g(locprim_g(ishell)+j)= cpsto(ip(numatomic(iatom))+j+3)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+3)
             enddo
             mprim_g(ishell)= 3
             mbf_g(ishell)= 3
@@ -1740,6 +1818,12 @@ end
             locatom_g(ishell)= iatom
             locprim_g(ishell+1)= locprim_g(ishell)+3
             locbf_g(ishell+1) = locbf_g(ishell)+3
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 3
+            dataguessbs%mtype(ishell)= 1
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+3
 ! K -Kr
           case(19:36)
 !   S function
@@ -1747,6 +1831,8 @@ end
             do j= 1,3
               ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
               coeff_g(locprim_g(ishell)+j)= cssto(is(numatomic(iatom))+j+9)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+9)
             enddo
             mprim_g(ishell)= 3
             mbf_g(ishell)= 1
@@ -1754,11 +1840,19 @@ end
             locatom_g(ishell)= iatom
             locprim_g(ishell+1)= locprim_g(ishell)+3
             locbf_g(ishell+1) = locbf_g(ishell)+1
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 1
+            dataguessbs%mtype(ishell)= 0
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
 !   P function
             ishell= ishell+1
             do j= 1,3
               ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
               coeff_g(locprim_g(ishell)+j)= cpsto(ip(numatomic(iatom))+j+6)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+6)
             enddo
             mprim_g(ishell)= 3
             mbf_g(ishell)= 3
@@ -1766,12 +1860,20 @@ end
             locatom_g(ishell)= iatom
             locprim_g(ishell+1)= locprim_g(ishell)+3
             locbf_g(ishell+1) = locbf_g(ishell)+3
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 3
+            dataguessbs%mtype(ishell)= 1
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+3
 !   D function
             if((numatomic(iatom) >= 21).and.(numatomic(iatom) <= 30)) then
               ishell= ishell+1
               do j= 1,3
                 ex_g(locprim_g(ishell)+j)= exdsto(id(numatomic(iatom))+j)
                 coeff_g(locprim_g(ishell)+j)= cdsto(id(numatomic(iatom))+j)
+                dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j)
+                dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cdsto(id(numatomic(iatom))+j)
               enddo
               mprim_g(ishell)= 3
               mtype_g(ishell)= 2
@@ -1784,6 +1886,17 @@ end
                 mbf_g(ishell)= 6
                 locbf_g(ishell+1) = locbf_g(ishell)+6
               endif
+              dataguessbs%mprim(ishell)= 3
+              dataguessbs%mtype(ishell)= 2
+              dataguessbs%locatom(ishell)= iatom
+              dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+              if(dataguessbs%spher) then
+                dataguessbs%mbf(ishell)= 5
+                dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+5
+              else
+                dataguessbs%mbf(ishell)= 6
+                dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+6
+              endif
             endif
 ! Rb-Xe
           case(37:54)
@@ -1792,6 +1905,8 @@ end
             do j= 1,3
               ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+12)
               coeff_g(locprim_g(ishell)+j)= cssto(is(numatomic(iatom))+j+12)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+12)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+12)
             enddo
             mprim_g(ishell)= 3
             mbf_g(ishell)= 1
@@ -1799,11 +1914,19 @@ end
             locatom_g(ishell)= iatom
             locprim_g(ishell+1)= locprim_g(ishell)+3
             locbf_g(ishell+1) = locbf_g(ishell)+1
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 1
+            dataguessbs%mtype(ishell)= 0
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
 !   P function
             ishell= ishell+1
             do j= 1,3
               ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+12)
               coeff_g(locprim_g(ishell)+j)= cpsto(ip(numatomic(iatom))+j+9)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+12)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+9)
             enddo
             mprim_g(ishell)= 3
             mbf_g(ishell)= 3
@@ -1811,12 +1934,20 @@ end
             locatom_g(ishell)= iatom
             locprim_g(ishell+1)= locprim_g(ishell)+3
             locbf_g(ishell+1) = locbf_g(ishell)+3
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 3
+            dataguessbs%mtype(ishell)= 1
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+3
 !   D function
             if((numatomic(iatom) >= 39).and.(numatomic(iatom) <= 48)) then
               ishell= ishell+1
               do j= 1,3
                 ex_g(locprim_g(ishell)+j)= exdsto(id(numatomic(iatom))+j+3)
                 coeff_g(locprim_g(ishell)+j)= cdsto(id(numatomic(iatom))+j+3)
+                dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j+3)
+                dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cdsto(id(numatomic(iatom))+j+3)
               enddo
               mprim_g(ishell)= 3
               mtype_g(ishell)= 2
@@ -1828,6 +1959,17 @@ end
               else
                 mbf_g(ishell)= 6
                 locbf_g(ishell+1) = locbf_g(ishell)+6
+              endif
+              dataguessbs%mprim(ishell)= 3
+              dataguessbs%mtype(ishell)= 2
+              dataguessbs%locatom(ishell)= iatom
+              dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+              if(dataguessbs%spher) then
+                dataguessbs%mbf(ishell)= 5
+                dataguessbs%locbf(ishell+1)= dataguessbs%locbf(ishell)+5
+              else
+                dataguessbs%mbf(ishell)= 6
+                dataguessbs%locbf(ishell+1)= dataguessbs%locbf(ishell)+6
               endif
             endif
           case default
@@ -1845,6 +1987,8 @@ end
             do j= 1,3
               ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j)
               coeff_g(locprim_g(ishell)+j)= cssto(is(numatomic(iatom))+j)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j)
             enddo
             mprim_g(ishell)= 3
             mbf_g(ishell)= 1
@@ -1852,6 +1996,12 @@ end
             locatom_g(ishell)= iatom
             locprim_g(ishell+1)= locprim_g(ishell)+3
             locbf_g(ishell+1) = locbf_g(ishell)+1
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 1
+            dataguessbs%mtype(ishell)= 0
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
           endif
         endif
 ! Set 2SP functions
@@ -1862,6 +2012,8 @@ end
             do j= 1,3
               ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
               coeff_g(locprim_g(ishell)+j)= cssto(is(numatomic(iatom))+j+3)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+3)
             enddo
             mprim_g(ishell)= 3
             mbf_g(ishell)= 1
@@ -1869,11 +2021,19 @@ end
             locatom_g(ishell)= iatom
             locprim_g(ishell+1)= locprim_g(ishell)+3
             locbf_g(ishell+1) = locbf_g(ishell)+1
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 1
+            dataguessbs%mtype(ishell)= 0
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
 !   P function
             ishell= ishell+1
             do j= 1,3
               ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
               coeff_g(locprim_g(ishell)+j)= cpsto(ip(numatomic(iatom))+j)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j)
             enddo
             mprim_g(ishell)= 3
             mbf_g(ishell)= 3
@@ -1881,6 +2041,12 @@ end
             locatom_g(ishell)= iatom
             locprim_g(ishell+1)= locprim_g(ishell)+3
             locbf_g(ishell+1) = locbf_g(ishell)+3
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 3
+            dataguessbs%mtype(ishell)= 1
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+3
           endif
         endif
 ! Set 3SPD functions
@@ -1891,6 +2057,8 @@ end
             do j= 1,3
               ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
               coeff_g(locprim_g(ishell)+j)= cssto(is(numatomic(iatom))+j+6)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+6)
             enddo
             mprim_g(ishell)= 3
             mbf_g(ishell)= 1
@@ -1898,11 +2066,19 @@ end
             locatom_g(ishell)= iatom
             locprim_g(ishell+1)= locprim_g(ishell)+3
             locbf_g(ishell+1) = locbf_g(ishell)+1
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 1
+            dataguessbs%mtype(ishell)= 0
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
 !   P function
             ishell= ishell+1
             do j= 1,3
               ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
               coeff_g(locprim_g(ishell)+j)= cpsto(ip(numatomic(iatom))+j+3)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+3)
             enddo
             mprim_g(ishell)= 3
             mbf_g(ishell)= 3
@@ -1910,6 +2086,12 @@ end
             locatom_g(ishell)= iatom
             locprim_g(ishell+1)= locprim_g(ishell)+3
             locbf_g(ishell+1) = locbf_g(ishell)+3
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 3
+            dataguessbs%mtype(ishell)= 1
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+3
           endif
         endif
 !   D function
@@ -1919,6 +2101,8 @@ end
             do j= 1,3
               ex_g(locprim_g(ishell)+j)= exdsto(id(numatomic(iatom))+j)
               coeff_g(locprim_g(ishell)+j)= cdsto(id(numatomic(iatom))+j)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cdsto(id(numatomic(iatom))+j)
             enddo
             mprim_g(ishell)= 3
             mtype_g(ishell)= 2
@@ -1931,6 +2115,17 @@ end
               mbf_g(ishell)= 6
               locbf_g(ishell+1) = locbf_g(ishell)+6
             endif
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mtype(ishell)= 2
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            if(dataguessbs%spher) then
+              dataguessbs%mbf(ishell)= 5
+              dataguessbs%locbf(ishell+1)= dataguessbs%locbf(ishell)+5
+            else
+              dataguessbs%mbf(ishell)= 6
+              dataguessbs%locbf(ishell+1)= dataguessbs%locbf(ishell)+6
+            endif
           endif
         endif
 ! Set 4SPD functions
@@ -1941,6 +2136,8 @@ end
             do j= 1,3
               ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
               coeff_g(locprim_g(ishell)+j)= cssto(is(numatomic(iatom))+j+9)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+9)
             enddo
             mprim_g(ishell)= 3
             mbf_g(ishell)= 1
@@ -1948,11 +2145,19 @@ end
             locatom_g(ishell)= iatom
             locprim_g(ishell+1)= locprim_g(ishell)+3
             locbf_g(ishell+1) = locbf_g(ishell)+1
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 1
+            dataguessbs%mtype(ishell)= 0
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
 !   P function
             ishell= ishell+1
             do j= 1,3
               ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
               coeff_g(locprim_g(ishell)+j)= cpsto(ip(numatomic(iatom))+j+6)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+6)
             enddo
             mprim_g(ishell)= 3
             mbf_g(ishell)= 3
@@ -1960,6 +2165,12 @@ end
             locatom_g(ishell)= iatom
             locprim_g(ishell+1)= locprim_g(ishell)+3
             locbf_g(ishell+1) = locbf_g(ishell)+3
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 3
+            dataguessbs%mtype(ishell)= 1
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+3
           endif
         endif
 !   D function
@@ -1969,6 +2180,8 @@ end
             do j= 1,3
               ex_g(locprim_g(ishell)+j)= exdsto(id(numatomic(iatom))+j+3)
               coeff_g(locprim_g(ishell)+j)= cdsto(id(numatomic(iatom))+j+3)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cdsto(id(numatomic(iatom))+j+3)
             enddo
             mprim_g(ishell)= 3
             mtype_g(ishell)= 2
@@ -1980,6 +2193,17 @@ end
             else
               mbf_g(ishell)= 6
               locbf_g(ishell+1) = locbf_g(ishell)+6
+            endif
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mtype(ishell)= 2
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            if(dataguessbs%spher) then
+              dataguessbs%mbf(ishell)= 5
+              dataguessbs%locbf(ishell+1)= dataguessbs%locbf(ishell)+5
+            else
+              dataguessbs%mbf(ishell)= 6
+              dataguessbs%locbf(ishell+1)= dataguessbs%locbf(ishell)+6
             endif
           endif
         endif
@@ -1994,6 +2218,8 @@ end
             do j= 1,3
               ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j)
               coeff_gcore(locprim_gcore(ishell)+j)= cssto(is(numatomic(iatom))+j)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j)
             enddo
             mprim_gcore(ishell)= 3
             mbf_gcore(ishell)= 1
@@ -2001,6 +2227,12 @@ end
             locatom_gcore(ishell)= iatom
             locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
             locbf_gcore(ishell+1) = locbf_gcore(ishell)+1
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 1
+            dataguessbs%mtype(ishell)= 0
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
           endif
         endif
 ! Set 2SP functions
@@ -2011,6 +2243,8 @@ end
             do j= 1,3
               ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
               coeff_gcore(locprim_gcore(ishell)+j)= cssto(is(numatomic(iatom))+j+3)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+3)
             enddo
             mprim_gcore(ishell)= 3
             mbf_gcore(ishell)= 1
@@ -2018,11 +2252,19 @@ end
             locatom_gcore(ishell)= iatom
             locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
             locbf_gcore(ishell+1) = locbf_gcore(ishell)+1
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 1
+            dataguessbs%mtype(ishell)= 0
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
 !   P function
             ishell= ishell+1
             do j= 1,3
               ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
               coeff_gcore(locprim_gcore(ishell)+j)= cpsto(ip(numatomic(iatom))+j)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j)
             enddo
             mprim_gcore(ishell)= 3
             mbf_gcore(ishell)= 3
@@ -2030,6 +2272,12 @@ end
             locatom_gcore(ishell)= iatom
             locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
             locbf_gcore(ishell+1) = locbf_gcore(ishell)+3
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 3
+            dataguessbs%mtype(ishell)= 1
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+3
           endif
         endif
 ! Set 3SPD functions
@@ -2040,6 +2288,8 @@ end
             do j= 1,3
               ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
               coeff_gcore(locprim_gcore(ishell)+j)= cssto(is(numatomic(iatom))+j+6)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+6)
             enddo
             mprim_gcore(ishell)= 3
             mbf_gcore(ishell)= 1
@@ -2047,11 +2297,19 @@ end
             locatom_gcore(ishell)= iatom
             locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
             locbf_gcore(ishell+1) = locbf_gcore(ishell)+1
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 1
+            dataguessbs%mtype(ishell)= 0
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
 !   P function
             ishell= ishell+1
             do j= 1,3
               ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
               coeff_gcore(locprim_gcore(ishell)+j)= cpsto(ip(numatomic(iatom))+j+3)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+3)
             enddo
             mprim_gcore(ishell)= 3
             mbf_gcore(ishell)= 3
@@ -2059,6 +2317,12 @@ end
             locatom_gcore(ishell)= iatom
             locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
             locbf_gcore(ishell+1) = locbf_gcore(ishell)+3
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 3
+            dataguessbs%mtype(ishell)= 1
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+3
           endif
         endif
 !   D function
@@ -2068,6 +2332,8 @@ end
             do j= 1,3
               ex_gcore(locprim_gcore(ishell)+j)= exdsto(id(numatomic(iatom))+j)
               coeff_gcore(locprim_gcore(ishell)+j)= cdsto(id(numatomic(iatom))+j)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cdsto(id(numatomic(iatom))+j)
             enddo
             mprim_gcore(ishell)= 3
             mtype_gcore(ishell)= 2
@@ -2075,6 +2341,12 @@ end
             locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
             mbf_gcore(ishell)= 5
             locbf_gcore(ishell+1) = locbf_gcore(ishell)+5
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 5
+            dataguessbs%mtype(ishell)= 2
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+5
           endif
         endif
 ! Set 4SPD functions
@@ -2085,6 +2357,8 @@ end
             do j= 1,3
               ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
               coeff_gcore(locprim_gcore(ishell)+j)= cssto(is(numatomic(iatom))+j+9)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+9)
             enddo
             mprim_gcore(ishell)= 3
             mbf_gcore(ishell)= 1
@@ -2092,11 +2366,19 @@ end
             locatom_gcore(ishell)= iatom
             locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
             locbf_gcore(ishell+1) = locbf_gcore(ishell)+1
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 1
+            dataguessbs%mtype(ishell)= 0
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
 !   P function
             ishell= ishell+1
             do j= 1,3
               ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
               coeff_gcore(locprim_gcore(ishell)+j)= cpsto(ip(numatomic(iatom))+j+6)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+6)
             enddo
             mprim_gcore(ishell)= 3
             mbf_gcore(ishell)= 3
@@ -2104,6 +2386,12 @@ end
             locatom_gcore(ishell)= iatom
             locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
             locbf_gcore(ishell+1) = locbf_gcore(ishell)+3
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 3
+            dataguessbs%mtype(ishell)= 1
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+3
           endif
         endif
 !   D function
@@ -2113,6 +2401,8 @@ end
             do j= 1,3
               ex_gcore(locprim_gcore(ishell)+j)= exdsto(id(numatomic(iatom))+j+3)
               coeff_gcore(locprim_gcore(ishell)+j)= cdsto(id(numatomic(iatom))+j+3)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cdsto(id(numatomic(iatom))+j+3)
             enddo
             mprim_gcore(ishell)= 3
             mtype_gcore(ishell)= 2
@@ -2120,6 +2410,12 @@ end
             locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
             mbf_gcore(ishell)= 5
             locbf_gcore(ishell+1) = locbf_gcore(ishell)+5
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 5
+            dataguessbs%mtype(ishell)= 2
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+5
           endif
         endif
       endif
@@ -2129,22 +2425,22 @@ end
         call iabort
       endif
       if(itype <= 2) then
-        if(locprim_g(ishell+1) > mxprim ) then
+        if(dataguessbs%locprim(ishell+1) > mxprim ) then
           write(*,'(" Error! The number of primitive basis functions exceeds mxprim",&
 &               i6,".")')mxprim
           call iabort
         endif
-        if(locbf_g(ishell+1) > mxao ) then
+        if(dataguessbs%locbf(ishell+1) > mxao ) then
           write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
           call iabort
         endif
       elseif(itype == 3) then
-        if(locprim_gcore(ishell+1) > mxprim ) then
+        if(dataguessbs%locprim(ishell+1) > mxprim ) then
           write(*,'(" Error! The number of primitive basis functions exceeds mxprim",&
 &               i6,".")')mxprim
           call iabort
         endif
-        if(locbf_gcore(ishell+1) > mxao ) then
+        if(dataguessbs%locbf(ishell+1) > mxao ) then
           write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
           call iabort
         endif

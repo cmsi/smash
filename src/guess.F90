@@ -94,9 +94,10 @@ end
       use modguess, only : nao_g, spher_g, coord_g
       use modbasis, only : nao
       use modmolecule, only : coord, natom
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
+      type(typebasis) :: dataguessbs
       integer :: nao_v, ntmp, i, j, nao_g2
       real(8),intent(in):: overinv(nao*nao)
       real(8),intent(out):: cmo(nao*nao)
@@ -104,8 +105,11 @@ end
 !
 ! Set basis functions
 !
+!ishimura-start
       spher_g=.true.
-      call setbasis_g(1,nao_v,ntmp)
+      dataguessbs%spher=.true.
+!ishimura-end
+      call setbasis_g(nao_v,ntmp,1,dataguessbs)
 !
 ! Set coordinate
 !
@@ -1583,9 +1587,10 @@ end
       use modguess, only : nao_g, nmo_g, nao_gcore
       use modbasis, only : nao
       use modmolecule, only : neleca, nelecb, charge
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
+      type(typebasis) :: datacorebs
       integer :: neleca_g, nelecb_g, nelect, nelect_g
       integer :: ncore, ndim, ntmp, max
       real(8),intent(in) :: overinv(nao*nao)
@@ -1635,7 +1640,9 @@ end
       endif
 !
       if(ncore > 0) then
-        call setbasis_g(2,ntmp,ntmp)
+!ishimura
+        datacorebs%spher=.true.
+        call setbasis_g(ntmp,ntmp,2,datacorebs)
         call memset(nao_gcore*(nao_gcore+nao_g*3+1),datacomp)
         allocate(coremo(nao_gcore,nao_gcore),work1(nao_g*nao_gcore),work2(nao_g*nao_gcore), &
 &                work3(nao_g*nao_gcore),eigen(nao_gcore))
@@ -2005,9 +2012,10 @@ end
       use modguess, only : nao_g, spher_g, coord_g
       use modbasis, only : nao
       use modmolecule, only : coord, natom
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
+      type(typebasis) :: dataguessbs
       integer :: nao_v, nshell_v, i, j, nao_g2, nao_g3
       real(8),intent(in):: overinv(nao*nao)
       real(8),intent(out):: cmo(nao*nao)
@@ -2015,8 +2023,11 @@ end
 !
 ! Set basis functions
 !
+!ishimura-start
       spher_g=.true.
-      call setbasis_g(1,nao_v,nshell_v)
+      dataguessbs%spher=.true.
+!ishimura-end
+      call setbasis_g(nao_v,nshell_v,1,dataguessbs)
 !
 ! Set coordinate
 !
