@@ -1101,15 +1101,14 @@ end
 !
 ! Out : overlap (overlap integral of guess basis set)
 !
-      use modguess, only : nshell_g, nao_g
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: dataguessbs
       integer :: ish, jsh
-      real(8),intent(out) :: overlap(nao_g*nao_g)
+      real(8),intent(out) :: overlap(dataguessbs%nao**2)
 !
 !$OMP parallel do private(jsh)
-      do ish= nshell_g,1,-1
+      do ish= dataguessbs%nshell,1,-1
         do jsh= 1,ish
           call intover1(overlap,ish,jsh,dataguessbs)
         enddo
@@ -1225,47 +1224,43 @@ end
 !
       use modparam, only : mxprsh
       use modjob, only : threshex
-      use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
-&                          ex_g, coeff_g, nao_g, coord_g
+      use modguess, only : coord_g
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: dataguessbs
       integer,intent(in) :: ish, jsh
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, iprim, jprim
       integer :: nbfij(2), nprimij(2), nangij(2), ii, jj, maxj
-      real(8),intent(out) :: overlap(nao_g,nao_g)
+      real(8),intent(out) :: overlap(dataguessbs%nao,dataguessbs%nao)
       real(8) :: sint(28,28), exij(mxprsh,2), coij(mxprsh,2), coordij(3,2)
       logical :: iandj
 !
 ! Set parameters
 !
       iandj =(ish == jsh)
-      nangij(1)= mtype_g(ish)
-      nangij(2)= mtype_g(jsh)
-      nprimij(1)= mprim_g(ish)
-      nprimij(2)= mprim_g(jsh)
-      nbfij(1)  = mbf_g(ish)
-      nbfij(2)  = mbf_g(jsh)
-      iatom = locatom_g(ish)
-      iloc  = locprim_g(ish)
-      ilocbf= locbf_g(ish)
-      jatom = locatom_g(jsh)
-      jloc  = locprim_g(jsh)
-      jlocbf= locbf_g(jsh)
+      nangij(1)= dataguessbs%mtype(ish)
+      nangij(2)= dataguessbs%mtype(jsh)
+      nprimij(1)= dataguessbs%mprim(ish)
+      nprimij(2)= dataguessbs%mprim(jsh)
+      nbfij(1)  = dataguessbs%mbf(ish)
+      nbfij(2)  = dataguessbs%mbf(jsh)
+      iatom = dataguessbs%locatom(ish)
+      iloc  = dataguessbs%locprim(ish)
+      ilocbf= dataguessbs%locbf(ish)
+      jatom = dataguessbs%locatom(jsh)
+      jloc  = dataguessbs%locprim(jsh)
+      jlocbf= dataguessbs%locbf(jsh)
       do ii= 1,3
         coordij(ii,1)= coord_g(ii,iatom)
         coordij(ii,2)= coord_g(ii,jatom)
       enddo
       do iprim= 1,nprimij(1)
-!kazuya
-!       exij(iprim,1)= ex_g(iloc+iprim)
-!       coij(iprim,1)= coeff_g(iloc+iprim)
         exij(iprim,1)= dataguessbs%ex(iloc+iprim)
         coij(iprim,1)= dataguessbs%coeff(iloc+iprim)
       enddo
       do jprim= 1,nprimij(2)
-        exij(jprim,2)= ex_g(jloc+jprim)
-        coij(jprim,2)= coeff_g(jloc+jprim)
+        exij(jprim,2)= dataguessbs%ex(jloc+jprim)
+        coij(jprim,2)= dataguessbs%coeff(jloc+jprim)
       enddo
 !
 ! Calculate overlap integrals
