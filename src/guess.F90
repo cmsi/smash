@@ -1788,7 +1788,18 @@ end
 !
         skipmo(:)=.false.
         do ii= 1,nao_gcore
-          skipmo(idamax(nmo_g,work3(1,ii),1))=.true.
+!         skipmo(idamax(nmo_g,work3(1,ii),1))=.true.
+          jj= idamax(nmo_g,work3(1,ii),1)
+          if(.not.skipmo(jj)) then
+            skipmo(jj)=.true.
+          else
+            do kk= 1,nao_gcore
+              if(((abs(eigen(jj)-eigen(kk))) < small).and.(.not.skipmo(kk))) then
+                skipmo(kk)=.true.
+                exit
+              endif
+            enddo
+          endif
         enddo
 !
 ! Skip core orbitals
