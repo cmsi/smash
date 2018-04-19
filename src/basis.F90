@@ -22,9 +22,10 @@
       use modbasis, only : basis, locprim, locbf, locatom, mprim, mbf, mtype, &
 &                          nshell, nao, nprim, ex, coeff, coeffinp
       use modjob, only : flagecp
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
+      type(typebasis) :: datagenbasis
       integer :: locgenshell(-9:112), ngenshell(-9:112)
       integer :: ishell, iatom, i
       character(len=16) :: atombasis(-9:112)
@@ -96,7 +97,7 @@
               endif
             enddo
           case('GEN')
-            call readbasis(atombasis,locgenshell,ngenshell,datacomp)
+            call readbasis(atombasis,locgenshell,ngenshell,datagenbasis,datacomp)
             call setgenbasis(atombasis,locgenshell,ngenshell,ishell)
           case('CHECK')
             call setcheckbasis
