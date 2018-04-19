@@ -103,7 +103,7 @@
             enddo
           case('GEN')
             call readbasis(atombasis,locgenshell,ngenshell,datagenbasis,datacomp)
-            call setgenbasis(atombasis,locgenshell,ngenshell,ishell,datagenbasis)
+            call setgenbasis(atombasis,locgenshell,ngenshell,ishell,databasis,datagenbasis)
           case('CHECK')
             call setcheckbasis
             ishell= nshell
@@ -250,7 +250,7 @@ end
 
 
 !---------------------------------
-  subroutine setgenbasis(atombasis,locgenshell,ngenshell,ishell,datagenbasis)
+  subroutine setgenbasis(atombasis,locgenshell,ngenshell,ishell,databasis,datagenbasis)
 !---------------------------------
 !
 ! Driver of setting basis functions from input file
@@ -262,6 +262,7 @@ end
       use modjob, only : flagecp
       use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(inout) :: databasis
       type(typebasis),intent(in) :: datagenbasis
       integer,intent(in) :: locgenshell(-9:112), ngenshell(-9:112)
       integer,intent(out) :: ishell
@@ -286,7 +287,7 @@ end
         nn= numatomic(iatom)
         select case(atombasis(nn))
           case('STO-3G')
-            call bssto3g(iatom,ishell)
+            call bssto3g(iatom,ishell,databasis)
           case('3-21G')
             call bs321g(iatom,ishell)
           case('6-31G')
@@ -873,6 +874,12 @@ end
 !ishimura-end
         enddo
 !ishimura-start
+        mprim(ishell)= 3
+        mbf(ishell)= 1
+        mtype(ishell)= 0
+        locatom(ishell)= iatom
+        locprim(ishell+1)= locprim(ishell)+3
+        locbf(ishell+1) = locbf(ishell)+1
         databasis%mprim(ishell)= 3
         databasis%mbf(ishell)= 1
         databasis%mtype(ishell)= 0
