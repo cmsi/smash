@@ -195,19 +195,16 @@ end
 !
 ! Out : hmo (extended Huckel orbitals)
 !
-      use modguess, only : nao_gcore
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(in) :: datacorebs
       type(typecomp),intent(inout) :: datacomp
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
-      real(8),intent(out) :: hmo(nao_gcore*nao_gcore), eigen(nao_gcore)
+      real(8),intent(out) :: hmo(datacorebs%nao**2), eigen(datacorebs%nao)
 !
 ! Calculate overlap integrals
 ! (guess basis)x(guess basis)
 !
-!ishimura
-!     call calcover1core(hmo,datacorebs)
       call calcover1(hmo,datacorebs)
 !
 ! Set ionization potentials
@@ -220,7 +217,8 @@ end
 !
 ! Diagonalize extended Huckel matrix
 !
-      call diag('V','U',nao_gcore,hmo,nao_gcore,eigen,datacomp)
+!     call diag('V','U',nao_gcore,hmo,nao_gcore,eigen,datacomp)
+      call diag('V','U',datacorebs%nao,hmo,datacorebs%nao,eigen,datacomp)
 !
       return
 end
