@@ -188,7 +188,7 @@ end
 
 
 !--------------------------------------------------------------
-  subroutine calchuckelgcore(hmo,eigen,datacomp)
+  subroutine calchuckelgcore(hmo,eigen,datacorebs,datacomp)
 !--------------------------------------------------------------
 !
 ! Driver of extended Huckel calculation for only core orbitals
@@ -196,8 +196,9 @@ end
 ! Out : hmo (extended Huckel orbitals)
 !
       use modguess, only : nao_gcore
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: datacorebs
       type(typecomp),intent(inout) :: datacomp
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(out) :: hmo(nao_gcore*nao_gcore), eigen(nao_gcore)
@@ -205,7 +206,9 @@ end
 ! Calculate overlap integrals
 ! (guess basis)x(guess basis)
 !
-      call calcover1core(hmo)
+!ishimura
+!     call calcover1core(hmo,datacorebs)
+      call calcover1(hmo,datacorebs)
 !
 ! Set ionization potentials
 !
@@ -1118,31 +1121,6 @@ end
 end
 
 
-!------------------------------------
-  subroutine calcover1core(overlap)
-!------------------------------------
-!
-! Driver of overlap integral calculation for only core orbitals
-! (guess basis)x(guess basis)
-!
-! Out : overlap (overlap integral of guess basis set)
-!
-      use modguess, only : nshell_gcore, nao_gcore
-      implicit none
-      integer :: ish, jsh
-      real(8),intent(out) :: overlap(nao_gcore*nao_gcore)
-!
-!$OMP parallel do private(jsh)
-      do ish= nshell_gcore,1,-1
-        do jsh= 1,ish
-          call intover1core(overlap,ish,jsh)
-        enddo
-      enddo
-!$OMP end parallel do
-      return
-end
-
-
 !-----------------------------------------------------------
   subroutine calcover2(overlap,work,datacomp)
 !-----------------------------------------------------------
@@ -1650,7 +1628,7 @@ end
         allocate(coremo(nao_gcore,nao_gcore),work1(nao_g*nao_gcore),work2(nao_g*nao_gcore), &
 &                work3(nao_g*nao_gcore),eigen(nao_gcore))
         call calccoremo(cmoa_g,cmob_g,coremo,work1,work2,work3,eigen,scftype_g, &
-&                       datacomp)
+&                       datacorebs,datacomp)
         call memunset(nao_gcore*(nao_gcore+nao_g*3+1),datacomp)
         deallocate(coremo,work1,work2,work3,eigen)
         nmo_g= nmo_g-ncore
@@ -1767,15 +1745,16 @@ end
 
 !------------------------------------------------------------------------------------
   subroutine calccoremo(cmoa_g,cmob_g,coremo,overlap,work2,work3,eigen,scftype_g, &
-&                       datacomp)
+&                       datacorebs,datacomp)
 !------------------------------------------------------------------------------------
 !
 ! Calculate and remove core orbitals corresponding ECP
 !
       use modguess, only : nao_g, nmo_g, nao_gcore
       use modjob, only : scftype
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: datacorebs
       type(typecomp),intent(inout) :: datacomp
       integer :: ii, jj, idamax, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
@@ -1788,7 +1767,7 @@ end
 !
 ! Calculate Extended Huckel method
 !
-      call calchuckelgcore(coremo,eigen,datacomp)
+      call calchuckelgcore(coremo,eigen,datacorebs,datacomp)
 !
 ! Calculate overlap integrals between core-guess basis and guess bases
 !
