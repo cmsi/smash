@@ -1723,7 +1723,7 @@ end
       type(typebasis),intent(in) :: datacorebs
       type(typecomp),intent(inout) :: datacomp
       integer :: ii, jj, kk, idamax, icount
-      real(8),parameter :: zero=0.0D+00, one=1.0D+00, small=1.0D-05
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, small=1.0D-04
       real(8),intent(inout) :: cmoa_g(nao_g,nao_g), cmob_g(nao_g,nao_g)
       real(8),intent(out) :: coremo(nao_gcore,nao_gcore), overlap(nao_gcore,nao_g)
       real(8),intent(out) :: work2(nao_gcore,nao_g), work3(nao_g,nao_gcore), eigen(nao_gcore)
