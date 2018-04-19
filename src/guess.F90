@@ -216,7 +216,7 @@ end
 !
 ! Form extended Huckel matrix
 !
-      call formhuckelcore(hmo,eigen)
+      call formhuckel(hmo,eigen,datacorebs%nao,0)
 !
 ! Diagonalize extended Huckel matrix
 !
@@ -1061,39 +1061,6 @@ end
 end
 
 
-!-------------------------------------------
-  subroutine formhuckelcore(huckel,energy)
-!-------------------------------------------
-!
-! Form extended Huckel matrix for only core orbitals
-!
-! In   : energy (ionization potential)
-! Inout: huckel[in] (overlap integral of guess basis set)
-!              [out](extended Huckel Hamiltonian)
-!
-      use modguess, only : nao_gcore
-      implicit none
-      integer :: i, j
-      real(8),parameter :: factor=0.875D+00  !(=1.75/2.0)
-      real(8),parameter :: fdown=0.05D+00
-      real(8),intent(in) :: energy(nao_gcore)
-      real(8),intent(inout) :: huckel(nao_gcore,nao_gcore)
-!
-! Generate Huckel matrix from overlap integrals and ionization potentials
-! Scale down core-core and core-valence elements
-!
-!$OMP parallel do schedule(static,1) private(j)
-      do i= 1,nao_gcore
-        do j= 1,i-1
-          huckel(j,i)= fdown*factor*huckel(j,i)*(energy(i)+energy(j))
-        enddo
-        huckel(i,i)= energy(i)
-      enddo
-!$OMP end parallel do
-      return
-end
-
-
 !--------------------------------
   subroutine calcover1(overlap,dataguessbs)
 !--------------------------------
@@ -1755,8 +1722,8 @@ end
       implicit none
       type(typebasis),intent(in) :: datacorebs
       type(typecomp),intent(inout) :: datacomp
-      integer :: ii, jj, idamax, icount
-      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      integer :: ii, jj, kk, idamax, icount
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, small=1.0D-05
       real(8),intent(inout) :: cmoa_g(nao_g,nao_g), cmob_g(nao_g,nao_g)
       real(8),intent(out) :: coremo(nao_gcore,nao_gcore), overlap(nao_gcore,nao_g)
       real(8),intent(out) :: work2(nao_gcore,nao_g), work3(nao_g,nao_gcore), eigen(nao_gcore)
@@ -1783,7 +1750,18 @@ end
 !
       skipmo(:)=.false.
       do ii= 1,nao_gcore
-        skipmo(idamax(nmo_g,work3(1,ii),1))=.true.
+!       skipmo(idamax(nmo_g,work3(1,ii),1))=.true.
+        jj= idamax(nmo_g,work3(1,ii),1)
+        if(.not.skipmo(jj)) then
+          skipmo(jj)=.true.
+        else
+          do kk= 1,nao_gcore
+            if(((abs(eigen(jj)-eigen(kk))) < small).and.(.not.skipmo(kk))) then
+              skipmo(kk)=.true.
+              exit
+            endif
+          enddo
+        endif
       enddo
 !
 ! Skip core orbitals
