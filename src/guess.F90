@@ -127,7 +127,7 @@ end
 !
 ! Calculate Extended Huckel method
 !
-      call calchuckelg(hmo,eigen,nao_v,datacomp)
+      call calchuckelg(hmo,eigen,nao_v,dataguessbs,datacomp)
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
@@ -143,7 +143,7 @@ end
 
 
 !----------------------------------------------------------
-  subroutine calchuckelg(hmo,eigen,nao_v,datacomp)
+  subroutine calchuckelg(hmo,eigen,nao_v,dataguessbs,datacomp)
 !----------------------------------------------------------
 !
 ! Driver of extended Huckel calculation for guess generation
@@ -152,17 +152,18 @@ end
 !
       use modguess, only : nao_g, nmo_g
       use modjob, only : iprint
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
-      integer,intent(in) :: nao_v
+      type(typebasis),intent(in) :: dataguessbs
       type(typecomp),intent(inout) :: datacomp
+      integer,intent(in) :: nao_v
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(out) :: hmo(nao_g*nao_g), eigen(nao_g)
 !
 ! Calculate overlap integrals
 ! (guess basis)x(guess basis)
 !
-      call calcover1(hmo)
+      call calcover1(hmo,dataguessbs)
 !
 ! Set ionization potentials
 !
@@ -1092,7 +1093,7 @@ end
 
 
 !--------------------------------
-  subroutine calcover1(overlap)
+  subroutine calcover1(overlap,dataguessbs)
 !--------------------------------
 !
 ! Driver of overlap integral calculation
@@ -1101,14 +1102,16 @@ end
 ! Out : overlap (overlap integral of guess basis set)
 !
       use modguess, only : nshell_g, nao_g
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: dataguessbs
       integer :: ish, jsh
       real(8),intent(out) :: overlap(nao_g*nao_g)
 !
 !$OMP parallel do private(jsh)
       do ish= nshell_g,1,-1
         do jsh= 1,ish
-          call intover1(overlap,ish,jsh)
+          call intover1(overlap,ish,jsh,dataguessbs)
         enddo
       enddo
 !$OMP end parallel do
@@ -1211,7 +1214,7 @@ end
 
 
 !---------------------------------------
-  subroutine intover1(overlap,ish,jsh)
+  subroutine intover1(overlap,ish,jsh,dataguessbs)
 !---------------------------------------
 !
 ! Overlap integral calculation
@@ -1224,7 +1227,9 @@ end
       use modjob, only : threshex
       use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
 &                          ex_g, coeff_g, nao_g, coord_g
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: dataguessbs
       integer,intent(in) :: ish, jsh
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, iprim, jprim
       integer :: nbfij(2), nprimij(2), nangij(2), ii, jj, maxj
@@ -1252,8 +1257,11 @@ end
         coordij(ii,2)= coord_g(ii,jatom)
       enddo
       do iprim= 1,nprimij(1)
-        exij(iprim,1)= ex_g(iloc+iprim)
-        coij(iprim,1)= coeff_g(iloc+iprim)
+!kazuya
+!       exij(iprim,1)= ex_g(iloc+iprim)
+!       coij(iprim,1)= coeff_g(iloc+iprim)
+        exij(iprim,1)= dataguessbs%ex(iloc+iprim)
+        coij(iprim,1)= dataguessbs%coeff(iloc+iprim)
       enddo
       do jprim= 1,nprimij(2)
         exij(jprim,2)= ex_g(jloc+jprim)
@@ -2046,7 +2054,7 @@ end
 !
 ! Calculate Extended Huckel method
 !
-      call calcdftb(hmo,overlap,work1,work2,eigen,nao_v,nshell_v,datacomp)
+      call calcdftb(hmo,overlap,work1,work2,eigen,nao_v,nshell_v,dataguessbs,datacomp)
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
@@ -2062,7 +2070,7 @@ end
 
 
 !-----------------------------------------------------------------------------
-  subroutine calcdftb(dftbmo,overlap,ortho,work,eigen,nao_v,nshell_v,datacomp)
+  subroutine calcdftb(dftbmo,overlap,ortho,work,eigen,nao_v,nshell_v,dataguessbs,datacomp)
 !-----------------------------------------------------------------------------
 !
 ! Driver of DFTB calculation
@@ -2074,8 +2082,9 @@ end
       use modguess, only : nao_g, nmo_g, spher_g, coord_g
       use modjob, only : threshover
       use modmolecule, only : coord, natom, neleca, nelecb
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: dataguessbs
       type(typecomp),intent(inout) :: datacomp
       integer,parameter :: maxiter=1000
       integer,intent(in) :: nao_v, nshell_v
@@ -2093,7 +2102,7 @@ end
 ! Calculate overlap integrals
 ! (guess basis)x(guess basis)
 !
-      call calcover1(overlap)
+      call calcover1(overlap,dataguessbs)
       do ii= 1,nao_g
         do jj= 1,ii
           work(jj,ii)= overlap(jj,ii)
