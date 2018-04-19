@@ -20,9 +20,10 @@
 !
       use modbasis, only : ecp, maxangecp, izcore, locecp, mprimecp, execp, coeffecp, mtypeecp
       use modmolecule, only : natom, znuc
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
+      type(typebasis) :: datagenbasis
       integer :: iatom, iprim
       integer :: locgenecp(0:5,-9:112), mgenprimecp(0:5,-9:112)
       integer :: maxgenangecp(-9:112), izgencore(-9:112)
@@ -40,8 +41,8 @@
             call ecplanl2(iatom,iprim)
           enddo
         elseif(ecp == 'GEN') then
-          call readecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,datacomp)
-          call setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim)
+          call readecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,datagenbasis,datacomp)
+          call setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim,datagenbasis)
         else
           write(*,'(" Error! This program does not support ECP function,",a10,".")')ecp
           call iabort
@@ -66,16 +67,17 @@ end
 
 
 !------------------------------
-  subroutine setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim)
+  subroutine setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim,datagenbasis)
 !------------------------------
 !
 ! Driver of setting ECP functions from input file
 ! This routine should be called only from master node.
 !
       use modmolecule, only : natom, numatomic
-      use modbasis, only : maxangecp, izcore, mtypeecp, locecp, mprimecp, execp, coeffecp, &
-&                          mgentypeecp, exgenecp, coeffgenecp
+      use modbasis, only : maxangecp, izcore, mtypeecp, locecp, mprimecp, execp, coeffecp
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: datagenbasis
       integer,intent(in) :: locgenecp(0:5,-9:112), mgenprimecp(0:5,-9:112)
       integer,intent(in) :: maxgenangecp(-9:112), izgencore(-9:112)
       integer,intent(inout) :: iprim
@@ -106,9 +108,9 @@ end
             mprimecp(iang,iatom)= numprim
             do ii= 1,numprim
               iprim= iprim+1
-              execp(iprim)= exgenecp(locgen+ii)
-              coeffecp(iprim)= coeffgenecp(locgen+ii)
-              mtypeecp(iprim)= mgentypeecp(locgen+ii)
+              execp(iprim)= datagenbasis%execp(locgen+ii)
+              coeffecp(iprim)= datagenbasis%coeffecp(locgen+ii)
+              mtypeecp(iprim)= datagenbasis%mtypeecp(locgen+ii)
             enddo
           enddo
         endif

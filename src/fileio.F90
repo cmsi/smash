@@ -1161,15 +1161,15 @@ end
 
 
 !---------------------
-  subroutine readecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,datacomp)
+  subroutine readecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,datagenbasis,datacomp)
 !---------------------
 !
 ! Read basis set
 !
       use modparam, only : mxprim, mxshell, maxline, input
-      use modbasis, only : exgenecp, coeffgenecp, mgentypeecp
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(out) :: datagenbasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(out) :: locgenecp(0:5,-9:112), mgenprimecp(0:5,-9:112)
       integer,intent(out) :: maxgenangecp(-9:112), izgencore(-9:112)
@@ -1255,7 +1255,8 @@ end
             enddo
             do jprim=1,numprim
               iprim= iprim+1
-              read(input,*,err=9998,end=9998)mgentypeecp(iprim),exgenecp(iprim),coeffgenecp(iprim)
+              read(input,*,err=9998,end=9998)datagenbasis%mtypeecp(iprim), &
+&                  datagenbasis%execp(iprim),datagenbasis%coeffecp(iprim)
             enddo
           enddo
           cycle
