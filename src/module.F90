@@ -336,8 +336,7 @@ end
         real(8) :: execp(mxprim), coeffecp(mxprim)
         character(len=16) :: ecp='', atomecp(-9:112)
 
-        integer :: maxgenangecp(-9:112), izgencore(-9:112), mgentypeecp(mxprim)
-        integer :: locgenecp(0:5,-9:112), mgenprimecp(0:5,-9:112)
+        integer :: mgentypeecp(mxprim)
         real(8) :: exgenecp(mxprim), coeffgenecp(mxprim)
      end type
 end module
