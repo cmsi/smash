@@ -162,6 +162,7 @@ end
       implicit none
       character(len=24) :: tdate
 !
+      call fdate(tdate)
       write(*,'(" Calculation finished abnormally.")')
       write(*,'(" The job finished at ",a)')tdate
       call para_abort
