@@ -32,12 +32,8 @@
       character(len=16) :: atombasis(-9:112)
 !
       if(datacomp%master) then
-!ishimura-start
-        locprim(1)=0
-        locbf(1)=0
         databasis%locprim(1)=0
         databasis%locbf(1)=0
-!ishimura-end
         ishell= 0
 !
         select case(basis)
@@ -106,41 +102,14 @@
             call setgenbasis(atombasis,locgenshell,ngenshell,ishell,databasis,datagenbasis)
           case('CHECK')
             call setcheckbasis(databasis)
-!ishimura-start
-            ishell= nshell
             ishell= databasis%nshell
-!ishimura-end
           case default
             write(*,'(" Error! Basis set ",a16,"is not supported.")') basis
             call iabort
         end select
 !
-!ishimura-start
-        nshell= ishell
         databasis%nshell= ishell
-!ishimura-end
       endif
-!
-!ishimura-start
-!      call para_bcasti(nshell,1,0,datacomp%mpi_comm1)
-!      call para_bcasti(locprim,nshell+1,0,datacomp%mpi_comm1)
-!      call para_bcasti(locbf  ,nshell+1,0,datacomp%mpi_comm1)
-!      call para_bcasti(locatom,nshell  ,0,datacomp%mpi_comm1)
-!!
-!      nao= locbf(nshell+1)
-!      nprim= locprim(nshell+1)
-!!
-!      call para_bcastr(ex   ,nprim,0,datacomp%mpi_comm1)
-!      call para_bcastr(coeff,nprim,0,datacomp%mpi_comm1)
-!      call para_bcasti(mprim,nshell,0,datacomp%mpi_comm1)
-!      call para_bcasti(mbf  ,nshell,0,datacomp%mpi_comm1)
-!      call para_bcasti(mtype,nshell,0,datacomp%mpi_comm1)
-!!
-!      do i= 1,nprim
-!        coeffinp(i)= coeff(i)
-!      enddo
-!!
-!      call bsnrmlz
 !
       call para_bcasti(databasis%nshell,1,0,datacomp%mpi_comm1)
       call para_bcasti(databasis%locprim,databasis%nshell+1,0,datacomp%mpi_comm1)
@@ -160,6 +129,7 @@
         databasis%coeffinp(i)= databasis%coeff(i)
       enddo
       call bsnrmlz1(databasis)
+!ishimura-start
 !!!!!!!!!!!
     nshell= databasis%nshell
     nao= databasis%nao
