@@ -55,11 +55,11 @@
             enddo
           case('6-31G(D)','6-31G*')
             do iatom= 1, natom
-              call bs631gd(iatom,ishell)
+              call bs631gd(iatom,ishell,databasis)
             enddo
           case('6-31G(D,P)','6-31G**')
             do iatom= 1, natom
-              call bs631gdp(iatom,ishell)
+              call bs631gdp(iatom,ishell,databasis)
             enddo
           case('6-311G')
             do iatom= 1, natom
@@ -312,9 +312,9 @@ end
           case('6-31G')
             call bs631g(iatom,ishell,databasis)
           case('6-31G(D)','6-31G*')
-            call bs631gd(iatom,ishell)
+            call bs631gd(iatom,ishell,databasis)
           case('6-31G(D,P)','6-31G**')
-            call bs631gdp(iatom,ishell)
+            call bs631gdp(iatom,ishell,databasis)
           case('6-311G')
             call bs6311g(iatom,ishell)
           case('6-311G(D)','6-311G*')
@@ -4653,41 +4653,45 @@ end
 
 
 !-----------------------------------
-  subroutine bs631gd(iatom,ishell)
+  subroutine bs631gd(iatom,ishell,databasis)
 !-----------------------------------
 !
 ! Set basis functions of 6-31G(d)
 !
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(inout) :: databasis
       integer,intent(in) :: iatom
       integer,intent(inout) :: ishell
 !
-      call bs631g(iatom,ishell)
+      call bs631g(iatom,ishell,databasis)
 !
-      call bs631gs(iatom,ishell)
+      call bs631gs(iatom,ishell,databasis)
 !
       return
 end
 
 
 !------------------------------------
-  subroutine bs631gdp(iatom,ishell)
+  subroutine bs631gdp(iatom,ishell,databasis)
 !------------------------------------
 !
 ! Set basis functions of 6-31G(d,p)
 !
       use modmolecule, only : numatomic
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(inout) :: databasis
       integer,intent(in) :: iatom
       integer,intent(inout) :: ishell
 !
-      call bs631g(iatom,ishell)
+      call bs631g(iatom,ishell,databasis)
 !
       select case(numatomic(iatom))
         case(1:2)
-          call bs631gss(iatom,ishell)
+          call bs631gss(iatom,ishell,databasis)
         case(3:)
-          call bs631gs(iatom,ishell)
+          call bs631gs(iatom,ishell,databasis)
       end select
 !
       return
@@ -4695,7 +4699,7 @@ end
 
 
 !-----------------------------------
-  subroutine bs631gs(iatom,ishell)
+  subroutine bs631gs(iatom,ishell,databasis)
 !-----------------------------------
 !
 ! Set basis polarization function of 6-31G(d)
@@ -4703,7 +4707,9 @@ end
       use modmolecule, only : numatomic
       use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mtype, mbf, spher
       use modparam, only : mxao, mxshell, mxprim
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(inout) :: databasis
       integer,intent(in) :: iatom
       integer,intent(inout) :: ishell
       real(8),parameter :: one=1.0D+00
@@ -4730,6 +4736,19 @@ end
             mbf(ishell)= 6
             locbf(ishell+1)= locbf(ishell)+6
           endif
+          databasis%ex(databasis%locprim(ishell)+1)= ex631gs(numatomic(iatom))
+          databasis%coeff(databasis%locprim(ishell)+1)= one
+          databasis%mprim(ishell)= 1
+          databasis%mtype(ishell)= 2
+          databasis%locatom(ishell)= iatom
+          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
+          if(databasis%spher) then
+            databasis%mbf(ishell)= 5
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+5
+          else
+            databasis%mbf(ishell)= 6
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+6
+          endif
         case(21:30)
           ishell= ishell+1
           ex(locprim(ishell)+1)= ex631gs(numatomic(iatom))
@@ -4745,6 +4764,19 @@ end
             mbf(ishell)= 10
             locbf(ishell+1)= locbf(ishell)+10
           endif
+          databasis%ex(databasis%locprim(ishell)+1)= ex631gs(numatomic(iatom))
+          databasis%coeff(databasis%locprim(ishell)+1)= one
+          databasis%mprim(ishell)= 1
+          databasis%mtype(ishell)= 3
+          databasis%locatom(ishell)= iatom
+          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
+          if(databasis%spher) then
+            databasis%mbf(ishell)= 7
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+7
+          else
+            databasis%mbf(ishell)= 10
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+10
+          endif
         case default
           write(*,'(" Error! This program supports Li - Zn 6-31G* basis set.")')
           call iabort
@@ -4754,12 +4786,12 @@ end
         write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
         call iabort
       endif
-      if(locprim(ishell+1) > mxprim ) then
+      if(databasis%locprim(ishell+1) > mxprim ) then
         write(*,'(" Error! The number of primitive basis functions exceeds mxprim", &
 &             i6,".")')mxprim
         call iabort
       endif
-      if(locbf(ishell+1) > mxao ) then
+      if(databasis%locbf(ishell+1) > mxao ) then
         write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
         call iabort
       endif
@@ -4768,7 +4800,7 @@ end
 
 
 !------------------------------------
-  subroutine bs631gss(iatom,ishell)
+  subroutine bs631gss(iatom,ishell,databasis)
 !------------------------------------
 !
 ! Set basis polarization function of Hydrogen 6-31G(d,p)
@@ -4776,7 +4808,9 @@ end
       use modmolecule, only : numatomic
       use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mtype, mbf
       use modparam, only : mxao, mxshell, mxprim
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(inout) :: databasis
       integer,intent(in) :: iatom
       integer,intent(inout) :: ishell
       real(8),parameter :: one=1.0D+00, ex631gss=1.1D+00 
@@ -4791,19 +4825,27 @@ end
           locatom(ishell)= iatom
           locprim(ishell+1)= locprim(ishell)+1
           mbf(ishell)= 3
-          locbf(ishell+1) = locbf(ishell)+3
+          locbf(ishell+1)= locbf(ishell)+3
+          databasis%ex(databasis%locprim(ishell)+1)= ex631gss
+          databasis%coeff(databasis%locprim(ishell)+1)= one
+          databasis%mprim(ishell)= 1
+          databasis%mtype(ishell)= 1
+          databasis%locatom(ishell)= iatom
+          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
+          databasis%mbf(ishell)= 3
+          databasis%locbf(ishell+1)= databasis%locbf(ishell)+3
       end select
 !
       if(ishell > mxshell) then
         write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
         call iabort
       endif
-      if(locprim(ishell+1) > mxprim ) then
+      if(databasis%locprim(ishell+1) > mxprim ) then
         write(*,'(" Error! The number of primitive basis functions exceeds mxprim", &
 &             i6,".")')mxprim
         call iabort
       endif
-      if(locbf(ishell+1) > mxao ) then
+      if(databasis%locbf(ishell+1) > mxao ) then
         write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
         call iabort
       endif
