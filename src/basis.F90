@@ -121,6 +121,7 @@
 !ishimura-end
       endif
 !
+!ishimura-start
       call para_bcasti(nshell,1,0,datacomp%mpi_comm1)
       call para_bcasti(locprim,nshell+1,0,datacomp%mpi_comm1)
       call para_bcasti(locbf  ,nshell+1,0,datacomp%mpi_comm1)
@@ -140,6 +141,37 @@
       enddo
 !
       call bsnrmlz
+!
+      call para_bcasti(databasis%nshell,1,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%locprim,databasis%nshell+1,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%locbf  ,databasis%nshell+1,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%locatom,databasis%nshell  ,0,datacomp%mpi_comm1)
+!
+      databasis%nao= databasis%locbf(databasis%nshell+1)
+      databasis%nprim= databasis%locprim(databasis%nshell+1)
+!
+      call para_bcastr(databasis%ex   ,databasis%nprim,0,datacomp%mpi_comm1)
+      call para_bcastr(databasis%coeff,databasis%nprim,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%mprim,databasis%nshell,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%mbf  ,databasis%nshell,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%mtype,databasis%nshell,0,datacomp%mpi_comm1)
+!
+      do i= 1,nprim
+        databasis%coeffinp(i)= databasis%coeff(i)
+      enddo
+      call bsnrmlz1(databasis)
+!!!!!!!!!!!
+    nshell= databasis%nshell
+    locprim(:)= databasis%locprim(:)
+    locbf(:)  = databasis%locbf(:)
+    locatom(:)= databasis%locatom(:)
+    ex(:)     = databasis%ex(:)
+    coeff(:)  = databasis%coeff(:)
+    mprim(:)  = databasis%mprim(:)
+    mbf(:)    = databasis%mbf(:)
+    mtype(:)  = databasis%mtype(:)
+!!!!!!!!!!!
+!ishimura-end
       return
 end
 
@@ -361,18 +393,28 @@ end
           do jj= 1,datagenbasis%mprim(ll+ii)
             ex(locprim(ishell)+jj)= datagenbasis%ex(lprim+jj)
             coeff(locprim(ishell)+jj)= datagenbasis%coeff(lprim+jj)
+            databasis%ex(databasis%locprim(ishell)+jj)= datagenbasis%ex(lprim+jj)
+            databasis%coeff(databasis%locprim(ishell)+jj)= datagenbasis%coeff(lprim+jj)
           enddo
           mprim(ishell)= datagenbasis%mprim(ll+ii)
           mtype(ishell)= datagenbasis%mtype(ll+ii)
           locatom(ishell)= iatom
           locprim(ishell+1)= locprim(ishell)+datagenbasis%mprim(ll+ii)
+          databasis%mprim(ishell)= datagenbasis%mprim(ll+ii)
+          databasis%mtype(ishell)= datagenbasis%mtype(ll+ii)
+          databasis%locatom(ishell)= iatom
+          databasis%locprim(ishell+1)= databasis%locprim(ishell)+datagenbasis%mprim(ll+ii)
           select case(datagenbasis%mtype(ll+ii))
             case(0)
               mbf(ishell)= 1
               locbf(ishell+1)= locbf(ishell)+1
+              databasis%mbf(ishell)= 1
+              databasis%locbf(ishell+1)= databasis%locbf(ishell)+1
             case(1)
               mbf(ishell)= 3
               locbf(ishell+1)= locbf(ishell)+3
+              databasis%mbf(ishell)= 3
+              databasis%locbf(ishell+1)= databasis%locbf(ishell)+3
             case(2)
               if(spher) then
                 mbf(ishell)= 5
@@ -380,6 +422,13 @@ end
               else
                 mbf(ishell)= 6
                 locbf(ishell+1)= locbf(ishell)+6
+              endif
+              if(databasis%spher) then
+                databasis%mbf(ishell)= 5
+                databasis%locbf(ishell+1)= databasis%locbf(ishell)+5
+              else
+                databasis%mbf(ishell)= 6
+                databasis%locbf(ishell+1)= databasis%locbf(ishell)+6
               endif
             case(3)
               if(spher) then
@@ -389,6 +438,13 @@ end
                 mbf(ishell)= 10
                 locbf(ishell+1)= locbf(ishell)+10
               endif
+              if(databasis%spher) then
+                databasis%mbf(ishell)= 7
+                databasis%locbf(ishell+1)= databasis%locbf(ishell)+7
+              else
+                databasis%mbf(ishell)= 10
+                databasis%locbf(ishell+1)= databasis%locbf(ishell)+10
+              endif
             case(4)
               if(spher) then
                 mbf(ishell)= 9
@@ -396,6 +452,13 @@ end
               else
                 mbf(ishell)= 15
                 locbf(ishell+1)= locbf(ishell)+15
+              endif
+              if(databasis%spher) then
+                databasis%mbf(ishell)= 9
+                databasis%locbf(ishell+1)= databasis%locbf(ishell)+9
+              else
+                databasis%mbf(ishell)= 15
+                databasis%locbf(ishell+1)= databasis%locbf(ishell)+15
               endif
             case(5)
               if(spher) then
@@ -405,6 +468,13 @@ end
                 mbf(ishell)= 21
                 locbf(ishell+1)= locbf(ishell)+21
               endif
+              if(databasis%spher) then
+                databasis%mbf(ishell)= 11
+                databasis%locbf(ishell+1)= databasis%locbf(ishell)+11
+              else
+                databasis%mbf(ishell)= 21
+                databasis%locbf(ishell+1)= databasis%locbf(ishell)+21
+              endif
             case(6)
               if(spher) then
                 mbf(ishell)= 13
@@ -412,6 +482,13 @@ end
               else
                 mbf(ishell)= 28
                 locbf(ishell+1)= locbf(ishell)+28
+              endif
+              if(databasis%spher) then
+                databasis%mbf(ishell)= 13
+                databasis%locbf(ishell+1)= databasis%locbf(ishell)+13
+              else
+                databasis%mbf(ishell)= 28
+                databasis%locbf(ishell+1)= databasis%locbf(ishell)+28
               endif
             case default
               write(*,'(" Error! This program supports up to i function.")')
