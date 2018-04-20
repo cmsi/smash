@@ -105,8 +105,11 @@
             call readbasis(atombasis,locgenshell,ngenshell,datagenbasis,datacomp)
             call setgenbasis(atombasis,locgenshell,ngenshell,ishell,databasis,datagenbasis)
           case('CHECK')
-            call setcheckbasis
+            call setcheckbasis(databasis)
+!ishimura-start
             ishell= nshell
+            ishell= databasis%nshell
+!ishimura-end
           case default
             write(*,'(" Error! Basis set ",a16,"is not supported.")') basis
             call iabort

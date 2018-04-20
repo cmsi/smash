@@ -958,7 +958,7 @@ end
 
 
 !---------------------------
-  subroutine setcheckbasis
+  subroutine setcheckbasis(databasis)
 !---------------------------
 !
 ! Read basis set from checkpoint file
@@ -966,7 +966,9 @@ end
       use modbasis, only : nshell, nao, nprim, ex, coeff, locprim, locbf, locatom, &
 &                          mprim, mbf, mtype
       use modparam, only : mxao, mxshell, mxprim, icheck
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(inout) :: databasis
       integer :: idummy, ii
       character(len=16) :: checkversion, cdummy
 !
@@ -1015,6 +1017,53 @@ end
 !
       locbf(nshell+1)= nao
       locprim(nshell+1)= nprim
+!
+!!!!!!!!!!!!!!!!!!!!!!
+      rewind(icheck)
+      read(icheck,err=9999) checkversion
+      read(icheck) cdummy, idummy, databasis%nao, idummy, databasis%nshell, databasis%nprim
+!
+      write(*,'(" Basis set is read from checkpoint file.")')
+      if(databasis%nshell+1 > mxshell) then
+        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
+        call iabort
+      endif
+      if(databasis%nprim > mxprim ) then
+        write(*,'(" Error! The number of primitive basis functions exceeds mxprim",i6,".")')mxprim
+        call iabort
+      endif
+      if(databasis%nao > mxao ) then
+        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
+        call iabort
+      endif
+!
+      read(icheck)
+      read(icheck)
+      read(icheck)
+      read(icheck)
+      if(checkversion(1:2) /= "1.") then
+        read(icheck)
+        read(icheck)
+      endif
+      read(icheck)
+      read(icheck) (databasis%ex(ii),ii=1,databasis%nprim)
+      read(icheck)
+      read(icheck) (databasis%coeff(ii),ii=1,databasis%nprim)
+      read(icheck)
+      read(icheck) (databasis%locprim(ii),ii=1,databasis%nshell)
+      read(icheck)
+      read(icheck) (databasis%locbf(ii),ii=1,databasis%nshell)
+      read(icheck)
+      read(icheck) (databasis%locatom(ii),ii=1,databasis%nshell)
+      read(icheck)
+      read(icheck) (databasis%mprim(ii),ii=1,databasis%nshell)
+      read(icheck)
+      read(icheck) (databasis%mbf(ii),ii=1,databasis%nshell)
+      read(icheck)
+      read(icheck) (databasis%mtype(ii),ii=1,databasis%nshell)
+!
+      databasis%locbf(databasis%nshell+1)= databasis%nao
+      databasis%locprim(databasis%nshell+1)= databasis%nprim
 !
       return
 9999  write(*,'(" Error! Basis set cannot be read from checkpoint file.")')
