@@ -4076,7 +4076,6 @@ end
 ! Set basis polarization function of 6-31G(d)
 !
       use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mtype, mbf, spher
       use modparam, only : mxao, mxshell, mxprim
       use modtype, only : typebasis
       implicit none
@@ -4094,19 +4093,6 @@ end
         case(:2)
         case(3:20)
           ishell= ishell+1
-          ex(locprim(ishell)+1)= ex631gs(numatomic(iatom))
-          coeff(locprim(ishell)+1)= one
-          mprim(ishell)= 1
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1)= locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1)= locbf(ishell)+6
-          endif
           databasis%ex(databasis%locprim(ishell)+1)= ex631gs(numatomic(iatom))
           databasis%coeff(databasis%locprim(ishell)+1)= one
           databasis%mprim(ishell)= 1
@@ -4122,19 +4108,6 @@ end
           endif
         case(21:30)
           ishell= ishell+1
-          ex(locprim(ishell)+1)= ex631gs(numatomic(iatom))
-          coeff(locprim(ishell)+1)= one
-          mprim(ishell)= 1
-          mtype(ishell)= 3
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 7
-            locbf(ishell+1)= locbf(ishell)+7
-          else
-            mbf(ishell)= 10
-            locbf(ishell+1)= locbf(ishell)+10
-          endif
           databasis%ex(databasis%locprim(ishell)+1)= ex631gs(numatomic(iatom))
           databasis%coeff(databasis%locprim(ishell)+1)= one
           databasis%mprim(ishell)= 1
@@ -4177,7 +4150,6 @@ end
 ! Set basis polarization function of Hydrogen 6-31G(d,p)
 !
       use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mtype, mbf
       use modparam, only : mxao, mxshell, mxprim
       use modtype, only : typebasis
       implicit none
@@ -4189,14 +4161,6 @@ end
       select case (numatomic(iatom))
         case(1:2)
           ishell= ishell+1
-          ex(locprim(ishell)+1)= ex631gss
-          coeff(locprim(ishell)+1)= one
-          mprim(ishell)= 1
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          mbf(ishell)= 3
-          locbf(ishell+1)= locbf(ishell)+3
           databasis%ex(databasis%locprim(ishell)+1)= ex631gss
           databasis%coeff(databasis%locprim(ishell)+1)= one
           databasis%mprim(ishell)= 1
