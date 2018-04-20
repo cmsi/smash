@@ -11735,6 +11735,12 @@ end
             databasis%ex(databasis%locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j+4)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j+4)
           enddo
+          mprim(ishell)= 1
+          mbf(ishell)= 3
+          mtype(ishell)= 1
+          locatom(ishell)= iatom
+          locprim(ishell+1)= databasis%locprim(ishell)+1
+          locbf(ishell+1) = locbf(ishell)+3
           databasis%mprim(ishell)= 1
           databasis%mbf(ishell)= 3
           databasis%mtype(ishell)= 1
