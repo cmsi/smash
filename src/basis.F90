@@ -122,25 +122,25 @@
       endif
 !
 !ishimura-start
-      call para_bcasti(nshell,1,0,datacomp%mpi_comm1)
-      call para_bcasti(locprim,nshell+1,0,datacomp%mpi_comm1)
-      call para_bcasti(locbf  ,nshell+1,0,datacomp%mpi_comm1)
-      call para_bcasti(locatom,nshell  ,0,datacomp%mpi_comm1)
-!
-      nao= locbf(nshell+1)
-      nprim= locprim(nshell+1)
-!
-      call para_bcastr(ex   ,nprim,0,datacomp%mpi_comm1)
-      call para_bcastr(coeff,nprim,0,datacomp%mpi_comm1)
-      call para_bcasti(mprim,nshell,0,datacomp%mpi_comm1)
-      call para_bcasti(mbf  ,nshell,0,datacomp%mpi_comm1)
-      call para_bcasti(mtype,nshell,0,datacomp%mpi_comm1)
-!
-      do i= 1,nprim
-        coeffinp(i)= coeff(i)
-      enddo
-!
-      call bsnrmlz
+!      call para_bcasti(nshell,1,0,datacomp%mpi_comm1)
+!      call para_bcasti(locprim,nshell+1,0,datacomp%mpi_comm1)
+!      call para_bcasti(locbf  ,nshell+1,0,datacomp%mpi_comm1)
+!      call para_bcasti(locatom,nshell  ,0,datacomp%mpi_comm1)
+!!
+!      nao= locbf(nshell+1)
+!      nprim= locprim(nshell+1)
+!!
+!      call para_bcastr(ex   ,nprim,0,datacomp%mpi_comm1)
+!      call para_bcastr(coeff,nprim,0,datacomp%mpi_comm1)
+!      call para_bcasti(mprim,nshell,0,datacomp%mpi_comm1)
+!      call para_bcasti(mbf  ,nshell,0,datacomp%mpi_comm1)
+!      call para_bcasti(mtype,nshell,0,datacomp%mpi_comm1)
+!!
+!      do i= 1,nprim
+!        coeffinp(i)= coeff(i)
+!      enddo
+!!
+!      call bsnrmlz
 !
       call para_bcasti(databasis%nshell,1,0,datacomp%mpi_comm1)
       call para_bcasti(databasis%locprim,databasis%nshell+1,0,datacomp%mpi_comm1)
@@ -156,12 +156,14 @@
       call para_bcasti(databasis%mbf  ,databasis%nshell,0,datacomp%mpi_comm1)
       call para_bcasti(databasis%mtype,databasis%nshell,0,datacomp%mpi_comm1)
 !
-      do i= 1,nprim
+      do i= 1,databasis%nprim
         databasis%coeffinp(i)= databasis%coeff(i)
       enddo
       call bsnrmlz1(databasis)
 !!!!!!!!!!!
     nshell= databasis%nshell
+    nao= databasis%nao
+    nprim= databasis%nprim
     locprim(:)= databasis%locprim(:)
     locbf(:)  = databasis%locbf(:)
     locatom(:)= databasis%locatom(:)
@@ -170,6 +172,7 @@
     mprim(:)  = databasis%mprim(:)
     mbf(:)    = databasis%mbf(:)
     mtype(:)  = databasis%mtype(:)
+    coeffinp(:)  = databasis%coeffinp(:)
 !!!!!!!!!!!
 !ishimura-end
       return
