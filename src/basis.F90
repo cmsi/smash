@@ -314,8 +314,6 @@ end
 ! This routine must be called only from master node.
 !
       use modmolecule, only : natom, numatomic
-      use modbasis, only : locprim, locbf, locatom, mprim, mbf, mtype, &
-&                          ex, coeff, spher
       use modjob, only : flagecp
       use modtype, only : typebasis
       implicit none
@@ -335,10 +333,6 @@ end
 &       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
 &       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
-!
-      locprim(1)=0
-      locbf(1)=0
-      ishell= 0
 !
       do iatom= 1,natom
         nn= numatomic(iatom)
@@ -394,38 +388,21 @@ end
           ishell= ishell+1 
           lprim= datagenbasis%locprim(ll+ii)
           do jj= 1,datagenbasis%mprim(ll+ii)
-            ex(locprim(ishell)+jj)= datagenbasis%ex(lprim+jj)
-            coeff(locprim(ishell)+jj)= datagenbasis%coeff(lprim+jj)
             databasis%ex(databasis%locprim(ishell)+jj)= datagenbasis%ex(lprim+jj)
             databasis%coeff(databasis%locprim(ishell)+jj)= datagenbasis%coeff(lprim+jj)
           enddo
-          mprim(ishell)= datagenbasis%mprim(ll+ii)
-          mtype(ishell)= datagenbasis%mtype(ll+ii)
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+datagenbasis%mprim(ll+ii)
           databasis%mprim(ishell)= datagenbasis%mprim(ll+ii)
           databasis%mtype(ishell)= datagenbasis%mtype(ll+ii)
           databasis%locatom(ishell)= iatom
           databasis%locprim(ishell+1)= databasis%locprim(ishell)+datagenbasis%mprim(ll+ii)
           select case(datagenbasis%mtype(ll+ii))
             case(0)
-              mbf(ishell)= 1
-              locbf(ishell+1)= locbf(ishell)+1
               databasis%mbf(ishell)= 1
               databasis%locbf(ishell+1)= databasis%locbf(ishell)+1
             case(1)
-              mbf(ishell)= 3
-              locbf(ishell+1)= locbf(ishell)+3
               databasis%mbf(ishell)= 3
               databasis%locbf(ishell+1)= databasis%locbf(ishell)+3
             case(2)
-              if(spher) then
-                mbf(ishell)= 5
-                locbf(ishell+1)= locbf(ishell)+5
-              else
-                mbf(ishell)= 6
-                locbf(ishell+1)= locbf(ishell)+6
-              endif
               if(databasis%spher) then
                 databasis%mbf(ishell)= 5
                 databasis%locbf(ishell+1)= databasis%locbf(ishell)+5
@@ -434,13 +411,6 @@ end
                 databasis%locbf(ishell+1)= databasis%locbf(ishell)+6
               endif
             case(3)
-              if(spher) then
-                mbf(ishell)= 7
-                locbf(ishell+1)= locbf(ishell)+7
-              else
-                mbf(ishell)= 10
-                locbf(ishell+1)= locbf(ishell)+10
-              endif
               if(databasis%spher) then
                 databasis%mbf(ishell)= 7
                 databasis%locbf(ishell+1)= databasis%locbf(ishell)+7
@@ -449,13 +419,6 @@ end
                 databasis%locbf(ishell+1)= databasis%locbf(ishell)+10
               endif
             case(4)
-              if(spher) then
-                mbf(ishell)= 9
-                locbf(ishell+1)= locbf(ishell)+9
-              else
-                mbf(ishell)= 15
-                locbf(ishell+1)= locbf(ishell)+15
-              endif
               if(databasis%spher) then
                 databasis%mbf(ishell)= 9
                 databasis%locbf(ishell+1)= databasis%locbf(ishell)+9
@@ -464,13 +427,6 @@ end
                 databasis%locbf(ishell+1)= databasis%locbf(ishell)+15
               endif
             case(5)
-              if(spher) then
-                mbf(ishell)= 11
-                locbf(ishell+1)= locbf(ishell)+11
-              else
-                mbf(ishell)= 21
-                locbf(ishell+1)= locbf(ishell)+21
-              endif
               if(databasis%spher) then
                 databasis%mbf(ishell)= 11
                 databasis%locbf(ishell+1)= databasis%locbf(ishell)+11
@@ -479,13 +435,6 @@ end
                 databasis%locbf(ishell+1)= databasis%locbf(ishell)+21
               endif
             case(6)
-              if(spher) then
-                mbf(ishell)= 13
-                locbf(ishell+1)= locbf(ishell)+13
-              else
-                mbf(ishell)= 28
-                locbf(ishell+1)= locbf(ishell)+28
-              endif
               if(databasis%spher) then
                 databasis%mbf(ishell)= 13
                 databasis%locbf(ishell+1)= databasis%locbf(ishell)+13
