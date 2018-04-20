@@ -5417,7 +5417,6 @@ end
 ! Set basis functions of cc-pVDZ
 !
       use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mbf, mtype, spher
       use modparam, only : mxao, mxshell, mxprim
       use modtype, only : typebasis
       implicit none
@@ -6240,17 +6239,9 @@ end
         case(1:2)
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 3
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -6260,17 +6251,9 @@ end
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+3)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+3)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 1
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -6280,17 +6263,9 @@ end
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
             databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
           databasis%mprim(ishell)= 1
           databasis%mbf(ishell)= 3
           databasis%mtype(ishell)= 1
@@ -6303,17 +6278,9 @@ end
         case(3:10)
           ishell= ishell+1
           do j= 1,8
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 8
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+8
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 8
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -6323,17 +6290,9 @@ end
 !
           ishell= ishell+1
           do j= 1,8
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+8)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+8)
           enddo
-          mprim(ishell)= 8
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+8
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 8
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -6343,17 +6302,9 @@ end
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+8)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+16)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+8)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+16)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 1
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -6363,17 +6314,9 @@ end
 !
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
             databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+3
           databasis%mprim(ishell)= 3
           databasis%mbf(ishell)= 3
           databasis%mtype(ishell)= 1
@@ -6383,17 +6326,9 @@ end
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+3)
             databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+3)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
           databasis%mprim(ishell)= 1
           databasis%mbf(ishell)= 3
           databasis%mtype(ishell)= 1
@@ -6403,22 +6338,9 @@ end
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= one
             databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= one
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1) = locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1) = locbf(ishell)+6
-          endif
           databasis%mprim(ishell)= 1
           databasis%mtype(ishell)= 2
           databasis%locatom(ishell)= iatom
@@ -6437,17 +6359,9 @@ end
 ! S functions
           ishell= ishell+1
           do j= 1,11
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 11
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+11
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 11
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -6457,17 +6371,9 @@ end
 !
           ishell= ishell+1
           do j= 1,11
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+11)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+11)
           enddo
-          mprim(ishell)= 11
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+11
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 11
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -6477,17 +6383,9 @@ end
 !
           ishell= ishell+1
           do j= 1,11
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+22)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+22)
           enddo
-          mprim(ishell)= 11
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+11
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 11
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -6497,17 +6395,9 @@ end
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+11)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+33)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+11)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+33)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 1
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -6517,17 +6407,9 @@ end
 ! P functions
           ishell= ishell+1
           do j= 1,7
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
             databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 7
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+7
-          locbf(ishell+1) = locbf(ishell)+3
           databasis%mprim(ishell)= 7
           databasis%mbf(ishell)= 3
           databasis%mtype(ishell)= 1
@@ -6537,17 +6419,9 @@ end
 !
           ishell= ishell+1
           do j= 1,7
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+7)
             databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+7)
           enddo
-          mprim(ishell)= 7
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+7
-          locbf(ishell+1) = locbf(ishell)+3
           databasis%mprim(ishell)= 7
           databasis%mbf(ishell)= 3
           databasis%mtype(ishell)= 1
@@ -6557,17 +6431,9 @@ end
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+7)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+14)
             databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+7)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+14)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
           databasis%mprim(ishell)= 1
           databasis%mbf(ishell)= 3
           databasis%mtype(ishell)= 1
@@ -6577,22 +6443,9 @@ end
 ! D functions
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= one
             databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= one
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1) = locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1) = locbf(ishell)+6
-          endif
           databasis%mprim(ishell)= 1
           databasis%mtype(ishell)= 2
           databasis%locatom(ishell)= iatom
@@ -6611,17 +6464,9 @@ end
 ! S functions
           ishell= ishell+1
           do j= 1,13
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 13
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+13
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 13
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -6631,17 +6476,9 @@ end
 !
           ishell= ishell+1
           do j= 1,13
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+13)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+13)
           enddo
-          mprim(ishell)= 13
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+13
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 13
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -6651,17 +6488,9 @@ end
 !
           ishell= ishell+1
           do j= 1,13
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+26)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+26)
           enddo
-          mprim(ishell)= 13
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+13
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 13
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -6671,17 +6500,9 @@ end
 !
           ishell= ishell+1
           do j= 1,13
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+39)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+39)
           enddo
-          mprim(ishell)= 13
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+13
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 13
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -6691,17 +6512,9 @@ end
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+13)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+52)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+13)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+52)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 1
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -6711,17 +6524,9 @@ end
 ! P functions
           ishell= ishell+1
           do j= 1,10
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
             databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 10
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+10
-          locbf(ishell+1) = locbf(ishell)+3
           databasis%mprim(ishell)= 10
           databasis%mbf(ishell)= 3
           databasis%mtype(ishell)= 1
@@ -6731,17 +6536,9 @@ end
 !
           ishell= ishell+1
           do j= 1,10
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+10)
             databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+10)
           enddo
-          mprim(ishell)= 10
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+10
-          locbf(ishell+1) = locbf(ishell)+3
           databasis%mprim(ishell)= 10
           databasis%mbf(ishell)= 3
           databasis%mtype(ishell)= 1
@@ -6751,17 +6548,9 @@ end
 !
           ishell= ishell+1
           do j= 1,10
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+20)
             databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+20)
           enddo
-          mprim(ishell)= 10
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+10
-          locbf(ishell+1) = locbf(ishell)+3
           databasis%mprim(ishell)= 10
           databasis%mbf(ishell)= 3
           databasis%mtype(ishell)= 1
@@ -6771,17 +6560,9 @@ end
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+10)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+30)
             databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+10)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+30)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
           databasis%mprim(ishell)= 1
           databasis%mbf(ishell)= 3
           databasis%mtype(ishell)= 1
@@ -6793,22 +6574,9 @@ end
           num= 4
           if(numatomic(iatom) >= 31) num= 5
           do j= 1,num
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j)
             databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= num
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+num
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1) = locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1) = locbf(ishell)+6
-          endif
           databasis%mprim(ishell)= num
           databasis%mtype(ishell)= 2
           databasis%locatom(ishell)= iatom
@@ -6823,22 +6591,9 @@ end
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j+num)
-            coeff(locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j+num)
             databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j+num)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j+num)
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1) = locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1) = locbf(ishell)+6
-          endif
           databasis%mprim(ishell)= 1
           databasis%mtype(ishell)= 2
           databasis%locatom(ishell)= iatom
@@ -6857,17 +6612,9 @@ end
 ! S functions
           ishell= ishell+1
           do j= 1,19
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 19
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+19
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 19
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -6877,17 +6624,9 @@ end
 !
           ishell= ishell+1
           do j= 1,19
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+19)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+19)
           enddo
-          mprim(ishell)= 19
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+19
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 19
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -6897,17 +6636,9 @@ end
 !
           ishell= ishell+1
           do j= 1,19
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+38)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+38)
           enddo
-          mprim(ishell)= 19
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+19
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 19
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -6917,17 +6648,9 @@ end
 !
           ishell= ishell+1
           do j= 1,19
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+57)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+57)
           enddo
-          mprim(ishell)= 19
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+19
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 19
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -6937,17 +6660,9 @@ end
 !
           ishell= ishell+1
           do j= 1,19
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+76)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+76)
           enddo
-          mprim(ishell)= 19
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+19
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 19
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -6957,17 +6672,9 @@ end
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+19)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+95)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+19)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+95)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 1
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -6977,17 +6684,9 @@ end
 ! P functions
           ishell= ishell+1
           do j= 1,15
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
             databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 15
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+15
-          locbf(ishell+1) = locbf(ishell)+3
           databasis%mprim(ishell)= 15
           databasis%mbf(ishell)= 3
           databasis%mtype(ishell)= 1
@@ -6997,17 +6696,9 @@ end
 !
           ishell= ishell+1
           do j= 1,15
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+15)
             databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+15)
           enddo
-          mprim(ishell)= 15
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+15
-          locbf(ishell+1) = locbf(ishell)+3
           databasis%mprim(ishell)= 15
           databasis%mbf(ishell)= 3
           databasis%mtype(ishell)= 1
@@ -7017,17 +6708,9 @@ end
 !
           ishell= ishell+1
           do j= 1,15
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+30)
             databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+30)
           enddo
-          mprim(ishell)= 15
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+15
-          locbf(ishell+1) = locbf(ishell)+3
           databasis%mprim(ishell)= 15
           databasis%mbf(ishell)= 3
           databasis%mtype(ishell)= 1
@@ -7037,17 +6720,9 @@ end
 !
           ishell= ishell+1
           do j= 1,15
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+45)
             databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+45)
           enddo
-          mprim(ishell)= 15
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+15
-          locbf(ishell+1) = locbf(ishell)+3
           databasis%mprim(ishell)= 15
           databasis%mbf(ishell)= 3
           databasis%mtype(ishell)= 1
@@ -7057,17 +6732,9 @@ end
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+15)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+60)
             databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+15)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+60)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
           databasis%mprim(ishell)= 1
           databasis%mbf(ishell)= 3
           databasis%mtype(ishell)= 1
@@ -7077,22 +6744,9 @@ end
 ! D functions
           ishell= ishell+1
           do j= 1,7
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j)
             databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 7
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+7
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1)= locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1)= locbf(ishell)+6
-          endif
           databasis%mprim(ishell)= 7
           databasis%mtype(ishell)= 2
           databasis%locatom(ishell)= iatom
@@ -7107,22 +6761,9 @@ end
 !
           ishell= ishell+1
           do j= 1,7
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j+7)
             databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j+7)
           enddo
-          mprim(ishell)= 7
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+7
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1)= locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1)= locbf(ishell)+6
-          endif
           databasis%mprim(ishell)= 7
           databasis%mtype(ishell)= 2
           databasis%locatom(ishell)= iatom
@@ -7137,22 +6778,9 @@ end
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j+7)
-            coeff(locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j+14)
             databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j+7)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j+14)
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1)= locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1)= locbf(ishell)+6
-          endif
           databasis%mprim(ishell)= 1
           databasis%mtype(ishell)= 2
           databasis%locatom(ishell)= iatom
@@ -7167,22 +6795,9 @@ end
 ! F functions
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= expf(ife(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coefff(ifc(numatomic(iatom))+j)
             databasis%ex(databasis%locprim(ishell)+j)= expf(ife(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coefff(ifc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 2
-          mtype(ishell)= 3
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          if(spher) then
-            mbf(ishell)= 7
-            locbf(ishell+1)= locbf(ishell)+7
-          else
-            mbf(ishell)= 10
-            locbf(ishell+1)= locbf(ishell)+10
-          endif
           databasis%mprim(ishell)= 2
           databasis%mtype(ishell)= 3
           databasis%locatom(ishell)= iatom
