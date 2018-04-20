@@ -9134,7 +9134,6 @@ end
 ! Set basis functions of D95V
 !
       use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mbf, mtype
       use modparam, only : mxao, mxshell, mxprim
       use modtype, only : typebasis
       implicit none
@@ -9211,17 +9210,9 @@ end
         case(1)
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(ise(numatomic(iatom))+j)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(ise(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 3
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -9231,17 +9222,9 @@ end
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffs(ise(numatomic(iatom))+j+3)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+3)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(ise(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 1
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -9254,17 +9237,9 @@ end
         case(3:10)
           ishell= ishell+1
           do j= 1,7
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(ise(numatomic(iatom))+j)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(ise(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 7
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+7
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 7
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -9274,17 +9249,9 @@ end
 !
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+7)
-            coeff(locprim(ishell)+j)= coeffs(ise(numatomic(iatom))+j+7)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+7)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(ise(numatomic(iatom))+j+7)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 2
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -9294,17 +9261,9 @@ end
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+9)
-            coeff(locprim(ishell)+j)= coeffs(ise(numatomic(iatom))+j+9)
             databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+9)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs(ise(numatomic(iatom))+j+9)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
           databasis%mprim(ishell)= 1
           databasis%mbf(ishell)= 1
           databasis%mtype(ishell)= 0
@@ -9316,17 +9275,9 @@ end
           if(numatomic(iatom) == 4) nump= 3
           ishell= ishell+1
           do j= 1,nump
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipe(numatomic(iatom))+j)
             databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipe(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= nump
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+nump
-          locbf(ishell+1) = locbf(ishell)+3
           databasis%mprim(ishell)= nump
           databasis%mbf(ishell)= 3
           databasis%mtype(ishell)= 1
@@ -9336,17 +9287,9 @@ end
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+nump)
-            coeff(locprim(ishell)+j)= coeffp(ipe(numatomic(iatom))+j+nump)
             databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+nump)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipe(numatomic(iatom))+j+nump)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
           databasis%mprim(ishell)= 1
           databasis%mbf(ishell)= 3
           databasis%mtype(ishell)= 1
@@ -9360,12 +9303,12 @@ end
         write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
         call iabort
       endif
-      if(locprim(ishell+1) > mxprim ) then
+      if(databasis%locprim(ishell+1) > mxprim ) then
         write(*,'(" Error! The number of primitive basis functions exceeds mxprim", &
 &             i6,".")')mxprim
         call iabort
       endif
-      if(locbf(ishell+1) > mxao ) then
+      if(databasis%locbf(ishell+1) > mxao ) then
         write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
         call iabort
       endif
