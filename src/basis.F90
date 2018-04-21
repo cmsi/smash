@@ -1132,6 +1132,18 @@ end
           dataguessbs%nao   = dataguessbs%locbf(ishell+1)
           call bsnrmlz(dataguessbs)
 !ishimura-end
+!!!!!!!!!!!
+    nshell_gcore    = dataguessbs%nshell
+    nao_gcore       = dataguessbs%nao
+    locprim_gcore(:)= dataguessbs%locprim(:)
+    locbf_gcore(:)  = dataguessbs%locbf(:)
+    locatom_gcore(:)= dataguessbs%locatom(:)
+    ex_gcore(:)     = dataguessbs%ex(:)
+    coeff_gcore(:)  = dataguessbs%coeff(:)
+    mprim_gcore(:)  = dataguessbs%mprim(:)
+    mbf_gcore(:)    = dataguessbs%mbf(:)
+    mtype_gcore(:)  = dataguessbs%mtype(:)
+!!!!!!!!!!!
       end select
 !
       return
