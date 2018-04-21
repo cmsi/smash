@@ -155,7 +155,7 @@ end
 !
 ! Set ECP functions
 !
-      if(flagecp) call setecp(datacomp)
+      if(flagecp) call setecp(databasis,datacomp)
 !
 ! Set maximum memory size
 !

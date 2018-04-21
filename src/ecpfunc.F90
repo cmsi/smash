@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !------------------------------
-  subroutine setecp(datacomp)
+  subroutine setecp(databasis,datacomp)
 !------------------------------
 !
 ! Driver of setting ecp functions
@@ -22,6 +22,7 @@
       use modmolecule, only : natom, znuc
       use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(inout) :: databasis
       type(typecomp),intent(inout) :: datacomp
       type(typebasis) :: datagenbasis
       integer :: iatom, iprim
@@ -38,11 +39,11 @@
       if(datacomp%master) then
         if((ecp == 'LANL2DZ').or.(ecp == 'LANL2MB')) then
           do iatom= 1,natom
-            call ecplanl2(iatom,iprim)
+            call ecplanl2(iatom,iprim,databasis)
           enddo
         elseif(ecp == 'GEN') then
           call readecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,datagenbasis,datacomp)
-          call setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim,datagenbasis)
+          call setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim,databasis,datagenbasis)
         else
           write(*,'(" Error! This program does not support ECP function,",a10,".")')ecp
           call iabort
@@ -67,7 +68,7 @@ end
 
 
 !------------------------------
-  subroutine setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim,datagenbasis)
+  subroutine setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim,databasis,datagenbasis)
 !------------------------------
 !
 ! Driver of setting ECP functions from input file
@@ -77,6 +78,7 @@ end
       use modbasis, only : maxangecp, izcore, mtypeecp, locecp, mprimecp, execp, coeffecp
       use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(inout) :: databasis
       type(typebasis),intent(in) :: datagenbasis
       integer,intent(in) :: locgenecp(0:5,-9:112), mgenprimecp(0:5,-9:112)
       integer,intent(in) :: maxgenangecp(-9:112), izgencore(-9:112)
@@ -90,7 +92,7 @@ end
         nn= numatomic(iatom)
         select case(atomecp(nn))
           case('LANL2DZ','LANL2MB')
-            call ecplanl2(iatom,iprim)
+            call ecplanl2(iatom,iprim,databasis)
           case('')
           case default
             write(*,'(" Error! This program does not support ECP function ",a10,".")')atomecp(nn)
@@ -101,16 +103,23 @@ end
         if(lmax /= -1) then
           maxangecp(iatom)= lmax
           izcore(iatom)= izgencore(nn)
+          databasis%maxangecp(iatom)= lmax
+          databasis%izcore(iatom)= izgencore(nn)
           do iang= 0,lmax
             numprim= mgenprimecp(iang,nn)
             locgen= locgenecp(iang,nn)
             locecp(iang,iatom)= iprim
             mprimecp(iang,iatom)= numprim
+            databasis%locecp(iang,iatom)= iprim
+            databasis%mprimecp(iang,iatom)= numprim
             do ii= 1,numprim
               iprim= iprim+1
               execp(iprim)= datagenbasis%execp(locgen+ii)
               coeffecp(iprim)= datagenbasis%coeffecp(locgen+ii)
               mtypeecp(iprim)= datagenbasis%mtypeecp(locgen+ii)
+              databasis%execp(iprim)= datagenbasis%execp(locgen+ii)
+              databasis%coeffecp(iprim)= datagenbasis%coeffecp(locgen+ii)
+              databasis%mtypeecp(iprim)= datagenbasis%mtypeecp(locgen+ii)
             enddo
           enddo
         endif
@@ -121,7 +130,7 @@ end
 
 
 !-----------------------------------
-  subroutine ecplanl2(iatom,iprim)
+  subroutine ecplanl2(iatom,iprim,databasis)
 !-----------------------------------
 !
 ! Set Hay-Wadt ECP functions
@@ -129,7 +138,9 @@ end
       use modmolecule, only : numatomic
       use modparam, only : mxprim
       use modbasis, only : maxangecp, izcore, mtypeecp, locecp, mprimecp, execp, coeffecp
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(inout) :: databasis
       integer,intent(in) :: iatom
       integer,intent(inout) :: iprim
       integer :: nangecp3(16)=(/1,2,2,2,2, 0,1,2,2,2, 0,1,2,2,2,2/)
@@ -617,29 +628,46 @@ end
         case(11:18)
           maxangecp(iatom)= 2
           izcore(iatom)= 10
+          databasis%maxangecp(iatom)= 2
+          databasis%izcore(iatom)= 10
 !  
           locecp(0,iatom)= iprim
           mprimecp(0,iatom)= 5
+          databasis%locecp(0,iatom)= iprim
+          databasis%mprimecp(0,iatom)= 5
           do j= 1,5
             execp(iprim+j)= ecpex3(j,numatomic(iatom))
             coeffecp(iprim+j)= ecpcoeff3(j,numatomic(iatom))
             mtypeecp(iprim+j)= nangecp3(j)
+            databasis%execp(iprim+j)= ecpex3(j,numatomic(iatom))
+            databasis%coeffecp(iprim+j)= ecpcoeff3(j,numatomic(iatom))
+            databasis%mtypeecp(iprim+j)= nangecp3(j)
           enddo
 !  
           locecp(1,iatom)= iprim+5
           mprimecp(1,iatom)= 5
+          databasis%locecp(1,iatom)= iprim+5
+          databasis%mprimecp(1,iatom)= 5
           do j= 6,10
             execp(iprim+j)= ecpex3(j,numatomic(iatom))
             coeffecp(iprim+j)= ecpcoeff3(j,numatomic(iatom))
             mtypeecp(iprim+j)= nangecp3(j)
+            databasis%execp(iprim+j)= ecpex3(j,numatomic(iatom))
+            databasis%coeffecp(iprim+j)= ecpcoeff3(j,numatomic(iatom))
+            databasis%mtypeecp(iprim+j)= nangecp3(j)
           enddo
 !  
           locecp(2,iatom)= iprim+10
           mprimecp(2,iatom)= 6
+          databasis%locecp(2,iatom)= iprim+10
+          databasis%mprimecp(2,iatom)= 6
           do j= 11,16
             execp(iprim+j)= ecpex3(j,numatomic(iatom))
             coeffecp(iprim+j)= ecpcoeff3(j,numatomic(iatom))
             mtypeecp(iprim+j)= nangecp3(j)
+            databasis%execp(iprim+j)= ecpex3(j,numatomic(iatom))
+            databasis%coeffecp(iprim+j)= ecpcoeff3(j,numatomic(iatom))
+            databasis%mtypeecp(iprim+j)= nangecp3(j)
           enddo
 !  
           iprim= iprim+16
@@ -650,12 +678,18 @@ end
           if(numatomic(iatom) <= 29) then
             maxangecp(iatom)= 2
             izcore(iatom)= 10
+            databasis%maxangecp(iatom)= 2
+            databasis%izcore(iatom)= 10
           elseif(numatomic(iatom) == 30) then
             maxangecp(iatom)= 3
             izcore(iatom)= 18
+            databasis%maxangecp(iatom)= 3
+            databasis%izcore(iatom)= 18
           else
             maxangecp(iatom)= 3
             izcore(iatom)= 28
+            databasis%maxangecp(iatom)= 3
+            databasis%izcore(iatom)= 28
           endif
           if(numatomic(iatom) <= 20) then
             numecp(0:2)=(/5,3,5/)
@@ -682,30 +716,45 @@ end
 !
           locecp(0,iatom)= iprim
           mprimecp(0,iatom)= numecp(0)
+          databasis%locecp(0,iatom)= iprim
+          databasis%mprimecp(0,iatom)= numecp(0)
           do j= 1,numecp(0)
             execp(iprim+j)= ecpex4(j+iecp4(numatomic(iatom)))
             coeffecp(iprim+j)= ecpcoeff4(j+iecp4(numatomic(iatom)))
             mtypeecp(iprim+j)= nangecp4(j)
+            databasis%execp(iprim+j)= ecpex4(j+iecp4(numatomic(iatom)))
+            databasis%coeffecp(iprim+j)= ecpcoeff4(j+iecp4(numatomic(iatom)))
+            databasis%mtypeecp(iprim+j)= nangecp4(j)
           enddo
           iprim= iprim+numecp(0)
           loctmp= numecp(0)
 !
           locecp(1,iatom)= iprim
           mprimecp(1,iatom)= numecp(1)
+          databasis%locecp(1,iatom)= iprim
+          databasis%mprimecp(1,iatom)= numecp(1)
           do j= 1,numecp(1)
             execp(iprim+j)= ecpex4(j+loctmp+iecp4(numatomic(iatom)))
             coeffecp(iprim+j)= ecpcoeff4(j+loctmp+iecp4(numatomic(iatom)))
             mtypeecp(iprim+j)= nangecp4(j+loctmp)
+            databasis%execp(iprim+j)= ecpex4(j+loctmp+iecp4(numatomic(iatom)))
+            databasis%coeffecp(iprim+j)= ecpcoeff4(j+loctmp+iecp4(numatomic(iatom)))
+            databasis%mtypeecp(iprim+j)= nangecp4(j+loctmp)
           enddo
           iprim= iprim+numecp(1)
           loctmp= loctmp+numecp(1)
 !
           locecp(2,iatom)= iprim
           mprimecp(2,iatom)= numecp(2)
+          databasis%locecp(2,iatom)= iprim
+          databasis%mprimecp(2,iatom)= numecp(2)
           do j= 1,numecp(2)
             execp(iprim+j)= ecpex4(j+loctmp+iecp4(numatomic(iatom)))
             coeffecp(iprim+j)= ecpcoeff4(j+loctmp+iecp4(numatomic(iatom)))
             mtypeecp(iprim+j)= nangecp4(j+loctmp)
+            databasis%execp(iprim+j)= ecpex4(j+loctmp+iecp4(numatomic(iatom)))
+            databasis%coeffecp(iprim+j)= ecpcoeff4(j+loctmp+iecp4(numatomic(iatom)))
+            databasis%mtypeecp(iprim+j)= nangecp4(j+loctmp)
           enddo
           iprim= iprim+numecp(2)
           loctmp= loctmp+numecp(2)
@@ -713,10 +762,15 @@ end
           if(numatomic(iatom) >= 30) then
             locecp(3,iatom)= iprim
             mprimecp(3,iatom)= numecp(3)
+            databasis%locecp(3,iatom)= iprim
+            databasis%mprimecp(3,iatom)= numecp(3)
             do j= 1,numecp(3)
               execp(iprim+j)= ecpex4(j+loctmp+iecp4(numatomic(iatom)))
               coeffecp(iprim+j)= ecpcoeff4(j+loctmp+iecp4(numatomic(iatom)))
               mtypeecp(iprim+j)= nangecp4(j+loctmp)
+              databasis%execp(iprim+j)= ecpex4(j+loctmp+iecp4(numatomic(iatom)))
+              databasis%coeffecp(iprim+j)= ecpcoeff4(j+loctmp+iecp4(numatomic(iatom)))
+              databasis%mtypeecp(iprim+j)= nangecp4(j+loctmp)
             enddo
             iprim= iprim+numecp(3)
           endif
@@ -725,12 +779,16 @@ end
 !
         case (37:54)
           maxangecp(iatom)= 3
+          databasis%maxangecp(iatom)= 3
           if(numatomic(iatom) <= 47) then
             izcore(iatom)= 28
+            databasis%izcore(iatom)= 28
           elseif(numatomic(iatom) == 48) then
             izcore(iatom)= 36
+            databasis%izcore(iatom)= 36
           else
             izcore(iatom)= 46
+            databasis%izcore(iatom)= 46
           endif
           select case(numatomic(iatom))
             case(37)
@@ -761,40 +819,60 @@ end
 !
           locecp(0,iatom)= iprim
           mprimecp(0,iatom)= numecp(0)
+          databasis%locecp(0,iatom)= iprim
+          databasis%mprimecp(0,iatom)= numecp(0)
           do j= 1,numecp(0)
             execp(iprim+j)= ecpex5(j+iecp5(numatomic(iatom)))
             coeffecp(iprim+j)= ecpcoeff5(j+iecp5(numatomic(iatom)))
             mtypeecp(iprim+j)= nangecp5(j)
+            databasis%execp(iprim+j)= ecpex5(j+iecp5(numatomic(iatom)))
+            databasis%coeffecp(iprim+j)= ecpcoeff5(j+iecp5(numatomic(iatom)))
+            databasis%mtypeecp(iprim+j)= nangecp5(j)
           enddo
           iprim= iprim+numecp(0)
           loctmp= numecp(0)
 !
           locecp(1,iatom)= iprim
           mprimecp(1,iatom)= numecp(1)
+          databasis%locecp(1,iatom)= iprim
+          databasis%mprimecp(1,iatom)= numecp(1)
           do j= 1,numecp(1)
             execp(iprim+j)= ecpex5(j+loctmp+iecp5(numatomic(iatom)))
             coeffecp(iprim+j)= ecpcoeff5(j+loctmp+iecp5(numatomic(iatom)))
             mtypeecp(iprim+j)= nangecp5(j+loctmp)
+            databasis%execp(iprim+j)= ecpex5(j+loctmp+iecp5(numatomic(iatom)))
+            databasis%coeffecp(iprim+j)= ecpcoeff5(j+loctmp+iecp5(numatomic(iatom)))
+            databasis%mtypeecp(iprim+j)= nangecp5(j+loctmp)
           enddo
           iprim= iprim+numecp(1)
           loctmp= loctmp+numecp(1)
 !
           locecp(2,iatom)= iprim
           mprimecp(2,iatom)= numecp(2)
+          databasis%locecp(2,iatom)= iprim
+          databasis%mprimecp(2,iatom)= numecp(2)
           do j= 1,numecp(2)
             execp(iprim+j)= ecpex5(j+loctmp+iecp5(numatomic(iatom)))
             coeffecp(iprim+j)= ecpcoeff5(j+loctmp+iecp5(numatomic(iatom)))
             mtypeecp(iprim+j)= nangecp5(j+loctmp)
+            databasis%execp(iprim+j)= ecpex5(j+loctmp+iecp5(numatomic(iatom)))
+            databasis%coeffecp(iprim+j)= ecpcoeff5(j+loctmp+iecp5(numatomic(iatom)))
+            databasis%mtypeecp(iprim+j)= nangecp5(j+loctmp)
           enddo
           iprim= iprim+numecp(2)
           loctmp= loctmp+numecp(2)
 !
           locecp(3,iatom)= iprim
           mprimecp(3,iatom)= numecp(3)
+          databasis%locecp(3,iatom)= iprim
+          databasis%mprimecp(3,iatom)= numecp(3)
           do j= 1,numecp(3)
             execp(iprim+j)= ecpex5(j+loctmp+iecp5(numatomic(iatom)))
             coeffecp(iprim+j)= ecpcoeff5(j+loctmp+iecp5(numatomic(iatom)))
             mtypeecp(iprim+j)= nangecp5(j+loctmp)
+            databasis%execp(iprim+j)= ecpex5(j+loctmp+iecp5(numatomic(iatom)))
+            databasis%coeffecp(iprim+j)= ecpcoeff5(j+loctmp+iecp5(numatomic(iatom)))
+            databasis%mtypeecp(iprim+j)= nangecp5(j+loctmp)
           enddo
           iprim= iprim+numecp(3)
 !
@@ -803,17 +881,23 @@ end
         case(55:57,72:83)
           if(numatomic(iatom) <= 55) then
             maxangecp(iatom)= 3
+            databasis%maxangecp(iatom)= 3
           else
             maxangecp(iatom)= 4
+            databasis%maxangecp(iatom)= 4
           endif
           if(numatomic(iatom) <= 55) then
             izcore(iatom)= 46
+            databasis%izcore(iatom)= 46
           elseif(numatomic(iatom) <= 79) then
             izcore(iatom)= 60
+            databasis%izcore(iatom)= 60
           elseif(numatomic(iatom) <= 81) then
             izcore(iatom)= 68
+            databasis%izcore(iatom)= 68
           else
             izcore(iatom)= 78
+            databasis%izcore(iatom)= 78
           endif
           select case(numatomic(iatom))
             case(55)
@@ -844,40 +928,60 @@ end
 !
           locecp(0,iatom)= iprim
           mprimecp(0,iatom)= numecp(0)
+          databasis%locecp(0,iatom)= iprim
+          databasis%mprimecp(0,iatom)= numecp(0)
           do j= 1,numecp(0)
             execp(iprim+j)= ecpex6(j+iecp6(numatomic(iatom)))
             coeffecp(iprim+j)= ecpcoeff6(j+iecp6(numatomic(iatom)))
             mtypeecp(iprim+j)= nangecp6(j)
+            databasis%execp(iprim+j)= ecpex6(j+iecp6(numatomic(iatom)))
+            databasis%coeffecp(iprim+j)= ecpcoeff6(j+iecp6(numatomic(iatom)))
+            databasis%mtypeecp(iprim+j)= nangecp6(j)
           enddo
           iprim= iprim+numecp(0)
           loctmp= numecp(0)
 !
           locecp(1,iatom)= iprim
           mprimecp(1,iatom)= numecp(1)
+          databasis%locecp(1,iatom)= iprim
+          databasis%mprimecp(1,iatom)= numecp(1)
           do j= 1,numecp(1)
             execp(iprim+j)= ecpex6(j+loctmp+iecp6(numatomic(iatom)))
             coeffecp(iprim+j)= ecpcoeff6(j+loctmp+iecp6(numatomic(iatom)))
             mtypeecp(iprim+j)= nangecp6(j+loctmp)
+            databasis%execp(iprim+j)= ecpex6(j+loctmp+iecp6(numatomic(iatom)))
+            databasis%coeffecp(iprim+j)= ecpcoeff6(j+loctmp+iecp6(numatomic(iatom)))
+            databasis%mtypeecp(iprim+j)= nangecp6(j+loctmp)
           enddo
           iprim= iprim+numecp(1)
           loctmp= loctmp+numecp(1)
 !
           locecp(2,iatom)= iprim
           mprimecp(2,iatom)= numecp(2)
+          databasis%locecp(2,iatom)= iprim
+          databasis%mprimecp(2,iatom)= numecp(2)
           do j= 1,numecp(2)
             execp(iprim+j)= ecpex6(j+loctmp+iecp6(numatomic(iatom)))
             coeffecp(iprim+j)= ecpcoeff6(j+loctmp+iecp6(numatomic(iatom)))
             mtypeecp(iprim+j)= nangecp6(j+loctmp)
+            databasis%execp(iprim+j)= ecpex6(j+loctmp+iecp6(numatomic(iatom)))
+            databasis%coeffecp(iprim+j)= ecpcoeff6(j+loctmp+iecp6(numatomic(iatom)))
+            databasis%mtypeecp(iprim+j)= nangecp6(j+loctmp)
           enddo
           iprim= iprim+numecp(2)
           loctmp= loctmp+numecp(2)
 !
           locecp(3,iatom)= iprim
           mprimecp(3,iatom)= numecp(3)
+          databasis%locecp(3,iatom)= iprim
+          databasis%mprimecp(3,iatom)= numecp(3)
           do j= 1,numecp(3)
             execp(iprim+j)= ecpex6(j+loctmp+iecp6(numatomic(iatom)))
             coeffecp(iprim+j)= ecpcoeff6(j+loctmp+iecp6(numatomic(iatom)))
             mtypeecp(iprim+j)= nangecp6(j+loctmp)
+            databasis%execp(iprim+j)= ecpex6(j+loctmp+iecp6(numatomic(iatom)))
+            databasis%coeffecp(iprim+j)= ecpcoeff6(j+loctmp+iecp6(numatomic(iatom)))
+            databasis%mtypeecp(iprim+j)= nangecp6(j+loctmp)
           enddo
           iprim= iprim+numecp(3)
           loctmp= loctmp+numecp(3)
@@ -885,10 +989,15 @@ end
           if(numatomic(iatom) >= 72) then
             locecp(4,iatom)= iprim
             mprimecp(4,iatom)= numecp(4)
+            databasis%locecp(4,iatom)= iprim
+            databasis%mprimecp(4,iatom)= numecp(4)
             do j= 1,numecp(4)
               execp(iprim+j)= ecpex6(j+loctmp+iecp6(numatomic(iatom)))
               coeffecp(iprim+j)= ecpcoeff6(j+loctmp+iecp6(numatomic(iatom)))
               mtypeecp(iprim+j)= nangecp6(j+loctmp)
+              databasis%execp(iprim+j)= ecpex6(j+loctmp+iecp6(numatomic(iatom)))
+              databasis%coeffecp(iprim+j)= ecpcoeff6(j+loctmp+iecp6(numatomic(iatom)))
+              databasis%mtypeecp(iprim+j)= nangecp6(j+loctmp)
             enddo
             iprim= iprim+numecp(4)
           endif
