@@ -1024,7 +1024,7 @@ end
 
 
 !------------------------------------------------------------------------------------
-  subroutine readcheckinfo(scftype_g,charge_g,flagecp_g,neleca_g,nelecb_g,datacomp)
+  subroutine readcheckinfo(scftype_g,charge_g,flagecp_g,neleca_g,nelecb_g,dataguessbs,datacomp)
 !------------------------------------------------------------------------------------
 !
 ! Read checkpoint information
@@ -1032,8 +1032,9 @@ end
       use modparam, only : icheck
       use modguess, only : nao_g, nmo_g, nshell_g, nprim_g
       use modmolecule, only : natom
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(out) :: dataguessbs
       type(typecomp),intent(inout) :: datacomp
       integer,intent(out) :: neleca_g, nelecb_g
       integer :: intarray(6), natom_g, idummy
@@ -1045,29 +1046,36 @@ end
       if(datacomp%master) then
         rewind(icheck)
         read(icheck,end=9999)
-        read(icheck,err=9998) scftype_g, natom_g, nao_g, nmo_g, nshell_g, nprim_g, neleca_g, &
+        read(icheck,err=9998) scftype_g, natom_g, dataguessbs%nao, nmo_g, dataguessbs%nshell, dataguessbs%nprim, neleca_g, &
 &                             nelecb_g, cdummy, cdummy, charge_g, idummy, flagecp_g
         if(natom_g /= natom) then
           write(*,'(" Error! The numbers of atoms in checkpoint and input files are different.")')
           call iabort
         endif
-        intarray(1)= nshell_g
+        intarray(1)= dataguessbs%nshell
         intarray(2)= nmo_g
         intarray(3)= neleca_g
         intarray(4)= nelecb_g
-        intarray(5)= nao_g
-        intarray(6)= nprim_g
+        intarray(5)= dataguessbs%nao
+        intarray(6)= dataguessbs%nprim
       endif
       call para_bcasti(intarray,6,0,datacomp%mpi_comm1)
       call para_bcastc(scftype_g,16,0,datacomp%mpi_comm1)
       call para_bcastl(flagecp_g,1,0,datacomp%mpi_comm1)
       call para_bcastr(charge_g,1,0,datacomp%mpi_comm1)
-      nshell_g= intarray(1)
+      dataguessbs%nshell= intarray(1)
       nmo_g   = intarray(2)
       neleca_g= intarray(3)
       nelecb_g= intarray(4)
+      dataguessbs%nao   = intarray(5)
+      dataguessbs%nprim = intarray(6)
+!!!!!!!!!!!!!!!!!!!!!!
+!ishimura-start
+      nshell_g= intarray(1)
       nao_g   = intarray(5)
       nprim_g = intarray(6)
+!ishimura-end
+!!!!!!!!!!!!!!!!!!!!!!
 !
       return
 !
@@ -1080,7 +1088,7 @@ end
 
 
 !--------------------------------------------------------------
-  subroutine readcheckguess(cmoa_g,cmob_g,scftype_g,datacomp)
+  subroutine readcheckguess(cmoa_g,cmob_g,scftype_g,dataguessbs,datacomp)
 !--------------------------------------------------------------
 !
 ! Read guess basis functions and MOs from checkpoint file
@@ -1090,8 +1098,9 @@ end
 &                          ex_g, coeff_g, nao_g, coord_g, nmo_g, nshell_g, nprim_g
       use modmolecule, only : natom
       use modjob, only : scftype
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(inout) :: dataguessbs
       type(typecomp),intent(inout) :: datacomp
       integer :: ii, jj
       real(8),intent(out) :: cmoa_g(nao_g,nao_g), cmob_g(nao_g,nao_g)
@@ -1111,27 +1120,37 @@ end
           read(icheck)
         endif
         read(icheck)
-        read(icheck) (ex_g(ii),ii=1,nprim_g)
+!       read(icheck) (ex_g(ii),ii=1,nprim_g)
+        read(icheck) (dataguessbs%ex(ii),ii=1,dataguessbs%nprim)
         read(icheck)
-        read(icheck) (coeff_g(ii),ii=1,nprim_g)
+!       read(icheck) (coeff_g(ii),ii=1,nprim_g)
+        read(icheck) (dataguessbs%coeff(ii),ii=1,dataguessbs%nprim)
         read(icheck)
-        read(icheck) (locprim_g(ii),ii=1,nshell_g)
+!       read(icheck) (locprim_g(ii),ii=1,nshell_g)
+        read(icheck) (dataguessbs%locprim(ii),ii=1,dataguessbs%nshell)
         read(icheck)
-        read(icheck) (locbf_g(ii),ii=1,nshell_g)
+!       read(icheck) (locbf_g(ii),ii=1,nshell_g)
+        read(icheck) (dataguessbs%locbf(ii),ii=1,dataguessbs%nshell)
         read(icheck)
-        read(icheck) (locatom_g(ii),ii=1,nshell_g)
+!       read(icheck) (locatom_g(ii),ii=1,nshell_g)
+        read(icheck) (dataguessbs%locatom(ii),ii=1,dataguessbs%nshell)
         read(icheck)
-        read(icheck) (mprim_g(ii),ii=1,nshell_g)
+!       read(icheck) (mprim_g(ii),ii=1,nshell_g)
+        read(icheck) (dataguessbs%mprim(ii),ii=1,dataguessbs%nshell)
         read(icheck)
-        read(icheck) (mbf_g(ii),ii=1,nshell_g)
+!       read(icheck) (mbf_g(ii),ii=1,nshell_g)
+        read(icheck) (dataguessbs%mbf(ii),ii=1,dataguessbs%nshell)
         read(icheck)
-        read(icheck) (mtype_g(ii),ii=1,nshell_g)
+!       read(icheck) (mtype_g(ii),ii=1,nshell_g)
+        read(icheck) (dataguessbs%mtype(ii),ii=1,dataguessbs%nshell)
 !
         read(icheck)
-        read(icheck)((cmoa_g(jj,ii),jj=1,nao_g),ii=1,nmo_g)
+!       read(icheck)((cmoa_g(jj,ii),jj=1,nao_g),ii=1,nmo_g)
+        read(icheck)((cmoa_g(jj,ii),jj=1,dataguessbs%nao),ii=1,nmo_g)
         if((scftype == 'UHF').and.(scftype_g == 'UHF')) then
           read(icheck)
-          read(icheck)((cmob_g(jj,ii),jj=1,nao_g),ii=1,nmo_g)
+!         read(icheck)((cmob_g(jj,ii),jj=1,nao_g),ii=1,nmo_g)
+          read(icheck)((cmob_g(jj,ii),jj=1,dataguessbs%nao),ii=1,nmo_g)
         endif
 ! Interchange the order of basis functions in cmoa_g and cmob_g
         if(checkversion(1:2) == "1.") then
@@ -1142,19 +1161,31 @@ end
 !
 ! Broadcast guess basis functions and MOs
 !
-      call para_bcasti(locprim_g,nshell_g,0,datacomp%mpi_comm1)
-      call para_bcasti(locbf_g  ,nshell_g,0,datacomp%mpi_comm1)
-      call para_bcasti(locatom_g,nshell_g,0,datacomp%mpi_comm1)
-      call para_bcastr(ex_g   ,nprim_g,0,datacomp%mpi_comm1)
-      call para_bcastr(coeff_g,nprim_g,0,datacomp%mpi_comm1)
-      call para_bcastr(coord_g,natom*3,0,datacomp%mpi_comm1)
-      call para_bcasti(mprim_g,nshell_g,0,datacomp%mpi_comm1)
-      call para_bcasti(mbf_g  ,nshell_g,0,datacomp%mpi_comm1)
-      call para_bcasti(mtype_g,nshell_g,0,datacomp%mpi_comm1)
-      call para_bcastr(cmoa_g,nao_g*nmo_g,0,datacomp%mpi_comm1)
+      call para_bcasti(dataguessbs%locprim,dataguessbs%nshell,0,datacomp%mpi_comm1)
+      call para_bcasti(dataguessbs%locbf  ,dataguessbs%nshell,0,datacomp%mpi_comm1)
+      call para_bcasti(dataguessbs%locatom,dataguessbs%nshell,0,datacomp%mpi_comm1)
+      call para_bcastr(dataguessbs%ex     ,dataguessbs%nprim,0,datacomp%mpi_comm1)
+      call para_bcastr(dataguessbs%coeff  ,dataguessbs%nprim,0,datacomp%mpi_comm1)
+      call para_bcastr(coord_g  ,natom*3,0,datacomp%mpi_comm1)
+      call para_bcasti(dataguessbs%mprim  ,dataguessbs%nshell,0,datacomp%mpi_comm1)
+      call para_bcasti(dataguessbs%mbf    ,dataguessbs%nshell,0,datacomp%mpi_comm1)
+      call para_bcasti(dataguessbs%mtype  ,dataguessbs%nshell,0,datacomp%mpi_comm1)
+      call para_bcastr(cmoa_g,dataguessbs%nao*nmo_g,0,datacomp%mpi_comm1)
       if((scftype == 'UHF').and.(scftype_g == 'UHF')) then
-        call para_bcastr(cmob_g,nao_g*nmo_g,0,datacomp%mpi_comm1)
+        call para_bcastr(cmob_g,dataguessbs%nao*nmo_g,0,datacomp%mpi_comm1)
       endif
+!!!!!!!!!!!!!!!!!!!!!!
+!ishimura-start
+      locprim_g=dataguessbs%locprim
+      locbf_g  =dataguessbs%locbf  
+      locatom_g=dataguessbs%locatom
+      ex_g     =dataguessbs%ex     
+      coeff_g  =dataguessbs%coeff  
+      mprim_g  =dataguessbs%mprim  
+      mbf_g    =dataguessbs%mbf    
+      mtype_g  =dataguessbs%mtype  
+!ishimura-end
+!!!!!!!!!!!!!!!!!!!!!!
 !
       return
 end
