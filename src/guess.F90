@@ -1566,6 +1566,7 @@ end
 ! Orthonormalize guess basis functions
 !
       call bsnrmlz_g
+      call bsnrmlz(dataguessbs)
 !
 ! Adjust the number of projected MOs
 !
