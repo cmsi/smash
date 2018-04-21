@@ -128,7 +128,7 @@
       do i= 1,databasis%nprim
         databasis%coeffinp(i)= databasis%coeff(i)
       enddo
-      call bsnrmlz1(databasis)
+      call bsnrmlz(databasis)
 !ishimura-start
 !!!!!!!!!!!
     nshell= databasis%nshell
@@ -150,26 +150,7 @@ end
 
 
 !---------------------
-  subroutine bsnrmlz
-!---------------------
-!
-! Normalize basis functions
-!
-      use modbasis, only : nshell, mtype, ex, coeff, locprim, mprim
-      implicit none
-      integer :: ishell
-!
-!$OMP parallel do
-      do ishell= 1,nshell
-        call bsnor(ishell,ex,coeff,locprim,mprim,mtype)
-      enddo
-!$OMP end parallel do
-      return
-end
-
-
-!---------------------
-  subroutine bsnrmlz1(databasis)
+  subroutine bsnrmlz(databasis)
 !---------------------
 !
 ! Normalize basis functions
@@ -181,7 +162,8 @@ end
 !
 !$OMP parallel do
       do ishell= 1,databasis%nshell
-        call bsnor(ishell,databasis%ex,databasis%coeff,databasis%locprim,databasis%mprim,databasis%mtype)
+        call bsnor(ishell,databasis%ex,databasis%coeff,databasis%locprim, &
+&                  databasis%mprim,databasis%mtype)
       enddo
 !$OMP end parallel do
       return
@@ -1106,7 +1088,7 @@ end
           dataguessbs%nshell= ishell
           dataguessbs%nao   = dataguessbs%locbf(ishell+1)
           dataguessbs%nprim = dataguessbs%locprim(ishell+1)
-          call bsnrmlz1(dataguessbs)
+          call bsnrmlz(dataguessbs)
 !ishimura-end
 !
 ! For extended Huckel calculation of only core orbitals
@@ -1132,7 +1114,7 @@ end
           call bsnrmlz_gcore
           dataguessbs%nshell= ishell
           dataguessbs%nao   = dataguessbs%locbf(ishell+1)
-          call bsnrmlz1(dataguessbs)
+          call bsnrmlz(dataguessbs)
 !ishimura-end
       end select
 !
