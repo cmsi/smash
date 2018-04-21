@@ -34,6 +34,10 @@
       izcore(1:natom)= 0
       locecp(:,1:natom)= 0
       mprimecp(:,1:natom)= 0
+      databasis%maxangecp(1:natom)= -1
+      databasis%izcore(1:natom)= 0
+      databasis%locecp(:,1:natom)= 0
+      databasis%mprimecp(:,1:natom)= 0
       iprim= 0
 !
       if(datacomp%master) then
@@ -50,14 +54,33 @@
         endif
       endif
 !
+!     call para_bcasti(iprim,1,0,datacomp%mpi_comm1)
+!     call para_bcasti(maxangecp,natom,0,datacomp%mpi_comm1)
+!     call para_bcasti(izcore,natom,0,datacomp%mpi_comm1)
+!     call para_bcasti(locecp(0,1),natom*6,0,datacomp%mpi_comm1)
+!     call para_bcasti(mprimecp(0,1),natom*6,0,datacomp%mpi_comm1)
+!     call para_bcastr(execp,iprim,0,datacomp%mpi_comm1)
+!     call para_bcastr(coeffecp,iprim,0,datacomp%mpi_comm1)
+!     call para_bcasti(mtypeecp,iprim,0,datacomp%mpi_comm1)
       call para_bcasti(iprim,1,0,datacomp%mpi_comm1)
-      call para_bcasti(maxangecp,natom,0,datacomp%mpi_comm1)
-      call para_bcasti(izcore,natom,0,datacomp%mpi_comm1)
-      call para_bcasti(locecp(0,1),natom*6,0,datacomp%mpi_comm1)
-      call para_bcasti(mprimecp(0,1),natom*6,0,datacomp%mpi_comm1)
-      call para_bcastr(execp,iprim,0,datacomp%mpi_comm1)
-      call para_bcastr(coeffecp,iprim,0,datacomp%mpi_comm1)
-      call para_bcasti(mtypeecp,iprim,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%maxangecp    ,natom  ,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%izcore       ,natom  ,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%locecp(0,1)  ,natom*6,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%mprimecp(0,1),natom*6,0,datacomp%mpi_comm1)
+      call para_bcastr(databasis%execp        ,iprim  ,0,datacomp%mpi_comm1)
+      call para_bcastr(databasis%coeffecp     ,iprim  ,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%mtypeecp     ,iprim  ,0,datacomp%mpi_comm1)
+!!!!!!!!!!!!!!!!!!!
+!ishimura-start
+maxangecp=databasis%maxangecp
+izcore   =databasis%izcore   
+locecp   =databasis%locecp
+mprimecp =databasis%mprimecp
+execp    =databasis%execp    
+coeffecp =databasis%coeffecp 
+mtypeecp =databasis%mtypeecp 
+!ishimura-end
+!!!!!!!!!!!!!!!!!!!
 ! 
       do iatom= 1,natom
         znuc(iatom)= znuc(iatom)-izcore(iatom)
