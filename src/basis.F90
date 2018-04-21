@@ -1036,9 +1036,10 @@ end
 !            =2 (For extended Huckel calculation of only core orbitals)
 !
       use modmolecule, only : natom, numatomic
-      use modguess, only : locprim_g, locbf_g, nshell_g, &
-&                          nao_g, nprim_g, &
-&                          locprim_gcore, locbf_gcore, nao_gcore, nshell_gcore
+      use modguess
+!      use modguess, only : locprim_g, locbf_g, nshell_g, &
+!&                          nao_g, nprim_g, &
+!&                          locprim_gcore, locbf_gcore, nao_gcore, nshell_gcore
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(inout) :: dataguessbs
@@ -1089,6 +1090,21 @@ end
           dataguessbs%nao   = dataguessbs%locbf(ishell+1)
           dataguessbs%nprim = dataguessbs%locprim(ishell+1)
           call bsnrmlz(dataguessbs)
+!ishimura-end
+!ishimura-start
+!!!!!!!!!!!
+    nshell_g    = dataguessbs%nshell
+    nao_g       = dataguessbs%nao
+    nprim_g     = dataguessbs%nprim
+    locprim_g(:)= dataguessbs%locprim(:)
+    locbf_g(:)  = dataguessbs%locbf(:)
+    locatom_g(:)= dataguessbs%locatom(:)
+    ex_g(:)     = dataguessbs%ex(:)
+    coeff_g(:)  = dataguessbs%coeff(:)
+    mprim_g(:)  = dataguessbs%mprim(:)
+    mbf_g(:)    = dataguessbs%mbf(:)
+    mtype_g(:)  = dataguessbs%mtype(:)
+!!!!!!!!!!!
 !ishimura-end
 !
 ! For extended Huckel calculation of only core orbitals
