@@ -385,7 +385,7 @@ end
       use modparam, only : toang
       use modtype, only : typecomp
       implicit none
-      type(typecomp),intent(inout) :: datacomp
+      type(typecomp),intent(in) :: datacomp
       integer :: i, j
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
@@ -413,18 +413,18 @@ end
 
 
 !------------------------
-  subroutine writebasis(datacomp)
+  subroutine writebasis(databasis,datacomp)
 !------------------------
 !
 ! Write basis functions
 !
       use modmolecule, only : numatomic
-      use modbasis, only : nshell, ex, coeffinp, locprim, locatom, mprim, mtype
       use modjob, only : iprint
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
-      type(typecomp),intent(inout) :: datacomp
-      integer :: iatom, ishell, iloc, iprim, jatomcheck(-9:112)=0
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer :: iatom, ishell, iloc, iprim, jatomcheck(-9:112)
       logical :: second
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
@@ -437,6 +437,8 @@ end
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
 &       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
 !
+      jatomcheck(-9:112)=0
+!
 ! Write basis functions
 !
       second=.false.
@@ -445,31 +447,31 @@ end
         write(*,'(" -------------")')
         write(*,'("   Basis set")')
         write(*,'(" -------------")')
-        do ishell= 1, nshell
-          if(iatom /= locatom(ishell)) then
-            if(jatomcheck(numatomic(locatom(ishell))) /= 0)cycle
-            jatomcheck(numatomic(locatom(ishell)))= 1
+        do ishell= 1, databasis%nshell
+          if(iatom /= databasis%locatom(ishell)) then
+            if(jatomcheck(numatomic(databasis%locatom(ishell))) /= 0)cycle
+            jatomcheck(numatomic(databasis%locatom(ishell)))= 1
             if(second) write(*,'("  ****")')
             second=.true.
-            write(*,'(2x,a3)')table(numatomic(locatom(ishell)))
-            iatom= locatom(ishell)
+            write(*,'(2x,a3)')table(numatomic(databasis%locatom(ishell)))
+            iatom= databasis%locatom(ishell)
           endif
-          if(mtype(ishell) == 0) write(*,'(4x,"S",i3)') mprim(ishell)
-          if(mtype(ishell) == 1) write(*,'(4x,"P",i3)') mprim(ishell)
-          if(mtype(ishell) == 2) write(*,'(4x,"D",i3)') mprim(ishell)
-          if(mtype(ishell) == 3) write(*,'(4x,"F",i3)') mprim(ishell)
-          if(mtype(ishell) == 4) write(*,'(4x,"G",i3)') mprim(ishell)
-          if(mtype(ishell) == 5) write(*,'(4x,"H",i3)') mprim(ishell)
-          if(mtype(ishell) == 6) write(*,'(4x,"I",i3)') mprim(ishell)
+          if(databasis%mtype(ishell) == 0) write(*,'(4x,"S",i3)') databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 1) write(*,'(4x,"P",i3)') databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 2) write(*,'(4x,"D",i3)') databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 3) write(*,'(4x,"F",i3)') databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 4) write(*,'(4x,"G",i3)') databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 5) write(*,'(4x,"H",i3)') databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 6) write(*,'(4x,"I",i3)') databasis%mprim(ishell)
 !
-          if(mtype(ishell) >  6) then
+          if(databasis%mtype(ishell) >  6) then
             write(*,'(" Error! The subroutine writebasis supports up to i functions.")')
             call iabort
           endif 
 !
-          iloc= locprim(ishell)
-          do iprim= 1,mprim(ishell)
-             write(*,'(3x,f16.7,1x,f15.8)') ex(iloc+iprim), coeffinp(iloc+iprim)
+          iloc= databasis%locprim(ishell)
+          do iprim= 1,databasis%mprim(ishell)
+             write(*,'(3x,f16.7,1x,f15.8)') databasis%ex(iloc+iprim), databasis%coeffinp(iloc+iprim)
           enddo
         enddo
         write(*,'("  ****")')
@@ -489,8 +491,8 @@ end
       use modjob, only : iprint
       use modtype, only : typecomp
       implicit none
-      type(typecomp),intent(inout) :: datacomp
-      integer :: iatom, ll, jprim, jloc, k, nprim, jatomcheck(-9:112)=0
+      type(typecomp),intent(in) :: datacomp
+      integer :: iatom, ll, jprim, jloc, k, nprim, jatomcheck(-9:112)
       character(len=7) :: tblecp
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
@@ -502,6 +504,8 @@ end
 &       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
 &       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
+!
+      jatomcheck(-9:112)=0
 !
 ! Write ECP functions
 !
