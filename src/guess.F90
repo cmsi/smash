@@ -1432,14 +1432,15 @@ end
 ! Inout : overinv (overlap integral inverse matrix)
 !         cmo     (initial guess orbitals)
 !
-      use modguess, only : nao_g, nmo_g
-      use modbasis, only : nao
+!     use modguess, only : nao_g, nmo_g
+!     use modbasis, only : nao
+      use modguess, only :  nmo_g
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: ndim
-      real(8),intent(inout) :: cmo(nao*nao), overinv(nao*nao)
+      real(8),intent(inout) :: cmo(databasis%nao**2), overinv(databasis%nao**2)
       real(8),allocatable :: overlap(:,:), work1(:), work2(:), eigen(:)
 !
 !     ndim= min(nmo,neleca+5)
@@ -1447,8 +1448,8 @@ end
 !
 ! Set arrays
 !
-      call memset(2*nao*nao_g+ndim*ndim+nao*ndim+ndim,datacomp)
-      allocate(overlap(nao*nao_g,2),work1(ndim*ndim),work2(nao*ndim),eigen(ndim))
+      call memset(2*databasis%nao**2+ndim*ndim+databasis%nao*ndim+ndim,datacomp)
+      allocate(overlap(databasis%nao**2,2),work1(ndim*ndim),work2(databasis%nao*ndim),eigen(ndim))
 !
 ! Calculate overlap integrals between previous and present bases
 !
@@ -1461,7 +1462,7 @@ end
 ! Unset arrays
 !
       deallocate(overlap,work1,work2,eigen)
-      call memunset(2*nao*nao_g+ndim*ndim+nao*ndim+ndim,datacomp)
+      call memunset(2*databasis%nao**2+ndim*ndim+databasis%nao*ndim+ndim,datacomp)
 !
       return
 end
