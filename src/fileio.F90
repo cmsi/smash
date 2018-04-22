@@ -554,24 +554,25 @@ end
 
 
 !----------------------------
-  subroutine writecondition(datacomp)
+  subroutine writecondition(databasis,datacomp)
 !----------------------------
 !
 ! Write computational conditions
 !
       use modmolecule, only : natom, neleca, nelecb, charge, multi
-      use modbasis, only : nshell, nao, nprim, basis, spher
+!     use modbasis, only : nshell, nao, nprim, basis, spher
       use modjob, only : method, runtype, scftype, bohr, octupole, check, precision, &
 &                        nopt, optconv, cartesian, guess
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
-      type(typecomp),intent(inout) :: datacomp
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
 !
       if(datacomp%master) then
 !
 ! Check the numbers of electrons and basis functions
 !
-        if(neleca > nao) then
+        if(neleca > databasis%nao) then
           write(*,'(" Error! The number of basis functions is smaller than that of electrons.")')
           call iabort
         endif
@@ -580,11 +581,11 @@ end
         write(*,'("   Job infomation")')
         write(*,'(" -------------------------------------------------------------------------")')
         write(*,'("   Runtype = ",a12,  ",  Method  = ",a12,     " ,  Basis    = ",a12)') &
-&                  runtype, method, basis
+&                  runtype, method, databasis%basis
         write(*,'("   Memory  =",i10, "MB ,  SCFtype = ",a12,     " ,  Precision= ",a12)') &
 &                  datacomp%memmax/125000, scftype, precision
         write(*,'("   Charge  = ",F11.1," ,  Multi   = ",i12,     " ,  Spher    = ",l1)') &
-&                  charge, multi, spher
+&                  charge, multi, databasis%spher
         write(*,'("   Bohr    = ",l1,11x,",  Guess   = ",a12,     " ,  Octupole = ",l1)') &
 &                  bohr, guess, octupole
         if(runtype == 'OPTIMIZE') &
@@ -600,9 +601,9 @@ end
         write(*,'("   Number of atoms                      =",i5)') natom
         write(*,'("   Number of alpha electrons            =",i5)') neleca
         write(*,'("   Number of beta electrons             =",i5)') nelecb
-        write(*,'("   Number of basis shells               =",i5)') nshell
-        write(*,'("   Number of basis contracted functions =",i5)') nao
-        write(*,'("   Number of basis primitive functions  =",i5)') nprim
+        write(*,'("   Number of basis shells               =",i5)') databasis%nshell
+        write(*,'("   Number of basis contracted functions =",i5)') databasis%nao
+        write(*,'("   Number of basis primitive functions  =",i5)') databasis%nprim
         write(*,'(" ------------------------------------------------",/)')
       endif
       return

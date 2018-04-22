@@ -179,7 +179,7 @@ end
 !
 ! Write input data
 !
-      call writecondition(datacomp)
+      call writecondition(databasis,datacomp)
       call writegeom(datacomp)
       call writebasis(datacomp)
       if(flagecp) call writeecp(datacomp)
