@@ -50,11 +50,11 @@
 !
       if(scftype == 'RHF') then
         if(runtype == 'ENERGY') then
-          call calcrenergy(datacomp)
+          call calcrenergy(databasis,datacomp)
         elseif(runtype == 'GRADIENT') then
-          call calcrgradient(datacomp)
+          call calcrgradient(databasis,datacomp)
         elseif(runtype == 'OPTIMIZE') then
-          call calcrgeometry(converged,datacomp)
+          call calcrgeometry(converged,databasis,datacomp)
         else
           if(datacomp%master) then
             write(*,'(" Error! This program does not support runtype= ",a16,".")')runtype
@@ -63,11 +63,11 @@
         endif
       elseif(scftype == 'UHF') then
         if(runtype == 'ENERGY') then
-          call calcuenergy(datacomp)
+          call calcuenergy(databasis,datacomp)
         elseif(runtype == 'GRADIENT') then
-          call calcugradient(datacomp)
+          call calcugradient(databasis,datacomp)
         elseif(runtype == 'OPTIMIZE') then
-          call calcugeometry(converged,datacomp)
+          call calcugeometry(converged,databasis,datacomp)
         endif
       else
         if(datacomp%master) write(*,'(" Error! SCFtype=",a16," is not supported.")')scftype
@@ -376,7 +376,7 @@ end
 
 
 !----------------------------------------------------------------------------
-  subroutine calcrenergy(datacomp)
+  subroutine calcrenergy(databasis,datacomp)
 !----------------------------------------------------------------------------
 !
 ! Driver of closed-shell energy calculation
@@ -390,8 +390,9 @@ end
       use modmolecule, only : nmo, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor, guess
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
@@ -432,7 +433,7 @@ end
 !
 ! Calculate initial MOs
 !
-      call guessmo(cmo,cmo,overinv,h1mtrx,ortho,datacomp)
+      call guessmo(cmo,cmo,overinv,h1mtrx,ortho,databasis,datacomp)
 !
 ! Unset arrays 2
 !
@@ -521,7 +522,7 @@ end
 
 
 !----------------------------------------------------------------------------
-  subroutine calcuenergy(datacomp)
+  subroutine calcuenergy(databasis,datacomp)
 !----------------------------------------------------------------------------
 !
 ! Driver of open-shell energy calculation
@@ -535,8 +536,9 @@ end
       use modmolecule, only : nmo, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor, guess
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
@@ -577,7 +579,7 @@ end
 !
 ! Calculate initial MOs
 !
-      call guessmo(cmoa,cmob,overinv,h1mtrx,ortho,datacomp)
+      call guessmo(cmoa,cmob,overinv,h1mtrx,ortho,databasis,datacomp)
 !
 ! Unset arrays 2
 !
@@ -668,7 +670,7 @@ end
 
 
 !------------------------------------------------------------------------------
-  subroutine calcrgradient(datacomp)
+  subroutine calcrgradient(databasis,datacomp)
 !------------------------------------------------------------------------------
 !
 ! Driver of energy gradient calculation
@@ -682,8 +684,9 @@ end
       use modmolecule, only : nmo, natom, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor, guess
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
@@ -726,7 +729,7 @@ end
 !
 ! Calculate initial MOs
 !
-      call guessmo(cmo,cmo,overinv,h1mtrx,ortho,datacomp)
+      call guessmo(cmo,cmo,overinv,h1mtrx,ortho,databasis,datacomp)
 !
 ! Unset arrays 2
 !
@@ -843,7 +846,7 @@ end
 
 
 !------------------------------------------------------------------------------
-  subroutine calcugradient(datacomp)
+  subroutine calcugradient(databasis,datacomp)
 !------------------------------------------------------------------------------
 !
 ! Driver of open-shell energy gradient calculation
@@ -857,8 +860,9 @@ end
       use modmolecule, only : nmo, natom, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor, guess
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
@@ -901,7 +905,7 @@ end
 !
 ! Calculate initial MOs
 !
-      call guessmo(cmoa,cmob,overinv,h1mtrx,ortho,datacomp)
+      call guessmo(cmoa,cmob,overinv,h1mtrx,ortho,databasis,datacomp)
 !
 ! Unset arrays 2
 !
@@ -1023,7 +1027,7 @@ end
 
 
 !----------------------------------------------------------------------------------------
-  subroutine calcrgeometry(converged,datacomp)
+  subroutine calcrgeometry(converged,databasis,datacomp)
 !----------------------------------------------------------------------------------------
 !
 ! Driver of geometry optimization calculation
@@ -1037,8 +1041,9 @@ end
       use modmolecule, only : nmo, natom, coord, coordold, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor, nopt, optconv, cartesian, guess
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,allocatable :: iredun(:)
       integer :: nao2, nao3, nshell3, natom3, ii, iopt
@@ -1132,7 +1137,7 @@ end
 ! Calculate initial MOs
 !
         if(iopt == 1) then
-          call guessmo(cmo,cmo,overinv,h1mtrx,ortho,datacomp)
+          call guessmo(cmo,cmo,overinv,h1mtrx,ortho,databasis,datacomp)
         endif
 !
 ! Unset work arrays 1
@@ -1326,7 +1331,7 @@ end
 
 
 !----------------------------------------------------------------------------------------
-  subroutine calcugeometry(converged,datacomp)
+  subroutine calcugeometry(converged,databasis,datacomp)
 !----------------------------------------------------------------------------------------
 !
 ! Driver of open-shell geometry optimization calculation
@@ -1340,8 +1345,9 @@ end
       use modmolecule, only : nmo, natom, coord, coordold, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor, nopt, optconv, cartesian, guess
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,allocatable :: iredun(:)
       integer :: nao2, nao3, nshell3, natom3, ii, iopt
@@ -1435,7 +1441,7 @@ end
 ! Calculate initial MOs
 !
         if(iopt == 1) then
-          call guessmo(cmoa,cmob,overinv,h1mtrx,ortho,datacomp)
+          call guessmo(cmoa,cmob,overinv,h1mtrx,ortho,databasis,datacomp)
         endif
 !
 ! Unset arrays 1
