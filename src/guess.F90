@@ -1123,7 +1123,7 @@ end
 
 
 !---------------------------------------------------------------
-  subroutine calcover2core(overlap,work,datacomp)
+  subroutine calcover2core(overlap,work,dataguessbs,datacorebs,datacomp)
 !---------------------------------------------------------------
 !
 ! Driver of overlap integral calculation for only core orbitals
@@ -1133,25 +1133,27 @@ end
 !       work    (work array)
 !
       use modguess, only : nshell_g, nao_g, nshell_gcore, nao_gcore
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
-      type(typecomp),intent(inout) :: datacomp
+      type(typebasis),intent(in) :: dataguessbs, datacorebs
+      type(typecomp),intent(in) :: datacomp
       integer :: ish, jsh
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(out) :: overlap(nao_gcore*nao_g), work(nao_gcore*nao_g)
+      real(8),intent(out) :: overlap(datacorebs%nao*dataguessbs%nao)
+      real(8),intent(out) :: work(datacorebs%nao*dataguessbs%nao)
 !
       work(:)= zero
 !$OMP parallel
-      do ish= nshell_g-datacomp%myrank2,1,-datacomp%nproc2
+      do ish= dataguessbs%nshell-datacomp%myrank2,1,-datacomp%nproc2
 !$OMP do
-        do jsh= 1,nshell_gcore
-          call intover2core(work,ish,jsh)
+        do jsh= 1,datacorebs%nshell
+          call intover2core(work,ish,jsh,dataguessbs,datacorebs)
         enddo
 !$OMP enddo
       enddo
 !$OMP end parallel
 !
-      call para_allreducer(work,overlap,nao_gcore*nao_g,datacomp%mpi_comm2)
+      call para_allreducer(work,overlap,datacorebs%nao*dataguessbs%nao,datacomp%mpi_comm2)
       return
 end
 
@@ -1355,7 +1357,7 @@ end
 
 
 !-------------------------------------------
-  subroutine intover2core(overlap,ish,jsh)
+  subroutine intover2core(overlap,ish,jsh,dataguessbs,datacorebs)
 !-------------------------------------------
 !
 ! Overlap integral calculation for only core orbitals
@@ -1366,43 +1368,46 @@ end
 !
       use modparam, only : mxprsh
       use modjob, only : threshex
-      use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
-&                          ex_g, coeff_g, nao_g, coord_g, &
-&                          locatom_gcore, locprim_gcore, locbf_gcore, mprim_gcore, &
-&                          mbf_gcore, mtype_gcore, ex_gcore, coeff_gcore, nao_gcore
+!      use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
+!&                          ex_g, coeff_g, nao_g, coord_g, &
+!&                          locatom_gcore, locprim_gcore, locbf_gcore, mprim_gcore, &
+!&                          mbf_gcore, mtype_gcore, ex_gcore, coeff_gcore, nao_gcore
+      use modguess, only : coord_g
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: dataguessbs, datacorebs
       integer,intent(in) :: ish, jsh
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, iprim, jprim
       integer :: nbfij(2), nprimij(2), nangij(2), ii, jj
       real(8),parameter :: zero=0.0D+0, one=1.0D+0
-      real(8),intent(out) :: overlap(nao_gcore,nao_g)
+      real(8),intent(out) :: overlap(datacorebs%nao,dataguessbs%nao)
       real(8) :: sint(28,28), exij(mxprsh,2), coij(mxprsh,2), coordij(3,2)
 !
 ! Set parameters
 !
-      nangij(1)= mtype_g(ish)
-      nangij(2)= mtype_gcore(jsh)
-      nprimij(1)= mprim_g(ish)
-      nprimij(2)= mprim_gcore(jsh)
-      nbfij(1)  = mbf_g(ish)
-      nbfij(2)  = mbf_gcore(jsh)
-      iatom = locatom_g(ish)
-      iloc  = locprim_g(ish)
-      ilocbf= locbf_g(ish)
-      jatom = locatom_gcore(jsh)
-      jloc  = locprim_gcore(jsh)
-      jlocbf= locbf_gcore(jsh)
+      nangij(1)= dataguessbs%mtype(ish)
+      nangij(2)= datacorebs%mtype(jsh)
+      nprimij(1)= dataguessbs%mprim(ish)
+      nprimij(2)= datacorebs%mprim(jsh)
+      nbfij(1)  = dataguessbs%mbf(ish)
+      nbfij(2)  = datacorebs%mbf(jsh)
+      iatom = dataguessbs%locatom(ish)
+      iloc  = dataguessbs%locprim(ish)
+      ilocbf= dataguessbs%locbf(ish)
+      jatom = datacorebs%locatom(jsh)
+      jloc  = datacorebs%locprim(jsh)
+      jlocbf= datacorebs%locbf(jsh)
       do ii= 1,3
         coordij(ii,1)= coord_g(ii,iatom)
         coordij(ii,2)= coord_g(ii,jatom)
       enddo
       do iprim= 1,nprimij(1)
-        exij(iprim,1)= ex_g(iloc+iprim)
-        coij(iprim,1)= coeff_g(iloc+iprim)
+        exij(iprim,1)= dataguessbs%ex(iloc+iprim)
+        coij(iprim,1)= dataguessbs%coeff(iloc+iprim)
       enddo
       do jprim= 1,nprimij(2)
-        exij(jprim,2)= ex_gcore(jloc+jprim)
-        coij(jprim,2)= coeff_gcore(jloc+jprim)
+        exij(jprim,2)= datacorebs%ex(jloc+jprim)
+        coij(jprim,2)= datacorebs%coeff(jloc+jprim)
       enddo
 !
 ! Calculate overlap integrals
@@ -1600,7 +1605,7 @@ end
         allocate(coremo(nao_gcore,nao_gcore),work1(nao_g*nao_gcore),work2(nao_g*nao_gcore), &
 &                work3(nao_g*nao_gcore),eigen(nao_gcore))
         call calccoremo(cmoa_g,cmob_g,coremo,work1,work2,work3,eigen,scftype_g, &
-&                       datacorebs,datacomp)
+&                       dataguessbs,datacorebs,datacomp)
         call memunset(nao_gcore*(nao_gcore+nao_g*3+1),datacomp)
         deallocate(coremo,work1,work2,work3,eigen)
         nmo_g= nmo_g-ncore
@@ -1717,7 +1722,7 @@ end
 
 !------------------------------------------------------------------------------------
   subroutine calccoremo(cmoa_g,cmob_g,coremo,overlap,work2,work3,eigen,scftype_g, &
-&                       datacorebs,datacomp)
+&                       dataguessbs,datacorebs,datacomp)
 !------------------------------------------------------------------------------------
 !
 ! Calculate and remove core orbitals corresponding ECP
@@ -1726,7 +1731,7 @@ end
       use modjob, only : scftype
       use modtype, only : typebasis, typecomp
       implicit none
-      type(typebasis),intent(in) :: datacorebs
+      type(typebasis),intent(in) :: dataguessbs, datacorebs
       type(typecomp),intent(inout) :: datacomp
       integer :: ii, jj, kk, idamax, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, small=1.0D-04
@@ -1743,7 +1748,7 @@ end
 !
 ! Calculate overlap integrals between core-guess basis and guess bases
 !
-      call calcover2core(overlap,work2,datacomp)
+      call calcover2core(overlap,work2,dataguessbs,datacorebs,datacomp)
 !
 ! Calculate Cguess-t*Overlap*Ccore
 !
