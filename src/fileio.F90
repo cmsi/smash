@@ -481,16 +481,17 @@ end
 
 
 !----------------------
-  subroutine writeecp(datacomp)
+  subroutine writeecp(databasis,datacomp)
 !----------------------
 !
 ! Write ECP functions
 !
       use modmolecule, only : numatomic, natom
-      use modbasis, only : maxangecp, mtypeecp, locecp, mprimecp, execp, coeffecp, izcore
+!     use modbasis, only : maxangecp, mtypeecp, locecp, mprimecp, execp, coeffecp, izcore
       use modjob, only : iprint
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
       integer :: iatom, ll, jprim, jloc, k, nprim, jatomcheck(-9:112)
       character(len=7) :: tblecp
@@ -515,35 +516,38 @@ end
         write(*,'(" ----------------")')
 !
         do iatom= 1,natom
-          if(maxangecp(iatom) /= -1)then
+          if(databasis%maxangecp(iatom) /= -1)then
             if(jatomcheck(numatomic(iatom)) == 0) then
               jatomcheck(numatomic(iatom))= iatom
               write(*,'(2x,a3)')table(numatomic(iatom))
               tblecp=table(numatomic(iatom))
               ll= len_trim(tblecp)
               tblecp= tblecp(1:ll)//'-ECP'
-              write(*,'(2x,a7,2x,i3,2x,i3)')tblecp, maxangecp(iatom), izcore(iatom)
-              nprim= mprimecp(0,iatom)
-              if(maxangecp(iatom) == 0) write(*,'(2x,"s-ul potential")')
-              if(maxangecp(iatom) == 1) write(*,'(2x,"p-ul potential")')
-              if(maxangecp(iatom) == 2) write(*,'(2x,"d-ul potential")')
-              if(maxangecp(iatom) == 3) write(*,'(2x,"f-ul potential")')
-              if(maxangecp(iatom) == 4) write(*,'(2x,"g-ul potential")')
+              write(*,'(2x,a7,2x,i3,2x,i3)') &
+&               tblecp, databasis%maxangecp(iatom), databasis%izcore(iatom)
+              nprim= databasis%mprimecp(0,iatom)
+              if(databasis%maxangecp(iatom) == 0) write(*,'(2x,"s-ul potential")')
+              if(databasis%maxangecp(iatom) == 1) write(*,'(2x,"p-ul potential")')
+              if(databasis%maxangecp(iatom) == 2) write(*,'(2x,"d-ul potential")')
+              if(databasis%maxangecp(iatom) == 3) write(*,'(2x,"f-ul potential")')
+              if(databasis%maxangecp(iatom) == 4) write(*,'(2x,"g-ul potential")')
               write(*,'(3x,i2)')nprim
               do jprim= 1,nprim
-                jloc= jprim+locecp(0,iatom)
-                write(*,'(2x,i1,2f16.7)')mtypeecp(jloc), execp(jloc), coeffecp(jloc)
+                jloc= jprim+databasis%locecp(0,iatom)
+                write(*,'(2x,i1,2f16.7)') &
+&                 databasis%mtypeecp(jloc), databasis%execp(jloc), databasis%coeffecp(jloc)
               enddo
-              do k= 1,maxangecp(iatom)
-                nprim= mprimecp(k,iatom)
+              do k= 1,databasis%maxangecp(iatom)
+                nprim= databasis%mprimecp(k,iatom)
                 if(k == 1) write(*,'(2x,"s-ul potential")')
                 if(k == 2) write(*,'(2x,"p-ul potential")')
                 if(k == 3) write(*,'(2x,"d-ul potential")')
                 if(k == 4) write(*,'(2x,"f-ul potential")')
                 write(*,'(3x,i2)')nprim
                 do jprim= 1,nprim
-                  jloc= jprim+locecp(k,iatom)
-                  write(*,'(2x,i1,2f16.7)')mtypeecp(jloc), execp(jloc), coeffecp(jloc)
+                  jloc= jprim+databasis%locecp(k,iatom)
+                  write(*,'(2x,i1,2f16.7)') &
+&                  databasis%mtypeecp(jloc), databasis%execp(jloc), databasis%coeffecp(jloc)
                 enddo
               enddo
             endif

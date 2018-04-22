@@ -182,7 +182,7 @@ end
       call writecondition(databasis,datacomp)
       call writegeom(datacomp)
       call writebasis(databasis,datacomp)
-      if(flagecp) call writeecp(datacomp)
+      if(flagecp) call writeecp(databasis,datacomp)
 !
 ! Set atom charge including dummy atom
 !
