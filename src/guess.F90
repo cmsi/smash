@@ -133,7 +133,7 @@ end
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
-      call calcover2(overlap,work1,datacomp)
+      call calcover2(overlap,work1,databasis,dataguessbs,datacomp)
 !
 ! Project orbitals from Huckel to SCF
 !
@@ -1088,7 +1088,7 @@ end
 
 
 !-----------------------------------------------------------
-  subroutine calcover2(overlap,work,datacomp)
+  subroutine calcover2(overlap,work,databasis,dataguessbs,datacomp)
 !-----------------------------------------------------------
 !
 ! Driver of overlap integral calculation
@@ -1097,27 +1097,27 @@ end
 ! Out : overlap (overlap integral of guess and SCF basis sets)
 !       work    (work array)
 !
-      use modbasis, only : nshell, nao
-      use modguess, only : nshell_g, nao_g
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis, dataguessbs
       type(typecomp),intent(inout) :: datacomp
       integer :: ish, jsh
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(out) :: overlap(nao*nao_g), work(nao*nao_g)
+      real(8),intent(out) :: overlap(databasis%nao*dataguessbs%nao)
+      real(8),intent(out) :: work(databasis%nao*dataguessbs%nao)
 !
       work(:)= zero
 !$OMP parallel
-      do ish= nshell_g-datacomp%myrank2,1,-datacomp%nproc2
+      do ish= dataguessbs%nshell-datacomp%myrank2,1,-datacomp%nproc2
 !$OMP do
-        do jsh= 1,nshell
-          call intover2(work,ish,jsh)
+        do jsh= 1,databasis%nshell
+          call intover2(work,ish,jsh,databasis,dataguessbs)
         enddo
 !$OMP enddo
       enddo
 !$OMP end parallel
 !
-      call para_allreducer(work,overlap,nao*nao_g,datacomp%mpi_comm2)
+      call para_allreducer(work,overlap,databasis%nao*dataguessbs%nao,datacomp%mpi_comm2)
       return
 end
 
@@ -1223,7 +1223,7 @@ end
 
 
 !---------------------------------------
-  subroutine intover2(overlap,ish,jsh)
+  subroutine intover2(overlap,ish,jsh,databasis,dataguessbs)
 !---------------------------------------
 !
 ! Overlap integral calculation
@@ -1235,42 +1235,45 @@ end
       use modparam, only : mxprsh
       use modjob, only : threshex
       use modmolecule, only : coord
-      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
-      use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
-&                          ex_g, coeff_g, nao_g, coord_g
+!      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
+!      use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
+!&                          ex_g, coeff_g, nao_g, coord_g
+      use modguess, only : coord_g
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis, dataguessbs
       integer,intent(in) :: ish, jsh
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, iprim, jprim
       integer :: nbfij(2), nprimij(2), nangij(2), ii, jj
       real(8),parameter :: zero=0.0D+0, one=1.0D+0
-      real(8),intent(out) :: overlap(nao,nao_g)
+      real(8),intent(out) :: overlap(databasis%nao,dataguessbs%nao)
       real(8) :: sint(28,28), exij(mxprsh,2), coij(mxprsh,2), coordij(3,2)
 !
 ! Set parameters
 !
-      nangij(1)= mtype_g(ish)
-      nangij(2)= mtype(jsh)
-      nprimij(1)= mprim_g(ish)
-      nprimij(2)= mprim(jsh)
-      nbfij(1)  = mbf_g(ish)
-      nbfij(2)  = mbf(jsh)
-      iatom = locatom_g(ish)
-      iloc  = locprim_g(ish)
-      ilocbf= locbf_g(ish)
-      jatom = locatom(jsh)
-      jloc  = locprim(jsh)
-      jlocbf= locbf(jsh)
+      nangij(1)= dataguessbs%mtype(ish)
+      nangij(2)= databasis%mtype(jsh)
+      nprimij(1)= dataguessbs%mprim(ish)
+      nprimij(2)= databasis%mprim(jsh)
+      nbfij(1)  = dataguessbs%mbf(ish)
+      nbfij(2)  = databasis%mbf(jsh)
+      iatom = dataguessbs%locatom(ish)
+      iloc  = dataguessbs%locprim(ish)
+      ilocbf= dataguessbs%locbf(ish)
+      jatom = databasis%locatom(jsh)
+      jloc  = databasis%locprim(jsh)
+      jlocbf= databasis%locbf(jsh)
       do ii= 1,3
         coordij(ii,1)= coord_g(ii,iatom)
         coordij(ii,2)= coord(ii,jatom)
       enddo
       do iprim= 1,nprimij(1)
-        exij(iprim,1)= ex_g(iloc+iprim)
-        coij(iprim,1)= coeff_g(iloc+iprim)
+        exij(iprim,1)= dataguessbs%ex(iloc+iprim)
+        coij(iprim,1)= dataguessbs%coeff(iloc+iprim)
       enddo
       do jprim= 1,nprimij(2)
-        exij(jprim,2)= ex(jloc+jprim)
-        coij(jprim,2)= coeff(jloc+jprim)
+        exij(jprim,2)= databasis%ex(jloc+jprim)
+        coij(jprim,2)= databasis%coeff(jloc+jprim)
       enddo
 !
 ! Calculate overlap integrals
@@ -1444,7 +1447,7 @@ end
 !
 ! Calculate overlap integrals between previous and present bases
 !
-      call calcover2(overlap(1,1),overlap(1,2),datacomp)
+      call calcover2(overlap(1,1),overlap(1,2),databasis,databasis,datacomp)
 !
 ! Project orbitals from previous basis to current basis
 !
@@ -1612,7 +1615,7 @@ end
 !
 ! Calculate overlap integrals between previous and present bases
 !
-      call calcover2(overlap,work2,datacomp)
+      call calcover2(overlap,work2,databasis,dataguessbs,datacomp)
 !
 ! Project orbitals from previous basis to current basis
 !
@@ -2024,7 +2027,7 @@ end
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
-      call calcover2(overlap,work1,datacomp)
+      call calcover2(overlap,work1,databasis,dataguessbs,datacomp)
 !
 ! Project orbitals from Huckel to SCF
 !
