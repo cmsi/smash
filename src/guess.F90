@@ -1458,7 +1458,7 @@ end
 !
 ! Project orbitals from previous basis to current basis
 !
-      call projectmo2(cmo,overinv,overlap,work1,work2,eigen,ndim,datacomp)
+      call projectmo2(cmo,overinv,overlap,work1,work2,eigen,ndim,databasis%nao,databasis%nao,datacomp)
 !
 ! Unset arrays
 !
@@ -1470,7 +1470,7 @@ end
 
 
 !------------------------------------------------------------------------------------------
-  subroutine projectmo2(cmo,overinv,overlap,work1,work2,eigen,ndim,datacomp)
+  subroutine projectmo2(cmo,overinv,overlap,work1,work2,eigen,ndim,nao,nao_g,datacomp)
 !------------------------------------------------------------------------------------------
 !
 ! Project orbitals from previous basis to current basis
@@ -1482,12 +1482,10 @@ end
 !         overinv (overlap integral inverse matrix of SCF basis set)
 !         overlap (overlap integral of guess and SCF basis sets)
 !
-      use modguess, only : nao_g
-      use modbasis, only : nao
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: ndim
+      integer,intent(in) :: ndim, nao, nao_g
       integer :: i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(inout) :: cmo(nao,nao), overinv(nao,nao), overlap(nao,nao_g)
@@ -2052,7 +2050,7 @@ end
 ! Out : dftbmo (DFTB MOs)
 !       overlap,ortho,work,eigen (work space)
 !
-      use modguess, only : nao_g, nmo_g, spher_g, coord_g
+      use modguess, only : nao_g, nmo_g, coord_g
       use modjob, only : threshover
       use modmolecule, only : coord, natom, neleca, nelecb
       use modtype, only : typebasis, typecomp
