@@ -2053,7 +2053,7 @@ end
 ! Calculate new Mulliken charge
 !
         qmulliken(1:nshell_v,2)= qmulliken(1:nshell_v,1)
-        call calcdftbmulliken(overlap,dftbmo,work,qmulliken,nelecdftb,nshell_v)
+        call calcdftbmulliken(overlap,dftbmo,work,qmulliken,nelecdftb,nshell_v,dataguessbs)
         call diffqmulliken(qmulliken,qmax,nshell_v)
         if(qmax < 1.0D-4) exit
         if(iter == maxiter) then
@@ -2277,20 +2277,22 @@ end
 
 
 !--------------------------------------------------------------------
-  subroutine calcdftbmulliken(overlap,cmo,work,qmulliken,nelecdftb,nshell_v)
+  subroutine calcdftbmulliken(overlap,cmo,work,qmulliken,nelecdftb,nshell_v,dataguessbs)
 !--------------------------------------------------------------------
 !
 ! Calculate Mulliken population for DFTB
 !
-      use modguess, only : nao_g, locbf_g, mbf_g, mtype_g, locatom_g
       use modmolecule, only : numatomic
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: dataguessbs
       integer,intent(in) :: nelecdftb(2), nshell_v
-      integer :: ii, jj, ish, locbfi
+      integer :: nao_g, ii, jj, ish, locbfi
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
-      real(8),intent(in) :: overlap(nao_g,nao_g), cmo(nao_g,nao_g)
-      real(8),intent(out) :: work(nao_g,nao_g), qmulliken(nshell_v)
-      real(8) :: grossorb(nao_g)
+      real(8),intent(in) :: overlap(dataguessbs%nao,dataguessbs%nao)
+      real(8),intent(in) :: cmo(dataguessbs%nao,dataguessbs%nao)
+      real(8),intent(out) :: work(dataguessbs%nao,dataguessbs%nao), qmulliken(nshell_v)
+      real(8) :: grossorb(dataguessbs%nao)
       real(8) :: znucshell(0:2,84)
       data znucshell/ &
 &          1.0D+0, 0.0D+0, 0.0D+0,  2.0D+0, 0.0D+0, 0.0D+0,  1.0D+0, 0.0D+0, 0.0D+0, &
@@ -2324,6 +2326,7 @@ end
 !
       grossorb(:)= zero
       qmulliken(:)= zero
+      nao_g= dataguessbs%nao
 !
       if(nelecdftb(1) == nelecdftb(2)) then
 !
@@ -2342,13 +2345,14 @@ end
 ! Calculate Gross atom population
 !
         do ish= 1,nshell_v
-          locbfi= locbf_g(ish)
-          do ii= 1,mbf_g(ish)
+          locbfi= dataguessbs%locbf(ish)
+          do ii= 1,dataguessbs%mbf(ish)
             qmulliken(ish)= qmulliken(ish)+grossorb(locbfi+ii)
           enddo
         enddo
         do ish= 1,nshell_v
-          qmulliken(ish)= qmulliken(ish)-znucshell(mtype_g(ish),numatomic(locatom_g(ish)))
+          qmulliken(ish)= qmulliken(ish) &
+&                        -znucshell(dataguessbs%mtype(ish),numatomic(dataguessbs%locatom(ish)))
         enddo
       else
         write(*,'(" Error! DFTB for open-shell has not been implemented yet!")')
