@@ -1156,8 +1156,9 @@ end
         endif
 ! Interchange the order of basis functions in cmoa_g and cmob_g
         if(checkversion(1:2) == "1.") then
-          call gcheckreorder(cmoa_g)
-          if((scftype == 'UHF').and.(scftype_g == 'UHF')) call gcheckreorder(cmob_g)
+          call gcheckreorder(cmoa_g,nmo_g,dataguessbs)
+          if((scftype == 'UHF').and.(scftype_g == 'UHF')) &
+&           call gcheckreorder(cmob_g,nmo_g,dataguessbs)
         endif
       endif
 !

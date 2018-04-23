@@ -1794,22 +1794,24 @@ end
 
 
 !--------------------------------
-  subroutine gcheckreorder(cmo)
+  subroutine gcheckreorder(cmo,nmo_g,dataguessbs)
 !--------------------------------
 !
 ! Reorder guess molecular orbitals
 !
-      use modguess, only : locbf_g, mbf_g, mtype_g, nao_g, nmo_g, nshell_g
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: dataguessbs
+      integer,intent(in) :: nmo_g
       integer :: ish, iloc, imo, iao
-      real(8),intent(inout) :: cmo(nao_g,nao_g)
+      real(8),intent(inout) :: cmo(dataguessbs%nao,dataguessbs%nao)
       real(8) :: work(28)
 !
 !ishimura
-      do ish= 1,nshell_g
-        if(mtype_g(ish) >= 2) then
-          iloc= locbf_g(ish)
-          select case (mbf_g(ish))
+      do ish= 1,dataguessbs%nshell
+        if(dataguessbs%mtype(ish) >= 2) then
+          iloc= dataguessbs%locbf(ish)
+          select case (dataguessbs%mbf(ish))
             case(5)
               do imo= 1,nmo_g
                 do iao= 1,5
