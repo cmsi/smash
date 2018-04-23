@@ -1919,14 +1919,14 @@ end
 ! In  : overinv (overlap integral inverse matrix)
 ! Out : cmo     (initial guess orbitals)
 !
-      use modguess, only : coord_g, nmo_g
+      use modguess, only : coord_g
       use modmolecule, only : coord, natom
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       type(typebasis) :: dataguessbs
-      integer :: nao_v, nshell_v, nao_g, i, j, nao_g2, nao_gmax
+      integer :: nao_v, nshell_v, nao_g, nmo_g, i, j, nao_g2, nao_gmax
       real(8),intent(in):: overinv(databasis%nao**2)
       real(8),intent(out):: cmo(databasis%nao**2)
       real(8),allocatable :: hmo(:), overlap(:), work1(:), work2(:), eigen(:)
@@ -1952,9 +1952,9 @@ end
       call memset(2*nao_g2+2*nao_gmax+nao_g,datacomp)
       allocate(hmo(nao_g2),overlap(nao_gmax),work1(nao_gmax),work2(nao_g2),eigen(nao_g))
 !
-! Calculate Extended Huckel method
+! Calculate DFTB orbitals
 !
-      call calcdftb(hmo,overlap,work1,work2,eigen,nao_v,nshell_v,dataguessbs,datacomp)
+      call calcdftb(hmo,overlap,work1,work2,eigen,nao_v,nshell_v,nmo_g,dataguessbs,datacomp)
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
@@ -1970,7 +1970,7 @@ end
 
 
 !-----------------------------------------------------------------------------
-  subroutine calcdftb(dftbmo,overlap,ortho,work,eigen,nao_v,nshell_v,dataguessbs,datacomp)
+  subroutine calcdftb(dftbmo,overlap,ortho,work,eigen,nao_v,nshell_v,nmo_g,dataguessbs,datacomp)
 !-----------------------------------------------------------------------------
 !
 ! Driver of DFTB calculation
@@ -1979,21 +1979,25 @@ end
 ! Out : dftbmo (DFTB MOs)
 !       overlap,ortho,work,eigen (work space)
 !
-      use modguess, only : nao_g, nmo_g, coord_g
       use modjob, only : threshover
-      use modmolecule, only : coord, natom, neleca, nelecb
+      use modmolecule, only : neleca, nelecb
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(in) :: dataguessbs
       type(typecomp),intent(inout) :: datacomp
       integer,parameter :: maxiter=1000
       integer,intent(in) :: nao_v, nshell_v
-      integer :: ii, jj, nelecdftb(2), iter
+      integer,intent(out) :: nmo_g
+      integer :: nao_g, ii, jj, nelecdftb(2), iter
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
-      real(8),intent(out) :: dftbmo(nao_g,nao_g), overlap(nao_g,nao_g)
-      real(8),intent(out) :: ortho(nao_g,nao_g), work(nao_g,nao_g), eigen(nao_g)
+      real(8),intent(out) :: dftbmo(dataguessbs%nao,dataguessbs%nao)
+      real(8),intent(out) :: overlap(dataguessbs%nao,dataguessbs%nao)
+      real(8),intent(out) :: ortho(dataguessbs%nao,dataguessbs%nao)
+      real(8),intent(out) :: work(dataguessbs%nao,dataguessbs%nao), eigen(dataguessbs%nao)
       real(8),allocatable :: dftb0(:), dftb1(:), gamma12(:), uhub(:), qmulliken(:,:)
       real(8) :: qmax
+!
+      nao_g= dataguessbs%nao
 !
       call memset(2*nao_g*nao_g+nshell_v*nshell_v+3*nshell_v,datacomp)
       allocate(dftb0(nao_g*nao_g),dftb1(nao_g*nao_g),gamma12(nshell_v*nshell_v), &
