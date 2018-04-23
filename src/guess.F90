@@ -2042,7 +2042,7 @@ end
 !
 ! Calculate Hamiltonian matrix for DFTB
 !
-        call formdftb1(dftb1,overlap,qmulliken,gamma12,nshell_v)
+        call formdftb1(dftb1,overlap,qmulliken,gamma12,nshell_v,dataguessbs)
 !
 ! Diagonalize Hamiltonian matrix
 !
@@ -2200,27 +2200,29 @@ end
 
 
 !--------------------------------------------------------
-  subroutine formdftb1(dftb1,overlap,qmulliken,gamma12,nshell_v)
+  subroutine formdftb1(dftb1,overlap,qmulliken,gamma12,nshell_v,dataguessbs)
 !--------------------------------------------------------
 !
 ! Form charge dependent DFTB matrix elements
 !
-      use modguess, only : nao_g, locbf_g, mbf_g
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: dataguessbs
       integer,intent(in) :: nshell_v
       integer :: ish, jsh, ksh, nbfi, nbfj, ilocbf, jlocbf, ii, jj
       real(8),parameter :: zero=0.0D+00, half=0.5D+00
-      real(8),intent(in) :: overlap(nao_g,nao_g), qmulliken(nshell_v), gamma12(nshell_v,nshell_v)
-      real(8),intent(inout) :: dftb1(nao_g,*)
+      real(8),intent(in) :: overlap(dataguessbs%nao,dataguessbs%nao)
+      real(8),intent(in) :: qmulliken(nshell_v), gamma12(nshell_v,nshell_v)
+      real(8),intent(inout) :: dftb1(dataguessbs%nao,*)
       real(8) :: cterm
 !
 !$OMP parallel do schedule(static,1) private(nbfi,ilocbf,nbfj,jlocbf,cterm)
       do ish= 1,nshell_v
-        nbfi  = mbf_g(ish)
-        ilocbf= locbf_g(ish)
+        nbfi  = dataguessbs%mbf(ish)
+        ilocbf= dataguessbs%locbf(ish)
         do jsh= 1,ish
-          nbfj  = mbf_g(jsh)
-          jlocbf= locbf_g(jsh)
+          nbfj  = dataguessbs%mbf(jsh)
+          jlocbf= dataguessbs%locbf(jsh)
           cterm= zero
           do ksh= 1,nshell_v
             cterm= cterm+(gamma12(ksh,ish)+gamma12(ksh,jsh))*qmulliken(ksh)
