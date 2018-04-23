@@ -2020,7 +2020,7 @@ end
 ! Set parameters
 !
       call huckelip(eigen,1,datacomp)
-      call dftbip(eigen,uhub,datacomp,nshell_v)
+      call dftbip(eigen,uhub,datacomp,nshell_v,dataguessbs%nao)
       nelecdftb(1)= neleca
       nelecdftb(2)= nelecb
 !
@@ -2031,7 +2031,7 @@ end
 !
 ! Calculate gamma12 calculation for DFTB
 !
-      call calcgamma12(gamma12,uhub,nshell_v)
+      call calcgamma12(gamma12,uhub,nshell_v,dataguessbs)
 !
 ! Set initial Mulliken charge
 !
@@ -2241,14 +2241,16 @@ end
 
 
 !---------------------------------------
-  subroutine calcgamma12(gamma12,uhub,nshell_v)
+  subroutine calcgamma12(gamma12,uhub,nshell_v,dataguessbs)
 !---------------------------------------
 !
 ! Driver of gamma12 calculation for DFTB
 !
-      use modguess, only : coord_g, locatom_g
+      use modguess, only : coord_g
       use modmolecule, only : numatomic
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: dataguessbs
       integer,intent(in) :: nshell_v
       integer :: iatom, jatom, ish, jsh
       real(8),intent(in) :: uhub(nshell_v)
@@ -2258,10 +2260,10 @@ end
 !
 !$OMP parallel do schedule(static,1) private(iatom,hbondi,jatom,rr,hbondij)
       do ish= 1,nshell_v
-        iatom= locatom_g(ish)
+        iatom= dataguessbs%locatom(ish)
         hbondi=(numatomic(iatom) == 1)
         do jsh= 1,ish
-          jatom= locatom_g(jsh)
+          jatom= dataguessbs%locatom(jsh)
           rr= sqrt((coord_g(1,iatom)-coord_g(1,jatom))**2+(coord_g(2,iatom)-coord_g(2,jatom))**2 &
 &                 +(coord_g(3,iatom)-coord_g(3,jatom))**2)
           hbondij= hbondi.or.(numatomic(jatom) == 1)
@@ -2434,17 +2436,16 @@ end
 
 
 !---------------------------------
-  subroutine dftbip(energy,uhub,datacomp,nshell_v)
+  subroutine dftbip(energy,uhub,datacomp,nshell_v,nao_g)
 !---------------------------------
 !
 ! Set valence ionization potentials for DFTB
 !
       use modmolecule, only : natom, numatomic
-      use modguess, only : nao_g
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: nshell_v
+      integer,intent(in) :: nshell_v, nao_g
       integer :: iao, iatom, i, ishell
       real(8),intent(inout) :: energy(nao_g), uhub(nshell_v)
       real(8) :: dftbips(84)= &
