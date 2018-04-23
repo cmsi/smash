@@ -1625,7 +1625,7 @@ end
 ! Project orbitals from previous basis to current basis
 !
       call projectmo3(cmoa,cmoa_g,overinv,overlap,work1,work2,work3,eigen, &
-&                     ndim,datacomp)
+&                     databasis%nao,dataguessbs%nao,nmo_g,ndim,datacomp)
       if(scftype == 'UHF') then
         if(scftype_g == 'RHF') then
           call dcopy(nao*nao,cmoa,1,cmob,1)
@@ -1655,7 +1655,7 @@ end
 
 !-----------------------------------------------------------------------------
   subroutine projectmo3(cmo,cmo_g,overinv,overlap,work1,work2,work3,eigen, &
-&                       ndim,datacomp)
+&                       nao,nao_g,nmo_g,ndim,datacomp)
 !-----------------------------------------------------------------------------
 !
 ! Project orbitals from previous basis to current basis
@@ -1666,12 +1666,10 @@ end
 !         overlap (Overlap integral of guess and SCF basis sets)
 ! Out   : cmo     (Projected orbitals)
 !
-      use modguess, only : nao_g, nmo_g
-      use modbasis, only : nao
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: ndim
+      integer,intent(in) :: nao, nao_g, nmo_g, ndim
       integer :: ii, jj, maxmo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, pm5=1.0D-05
       real(8),intent(in) :: overinv(nao,nao), overlap(nao,nao_g)
