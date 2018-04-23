@@ -1604,7 +1604,7 @@ end
         call memset(nao_gcore*(nao_gcore+nao_g*3+1),datacomp)
         allocate(coremo(nao_gcore,nao_gcore),work1(nao_g*nao_gcore),work2(nao_g*nao_gcore), &
 &                work3(nao_g*nao_gcore),eigen(nao_gcore))
-        call calccoremo(cmoa_g,cmob_g,coremo,work1,work2,work3,eigen,scftype_g, &
+        call calccoremo(cmoa_g,cmob_g,coremo,work1,work2,work3,eigen,scftype_g,nmo_g, &
 &                       dataguessbs,datacorebs,datacomp)
         call memunset(nao_gcore*(nao_gcore+nao_g*3+1),datacomp)
         deallocate(coremo,work1,work2,work3,eigen)
@@ -1719,26 +1719,31 @@ end
 end
 
 !------------------------------------------------------------------------------------
-  subroutine calccoremo(cmoa_g,cmob_g,coremo,overlap,work2,work3,eigen,scftype_g, &
+  subroutine calccoremo(cmoa_g,cmob_g,coremo,overlap,work2,work3,eigen,scftype_g,nmo_g, &
 &                       dataguessbs,datacorebs,datacomp)
 !------------------------------------------------------------------------------------
 !
 ! Calculate and remove core orbitals corresponding ECP
 !
-      use modguess, only : nao_g, nmo_g, nao_gcore
       use modjob, only : scftype
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(in) :: dataguessbs, datacorebs
       type(typecomp),intent(inout) :: datacomp
-      integer :: ii, jj, kk, idamax, icount
+      integer,intent(in) :: nmo_g
+      integer :: nao_g, nao_gcore, ii, jj, kk, idamax, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, small=1.0D-04
-      real(8),intent(inout) :: cmoa_g(nao_g,nao_g), cmob_g(nao_g,nao_g)
-      real(8),intent(out) :: coremo(nao_gcore,nao_gcore), overlap(nao_gcore,nao_g)
-      real(8),intent(out) :: work2(nao_gcore,nao_g), work3(nao_g,nao_gcore), eigen(nao_gcore)
+      real(8),intent(inout) :: cmoa_g(dataguessbs%nao,dataguessbs%nao)
+      real(8),intent(inout) :: cmob_g(dataguessbs%nao,dataguessbs%nao)
+      real(8),intent(out) :: coremo(datacorebs%nao,datacorebs%nao)
+      real(8),intent(out) :: overlap(datacorebs%nao,dataguessbs%nao)
+      real(8),intent(out) :: work2(datacorebs%nao,dataguessbs%nao)
+      real(8),intent(out) :: work3(dataguessbs%nao,datacorebs%nao), eigen(datacorebs%nao)
       character(len=16),intent(in) :: scftype_g
-      logical :: skipmo(nao_g)
+      logical :: skipmo(dataguessbs%nao)
 !
+      nao_g= dataguessbs%nao
+      nao_gcore= datacorebs%nao
 !
 ! Calculate Extended Huckel method
 !
