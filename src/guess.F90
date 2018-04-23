@@ -1486,6 +1486,7 @@ end
 !
       call readcheckinfo(scftype_g,charge_g,flagecp_g,neleca_g,nelecb_g,nmo_g,dataguessbs,datacomp)
 !
+      nao_g= dataguessbs%nao
       if(scftype == 'RHF') then
         call memset(nao_g*nao_g,datacomp)
         allocate(cmoa_g(nao_g,nao_g))
@@ -1524,6 +1525,7 @@ end
 !ishimura
         datacorebs%spher=.true.
         call setbasis_g(ntmp,ntmp,2,datacorebs)
+        nao_gcore= datacorebs%nao
         call memset(nao_gcore*(nao_gcore+nao_g*3+1),datacomp)
         allocate(coremo(nao_gcore,nao_gcore),work1(nao_g*nao_gcore),work2(nao_g*nao_gcore), &
 &                work3(nao_g*nao_gcore),eigen(nao_gcore))

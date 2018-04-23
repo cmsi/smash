@@ -1039,7 +1039,6 @@ end
 ! Read checkpoint information
 !
       use modparam, only : icheck
-      use modguess, only : nao_g,  nshell_g, nprim_g
       use modmolecule, only : natom
       use modtype, only : typebasis, typecomp
       implicit none
@@ -1078,13 +1077,6 @@ end
       nelecb_g= intarray(4)
       dataguessbs%nao   = intarray(5)
       dataguessbs%nprim = intarray(6)
-!!!!!!!!!!!!!!!!!!!!!!
-!ishimura-start
-      nshell_g= intarray(1)
-      nao_g   = intarray(5)
-      nprim_g = intarray(6)
-!ishimura-end
-!!!!!!!!!!!!!!!!!!!!!!
 !
       return
 !
@@ -1103,8 +1095,7 @@ end
 ! Read guess basis functions and MOs from checkpoint file
 !
       use modparam, only : icheck
-      use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
-&                          ex_g, coeff_g, nao_g, coord_g, nshell_g, nprim_g
+      use modguess, only : coord_g
       use modmolecule, only : natom
       use modjob, only : scftype
       use modtype, only : typebasis, typecomp
@@ -1113,7 +1104,8 @@ end
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nmo_g
       integer :: ii, jj
-      real(8),intent(out) :: cmoa_g(nao_g,nao_g), cmob_g(nao_g,nao_g)
+      real(8),intent(out) :: cmoa_g(dataguessbs%nao,dataguessbs%nao)
+      real(8),intent(out) :: cmob_g(dataguessbs%nao,dataguessbs%nao)
       character(len=16),intent(in) :: scftype_g
       character(len=16) :: checkversion
 !
@@ -1184,18 +1176,6 @@ end
       if((scftype == 'UHF').and.(scftype_g == 'UHF')) then
         call para_bcastr(cmob_g,dataguessbs%nao*nmo_g,0,datacomp%mpi_comm1)
       endif
-!!!!!!!!!!!!!!!!!!!!!!
-!ishimura-start
-      locprim_g=dataguessbs%locprim
-      locbf_g  =dataguessbs%locbf  
-      locatom_g=dataguessbs%locatom
-      ex_g     =dataguessbs%ex     
-      coeff_g  =dataguessbs%coeff  
-      mprim_g  =dataguessbs%mprim  
-      mbf_g    =dataguessbs%mbf    
-      mtype_g  =dataguessbs%mtype  
-!ishimura-end
-!!!!!!!!!!!!!!!!!!!!!!
 !
       return
 end
