@@ -1463,18 +1463,16 @@ end
 !         cmob    (Beta initial guess orbitals)
 !
       use modjob, only : scftype
-      use modguess, only : nao_g, nao_gcore
-      use modbasis, only : nao
       use modmolecule, only : neleca, nelecb, charge
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       type(typebasis) :: dataguessbs, datacorebs
-      integer :: neleca_g, nelecb_g, nmo_g, nelect, nelect_g
+      integer :: nao, nao_g, nao_gcore, neleca_g, nelecb_g, nmo_g, nelect, nelect_g
       integer :: ncore, ndim, ntmp, max
-      real(8),intent(in) :: overinv(nao*nao)
-      real(8),intent(inout) :: cmoa(nao*nao), cmob(nao*nao)
+      real(8),intent(in) :: overinv(databasis%nao**2)
+      real(8),intent(inout) :: cmoa(databasis%nao**2), cmob(databasis%nao**2)
       real(8),allocatable :: cmoa_g(:,:), cmob_g(:,:)
       real(8),allocatable :: overlap(:), work1(:), work2(:), work3(:), eigen(:)
       real(8),allocatable :: coremo(:,:)
@@ -1486,6 +1484,7 @@ end
 !
       call readcheckinfo(scftype_g,charge_g,flagecp_g,neleca_g,nelecb_g,nmo_g,dataguessbs,datacomp)
 !
+      nao= databasis%nao
       nao_g= dataguessbs%nao
       if(scftype == 'RHF') then
         call memset(nao_g*nao_g,datacomp)
