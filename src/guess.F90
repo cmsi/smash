@@ -154,7 +154,6 @@ end
 !
 ! Out : hmo (extended Huckel orbitals)
 !
-      use modguess, only : nmo_g
       use modjob, only : iprint
       use modtype, only : typebasis, typecomp
       implicit none
@@ -186,7 +185,6 @@ end
         write(*,'(4x,8f9.3)')eigen
       endif
 !
-      nmo_g= dataguessbs%nao
       return
 end
 
@@ -1133,7 +1131,6 @@ end
 ! Out : overlap (overlap integral of guess and SCF basis sets)
 !       work    (work array)
 !
-      use modguess, only : nshell_g, nao_g, nshell_gcore, nao_gcore
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(in) :: dataguessbs, datacorebs
@@ -1238,9 +1235,6 @@ end
       use modparam, only : mxprsh
       use modjob, only : threshex
       use modmolecule, only : coord
-!      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
-!      use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
-!&                          ex_g, coeff_g, nao_g, coord_g
       use modguess, only : coord_g
       use modtype, only : typebasis
       implicit none
@@ -1433,8 +1427,6 @@ end
 ! Inout : overinv (overlap integral inverse matrix)
 !         cmo     (initial guess orbitals)
 !
-!     use modguess, only : nao_g, nmo_g
-!     use modbasis, only : nao
       use modguess, only :  nmo_g
       use modtype, only : typebasis, typecomp
       implicit none
