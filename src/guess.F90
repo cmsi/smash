@@ -138,7 +138,7 @@ end
 !
 ! Project orbitals from Huckel to SCF
 !
-      call projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,datacomp)
+      call projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,databasis%nao,nao_g,nao_g,datacomp)
       deallocate(hmo,overlap,work1, &
 &                work2,eigen)
       call memunset(2*nao_g2+2*databasis%nao*nao_g+nao_g,datacomp)
@@ -229,7 +229,7 @@ end
 
 
 !----------------------------------------------------------------------------------------
-  subroutine projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,datacomp)
+  subroutine projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,nao,nao_g,nmo_g,datacomp)
 !----------------------------------------------------------------------------------------
 !
 ! Project orbitals from Huckel to SCF
@@ -240,11 +240,10 @@ end
 !        hmo (extended Huckel orbitals)
 ! Out :  cmo (initial guess orbitals)
 !
-      use modguess, only : nao_g, nmo_g
-      use modbasis, only : nao
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
+      integer,intent(in) :: nao, nao_g, nmo_g
       integer :: i, j, nskip
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, small=1.0D-5
       real(8),intent(in) :: overinv(nao,nao)
@@ -2039,7 +2038,7 @@ end
 !
 ! Project orbitals from Huckel to SCF
 !
-      call projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,datacomp)
+      call projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,databasis%nao,nao_g,nmo_g,datacomp)
       deallocate(hmo,overlap,work1,work2,eigen)
       call memunset(2*nao_g2+2*nao*nao_g+nao_g,datacomp)
       return
