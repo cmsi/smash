@@ -1992,7 +1992,7 @@ end
 ! In  : overinv (overlap integral inverse matrix)
 ! Out : cmo     (initial guess orbitals)
 !
-      use modguess, only : nao_g, spher_g, coord_g
+      use modguess, only : nao_g, coord_g, nmo_g
       use modbasis, only : nao
       use modmolecule, only : coord, natom
       use modtype, only : typebasis, typecomp
@@ -2007,10 +2007,7 @@ end
 !
 ! Set basis functions
 !
-!ishimura-start
-      spher_g=.true.
       dataguessbs%spher=.true.
-!ishimura-end
       call setbasis_g(nao_v,nshell_v,1,dataguessbs)
 !
 ! Set coordinate
