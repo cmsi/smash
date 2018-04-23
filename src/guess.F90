@@ -1298,10 +1298,6 @@ end
 !
       use modparam, only : mxprsh
       use modjob, only : threshex
-!      use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
-!&                          ex_g, coeff_g, nao_g, coord_g, &
-!&                          locatom_gcore, locprim_gcore, locbf_gcore, mprim_gcore, &
-!&                          mbf_gcore, mtype_gcore, ex_gcore, coeff_gcore, nao_gcore
       use modguess, only : coord_g
       use modtype, only : typebasis
       implicit none
@@ -1467,7 +1463,7 @@ end
 !         cmob    (Beta initial guess orbitals)
 !
       use modjob, only : scftype
-      use modguess, only : nao_g, nmo_g, nao_gcore
+      use modguess, only : nao_g, nao_gcore
       use modbasis, only : nao
       use modmolecule, only : neleca, nelecb, charge
       use modtype, only : typebasis, typecomp
@@ -1475,7 +1471,7 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       type(typebasis) :: dataguessbs, datacorebs
-      integer :: neleca_g, nelecb_g, nelect, nelect_g
+      integer :: neleca_g, nelecb_g, nmo_g, nelect, nelect_g
       integer :: ncore, ndim, ntmp, max
       real(8),intent(in) :: overinv(nao*nao)
       real(8),intent(inout) :: cmoa(nao*nao), cmob(nao*nao)
@@ -1488,7 +1484,7 @@ end
 !
 ! Read checkpoint information
 !
-      call readcheckinfo(scftype_g,charge_g,flagecp_g,neleca_g,nelecb_g,dataguessbs,datacomp)
+      call readcheckinfo(scftype_g,charge_g,flagecp_g,neleca_g,nelecb_g,nmo_g,dataguessbs,datacomp)
 !
       if(scftype == 'RHF') then
         call memset(nao_g*nao_g,datacomp)
@@ -1500,7 +1496,7 @@ end
 !
 ! Read guess basis functions and MOs from checkpoint file
 !
-      call readcheckguess(cmoa_g,cmob_g,scftype_g,dataguessbs,datacomp)
+      call readcheckguess(cmoa_g,cmob_g,scftype_g,nmo_g,dataguessbs,datacomp)
 !
 ! Orthonormalize guess basis functions
 !

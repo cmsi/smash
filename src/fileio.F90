@@ -1033,19 +1033,19 @@ end
 
 
 !------------------------------------------------------------------------------------
-  subroutine readcheckinfo(scftype_g,charge_g,flagecp_g,neleca_g,nelecb_g,dataguessbs,datacomp)
+  subroutine readcheckinfo(scftype_g,charge_g,flagecp_g,neleca_g,nelecb_g,nmo_g,dataguessbs,datacomp)
 !------------------------------------------------------------------------------------
 !
 ! Read checkpoint information
 !
       use modparam, only : icheck
-      use modguess, only : nao_g, nmo_g, nshell_g, nprim_g
+      use modguess, only : nao_g,  nshell_g, nprim_g
       use modmolecule, only : natom
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(out) :: dataguessbs
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(out) :: neleca_g, nelecb_g
+      integer,intent(out) :: neleca_g, nelecb_g, nmo_g
       integer :: intarray(6), natom_g, idummy
       real(8),intent(out) :: charge_g
       character(len=16),intent(out) :: scftype_g
@@ -1097,20 +1097,21 @@ end
 
 
 !--------------------------------------------------------------
-  subroutine readcheckguess(cmoa_g,cmob_g,scftype_g,dataguessbs,datacomp)
+  subroutine readcheckguess(cmoa_g,cmob_g,scftype_g,nmo_g,dataguessbs,datacomp)
 !--------------------------------------------------------------
 !
 ! Read guess basis functions and MOs from checkpoint file
 !
       use modparam, only : icheck
       use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
-&                          ex_g, coeff_g, nao_g, coord_g, nmo_g, nshell_g, nprim_g
+&                          ex_g, coeff_g, nao_g, coord_g, nshell_g, nprim_g
       use modmolecule, only : natom
       use modjob, only : scftype
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(inout) :: dataguessbs
       type(typecomp),intent(inout) :: datacomp
+      integer,intent(in) :: nmo_g
       integer :: ii, jj
       real(8),intent(out) :: cmoa_g(nao_g,nao_g), cmob_g(nao_g,nao_g)
       character(len=16),intent(in) :: scftype_g
