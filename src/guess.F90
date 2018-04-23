@@ -2027,7 +2027,7 @@ end
 ! Calculate core Hamiltonian matrix for DFTB
 !
       dftb0=zero
-      call formdftb0(dftb0,overlap,eigen,nao_v,nshell_v)
+      call formdftb0(dftb0,overlap,eigen,nao_v,nshell_v,dataguessbs)
 !
 ! Calculate gamma12 calculation for DFTB
 !
@@ -2071,24 +2071,25 @@ end
 
 
 !---------------------------------------------
-  subroutine formdftb0(dftb0,overlap,energy,nao_v,nshell_v)
+  subroutine formdftb0(dftb0,overlap,energy,nao_v,nshell_v,dataguessbs)
 !---------------------------------------------
 !
 ! Form charge independent DFTB matrix elements
 !
       use modparam, only : mxprsh
-      use modguess, only : nao_g, locprim_g, locbf_g, locatom_g, mprim_g, &
-&                          mbf_g, mtype_g, ex_g, coeff_g, coord_g
+      use modguess, only : coord_g
       use modjob, only : threshex
       use modmolecule, only : numatomic
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: dataguessbs
       integer,parameter :: len1=5
       integer,intent(in) :: nao_v, nshell_v
       integer :: ii, jj, ish, jsh, iprim, jprim, nangij(2), nprimij(2), nbfij(2)
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf
       real(8),parameter :: zero=0.0D+00, factor=0.875D+00, fdown=0.05D+00
-      real(8),intent(in) :: overlap(nao_g,nao_g), energy(nao_g)
-      real(8),intent(out) :: dftb0(nao_g,nao_g)
+      real(8),intent(in) :: overlap(dataguessbs%nao,dataguessbs%nao), energy(dataguessbs%nao)
+      real(8),intent(out) :: dftb0(dataguessbs%nao,dataguessbs%nao)
       real(8) :: coordij(3,2), exij(mxprsh,2), coij(mxprsh,2), znucdftb(2)
       real(8) :: sint(len1,len1), tint(len1,len1), cint(len1,len1)
       real(8) :: znucvalence(86)= &
@@ -2105,7 +2106,7 @@ end
 !
 ! Diagonal elements
 !
-      do ii= 1,nao_g
+      do ii= 1,dataguessbs%nao
         dftb0(ii,ii)= energy(ii)
       enddo
 !
@@ -2114,35 +2115,35 @@ end
 !$OMP parallel do schedule(static,1) private(nangij,nprimij,nbfij,iatom,iloc,ilocbf,coordij, &
 !$OMP exij,coij,znucdftb,jatom,jloc,jlocbf,sint,tint,cint)
       do ish= 1,nshell_v
-        nangij(1)= mtype_g(ish)
-        nprimij(1)= mprim_g(ish)
-        nbfij(1)  = mbf_g(ish)
-        iatom = locatom_g(ish)
-        iloc  = locprim_g(ish)
-        ilocbf= locbf_g(ish)
+        nangij(1)= dataguessbs%mtype(ish)
+        nprimij(1)= dataguessbs%mprim(ish)
+        nbfij(1)  = dataguessbs%mbf(ish)
+        iatom = dataguessbs%locatom(ish)
+        iloc  = dataguessbs%locprim(ish)
+        ilocbf= dataguessbs%locbf(ish)
         do ii= 1,3
           coordij(ii,1)= coord_g(ii,iatom)
         enddo
         do iprim= 1,nprimij(1)
-          exij(iprim,1)= ex_g(iloc+iprim)
-          coij(iprim,1)= coeff_g(iloc+iprim)
+          exij(iprim,1)= dataguessbs%ex(iloc+iprim)
+          coij(iprim,1)= dataguessbs%coeff(iloc+iprim)
         enddo
         znucdftb(1)= znucvalence(numatomic(iatom))
 !
         do jsh= 1,ish-1
-          jatom = locatom_g(jsh)
+          jatom = dataguessbs%locatom(jsh)
           if(iatom /= jatom) then
-            nangij(2)= mtype_g(jsh)
-            nprimij(2)= mprim_g(jsh)
-            nbfij(2)  = mbf_g(jsh)
-            jloc  = locprim_g(jsh)
-            jlocbf= locbf_g(jsh)
+            nangij(2)= dataguessbs%mtype(jsh)
+            nprimij(2)= dataguessbs%mprim(jsh)
+            nbfij(2)  = dataguessbs%mbf(jsh)
+            jloc  = dataguessbs%locprim(jsh)
+            jlocbf= dataguessbs%locbf(jsh)
             do ii= 1,3
               coordij(ii,2)= coord_g(ii,jatom)
             enddo
             do jprim= 1,nprimij(2)
-              exij(jprim,2)= ex_g(jloc+jprim)
-              coij(jprim,2)= coeff_g(jloc+jprim)
+              exij(jprim,2)= dataguessbs%ex(jloc+jprim)
+              coij(jprim,2)= dataguessbs%coeff(jloc+jprim)
             enddo
 !
 ! Overlap and kinetic integrals
@@ -2187,7 +2188,7 @@ end
 ! Off-diagonal elements of core functions
 !
 !$OMP parallel do schedule(static,1)
-      do ii= nao_v+1,nao_g
+      do ii= nao_v+1,dataguessbs%nao
         do jj= 1,ii-1
           dftb0(jj,ii)= factor*fdown*overlap(jj,ii)*(energy(ii)+energy(jj))
         enddo
