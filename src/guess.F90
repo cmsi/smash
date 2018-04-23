@@ -1919,23 +1919,23 @@ end
 ! In  : overinv (overlap integral inverse matrix)
 ! Out : cmo     (initial guess orbitals)
 !
-      use modguess, only : nao_g, coord_g, nmo_g
-      use modbasis, only : nao
+      use modguess, only : coord_g, nmo_g
       use modmolecule, only : coord, natom
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       type(typebasis) :: dataguessbs
-      integer :: nao_v, nshell_v, i, j, nao_g2, nao_g3
-      real(8),intent(in):: overinv(nao*nao)
-      real(8),intent(out):: cmo(nao*nao)
+      integer :: nao_v, nshell_v, nao_g, i, j, nao_g2, nao_gmax
+      real(8),intent(in):: overinv(databasis%nao**2)
+      real(8),intent(out):: cmo(databasis%nao**2)
       real(8),allocatable :: hmo(:), overlap(:), work1(:), work2(:), eigen(:)
 !
 ! Set basis functions
 !
       dataguessbs%spher=.true.
       call setbasis_g(nao_v,nshell_v,1,dataguessbs)
+      nao_g= dataguessbs%nao
 !
 ! Set coordinate
 !
@@ -1948,9 +1948,9 @@ end
 ! Set required arrays
 !
       nao_g2= nao_g*nao_g
-      nao_g3= max(nao,nao_g)*nao_g
-      call memset(2*nao_g2+2*nao_g3+nao_g,datacomp)
-      allocate(hmo(nao_g2),overlap(nao_g3),work1(nao_g3),work2(nao_g2),eigen(nao_g))
+      nao_gmax= max(databasis%nao,nao_g)*nao_g
+      call memset(2*nao_g2+2*nao_gmax+nao_g,datacomp)
+      allocate(hmo(nao_g2),overlap(nao_gmax),work1(nao_gmax),work2(nao_g2),eigen(nao_g))
 !
 ! Calculate Extended Huckel method
 !
@@ -1964,7 +1964,7 @@ end
 !
       call projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,databasis%nao,nao_g,nmo_g,datacomp)
       deallocate(hmo,overlap,work1,work2,eigen)
-      call memunset(2*nao_g2+2*nao*nao_g+nao_g,datacomp)
+      call memunset(2*nao_g2+2*nao_gmax+nao_g,datacomp)
       return
 end
 
