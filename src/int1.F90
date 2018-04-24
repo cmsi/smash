@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !--------------------------------------------------------------------------
-  subroutine oneei(hstmat1,hstmat2,hstmat3,hstmat4,nproc,myrank,mpi_comm)
+  subroutine oneei(hstmat1,hstmat2,hstmat3,hstmat4,nproc,myrank,mpi_comm,databasis)
 !--------------------------------------------------------------------------
 !
 ! Driver of one-electron and overlap integrals
@@ -23,29 +23,32 @@
 !       hstmat3 (Kinetic energy matrix)
 !       hstmat4 (Work array)
 !
-      use modbasis, only : nao, nshell, mtype
       use modjob, only : flagecp
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh, num, maxfunc(0:6), maxbasis, maxdim
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(out) :: hstmat1((nao*(nao+1))/2), hstmat2((nao*(nao+1))/2)
-      real(8),intent(out) :: hstmat3((nao*(nao+1))/2), hstmat4((nao*(nao+1))/2)
+      real(8),intent(out) :: hstmat1((databasis%nao*(databasis%nao+1))/2)
+      real(8),intent(out) :: hstmat2((databasis%nao*(databasis%nao+1))/2)
+      real(8),intent(out) :: hstmat3((databasis%nao*(databasis%nao+1))/2)
+      real(8),intent(out) :: hstmat4((databasis%nao*(databasis%nao+1))/2)
       data maxfunc/1,3,6,10,15,21,28/
 !
-      maxbasis= maxval(mtype(1:nshell))
+      maxbasis= maxval(databasis%mtype(1:databasis%nshell))
       maxdim= maxfunc(maxbasis)
 !
-      num=(nao*(nao+1))/2
+      num=(databasis%nao*(databasis%nao+1))/2
       hstmat2(:)= zero
       hstmat3(:)= zero
       hstmat4(:)= zero
 !
 !$OMP parallel
-      do ish= nshell-myrank,1,-nproc
+      do ish= databasis%nshell-myrank,1,-nproc
 !$OMP do
         do jsh= 1,ish
-          call calcintst1c(hstmat2,hstmat3,hstmat4,ish,jsh,maxdim)
+          call calcintst1c(hstmat2,hstmat3,hstmat4,ish,jsh,maxdim,databasis)
         enddo
 !$OMP enddo
       enddo
@@ -64,49 +67,51 @@ end
 
 
 !------------------------------------------------------
-  subroutine calcintst1c(hmat,smat,tmat,ish,jsh,len1)
+  subroutine calcintst1c(hmat,smat,tmat,ish,jsh,len1,databasis)
 !------------------------------------------------------
 !
 ! Driver of overlap, kinetic, and 1-electron Coulomb integrals (j|Z/r|i)
 !
       use modparam, only : mxprsh
       use modmolecule, only : natom, coord, znuc
-      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
       use modjob, only : threshex
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, len1
       integer :: nangij(2), nprimij(2), nbfij(2), iatom, jatom
       integer :: iloc, jloc, ilocbf, jlocbf, iprim, jprim, i, j, ii, ij, maxj
-      real(8),intent(inout) :: hmat((nao*(nao+1))/2), smat((nao*(nao+1))/2)
-      real(8),intent(inout) :: tmat((nao*(nao+1))/2)
+      real(8),intent(inout) :: hmat((databasis%nao*(databasis%nao+1))/2)
+      real(8),intent(inout) :: smat((databasis%nao*(databasis%nao+1))/2)
+      real(8),intent(inout) :: tmat((databasis%nao*(databasis%nao+1))/2)
       real(8) :: exij(mxprsh,2), coij(mxprsh,2), coordij(3,2)
       real(8) :: sint(len1,len1), tint(len1,len1), cint(len1,len1)
       logical :: iandj
 !
       iandj=(ish == jsh)
-      nangij(1)= mtype(ish)
-      nangij(2)= mtype(jsh)
-      nprimij(1)= mprim(ish)
-      nprimij(2)= mprim(jsh)
-      nbfij(1)  = mbf(ish)
-      nbfij(2)  = mbf(jsh)
-      iatom = locatom(ish)
-      iloc  = locprim(ish)
-      ilocbf= locbf(ish)
-      jatom = locatom(jsh)
-      jloc  = locprim(jsh)
-      jlocbf= locbf(jsh)
+      nangij(1)= databasis%mtype(ish)
+      nangij(2)= databasis%mtype(jsh)
+      nprimij(1)= databasis%mprim(ish)
+      nprimij(2)= databasis%mprim(jsh)
+      nbfij(1)  = databasis%mbf(ish)
+      nbfij(2)  = databasis%mbf(jsh)
+      iatom = databasis%locatom(ish)
+      iloc  = databasis%locprim(ish)
+      ilocbf= databasis%locbf(ish)
+      jatom = databasis%locatom(jsh)
+      jloc  = databasis%locprim(jsh)
+      jlocbf= databasis%locbf(jsh)
       do i= 1,3
         coordij(i,1)= coord(i,iatom)
         coordij(i,2)= coord(i,jatom)
       enddo
       do iprim= 1,nprimij(1)
-        exij(iprim,1)= ex(iloc+iprim)
-        coij(iprim,1)= coeff(iloc+iprim)
+        exij(iprim,1)= databasis%ex(iloc+iprim)
+        coij(iprim,1)= databasis%coeff(iloc+iprim)
       enddo
       do jprim= 1,nprimij(2)
-        exij(jprim,2)= ex(jloc+jprim)
-        coij(jprim,2)= coeff(jloc+jprim)
+        exij(jprim,2)= databasis%ex(jloc+jprim)
+        coij(jprim,2)= databasis%coeff(jloc+jprim)
       enddo
 !
       if((nangij(1) > 6).or.(nangij(2) > 6))then

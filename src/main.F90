@@ -424,7 +424,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-      call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+      call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -570,7 +570,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-      call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+      call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -720,7 +720,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-      call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+      call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -896,7 +896,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-      call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+      call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -1127,7 +1127,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-        call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+        call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -1431,7 +1431,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-        call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+        call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
