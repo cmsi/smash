@@ -2146,7 +2146,7 @@ end
 
 
 !-------------------------------------------------------------------------------------------
-  subroutine calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm)
+  subroutine calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm,databasis)
 !-------------------------------------------------------------------------------------------
 !
 ! Driver of dipole, quadrupole, and octupole moment matrix calculation
@@ -2157,17 +2157,20 @@ end
 !       octpmat   (Octupole moment matrix)
 !       work      (Working matrix)
 !
-      use modbasis, only : nao, nshell, mtype
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh, maxfunc(0:6), maxbasis, maxdim
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: dipcenter(3)
-      real(8),intent(out) :: dipmat((nao*(nao+1))/2*3), quadpmat((nao*(nao+1))/2*6)
-      real(8),intent(out) :: octpmat((nao*(nao+1))/2*10), work((nao*(nao+1))/2*10)
+      real(8),intent(out) :: dipmat((databasis%nao*(databasis%nao+1))/2*3)
+      real(8),intent(out) :: quadpmat((databasis%nao*(databasis%nao+1))/2*6)
+      real(8),intent(out) :: octpmat((databasis%nao*(databasis%nao+1))/2*10)
+      real(8),intent(out) :: work((databasis%nao*(databasis%nao+1))/2*10)
       data maxfunc/1,3,6,10,15,21,28/
 !
-      maxbasis= maxval(mtype(1:nshell))
+      maxbasis= maxval(databasis%mtype(1:databasis%nshell))
       maxdim= maxfunc(maxbasis)
 !
       quadpmat(:)= zero
@@ -2175,25 +2178,25 @@ end
       work(:)= zero
 !
 !$OMP parallel
-      do ish= nshell-myrank,1,-nproc
+      do ish= databasis%nshell-myrank,1,-nproc
 !$OMP do
         do jsh= 1,ish
-          call calcintoctupole(quadpmat,octpmat,work,dipcenter,ish,jsh,maxdim)
+          call calcintoctupole(quadpmat,octpmat,work,dipcenter,ish,jsh,maxdim,databasis)
         enddo
 !$OMP enddo
       enddo
 !$OMP end parallel
 !
-      call para_allreducer(quadpmat,dipmat,(nao*(nao+1))/2*3,mpi_comm)
-      call para_allreducer(octpmat,quadpmat,(nao*(nao+1))/2*6,mpi_comm)
-      call para_allreducer(work,octpmat,(nao*(nao+1))/2*10,mpi_comm)
+      call para_allreducer(quadpmat,dipmat,(databasis%nao*(databasis%nao+1))/2*3,mpi_comm)
+      call para_allreducer(octpmat,quadpmat,(databasis%nao*(databasis%nao+1))/2*6,mpi_comm)
+      call para_allreducer(work,octpmat,(databasis%nao*(databasis%nao+1))/2*10,mpi_comm)
 !
       return
 end
 
 
 !-----------------------------------------------------------------------------
-  subroutine calcintoctupole(dipmat,quadpmat,octpmat,dipcenter,ish,jsh,len1)
+  subroutine calcintoctupole(dipmat,quadpmat,octpmat,dipcenter,ish,jsh,len1,databasis)
 !-----------------------------------------------------------------------------
 !
 ! Driver of dipole (j|r|i), quadrupole (j|r^2|i), and octupole (j|r^3|i) 
@@ -2201,44 +2204,46 @@ end
 !
       use modparam, only : mxprsh
       use modmolecule, only : coord
-      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
       use modjob, only : threshex
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, len1
       integer :: nangij(2), nprimij(2), nbfij(2), iatom, jatom
       integer :: iloc, jloc, ilocbf, jlocbf, iprim, jprim, i, j, ii, ij, maxj, kk
       real(8),intent(in) :: dipcenter(3)
-      real(8),intent(out) :: dipmat((nao*(nao+1))/2,3), quadpmat((nao*(nao+1))/2,6)
-      real(8),intent(out) :: octpmat((nao*(nao+1))/2,10) 
+      real(8),intent(out) :: dipmat((databasis%nao*(databasis%nao+1))/2,3)
+      real(8),intent(out) :: quadpmat((databasis%nao*(databasis%nao+1))/2,6)
+      real(8),intent(out) :: octpmat((databasis%nao*(databasis%nao+1))/2,10) 
       real(8) :: exij(mxprsh,2), coij(mxprsh,2), coordijk(3,3)
       real(8) :: dipint(len1,len1,3), quadpint(len1,len1,6), octpint(len1,len1,10)
       logical :: iandj
 !
       iandj=(ish == jsh)
-      nangij(1)= mtype(ish)
-      nangij(2)= mtype(jsh)
-      nprimij(1)= mprim(ish)
-      nprimij(2)= mprim(jsh)
-      nbfij(1)  = mbf(ish)
-      nbfij(2)  = mbf(jsh)
-      iatom = locatom(ish)
-      iloc  = locprim(ish)
-      ilocbf= locbf(ish)
-      jatom = locatom(jsh)
-      jloc  = locprim(jsh)
-      jlocbf= locbf(jsh)
+      nangij(1)= databasis%mtype(ish)
+      nangij(2)= databasis%mtype(jsh)
+      nprimij(1)= databasis%mprim(ish)
+      nprimij(2)= databasis%mprim(jsh)
+      nbfij(1)  = databasis%mbf(ish)
+      nbfij(2)  = databasis%mbf(jsh)
+      iatom = databasis%locatom(ish)
+      iloc  = databasis%locprim(ish)
+      ilocbf= databasis%locbf(ish)
+      jatom = databasis%locatom(jsh)
+      jloc  = databasis%locprim(jsh)
+      jlocbf= databasis%locbf(jsh)
       do i= 1,3
         coordijk(i,1)= coord(i,iatom)
         coordijk(i,2)= coord(i,jatom)
         coordijk(i,3)= dipcenter(i)
       enddo
       do iprim= 1,nprimij(1)
-        exij(iprim,1)= ex(iloc+iprim)
-        coij(iprim,1)= coeff(iloc+iprim)
+        exij(iprim,1)= databasis%ex(iloc+iprim)
+        coij(iprim,1)= databasis%coeff(iloc+iprim)
       enddo
       do jprim= 1,nprimij(2)
-        exij(jprim,2)= ex(jloc+jprim)
-        coij(jprim,2)= coeff(jloc+jprim)
+        exij(jprim,2)= databasis%ex(jloc+jprim)
+        coij(jprim,2)= databasis%coeff(jloc+jprim)
       enddo
 !
       if((nangij(1) > 6).or.(nangij(2) > 6))then

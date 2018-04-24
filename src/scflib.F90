@@ -1275,24 +1275,26 @@ end
 
 !-----------------------------------------------------------------
   subroutine calcroctupole(dipmat,quadpmat,octpmat,work,dmtrx, &
-&                          nproc,myrank,mpi_comm,datacomp)
+&                          nproc,myrank,mpi_comm,databasis,datacomp)
 !-----------------------------------------------------------------
 !
 ! Driver of dipole, quadrupole, and octupole moment calculation for closed-shell
 !
-      use modbasis, only : nao
       use modparam, only : todebye, toang
       use modmolecule, only : natom, coord, znuc
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
-      type(typecomp),intent(inout) :: datacomp
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: iatom, ii
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, two=2.0D+00, three=3.0D+00
       real(8),parameter :: four=4.0D+00, five=5.0D+00
-      real(8),intent(in) :: dmtrx((nao*(nao+1))/2)
-      real(8),intent(out) :: dipmat((nao*(nao+1))/2,3), quadpmat((nao*(nao+1))/2,6)
-      real(8),intent(out) :: octpmat((nao*(nao+1))/2,10), work((nao*(nao+1))/2*10)
+      real(8),intent(in) :: dmtrx((databasis%nao*(databasis%nao+1))/2)
+      real(8),intent(out) :: dipmat((databasis%nao*(databasis%nao+1))/2,3)
+      real(8),intent(out) :: quadpmat((databasis%nao*(databasis%nao+1))/2,6)
+      real(8),intent(out) :: octpmat((databasis%nao*(databasis%nao+1))/2,10)
+      real(8),intent(out) :: work((databasis%nao*(databasis%nao+1))/2*10)
       real(8) :: dipcenter(3), xdip, ydip, zdip, totaldip, tridot
       real(8) :: xdipplus, ydipplus, zdipplus, xdipminus, ydipminus, zdipminus
       real(8) :: xxquadpplus, xyquadpplus, xzquadpplus, yyquadpplus, yzquadpplus, zzquadpplus
@@ -1353,27 +1355,27 @@ end
 !
       dipcenter(:)= zero
 !
-      call calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm)
+      call calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm,databasis)
 !
-      xdipminus=-tridot(dmtrx,dipmat(1,1),nao)
-      ydipminus=-tridot(dmtrx,dipmat(1,2),nao)
-      zdipminus=-tridot(dmtrx,dipmat(1,3),nao)
-      xxquadpminus=-tridot(dmtrx,quadpmat(1,1),nao)
-      xyquadpminus=-tridot(dmtrx,quadpmat(1,2),nao)
-      xzquadpminus=-tridot(dmtrx,quadpmat(1,3),nao)
-      yyquadpminus=-tridot(dmtrx,quadpmat(1,4),nao)
-      yzquadpminus=-tridot(dmtrx,quadpmat(1,5),nao)
-      zzquadpminus=-tridot(dmtrx,quadpmat(1,6),nao)
-      xxxoctpminus=-tridot(dmtrx,octpmat(1, 1),nao)
-      xxyoctpminus=-tridot(dmtrx,octpmat(1, 2),nao)
-      xxzoctpminus=-tridot(dmtrx,octpmat(1, 3),nao)
-      xyyoctpminus=-tridot(dmtrx,octpmat(1, 4),nao)
-      xyzoctpminus=-tridot(dmtrx,octpmat(1, 5),nao)
-      xzzoctpminus=-tridot(dmtrx,octpmat(1, 6),nao)
-      yyyoctpminus=-tridot(dmtrx,octpmat(1, 7),nao)
-      yyzoctpminus=-tridot(dmtrx,octpmat(1, 8),nao)
-      yzzoctpminus=-tridot(dmtrx,octpmat(1, 9),nao)
-      zzzoctpminus=-tridot(dmtrx,octpmat(1,10),nao)
+      xdipminus=-tridot(dmtrx,dipmat(1,1),databasis%nao)
+      ydipminus=-tridot(dmtrx,dipmat(1,2),databasis%nao)
+      zdipminus=-tridot(dmtrx,dipmat(1,3),databasis%nao)
+      xxquadpminus=-tridot(dmtrx,quadpmat(1,1),databasis%nao)
+      xyquadpminus=-tridot(dmtrx,quadpmat(1,2),databasis%nao)
+      xzquadpminus=-tridot(dmtrx,quadpmat(1,3),databasis%nao)
+      yyquadpminus=-tridot(dmtrx,quadpmat(1,4),databasis%nao)
+      yzquadpminus=-tridot(dmtrx,quadpmat(1,5),databasis%nao)
+      zzquadpminus=-tridot(dmtrx,quadpmat(1,6),databasis%nao)
+      xxxoctpminus=-tridot(dmtrx,octpmat(1, 1),databasis%nao)
+      xxyoctpminus=-tridot(dmtrx,octpmat(1, 2),databasis%nao)
+      xxzoctpminus=-tridot(dmtrx,octpmat(1, 3),databasis%nao)
+      xyyoctpminus=-tridot(dmtrx,octpmat(1, 4),databasis%nao)
+      xyzoctpminus=-tridot(dmtrx,octpmat(1, 5),databasis%nao)
+      xzzoctpminus=-tridot(dmtrx,octpmat(1, 6),databasis%nao)
+      yyyoctpminus=-tridot(dmtrx,octpmat(1, 7),databasis%nao)
+      yyzoctpminus=-tridot(dmtrx,octpmat(1, 8),databasis%nao)
+      yzzoctpminus=-tridot(dmtrx,octpmat(1, 9),databasis%nao)
+      zzzoctpminus=-tridot(dmtrx,octpmat(1,10),databasis%nao)
 !
 ! Sum Nuclear and Electron parts
 !
@@ -1512,7 +1514,7 @@ end
 
 !-------------------------------------------------------------------------
   subroutine calcuoctupole(dipmat,quadpmat,octpmat,work,dmtrxa,dmtrxb, &
-&                          nproc,myrank,mpi_comm,datacomp)
+&                          nproc,myrank,mpi_comm,databasis,datacomp)
 !-------------------------------------------------------------------------
 !
 ! Driver of dipole, quadrupole, and octupole moment calculation for open-shell
@@ -1520,9 +1522,10 @@ end
       use modbasis, only : nao
       use modparam, only : todebye, toang
       use modmolecule, only : natom, coord, znuc
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
-      type(typecomp),intent(inout) :: datacomp
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: iatom, ii
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, two=2.0D+00, three=3.0D+00
@@ -1590,31 +1593,31 @@ end
 !
       dipcenter(:)= zero
 !
-      call calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm)
+      call calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm,databasis)
 !
       do ii= 1,nao*(nao+1)/2
         work(ii)= dmtrxa(ii)+dmtrxb(ii)
       enddo
 !
-      xdipminus=-tridot(work,dipmat(1,1),nao)
-      ydipminus=-tridot(work,dipmat(1,2),nao)
-      zdipminus=-tridot(work,dipmat(1,3),nao)
-      xxquadpminus=-tridot(work,quadpmat(1,1),nao)
-      xyquadpminus=-tridot(work,quadpmat(1,2),nao)
-      xzquadpminus=-tridot(work,quadpmat(1,3),nao)
-      yyquadpminus=-tridot(work,quadpmat(1,4),nao)
-      yzquadpminus=-tridot(work,quadpmat(1,5),nao)
-      zzquadpminus=-tridot(work,quadpmat(1,6),nao)
-      xxxoctpminus=-tridot(work,octpmat(1, 1),nao)
-      xxyoctpminus=-tridot(work,octpmat(1, 2),nao)
-      xxzoctpminus=-tridot(work,octpmat(1, 3),nao)
-      xyyoctpminus=-tridot(work,octpmat(1, 4),nao)
-      xyzoctpminus=-tridot(work,octpmat(1, 5),nao)
-      xzzoctpminus=-tridot(work,octpmat(1, 6),nao)
-      yyyoctpminus=-tridot(work,octpmat(1, 7),nao)
-      yyzoctpminus=-tridot(work,octpmat(1, 8),nao)
-      yzzoctpminus=-tridot(work,octpmat(1, 9),nao)
-      zzzoctpminus=-tridot(work,octpmat(1,10),nao)
+      xdipminus=-tridot(work,dipmat(1,1),databasis%nao)
+      ydipminus=-tridot(work,dipmat(1,2),databasis%nao)
+      zdipminus=-tridot(work,dipmat(1,3),databasis%nao)
+      xxquadpminus=-tridot(work,quadpmat(1,1),databasis%nao)
+      xyquadpminus=-tridot(work,quadpmat(1,2),databasis%nao)
+      xzquadpminus=-tridot(work,quadpmat(1,3),databasis%nao)
+      yyquadpminus=-tridot(work,quadpmat(1,4),databasis%nao)
+      yzquadpminus=-tridot(work,quadpmat(1,5),databasis%nao)
+      zzquadpminus=-tridot(work,quadpmat(1,6),databasis%nao)
+      xxxoctpminus=-tridot(work,octpmat(1, 1),databasis%nao)
+      xxyoctpminus=-tridot(work,octpmat(1, 2),databasis%nao)
+      xxzoctpminus=-tridot(work,octpmat(1, 3),databasis%nao)
+      xyyoctpminus=-tridot(work,octpmat(1, 4),databasis%nao)
+      xyzoctpminus=-tridot(work,octpmat(1, 5),databasis%nao)
+      xzzoctpminus=-tridot(work,octpmat(1, 6),databasis%nao)
+      yyyoctpminus=-tridot(work,octpmat(1, 7),databasis%nao)
+      yyzoctpminus=-tridot(work,octpmat(1, 8),databasis%nao)
+      yzzoctpminus=-tridot(work,octpmat(1, 9),databasis%nao)
+      zzzoctpminus=-tridot(work,octpmat(1,10),databasis%nao)
 !
 ! Sum Nuclear and Electron parts
 !
