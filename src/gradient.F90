@@ -13,20 +13,21 @@
 ! limitations under the License.
 !
 !---------------------------------------------------------------------------
-  subroutine calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
+  subroutine calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,databasis,datacomp)
 !---------------------------------------------------------------------------
 !
 ! Driver of RHF energy gradient calculation
 !
-      use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom, neleca, numatomic
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc1, myrank1, mpi_comm1
-      integer :: nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j
+      integer :: nao, nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
-      real(8),intent(in) :: cmo(nao*nao), energymo(nao), xint(nshell*(nshell+1)/2)
+      real(8),intent(in) :: cmo(databasis%nao*databasis%nao), energymo(databasis%nao)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
       real(8),intent(out) :: egrad(3,natom)
       real(8),allocatable :: fulldmtrx(:), ewdmtrx(:), egradtmp(:)
       character(len=3) :: table(-9:112)= &
@@ -49,6 +50,7 @@
 !
 ! Set arrays
 !
+      nao= databasis%nao
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
       call memset(nao2+nao3+natom*3,datacomp)
@@ -70,7 +72,7 @@
 !
 ! Calculate derivatives for two-electron integrals
 !
-      maxdim= maxval(mtype(1:nshell))
+      maxdim= maxval(databasis%mtype(1:databasis%nshell))
       maxgraddim= maxfunc(maxdim+1)
       maxdim= maxfunc(maxdim)
       call grad2eri(egradtmp,egrad,fulldmtrx,fulldmtrx,xint,one, &
@@ -99,21 +101,22 @@ end
 
 
 !--------------------------------------------------------------------------------------------
-  subroutine calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
+  subroutine calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,databasis,datacomp)
 !--------------------------------------------------------------------------------------------
 !
 ! Driver of UHF energy gradient calculation
 !
-      use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom, neleca, nelecb, numatomic
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc1, myrank1, mpi_comm1
-      integer :: nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j
+      integer :: nao, nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
-      real(8),intent(in) :: cmoa(nao*nao), cmob(nao*nao), energymoa(nao), energymob(nao)
-      real(8),intent(in) :: xint(nshell*(nshell+1)/2)
+      real(8),intent(in) :: cmoa(databasis%nao*databasis%nao), cmob(databasis%nao*databasis%nao)
+      real(8),intent(in) :: energymoa(databasis%nao), energymob(databasis%nao)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
       real(8),intent(out) :: egrad(3,natom)
       real(8),allocatable :: fulldmtrx1(:), fulldmtrx2(:), ewdmtrx(:), egradtmp(:)
       character(len=3) :: table(-9:112)= &
@@ -136,6 +139,7 @@ end
 !
 ! Set arrays
 !
+      nao= databasis%nao
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
       call memset(nao2*2+nao3+natom*3,datacomp)
@@ -158,7 +162,7 @@ end
 !
 ! Calculate derivatives for two-electron integrals
 !
-      maxdim= maxval(mtype(1:nshell))
+      maxdim= maxval(databasis%mtype(1:databasis%nshell))
       maxgraddim= maxfunc(maxdim+1)
       maxdim= maxfunc(maxdim)
       call grad2eri(egradtmp,egrad,fulldmtrx1,fulldmtrx2,xint,one, &
@@ -187,22 +191,23 @@ end
 
 
 !----------------------------------------------------------------------------
-  subroutine calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
+  subroutine calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,databasis,datacomp)
 !----------------------------------------------------------------------------
 !
 ! Driver of closed-shell DFT energy gradient calculation
 !
-      use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom, neleca, numatomic, atomrad
       use modjob, only : nrad, nleb, idftex, idftcor, hfexchange
       use modparam, only : tobohr
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc1, myrank1, mpi_comm1
-      integer :: nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j, iatom
+      integer :: nao, nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j, iatom
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: cmo(nao*nao), energymo(nao), xint(nshell*(nshell+1)/2)
+      real(8),intent(in) :: cmo(databasis%nao*databasis%nao), energymo(databasis%nao)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
       real(8),intent(out) :: egrad(3,natom)
       real(8),allocatable :: fulldmtrx(:), ewdmtrx(:), egradtmp(:,:)
       real(8),allocatable :: atomvec(:), surface(:), radpt(:), angpt(:), rad(:), ptweight(:)
@@ -228,6 +233,7 @@ end
 !
 ! Set arrays
 !
+      nao= databasis%nao
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
       call memset(nao2+nao3+natom*3,datacomp)
@@ -264,7 +270,7 @@ end
 !
 ! Calculate derivatives of two-electron integrals
 !
-      maxdim= maxval(mtype(1:nshell))
+      maxdim= maxval(databasis%mtype(1:databasis%nshell))
       maxgraddim= maxfunc(maxdim+1)
       maxdim= maxfunc(maxdim)
       call grad2eri(egradtmp,egrad,fulldmtrx,fulldmtrx,xint,hfexchange, &
@@ -304,23 +310,24 @@ end
 
 
 !---------------------------------------------------------------------------------------------
-  subroutine calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,datacomp)
+  subroutine calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,databasis,datacomp)
 !---------------------------------------------------------------------------------------------
 !
 ! Driver of open-shell DFT energy gradient calculation
 !
-      use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom, neleca, nelecb, numatomic, atomrad
       use modjob, only : nrad, nleb, idftex, idftcor, hfexchange
       use modparam, only : tobohr
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
-      integer :: nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j, iatom
+      integer :: nao, nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j, iatom
       integer,intent(in) :: nproc1, myrank1, mpi_comm1
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: cmoa(nao*nao), cmob(nao*nao), energymoa(nao), energymob(nao)
-      real(8),intent(in) :: xint(nshell*(nshell+1)/2)
+      real(8),intent(in) :: cmoa(databasis%nao*databasis%nao), cmob(databasis%nao*databasis%nao)
+      real(8),intent(in) :: energymoa(databasis%nao), energymob(databasis%nao)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
       real(8),intent(out) :: egrad(3,natom)
       real(8),allocatable :: fulldmtrx1(:), fulldmtrx2(:), ewdmtrx(:), egradtmp(:,:)
       real(8),allocatable :: atomvec(:), surface(:), radpt(:), angpt(:), rad(:), ptweight(:)
@@ -346,6 +353,7 @@ end
 !
 ! Set arrays
 !
+      nao= databasis%nao
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
       call memset(nao2*2+nao3+natom*3,datacomp)
@@ -384,7 +392,7 @@ end
 !
 ! Calculate derivatives of two-electron integrals
 !
-      maxdim= maxval(mtype(1:nshell))
+      maxdim= maxval(databasis%mtype(1:databasis%nshell))
       maxgraddim= maxfunc(maxdim+1)
       maxdim= maxfunc(maxdim)
       call grad2eri(egradtmp,egrad,fulldmtrx1,fulldmtrx2,xint,hfexchange, &
