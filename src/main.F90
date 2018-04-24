@@ -480,7 +480,7 @@ end
         write(*,'("  -------------------")')
         write(*,'("    MO coefficients")')
         write(*,'("  -------------------")')
-        call writeeigenvector(cmo,energymo,datacomp)
+        call writeeigenvector(cmo,energymo,databasis,datacomp)
       endif
 !
 ! Calculate Mulliken charge
@@ -625,11 +625,11 @@ end
         write(*,'("  -------------------------")')
         write(*,'("    Alpha MO coefficients")')
         write(*,'("  -------------------------")')
-        call writeeigenvector(cmoa,energymoa,datacomp)
+        call writeeigenvector(cmoa,energymoa,databasis,datacomp)
         write(*,'("  ------------------------")')
         write(*,'("    Beta MO coefficients")')
         write(*,'("  ------------------------")')
-        call writeeigenvector(cmob,energymob,datacomp)
+        call writeeigenvector(cmob,energymob,databasis,datacomp)
       endif
 !
 ! Calculate Mulliken charge
@@ -804,7 +804,7 @@ end
         write(*,'("  -------------------")')
         write(*,'("    MO coefficients")')
         write(*,'("  -------------------")')
-        call writeeigenvector(cmo,energymo,datacomp)
+        call writeeigenvector(cmo,energymo,databasis,datacomp)
       endif
 !
 ! Calculate Mulliken charge
@@ -981,11 +981,11 @@ end
         write(*,'("  -------------------------")')
         write(*,'("    Alpha MO coefficients")')
         write(*,'("  -------------------------")')
-        call writeeigenvector(cmoa,energymoa,datacomp)
+        call writeeigenvector(cmoa,energymoa,databasis,datacomp)
         write(*,'("  ------------------------")')
         write(*,'("    Beta MO coefficients")')
         write(*,'("  ------------------------")')
-        call writeeigenvector(cmob,energymob,datacomp)
+        call writeeigenvector(cmob,energymob,databasis,datacomp)
       endif
 !
 ! Calculate Mulliken charge
@@ -1261,7 +1261,7 @@ end
         write(*,'("  -------------------")')
         write(*,'("    MO coefficients")')
         write(*,'("  -------------------")')
-        call writeeigenvector(cmo,energymo,datacomp)
+        call writeeigenvector(cmo,energymo,databasis,datacomp)
       endif
 !
 ! Calculate Mulliken charge
@@ -1567,11 +1567,11 @@ end
         write(*,'("  -------------------------")')
         write(*,'("    Alpha MO coefficients")')
         write(*,'("  -------------------------")')
-        call writeeigenvector(cmoa,energymoa,datacomp)
+        call writeeigenvector(cmoa,energymoa,databasis,datacomp)
         write(*,'("  ------------------------")')
         write(*,'("    Beta MO coefficients")')
         write(*,'("  ------------------------")')
-        call writeeigenvector(cmob,energymob,datacomp)
+        call writeeigenvector(cmob,energymob,databasis,datacomp)
       endif
 !
 ! Calculate Mulliken charge
