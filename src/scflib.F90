@@ -101,7 +101,7 @@ end
 
 
 !-----------------------------------------------------------------
-  subroutine calcrdmax(dmtrx,dmax,dmaxtmp,nproc,myrank,mpi_comm)
+  subroutine calcrdmax(dmtrx,dmax,dmaxtmp,nproc,myrank,mpi_comm,databasis)
 !-----------------------------------------------------------------
 !
 ! Calculate maximum density matrix element for each shell
@@ -111,7 +111,9 @@ end
 !       dmaxtmp (Work array)
 !
       use modbasis, only : nshell, nao, mbf, locbf
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh, ijsh, locbfi, locbfj, nbfi, nbfj
       integer :: jnbf, i, j, ii, ij
@@ -153,7 +155,7 @@ end
 
 
 !-------------------------------------------------------------------------
-  subroutine calcudmax(dmtrxa,dmtrxb,dmax,dmaxtmp,nproc,myrank,mpi_comm)
+  subroutine calcudmax(dmtrxa,dmtrxb,dmax,dmaxtmp,nproc,myrank,mpi_comm,databasis)
 !-------------------------------------------------------------------------
 !
 ! Calculate maximum unrestricted density matrix element for each shell
@@ -164,7 +166,9 @@ end
 !       dmaxtmp (Work array)
 !
       use modbasis, only : nshell, nao, mbf, locbf
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh, ijsh, locbfi, locbfj, nbfi, nbfj
       integer :: jnbf, i, j, ii, ij

@@ -169,7 +169,7 @@
 !
 ! Calculate maximum density matrix elements
 !
-        call calcrdmax(dmtrx,dmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+        call calcrdmax(dmtrx,dmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
 !
 ! Calculate two-electron integrals and Fock matrix
 !
@@ -1065,7 +1065,7 @@ end
 !
 ! Calculate maximum density matrix elements
 !
-        call calcrdmax(dmtrx,dmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+        call calcrdmax(dmtrx,dmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
         call cpu_time(time1)
 !
 ! Calculate exchange-correlation terms
@@ -1445,7 +1445,7 @@ end
 !
 ! Calculate maximum density matrix elements
 !
-        call calcudmax(dmtrxa,dmtrxb,dmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+        call calcudmax(dmtrxa,dmtrxb,dmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
 !
 ! Calculate two-electron integrals and Fock matrix
 !
@@ -2168,7 +2168,7 @@ end
 !
 ! Calculate maximum density matrix elements
 !
-        call calcudmax(dmtrxa,dmtrxb,dmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+        call calcudmax(dmtrxa,dmtrxb,dmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
         call cpu_time(time1)
 !
 ! Calculate exchange-correlation terms

@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !-------------------------------------------------------------------------
-  subroutine calcgradrmp2(cmo,energymo,xint,egrad,nproc,myrank,mpi_comm,datacomp)
+  subroutine calcgradrmp2(cmo,energymo,xint,egrad,nproc,myrank,mpi_comm,databasis,datacomp)
 !-------------------------------------------------------------------------
 !
 ! Main driver of closed-shell MP2 energy gradient calculation
@@ -26,8 +26,9 @@
       use modbasis, only : nao, nshell, mbf, mtype
       use modmolecule, only : nmo, natom, neleca, numatomic, escf, emp2, escsmp2
       use modjob, only : ncore, nvfz, maxmp2diis
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: maxfunc(0:7), maxdim, maxgraddim, nocc, nvir, noac, nvac, icount, ish, jsh
@@ -197,7 +198,7 @@
         endif
         call mp2gradmulti(emp2st,egradtmp,egrad,cmo,energymo,xint,nocc,noac,nvir,nvac, &
 &                         ncore,nvfz,maxsize,maxdim,maxgraddim,idis,npass,numi,numab,numirecv, &
-&                         nproc,myrank,mpi_comm,datacomp)
+&                         nproc,myrank,mpi_comm,databasis,datacomp)
       endif
 !
       call para_allreducer(emp2st,emp2stsum,2,mpi_comm)
@@ -234,7 +235,7 @@ end
 !-------------------------------------------------------------------------------------------------
   subroutine mp2gradmulti(emp2st,egrad,egradtmp,cmo,energymo,xint,nocc,noac,nvir,nvac, &
 &                         ncore,nvfz,maxsize,maxdim,maxgraddim,idis,npass,numi,numab,numirecv, &
-&                         nproc,myrank,mpi_comm,datacomp)
+&                         nproc,myrank,mpi_comm,databasis,datacomp)
 !-------------------------------------------------------------------------------------------------
 !
 ! Driver of single pass MP2 energy calculation
@@ -263,8 +264,9 @@ end
       use modbasis, only : nshell, nao
       use modmolecule, only : nmo, natom
       use modjob, only : maxmp2diis
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nocc, noac, nvir, nvac, ncore, nvfz, maxsize, maxdim, maxgraddim
       integer,intent(in) :: nproc, myrank, mpi_comm, idis(0:nproc-1,8), npass
@@ -390,7 +392,7 @@ end
 ! Solve CPHF equation and obtain Pai
 !
       call mp2gradcphf(pai,xlai,cmo,xint,energymo,paiprev,pls,pmax,paifock,errdiis,paidiis, &
-&                      diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm,datacomp)
+&                      diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm,databasis,datacomp)
 !ishimura
 !call tstamp(1)
 !
@@ -1337,7 +1339,7 @@ end
 
 !------------------------------------------------------------------------------------------------
   subroutine mp2gradcphf(pai,xlai,cmo,xint,energymo,paiprev,pls,pmax,paifock,errdiis,paidiis, &
-&                        diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm,datacomp)
+&                        diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm,databasis,datacomp)
 !------------------------------------------------------------------------------------------------
 !
 ! Solve CPHF equation for MP2 energy gradient
@@ -1357,8 +1359,9 @@ end
 !
       use modbasis, only : nao, nshell
       use modjob, only : threshmp2cphf, maxmp2diis, maxmp2iter
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nocc, nvir, maxdim, nproc, myrank, mpi_comm, idis(0:nproc-1,8)
       integer :: moa, moi, itdiis, iter, ii, ij, jj, ia
@@ -1402,7 +1405,7 @@ end
 !
 ! Calculate maximum Pls of each shell
 !
-        call calcrdmax(pls,pmax,work1,nproc,myrank,mpi_comm)
+        call calcrdmax(pls,pmax,work1,nproc,myrank,mpi_comm,databasis)
 !
 ! Calculate two-electron integrals and Fock-like matrix
 !
