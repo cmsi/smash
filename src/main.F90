@@ -444,7 +444,7 @@ end
 ! Start SCF
 !
       if(method == 'HARTREE-FOCK') then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datacomp)
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
         call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
@@ -453,7 +453,7 @@ end
           savecutint2= cutint2
           dconv= max(dconv,1.0D-2)
           cutint2= max(cutint2,1.0D-9)
-          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datacomp)
+          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
           dconv= savedconv
           cutint2= savecutint2
           call tstamp(1,datacomp)
@@ -462,7 +462,7 @@ end
         call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
       elseif(method == 'MP2') then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datacomp)
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
         call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
         call calcrmp2(cmo,energymo,xint,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
@@ -590,7 +590,7 @@ end
 ! Start SCF
 !
       if(method == 'HARTREE-FOCK') then
-        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datacomp)
+        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
         call writeeigenvalue(energymoa,energymob,2,datacomp)
         call tstamp(1,datacomp)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
@@ -599,7 +599,7 @@ end
           savecutint2= cutint2
           dconv= max(dconv,1.0D-2)
           cutint2= max(cutint2,1.0D-9)
-          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datacomp)
+          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
           dconv= savedconv
           cutint2= savecutint2
           call tstamp(1,datacomp)
@@ -740,7 +740,7 @@ end
 ! Start SCF
 !
       if((method == 'HARTREE-FOCK').or.(method == 'MP2')) then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datacomp)
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
         call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
@@ -749,7 +749,7 @@ end
           savecutint2= cutint2
           dconv= max(dconv,1.0D-2)
           cutint2= max(cutint2,1.0D-9)
-          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datacomp)
+          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
           dconv= savedconv
           cutint2= savecutint2
           call tstamp(1,datacomp)
@@ -916,7 +916,7 @@ end
 ! Start SCF
 !
       if(method == 'HARTREE-FOCK') then
-        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datacomp)
+        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
         call writeeigenvalue(energymoa,energymob,2,datacomp)
         call tstamp(1,datacomp)
       elseif((idftex >= 1).or.(idftcor >= 1)) then
@@ -925,7 +925,7 @@ end
           savecutint2= cutint2
           dconv= max(dconv,1.0D-2)
           cutint2= max(cutint2,1.0D-9)
-          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datacomp)
+          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
           dconv= savedconv
           cutint2= savecutint2
           call tstamp(1,datacomp)
@@ -1149,7 +1149,7 @@ end
 ! Calculate energy
 !
         if((method == 'HARTREE-FOCK').or.(method == 'MP2')) then
-          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datacomp)
+          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1,datacomp)
           call tstamp(1,datacomp)
         elseif((idftex >= 1).or.(idftcor >= 1)) then
@@ -1158,7 +1158,7 @@ end
             savecutint2= cutint2
             dconv= max(dconv,1.0D-2)
             cutint2= max(cutint2,1.0D-9)
-            call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datacomp)
+            call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
             dconv= savedconv
             cutint2= savecutint2
             call tstamp(1,datacomp)
@@ -1453,7 +1453,7 @@ end
 ! Calculate energy
 !
         if(method == 'HARTREE-FOCK') then
-          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datacomp)
+          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2,datacomp)
           call tstamp(1,datacomp)
         elseif((idftex >= 1).or.(idftcor >= 1)) then
@@ -1462,7 +1462,7 @@ end
             savecutint2= cutint2
             dconv= max(dconv,1.0D-2)
             cutint2= max(cutint2,1.0D-9)
-            call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datacomp)
+            call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
             dconv= savedconv
             cutint2= savecutint2
             call tstamp(1,datacomp)
