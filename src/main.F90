@@ -386,7 +386,6 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modbasis, only : nao, nshell
       use modmolecule, only : nmo, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor, guess
@@ -394,15 +393,16 @@ end
       implicit none
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
-      integer :: nao2, nao3, nshell3
+      integer :: nao, nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
       real(8), allocatable :: xint(:), energymo(:)
       real(8), allocatable :: overinv(:), work(:)
       real(8) :: savedconv, savecutint2
 !
+      nao= databasis%nao
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
-      nshell3=(nshell*(nshell+1))/2
+      nshell3=(databasis%nshell*(databasis%nshell+1))/2
 !
 ! Set arrays 1
 !
@@ -532,7 +532,6 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modbasis, only : nao, nshell
       use modmolecule, only : nmo, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor, guess
@@ -540,15 +539,16 @@ end
       implicit none
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
-      integer :: nao2, nao3, nshell3
+      integer :: nao, nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
       real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), energymoa(:), energymob(:)
       real(8), allocatable :: overinv(:), work(:)
       real(8) :: savedconv, savecutint2
 !
+      nao= databasis%nao
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
-      nshell3=(nshell*(nshell+1))/2
+      nshell3=(databasis%nshell*(databasis%nshell+1))/2
 !
 ! Set arrays 1
 !
@@ -680,7 +680,6 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modbasis, only : nao, nshell
       use modmolecule, only : nmo, natom, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor, guess
@@ -688,7 +687,7 @@ end
       implicit none
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
-      integer :: nao2, nao3, nshell3
+      integer :: nao, nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
       real(8), allocatable :: xint(:), energymo(:)
       real(8), allocatable :: overinv(:), work(:)
@@ -696,9 +695,10 @@ end
       real(8) :: egradmax, egradrms
       real(8) :: savedconv, savecutint2
 !
+      nao= databasis%nao
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
-      nshell3=(nshell*(nshell+1))/2
+      nshell3=(databasis%nshell*(databasis%nshell+1))/2
 !
 ! Set arrays 1
 !
@@ -856,7 +856,6 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modbasis, only : nao, nshell
       use modmolecule, only : nmo, natom, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor, guess
@@ -864,7 +863,7 @@ end
       implicit none
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
-      integer :: nao2, nao3, nshell3
+      integer :: nao, nao2, nao3, nshell3
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
       real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), energymoa(:), energymob(:)
       real(8), allocatable :: overinv(:), work(:)
@@ -872,9 +871,10 @@ end
       real(8) :: egradmax, egradrms
       real(8) :: savedconv, savecutint2
 !
+      nao= databasis%nao
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
-      nshell3=(nshell*(nshell+1))/2
+      nshell3=(databasis%nshell*(databasis%nshell+1))/2
 !
 ! Set arrays 1
 !
@@ -1037,7 +1037,6 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modbasis, only : nao, nshell
       use modmolecule, only : nmo, natom, coord, coordold, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor, nopt, optconv, cartesian, guess
@@ -1046,7 +1045,7 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,allocatable :: iredun(:)
-      integer :: nao2, nao3, nshell3, natom3, ii, iopt
+      integer :: nao, nao2, nao3, nshell3, natom3, ii, iopt
       integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
       real(8), parameter :: third=0.3333333333333333D+00
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
@@ -1059,9 +1058,10 @@ end
       logical,intent(out) :: converged
       logical :: exceed
 !
+      nao= databasis%nao
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
-      nshell3=(nshell*(nshell+1))/2
+      nshell3=(databasis%nshell*(databasis%nshell+1))/2
       natom3= natom*3
       converged=.false.
 !
@@ -1341,7 +1341,6 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modbasis, only : nao, nshell
       use modmolecule, only : nmo, natom, coord, coordold, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor, nopt, optconv, cartesian, guess
@@ -1350,7 +1349,7 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,allocatable :: iredun(:)
-      integer :: nao2, nao3, nshell3, natom3, ii, iopt
+      integer :: nao, nao2, nao3, nshell3, natom3, ii, iopt
       integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
       real(8), parameter :: third=0.3333333333333333D+00
       real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
@@ -1363,9 +1362,10 @@ end
       logical,intent(out) :: converged
       logical :: exceed
 !
+      nao= databasis%nao
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
-      nshell3=(nshell*(nshell+1))/2
+      nshell3=(databasis%nshell*(databasis%nshell+1))/2
       natom3= natom*3
       converged=.false.
 !
@@ -1646,15 +1646,12 @@ end
 !
 ! Set parameters for next optimization step
 !
-      use modbasis, only : ex, coeff, nshell, nao, nprim, locprim, locbf, &
-&                          locatom, mprim, mbf, mtype, spher
-      use modguess, only : ex_g, coeff_g, nshell_g, nao_g, nmo_g, nprim_g, locprim_g, locbf_g, &
-&                          locatom_g, mprim_g, mbf_g, mtype_g, spher_g, coord_g
+      use modguess, only : coord_g, nmo_g
       use modjob, only : guess
       use modmolecule, only : nmo
       implicit none
       integer,intent(in) :: natom, iopt
-      integer :: iprim, ishell, iatom
+      integer :: iatom
       real(8),intent(in) :: coordold(3,natom)
 !
 ! Set MO projection as initial MO calculation
@@ -1669,31 +1666,7 @@ end
         coord_g(3,iatom)= coordold(3,iatom)
       enddo
 !
-! Copy basis set information
-!
       nmo_g= nmo
-!
-      if(iopt == 1) then
-        nao_g= nao
-        nprim_g= nprim
-        nshell_g= nshell
-!
-        do iprim= 1,nprim
-          ex_g(iprim)= ex(iprim)
-          coeff_g(iprim)= coeff(iprim)
-        enddo
-!
-        do ishell= 1,nshell
-          locprim_g(ishell)= locprim(ishell)
-          locbf_g(ishell)  = locbf(ishell)
-          locatom_g(ishell)= locatom(ishell)
-          mprim_g(ishell)  = mprim(ishell)
-          mbf_g(ishell)    = mbf(ishell)
-          mtype_g(ishell)  = mtype(ishell)
-        enddo
-!
-        spher_g= spher
-      endif
 !
       return
 end

@@ -130,7 +130,7 @@ end
 !
 ! Calculate Extended Huckel method
 !
-      call calchuckelg(hmo,eigen,nao_v,dataguessbs,datacomp)
+      call calchuckelg(hmo,eigen,nao_v,databasis,dataguessbs,datacomp)
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
@@ -147,7 +147,7 @@ end
 
 
 !----------------------------------------------------------
-  subroutine calchuckelg(hmo,eigen,nao_v,dataguessbs,datacomp)
+  subroutine calchuckelg(hmo,eigen,nao_v,databasis,dataguessbs,datacomp)
 !----------------------------------------------------------
 !
 ! Driver of extended Huckel calculation for guess generation
@@ -157,7 +157,7 @@ end
       use modjob, only : iprint
       use modtype, only : typebasis, typecomp
       implicit none
-      type(typebasis),intent(in) :: dataguessbs
+      type(typebasis),intent(in) :: databasis, dataguessbs
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nao_v
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
@@ -170,7 +170,7 @@ end
 !
 ! Set ionization potentials
 !
-      call huckelip(eigen,1,datacomp)
+      call huckelip(eigen,1,databasis%izcore,datacomp)
 !
 ! Form extended Huckel matrix
 !
@@ -190,7 +190,7 @@ end
 
 
 !--------------------------------------------------------------
-  subroutine calchuckelgcore(hmo,eigen,datacorebs,datacomp)
+  subroutine calchuckelgcore(hmo,eigen,databasis,datacorebs,datacomp)
 !--------------------------------------------------------------
 !
 ! Driver of extended Huckel calculation for only core orbitals
@@ -199,7 +199,7 @@ end
 !
       use modtype, only : typebasis, typecomp
       implicit none
-      type(typebasis),intent(in) :: datacorebs
+      type(typebasis),intent(in) :: databasis, datacorebs
       type(typecomp),intent(inout) :: datacomp
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(out) :: hmo(datacorebs%nao**2), eigen(datacorebs%nao)
@@ -211,7 +211,7 @@ end
 !
 ! Set ionization potentials
 !
-      call huckelip(eigen,2,datacomp)
+      call huckelip(eigen,2,databasis%izcore,datacomp)
 !
 ! Form extended Huckel matrix
 !
@@ -295,7 +295,7 @@ end
 
 
 !------------------------------------
-  subroutine huckelip(energy,itype,datacomp)
+  subroutine huckelip(energy,itype,izcore,datacomp)
 !------------------------------------
 !
 ! Set ionization potentials
@@ -304,13 +304,13 @@ end
 !              (2: Huckel calculation for core orbitals)
 ! Out : energy (ionization potential)
 !
+      use modparam, only : mxatom
       use modmolecule, only : natom, numatomic
       use modjob, only : flagecp
-      use modbasis, only : izcore
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: itype
+      integer,intent(in) :: itype, izcore(mxatom)
       integer :: iao, iatom, i
       real(8),parameter :: one=1.0D+00
       real(8),intent(out) :: energy(*)
@@ -1644,7 +1644,7 @@ end
 
 !------------------------------------------------------------------------------------
   subroutine calccoremo(cmoa_g,cmob_g,coremo,overlap,work2,work3,eigen,scftype_g,nmo_g, &
-&                       dataguessbs,datacorebs,datacomp)
+&                       databasis,dataguessbs,datacorebs,datacomp)
 !------------------------------------------------------------------------------------
 !
 ! Calculate and remove core orbitals corresponding ECP
@@ -1652,7 +1652,7 @@ end
       use modjob, only : scftype
       use modtype, only : typebasis, typecomp
       implicit none
-      type(typebasis),intent(in) :: dataguessbs, datacorebs
+      type(typebasis),intent(in) :: databasis, dataguessbs, datacorebs
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nmo_g
       integer :: nao_g, nao_gcore, ii, jj, kk, idamax, icount
@@ -1671,7 +1671,7 @@ end
 !
 ! Calculate Extended Huckel method
 !
-      call calchuckelgcore(coremo,eigen,datacorebs,datacomp)
+      call calchuckelgcore(coremo,eigen,databasis,datacorebs,datacomp)
 !
 ! Calculate overlap integrals between core-guess basis and guess bases
 !
@@ -1954,7 +1954,7 @@ end
 !
 ! Calculate DFTB orbitals
 !
-      call calcdftb(hmo,overlap,work1,work2,eigen,nao_v,nshell_v,nmo_g,dataguessbs,datacomp)
+      call calcdftb(hmo,overlap,work1,work2,eigen,nao_v,nshell_v,nmo_g,databasis,dataguessbs,datacomp)
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
@@ -1970,7 +1970,7 @@ end
 
 
 !-----------------------------------------------------------------------------
-  subroutine calcdftb(dftbmo,overlap,ortho,work,eigen,nao_v,nshell_v,nmo_g,dataguessbs,datacomp)
+  subroutine calcdftb(dftbmo,overlap,ortho,work,eigen,nao_v,nshell_v,nmo_g,databasis,dataguessbs,datacomp)
 !-----------------------------------------------------------------------------
 !
 ! Driver of DFTB calculation
@@ -1983,7 +1983,7 @@ end
       use modmolecule, only : neleca, nelecb
       use modtype, only : typebasis, typecomp
       implicit none
-      type(typebasis),intent(in) :: dataguessbs
+      type(typebasis),intent(in) :: databasis, dataguessbs
       type(typecomp),intent(inout) :: datacomp
       integer,parameter :: maxiter=1000
       integer,intent(in) :: nao_v, nshell_v
@@ -2019,7 +2019,7 @@ end
 !
 ! Set parameters
 !
-      call huckelip(eigen,1,datacomp)
+      call huckelip(eigen,1,databasis%izcore,datacomp)
       call dftbip(eigen,uhub,datacomp,nshell_v,dataguessbs%nao)
       nelecdftb(1)= neleca
       nelecdftb(2)= nelecb
