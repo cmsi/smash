@@ -68,7 +68,7 @@
 !
 ! Calculate derivatives of one-electron integrals
 !
-      call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx,nproc1,myrank1,datacomp)
+      call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx,nproc1,myrank1,databasis,datacomp)
 !
 ! Calculate derivatives for two-electron integrals
 !
@@ -158,7 +158,7 @@ end
 !
 ! Calculate derivatives for one-electron integrals
 !
-      call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx,nproc1,myrank1,datacomp)
+      call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx,nproc1,myrank1,databasis,datacomp)
 !
 ! Calculate derivatives for two-electron integrals
 !
@@ -256,7 +256,7 @@ end
 !
 ! Calculate derivatives of one-electron integrals
 !
-      call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx,nproc1,myrank1,datacomp)
+      call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx,nproc1,myrank1,databasis,datacomp)
 !
 ! Calculate DFT information
 !
@@ -378,7 +378,7 @@ end
 !
 ! Calculate derivatives of one-electron integrals
 !
-      call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx,nproc1,myrank1,datacomp)
+      call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx,nproc1,myrank1,databasis,datacomp)
 !
 ! Calculate DFT information
 !

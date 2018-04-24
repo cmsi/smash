@@ -13,26 +13,27 @@
 ! limitations under the License.
 !
 !--------------------------------------------------------------------
-  subroutine gradoneei(egrad,egrad1,fulldmtrx,ewdmtrx,nproc,myrank,datacomp)
+  subroutine gradoneei(egrad,egrad1,fulldmtrx,ewdmtrx,nproc,myrank,databasis,datacomp)
 !--------------------------------------------------------------------
 !
 ! Driver of derivatives for one-electron and overlap integrals
 !
-      use modbasis, only : nshell, nao, mtype
       use modmolecule, only : natom
       use modjob, only : flagecp
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank
       integer :: ish, jsh, len1, i, maxfunc(0:6), maxbasis
       real(8),parameter :: zero=0.0D+00, two=2.0D+00
-      real(8),intent(in) :: fulldmtrx(nao*nao), ewdmtrx(nao*(nao+1)/2)
+      real(8),intent(in) :: fulldmtrx(databasis%nao*databasis%nao)
+      real(8),intent(in) :: ewdmtrx(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: egrad1(3*natom)
       real(8),intent(inout) :: egrad(3*natom)
       data maxfunc/1,3,6,10,15,21,28/
 !
-      maxbasis= maxval(mtype(1:nshell))
+      maxbasis= maxval(databasis%mtype(1:databasis%nshell))
       if(maxbasis > 6) then
         if(datacomp%master) &
 &         write(*,'(" Error! This program supports up to h function in gradoneei")')
@@ -42,7 +43,7 @@
       egrad1(:)= zero
 !
 !$OMP parallel reduction(+:egrad1)
-      do ish= nshell-myrank,1,-nproc
+      do ish= databasis%nshell-myrank,1,-nproc
 !$OMP do
         do jsh= 1,ish
           call calcdoverlap(egrad1,ewdmtrx,ish,jsh)
@@ -51,9 +52,9 @@
 !$OMP enddo
       enddo
 !
-      do ish= myrank+1,nshell,nproc
+      do ish= myrank+1,databasis%nshell,nproc
 !$OMP do
-        do jsh= 1,nshell
+        do jsh= 1,databasis%nshell
           call calcdkinetic(egrad1,fulldmtrx,ish,jsh)
           call calcdcoulomb(egrad1,fulldmtrx,ish,jsh,len1)
         enddo

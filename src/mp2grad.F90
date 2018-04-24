@@ -406,7 +406,7 @@ end
 ! Calculate integral derivatives and their MP2 energy gradient
 !
       call mp2graddint(egrad,egradtmp,pmn,wij,wab,wai,xint,cmo,energymo,pls,work1,work2, &
-&                      nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm,datacomp)
+&                      nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm,databasis,datacomp)
 !ishimura
 !call tstamp(1)
 !
@@ -1628,7 +1628,7 @@ end
 
 !--------------------------------------------------------------------------------------------
   subroutine mp2graddint(egrad,egradtmp,pmn,wij,wab,wai,xint,cmo,energymo,wmn,pmnhf,work, &
-&                        nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm,datacomp)
+&                        nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm,databasis,datacomp)
 !--------------------------------------------------------------------------------------------
 !
 ! Calculate integral derivatives and MP2 energy gradient
@@ -1642,11 +1642,11 @@ end
 ! Inout:egrad     (MP2 energy gradients)
 !       pmn       (Pmn)
 ! Work :egradtmp,wmn,work
-!
       use modbasis, only : nao, nshell
       use modmolecule, only : natom
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nocc, nvir, maxdim, maxgraddim, nproc, myrank, mpi_comm
       integer :: ii, jj, ij, kk
@@ -1703,7 +1703,7 @@ end
 !
 ! Calculate derivatives of one-electron integrals
 !
-      call gradoneei(egradtmp,egradtmp2,pmn,wmn,nproc,myrank,datacomp)
+      call gradoneei(egradtmp,egradtmp2,pmn,wmn,nproc,myrank,databasis,datacomp)
 !
       do ii= 1,3*natom
         egrad(ii)= egrad(ii)+egradtmp(ii)
