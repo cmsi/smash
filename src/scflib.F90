@@ -1211,22 +1211,23 @@ end
 
 
 !------------------------------------------------------------------
-  subroutine calcrdipole(dipmat,work,dmtrx,nproc,myrank,mpi_comm,datacomp)
+  subroutine calcrdipole(dipmat,work,dmtrx,nproc,myrank,mpi_comm,databasis,datacomp)
 !------------------------------------------------------------------
 !
 ! Driver of dipole moment calculation for closed-shell
 !
-      use modbasis, only : nao
       use modparam, only : todebye
       use modmolecule, only : natom, coord, znuc
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: iatom
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: dmtrx((nao*(nao+1))/2)
-      real(8),intent(out) :: dipmat((nao*(nao+1))/2,3), work((nao*(nao+1))/2,3)
+      real(8),intent(in) :: dmtrx((databasis%nao*(databasis%nao+1))/2)
+      real(8),intent(out) :: dipmat((databasis%nao*(databasis%nao+1))/2,3)
+      real(8),intent(out) :: work((databasis%nao*(databasis%nao+1))/2,3)
       real(8) :: dipcenter(3), xdip, ydip, zdip, totaldip, tridot
       real(8) :: xdipplus, ydipplus, zdipplus, xdipminus, ydipminus, zdipminus
 !
@@ -1246,11 +1247,11 @@ end
 !
       dipcenter(:)= zero
 !
-      call calcmatdipole(dipmat,work,dipcenter,nproc,myrank,mpi_comm)
+      call calcmatdipole(dipmat,work,dipcenter,nproc,myrank,mpi_comm,databasis)
 !
-      xdipminus=-tridot(dmtrx,dipmat(1,1),nao)
-      ydipminus=-tridot(dmtrx,dipmat(1,2),nao)
-      zdipminus=-tridot(dmtrx,dipmat(1,3),nao)
+      xdipminus=-tridot(dmtrx,dipmat(1,1),databasis%nao)
+      ydipminus=-tridot(dmtrx,dipmat(1,2),databasis%nao)
+      zdipminus=-tridot(dmtrx,dipmat(1,3),databasis%nao)
 !
 ! Sum Nuclear and Electron parts
 !
@@ -1446,22 +1447,24 @@ end
 
 
 !--------------------------------------------------------------------------
-  subroutine calcudipole(dipmat,work,dmtrxa,dmtrxb,nproc,myrank,mpi_comm,datacomp)
+  subroutine calcudipole(dipmat,work,dmtrxa,dmtrxb,nproc,myrank,mpi_comm,databasis,datacomp)
 !--------------------------------------------------------------------------
 !
 ! Driver of dipole moment calculation for open-shell
 !
-      use modbasis, only : nao
       use modparam, only : todebye
       use modmolecule, only : natom, coord, znuc
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
-      type(typecomp),intent(inout) :: datacomp
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: iatom
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: dmtrxa((nao*(nao+1))/2), dmtrxb((nao*(nao+1))/2)
-      real(8),intent(out) :: dipmat((nao*(nao+1))/2,3), work((nao*(nao+1))/2,3)
+      real(8),intent(in) :: dmtrxa((databasis%nao*(databasis%nao+1))/2)
+      real(8),intent(in) :: dmtrxb((databasis%nao*(databasis%nao+1))/2)
+      real(8),intent(out) :: dipmat((databasis%nao*(databasis%nao+1))/2,3)
+      real(8),intent(out) :: work((databasis%nao*(databasis%nao+1))/2,3)
       real(8) :: dipcenter(3), xdip, ydip, zdip, totaldip, tridot
       real(8) :: xdipplus, ydipplus, zdipplus, xdipminus, ydipminus, zdipminus
 !
@@ -1481,11 +1484,11 @@ end
 !
       dipcenter(:)= zero
 !
-      call calcmatdipole(dipmat,work,dipcenter,nproc,myrank,mpi_comm)
+      call calcmatdipole(dipmat,work,dipcenter,nproc,myrank,mpi_comm,databasis)
 !
-      xdipminus=-tridot(dmtrxa,dipmat(1,1),nao)-tridot(dmtrxb,dipmat(1,1),nao)
-      ydipminus=-tridot(dmtrxa,dipmat(1,2),nao)-tridot(dmtrxb,dipmat(1,2),nao)
-      zdipminus=-tridot(dmtrxa,dipmat(1,3),nao)-tridot(dmtrxb,dipmat(1,3),nao)
+      xdipminus=-tridot(dmtrxa,dipmat(1,1),databasis%nao)-tridot(dmtrxb,dipmat(1,1),databasis%nao)
+      ydipminus=-tridot(dmtrxa,dipmat(1,2),databasis%nao)-tridot(dmtrxb,dipmat(1,2),databasis%nao)
+      zdipminus=-tridot(dmtrxa,dipmat(1,3),databasis%nao)-tridot(dmtrxb,dipmat(1,3),databasis%nao)
 !
 ! Sum Nuclear and Electron parts
 !
