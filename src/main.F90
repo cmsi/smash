@@ -163,7 +163,7 @@ end
 !
 ! Set number of electrons
 !
-      call setelectron(datacomp)
+      call setelectron(databasis,datacomp)
 !
 ! Reset defaults after reading input file
 !
@@ -171,7 +171,7 @@ end
 !
 ! Set functional information and adjust the number of DFT grids
 !
-      call setdft(datacomp)
+      call setdft(databasis,datacomp)
 !
 ! Set functional information and adjust the number of DFT grids
 !
@@ -326,16 +326,16 @@ end
 
 
 !-------------------------
-  subroutine setelectron(datacomp)
+  subroutine setelectron(databasis,datacomp)
 !-------------------------
 !
 ! Set number of electrons
 !
       use modmolecule, only : numatomic, neleca, nelecb, natom, multi, charge
-      use modbasis, only : izcore
       use modjob, only : scftype, flagecp
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nume, ii
 !
@@ -350,7 +350,7 @@ end
 !
       if(flagecp) then
         do ii= 1,natom
-          nume= nume-izcore(ii)
+          nume= nume-databasis%izcore(ii)
         enddo
       endif
 
@@ -1673,7 +1673,7 @@ end
 
 
 !--------------------
-  subroutine setdft(datacomp)
+  subroutine setdft(databasis,datacomp)
 !--------------------
 !
 ! Set functional information
@@ -1681,9 +1681,9 @@ end
 !
       use modmolecule, only : natom, numatomic, atomrad
       use modjob, only : method, idftex, idftcor, nrad, nleb, hfexchange, bqrad
-      use modbasis, only : nao
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: ii, maxelem
 !
@@ -1710,7 +1710,7 @@ end
 !
       if((idftex >= 1).or.(idftcor >= 1)) then
         maxelem= maxval(numatomic(1:natom))
-        if(((maxelem >= 55).or.(nao >= 2000)).and.((nrad == 96).and.(nleb == 302))) then
+        if(((maxelem >= 55).or.(databasis%nao >= 2000)).and.((nrad == 96).and.(nleb == 302))) then
           datacomp%nwarn= datacomp%nwarn+1
           if(datacomp%master) write(*,'(" Warning! The number of DFT grids may not be enough.")')
         endif
