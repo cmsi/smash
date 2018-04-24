@@ -1779,13 +1779,14 @@ end
 !--------------------------------------------------------------------------------------------
   subroutine rhfqc(fock,cmo,qcrmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
 &                  qcwork,work,hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,maxqcdiag, &
-&                  maxqcdiagsub,threshqc,datacomp)
+&                  maxqcdiagsub,threshqc,databasis,datacomp)
 !--------------------------------------------------------------------------------------------
 !
 ! Driver of Davidson diagonalization for quadratically convergent of RHF
 !
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nao, nmo, nocc, nvir, nshell, maxdim, maxqcdiag, maxqcdiagsub
       integer :: itdav, itqcdiag, ii, ij, jj, kk, ia, ib, istart, icount
@@ -1841,7 +1842,7 @@ end
 ! Calculate Gmn
 !
         call calcqcrmn(qcwork,qcvec,cmo,work,nao,nocc,nvir,itdav,maxqcdiagsub)
-        call calcrdmax(qcwork,qcrmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+        call calcrdmax(qcwork,qcrmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
         call formrdftfock(qcgmn,work,qcwork,qcrmax,xint,maxdim,hfexchange, &
 &                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1)
 !
@@ -2084,13 +2085,14 @@ end
   subroutine uhfqc(focka,fockb,cmoa,cmob,qcrmax,qcgmna,qcgmnb,qcvec, &
 &                  qcmat,qcmatsave,qceigen,overlap,xint, &
 &                  qcworka,qcworkb,work,hfexchange,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
-&                  maxdim,maxqcdiag,maxqcdiagsub,threshqc,datacomp)
+&                  maxdim,maxqcdiag,maxqcdiagsub,threshqc,databasis,datacomp)
 !---------------------------------------------------------------------------------------------
 !
 ! Driver of Davidson diagonalization for quadratically convergent of UHF
 !
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nao, nmo, nocca, noccb, nvira, nvirb, nshell, maxdim, maxqcdiag
       integer,intent(in) :: maxqcdiagsub
@@ -2166,7 +2168,7 @@ end
 !
         call calcqcurmn(qcworka,qcworkb,qcvec,cmoa,cmob,work,nao,nocca,noccb,nvira,nvirb, &
 &                       itdav,maxqcdiagsub)
-        call calcudmax(qcworka,qcworkb,qcrmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+        call calcudmax(qcworka,qcworkb,qcrmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
         call calcqcugmn(qcgmna,qcgmnb,work,qcworka,qcworkb,qcrmax,xint,hfexchange,maxdim, &
 &                       nao,nshell,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1)
 !

@@ -246,7 +246,7 @@
             else
               call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
 &                        work,work2,one,nao,nmo,nocc,nvir,nshell,maxdim,maxqcdiag, &
-&                        maxqcdiagsub,threshqc,datacomp)
+&                        maxqcdiagsub,threshqc,databasis,datacomp)
               itqc= itqc+1
             endif
         end select
@@ -1153,7 +1153,7 @@ end
             else
               call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
 &                        work,work2,hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,maxqcdiag, &
-&                        maxqcdiagsub,threshqc,datacomp)
+&                        maxqcdiagsub,threshqc,databasis,datacomp)
               itqc= itqc+1
             endif
         end select
@@ -1554,7 +1554,7 @@ end
 &                        qcmat,qcmatsave,qceigen,overlap,xint, &
 &                        work,work2,work3,one,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
 &                        maxdim,maxqcdiag,maxqcdiagsub,threshqc, &
-&                        datacomp)
+&                        databasis,datacomp)
               itqc= itqc+1
             endif
         end select
@@ -2289,7 +2289,7 @@ end
 &                        qcmat,qcmatsave,qceigen,overlap,xint, &
 &                        work,work2,work3,hfexchange,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
 &                        maxdim,maxqcdiag,maxqcdiagsub,threshqc, &
-&                        datacomp)
+&                        databasis,datacomp)
               itqc= itqc+1
             endif
         end select

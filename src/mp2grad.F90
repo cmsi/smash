@@ -399,7 +399,7 @@ end
 ! Calculate Wij[III] and Wai[II]
 !
       call mp2gradwij3(wij,wai,pmn,pai,paifock,cmo,energymo,xint,pls,pmax,work1,work2, &
-&                      nocc,nvir,nvac,maxdim,nproc,myrank,mpi_comm)
+&                      nocc,nvir,nvac,maxdim,nproc,myrank,mpi_comm,databasis)
 !ishimura
 !call tstamp(1)
 !
@@ -1543,7 +1543,7 @@ end
 
 !--------------------------------------------------------------------------------------------
   subroutine mp2gradwij3(wij,wai,pmn,pai,pmnfock,cmo,energymo,xint,pmn2,pmax,work1,work2, &
-&                        nocc,nvir,nvac,maxdim,nproc,myrank,mpi_comm)
+&                        nocc,nvir,nvac,maxdim,nproc,myrank,mpi_comm,databasis)
 !--------------------------------------------------------------------------------------------
 !
 ! Calculate Wij[III] and Wai[II]
@@ -1558,7 +1558,9 @@ end
 ! Work :pmnfock,pmn2,pmax,work1,work2
 !
       use modbasis, only : nao, nshell
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nocc, nvir, nvac, maxdim, nproc, myrank, mpi_comm
       integer :: moa, moi, moj, ii, ij, jj
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
@@ -1592,7 +1594,7 @@ end
       enddo
 !$OMP end parallel do
 !
-      call calcrdmax(pmn2,pmax,work1,nproc,myrank,mpi_comm)
+      call calcrdmax(pmn2,pmax,work1,nproc,myrank,mpi_comm,databasis)
 !
 ! Calculate two-electron integrals and Fock-like matrix
 !
