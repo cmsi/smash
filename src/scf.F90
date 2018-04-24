@@ -879,7 +879,7 @@ end
 
 
 !-------------------------------------------------------------------------
-  subroutine calcrdft(h1mtrx,cmo,ortho,overlap,dmtrx,xint,eigen,datacomp)
+  subroutine calcrdft(h1mtrx,cmo,ortho,overlap,dmtrx,xint,eigen,databasis,datacomp)
 !-------------------------------------------------------------------------
 !
 ! Driver of restricted DFT calculation
@@ -892,7 +892,6 @@ end
 !       eigen   (MO energy)
 ! Inout : cmo   (MO coefficient matrix)
 !
-      use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nmo, natom, numatomic, enuc, escf, escfe, atomrad
       use modjob, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
 &                        threshweight, threshrho, threshdfock, threshdftao, iprint, &
@@ -900,17 +899,21 @@ end
 &                        maxqcdiagsub, scfconv, extrap, &
 &                        idftex, idftcor, nrad, nleb, hfexchange
       use modparam, only : tobohr
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
-      integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
+      integer :: nao, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
       integer :: itextra, itsoscf, itqc, nocc, nvir
       integer :: idis(datacomp%nproc2,14), isize1, isize2, isize3, iatom
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
       real(8),parameter :: small=1.0D-10
-      real(8),intent(in) :: h1mtrx(nao*(nao+1)/2), ortho(nao*nao), overlap(nao*(nao+1)/2)
-      real(8),intent(out) :: dmtrx(nao*(nao+1)/2), xint(nshell*(nshell+1)/2), eigen(nao)
-      real(8),intent(inout) :: cmo(nao*nao)
+      real(8),intent(in) :: h1mtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: ortho(databasis%nao*databasis%nao)
+      real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: xint(databasis%nshell*(databasis%nshell+1)/2), eigen(databasis%nao)
+      real(8),intent(inout) :: cmo(databasis%nao*databasis%nao)
       real(8),allocatable :: fock(:), fockprev(:), dmtrxprev(:), dmax(:), work(:)
       real(8),allocatable :: fockdiis(:), errdiis(:), diismtrx(:), work2(:)
       real(8),allocatable :: hstart(:), sograd(:,:), sodisp(:), sovecy(:)
@@ -923,12 +926,14 @@ end
       logical :: convsoscf, convqc
       data maxfunc/1,3,6,10,15,21,28/
 !
+      nao= databasis%nao
       nao2= nao*nao
       nao3= nao*(nao+1)/2
+      nshell= databasis%nshell
       nshell3= nshell*(nshell+1)/2
       nocc= neleca
       nvir= nmo-neleca
-      maxdim=maxfunc(maxval(mtype(1:nshell)))
+      maxdim=maxfunc(maxval(databasis%mtype(1:nshell)))
 !
 ! Distribute fock and error arrays for DIIS
 !
@@ -1947,7 +1952,7 @@ end
 
 
 !-----------------------------------------------------------------------------------------
-  subroutine calcudft(h1mtrx,cmoa,cmob,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb,datacomp)
+  subroutine calcudft(h1mtrx,cmoa,cmob,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb,databasis,datacomp)
 !-----------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted DFT calculation
@@ -1963,7 +1968,6 @@ end
 ! Inout : cmoa  (Alpha MO coefficient matrix)
 !         cmob  (Beta MO coefficient matrix)
 !
-      use modbasis, only : nshell, nao, mtype
       use modmolecule, only : neleca, nelecb, nmo, natom, numatomic, enuc, escf, escfe, atomrad
       use modjob, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
 &                        threshweight, threshrho, threshdfock, threshdftao, iprint, &
@@ -1971,18 +1975,24 @@ end
 &                        maxqcdiagsub, scfconv, extrap, &
 &                        idftex, idftcor, nrad, nleb, hfexchange
       use modparam, only : tobohr
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
-      integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), numwork, iter, itsub, itdiis
+      integer :: nao, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), numwork, iter, itsub, itdiis
       integer :: itextra, itsoscf, itqc, nocca, nvira, noccb, nvirb
       integer :: idis(datacomp%nproc2,14), isize1, isize2, isize3, iatom
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
       real(8),parameter :: small=1.0D-10
-      real(8),intent(in) :: h1mtrx(nao*(nao+1)/2), ortho(nao*nao), overlap(nao*(nao+1)/2)
-      real(8),intent(out) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
-      real(8),intent(out) :: xint(nshell*(nshell+1)/2), eigena(nao), eigenb(nao)
-      real(8),intent(inout) :: cmoa(nao*nao), cmob(nao*nao)
+      real(8),intent(in) :: h1mtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: ortho(databasis%nao*databasis%nao)
+      real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(out) :: eigena(databasis%nao), eigenb(databasis%nao)
+      real(8),intent(inout) :: cmoa(databasis%nao*databasis%nao)
+      real(8),intent(inout) :: cmob(databasis%nao*databasis%nao)
       real(8),allocatable :: focka(:), fockb(:), fockpreva(:), fockprevb(:)
       real(8),allocatable :: dmtrxpreva(:), dmtrxprevb(:), dmax(:), work(:)
       real(8),allocatable :: fockdiisa(:), fockdiisb(:), errdiisa(:), errdiisb(:)
@@ -2001,14 +2011,16 @@ end
       logical :: convsoscf, convqc
       data maxfunc/1,3,6,10,15,21,28/
 !
+      nao= databasis%nao
       nao2= nao*nao
       nao3= nao*(nao+1)/2
+      nshell= databasis%nshell
       nshell3= nshell*(nshell+1)/2
       nocca= neleca
       nvira= nmo-neleca
       noccb= nelecb
       nvirb= nmo-nelecb
-      maxdim=maxfunc(maxval(mtype(1:nshell)))
+      maxdim=maxfunc(maxval(databasis%mtype(1:nshell)))
       numwork= max(nao3*2,(neleca+nelecb)*nao)
 !
 ! Distribute fock and error arrays for DIIS

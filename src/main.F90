@@ -458,7 +458,7 @@ end
           cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
-        call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datacomp)
+        call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
         call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
       elseif(method == 'MP2') then
@@ -604,7 +604,7 @@ end
           cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
-        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datacomp)
+        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
         call writeeigenvalue(energymoa,energymob,2,datacomp)
         call tstamp(1,datacomp)
 !     elseif(method == 'MP2') then
@@ -754,7 +754,7 @@ end
           cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
-        call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datacomp)
+        call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
         call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
       else
@@ -930,7 +930,7 @@ end
           cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
-        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datacomp)
+        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
         call writeeigenvalue(energymoa,energymob,2,datacomp)
         call tstamp(1,datacomp)
 !     elseif(method == 'MP2') then
@@ -1163,7 +1163,7 @@ end
             cutint2= savecutint2
             call tstamp(1,datacomp)
           endif
-          call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datacomp)
+          call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1,datacomp)
           call tstamp(1,datacomp)
         else
@@ -1467,7 +1467,7 @@ end
             cutint2= savecutint2
             call tstamp(1,datacomp)
           endif
-          call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datacomp)
+          call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2,datacomp)
           call tstamp(1,datacomp)
 !       elseif(method == 'MP2') then
