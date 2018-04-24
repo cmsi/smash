@@ -1057,20 +1057,21 @@ end
 
 
 !------------------------------------------
-  subroutine calcrmulliken(dmtrx,overlap,datacomp)
+  subroutine calcrmulliken(dmtrx,overlap,databasis,datacomp)
 !------------------------------------------
 !
 ! Execute Mulliken population analysis for closed-shell
 !
       use modmolecule, only : natom, znuc, numatomic
-      use modbasis, only : locatom, nao, nshell, locbf, mbf
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
-      type(typecomp),intent(inout) :: datacomp
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer :: ii, jj, ij, ish, iatom, locbfi
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: dmtrx(nao*(nao+1)/2), overlap(nao*(nao+1)/2)
-      real(8) :: grossorb(nao), grossatom(natom), totalgross
+      real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
+      real(8) :: grossorb(databasis%nao), grossatom(natom), totalgross
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
 &       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
@@ -1089,7 +1090,7 @@ end
 ! Calculate Gross orbital population
 !
 !$OMP parallel do schedule(static,1) private(ij) reduction(+:grossorb)
-      do ii= 1,nao
+      do ii= 1,databasis%nao
         ij= ii*(ii-1)/2
         do jj= 1,ii-1
           ij= ij+1
@@ -1103,10 +1104,10 @@ end
 !
 ! Calculate Gross atom population
 !
-      do ish= 1,nshell
-        iatom= locatom(ish)
-        locbfi= locbf(ish)
-        do ii= 1,mbf(ish)
+      do ish= 1,databasis%nshell
+        iatom= databasis%locatom(ish)
+        locbfi= databasis%locbf(ish)
+        do ii= 1,databasis%mbf(ish)
           grossatom(iatom)= grossatom(iatom)+grossorb(locbfi+ii)
         enddo
       enddo
@@ -1134,20 +1135,22 @@ end
 
 
 !--------------------------------------------------
-  subroutine calcumulliken(dmtrxa,dmtrxb,overlap,datacomp)
+  subroutine calcumulliken(dmtrxa,dmtrxb,overlap,databasis,datacomp)
 !--------------------------------------------------
 !
 ! Execute Mulliken population analysis for open-shell
 !
       use modmolecule, only : natom, znuc, numatomic
-      use modbasis, only : locatom, nao, nshell, locbf, mbf
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
-      type(typecomp),intent(inout) :: datacomp
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer :: ii, jj, ij, ish, iatom, locbfi
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2), overlap(nao*(nao+1)/2)
-      real(8) :: grossorb(nao), grossatom(natom), totalgross
+      real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
+      real(8) :: grossorb(databasis%nao), grossatom(natom), totalgross
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
 &       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
@@ -1166,7 +1169,7 @@ end
 ! Calculate Gross orbital population
 !
 !$OMP parallel do schedule(static,1) private(ij) reduction(+:grossorb)
-      do ii= 1,nao
+      do ii= 1,databasis%nao
         ij= ii*(ii-1)/2
         do jj= 1,ii-1
           ij= ij+1
@@ -1180,10 +1183,10 @@ end
 !
 ! Calculate Gross atom population
 !
-      do ish= 1,nshell
-        iatom= locatom(ish)
-        locbfi= locbf(ish)
-        do ii= 1,mbf(ish)
+      do ish= 1,databasis%nshell
+        iatom= databasis%locatom(ish)
+        locbfi= databasis%locbf(ish)
+        do ii= 1,databasis%mbf(ish)
           grossatom(iatom)= grossatom(iatom)+grossorb(locbfi+ii)
         enddo
       enddo
@@ -1519,7 +1522,6 @@ end
 !
 ! Driver of dipole, quadrupole, and octupole moment calculation for open-shell
 !
-      use modbasis, only : nao
       use modparam, only : todebye, toang
       use modmolecule, only : natom, coord, znuc
       use modtype, only : typebasis, typecomp
@@ -1530,9 +1532,12 @@ end
       integer :: iatom, ii
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, two=2.0D+00, three=3.0D+00
       real(8),parameter :: four=4.0D+00, five=5.0D+00
-      real(8),intent(in) :: dmtrxa((nao*(nao+1))/2), dmtrxb((nao*(nao+1))/2)
-      real(8),intent(out) :: dipmat((nao*(nao+1))/2,3), quadpmat((nao*(nao+1))/2,6)
-      real(8),intent(out) :: octpmat((nao*(nao+1))/2,10), work((nao*(nao+1))/2*10)
+      real(8),intent(in) :: dmtrxa((databasis%nao*(databasis%nao+1))/2)
+      real(8),intent(in) :: dmtrxb((databasis%nao*(databasis%nao+1))/2)
+      real(8),intent(out) :: dipmat((databasis%nao*(databasis%nao+1))/2,3)
+      real(8),intent(out) :: quadpmat((databasis%nao*(databasis%nao+1))/2,6)
+      real(8),intent(out) :: octpmat((databasis%nao*(databasis%nao+1))/2,10)
+      real(8),intent(out) :: work((databasis%nao*(databasis%nao+1))/2*10)
       real(8) :: dipcenter(3), xdip, ydip, zdip, totaldip, tridot
       real(8) :: xdipplus, ydipplus, zdipplus, xdipminus, ydipminus, zdipminus
       real(8) :: xxquadpplus, xyquadpplus, xzquadpplus, yyquadpplus, yzquadpplus, zzquadpplus
@@ -1595,7 +1600,7 @@ end
 !
       call calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm,databasis)
 !
-      do ii= 1,nao*(nao+1)/2
+      do ii= 1,databasis%nao*(databasis%nao+1)/2
         work(ii)= dmtrxa(ii)+dmtrxb(ii)
       enddo
 !
