@@ -70,7 +70,7 @@
 !
       if(flagecp) then
         egrad1(:)= zero
-        call gradoneeiecp(egrad1,fulldmtrx,nproc,myrank)
+        call gradoneeiecp(egrad1,fulldmtrx,nproc,myrank,databasis)
         do i= 1,3*natom
           egrad(i)= egrad(i)+egrad1(i)*two
         enddo

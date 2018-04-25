@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !---------------------------------------------------------
-  subroutine gradoneeiecp(egrad1,fulldmtrx,nproc,myrank)
+  subroutine gradoneeiecp(egrad1,fulldmtrx,nproc,myrank,databasis)
 !---------------------------------------------------------
 !
 ! Calculate ECP derivative terms and add them into energy gradient matrix
@@ -21,22 +21,21 @@
 ! Inout  : egrad1 (one electron gradient matrix)
 !
       use modecp, only : nterm1, nterm2
-      use modbasis, only : nao, mtype, nshell, maxangecp
       use modmolecule, only : natom
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nproc, myrank
       integer :: maxfunc(0:6)=(/1,3,6,10,15,21,28/)
       integer :: maxbasis, numtbasis, maxdim, llmax, maxecpdim, nsizecp1, nsizecp2, ish, jsh
-!     integer,allocatable :: label1ecp(:), num1ecp(:), label2ecp(:), num2ecp(:)
       integer :: label1ecp(nterm1*9), num1ecp(1597), label2ecp(nterm2*6), num2ecp(897)
-      real(8),intent(in) :: fulldmtrx(nao*nao)
+      real(8),intent(in) :: fulldmtrx(databasis%nao*databasis%nao)
       real(8),intent(inout) :: egrad1(natom*3)
-!     real(8),allocatable :: term1ecp(:), term2ecp(:), term0ecp(:), xyzintecp(:)
       real(8) :: term1ecp(nterm1), term2ecp(nterm2), term0ecp(897), xyzintecp(25*25*25)
 !
-      maxbasis= maxval(mtype(1:nshell))+1
+      maxbasis= maxval(databasis%mtype(1:databasis%nshell))+1
       maxdim= maxfunc(maxbasis)
-      llmax= maxval(maxangecp(1:natom))
+      llmax= maxval(databasis%maxangecp(1:natom))
       if(maxbasis >= 6) then
         write(*,'(" Error! This program supports up to g function in ecp derivative calculation.")')
         call iabort
@@ -60,11 +59,11 @@
 &                  num1ecp,num2ecp,maxecpdim,llmax,numtbasis)
 !
 !$OMP parallel reduction(+:egrad1)
-      do ish= nshell-myrank,1,-nproc
+      do ish= databasis%nshell-myrank,1,-nproc
 !$OMP do
-        do jsh= 1,nshell
+        do jsh= 1,databasis%nshell
           call calcdintecp(egrad1,fulldmtrx,term1ecp,term2ecp,term0ecp,xyzintecp, &
-&                          label1ecp,label2ecp,num1ecp,num2ecp,numtbasis,ish,jsh,maxdim)
+&                          label1ecp,label2ecp,num1ecp,num2ecp,numtbasis,ish,jsh,maxdim,databasis)
         enddo
 !$OMP enddo
       enddo
@@ -80,7 +79,7 @@ end
 
 !-------------------------------------------------------------------------------------
   subroutine calcdintecp(egrad1,fulldmtrx,term1ecp,term2ecp,term0ecp,xyzintecp, &
-&                        label1ecp,label2ecp,num1ecp,num2ecp,numtbasis,ish,jsh,len1)
+&                        label1ecp,label2ecp,num1ecp,num2ecp,numtbasis,ish,jsh,len1,databasis)
 !-------------------------------------------------------------------------------------
 !
 ! Driver of ECP derivative terms
@@ -90,11 +89,11 @@ end
 ! Inout : egrad1 (energy gradient value)
 !
       use modparam, only : mxprsh
-      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao, &
-&                          maxangecp, mtypeecp, locecp, mprimecp, execp, coeffecp
       use modmolecule, only : natom, coord
       use modecp, only : nterm1, nterm2
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: label1ecp(nterm1*9), label2ecp(nterm2*6), num1ecp(*), num2ecp(*)
       integer,intent(in) :: numtbasis, ish, jsh, len1
       integer :: nangij(2), nprimij(2), nbfij(2), iatom, jatom, katom, iloc, jloc, ilocbf, jlocbf
@@ -134,7 +133,7 @@ end
       real(8),parameter :: fach3=0.52291251658379721D+00 ! sqrt(35/2)/8
       real(8),parameter :: fach4=2.56173769148989959D+00 ! sqrt(105)/4
       real(8),parameter :: fach5=0.48412291827592711D+00 ! sqrt(15)/8
-      real(8),intent(in) :: fulldmtrx(nao,nao), term1ecp(nterm1), term2ecp(nterm2)
+      real(8),intent(in) :: fulldmtrx(databasis%nao,databasis%nao), term1ecp(nterm1), term2ecp(nterm2)
       real(8),intent(in) :: term0ecp(*), xyzintecp(25*25*25)
       real(8),intent(inout) :: egrad1(3,natom)
       real(8) :: exij(mxprsh,2), coij(mxprsh,2), coordijk(3,3), ecpint1(len1,len1)
@@ -142,18 +141,18 @@ end
       real(8) :: exkecp(mxprsh,6), cokecp(mxprsh,6)
       data ncart/1,3,6,10,15,21,28/
 !
-      nangij(1)= mtype(ish)
-      nangij(2)= mtype(jsh)
-      nprimij(1)= mprim(ish)
-      nprimij(2)= mprim(jsh)
-      nbfij(1)  = mbf(ish)
-      nbfij(2)  = mbf(jsh)
-      iatom = locatom(ish)
-      iloc  = locprim(ish)
-      ilocbf= locbf(ish)
-      jatom = locatom(jsh)
-      jloc  = locprim(jsh)
-      jlocbf= locbf(jsh)
+      nangij(1)= databasis%mtype(ish)
+      nangij(2)= databasis%mtype(jsh)
+      nprimij(1)= databasis%mprim(ish)
+      nprimij(2)= databasis%mprim(jsh)
+      nbfij(1)  = databasis%mbf(ish)
+      nbfij(2)  = databasis%mbf(jsh)
+      iatom = databasis%locatom(ish)
+      iloc  = databasis%locprim(ish)
+      ilocbf= databasis%locbf(ish)
+      jatom = databasis%locatom(jsh)
+      jloc  = databasis%locprim(jsh)
+      jlocbf= databasis%locbf(jsh)
 !
       if((nangij(1) > 6).or.(nangij(2) > 6))then
         write(*,'(" Error! This program supports up to h function in calcdintecp")')
@@ -165,35 +164,35 @@ end
         coordijk(i,2)= coord(i,jatom)
       enddo
       do iprim= 1,nprimij(1)
-        exij(iprim,1)= ex(iloc+iprim)
-        coij(iprim,1)= coeff(iloc+iprim)
+        exij(iprim,1)= databasis%ex(iloc+iprim)
+        coij(iprim,1)= databasis%coeff(iloc+iprim)
       enddo
         do jprim= 1,nprimij(2)
-          exij(jprim,2)= ex(jloc+jprim)
+          exij(jprim,2)= databasis%ex(jloc+jprim)
         enddo
 !
       ijkatom(1)= iatom
       ijkatom(2)= jatom
 !
       do katom= 1,natom
-        if(maxangecp(katom) == -1) cycle
+        if(databasis%maxangecp(katom) == -1) cycle
         if(katom == jatom) cycle
         do i= 1,3
           coordijk(i,3)= coord(i,katom)
         enddo
-        nangij(2)= mtype(jsh)+1
+        nangij(2)= databasis%mtype(jsh)+1
         nbfij(2)= ncart(nangij(2))
         do jprim= 1,nprimij(2)
-          coij(jprim,2)= coeff(jloc+jprim)*two*ex(jloc+jprim)
+          coij(jprim,2)= databasis%coeff(jloc+jprim)*two*databasis%ex(jloc+jprim)
         enddo
         ijkatom(3)= katom
-        lmaxecp= maxangecp(katom)
-        do i= 1,maxangecp(katom)+1
-          nprimkecp(i)= mprimecp(i-1,katom)
+        lmaxecp= databasis%maxangecp(katom)
+        do i= 1,databasis%maxangecp(katom)+1
+          nprimkecp(i)= databasis%mprimecp(i-1,katom)
           do jprim= 1,nprimkecp(i)
-            exkecp(jprim,i)= execp(locecp(i-1,katom)+jprim)
-            cokecp(jprim,i)= coeffecp(locecp(i-1,katom)+jprim)
-            nangkecp(jprim,i)= mtypeecp(locecp(i-1,katom)+jprim)
+            exkecp(jprim,i)= databasis%execp(databasis%locecp(i-1,katom)+jprim)
+            cokecp(jprim,i)= databasis%coeffecp(databasis%locecp(i-1,katom)+jprim)
+            nangkecp(jprim,i)= databasis%mtypeecp(databasis%locecp(i-1,katom)+jprim)
           enddo
         enddo
         call intecp(ecpint1,exij,coij,coordijk,nprimij,nangij,nbfij, &
@@ -201,11 +200,11 @@ end
 &                   term1ecp,term2ecp,term0ecp,xyzintecp,label1ecp,label2ecp, &
 &                   num1ecp,num2ecp,numtbasis,ijkatom,len1,mxprsh)
 !
-        if(mtype(jsh) >= 1) then
-          nangij(2)= mtype(jsh)-1
+        if(databasis%mtype(jsh) >= 1) then
+          nangij(2)= databasis%mtype(jsh)-1
           nbfij(2)= ncart(nangij(2))
           do jprim= 1,nprimij(2)
-            coij(jprim,2) = coeff(jloc+jprim)
+            coij(jprim,2) = databasis%coeff(jloc+jprim)
           enddo
           call intecp(ecpint2,exij,coij,coordijk,nprimij,nangij,nbfij, &
 &                     exkecp,cokecp,nprimkecp,nangkecp,lmaxecp, &
@@ -215,7 +214,7 @@ end
           ecpint2(1:nbfij(2),1:nbfij(1))= zero
         endif
 !
-        select case(mtype(jsh))
+        select case(databasis%mtype(jsh))
           case (0)
             do i= 1,nbfij(1)
               decpint(1,i,1)= ecpint1(1,i)
@@ -404,7 +403,7 @@ end
           enddo
         end select
 !
-        nbfij(2)  = mbf(jsh)
+        nbfij(2)  = databasis%mbf(jsh)
         select case(nbfij(2))
           case(5)
             do k= 1,3
