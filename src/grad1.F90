@@ -56,7 +56,7 @@
 !$OMP do
         do jsh= 1,databasis%nshell
           call calcdkinetic(egrad1,fulldmtrx,ish,jsh,databasis)
-          call calcdcoulomb(egrad1,fulldmtrx,ish,jsh,len1)
+          call calcdcoulomb(egrad1,fulldmtrx,ish,jsh,len1,databasis)
         enddo
 !$OMP enddo
       enddo
@@ -192,7 +192,6 @@ end
 ! Inout : egrad (Energy gradient value)
 !
       use modparam, only : mxprsh
-!     use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
       use modjob, only : threshex
       use modmolecule, only : natom, coord
       use modtype, only : typebasis
@@ -341,7 +340,6 @@ end
 ! Inout : egrad  (Energy gradient value)
 !
       use modparam, only : mxprsh
-!     use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
       use modjob, only : threshex
       use modmolecule, only : natom, coord
       use modtype, only : typebasis
@@ -517,7 +515,7 @@ end
 
 
 !--------------------------------------------------------
-  subroutine calcdcoulomb(egrad,fulldmtrx,ish,jsh,len1)
+  subroutine calcdcoulomb(egrad,fulldmtrx,ish,jsh,len1,databasis)
 !--------------------------------------------------------
 !
 ! Driver of Coulomb derivative term
@@ -527,10 +525,11 @@ end
 ! Inout : egrad  (energy gradient value)
 !
       use modparam, only : mxprsh
-      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
       use modjob, only : threshex
       use modmolecule, only : natom, coord, znuc
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, len1
       integer :: nangij(2), nprimij(2), nbfij(2), iatom, jatom, iloc, jloc, ilocbf, jlocbf
       integer :: iprim, jprim, i, j, k, ii, ncart(0:6)
@@ -568,39 +567,39 @@ end
       real(8),parameter :: fach3=0.52291251658379721D+00 ! sqrt(35/2)/8
       real(8),parameter :: fach4=2.56173769148989959D+00 ! sqrt(105)/4
       real(8),parameter :: fach5=0.48412291827592711D+00 ! sqrt(15)/8
-      real(8),intent(in) :: fulldmtrx(nao,nao)
+      real(8),intent(in) :: fulldmtrx(databasis%nao,databasis%nao)
       real(8),intent(inout) :: egrad(3,natom)
       real(8) :: exij(mxprsh,2), cij(mxprsh,2), coordij(3,2)
       real(8) :: cint1(len1,len1), cint2(len1,len1), dcint(28,28,3), work(21)
       data ncart/1,3,6,10,15,21,28/
 !
-      nangij(1)= mtype(ish)
-      nangij(2)= mtype(jsh)
-      nprimij(1)= mprim(ish)
-      nprimij(2)= mprim(jsh)
-      nbfij(1)  = mbf(ish)
-      nbfij(2)  = mbf(jsh)
-      iatom = locatom(ish)
-      iloc  = locprim(ish)
-      ilocbf= locbf(ish)
-      jatom = locatom(jsh)
-      jloc  = locprim(jsh)
-      jlocbf= locbf(jsh)
+      nangij(1)= databasis%mtype(ish)
+      nangij(2)= databasis%mtype(jsh)
+      nprimij(1)= databasis%mprim(ish)
+      nprimij(2)= databasis%mprim(jsh)
+      nbfij(1)  = databasis%mbf(ish)
+      nbfij(2)  = databasis%mbf(jsh)
+      iatom = databasis%locatom(ish)
+      iloc  = databasis%locprim(ish)
+      ilocbf= databasis%locbf(ish)
+      jatom = databasis%locatom(jsh)
+      jloc  = databasis%locprim(jsh)
+      jlocbf= databasis%locbf(jsh)
 !
       do i= 1,3
         coordij(i,1)= coord(i,iatom)
         coordij(i,2)= coord(i,jatom)
       enddo
       do iprim= 1,nprimij(1)
-        exij(iprim,1)= ex(iloc+iprim)
-        cij(iprim,1) = coeff(iloc+iprim)
+        exij(iprim,1)= databasis%ex(iloc+iprim)
+        cij(iprim,1) = databasis%coeff(iloc+iprim)
       enddo
 !
       nangij(2)= nangij(2)+1
       nbfij(2)= ncart(nangij(2))
       do jprim= 1,nprimij(2)
-        exij(jprim,2)= ex(jloc+jprim)
-        cij(jprim,2) = coeff(jloc+jprim)*two*ex(jloc+jprim)
+        exij(jprim,2)= databasis%ex(jloc+jprim)
+        cij(jprim,2) = databasis%coeff(jloc+jprim)*two*databasis%ex(jloc+jprim)
       enddo
 !
       if((nangij(1) <= 2).and.(nangij(2) <= 2)) then
@@ -615,11 +614,11 @@ end
 &                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
       endif
 !
-      if(mtype(jsh) >= 1) then
-        nangij(2)= mtype(jsh)-1
+      if(databasis%mtype(jsh) >= 1) then
+        nangij(2)= databasis%mtype(jsh)-1
         nbfij(2)= ncart(nangij(2))
         do jprim= 1,nprimij(2)
-          cij(jprim,2) = coeff(jloc+jprim)
+          cij(jprim,2) = databasis%coeff(jloc+jprim)
         enddo
         if((nangij(1) <= 2).and.(nangij(2) <= 2)) then
           call int1cmd(cint2,exij,cij,coordij,coord,znuc,natom, &
@@ -638,7 +637,7 @@ end
         cint2(1:nbfij(2),1:nbfij(1))= zero
       endif
 !
-      select case(mtype(jsh))
+      select case(databasis%mtype(jsh))
         case (0)
           do i= 1,nbfij(1)
             dcint(1,i,1)= cint1(1,i)
@@ -827,7 +826,7 @@ end
           enddo
       end select
 !
-      nbfij(2)  = mbf(jsh)
+      nbfij(2)  = databasis%mbf(jsh)
       select case(nbfij(2))
         case(5)
           do k= 1,3
@@ -977,7 +976,6 @@ end
 !
       use modparam, only : mxprsh
       use modmolecule, only : natom, coord, znuc
-!     use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
       use modjob, only : threshex
       use modtype, only : typebasis
       implicit none
