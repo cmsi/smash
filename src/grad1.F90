@@ -46,8 +46,8 @@
       do ish= databasis%nshell-myrank,1,-nproc
 !$OMP do
         do jsh= 1,ish
-          call calcdoverlap(egrad1,ewdmtrx,ish,jsh)
-          call calchelfey(egrad1,fulldmtrx,ish,jsh)
+          call calcdoverlap(egrad1,ewdmtrx,ish,jsh,databasis)
+          call calchelfey(egrad1,fulldmtrx,ish,jsh,databasis)
         enddo
 !$OMP enddo
       enddo
@@ -55,7 +55,7 @@
       do ish= myrank+1,databasis%nshell,nproc
 !$OMP do
         do jsh= 1,databasis%nshell
-          call calcdkinetic(egrad1,fulldmtrx,ish,jsh)
+          call calcdkinetic(egrad1,fulldmtrx,ish,jsh,databasis)
           call calcdcoulomb(egrad1,fulldmtrx,ish,jsh,len1)
         enddo
 !$OMP enddo
@@ -182,7 +182,7 @@ end
 
 
 !-------------------------------------------------
-  subroutine calcdoverlap(egrad,ewdmtrx,ish,jsh)
+  subroutine calcdoverlap(egrad,ewdmtrx,ish,jsh,databasis)
 !-------------------------------------------------
 !
 ! Driver of overlap derivative term
@@ -192,16 +192,18 @@ end
 ! Inout : egrad (Energy gradient value)
 !
       use modparam, only : mxprsh
-      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
+!     use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
       use modjob, only : threshex
       use modmolecule, only : natom, coord
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, nprimi, nprimj, nangi, nangj
       integer :: nbfi, nbfj, iprim, jprim, ncarti, ncartj, i, j, iang, jang, ii, ij
       integer :: ix, jx, iy, jy, iz, jz, ncart(0:6)
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
-      real(8),intent(in) :: ewdmtrx(nao*(nao+1)/2)
+      real(8),intent(in) :: ewdmtrx(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(inout) :: egrad(3,natom)
       real(8) :: xyzij(3), rij, rij2, fac, exi, exj, exj2, ci, cj
       real(8) :: ex1, ex2, ex3, xyzpij(3,2), cij
@@ -209,20 +211,20 @@ end
       real(8) :: dsint(28,28,3)
       data ncart/1,3,6,10,15,21,28/
 !
-      iatom = locatom(ish)
-      jatom = locatom(jsh)
+      iatom = databasis%locatom(ish)
+      jatom = databasis%locatom(jsh)
       if(iatom == jatom) return
 !
-      iloc  = locprim(ish)
-      ilocbf= locbf(ish)
-      nprimi= mprim(ish)
-      nangi = mtype(ish)
-      nbfi  = mbf(ish)
-      jloc  = locprim(jsh)
-      jlocbf= locbf(jsh)
-      nprimj= mprim(jsh)
-      nangj = mtype(jsh)
-      nbfj  = mbf(jsh)
+      iloc  = databasis%locprim(ish)
+      ilocbf= databasis%locbf(ish)
+      nprimi= databasis%mprim(ish)
+      nangi = databasis%mtype(ish)
+      nbfi  = databasis%mbf(ish)
+      jloc  = databasis%locprim(jsh)
+      jlocbf= databasis%locbf(jsh)
+      nprimj= databasis%mprim(jsh)
+      nangj = databasis%mtype(jsh)
+      nbfj  = databasis%mbf(jsh)
 !
       if((nangi > 6).or.(nangj > 6)) then
         write(*,'(" Error! This program supports up to h function in calcdoverlap")')
@@ -247,10 +249,10 @@ end
 ! Calculate overlap derivative for each primitive
 !
       do iprim= 1,nprimi
-        exi= ex(iloc+iprim)
-        ci = coeff(iloc+iprim)
+        exi= databasis%ex(iloc+iprim)
+        ci = databasis%coeff(iloc+iprim)
         do jprim= 1,nprimj
-          exj= ex(jloc+jprim)
+          exj= databasis%ex(jloc+jprim)
           ex1= exi+exj
           ex2= one/ex1
           rij2=rij*exi*exj*ex2
@@ -262,7 +264,7 @@ end
             xyzpij(i,1)=-exj*xyzij(i)*ex2
             xyzpij(i,2)= exi*xyzij(i)*ex2
           enddo
-          cj = coeff(jloc+jprim)*fac
+          cj = databasis%coeff(jloc+jprim)*fac
 !
           do iang= 0,nangi
             do jang= 0,nangj+1
@@ -329,7 +331,7 @@ end
 
 
 !---------------------------------------------------
-  subroutine calcdkinetic(egrad,fulldmtrx,ish,jsh)
+  subroutine calcdkinetic(egrad,fulldmtrx,ish,jsh,databasis)
 !---------------------------------------------------
 !
 ! Driver of kinetic derivative term
@@ -339,16 +341,18 @@ end
 ! Inout : egrad  (Energy gradient value)
 !
       use modparam, only : mxprsh
-      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
+!     use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
       use modjob, only : threshex
       use modmolecule, only : natom, coord
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, nprimi, nprimj, nangi, nangj
       integer :: nbfi, nbfj, iprim, jprim, ncarti, ncartj, i, j, iang, jang, ii
       integer :: ix, jx, iy, jy, iz, jz, ncart(0:6)
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, half=0.5D+00
-      real(8),intent(in) :: fulldmtrx(nao,nao)
+      real(8),intent(in) :: fulldmtrx(databasis%nao,databasis%nao)
       real(8),intent(inout) :: egrad(3,natom)
       real(8) :: xyzij(3), rij, rij2, fac, exi, exi2, exj, exj2, ci, cj
       real(8) :: ex1, ex2, ex3, xyzpij(3,2), cij
@@ -356,18 +360,18 @@ end
       real(8) :: dtint(28,28,3)
       data ncart/1,3,6,10,15,21,28/
 !
-      iatom = locatom(ish)
-      iloc  = locprim(ish)
-      ilocbf= locbf(ish)
-      nprimi= mprim(ish)
-      nangi = mtype(ish)
-      nbfi  = mbf(ish)
-      jatom = locatom(jsh)
-      jloc  = locprim(jsh)
-      jlocbf= locbf(jsh)
-      nprimj= mprim(jsh)
-      nangj = mtype(jsh)
-      nbfj  = mbf(jsh)
+      iatom = databasis%locatom(ish)
+      iloc  = databasis%locprim(ish)
+      ilocbf= databasis%locbf(ish)
+      nprimi= databasis%mprim(ish)
+      nangi = databasis%mtype(ish)
+      nbfi  = databasis%mbf(ish)
+      jatom = databasis%locatom(jsh)
+      jloc  = databasis%locprim(jsh)
+      jlocbf= databasis%locbf(jsh)
+      nprimj= databasis%mprim(jsh)
+      nangj = databasis%mtype(jsh)
+      nbfj  = databasis%mbf(jsh)
 !
       if((nangi > 6).or.(nangj > 6))then
         write(*,'(" Error! This program supports up to h function in calcdkinetic.")')
@@ -392,11 +396,11 @@ end
 ! Calculate overlap derivative for each primitive
 !
       do iprim= 1,nprimi
-        exi= ex(iloc+iprim)
-        ci = coeff(iloc+iprim)
+        exi= databasis%ex(iloc+iprim)
+        ci = databasis%coeff(iloc+iprim)
         exi2=-two*exi*exi
         do jprim= 1,nprimj
-          exj= ex(jloc+jprim)
+          exj= databasis%ex(jloc+jprim)
           ex1= exi+exj
           ex2= one/ex1
           rij2=rij*exi*exj*ex2
@@ -408,7 +412,7 @@ end
             xyzpij(i,1)=-exj*xyzij(i)*ex2
             xyzpij(i,2)= exi*xyzij(i)*ex2
           enddo
-          cj = coeff(jloc+jprim)*fac
+          cj = databasis%coeff(jloc+jprim)*fac
 !
 ! overlap term
 !
@@ -962,7 +966,7 @@ end
 
 
 !-------------------------------------------------
-  subroutine calchelfey(egrad,fulldmtrx,ish,jsh)
+  subroutine calchelfey(egrad,fulldmtrx,ish,jsh,databasis)
 !-------------------------------------------------
 !
 ! Driver of Helmann-Feynman gradient term
@@ -973,48 +977,50 @@ end
 !
       use modparam, only : mxprsh
       use modmolecule, only : natom, coord, znuc
-      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
+!     use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
       use modjob, only : threshex
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh
       integer :: nangij(2), nprimij(2), nbfij(2), locbfij(2), iatom, jatom
       integer :: iloc, jloc, iprim, jprim, i
-      real(8),intent(in) :: fulldmtrx(nao,nao)
+      real(8),intent(in) :: fulldmtrx(databasis%nao,databasis%nao)
       real(8),intent(inout) :: egrad(3,natom)
       real(8) :: exij(mxprsh,2), cij(mxprsh,2), coordij(3,2)
       logical :: iandj
 !
       iandj=(ish == jsh)
-      nangij(1)= mtype(ish)
-      nangij(2)= mtype(jsh)
-      nprimij(1)= mprim(ish)
-      nprimij(2)= mprim(jsh)
-      nbfij(1)  = mbf(ish)
-      nbfij(2)  = mbf(jsh)
-      locbfij(1)= locbf(ish)
-      locbfij(2)= locbf(jsh)
-      iatom = locatom(ish)
-      iloc  = locprim(ish)
-      jatom = locatom(jsh)
-      jloc  = locprim(jsh)
+      nangij(1)= databasis%mtype(ish)
+      nangij(2)= databasis%mtype(jsh)
+      nprimij(1)= databasis%mprim(ish)
+      nprimij(2)= databasis%mprim(jsh)
+      nbfij(1)  = databasis%mbf(ish)
+      nbfij(2)  = databasis%mbf(jsh)
+      locbfij(1)= databasis%locbf(ish)
+      locbfij(2)= databasis%locbf(jsh)
+      iatom = databasis%locatom(ish)
+      iloc  = databasis%locprim(ish)
+      jatom = databasis%locatom(jsh)
+      jloc  = databasis%locprim(jsh)
       do i= 1,3
         coordij(i,1)= coord(i,iatom)
         coordij(i,2)= coord(i,jatom)
       enddo
       do iprim= 1,nprimij(1)
-        exij(iprim,1)= ex(iloc+iprim)
-        cij(iprim,1) = coeff(iloc+iprim)
+        exij(iprim,1)= databasis%ex(iloc+iprim)
+        cij(iprim,1) = databasis%coeff(iloc+iprim)
       enddo
       do jprim= 1,nprimij(2)
-        exij(jprim,2)= ex(jloc+jprim)
-        cij(jprim,2) = coeff(jloc+jprim)
+        exij(jprim,2)= databasis%ex(jloc+jprim)
+        cij(jprim,2) = databasis%coeff(jloc+jprim)
       enddo
 !
       if((nangij(1) <= 2).and.(nangij(2) <= 2)) then
-        call int1cgmd(egrad,fulldmtrx,exij,cij,coordij,coord,znuc,natom,nao, &
+        call int1cgmd(egrad,fulldmtrx,exij,cij,coordij,coord,znuc,natom,databasis%nao, &
 &                     nprimij,nangij,nbfij,locbfij,mxprsh,threshex,iandj)
       elseif((nangij(1) <= 5).and.(nangij(2) <= 5)) then
-        call int1grys(egrad,fulldmtrx,exij,cij,coordij,coord,znuc,natom,nao, &
+        call int1grys(egrad,fulldmtrx,exij,cij,coordij,coord,znuc,natom,databasis%nao, &
 &                     nprimij,nangij,nbfij,locbfij,mxprsh,threshex,iandj)
       else
         write(*,'(" Error! This program supports up to h function in helfey")')
