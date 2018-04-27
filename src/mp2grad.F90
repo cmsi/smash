@@ -345,7 +345,7 @@ end
         call mp2gradtrans34(emp2st,cmo,energymo,trint2,trint2core,xaibj,xaikj, &
 &                           tijab,pij,pab,wij,wab,wai,recvint,sendint,recvt,storet, &
 &                           nocc,noac,nvir,nvac,ncore,nvfz,istart,numitrans,numirecv, &
-&                           numab,maxsize,idis,nproc,myrank,mpi_comm)
+&                           numab,maxsize,idis,nproc,myrank,mpi_comm,databasis)
 !
         deallocate(xaibj,xaikj,tijab,recvint, &
 &                  sendint,recvt,storet)
@@ -576,7 +576,7 @@ end
   subroutine mp2gradtrans34(emp2st,cmo,energymo,trint2,trint2core,xaibj,xaikj, &
 &                           tijab,pij,pab,wij,wab,wai,recvint,sendint,recvt,storet, &
 &                           nocc,noac,nvir,nvac,ncore,nvfz,istart,numitrans,numirecv, &
-&                           numab,maxsize,idis,nproc,myrank,mpi_comm)
+&                           numab,maxsize,idis,nproc,myrank,mpi_comm,databasis)
 !--------------------------------------------------------------------------------------------
 !
 ! Driver of third and fourth integral transformations, and
@@ -613,15 +613,17 @@ end
 !       recvt    (Receiving buffer for tijml)
 !       storet   (Storing buffer for tijml)
 !
-      use modbasis, only : nao
       use modmolecule, only : nmo
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nocc, noac, nvir, nvac, ncore, nvfz, istart, numitrans, numirecv
       integer,intent(in) :: numab, maxsize, nproc, myrank, mpi_comm, idis(0:nproc-1,8)
-      integer :: numij, numrecv, iproc, irecv(0:nproc-1), ncycle, icycle, myij, moi, moj
+      integer :: nao, numij, numrecv, iproc, irecv(0:nproc-1), ncycle, icycle, myij, moi, moj
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
-      real(8),intent(in) :: cmo(nao,nao), energymo(nmo)
-      real(8),intent(out) :: xaibj(nproc*maxsize), xaikj(nocc*nvac), tijab(nao*nao)
+      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(nmo)
+      real(8),intent(out) :: xaibj(nproc*maxsize), xaikj(nocc*nvac)
+      real(8),intent(out) :: tijab(databasis%nao*databasis%nao)
       real(8),intent(out) :: recvint(2*numab*noac*numirecv), sendint(2*numab)
       real(8),intent(out) :: recvt(nproc*maxsize), storet(noac*maxsize)
       real(8),intent(inout) :: emp2st(2), trint2(idis(myrank,3),noac,numitrans)
@@ -629,6 +631,7 @@ end
       real(8),intent(inout) :: pij(nocc*(nocc+1)/2), pab(nvir*nvir), wij(nocc,nocc)
       real(8),intent(inout) :: wab(nvir*nvir), wai(nocc*nvac)
 !
+      nao= databasis%nao
       numij= noac*numitrans
       numrecv= 1
       do iproc= 0,nproc-1
@@ -639,7 +642,7 @@ end
 !
       do icycle= 1,ncycle
         call mp2int_sendrecv(trint2,tijab,xaibj,icycle,irecv,numij, &
-&                            idis,nproc,myrank,mpi_comm)
+&                            idis,nproc,myrank,mpi_comm,databasis)
 !
         myij=(icycle-1)*nproc+1+myrank
         if(myij <= numij) then
