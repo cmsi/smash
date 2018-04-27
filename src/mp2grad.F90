@@ -1170,7 +1170,7 @@ end
           mlend= numshell
           call mp2gradbt1(xlai,egrad,tijml,cmo,xint,tisml,xlmi,egradtmp,work,work2, &
 &                         mlindex,numml,mlstart,mlend,numitrans,nocc,noac,ncore,nvir,maxdim, &
-&                         maxgraddim,istart,idis,nproc,myrank)
+&                         maxgraddim,istart,idis,nproc,myrank,databasis)
           exit
         endif
 !
@@ -1178,7 +1178,7 @@ end
           mlend= numshell
           call mp2gradbt1(xlai,egrad,tijml,cmo,xint,tisml,xlmi,egradtmp,work,work2, &
 &                         mlindex,numml,mlstart,mlend,numitrans,nocc,noac,ncore,nvir,maxdim, &
-&                         maxgraddim,istart,idis,nproc,myrank)
+&                         maxgraddim,istart,idis,nproc,myrank,databasis)
           mlstart= numshell+1
           numml= 0
         endif
@@ -1667,21 +1667,24 @@ end
 ! Inout:egrad     (MP2 energy gradients)
 !       pmn       (Pmn)
 ! Work :egradtmp,wmn,work
-      use modbasis, only : nao, nshell
       use modmolecule, only : natom
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nocc, nvir, maxdim, maxgraddim, nproc, myrank, mpi_comm
-      integer :: ii, jj, ij, kk
+      integer :: nao, ii, jj, ij, kk
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: wij(nocc*nocc), wab(nvir*nvir), wai(nocc*nvir)
-      real(8),intent(in) :: xint(nshell*(nshell+1)/2), cmo(nao,nao), energymo(nao)
-      real(8),intent(out) :: egradtmp(3*natom), wmn(nao*(nao+1)/2), pmnhf(nao,nao), work(nao,nao)
-      real(8),intent(inout) :: egrad(3*natom), pmn(nao,nao)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: cmo(databasis%nao,databasis%nao)
+      real(8),intent(in) :: energymo(databasis%nao)
+      real(8),intent(out) :: egradtmp(3*natom), wmn(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: pmnhf(databasis%nao,databasis%nao), work(databasis%nao,databasis%nao)
+      real(8),intent(inout) :: egrad(3*natom), pmn(databasis%nao,databasis%nao)
       real(8) :: egradtmp2(3*natom), ewtmp
 !
+      nao= databasis%nao
       egradtmp(:)= zero
 !
 ! Calculate energy gradient of nuclear repulsion
@@ -1741,7 +1744,7 @@ end
 !---------------------------------------------------------------------------------------------
   subroutine mp2gradbt1(xlai,egrad,tijml,cmo,xint,tisml,xlmi,egradtmp,cmotrans,work2, &
 &                       mlindex,numml,mlstart,mlend,numitrans,nocc,noac,ncore,nvir,maxdim, &
-&                       maxgraddim,istart,idis,nproc,myrank)
+&                       maxgraddim,istart,idis,nproc,myrank,databasis)
 !---------------------------------------------------------------------------------------------
 !
 ! Calculate second-half back-transformation (tnsml), Lai4 and tnsml*(mn|ls)' terms
@@ -1760,23 +1763,26 @@ end
 !       cmotrans  (transposed matrix of cmo)
 !       work2     (work space)
 !
-      use modbasis, only : nao, nshell, mbf, locbf
       use modmolecule, only : natom
       use modjob, only : cutint2
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: numml, mlstart, mlend, numitrans, nocc, noac, ncore, nvir, maxdim
       integer,intent(in) :: maxgraddim, istart, nproc, myrank, idis(0:nproc-1,8)
       integer,intent(in) :: mlindex(4,idis(myrank,4))
-      integer :: moi, mlcount, numshell, ish, jsh, ksh, lsh, nbfi, nbfj, nbfk, nbfl
+      integer :: nao, moi, mlcount, numshell, ish, jsh, ksh, lsh, nbfi, nbfj, nbfk, nbfl
       integer :: locbfi, locbfj, locbfk, locbfl, ij, kl, ii, jj, kk, ll, i2, ik, ml
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, four=4.0D+00
-      real(8),intent(in) :: tijml(idis(myrank,3),noac,numitrans), cmo(nao,nao)
-      real(8),intent(in) :: xint(nshell*(nshell+1)/2)
-      real(8),intent(out) :: tisml(numitrans,nao,numml), xlmi(numitrans,nao)
-      real(8),intent(out) :: egradtmp(3*natom), cmotrans(noac,*), work2(nao,numml)
+      real(8),intent(in) :: tijml(idis(myrank,3),noac,numitrans), cmo(databasis%nao,databasis%nao)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(out) :: tisml(numitrans,databasis%nao,numml), xlmi(numitrans,databasis%nao)
+      real(8),intent(out) :: egradtmp(3*natom), cmotrans(noac,*), work2(databasis%nao,numml)
       real(8),intent(inout) :: xlai(nocc,nvir), egrad(3*natom)
       real(8) :: twoeri(maxgraddim**4), twork(maxdim,maxdim,maxdim,maxdim)
       real(8) :: dtwoeri(maxdim,maxdim,maxdim,maxdim,3), tmax, tmp, xijkl
+!
+      nao= databasis%nao
 !
       do moi= 1,numitrans
         call dgemm('N','T',nao,numml,noac,one,cmo(1,ncore+1),nao, &
@@ -1802,24 +1808,24 @@ end
 !$OMP locbfi,locbfj,locbfk,locbfl,ij,kl,i2,ik,xijkl,tmax,tmp,twoeri,twork,dtwoeri) &
 !$OMP reduction(+:xlmi,egradtmp)
       do numshell= mlstart,mlend
-        do lsh= 1,nshell
+        do lsh= 1,databasis%nshell
           ish= mlindex(1,numshell)
           ksh= mlindex(2,numshell)
           mlcount= mlindex(3,numshell)-mlindex(3,mlstart)
-          nbfi= mbf(ish)
-          nbfk= mbf(ksh)
-          nbfl= mbf(lsh)
-          locbfi= locbf(ish)
-          locbfk= locbf(ksh)
-          locbfl= locbf(lsh)
+          nbfi= databasis%mbf(ish)
+          nbfk= databasis%mbf(ksh)
+          nbfl= databasis%mbf(lsh)
+          locbfi= databasis%locbf(ish)
+          locbfk= databasis%locbf(ksh)
+          locbfl= databasis%locbf(lsh)
           if(ksh >= lsh) then
             kl= ksh*(ksh-1)/2+lsh
           else
             kl= lsh*(lsh-1)/2+ksh
           endif
-          do jsh= 1,nshell
-            nbfj  = mbf(jsh)
-            locbfj= locbf(jsh)
+          do jsh= 1,databasis%nshell
+            nbfj  = databasis%mbf(jsh)
+            locbfj= databasis%locbf(jsh)
             if(ish >= jsh) then
               ij= ish*(ish-1)/2+jsh
             else
