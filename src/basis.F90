@@ -1027,7 +1027,7 @@ end
 
 
 !-------------------------------
-  subroutine setbasis_g(nao_v,nshell_v,itype,dataguessbs)
+  subroutine setbasis_g(nao_v,nshell_v,itype,databasis,dataguessbs)
 !-------------------------------
 !
 ! Driver of setting basis functions for guess calculations
@@ -1042,6 +1042,7 @@ end
 !&                          locprim_gcore, locbf_gcore, nao_gcore, nshell_gcore
       use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typebasis),intent(inout) :: dataguessbs
       integer,intent(out) :: nao_v, nshell_v
       integer,intent(in) :: itype
@@ -1060,9 +1061,9 @@ end
 !
           do iatom= 1,natom
             if((numatomic(iatom) >= 1).and.(numatomic(iatom) <= 54)) then
-              call bssto3g_g(iatom,ishell,1,dataguessbs)
+              call bssto3g_g(iatom,ishell,1,databasis,dataguessbs)
             elseif(numatomic(iatom) >= 55) then
-              call bshuzmini6_g(iatom,ishell,1,dataguessbs)
+              call bshuzmini6_g(iatom,ishell,1,databasis,dataguessbs)
             endif
           enddo
           nshell_v= ishell
@@ -1072,9 +1073,9 @@ end
 !
           do iatom= 1,natom
             if((numatomic(iatom) >= 1).and.(numatomic(iatom) <= 54)) then
-              call bssto3g_g(iatom,ishell,2,dataguessbs)
+              call bssto3g_g(iatom,ishell,2,databasis,dataguessbs)
             elseif(numatomic(iatom) >= 55) then
-              call bshuzmini6_g(iatom,ishell,2,dataguessbs)
+              call bshuzmini6_g(iatom,ishell,2,databasis,dataguessbs)
             endif
           enddo
           dataguessbs%nshell= ishell
@@ -1105,9 +1106,9 @@ end
           dataguessbs%locbf(1)=0
           do iatom= 1,natom
             if((numatomic(iatom) >= 1).and.(numatomic(iatom) <= 54)) then
-              call bssto3g_g(iatom,ishell,3,dataguessbs)
+              call bssto3g_g(iatom,ishell,3,databasis,dataguessbs)
             elseif(numatomic(iatom) >= 55) then
-              call bshuzmini6_g(iatom,ishell,3,dataguessbs)
+              call bshuzmini6_g(iatom,ishell,3,databasis,dataguessbs)
             endif
           enddo
           dataguessbs%nshell= ishell
@@ -1134,7 +1135,7 @@ end
 
 
 !-------------------------------------------
-  subroutine bssto3g_g(iatom,ishell,itype,dataguessbs)
+  subroutine bssto3g_g(iatom,ishell,itype,databasis,dataguessbs)
 !-------------------------------------------
 !
 ! Set basis functions of STO-3G for guess calculation
@@ -1145,9 +1146,9 @@ end
       use modmolecule, only : numatomic
       use modparam, only : mxao, mxshell, mxprim
       use modjob, only : flagecp
-      use modbasis, only : izcore
       use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typebasis),intent(inout) :: dataguessbs
       integer,intent(in) :: iatom, itype
       integer,intent(inout):: ishell
@@ -1733,7 +1734,7 @@ end
       elseif(itype == 2) then
 ! Set 1S functions
         if(numatomic(iatom) >= 3) then
-          if(.not.flagecp.or.(izcore(iatom) < 2))then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 2))then
             ishell= ishell+1
             do j= 1,3
               dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j)
@@ -1749,7 +1750,7 @@ end
         endif
 ! Set 2SP functions
         if(numatomic(iatom) >= 11) then
-          if(.not.flagecp.or.(izcore(iatom) < 10))then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 10))then
 !   S function
             ishell= ishell+1
             do j= 1,3
@@ -1778,7 +1779,7 @@ end
         endif
 ! Set 3SPD functions
         if(numatomic(iatom) >= 19) then
-          if(.not.flagecp.or.(izcore(iatom) < 18))then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 18))then
 !   S function
             ishell= ishell+1
             do j= 1,3
@@ -1807,7 +1808,7 @@ end
         endif
 !   D function
         if(numatomic(iatom) >= 31) then
-          if(.not.flagecp.or.(izcore(iatom) < 28))then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 28))then
             ishell= ishell+1
             do j= 1,3
               dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j)
@@ -1828,7 +1829,7 @@ end
         endif
 ! Set 4SPD functions
         if(numatomic(iatom) >= 37) then
-          if(.not.flagecp.or.(izcore(iatom) < 36))then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 36))then
 !   S function
             ishell= ishell+1
             do j= 1,3
@@ -1857,7 +1858,7 @@ end
         endif
 !   D function
         if(numatomic(iatom) >= 49) then
-          if(.not.flagecp.or.(izcore(iatom) < 46))then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 46))then
             ishell= ishell+1
             do j= 1,3
               dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j+3)
@@ -1882,7 +1883,7 @@ end
       elseif(itype == 3) then
 ! Set 1S functions
         if(numatomic(iatom) >= 3) then
-          if(izcore(iatom) >= 2)then
+          if(databasis%izcore(iatom) >= 2)then
             ishell= ishell+1
             do j= 1,3
               dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j)
@@ -1898,7 +1899,7 @@ end
         endif
 ! Set 2SP functions
         if(numatomic(iatom) >= 11) then
-          if(izcore(iatom) >= 10)then
+          if(databasis%izcore(iatom) >= 10)then
 !   S function
             ishell= ishell+1
             do j= 1,3
@@ -1927,7 +1928,7 @@ end
         endif
 ! Set 3SPD functions
         if(numatomic(iatom) >= 19) then
-          if(izcore(iatom) >= 18)then
+          if(databasis%izcore(iatom) >= 18)then
 !   S function
             ishell= ishell+1
             do j= 1,3
@@ -1956,7 +1957,7 @@ end
         endif
 !   D function
         if(numatomic(iatom) >= 31) then
-          if(izcore(iatom) >= 28)then
+          if(databasis%izcore(iatom) >= 28)then
             ishell= ishell+1
             do j= 1,3
               dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j)
@@ -1972,7 +1973,7 @@ end
         endif
 ! Set 4SPD functions
         if(numatomic(iatom) >= 37) then
-          if(izcore(iatom) >= 36)then
+          if(databasis%izcore(iatom) >= 36)then
 !   S function
             ishell= ishell+1
             do j= 1,3
@@ -2001,7 +2002,7 @@ end
         endif
 !   D function
         if(numatomic(iatom) >= 49) then
-          if(izcore(iatom) >= 46)then
+          if(databasis%izcore(iatom) >= 46)then
             ishell= ishell+1
             do j= 1,3
               dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j+3)
@@ -9701,7 +9702,7 @@ end
 
 
 !----------------------------------------------
-  subroutine bshuzmini6_g(iatom,ishell,itype,dataguessbs)
+  subroutine bshuzmini6_g(iatom,ishell,itype,databasis,dataguessbs)
 !----------------------------------------------
 !
 ! Set 6th row basis functions of minimal Huzinaga set for guess calculation
@@ -9711,9 +9712,9 @@ end
       use modmolecule, only : numatomic
       use modparam, only : mxao, mxshell, mxprim
       use modjob, only : flagecp
-      use modbasis, only : izcore
       use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typebasis),intent(inout) :: dataguessbs
       integer,intent(in) :: iatom, itype
       integer,intent(inout) :: ishell
@@ -10291,7 +10292,7 @@ end
 !
       else
 ! Set 1S functions
-        if(.not.flagecp.or.(izcore(iatom) < 2)) then
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 2)) then
           ishell= ishell+1
           do j= 1,3
             dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,1,numatomic(iatom))
@@ -10305,7 +10306,7 @@ end
           dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
         endif
 ! Set 2SP functions
-        if(.not.flagecp.or.(izcore(iatom) < 10)) then
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 10)) then
 !   S function
           ishell= ishell+1
           do j= 1,3
@@ -10332,7 +10333,7 @@ end
           dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+3
         endif
 ! Set 3SPD functions
-        if(.not.flagecp.or.(izcore(iatom) < 18)) then
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 18)) then
 !   S function
           ishell= ishell+1
           do j= 1,3
@@ -10358,7 +10359,7 @@ end
           dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
           dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+3
         endif
-        if(.not.flagecp.or.(izcore(iatom) < 28)) then
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 28)) then
 !   D function
           ishell= ishell+1
           do j= 1,3
@@ -10378,7 +10379,7 @@ end
           endif
         endif
 ! Set 4SPDF functions
-        if(.not.flagecp.or.(izcore(iatom) < 36)) then
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 36)) then
 !   S function
           ishell= ishell+1
           do j= 1,3
@@ -10405,7 +10406,7 @@ end
           dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+3
         endif
 !   D function
-        if(.not.flagecp.or.(izcore(iatom) < 46)) then
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 46)) then
           ishell= ishell+1
           do j= 1,3
             dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd(j,4,numatomic(iatom))
@@ -10425,7 +10426,7 @@ end
         endif
 !   F function
         if(numatomic(iatom) >= 71) then
-          if(.not.flagecp.or.(izcore(iatom) < 60)) then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 60)) then
               ishell= ishell+1
               do j= 1,3
                 dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expf2(j,numatomic(iatom))
@@ -10445,7 +10446,7 @@ end
             endif
           endif
 ! Set 5SPD functions
-        if(.not.flagecp.or.((izcore(iatom) /= 54).and.(izcore(iatom) < 68))) then
+        if(.not.flagecp.or.((databasis%izcore(iatom) /= 54).and.(databasis%izcore(iatom) < 68))) then
 !   S function
           ishell= ishell+1
           do j= 1,3
@@ -10473,7 +10474,7 @@ end
         endif
 !   D function
         if(numatomic(iatom) >= 81) then
-          if(.not.flagecp.or.(izcore(iatom) < 78)) then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 78)) then
             ishell= ishell+1
             do j= 1,3
               dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd(j,5,numatomic(iatom))
