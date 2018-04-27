@@ -117,7 +117,7 @@
 !
 ! Calculate (ij|ij) integrals
 !
-      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
 !
       if(datacomp%master) then
         write(*,'(1x,74("-"))')
@@ -1022,7 +1022,7 @@ end
 !
 ! Calculate (ij|ij) integrals
 !
-      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
 !
       if(datacomp%master) then
         write(*,'(1x,74("-"))')
@@ -1406,7 +1406,7 @@ end
 !
 ! Calculate (ij|ij) integrals
 !
-      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
 !
       if(datacomp%master) then
         write(*,'(1x,74("-"))')
@@ -2135,7 +2135,7 @@ end
 !
 ! Calculate (ij|ij) integrals
 !
-      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
 !
       if(datacomp%master) then
         write(*,'(1x,74("-"))')

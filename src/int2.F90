@@ -83,7 +83,7 @@ end
 
 
 !-----------------------------------------------------------------------
-  subroutine calcschwarzeri(xint,xinttmp,maxdim,nproc,myrank,mpi_comm)
+  subroutine calcschwarzeri(xint,xinttmp,maxdim,nproc,myrank,mpi_comm,databasis)
 !-----------------------------------------------------------------------
 !
 ! Driver of (ij|ij) integral calculation
@@ -91,24 +91,25 @@ end
 ! Out : xint    ((ij|ij) integrals for Schwarz screening)
 !       xinttmp (Work array)
 !
-      use modbasis, only : nshell, mbf
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(inout) :: databasis
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ish, jsh, nbfi, nbfj, i, j, ii, ij
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, two=2.0D+00
-      real(8),intent(out) :: xint(nshell*(nshell+1)/2)
-      real(8),intent(out) :: xinttmp(nshell*(nshell+1)/2)
+      real(8),intent(out) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(out) :: xinttmp(databasis%nshell*(databasis%nshell+1)/2)
       real(8) :: twoeri(maxdim,maxdim,maxdim,maxdim), xintmax, val
 !
       xinttmp(:)= zero
 !
 !$OMP parallel private(jsh,xintmax,twoeri,nbfi,nbfj,i,j,val,ij,ii)
-      do ish= nshell-myrank,1,-nproc
-        nbfi= mbf(ish)
+      do ish= databasis%nshell-myrank,1,-nproc
+        nbfi= databasis%mbf(ish)
         ii  = ish*(ish-1)/2
 !$OMP do
         do jsh = 1,ish
-          nbfj = mbf(jsh)
+          nbfj = databasis%mbf(jsh)
           call calc2eri(twoeri,ish,jsh,ish,jsh,maxdim)
           xintmax= zero
           do i= 1,nbfi
@@ -124,7 +125,7 @@ end
       enddo
 !$OMP end parallel
 !
-      call para_allreducer(xinttmp,xint,nshell*(nshell+1)/2,mpi_comm)
+      call para_allreducer(xinttmp,xint,databasis%nshell*(databasis%nshell+1)/2,mpi_comm)
 !
       return
 end
