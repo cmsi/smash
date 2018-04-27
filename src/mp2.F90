@@ -233,7 +233,7 @@ end
 ! Third and fourth integral transformations and MP2 energy calculation
 !
       if(datacomp%master) write(*,'("    Start third and fourth integral transformations")')
-      call mp2trans34(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,noac,nvac,ncore, &
+      call mp2trans34(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,noac,nvac,ncore,nao, &
 &                     idis,nproc,myrank,mpi_comm)
 !
       deallocate(trint3,trint4)
@@ -352,7 +352,7 @@ end
 !
         if(datacomp%master) &
 &         write(*,'("    Start third and fourth integral transformations of Pass",i5)')ipass
-        call mp2trans34m(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,nvac,ncore, &
+        call mp2trans34m(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,nvac,ncore,nao, &
 &                        idis,numij,ijindex(1,ipass),nproc,myrank,mpi_comm)
 !
         deallocate(trint3,trint4)
@@ -459,7 +459,7 @@ end
 
 
 !---------------------------------------------------------------------------------------
-  subroutine mp2trans34(cmovir,energymo,trint2,trint3,trint4,emp2st,noac,nvac,ncore, &
+  subroutine mp2trans34(cmovir,energymo,trint2,trint3,trint4,emp2st,noac,nvac,ncore,nao, &
 &                       idis,nproc,myrank,mpi_comm)
 !---------------------------------------------------------------------------------------
 !
@@ -474,10 +474,9 @@ end
 ! Work: trint3  (Third transformed integrals)
 !       trint4  (Fourth transformed integrals)
 !
-      use modbasis, only : nao
       use modmolecule, only : nmo
       implicit none
-      integer,intent(in) :: noac, nvac, ncore, nproc, myrank, mpi_comm, idis(0:nproc-1,4)
+      integer,intent(in) :: noac, nvac, ncore, nao, nproc, myrank, mpi_comm, idis(0:nproc-1,4)
       integer :: numrecv, iproc, irecv(0:nproc-1), noac3, ncycle, icycle, myij
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: cmovir(nao*nvac), energymo(nmo)
@@ -952,7 +951,7 @@ end
 
 
 !---------------------------------------------------------------------------------------
-  subroutine mp2trans34m(cmovir,energymo,trint2,trint3,trint4,emp2st,nvac,ncore, &
+  subroutine mp2trans34m(cmovir,energymo,trint2,trint3,trint4,emp2st,nvac,ncore,nao, &
 &                        idis,numij,ijindex,nproc,myrank,mpi_comm)
 !---------------------------------------------------------------------------------------
 !
@@ -968,10 +967,9 @@ end
 ! Work: trint3  (Third transformed integrals)
 !       trint4  (Fourth transformed integrals)
 !
-      use modbasis, only : nao
       use modmolecule, only : nmo
       implicit none
-      integer,intent(in) :: nvac, ncore, nproc, myrank, mpi_comm, idis(0:nproc-1,4)
+      integer,intent(in) :: nvac, ncore, nao, nproc, myrank, mpi_comm, idis(0:nproc-1,4)
       integer,intent(in) :: numij, ijindex(4)
       integer :: numrecv, iproc, irecv(0:nproc-1), ncycle, icycle, myij
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
