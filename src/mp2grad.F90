@@ -1375,24 +1375,28 @@ end
 !       paidiis   (Old Pai for DIIS)
 !       diismtrx  (DIIS matrix)
 !
-      use modbasis, only : nao, nshell
       use modjob, only : threshmp2cphf, maxmp2diis, maxmp2iter
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nocc, nvir, maxdim, nproc, myrank, mpi_comm, idis(0:nproc-1,8)
-      integer :: moa, moi, itdiis, iter, ii, ij, jj, ia
+      integer :: nao, moa, moi, itdiis, iter, ii, ij, jj, ia
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
-      real(8),intent(in) :: xlai(nocc,nvir), cmo(nao,nao), xint(nshell*(nshell+1)/2)
-      real(8),intent(in) :: energymo(nao)
-      real(8),intent(out) :: pai(nocc,nvir), paiprev(nocc,nvir), pls(nao*(nao+1)/2)
-      real(8),intent(out) :: pmax(nshell*(nshell+1)/2), paifock(nao*(nao+1)/2)
+      real(8),intent(in) :: xlai(nocc,nvir), cmo(databasis%nao,databasis%nao)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2), energymo(databasis%nao)
+      real(8),intent(out) :: pai(nocc,nvir), paiprev(nocc,nvir)
+      real(8),intent(out) :: pls(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: pmax(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(out) :: paifock(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: errdiis(idis(myrank,7)*maxmp2diis)
       real(8),intent(out) :: paidiis(idis(myrank,7)*maxmp2diis)
       real(8),intent(out) :: diismtrx(maxmp2diis*(maxmp2diis+1)/2)
-      real(8),intent(out) :: work1(nao,nao), work2(nao*nao)
+      real(8),intent(out) :: work1(databasis%nao,databasis%nao)
+      real(8),intent(out) :: work2(databasis%nao*databasis%nao)
       real(8) :: deltapai
+!
+      nao= databasis%nao
 !
 ! Set initial Pai
 !
@@ -1455,7 +1459,7 @@ end
 !
         if(iter >= 2) then
           itdiis= itdiis+1
-          call mp2graddiis(pai,work2,errdiis,paidiis,diismtrx,work1,nocc,nvir,maxmp2diis, &
+          call mp2graddiis(pai,work2,errdiis,paidiis,diismtrx,work1,nocc,nvir,nao,maxmp2diis, &
 &                          itdiis,idis,nproc,myrank,mpi_comm)
         endif
 !
@@ -1492,7 +1496,7 @@ end
 end
 
 !---------------------------------------------------------------------------------------
-  subroutine mp2graddiis(pai,err,errdiis,paidiis,diismtrx,work,nocc,nvir,maxmp2diis, &
+  subroutine mp2graddiis(pai,err,errdiis,paidiis,diismtrx,work,nocc,nvir,nao,maxmp2diis, &
 &                        itdiis,idis,nproc,myrank,mpi_comm)
 !---------------------------------------------------------------------------------------
 !
@@ -1505,9 +1509,8 @@ end
 !       diismtrx  (DIIS matrix)
 ! Work :work
 !
-      use modbasis, only : nao
       implicit none
-      integer,intent(in) :: nocc, nvir, maxmp2diis, itdiis, nproc, myrank, mpi_comm
+      integer,intent(in) :: nocc, nvir, nao, maxmp2diis, itdiis, nproc, myrank, mpi_comm
       integer,intent(in) :: idis(0:nproc-1,8)
       integer :: num, istart, ii, jj, ij, ipiv(maxmp2diis+1), info
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
@@ -1575,17 +1578,21 @@ end
 !       pmn       (Pmn (AO bais)
 ! Work :pmnfock,pmn2,pmax,work1,work2
 !
-      use modbasis, only : nao, nshell
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nocc, nvir, nvac, maxdim, nproc, myrank, mpi_comm
-      integer :: moa, moi, moj, ii, ij, jj
+      integer :: nao, moa, moi, moj, ii, ij, jj
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
-      real(8),intent(in) :: pai(nocc,nvir), cmo(nao,nao), energymo(nao), xint(nshell*(nshell+1)/2)
-      real(8),intent(out) :: pmnfock(nao*(nao+1)/2), pmn2(nao*(nao+1)/2)
-      real(8),intent(out) :: pmax(nshell*(nshell+1)/2), work1(nao,nao), work2(nao*nao)
-      real(8),intent(inout) :: wij(nocc,nocc), wai(nocc,nvac), pmn(nao,nao)
+      real(8),intent(in) :: pai(nocc,nvir), cmo(databasis%nao,databasis%nao)
+      real(8),intent(in) :: energymo(databasis%nao), xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(out) :: pmnfock(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: pmn2(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: pmax(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(out) :: work1(databasis%nao,databasis%nao), work2(databasis%nao*databasis%nao)
+      real(8),intent(inout) :: wij(nocc,nocc), wai(nocc,nvac), pmn(databasis%nao,databasis%nao)
+!
+      nao= databasis%nao
 !
 ! Calculate Wai[II]
 !
