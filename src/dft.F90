@@ -82,7 +82,7 @@
 &                          +xyzpt(3,jatom)*xyzpt(3,jatom)
             enddo
 !
-            call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff)
+            call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,databasis)
 !
             rhoa= zero
             grhoa(1:3)= zero
@@ -270,7 +270,7 @@ end
 &                          +xyzpt(3,jatom)*xyzpt(3,jatom)
             enddo
 !
-            call griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff)
+            call griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff,databasis)
 !
             rhoa= zero
             grhoa(1:3)= zero
@@ -628,28 +628,29 @@ end
 
 
 !--------------------------------------------------------------
-  subroutine gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff)
+  subroutine gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,databasis)
 !--------------------------------------------------------------
 !
 ! Calculate closed-shell AO and MO values for a grid point
 !
       use modmolecule, only : natom, neleca
-      use modbasis, only : nao
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer :: ii, jj
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom), transcmo(neleca,nao), aocutoff
-      real(8),intent(out) :: vao(nao,4), vmo(neleca,4)
+      real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom), transcmo(neleca,databasis%nao), aocutoff
+      real(8),intent(out) :: vao(databasis%nao,4), vmo(neleca,4)
 !
 ! Calculate AO values for a grid point
 !
       vao(:,:)= zero
-      call gridao(vao,xyzpt,rsqrd)
+      call gridao(vao,xyzpt,rsqrd,databasis)
 !
 ! Calculate MO values for a grid point
 !
       vmo(:,:)= zero
-      do ii= 1,nao
+      do ii= 1,databasis%nao
         if(abs(vao(ii,1))+abs(vao(ii,2)) &
 &         +abs(vao(ii,3))+abs(vao(ii,4)) > aocutoff) then
           do jj= 1,neleca
@@ -666,27 +667,28 @@ end
 
 
 !-------------------------------------------------------------------------------
-  subroutine griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff)
+  subroutine griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff,databasis)
 !-------------------------------------------------------------------------------
 !
 ! Calculate open-shell AO and MO values for a grid point
 !
       use modmolecule, only : natom, neleca, nelecb
-      use modbasis, only : nao
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer :: ii, jj
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom), transcmoa(neleca,nao)
-      real(8),intent(in) :: transcmob(nelecb,nao), aocutoff
-      real(8),intent(out) :: vao(nao,4), vmoa(neleca,4), vmob(nelecb,4)
+      real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom), transcmoa(neleca,databasis%nao)
+      real(8),intent(in) :: transcmob(nelecb,databasis%nao), aocutoff
+      real(8),intent(out) :: vao(databasis%nao,4), vmoa(neleca,4), vmob(nelecb,4)
 !
       vao(:,:)= zero
 !
-      call gridao(vao,xyzpt,rsqrd)
+      call gridao(vao,xyzpt,rsqrd,databasis)
 !
       vmoa(:,:)= zero
       vmob(:,:)= zero
-      do ii= 1,nao
+      do ii= 1,databasis%nao
         if(abs(vao(ii,1))+abs(vao(ii,2)) &
 &         +abs(vao(ii,3))+abs(vao(ii,4)) > aocutoff) then
           do jj= 1,neleca
@@ -709,16 +711,18 @@ end
 
 
 !-------------------------------------
-  subroutine gridao(vao,xyzpt,rsqrd)
+  subroutine gridao(vao,xyzpt,rsqrd,databasis)
 !-------------------------------------
 !
 ! Calculate AO values for a grid point
 !
       use modmolecule, only : natom
-      use modbasis, only : ex, coeff, nshell, nao, locbf, locatom, &
-&                          mprim, mbf, mtype
+!      use modbasis, only : ex, coeff, nshell, nao, locbf, locatom, &
+!&                          mprim, mbf, mtype
       use modjob, only : threshex
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer :: icount, ish, numprim, iatom, iprim, nang, nbf, ilocbf, ii, jj
       real(8),parameter :: half=0.5D+00, one=1.0D+00, two=2.0D+00
       real(8),parameter :: three=3.0D+00, four=4.0D+00, five=5.0D+00, six=6.0D+00
@@ -758,17 +762,17 @@ end
       real(8),parameter :: faci5=0.45285552331841995D+00 ! sqrt(105/2)/16
       real(8),parameter :: faci6=0.57282196186948000D+00 ! sqrt(21)/8
       real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom)
-      real(8),intent(inout) :: vao(nao,4)
+      real(8),intent(inout) :: vao(databasis%nao,4)
       real(8) :: expval, fac, tmp(28,4), xx, yy, zz, xy, xz, yz
       real(8) :: xyz3(10), xyz4(15), xyz5(21), xyz6(28), xyz7(36)
 !
       icount= 0
-      do ish= 1,nshell
-        nang= mtype(ish)
-        numprim= mprim(ish)
-        nbf = mbf(ish)
-        ilocbf= locbf(ish)
-        iatom= locatom(ish)
+      do ish= 1,databasis%nshell
+        nang= databasis%mtype(ish)
+        numprim= databasis%mprim(ish)
+        nbf = databasis%mbf(ish)
+        ilocbf= databasis%locbf(ish)
+        iatom= databasis%locatom(ish)
         select case(nang)
 !
 ! S function
@@ -776,9 +780,9 @@ end
           case(0)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac= ex(icount)*expval*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac= databasis%ex(icount)*expval*two
               vao(ilocbf+1,1)= vao(ilocbf+1,1)+expval
               vao(ilocbf+1,2)= vao(ilocbf+1,2)-fac*xyzpt(1,iatom)
               vao(ilocbf+1,3)= vao(ilocbf+1,3)-fac*xyzpt(2,iatom)
@@ -790,9 +794,9 @@ end
           case(1)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac= ex(icount)*expval*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac= databasis%ex(icount)*expval*two
               vao(ilocbf+1,1)= vao(ilocbf+1,1)+expval*xyzpt(1,iatom)
               vao(ilocbf+2,1)= vao(ilocbf+2,1)+expval*xyzpt(2,iatom)
               vao(ilocbf+3,1)= vao(ilocbf+3,1)+expval*xyzpt(3,iatom)
@@ -818,9 +822,9 @@ end
           case(2)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac= ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac= databasis%ex(icount)*two
               tmp(1,1)= expval*xyzpt(1,iatom)*xyzpt(1,iatom)
               tmp(2,1)= expval*xyzpt(1,iatom)*xyzpt(2,iatom)*sqrt3
               tmp(3,1)= expval*xyzpt(1,iatom)*xyzpt(3,iatom)*sqrt3
@@ -877,9 +881,9 @@ end
           case(3)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac= ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac= databasis%ex(icount)*two
               xx= xyzpt(1,iatom)*xyzpt(1,iatom)
               yy= xyzpt(2,iatom)*xyzpt(2,iatom)
               zz= xyzpt(3,iatom)*xyzpt(3,iatom)
@@ -973,9 +977,9 @@ end
           case(4)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac= ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac= databasis%ex(icount)*two
               xx= xyzpt(1,iatom)*xyzpt(1,iatom)
               xy= xyzpt(1,iatom)*xyzpt(2,iatom)
               xz= xyzpt(1,iatom)*xyzpt(3,iatom)
@@ -1116,9 +1120,9 @@ end
           case(5)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac= ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac= databasis%ex(icount)*two
               xx= xyzpt(1,iatom)*xyzpt(1,iatom)
               xy= xyzpt(1,iatom)*xyzpt(2,iatom)
               xz= xyzpt(1,iatom)*xyzpt(3,iatom)
@@ -1311,9 +1315,9 @@ end
           case(6)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac= ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac= databasis%ex(icount)*two
               xx= xyzpt(1,iatom)*xyzpt(1,iatom)
               xy= xyzpt(1,iatom)*xyzpt(2,iatom)
               xz= xyzpt(1,iatom)*xyzpt(3,iatom)
@@ -2419,7 +2423,7 @@ end
               uvec(3,jatom)= xyzpt(3,jatom)*tmp
             enddo
 !
-            call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff)
+            call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,databasis)
 !
             rhoa= zero
             grhoa(1:3)= zero
@@ -2540,7 +2544,7 @@ end
               uvec(3,jatom)= xyzpt(3,jatom)*tmp
             enddo
 !
-            call griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff)
+            call griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff,databasis)
 !
             rhoa= zero
             grhoa(1:3)= zero
