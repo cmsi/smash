@@ -18,7 +18,6 @@
 !
 ! Driver of setting ecp functions
 !
-      use modbasis, only : ecp, maxangecp, izcore, locecp, mprimecp, execp, coeffecp, mtypeecp
       use modmolecule, only : natom, znuc
       use modtype, only : typebasis, typecomp
       implicit none
@@ -30,10 +29,6 @@
       integer :: maxgenangecp(-9:112), izgencore(-9:112)
       character(len=16) :: atomecp(-9:112)
 !
-      maxangecp(1:natom)= -1
-      izcore(1:natom)= 0
-      locecp(:,1:natom)= 0
-      mprimecp(:,1:natom)= 0
       databasis%maxangecp(1:natom)= -1
       databasis%izcore(1:natom)= 0
       databasis%locecp(:,1:natom)= 0
@@ -41,27 +36,19 @@
       iprim= 0
 !
       if(datacomp%master) then
-        if((ecp == 'LANL2DZ').or.(ecp == 'LANL2MB')) then
+        if((databasis%ecp == 'LANL2DZ').or.(databasis%ecp == 'LANL2MB')) then
           do iatom= 1,natom
             call ecplanl2(iatom,iprim,databasis)
           enddo
-        elseif(ecp == 'GEN') then
+        elseif(databasis%ecp == 'GEN') then
           call readecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,datagenbasis,datacomp)
           call setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim,databasis,datagenbasis)
         else
-          write(*,'(" Error! This program does not support ECP function,",a10,".")')ecp
+          write(*,'(" Error! This program does not support ECP function,",a10,".")')databasis%ecp
           call iabort
         endif
       endif
 !
-!     call para_bcasti(iprim,1,0,datacomp%mpi_comm1)
-!     call para_bcasti(maxangecp,natom,0,datacomp%mpi_comm1)
-!     call para_bcasti(izcore,natom,0,datacomp%mpi_comm1)
-!     call para_bcasti(locecp(0,1),natom*6,0,datacomp%mpi_comm1)
-!     call para_bcasti(mprimecp(0,1),natom*6,0,datacomp%mpi_comm1)
-!     call para_bcastr(execp,iprim,0,datacomp%mpi_comm1)
-!     call para_bcastr(coeffecp,iprim,0,datacomp%mpi_comm1)
-!     call para_bcasti(mtypeecp,iprim,0,datacomp%mpi_comm1)
       call para_bcasti(iprim,1,0,datacomp%mpi_comm1)
       call para_bcasti(databasis%maxangecp    ,natom  ,0,datacomp%mpi_comm1)
       call para_bcasti(databasis%izcore       ,natom  ,0,datacomp%mpi_comm1)
@@ -70,20 +57,9 @@
       call para_bcastr(databasis%execp        ,iprim  ,0,datacomp%mpi_comm1)
       call para_bcastr(databasis%coeffecp     ,iprim  ,0,datacomp%mpi_comm1)
       call para_bcasti(databasis%mtypeecp     ,iprim  ,0,datacomp%mpi_comm1)
-!!!!!!!!!!!!!!!!!!!
-!ishimura-start
-maxangecp=databasis%maxangecp
-izcore   =databasis%izcore   
-locecp   =databasis%locecp
-mprimecp =databasis%mprimecp
-execp    =databasis%execp    
-coeffecp =databasis%coeffecp 
-mtypeecp =databasis%mtypeecp 
-!ishimura-end
-!!!!!!!!!!!!!!!!!!!
 ! 
       do iatom= 1,natom
-        znuc(iatom)= znuc(iatom)-izcore(iatom)
+        znuc(iatom)= znuc(iatom)-databasis%izcore(iatom)
       enddo
 !
       return
