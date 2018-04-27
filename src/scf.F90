@@ -472,7 +472,7 @@ end
           enddo
           do lsh= 1,lnum
             call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
-            call rfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
+            call rfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,databasis)
           enddo
         enddo
       enddo
@@ -488,33 +488,35 @@ end
 
 
 !----------------------------------------------------------------
-  subroutine rfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,lsh,maxdim)
+  subroutine rfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,lsh,maxdim,databasis)
 !----------------------------------------------------------------
 !
 ! Form Fock matrix from two-electron intgrals
 !
-      use modbasis, only : nao, mbf, locbf
       use modjob, only : cutint2
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nbfi, nbfj, nbfk, nbfl
       integer :: locbfi, locbfj, locbfk, locbfl, jmax, lmax, i, j, k, l, ij, kl
       integer :: nij, nkl, nik, nil, njk, njl
       integer :: iloc, jloc, kloc, lloc, iloc2, jloc2, kloc2, lloc2, kloc0, jloc0
       real(8),parameter :: half=0.5D+00, four=4.0D+00
-      real(8),intent(in) :: dmtrx(nao*(nao+1)/2), twoeri(maxdim,maxdim,maxdim,maxdim)
-      real(8),intent(inout) :: fock(nao*(nao+1)/2)
+      real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim)
+      real(8),intent(inout) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8) :: val, val4
       logical :: ieqj, keql, ieqk, jeql, ikandjl, ijorkl
 !
-      nbfi = mbf(ish)
-      nbfj = mbf(jsh)
-      nbfk = mbf(ksh)
-      nbfl = mbf(lsh)
-      locbfi= locbf(ish)
-      locbfj= locbf(jsh)
-      locbfk= locbf(ksh)
-      locbfl= locbf(lsh)
+      nbfi = databasis%mbf(ish)
+      nbfj = databasis%mbf(jsh)
+      nbfk = databasis%mbf(ksh)
+      nbfl = databasis%mbf(lsh)
+      locbfi= databasis%locbf(ish)
+      locbfj= databasis%locbf(jsh)
+      locbfk= databasis%locbf(ksh)
+      locbfl= databasis%locbf(lsh)
 !
       ieqj= ish.eq.jsh
       keql= ksh.eq.lsh
@@ -1778,7 +1780,7 @@ end
           enddo
           do lsh= 1,lnum
             call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
-            call ufockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
+            call ufockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,databasis)
           enddo
         enddo
       enddo
@@ -1796,34 +1798,37 @@ end
 
 
 !-------------------------------------------------------------------------------
-  subroutine ufockeri(focka,fockb,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,lsh,maxdim)
+  subroutine ufockeri(focka,fockb,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,lsh,maxdim,databasis)
 !-------------------------------------------------------------------------------
 !
 ! Form unrestricted Fock matrix from two-electron intgrals
 !
-      use modbasis, only : nao, mbf, locbf
       use modjob, only : cutint2
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nbfi, nbfj, nbfk, nbfl
       integer :: locbfi, locbfj, locbfk, locbfl, jmax, lmax, i, j, k, l, ij, kl
       integer :: nij, nkl, nik, nil, njk, njl
       integer :: iloc, jloc, kloc, lloc, iloc2, jloc2, kloc2, lloc2, jloc0, kloc0
       real(8),parameter :: half=0.5D+00, two=2.0D+00, four=4.0D+00
-      real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
+      real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim)
-      real(8),intent(inout) :: focka(nao*(nao+1)/2), fockb(nao*(nao+1)/2)
+      real(8),intent(inout) :: focka(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(inout) :: fockb(databasis%nao*(databasis%nao+1)/2)
       real(8) :: val, val2, val4
       logical :: ieqj, keql, ieqk, jeql, ikandjl, ijorkl
 !
-      nbfi = mbf(ish)
-      nbfj = mbf(jsh)
-      nbfk = mbf(ksh)
-      nbfl = mbf(lsh)
-      locbfi= locbf(ish)
-      locbfj= locbf(jsh)
-      locbfk= locbf(ksh)
-      locbfl= locbf(lsh)
+      nbfi = databasis%mbf(ish)
+      nbfj = databasis%mbf(jsh)
+      nbfk = databasis%mbf(ksh)
+      nbfl = databasis%mbf(lsh)
+      locbfi= databasis%locbf(ish)
+      locbfj= databasis%locbf(jsh)
+      locbfk= databasis%locbf(ksh)
+      locbfl= databasis%locbf(lsh)
 !
       ieqj= ish.eq.jsh
       keql= ksh.eq.lsh
