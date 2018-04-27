@@ -638,25 +638,30 @@ end
 
 !------------------------------------------------------------------------------
   subroutine formrdftfock(focktotal,fock,dmtrx,dmax,xint,maxdim,hfexchange, &
-&                         nproc,myrank,mpi_comm)
+&                         nproc,myrank,mpi_comm,databasis)
 !------------------------------------------------------------------------------
 !
 ! Driver of DFT Fock matrix formation from two-electron intgrals
 !
-      use modbasis, only : nshell, nao
       use modjob, only : cutint2
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart, ishcheck
-      integer(8) :: ncount, icount(nshell)
+      integer(8) :: ncount, icount(databasis%nshell)
       real(8),parameter :: zero=0.0D+00, two=2.0D+00, four=4.0D+00
-      real(8),intent(in) :: dmtrx(nao*(nao+1)/2), dmax(nshell*(nshell+1)/2)
-      real(8),intent(in) :: xint(nshell*(nshell+1)/2), hfexchange
-      real(8),intent(out) :: focktotal(nao*(nao+1)/2), fock(nao*(nao+1)/2)
+      real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: dmax(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2), hfexchange
+      real(8),intent(out) :: focktotal(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8) :: xijkl, denmax, twoeri(maxdim**4), denmax1
-      integer :: last, ltmp(nshell), lnum, ll
+      integer :: nao, nshell, last, ltmp(databasis%nshell), lnum, ll
 !
+      nao= databasis%nao
+      nshell= databasis%nshell
       fock(:)= zero
 !
       ncount= 0
@@ -720,7 +725,7 @@ end
           enddo
           do lsh= 1,lnum
             call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
-            call rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,hfexchange)
+            call rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,hfexchange,databasis)
           enddo
         enddo
       enddo
@@ -736,34 +741,36 @@ end
 
 
 !------------------------------------------------------------------------------
-  subroutine rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,lsh,maxdim,hfexchange)
+  subroutine rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,lsh,maxdim,hfexchange,databasis)
 !------------------------------------------------------------------------------
 !
 ! Form DFT Fock matrix from two-electron intgrals
 !
-      use modbasis, only : nao, mbf, locbf
       use modjob, only : cutint2
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nbfi, nbfj, nbfk, nbfl
       integer :: locbfi, locbfj, locbfk, locbfl, jmax, lmax, i, j, k, l, ij, kl
       integer :: nij, nkl, nik, nil, njk, njl
       integer :: iloc, jloc, kloc, lloc, iloc2, jloc2, kloc2, lloc2, jloc0, kloc0
       real(8),parameter :: half=0.5D+00, four=4.0D+00
-      real(8),intent(in) :: dmtrx(nao*(nao+1)/2), twoeri(maxdim,maxdim,maxdim,maxdim)
+      real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim)
       real(8),intent(in) :: hfexchange
-      real(8),intent(inout) :: fock(nao*(nao+1)/2)
+      real(8),intent(inout) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8) :: val, val4
       logical :: ieqj, keql, ieqk, jeql, ikandjl, ijorkl
 !
-      nbfi = mbf(ish)
-      nbfj = mbf(jsh)
-      nbfk = mbf(ksh)
-      nbfl = mbf(lsh)
-      locbfi= locbf(ish)
-      locbfj= locbf(jsh)
-      locbfk= locbf(ksh)
-      locbfl= locbf(lsh)
+      nbfi = databasis%mbf(ish)
+      nbfj = databasis%mbf(jsh)
+      nbfk = databasis%mbf(ksh)
+      nbfl = databasis%mbf(lsh)
+      locbfi= databasis%locbf(ish)
+      locbfj= databasis%locbf(jsh)
+      locbfk= databasis%locbf(ksh)
+      locbfl= databasis%locbf(lsh)
 !
       ieqj= ish.eq.jsh
       keql= ksh.eq.lsh
@@ -1083,7 +1090,7 @@ end
 ! Calculate two-electron integrals
 !
         call formrdftfock(fock,work,dmtrx,dmax,xint,maxdim,hfexchange, &
-&                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1)
+&                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis)
         call dscal(nao3,half,fock,1)
         call cpu_time(time2)
 !
@@ -2196,7 +2203,7 @@ end
 ! Calculate two-electron integrals
 !
         call formudftfock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,hfexchange, &
-&                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1)
+&                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis)
         call dscal(nao3,half,focka,1)
         call dscal(nao3,half,fockb,1)
         call cpu_time(time2)
@@ -2443,7 +2450,7 @@ end
 
 !-----------------------------------------------------------------------------------------
   subroutine formudftfock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,hfexchange, &
-&                         nproc,myrank,mpi_comm)
+&                         nproc,myrank,mpi_comm,databasis)
 !-----------------------------------------------------------------------------------------
 !
 ! Driver of DFT Fock matrix formation from two-electron intgrals
@@ -2454,20 +2461,27 @@ end
 !       fock2  (Beta Fock matrix)
 !       fock3  (Work space)
 !
-      use modbasis, only : nshell, nao
       use modjob, only : cutint2
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart, ishcheck
-      integer(8) :: ncount, icount(nshell)
+      integer(8) :: ncount, icount(databasis%nshell)
       real(8),parameter :: zero=0.0D+00, two=2.0D+00, four=4.0D+00
-      real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
-      real(8),intent(in) :: dmax(nshell*(nshell+1)/2), xint(nshell*(nshell+1)/2), hfexchange
-      real(8),intent(out) :: fock1(nao*(nao+1)/2), fock2(nao*(nao+1)/2), fock3(nao*(nao+1)/2)
+      real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: dmax(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2), hfexchange
+      real(8),intent(out) :: fock1(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fock2(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fock3(databasis%nao*(databasis%nao+1)/2)
       real(8) :: xijkl, denmax, twoeri(maxdim**4), denmax1
-      integer :: last, ltmp(nshell), lnum, ll
+      integer :: nao, nshell, last, ltmp(databasis%nshell), lnum, ll
 !
+      nao= databasis%nao
+      nshell= databasis%nshell
       fock2(:)= zero
       fock3(:)= zero
 !
@@ -2533,7 +2547,7 @@ end
           do lsh= 1,lnum
             call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
             call udftfockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim, &
-&                            hfexchange)
+&                            hfexchange,databasis)
           enddo
         enddo
       enddo
@@ -2552,34 +2566,37 @@ end
 
 !------------------------------------------------------------------------------------
   subroutine udftfockeri(focka,fockb,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,lsh,maxdim, &
-&                        hfexchange)
+&                        hfexchange,databasis)
 !------------------------------------------------------------------------------------
 !
 ! Form unrestricted DFT Fock matrix from two-electron intgrals
 !
-      use modbasis, only : nao, mbf, locbf
       use modjob, only : cutint2
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nbfi, nbfj, nbfk, nbfl
       integer :: locbfi, locbfj, locbfk, locbfl, jmax, lmax, i, j, k, l, ij, kl
       integer :: nij, nkl, nik, nil, njk, njl
       integer :: iloc, jloc, kloc, lloc, iloc2, jloc2, kloc2, lloc2, jloc0, kloc0
       real(8),parameter :: half=0.5D+00, two=2.0D+00, four=4.0D+00
-      real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
+      real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim), hfexchange
-      real(8),intent(inout) :: focka(nao*(nao+1)/2), fockb(nao*(nao+1)/2)
+      real(8),intent(inout) :: focka(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(inout) :: fockb(databasis%nao*(databasis%nao+1)/2)
       real(8) :: val, val2, val4
       logical :: ieqj, keql, ieqk, jeql, ikandjl, ijorkl
 !
-      nbfi = mbf(ish)
-      nbfj = mbf(jsh)
-      nbfk = mbf(ksh)
-      nbfl = mbf(lsh)
-      locbfi= locbf(ish)
-      locbfj= locbf(jsh)
-      locbfk= locbf(ksh)
-      locbfl= locbf(lsh)
+      nbfi = databasis%mbf(ish)
+      nbfj = databasis%mbf(jsh)
+      nbfk = databasis%mbf(ksh)
+      nbfl = databasis%mbf(lsh)
+      locbfi= databasis%locbf(ish)
+      locbfj= databasis%locbf(jsh)
+      locbfk= databasis%locbf(ksh)
+      locbfl= databasis%locbf(lsh)
 !
       ieqj= ish.eq.jsh
       keql= ksh.eq.lsh
