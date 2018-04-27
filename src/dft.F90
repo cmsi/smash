@@ -717,8 +717,6 @@ end
 ! Calculate AO values for a grid point
 !
       use modmolecule, only : natom
-!      use modbasis, only : ex, coeff, nshell, nao, locbf, locatom, &
-!&                          mprim, mbf, mtype
       use modjob, only : threshex
       use modtype, only : typebasis
       implicit none
@@ -1588,15 +1586,17 @@ end
 
 
 !-----------------------------------------
-  subroutine gridd2ao(vg2ao,xyzpt,rsqrd)
+  subroutine gridd2ao(vg2ao,xyzpt,rsqrd,databasis)
 !-----------------------------------------
 !
 ! Calculate second derivatives of AO values for a grid point
 !
       use modmolecule, only : natom
-      use modbasis, only : ex, coeff, nshell, nao, locbf, locatom, mprim, mbf, mtype
+!     use modbasis, only : ex, coeff, nshell, nao, locbf, locatom, mprim, mbf, mtype
       use modjob, only : threshex
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer :: icount, ish, numprim, iatom, iprim, nang, nbf, iloc, ii, jj
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00, three=3.0D+00
       real(8),parameter :: four=4.0D+00, five=5.0D+00, six=6.0D+00, seven=7.0D+00
@@ -1626,25 +1626,25 @@ end
       real(8),parameter :: fach4=2.56173769148989959D+00 ! sqrt(105)/4
       real(8),parameter :: fach5=0.48412291827592711D+00 ! sqrt(15)/8
       real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom)
-      real(8),intent(out) :: vg2ao(nao,6)
+      real(8),intent(out) :: vg2ao(databasis%nao,6)
       real(8) :: fac, fac2, expval, tmp(21,6), xx, xy, xz, yy, yz, zz
       real(8) :: xyz3(10), xyz4(15), xyz5(21), xyz6(28), xyz7(36)
 !
       vg2ao(:,:)= zero
       icount= 0
-      do ish= 1,nshell
-        nang= mtype(ish)
-        numprim= mprim(ish)
-        nbf = mbf(ish)
-        iloc= locbf(ish)
-        iatom= locatom(ish)
+      do ish= 1,databasis%nshell
+        nang= databasis%mtype(ish)
+        numprim= databasis%mprim(ish)
+        nbf = databasis%mbf(ish)
+        iloc= databasis%locbf(ish)
+        iatom= databasis%locatom(ish)
         select case(nang)
           case(0)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac =-ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac =-databasis%ex(icount)*two
               fac2= fac*fac
               xx= xyzpt(1,iatom)*xyzpt(1,iatom)
               xy= xyzpt(1,iatom)*xyzpt(2,iatom)
@@ -1662,9 +1662,9 @@ end
           case(1)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac =-ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac =-databasis%ex(icount)*two
               fac2= fac*fac
               xyz3( 1)= xyzpt(1,iatom)*xyzpt(1,iatom)*xyzpt(1,iatom)*fac2
               xyz3( 2)= xyzpt(1,iatom)*xyzpt(1,iatom)*xyzpt(2,iatom)*fac2
@@ -1698,9 +1698,9 @@ end
           case(2)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac=-ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac=-databasis%ex(icount)*two
               xx= xyzpt(1,iatom)*xyzpt(1,iatom)*fac
               yy= xyzpt(2,iatom)*xyzpt(2,iatom)*fac
               zz= xyzpt(3,iatom)*xyzpt(3,iatom)*fac
@@ -1777,9 +1777,9 @@ end
           case(3)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac=-ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac=-databasis%ex(icount)*two
               xx= xyzpt(1,iatom)*xyzpt(1,iatom)*fac
               yy= xyzpt(2,iatom)*xyzpt(2,iatom)*fac
               zz= xyzpt(3,iatom)*xyzpt(3,iatom)*fac
@@ -1906,9 +1906,9 @@ end
           case(4)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac=-ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac=-databasis%ex(icount)*two
               xx= xyzpt(1,iatom)*xyzpt(1,iatom)
               yy= xyzpt(2,iatom)*xyzpt(2,iatom)
               zz= xyzpt(3,iatom)*xyzpt(3,iatom)
@@ -2088,9 +2088,9 @@ end
           case(5)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac=-ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac=-databasis%ex(icount)*two
               xx= xyzpt(1,iatom)*xyzpt(1,iatom)*fac
               xy= xyzpt(1,iatom)*xyzpt(2,iatom)*fac
               xz= xyzpt(1,iatom)*xyzpt(3,iatom)*fac
@@ -2437,7 +2437,7 @@ end
             grhoa(1)= grhoa(1)*two
             grhoa(2)= grhoa(2)*two
             grhoa(3)= grhoa(3)*two
-            call gridd2ao(vao(1,5),xyzpt,rsqrd)
+            call gridd2ao(vao(1,5),xyzpt,rsqrd,databasis)
 !
 ! Calculate weight derivative
 !
@@ -2565,7 +2565,7 @@ end
             if((rhoa+rhob) < rcutoff)cycle
             grhoa(1:3)= grhoa(1:3)*two
             grhob(1:3)= grhob(1:3)*two
-            call gridd2ao(vao(1,5),xyzpt,rsqrd)
+            call gridd2ao(vao(1,5),xyzpt,rsqrd,databasis)
 !
 ! Calculate weight derivative
 !
