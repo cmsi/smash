@@ -33,7 +33,8 @@
       integer :: idis(0:nproc-1,4), maxsize, ish, jsh, msize, memneed
       integer :: numocc3, npass
       real(8),parameter :: zero=0.0D+00, three=3.0D+00, p12=1.2D+00
-      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(nmo), xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(nmo)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
       real(8) :: emp2st(2), emp2stsum(2)
 !
       nao= databasis%nao
@@ -113,7 +114,7 @@
       elseif(numocc3 >= noac3) then
         if(datacomp%master) write(*,'(" == Single pass calculation ==")')
         call mp2single(emp2st,cmo,energymo,xint,noac,nvac,ncore,maxsize,maxdim,idis, &
-&                      nproc,myrank,mpi_comm,datacomp)
+&                      nproc,myrank,mpi_comm,databasis,datacomp)
 !
 ! Multiple pass
 !
@@ -125,7 +126,7 @@
           write(*,'("    Number of passes :",i5)')npass
         endif
         call mp2multi(emp2st,cmo,energymo,xint,noac,nvac,ncore,maxsize,maxdim,idis, &
-&                     npass,numocc3,nproc,myrank,mpi_comm,datacomp)
+&                     npass,numocc3,nproc,myrank,mpi_comm,databasis,datacomp)
       endif
 !
       call para_allreducer(emp2st,emp2stsum,2,mpi_comm)
@@ -171,7 +172,7 @@ end
 
 !---------------------------------------------------------------------------------------
   subroutine mp2single(emp2st,cmo,energymo,xint,noac,nvac,ncore,maxsize,maxdim,idis, &
-&                      nproc,myrank,mpi_comm,datacomp)
+&                      nproc,myrank,mpi_comm,databasis,datacomp)
 !---------------------------------------------------------------------------------------
 !
 ! Driver of single pass MP2 energy calculation
@@ -187,20 +188,22 @@ end
 !       idis    (Information for parallelization)
 ! Out : emp2st  (Partial MP2 energies)
 !
-      use modbasis, only : nshell, nao
       use modmolecule, only : neleca, nmo
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: noac, nvac, ncore, maxsize, maxdim, nproc, myrank, mpi_comm
       integer,intent(in) :: idis(0:nproc-1,4)
-      integer :: noac3, nao2, msize, mlsize
-      real(8),intent(in) :: cmo(nao,nao), energymo(nmo), xint(nshell*(nshell+1)/2)
+      integer :: noac3, nao, nao2, msize, mlsize
+      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(nmo)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
       real(8),intent(inout) :: emp2st(2)
       real(8),allocatable :: trint2(:), cmowrk(:), trint1a(:), trint1b(:)
       real(8),allocatable :: trint3(:), trint4(:)
 !
       noac3= noac*(noac+1)/2
+      nao= databasis%nao
       nao2 = nao*nao
 !
       call memset(maxsize*noac3,datacomp)
@@ -244,7 +247,7 @@ end
 
 !---------------------------------------------------------------------------------------
   subroutine mp2multi(emp2st,cmo,energymo,xint,noac,nvac,ncore,maxsize,maxdim,idis, &
-&                     npass,numocc3,nproc,myrank,mpi_comm,datacomp)
+&                     npass,numocc3,nproc,myrank,mpi_comm,databasis,datacomp)
 !---------------------------------------------------------------------------------------
 !
 ! Driver of multiple pass MP2 energy calculation
@@ -262,20 +265,22 @@ end
 !       numocc3 (Number of active occupied MO pairs per pass)
 ! Out : emp2st  (Partial MP2 energies)
 !
-      use modbasis, only : nshell, nao
       use modmolecule, only : neleca, nmo
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: noac, nvac, ncore, maxsize, maxdim, nproc, myrank, mpi_comm
       integer,intent(in) :: idis(0:nproc-1,4), npass, numocc3
-      integer :: noac3, nao2, msize, mlsize, ijindex(4,npass), icount, ipass, moi, moj, numij
-      real(8),intent(in) :: cmo(nao,nao), energymo(nmo), xint(nshell*(nshell+1)/2)
+      integer :: noac3, nao, nao2, msize, mlsize, ijindex(4,npass), icount, ipass, moi, moj, numij
+      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(nmo)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
       real(8),intent(inout) :: emp2st(2)
       real(8),allocatable :: trint2(:), cmowrk(:), trint1a(:), trint1b(:)
       real(8),allocatable :: trint3(:), trint4(:)
 !
       noac3= noac*(noac+1)/2
+      nao= databasis%nao
       nao2 = nao*nao
       icount= 0
       ipass= 1
