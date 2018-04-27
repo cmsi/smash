@@ -110,7 +110,6 @@ end
 ! Out : dmax    (Maximum density matrix elements)
 !       dmaxtmp (Work array)
 !
-      use modbasis, only : nshell, nao, mbf, locbf
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
@@ -118,20 +117,21 @@ end
       integer :: ish, jsh, ijsh, locbfi, locbfj, nbfi, nbfj
       integer :: jnbf, i, j, ii, ij
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: dmtrx(nao*(nao+1)/2)
-      real(8),intent(out) :: dmax(nshell*(nshell+1)/2), dmaxtmp(nshell*(nshell+1)/2)
+      real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: dmax(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(out) :: dmaxtmp(databasis%nshell*(databasis%nshell+1)/2)
       real(8) :: dtmp
 !
       dmaxtmp(:)= zero
 !
 !$OMP parallel private(locbfi,locbfj,nbfi,nbfj,jsh,ijsh,dtmp,i,j,ii,ij,jnbf)
-      do ish= nshell-myrank,1,-nproc
-        locbfi= locbf(ish)
-        nbfi  = mbf(ish)
+      do ish= databasis%nshell-myrank,1,-nproc
+        locbfi= databasis%locbf(ish)
+        nbfi  = databasis%mbf(ish)
 !$OMP do
         do jsh= 1,ish
-          locbfj= locbf(jsh)
-          nbfj  = mbf(jsh)
+          locbfj= databasis%locbf(jsh)
+          nbfj  = databasis%mbf(jsh)
           ijsh= ish*(ish-1)/2+jsh
           dtmp= zero
           do i= 1,nbfi
@@ -149,7 +149,7 @@ end
       enddo
 !$OMP end parallel
 !
-      call para_allreducer(dmaxtmp,dmax,nshell*(nshell+1)/2,mpi_comm)
+      call para_allreducer(dmaxtmp,dmax,databasis%nshell*(databasis%nshell+1)/2,mpi_comm)
       return
 end
 
