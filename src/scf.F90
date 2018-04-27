@@ -1072,7 +1072,7 @@ end
 !
         call formrfockexcor(fockd,fock,edft,totalelec,cmo,atomvec,radpt,angpt, &
 &                           rad,ptweight,vao,vmo,xyzpt,rsqrd,work,work2,idftex,idftcor, &
-&                           datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1)
+&                           datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis)
 !
 ! Calculate two-electron integrals
 !
@@ -2175,7 +2175,7 @@ end
 !
         call formufockexcor(fockda,fockdb,focka,edft,totalelec,cmoa,cmob,atomvec,&
 &                           radpt,angpt,rad,ptweight,vao,vmoa,vmob,xyzpt,rsqrd, &
-&                           work,work(neleca*nao+1),work2,idftex,idftcor,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1)
+&                           work,work(neleca*nao+1),work2,idftex,idftcor,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis)
 !
 ! Calculate two-electron integrals
 !

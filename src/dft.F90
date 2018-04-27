@@ -15,7 +15,7 @@
 !---------------------------------------------------------------------------------------------
   subroutine formrfockexcor(fockdsum,fockd,energy,totalelec,cmo,atomvec,radpt,angpt, &
 &                           rad,ptweight,vao,vmo,xyzpt,rsqrd,transcmo,work,idftex,idftcor, &
-&                           nproc,myrank,mpi_comm)
+&                           nproc,myrank,mpi_comm,databasis)
 !---------------------------------------------------------------------------------------------
 !
 ! Driver of DFT Fock matrix formation from exchange-correlation functionals
@@ -33,17 +33,19 @@
 !       vao,vmo,xyzpt,work (work space)
 !
       use modmolecule, only : natom, neleca
-      use modbasis, only : nao
       use modjob, only : threshweight, threshrho, threshdfock, threshdftao, nrad, nleb
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: idftex, idftcor, nproc, myrank, mpi_comm
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
-      real(8),intent(in) :: cmo(nao,neleca), atomvec(5,natom,natom), radpt(2,nrad)
+      real(8),intent(in) :: cmo(databasis%nao,neleca), atomvec(5,natom,natom), radpt(2,nrad)
       real(8),intent(in) :: angpt(4,nleb), rad(natom), ptweight(nleb,nrad,natom)
-      real(8),intent(out) :: fockdsum(nao*(nao+1)/2), fockd(nao*(nao+1)/2), energy, totalelec
-      real(8),intent(out) :: vao(nao,4), vmo(neleca,4), xyzpt(3,natom), rsqrd(natom)
-      real(8),intent(out) :: transcmo(neleca,nao), work(nao)
+      real(8),intent(out) :: fockdsum(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fockd(databasis%nao*(databasis%nao+1)/2), energy, totalelec
+      real(8),intent(out) :: vao(databasis%nao,4), vmo(neleca,4), xyzpt(3,natom), rsqrd(natom)
+      real(8),intent(out) :: transcmo(neleca,databasis%nao), work(databasis%nao)
       real(8) :: weight, rhoa, grhoa(3), excora(4)
       real(8) :: radpoint, tmp(2,2), wcutoff, rcutoff, fcutoff, aocutoff
 !
@@ -95,7 +97,7 @@
             grhoa(2)= grhoa(2)*two
             grhoa(3)= grhoa(3)*two
             call calcexcor(excora,excora,energy,rhoa,rhoa,grhoa,grhoa,weight,idftex,idftcor,1)
-            call fockexcor(fockd,excora,vao,vao(1,2),work,weight,nao,fcutoff)
+            call fockexcor(fockd,excora,vao,vao(1,2),work,weight,databasis%nao,fcutoff)
             totalelec=totalelec+weight*rhoa*two
           enddo
         enddo
@@ -104,7 +106,7 @@
 !
       tmp(1,1)= energy
       tmp(2,1)= totalelec
-      call para_allreducer(fockd,fockdsum,nao*(nao+1)/2,mpi_comm)
+      call para_allreducer(fockd,fockdsum,databasis%nao*(databasis%nao+1)/2,mpi_comm)
       call para_allreducer(tmp(1,1),tmp(1,2),2,mpi_comm)
       energy    = tmp(1,2)
       totalelec = tmp(2,2)
@@ -202,7 +204,7 @@ end
 !-------------------------------------------------------------------------------------------
   subroutine formufockexcor(fockd1,fockd2,fockd3,energy,totalelec,cmoa,cmob,atomvec, &
 &                           radpt,angpt,rad,ptweight,vao,vmoa,vmob,xyzpt,rsqrd, &
-&                           transcmoa,transcmob,work,idftex,idftcor,nproc,myrank,mpi_comm)
+&                           transcmoa,transcmob,work,idftex,idftcor,nproc,myrank,mpi_comm,databasis)
 !-------------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted DFT Fock matrix formation from exchange-correlation functionals
@@ -214,18 +216,23 @@ end
 !       fock3 (Work space)
 !
       use modmolecule, only : natom, neleca, nelecb
-      use modbasis, only : nao
       use modjob, only : threshweight, threshrho, threshdfock, threshdftao, nrad, nleb
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: idftex, idftcor, nproc, myrank, mpi_comm
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
-      real(8),intent(in) :: cmoa(nao,neleca), cmob(nao,nelecb), atomvec(5,natom,natom)
-      real(8),intent(in) :: radpt(2,nrad), angpt(4,nleb), rad(natom), ptweight(nleb,nrad,natom)
-      real(8),intent(out) :: fockd1(nao*(nao+1)/2), fockd2(nao*(nao+1)/2)
-      real(8),intent(out) :: fockd3(nao*(nao+1)/2), energy, totalelec, vao(nao,4)
+      real(8),intent(in) :: cmoa(databasis%nao,neleca), cmob(databasis%nao,nelecb)
+      real(8),intent(in) :: atomvec(5,natom,natom), radpt(2,nrad), angpt(4,nleb)
+      real(8),intent(in) :: rad(natom), ptweight(nleb,nrad,natom)
+      real(8),intent(out) :: fockd1(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fockd2(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fockd3(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: energy, totalelec, vao(databasis%nao,4)
       real(8),intent(out) :: vmoa(neleca,4), vmob(nelecb,4), xyzpt(3,natom), rsqrd(natom)
-      real(8),intent(out) :: transcmoa(neleca,nao), transcmob(nelecb,nao), work(nao*2)
+      real(8),intent(out) :: transcmoa(neleca,databasis%nao), transcmob(nelecb,databasis%nao)
+      real(8),intent(out) :: work(databasis%nao*2)
       real(8) :: weight, rhoa, rhob, grhoa(3), grhob(3), excora(4), excorb(4)
       real(8) :: radpoint, tmp(2,2), wcutoff, rcutoff, fcutoff, aocutoff
 !
@@ -289,7 +296,7 @@ end
             grhob(2)= grhob(2)*two
             grhob(3)= grhob(3)*two
             call calcexcor(excora,excorb,energy,rhoa,rhob,grhoa,grhob,weight,idftex,idftcor,2)
-            call ufockexcor(fockd2,fockd3,excora,excorb,vao,vao(1,2),work,weight,nao,fcutoff)
+            call ufockexcor(fockd2,fockd3,excora,excorb,vao,vao(1,2),work,weight,databasis%nao,fcutoff)
             totalelec=totalelec+weight*(rhoa+rhob)
           enddo
         enddo
@@ -298,8 +305,8 @@ end
 !
       tmp(1,1)= energy
       tmp(2,1)= totalelec
-      call para_allreducer(fockd2,fockd1,nao*(nao+1)/2,mpi_comm)
-      call para_allreducer(fockd3,fockd2,nao*(nao+1)/2,mpi_comm)
+      call para_allreducer(fockd2,fockd1,databasis%nao*(databasis%nao+1)/2,mpi_comm)
+      call para_allreducer(fockd3,fockd2,databasis%nao*(databasis%nao+1)/2,mpi_comm)
       call para_allreducer(tmp(1,1),tmp(1,2),2,mpi_comm)
       energy    = tmp(1,2)
       totalelec = tmp(2,2)
