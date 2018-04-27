@@ -1592,7 +1592,6 @@ end
 ! Calculate second derivatives of AO values for a grid point
 !
       use modmolecule, only : natom
-!     use modbasis, only : ex, coeff, nshell, nao, locbf, locatom, mprim, mbf, mtype
       use modjob, only : threshex
       use modtype, only : typebasis
       implicit none
@@ -2450,7 +2449,7 @@ end
             if(abs(excora(1))*two*weight < fcutoff)cycle
 !
             call formgradexcor(edftgrad,fulldmtrx,fulldmtrx,vao,vao(1,2),vao(1,5), &
-&                              excora,excora,weight,iatom,1)
+&                              excora,excora,weight,iatom,1,databasis)
 !
 ! Add weight derivative contribution
 !
@@ -2578,7 +2577,7 @@ end
             if((abs(excora(1))+abs(excorb(1)))*weight < fcutoff)cycle
 !
             call formgradexcor(edftgrad,fulldmtrx1,fulldmtrx2,vao,vao(1,2),vao(1,5), &
-&                              excora,excorb,weight,iatom,2)
+&                              excora,excorb,weight,iatom,2,databasis)
 !
 ! Add weight derivative contribution
 !
@@ -2725,19 +2724,22 @@ end
 
 !-----------------------------------------------------------------------------
   subroutine formgradexcor(edftgrad,fulldmtrxa,fulldmtrxb,vao,vgao,vg2ao, &
-&                          excora,excorb,weight,katom,itype)
+&                          excora,excorb,weight,katom,itype,databasis)
 !-----------------------------------------------------------------------------
 !
 ! Calculate DFT energy gradient terms
 !
-      use modbasis, only : locatom, mbf, locbf, nao, nshell
       use modmolecule, only : natom
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: katom, itype
       integer :: ish, iatom, nbf, ilocbf, iao, jao
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, two=2.0D+00
-      real(8),intent(in) :: fulldmtrxa(nao,nao), fulldmtrxb(nao,nao), vao(nao)
-      real(8),intent(in) :: vgao(nao,3), vg2ao(nao,6), excora(4), excorb(4), weight
+      real(8),intent(in) :: fulldmtrxa(databasis%nao,databasis%nao)
+      real(8),intent(in) :: fulldmtrxb(databasis%nao,databasis%nao), vao(databasis%nao)
+      real(8),intent(in) :: vgao(databasis%nao,3), vg2ao(databasis%nao,6)
+      real(8),intent(in) :: excora(4), excorb(4), weight
       real(8),intent(inout) :: edftgrad(3,natom)
       real(8) :: dra, drxa, drya, drza, gradx, grady, gradz, gwx, gwy, gwz
       real(8) :: drb, drxb, dryb, drzb, dmtrxa, dmtrxb
@@ -2745,11 +2747,11 @@ end
 ! Closed-shell
 !
       if(itype == 1) then
-        do ish= 1,nshell
-          iatom= locatom(ish)
+        do ish= 1,databasis%nshell
+          iatom= databasis%locatom(ish)
           if(iatom == katom) cycle
-          nbf = mbf(ish)
-          ilocbf= locbf(ish)
+          nbf = databasis%mbf(ish)
+          ilocbf= databasis%locbf(ish)
           gradx= zero
           grady= zero
           gradz= zero
@@ -2758,7 +2760,7 @@ end
             drxa= zero
             drya= zero
             drza= zero
-            do jao= 1,nao
+            do jao= 1,databasis%nao
               dra = dra +fulldmtrxa(jao,iao)*vao(jao)
               drxa= drxa+fulldmtrxa(jao,iao)*vgao(jao,1)
               drya= drya+fulldmtrxa(jao,iao)*vgao(jao,2)
@@ -2792,11 +2794,11 @@ end
 ! Open-shell
 !
       elseif(itype == 2) then
-        do ish= 1,nshell
-          iatom= locatom(ish)
+        do ish= 1,databasis%nshell
+          iatom= databasis%locatom(ish)
           if(iatom == katom) cycle
-          nbf = mbf(ish)
-          ilocbf= locbf(ish)
+          nbf = databasis%mbf(ish)
+          ilocbf= databasis%locbf(ish)
           gradx= zero
           grady= zero
           gradz= zero
@@ -2809,7 +2811,7 @@ end
             drxb= zero
             dryb= zero
             drzb= zero
-            do jao= 1,nao
+            do jao= 1,databasis%nao
               dmtrxa=(fulldmtrxa(jao,iao)+fulldmtrxb(jao,iao))*half
               dmtrxb=(fulldmtrxa(jao,iao)-fulldmtrxb(jao,iao))*half
               dra = dra +dmtrxa*vao(jao)
