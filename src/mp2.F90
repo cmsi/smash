@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !---------------------------------------------------------------
-  subroutine calcrmp2(cmo,energymo,xint,nproc,myrank,mpi_comm,datacomp)
+  subroutine calcrmp2(cmo,energymo,xint,nproc,myrank,mpi_comm,databasis,datacomp)
 !---------------------------------------------------------------
 !
 ! Driver of restricted MP2 calculation
@@ -22,23 +22,25 @@
 !       energymo(MO energies)
 !       xint    (Exchange integral matrix)
 !       
-      use modbasis, only : nshell, nao, mbf
       use modmolecule, only : neleca, nmo, escf, emp2, escsmp2
       use modjob, only : ncore, nvfz
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
-      integer :: maxdim, noac, nvac, noac3, iproc, icount
+      integer :: nao, nshell, maxdim, noac, nvac, noac3, iproc, icount
       integer :: idis(0:nproc-1,4), maxsize, ish, jsh, msize, memneed
       integer :: numocc3, npass
       real(8),parameter :: zero=0.0D+00, three=3.0D+00, p12=1.2D+00
-      real(8),intent(in) :: cmo(nao,nao), energymo(nmo), xint(nshell*(nshell+1)/2)
+      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(nmo), xint(databasis%nshell*(databasis%nshell+1)/2)
       real(8) :: emp2st(2), emp2stsum(2)
 !
+      nao= databasis%nao
+      nshell= databasis%nshell
       emp2= zero
       emp2st(:)= zero
-      maxdim= maxval(mbf(1:nshell))
+      maxdim= maxval(databasis%mbf(1:nshell))
       noac= neleca-ncore
       nvac= nmo-neleca-nvfz
       noac3= noac*(noac+1)/2
@@ -77,7 +79,7 @@
       if(nproc /= 1) then
         do ish= 1,nshell
           do jsh= 1,nshell
-            idis(iproc,3)= idis(iproc,3)+mbf(ish)*mbf(jsh)
+            idis(iproc,3)= idis(iproc,3)+databasis%mbf(ish)*databasis%mbf(jsh)
             idis(iproc,4)= idis(iproc,4)+1
             icount= icount+1
             if(mod(icount,nproc) == 0) then
@@ -144,20 +146,21 @@ end
 
 
 !-----------------------
-  function ncorecalc()
+  function ncorecalc(databasis)
 !-----------------------
 !
 ! Calculate the number of core MOs
 !
       use modmolecule, only : natom, numatomic
-      use modbasis, only : izcore
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer :: ncorecalc, ncore, iatom, numcore(-9:137)
       data numcore/12*0, 8*1, 8*5, 18*9, 18*18, 32*27, 32*43, 19*59/
 !
       ncore= 0
       do iatom= 1,natom
-        if(izcore(iatom) == 0) then
+        if(databasis%izcore(iatom) == 0) then
           ncore= ncore+numcore(numatomic(iatom))
         endif
       enddo

@@ -175,7 +175,7 @@ end
 !
 ! Set functional information and adjust the number of DFT grids
 !
-      call setmp2
+      call setmp2(databasis)
 !
 ! Write input data
 !
@@ -465,7 +465,7 @@ end
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
         call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
-        call calcrmp2(cmo,energymo,xint,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datacomp)
+        call calcrmp2(cmo,energymo,xint,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
         call tstamp(1,datacomp)
       else
         if(datacomp%master) then
@@ -1721,16 +1721,18 @@ end
 
 
 !--------------------
-  subroutine setmp2
+  subroutine setmp2(databasis)
 !--------------------
 !
 ! Set MP2 information
 !
       use modjob, only : ncore
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer :: ncorecalc
 !
-      if(ncore == -1) ncore= ncorecalc()
+      if(ncore == -1) ncore= ncorecalc(databasis)
 !
       return
 end
