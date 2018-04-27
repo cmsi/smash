@@ -2355,26 +2355,26 @@ end
 !-------------------------------------------------------------------------------------------------
   subroutine gradrexcor(egrad,edftgrad,cmo,fulldmtrx,atomvec,surface,radpt,angpt,rad,ptweight, &
 &                       xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,transcmo,idftex,idftcor, &
-&                       nproc,myrank,datacomp)
+&                       nproc,myrank,databasis,datacomp)
 !-------------------------------------------------------------------------------------------------
 !
 ! Driver of derivatives for closed-shell exchange-correlation terms
 !
-      use modbasis, only : nao
       use modmolecule, only : natom, neleca
       use modjob, only : threshweight, threshrho, threshdfock, threshdftao, nrad, nleb
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: idftex, idftcor, nproc, myrank
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
-      real(8),intent(in) :: cmo(nao,neleca), fulldmtrx(nao,nao)
+      real(8),intent(in) :: cmo(databasis%nao,neleca), fulldmtrx(databasis%nao,databasis%nao)
       real(8),intent(in) :: atomvec(5,natom,natom), surface(natom,natom), radpt(2,nrad)
       real(8),intent(in) :: angpt(4,nleb), rad(natom), ptweight(nleb,nrad,natom)
       real(8),intent(out) :: edftgrad(3*natom), xyzpt(3,natom), rsqrd(natom), rr(natom)
-      real(8),intent(out) :: uvec(3,natom), vao(nao,10), vmo(neleca,4), dweight(3*natom)
-      real(8),intent(out) :: dpa(3,natom,natom), pa(natom), transcmo(neleca,nao)
+      real(8),intent(out) :: uvec(3,natom), vao(databasis%nao,10), vmo(neleca,4), dweight(3*natom)
+      real(8),intent(out) :: dpa(3,natom,natom), pa(natom), transcmo(neleca,databasis%nao)
       real(8),intent(inout) :: egrad(3*natom)
       real(8) :: radpoint, radweight, weight, xgrid, ygrid, zgrid, tmp, rhoa, grhoa(3)
       real(8) :: sphweight, excora(4), ptenergy, wcutoff, rcutoff, fcutoff, aocutoff
@@ -2471,27 +2471,29 @@ end
 !------------------------------------------------------------------------------------------------
   subroutine graduexcor(egrad,edftgrad,cmoa,cmob,fulldmtrx1,fulldmtrx2,atomvec,surface,radpt, &
 &                       angpt,rad,ptweight,xyzpt,rsqrd,rr,uvec,vao,vmoa,vmob,dweight, &
-&                       dpa,pa,transcmoa,transcmob,idftex,idftcor,nproc,myrank,datacomp)
+&                       dpa,pa,transcmoa,transcmob,idftex,idftcor,nproc,myrank,databasis,datacomp)
 !------------------------------------------------------------------------------------------------
 !
 ! Driver of derivatives for open-shell exchange-correlation terms
 !
-      use modbasis, only : nao
       use modmolecule, only : natom, neleca, nelecb
       use modjob, only : threshweight, threshrho, threshdfock, threshdftao, nrad, nleb
-      use modtype, only : typecomp
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: idftex, idftcor, nproc, myrank
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
-      real(8),intent(in) :: cmoa(nao,neleca), cmob(nao,nelecb), fulldmtrx1(nao,nao)
-      real(8),intent(in) :: fulldmtrx2(nao,nao), atomvec(5,natom,natom), surface(natom,natom)
+      real(8),intent(in) :: cmoa(databasis%nao,neleca), cmob(databasis%nao,nelecb)
+      real(8),intent(in) :: fulldmtrx1(databasis%nao,databasis%nao)
+      real(8),intent(in) :: fulldmtrx2(databasis%nao,databasis%nao)
+      real(8),intent(in) :: atomvec(5,natom,natom), surface(natom,natom)
       real(8),intent(in) :: radpt(2,nrad), angpt(4,nleb), rad(natom), ptweight(nleb,nrad,natom)
       real(8),intent(out) :: edftgrad(3*natom), xyzpt(3,natom), rsqrd(natom), rr(natom)
-      real(8),intent(out) :: uvec(3,natom), vao(nao,10), vmoa(neleca,4)
+      real(8),intent(out) :: uvec(3,natom), vao(databasis%nao,10), vmoa(neleca,4)
       real(8),intent(out) :: vmob(nelecb,4), dweight(3*natom), dpa(3,natom,natom), pa(natom)
-      real(8),intent(out) :: transcmoa(neleca,nao), transcmob(nelecb,nao)
+      real(8),intent(out) :: transcmoa(neleca,databasis%nao), transcmob(nelecb,databasis%nao)
       real(8),intent(inout) :: egrad(3*natom)
       real(8) :: radpoint, radweight, weight, xgrid, ygrid, zgrid, tmp, rhoa, rhob
       real(8) :: grhoa(3), grhob(3), sphweight, excora(4), excorb(4), ptenergy

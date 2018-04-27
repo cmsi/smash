@@ -280,7 +280,7 @@ end
 !
       call gradrexcor(egradtmp,egrad,cmo,fulldmtrx,atomvec,surface,radpt,angpt,rad,ptweight, &
 &                     xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,work,idftex,idftcor, &
-&                     nproc1,myrank1,datacomp)
+&                     nproc1,myrank1,databasis,datacomp)
 !
       call para_allreducer(egradtmp(1,1),egrad(1,1),3*natom,mpi_comm1)
 !
@@ -402,7 +402,7 @@ end
 !
       call graduexcor(egradtmp,egrad,cmoa,cmob,fulldmtrx1,fulldmtrx2,atomvec,surface,radpt, &
 &                     angpt,rad,ptweight,xyzpt,rsqrd,rr,uvec,vao,vmoa,vmob,dweight, &
-&                     dpa,pa,work,work(neleca*nao+1),idftex,idftcor,nproc1,myrank1,datacomp)
+&                     dpa,pa,work,work(neleca*nao+1),idftex,idftcor,nproc1,myrank1,databasis,datacomp)
 !
       call para_allreducer(egradtmp(1,1),egrad(1,1),3*natom,mpi_comm1)
 !
