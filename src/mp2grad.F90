@@ -327,7 +327,7 @@ end
         allocate(cmowrk(nao*noac),trint1a(numi*maxdim**3),trint1b(mlsize*nao*numi))
 !
         call mp2gradtrans12(cmo,cmowrk,trint1a,trint1b,trint2,trint2core,xint,istart,mlsize, &
-&                           noac,ncore,maxdim,numitrans,idis,nproc,myrank)
+&                           noac,ncore,maxdim,numitrans,idis,nproc,myrank,databasis)
 !
         deallocate(cmowrk,trint1a,trint1b)
         call memunset(nao*noac+numi*maxdim**3+mlsize*nao*numi,datacomp)
@@ -426,7 +426,7 @@ end
 
 !-----------------------------------------------------------------------------------------------
   subroutine mp2gradtrans12(cmo,cmowrk,trint1a,trint1b,trint2,trint2core,xint,istart,mlsize, &
-&                           noac,ncore,maxdim,numitrans,idis,nproc,myrank)
+&                           noac,ncore,maxdim,numitrans,idis,nproc,myrank,databasis)
 !-----------------------------------------------------------------------------------------------
 !
 ! Driver of AO intengral generation and first and second integral transformations
@@ -447,22 +447,24 @@ end
 !       trint1a  (First transformed integrals)
 !       trint1b  (First transformed integrals)
 !
-      use modbasis, only : nshell, nao, mbf
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: istart, mlsize, noac, ncore, maxdim, numitrans
       integer,intent(in) :: nproc, myrank, idis(0:nproc-1,8)
       integer :: ii, jj, ish, ksh, ish1, ksh1, jcount, jcount1, mlcount, mlstart, mlshell
       integer :: numshell
-      real(8),intent(in) :: cmo(nao,nao), xint(nshell*(nshell+1)/2)
-      real(8),intent(out) :: cmowrk(numitrans,nao)
+      real(8),intent(in) :: cmo(databasis%nao,databasis%nao)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(out) :: cmowrk(numitrans,databasis%nao)
       real(8),intent(out) :: trint1a(numitrans,maxdim,maxdim**2)
-      real(8),intent(out) :: trint1b(mlsize*numitrans*nao)
+      real(8),intent(out) :: trint1b(mlsize*numitrans*databasis%nao)
       real(8),intent(out) :: trint2(idis(myrank,3)*noac*numitrans)
       real(8),intent(out) :: trint2core(idis(myrank,3)*ncore*numitrans)
 !
 !$OMP parallel do
       do jj= 1,numitrans
-        do ii= 1,nao
+        do ii= 1,databasis%nao
           cmowrk(jj,ii)= cmo(ii,jj+istart+ncore)
         enddo
       enddo
@@ -479,7 +481,7 @@ end
       mlshell=0
       do numshell= 1,idis(myrank,4)
         mlshell= mlshell+1
-        mlcount= mlcount+mbf(ish)*mbf(ksh)
+        mlcount= mlcount+databasis%mbf(ish)*databasis%mbf(ksh)
         if(numshell == idis(myrank,4)) then
 !
 ! AO integral generation and first integral transformation
@@ -500,16 +502,16 @@ end
           jcount= jcount+1
           if(jcount == nproc) jcount= 0
 !
-          if(ksh > nshell) then
-            do ii= 1,nshell
-              ksh= ksh-nshell
+          if(ksh > databasis%nshell) then
+            do ii= 1,databasis%nshell
+              ksh= ksh-databasis%nshell
               ish= ish+1
-              if(ksh <= nshell) exit
+              if(ksh <= databasis%nshell) exit
             enddo
           endif
-          if(mlcount+mbf(ish)*mbf(ksh) > mlsize) then
+          if(mlcount+databasis%mbf(ish)*databasis%mbf(ksh) > mlsize) then
             call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,numitrans,jcount1, &
-&                            mlshell,mlsize,nproc,myrank)
+&                            mlshell,mlsize,nproc,myrank,databasis)
             call transmointgrad2(trint2,trint2core,trint1b,cmo,noac,ncore,numitrans,mlcount, &
 &                                mlstart,mlsize,idis,nproc,myrank)
             mlstart= mlstart+mlcount

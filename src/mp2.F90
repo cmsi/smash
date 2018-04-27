@@ -416,7 +416,7 @@ end
 ! AO intengral generation and first integral transformation
 !
           call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,noac,jcount1, &
-&                          mlshell,mlsize,nproc,myrank)
+&                          mlshell,mlsize,nproc,myrank,databasis)
 !
 ! Second integral transformation
 !
@@ -439,7 +439,7 @@ end
           endif
           if(mlcount+databasis%mbf(ish)*databasis%mbf(ksh) > mlsize) then
             call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,noac,jcount1, &
-&                            mlshell,mlsize,nproc,myrank)
+&                            mlshell,mlsize,nproc,myrank,databasis)
             call transmoint2(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,idis,nproc,myrank)
             mlstart= mlstart+mlcount
             mlshell= 0
@@ -519,7 +519,7 @@ end
 
 !-----------------------------------------------------------------------------------
   subroutine transmoint1(trint1a,trint1b,cmowrk,xint,ish,ksh,maxdim,numi,jcount, &
-&                        mlshell,mlsize,nproc,myrank)
+&                        mlshell,mlsize,nproc,myrank,databasis)
 !-----------------------------------------------------------------------------------
 !
 ! AO intengral generation and first-quarter integral transformation
@@ -536,16 +536,18 @@ end
 ! Work: trint1a (First transformed integrals, [i,s,ml])
 ! Inout : ish,ksh (Basis shell indices)
 !
-      use modbasis, only : nao, nshell, mbf, locbf
       use modjob, only : cutint2
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, numi, mlshell, mlsize, nproc, myrank
       integer,intent(inout) :: ish, ksh, jcount
       integer :: mlcount, ml, mlindex(3,mlshell), jsh, lsh, nbfi, nbfj, nbfk, nbfl
       integer :: nbfik, locbfj, locbfl, moi, i, j, k, l, ik, kl, ij, ii, jloc, lloc
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: cmowrk(numi,nao), xint(nshell*(nshell+1)/2)
-      real(8),intent(out) :: trint1a(numi,maxdim,maxdim*maxdim), trint1b(nao,numi,mlsize)
+      real(8),intent(in) :: cmowrk(numi,databasis%nao)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(out) :: trint1a(numi,maxdim,maxdim*maxdim), trint1b(databasis%nao,numi,mlsize)
       real(8) :: twoeri(maxdim,maxdim,maxdim,maxdim)
 !
       mlcount= 0
@@ -553,7 +555,7 @@ end
         mlindex(1,ml)= ish
         mlindex(2,ml)= ksh
         mlindex(3,ml)= mlcount
-        mlcount= mlcount+mbf(ish)*mbf(ksh)
+        mlcount= mlcount+databasis%mbf(ish)*databasis%mbf(ksh)
         if(jcount == myrank) then
           ksh= ksh+2*nproc-1
         else
@@ -562,11 +564,11 @@ end
         jcount= jcount+1
         if(jcount == nproc) jcount= 0
 !
-        if(ksh > nshell) then
-          do ii= 1,nshell
-            ksh= ksh-nshell
+        if(ksh > databasis%nshell) then
+          do ii= 1,databasis%nshell
+            ksh= ksh-databasis%nshell
             ish= ish+1
-            if(ksh <= nshell) exit
+            if(ksh <= databasis%nshell) exit
           enddo
         endif
       enddo
@@ -574,15 +576,15 @@ end
 !$OMP parallel do schedule(dynamic,1) collapse(2) private(ish,ksh,mlcount,nbfi,nbfk,nbfl, &
 !$OMP nbfik,locbfl,trint1a,kl,nbfj,locbfj,ij,twoeri,ii,ik,jloc,lloc)
       do ml= 1,mlshell
-        do lsh= 1,nshell
+        do lsh= 1,databasis%nshell
           ish= mlindex(1,ml)
           ksh= mlindex(2,ml)
           mlcount= mlindex(3,ml)
-          nbfi= mbf(ish)
-          nbfk= mbf(ksh)
-          nbfl= mbf(lsh)
+          nbfi= databasis%mbf(ish)
+          nbfk= databasis%mbf(ksh)
+          nbfl= databasis%mbf(lsh)
           nbfik= nbfi*nbfk
-          locbfl= locbf(lsh)
+          locbfl= databasis%locbf(lsh)
           do ik= 1,nbfik
             do l= 1,nbfl
               do moi= 1,numi
@@ -596,9 +598,9 @@ end
             kl= lsh*(lsh-1)/2+ksh
           endif
 !
-          do jsh= 1,nshell
-            nbfj  = mbf(jsh)
-            locbfj= locbf(jsh)
+          do jsh= 1,databasis%nshell
+            nbfj  = databasis%mbf(jsh)
+            locbfj= databasis%locbf(jsh)
             if(ish >= jsh) then
               ij= ish*(ish-1)/2+jsh
             else
@@ -906,7 +908,7 @@ end
 ! AO intengral generation and first integral transformation
 !
           call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,numi,jcount1, &
-&                          mlshell,mlsize,nproc,myrank)
+&                          mlshell,mlsize,nproc,myrank,databasis)
 !
 ! Second integral transformation
 !
@@ -930,7 +932,7 @@ end
           endif
           if(mlcount+databasis%mbf(ish)*databasis%mbf(ksh) > mlsize) then
             call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,numi,jcount1, &
-&                            mlshell,mlsize,nproc,myrank)
+&                            mlshell,mlsize,nproc,myrank,databasis)
             call transmoint2m(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,idis, &
 &                             numij,ijindex,nproc,myrank)
             mlstart= mlstart+mlcount
