@@ -371,11 +371,11 @@ end
         if(ipass /= npass) then
           call mp2gradbacktrans1(egrad,egradtmp,xlai,tisml,xlmi,cmo,xint,trint2,work1,work2, &
 &                                nocc,noac,nvir,ncore,numitrans,istart,maxdim,maxgraddim, &
-&                                mlsize2,idis,nproc,myrank)
+&                                mlsize2,idis,nproc,myrank,databasis)
         else
           call mp2gradbacktrans2(egrad,egradtmp,wij,wab,wai,xlai,tisml,xlmi,xlmn,cmo,xint,trint2, &
 &                                pij,pab,pmn,energymo,work1,work2,nocc,noac,nvir,ncore,numitrans, &
-&                                istart,maxdim,maxgraddim,mlsize2,idis,nproc,myrank,mpi_comm)
+&                                istart,maxdim,maxgraddim,mlsize2,idis,nproc,myrank,mpi_comm,databasis)
         endif
 !
         deallocate(tisml,xlmi,xlmn,work1,work2)
@@ -687,7 +687,7 @@ end
 ! Send and receive tijml, and calculate Wij[I]
 !
         call mp2gradwij1(wij,tijab,trint2,trint2core,xaibj,recvt,storet,nocc, &
-&                        noac,ncore,numitrans,maxsize,icycle,numij,idis,nproc,myrank,mpi_comm)
+&                        noac,ncore,numitrans,maxsize,icycle,numij,idis,nproc,myrank,mpi_comm,databasis)
       enddo
 !
       return
@@ -924,7 +924,7 @@ end
 
 !-----------------------------------------------------------------------------------------------
   subroutine mp2gradwij1(wij,tijml,trint2,trint2core,sendt,recvt,storet,nocc, &
-&                        noac,ncore,numitrans,maxsize,icycle,numij,idis,nproc,myrank,mpi_comm)
+&                        noac,ncore,numitrans,maxsize,icycle,numij,idis,nproc,myrank,mpi_comm,databasis)
 !-----------------------------------------------------------------------------------------------
 !
 ! Send and receive tijml, and calculate Wij[I]
@@ -937,8 +937,9 @@ end
 ! Inout:wij       (Wij)
 !       trint2    (In:Second transformed integrals, Out:tijml)
 !
-      use modbasis, only : nao, mbf, locbf, nshell
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nocc, noac, ncore, numitrans, maxsize, icycle, numij
       integer,intent(in) :: nproc, myrank, mpi_comm, idis(0:nproc-1,8)
       integer :: myij, iproc, jproc, ish, ksh, jcount, num, nbfi, nbfk, locbfi, locbfk
@@ -946,7 +947,8 @@ end
       integer :: moikfirst, moiklast, mokfirst, moklast, moifirst, moilast
       integer :: moi, mok, mlao, moirecvt, numml
       real(8),parameter :: one=1.0D+00, two=2.0D+00
-      real(8),intent(in) :: tijml(nao,nao), trint2core(idis(myrank,3),ncore,numitrans)
+      real(8),intent(in) :: tijml(databasis%nao,databasis%nao)
+      real(8),intent(in) :: trint2core(idis(myrank,3),ncore,numitrans)
       real(8),intent(out) :: sendt(maxsize,0:nproc-1), recvt(maxsize,0:nproc-1)
       real(8),intent(out) :: storet(maxsize,noac)
       real(8),intent(inout) :: wij(nocc,nocc)
@@ -963,10 +965,10 @@ end
           ksh= idis(iproc,2)
           jcount= 0
           do num= 1,idis(iproc,4)
-            nbfi= mbf(ish)
-            nbfk= mbf(ksh)
-            locbfi= locbf(ish)
-            locbfk= locbf(ksh)
+            nbfi= databasis%mbf(ish)
+            nbfk= databasis%mbf(ksh)
+            locbfi= databasis%locbf(ish)
+            locbfk= databasis%locbf(ksh)
             do ii= 1,nbfi
               do kk= 1,nbfk
                 ik= ik+1
@@ -979,11 +981,11 @@ end
             else
               ksh= ksh+nproc-1
             endif
-            if(ksh > nshell) then
-              do ii= 1,nshell
-                ksh= ksh-nshell
+            if(ksh > databasis%nshell) then
+              do ii= 1,databasis%nshell
+                ksh= ksh-databasis%nshell
                 ish= ish+1
-                if(ksh <= nshell) exit
+                if(ksh <= databasis%nshell) exit
               enddo
             endif
             jcount= jcount+1
@@ -1097,7 +1099,7 @@ end
 !-------------------------------------------------------------------------------------------
   subroutine mp2gradbacktrans1(egrad,egradtmp,xlai,tisml,xlmi,cmo,xint,tijml,work,work2, &
 &                              nocc,noac,nvir,ncore,numitrans,istart,maxdim,maxgraddim, &
-&                              mlsize2,idis,nproc,myrank)
+&                              mlsize2,idis,nproc,myrank,databasis)
 !-------------------------------------------------------------------------------------------
 !
 ! Driver of second-half back-transformation (tnsml), and Lai4 and tnsml*(mn|ls)' terms
@@ -1114,18 +1116,21 @@ end
 !       tisml     (tisml)
 !       xlmi      (Lmi)
 !
-      use modbasis, only : nao, nshell, mbf
       use modmolecule, only : natom
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nocc, noac, nvir, ncore, numitrans, istart, maxdim, maxgraddim
       integer,intent(in) :: mlsize2, nproc, myrank, idis(0:nproc-1,8)
       integer :: mlcount, ish, ksh, ml, mlindex(4,idis(myrank,4)), jcount, ii, numshell
       integer :: numml, mlstart, mlend
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, four=4.0D+00
-      real(8),intent(in) :: cmo(nao,nao), xint(nshell*(nshell+1)/2)
+      real(8),intent(in) :: cmo(databasis%nao,databasis%nao)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
       real(8),intent(in) :: tijml(idis(myrank,3),noac,numitrans)
-      real(8),intent(out) :: egradtmp(3*natom), tisml(nao*mlsize2*numitrans)
-      real(8),intent(out) :: xlmi(numitrans,nao), work(nao*nao), work2(nao*mlsize2)
+      real(8),intent(out) :: egradtmp(3*natom), tisml(databasis%nao*mlsize2*numitrans)
+      real(8),intent(out) :: xlmi(numitrans,databasis%nao), work(databasis%nao*databasis%nao)
+      real(8),intent(out) :: work2(databasis%nao*mlsize2)
       real(8),intent(inout) :: egrad(3*natom), xlai(nocc,nvir) 
 !
 !
@@ -1137,7 +1142,7 @@ end
         mlindex(1,ml)= ish
         mlindex(2,ml)= ksh
         mlindex(3,ml)= mlcount
-        mlindex(4,ml)= mbf(ish)*mbf(ksh)
+        mlindex(4,ml)= databasis%mbf(ish)*databasis%mbf(ksh)
         mlcount= mlcount+mlindex(4,ml)
         if(jcount == myrank) then
           ksh= ksh+2*nproc-1
@@ -1147,11 +1152,11 @@ end
         jcount= jcount+1
         if(jcount == nproc) jcount= 0
 !
-        if(ksh > nshell) then
-          do ii= 1,nshell
-            ksh= ksh-nshell
+        if(ksh > databasis%nshell) then
+          do ii= 1,databasis%nshell
+            ksh= ksh-databasis%nshell
             ish= ish+1
-            if(ksh <= nshell) exit
+            if(ksh <= databasis%nshell) exit
           enddo
         endif
       enddo
@@ -1186,7 +1191,7 @@ end
 !-------------------------------------------------------------------------------------------------
   subroutine mp2gradbacktrans2(egrad,egradtmp,wij,wab,wai,xlai,tisml,xlmi,xlmn,cmo,xint,tijml, &
 &                              pij,pab,pmn,energymo,work,work2,nocc,noac,nvir,ncore,numitrans, &
-&                              istart,maxdim,maxgraddim,mlsize2,idis,nproc,myrank,mpi_comm)
+&                              istart,maxdim,maxgraddim,mlsize2,idis,nproc,myrank,mpi_comm,databasis)
 !-------------------------------------------------------------------------------------------------
 !
 ! Driver of second-half back-transformation (tnsml), and PiJ, Lai1,2,4 and tnsml*(mn|ls)' terms,
@@ -1215,25 +1220,29 @@ end
 !       work      (Work space)
 !       work2     (Work space)
 !
-      use modbasis, only : nao, nshell, mbf
       use modmolecule, only : natom
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nocc, noac, nvir, ncore, numitrans, istart, maxdim, maxgraddim
       integer,intent(in) :: mlsize2, nproc, myrank, mpi_comm, idis(0:nproc-1,8)
-      integer :: mlcount, ish, ksh, ml, mlindex(4,idis(myrank,4)), jcount, ii, numshell
-      integer :: numml, moi, moj
-      integer :: moij, ij, jj, mlstart, mlend
+      integer :: nao, nshell, mlcount, ish, ksh, ml, mlindex(4,idis(myrank,4)), jcount, ii
+      integer :: numshell, numml, moi, moj, moij, ij, jj, mlstart, mlend
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00, four=4.0D+00
-      real(8),intent(in) :: wai(nocc*nvir), cmo(nao,nao), xint(nshell*(nshell+1)/2)
+      real(8),intent(in) :: wai(nocc*nvir), cmo(databasis%nao,databasis%nao)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
       real(8),intent(in) :: tijml(idis(myrank,3),noac,numitrans)
-      real(8),intent(in) :: pab(nvir*nvir), energymo(nao)
-      real(8),intent(out) :: egradtmp(3*natom), tisml(nao*mlsize2*numitrans)
-      real(8),intent(out) :: xlmi(nao,numitrans), xlmn(nao,nao), pmn(nao,nao), work(nao*nao)
-      real(8),intent(out) :: work2(nao*mlsize2)
+      real(8),intent(in) :: pab(nvir*nvir), energymo(databasis%nao)
+      real(8),intent(out) :: egradtmp(3*natom), tisml(databasis%nao*mlsize2*numitrans)
+      real(8),intent(out) :: xlmi(databasis%nao,numitrans), xlmn(databasis%nao,databasis%nao)
+      real(8),intent(out) :: pmn(databasis%nao,databasis%nao), work(databasis%nao*databasis%nao)
+      real(8),intent(out) :: work2(databasis%nao*mlsize2)
       real(8),intent(inout) :: egrad(3*natom), wij(nocc,nocc), wab(nvir,nvir)
       real(8),intent(inout) :: xlai(nocc,nvir), pij(nocc*(nocc+1)/2)
       real(8) :: eij
 !
+      nao= databasis%nao
+      nshell= databasis%nshell
       mlcount= 0
       ish= idis(myrank,1)
       ksh= idis(myrank,2)
@@ -1242,7 +1251,7 @@ end
         mlindex(1,ml)= ish
         mlindex(2,ml)= ksh
         mlindex(3,ml)= mlcount
-        mlindex(4,ml)= mbf(ish)*mbf(ksh)
+        mlindex(4,ml)= databasis%mbf(ish)*databasis%mbf(ksh)
         mlcount= mlcount+mlindex(4,ml)
         if(jcount == myrank) then
           ksh= ksh+2*nproc-1
