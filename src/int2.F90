@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !-----------------------------------------------------
-  subroutine calc2eri(twoeri,ish,jsh,ksh,lsh,maxdim)
+  subroutine calc2eri(twoeri,ish,jsh,ksh,lsh,maxdim,databasis)
 !-----------------------------------------------------
 !
 ! Driver of two-electron repulsion integrals 
@@ -25,55 +25,56 @@
 !
       use modparam, only : mxprsh
       use modmolecule, only : coord
-      use modbasis, only : locatom, locprim, mprim, mbf, mtype, ex, coeff
       use modjob, only : threshex
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(inout) :: databasis
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nangijkl(4), nprimijkl(4), nbfijkl(4)
       integer :: iloc, jloc, kloc, lloc, i, j, k, l
       real(8),intent(out) :: twoeri(maxdim,maxdim,maxdim,maxdim)
       real(8) :: xyzijkl(3,4), exijkl(mxprsh,4), coijkl(mxprsh,4)
 !
-      nangijkl(1)= mtype(ish)
-      nangijkl(2)= mtype(jsh)
-      nangijkl(3)= mtype(ksh)
-      nangijkl(4)= mtype(lsh)
+      nangijkl(1)= databasis%mtype(ish)
+      nangijkl(2)= databasis%mtype(jsh)
+      nangijkl(3)= databasis%mtype(ksh)
+      nangijkl(4)= databasis%mtype(lsh)
 !
-      iloc  = locprim(ish)
-      jloc  = locprim(jsh)
-      kloc  = locprim(ksh)
-      lloc  = locprim(lsh)
-      nbfijkl(1)= mbf(ish)
-      nbfijkl(2)= mbf(jsh)
-      nbfijkl(3)= mbf(ksh)
-      nbfijkl(4)= mbf(lsh)
-      nprimijkl(1)= mprim(ish)
-      nprimijkl(2)= mprim(jsh)
-      nprimijkl(3)= mprim(ksh)
-      nprimijkl(4)= mprim(lsh)
+      iloc  = databasis%locprim(ish)
+      jloc  = databasis%locprim(jsh)
+      kloc  = databasis%locprim(ksh)
+      lloc  = databasis%locprim(lsh)
+      nbfijkl(1)= databasis%mbf(ish)
+      nbfijkl(2)= databasis%mbf(jsh)
+      nbfijkl(3)= databasis%mbf(ksh)
+      nbfijkl(4)= databasis%mbf(lsh)
+      nprimijkl(1)= databasis%mprim(ish)
+      nprimijkl(2)= databasis%mprim(jsh)
+      nprimijkl(3)= databasis%mprim(ksh)
+      nprimijkl(4)= databasis%mprim(lsh)
 !
       do i= 1,3
-        xyzijkl(i,1)= coord(i,locatom(ish))
-        xyzijkl(i,2)= coord(i,locatom(jsh))
-        xyzijkl(i,3)= coord(i,locatom(ksh))
-        xyzijkl(i,4)= coord(i,locatom(lsh))
+        xyzijkl(i,1)= coord(i,databasis%locatom(ish))
+        xyzijkl(i,2)= coord(i,databasis%locatom(jsh))
+        xyzijkl(i,3)= coord(i,databasis%locatom(ksh))
+        xyzijkl(i,4)= coord(i,databasis%locatom(lsh))
       enddo
 !
       do i= 1,nprimijkl(1)
-        exijkl(i,1)=ex(iloc+i)
-        coijkl(i,1)=coeff(iloc+i)
+        exijkl(i,1)=databasis%ex(iloc+i)
+        coijkl(i,1)=databasis%coeff(iloc+i)
       enddo
       do j= 1,nprimijkl(2)
-        exijkl(j,2)=ex(jloc+j)
-        coijkl(j,2)=coeff(jloc+j)
+        exijkl(j,2)=databasis%ex(jloc+j)
+        coijkl(j,2)=databasis%coeff(jloc+j)
       enddo
       do k= 1,nprimijkl(3)
-        exijkl(k,3)=ex(kloc+k)
-        coijkl(k,3)=coeff(kloc+k)
+        exijkl(k,3)=databasis%ex(kloc+k)
+        coijkl(k,3)=databasis%coeff(kloc+k)
       enddo
       do l= 1,nprimijkl(4)
-        exijkl(l,4)=ex(lloc+l)
-        coijkl(l,4)=coeff(lloc+l)
+        exijkl(l,4)=databasis%ex(lloc+l)
+        coijkl(l,4)=databasis%coeff(lloc+l)
       enddo
 !
       call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxdim, &
@@ -110,7 +111,7 @@ end
 !$OMP do
         do jsh = 1,ish
           nbfj = databasis%mbf(jsh)
-          call calc2eri(twoeri,ish,jsh,ish,jsh,maxdim)
+          call calc2eri(twoeri,ish,jsh,ish,jsh,maxdim,databasis)
           xintmax= zero
           do i= 1,nbfi
             do j= 1,nbfj

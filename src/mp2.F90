@@ -613,7 +613,7 @@ end
 ! AO integral calculation
 !
             if(xint(ij)*xint(kl) < cutint2) cycle
-            call calc2eri(twoeri,ksh,lsh,ish,jsh,maxdim)
+            call calc2eri(twoeri,ksh,lsh,ish,jsh,maxdim,databasis)
 !
 ! First integral transformation
 !

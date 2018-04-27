@@ -2548,7 +2548,7 @@ end
             endif
           enddo
           do lsh= 1,lnum
-            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
+            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,databasis)
             call ugmneri(gmn2,gmn3,rmna,rmnb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,hfexchange,databasis)
           enddo
         enddo

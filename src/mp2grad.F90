@@ -1836,7 +1836,7 @@ end
 !
             xijkl= xint(ij)*xint(kl)
             if(xijkl < cutint2) cycle
-            call calc2eri(dtwoeri,ish,jsh,ksh,lsh,maxdim)
+            call calc2eri(dtwoeri,ish,jsh,ksh,lsh,maxdim,databasis)
 !
             tmax= zero
             do ii= 1,nbfi
@@ -1975,7 +1975,7 @@ end
 !
             xijkl= xint(ij)*xint(kl)
             if(xijkl < cutint2) cycle
-            call calc2eri(dtwoeri,ish,jsh,ksh,lsh,maxdim)
+            call calc2eri(dtwoeri,ish,jsh,ksh,lsh,maxdim,databasis)
 !
             tmax= zero
             do ii= 1,nbfi
