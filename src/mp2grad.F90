@@ -1861,7 +1861,7 @@ end
             enddo
 !
             if(xijkl*tmax < cutint2) cycle
-            call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim)
+            call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,databasis)
           enddo
         enddo
       enddo
@@ -2013,7 +2013,7 @@ end
             enddo
 !
             if(xijkl*tmax < cutint2) cycle
-            call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim)
+            call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,databasis)
           enddo
         enddo
       enddo

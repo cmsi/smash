@@ -86,9 +86,9 @@
             xijkl=xint(ij)*xint(kl)
             if(xijkl.lt.cutint2) cycle
             call calcpdmtrx(fulldmtrx1,fulldmtrx2,pdmtrx,pdmax,hfexchange, &
-&                           ish,jsh,ksh,lsh,maxdim,itype)
+&                           ish,jsh,ksh,lsh,maxdim,itype,databasis)
             if((xijkl*pdmax).lt.cutint2) cycle
-            call calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim)
+            call calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,databasis)
           enddo
         enddo kloop
       enddo
@@ -102,7 +102,7 @@ end
 
 
 !---------------------------------------------------------------------------------------
-  subroutine calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim)
+  subroutine calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,databasis)
 !---------------------------------------------------------------------------------------
 !
 ! Driver of derivatives for two-electron integrals
@@ -117,9 +117,11 @@ end
 !
       use modparam, only : mxprsh
       use modmolecule, only : coord, natom
-      use modbasis, only : locatom, locprim, mprim, mbf, mtype, ex, coeff
+!     use modbasis, only : locatom, locprim, mprim, mbf, mtype, ex, coeff
       use modjob, only : threshex
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,parameter :: ncart(0:6)=(/1,3,6,10,15,21,28/)
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim, maxgraddim
       integer :: i, j, k, l, iatom, jatom, katom, latom, iloc, jloc, kloc, lloc, ider
@@ -164,31 +166,31 @@ end
       real(8),intent(inout) :: egrad2(3,natom)
       real(8) :: gradtwo(3,4), xyzijkl(3,4), exijkl(mxprsh,4), coijkl(mxprsh,4), work(21)
 !
-      iatom= locatom(ish)
-      jatom= locatom(jsh)
-      katom= locatom(ksh)
-      latom= locatom(lsh)
+      iatom= databasis%locatom(ish)
+      jatom= databasis%locatom(jsh)
+      katom= databasis%locatom(ksh)
+      latom= databasis%locatom(lsh)
 !
       if((iatom == jatom).and.(iatom == katom).and.(iatom == latom)) return
       gradtwo(:,:)= zero
 !
-      nangijkl(1)= mtype(ish)
-      nangijkl(2)= mtype(jsh)
-      nangijkl(3)= mtype(ksh)
-      nangijkl(4)= mtype(lsh)
+      nangijkl(1)= databasis%mtype(ish)
+      nangijkl(2)= databasis%mtype(jsh)
+      nangijkl(3)= databasis%mtype(ksh)
+      nangijkl(4)= databasis%mtype(lsh)
 !
-      iloc  = locprim(ish)
-      jloc  = locprim(jsh)
-      kloc  = locprim(ksh)
-      lloc  = locprim(lsh)
-      nbfijkl(1)= mbf(ish)
-      nbfijkl(2)= mbf(jsh)
-      nbfijkl(3)= mbf(ksh)
-      nbfijkl(4)= mbf(lsh)
-      nprimijkl(1)= mprim(ish)
-      nprimijkl(2)= mprim(jsh)
-      nprimijkl(3)= mprim(ksh)
-      nprimijkl(4)= mprim(lsh)
+      iloc  = databasis%locprim(ish)
+      jloc  = databasis%locprim(jsh)
+      kloc  = databasis%locprim(ksh)
+      lloc  = databasis%locprim(lsh)
+      nbfijkl(1)= databasis%mbf(ish)
+      nbfijkl(2)= databasis%mbf(jsh)
+      nbfijkl(3)= databasis%mbf(ksh)
+      nbfijkl(4)= databasis%mbf(lsh)
+      nprimijkl(1)= databasis%mprim(ish)
+      nprimijkl(2)= databasis%mprim(jsh)
+      nprimijkl(3)= databasis%mprim(ksh)
+      nprimijkl(4)= databasis%mprim(lsh)
 !
       do i= 1,3
         xyzijkl(i,1)= coord(i,iatom)
@@ -198,28 +200,28 @@ end
       enddo
 !
       do i= 1,nprimijkl(1)
-        exijkl(i,1)=ex(iloc+i)
-        coijkl(i,1)=coeff(iloc+i)
+        exijkl(i,1)= databasis%ex(iloc+i)
+        coijkl(i,1)= databasis%coeff(iloc+i)
       enddo
       do j= 1,nprimijkl(2)
-        exijkl(j,2)=ex(jloc+j)
-        coijkl(j,2)=coeff(jloc+j)
+        exijkl(j,2)= databasis%ex(jloc+j)
+        coijkl(j,2)= databasis%coeff(jloc+j)
       enddo
       do k= 1,nprimijkl(3)
-        exijkl(k,3)=ex(kloc+k)
-        coijkl(k,3)=coeff(kloc+k)
+        exijkl(k,3)= databasis%ex(kloc+k)
+        coijkl(k,3)= databasis%coeff(kloc+k)
       enddo
       do l= 1,nprimijkl(4)
-        exijkl(l,4)=ex(lloc+l)
-        coijkl(l,4)=coeff(lloc+l)
+        exijkl(l,4)= databasis%ex(lloc+l)
+        coijkl(l,4)= databasis%coeff(lloc+l)
       enddo
 !
 ! Lsh derivative 
 !
-      nangijkl(4)= mtype(lsh)+1
+      nangijkl(4)= databasis%mtype(lsh)+1
       nbfijkl(4) = ncart(nangijkl(4))
       do l= 1,nprimijkl(4)
-        coijkl(l,4)= two*ex(lloc+l)*coeff(lloc+l)
+        coijkl(l,4)= two*databasis%ex(lloc+l)*databasis%coeff(lloc+l)
       enddo
 !
 ! Two-electron integral calculation
@@ -443,11 +445,11 @@ end
           call iabort
       end select
 !
-      if(mtype(lsh) >= 1) then
-        nangijkl(4)= mtype(lsh)-1
+      if(databasis%mtype(lsh) >= 1) then
+        nangijkl(4)= databasis%mtype(lsh)-1
         nbfijkl(4) = ncart(nangijkl(4))
         do l= 1,nprimijkl(4)
-          coijkl(l,4)= coeff(lloc+l)
+          coijkl(l,4)= databasis%coeff(lloc+l)
         enddo
 !
 ! Two-electron integral calculation
@@ -482,7 +484,7 @@ end
                 enddo
               enddo
             enddo
-            if(mbf(lsh) == 5) then
+            if(databasis%mbf(lsh) == 5) then
               do ider= 1,3
                 do i= 1,nbfijkl(1)
                   do j= 1,nbfijkl(2)
@@ -525,7 +527,7 @@ end
                 enddo
               enddo
             enddo
-            if(mbf(lsh) == 7) then
+            if(databasis%mbf(lsh) == 7) then
               do ider= 1,3
                 do i= 1,nbfijkl(1)
                   do j= 1,nbfijkl(2)
@@ -598,7 +600,7 @@ end
                 enddo
               enddo
             enddo
-            if(mbf(lsh) == 9) then
+            if(databasis%mbf(lsh) == 9) then
               do ider= 1,3
                 do i= 1,nbfijkl(1)
                   do j= 1,nbfijkl(2)
@@ -694,7 +696,7 @@ end
                 enddo
               enddo
             enddo
-            if(mbf(lsh) == 11) then
+            if(databasis%mbf(lsh) == 11) then
               do ider= 1,3
                 do i= 1,nbfijkl(1)
                   do j= 1,nbfijkl(2)
@@ -753,10 +755,10 @@ end
         end select
       endif
 !
-      nangijkl(4)= mtype(lsh)
-      nbfijkl(4) = mbf(lsh)
+      nangijkl(4)= databasis%mtype(lsh)
+      nbfijkl(4) = databasis%mbf(lsh)
       do l= 1,nprimijkl(4)
-        coijkl(l,4)= coeff(lloc+l)
+        coijkl(l,4)= databasis%coeff(lloc+l)
       enddo
       do i= 1,nbfijkl(1)
         do j= 1,nbfijkl(2)
@@ -772,10 +774,10 @@ end
 !
 ! Ksh derivative
 !
-      nangijkl(3)= mtype(ksh)+1
+      nangijkl(3)= databasis%mtype(ksh)+1
       nbfijkl(3) = ncart(nangijkl(3))
       do k= 1,nprimijkl(3)
-        coijkl(k,3)= two*ex(kloc+k)*coeff(kloc+k)
+        coijkl(k,3)= two*databasis%ex(kloc+k)*databasis%coeff(kloc+k)
       enddo
 !
 ! Two-electron integral calculation
@@ -999,11 +1001,11 @@ end
           call iabort
       end select
 !
-      if(mtype(ksh) >= 1) then
-        nangijkl(3)= mtype(ksh)-1
+      if(databasis%mtype(ksh) >= 1) then
+        nangijkl(3)= databasis%mtype(ksh)-1
         nbfijkl(3) = ncart(nangijkl(3))
         do k= 1,nprimijkl(3)
-          coijkl(k,3)= coeff(kloc+k)
+          coijkl(k,3)= databasis%coeff(kloc+k)
         enddo
 !
 ! Two-electron integral calculation
@@ -1038,7 +1040,7 @@ end
                 enddo
               enddo
             enddo
-            if(mbf(ksh) == 5) then
+            if(databasis%mbf(ksh) == 5) then
               do ider= 1,3
                 do i= 1,nbfijkl(1)
                   do j= 1,nbfijkl(2)
@@ -1081,7 +1083,7 @@ end
                 enddo
               enddo
             enddo
-            if(mbf(ksh) == 7) then
+            if(databasis%mbf(ksh) == 7) then
               do ider= 1,3
                 do i= 1,nbfijkl(1)
                   do j= 1,nbfijkl(2)
@@ -1154,7 +1156,7 @@ end
                 enddo
               enddo
             enddo
-            if(mbf(ksh) == 9) then
+            if(databasis%mbf(ksh) == 9) then
               do ider= 1,3
                 do i= 1,nbfijkl(1)
                   do j= 1,nbfijkl(2)
@@ -1250,7 +1252,7 @@ end
                 enddo
               enddo
             enddo
-            if(mbf(ksh) == 11) then
+            if(databasis%mbf(ksh) == 11) then
               do ider= 1,3
                 do i= 1,nbfijkl(1)
                   do j= 1,nbfijkl(2)
@@ -1309,10 +1311,10 @@ end
         end select
       endif
 !
-      nangijkl(3)= mtype(ksh)
-      nbfijkl(3) = mbf(ksh)
+      nangijkl(3)= databasis%mtype(ksh)
+      nbfijkl(3) = databasis%mbf(ksh)
       do k= 1,nprimijkl(3)
-        coijkl(k,3)= coeff(kloc+k)
+        coijkl(k,3)= databasis%coeff(kloc+k)
       enddo
       do i= 1,nbfijkl(1)
         do j= 1,nbfijkl(2)
@@ -1328,10 +1330,10 @@ end
 !
 ! Jsh derivative
 !
-      nangijkl(2)= mtype(jsh)+1
+      nangijkl(2)= databasis%mtype(jsh)+1
       nbfijkl(2) = ncart(nangijkl(2))
       do j= 1,nprimijkl(2)
-        coijkl(j,2)= two*ex(jloc+j)*coeff(jloc+j)
+        coijkl(j,2)= two*databasis%ex(jloc+j)*databasis%coeff(jloc+j)
       enddo
 !
 ! Two-electron integral calculation
@@ -1555,11 +1557,11 @@ end
           call iabort
       end select
 !
-      if(mtype(jsh) >= 1) then
-        nangijkl(2)= mtype(jsh)-1
+      if(databasis%mtype(jsh) >= 1) then
+        nangijkl(2)= databasis%mtype(jsh)-1
         nbfijkl(2) = ncart(nangijkl(2))
         do j= 1,nprimijkl(2)
-          coijkl(j,2)= coeff(jloc+j)
+          coijkl(j,2)= databasis%coeff(jloc+j)
         enddo
 !
 ! Two-electron integral calculation
@@ -1594,7 +1596,7 @@ end
                 enddo
               enddo
             enddo
-            if(mbf(jsh) == 5) then
+            if(databasis%mbf(jsh) == 5) then
               do ider= 1,3
                 do i= 1,nbfijkl(1)
                   do k= 1,nbfijkl(3)
@@ -1637,7 +1639,7 @@ end
                 enddo
               enddo
             enddo
-            if(mbf(jsh) == 7) then
+            if(databasis%mbf(jsh) == 7) then
               do ider= 1,3
                 do i= 1,nbfijkl(1)
                   do k= 1,nbfijkl(3)
@@ -1710,7 +1712,7 @@ end
                 enddo
               enddo
             enddo
-            if(mbf(jsh) == 9) then
+            if(databasis%mbf(jsh) == 9) then
               do ider= 1,3
                 do i= 1,nbfijkl(1)
                   do k= 1,nbfijkl(3)
@@ -1806,7 +1808,7 @@ end
                 enddo
               enddo
             enddo
-            if(mbf(jsh) == 11) then
+            if(databasis%mbf(jsh) == 11) then
               do ider= 1,3
                 do i= 1,nbfijkl(1)
                   do k= 1,nbfijkl(3)
@@ -1865,7 +1867,7 @@ end
         end select
       endif
 !
-      nbfijkl(2) = mbf(jsh)
+      nbfijkl(2) = databasis%mbf(jsh)
       do i= 1,nbfijkl(1)
         do j= 1,nbfijkl(2)
           do k= 1,nbfijkl(3)
@@ -1899,30 +1901,32 @@ end
 
 !-------------------------------------------------------------------------
   subroutine calcpdmtrx(fulldmtrx1,fulldmtrx2,pdmtrx,pdmax,hfexchange, &
-&                       ish,jsh,ksh,lsh,maxdim,itype)
+&                       ish,jsh,ksh,lsh,maxdim,itype,databasis)
 !-------------------------------------------------------------------------
 !
 ! Calculate 4*(4*Dij*Dkl-Dil*Djk-Dik*Djl)
 !
-      use modbasis, only : nao, mbf, locbf
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim, itype
       integer :: i, j, k, l, ilocbf, jlocbf, klocbf, llocbf, ii, jj, kk, ll
       integer :: nbfijkl(4)
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, four=4.0D+00
-      real(8),intent(in) :: fulldmtrx1(nao,nao), fulldmtrx2(nao,nao), hfexchange
+      real(8),intent(in) :: fulldmtrx1(databasis%nao,databasis%nao)
+      real(8),intent(in) :: fulldmtrx2(databasis%nao,databasis%nao), hfexchange
       real(8),intent(out) :: pdmtrx(maxdim,maxdim,maxdim,maxdim), pdmax
       real(8) :: factor
 !
       pdmax= zero
-      nbfijkl(1)= mbf(ish)
-      nbfijkl(2)= mbf(jsh)
-      nbfijkl(3)= mbf(ksh)
-      nbfijkl(4)= mbf(lsh)
-      ilocbf= locbf(ish)
-      jlocbf= locbf(jsh)
-      klocbf= locbf(ksh)
-      llocbf= locbf(lsh)
+      nbfijkl(1)= databasis%mbf(ish)
+      nbfijkl(2)= databasis%mbf(jsh)
+      nbfijkl(3)= databasis%mbf(ksh)
+      nbfijkl(4)= databasis%mbf(lsh)
+      ilocbf= databasis%locbf(ish)
+      jlocbf= databasis%locbf(jsh)
+      klocbf= databasis%locbf(ksh)
+      llocbf= databasis%locbf(lsh)
 
 !
 ! Check ish, jsh, ksh, lsh
