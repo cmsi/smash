@@ -420,7 +420,7 @@ end
 !
 ! Second integral transformation
 !
-          call transmoint2(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,idis,nproc,myrank)
+          call transmoint2(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,databasis%nao,idis,nproc,myrank)
         else
           if(jcount == myrank) then
             ksh= ksh+2*nproc-1
@@ -440,7 +440,7 @@ end
           if(mlcount+databasis%mbf(ish)*databasis%mbf(ksh) > mlsize) then
             call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,noac,jcount1, &
 &                            mlshell,mlsize,nproc,myrank,databasis)
-            call transmoint2(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,idis,nproc,myrank)
+            call transmoint2(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,databasis%nao,idis,nproc,myrank)
             mlstart= mlstart+mlcount
             mlshell= 0
             mlcount= 0
@@ -652,7 +652,7 @@ end
 
 
 !----------------------------------------------------------------------------------------------
-  subroutine transmoint2(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,idis,nproc,myrank)
+  subroutine transmoint2(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,nao,idis,nproc,myrank)
 !----------------------------------------------------------------------------------------------
 !
 ! Second-quarter integral transformation
@@ -667,9 +667,8 @@ end
 !       idis    (Information for parallelization)
 ! Out : trint2  (Second transformed integrals, [ml,ij])
 !
-      use modbasis, only : nao
       implicit none
-      integer,intent(in) :: noac, mlcount, mlstart, mlsize, nproc, myrank, idis(0:nproc-1,4)
+      integer,intent(in) :: noac, mlcount, mlstart, mlsize, nao, nproc, myrank, idis(0:nproc-1,4)
       integer :: moi, moij
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: trint1b(nao,noac,mlsize), cmoocc(nao,noac)
@@ -912,7 +911,7 @@ end
 !
 ! Second integral transformation
 !
-          call transmoint2m(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,idis, &
+          call transmoint2m(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,databasis%nao,idis, &
 &                           numij,ijindex,nproc,myrank)
         else
           if(jcount == myrank) then
@@ -933,7 +932,7 @@ end
           if(mlcount+databasis%mbf(ish)*databasis%mbf(ksh) > mlsize) then
             call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,numi,jcount1, &
 &                            mlshell,mlsize,nproc,myrank,databasis)
-            call transmoint2m(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,idis, &
+            call transmoint2m(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,databasis%nao,idis, &
 &                             numij,ijindex,nproc,myrank)
             mlstart= mlstart+mlcount
             mlshell= 0
@@ -1013,7 +1012,7 @@ end
 
 
 !------------------------------------------------------------------------------------
-  subroutine transmoint2m(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,idis, &
+  subroutine transmoint2m(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,nao,idis, &
 &                         numij,ijindex,nproc,myrank)
 !------------------------------------------------------------------------------------
 !
@@ -1031,9 +1030,8 @@ end
 !       ijindex (First and last indices of active occupied MO pairs)
 ! Out : trint2  (Second transformed integrals, [ml,ij])
 !
-      use modbasis, only : nao
       implicit none
-      integer,intent(in) :: noac, mlcount, mlstart, mlsize, nproc, myrank, idis(0:nproc-1,4)
+      integer,intent(in) :: noac, mlcount, mlstart, mlsize, nao, nproc, myrank, idis(0:nproc-1,4)
       integer,intent(in) :: numij, ijindex(4)
       integer :: numi, moij, moi, mojf, numj
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
