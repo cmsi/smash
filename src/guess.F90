@@ -1783,7 +1783,7 @@ end
       call memset(isize+nao,datacomp)
       allocate(work2(isize),eigen(nao))
 !
-      call diagfock(h1mtrx,work,ortho,cmo,work2,eigen,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+      call diagfock(h1mtrx,work,ortho,cmo,work2,eigen,nao,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
 !
       deallocate(work2,eigen)
       call memunset(isize+nao,datacomp)
