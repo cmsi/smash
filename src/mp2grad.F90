@@ -1329,7 +1329,7 @@ end
           mlend= numshell
           call mp2gradbt2(xlai,egrad,tijml,cmo,pmn,xint,tisml,xlmi,xlmn,egradtmp,work,work2, &
 &                         mlindex,numml,mlstart,mlend,numitrans,nocc,noac,ncore,nvir,maxdim, &
-&                         maxgraddim,istart,idis,nproc,myrank)
+&                         maxgraddim,istart,idis,nproc,myrank,databasis)
           exit
         endif
 !
@@ -1337,7 +1337,7 @@ end
           mlend= numshell
           call mp2gradbt2(xlai,egrad,tijml,cmo,pmn,xint,tisml,xlmi,xlmn,egradtmp,work,work2, &
 &                         mlindex,numml,mlstart,mlend,numitrans,nocc,noac,ncore,nvir,maxdim, &
-&                         maxgraddim,istart,idis,nproc,myrank)
+&                         maxgraddim,istart,idis,nproc,myrank,databasis)
           mlstart= numshell+1
           numml= 0
         endif
@@ -1878,7 +1878,7 @@ end
 !-------------------------------------------------------------------------------------------------
   subroutine mp2gradbt2(xlai,egrad,tijml,cmo,pmn,xint,tisml,xlmi,xlmn,egradtmp,cmotrans,work2, &
 &                       mlindex,numml,mlstart,mlend,numitrans,nocc,noac,ncore,nvir,maxdim, &
-&                       maxgraddim,istart,idis,nproc,myrank)
+&                       maxgraddim,istart,idis,nproc,myrank,databasis)
 !-------------------------------------------------------------------------------------------------
 !
 ! Calculate second-half back-transformation (tnsml), Lai1,2,4 and tnsml*(mn|ls)' terms
@@ -1899,23 +1899,28 @@ end
 !       cmotrans  (transposed matrix of cmo)
 !       work2     (Work space)
 !
-      use modbasis, only : nao, nshell, mbf, locbf
       use modmolecule, only : natom
       use modjob, only : cutint2
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: numml, mlstart, mlend, numitrans, nocc, noac, ncore, nvir, maxdim
       integer,intent(in) :: maxgraddim, istart, nproc, myrank, idis(0:nproc-1,8)
       integer,intent(in) :: mlindex(4,idis(myrank,4))
-      integer :: moi, mlcount, numshell, ish, jsh, ksh, lsh, nbfi, nbfj, nbfk, nbfl
+      integer :: nao, moi, mlcount, numshell, ish, jsh, ksh, lsh, nbfi, nbfj, nbfk, nbfl
       integer :: locbfi, locbfj, locbfk, locbfl, ij, kl, ii, jj, kk, ll, i2, ik, ml
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, four=4.0D+00
-      real(8),intent(in) :: tijml(idis(myrank,3),noac,numitrans), cmo(nao,nao), pmn(nao,nao)
-      real(8),intent(in) :: xint(nshell*(nshell+1)/2)
-      real(8),intent(out) :: tisml(numitrans,nao,numml), xlmi(numitrans,nao), xlmn(nao,nao)
-      real(8),intent(out) :: egradtmp(3*natom), cmotrans(noac,*), work2(nao,numml)
+      real(8),intent(in) :: tijml(idis(myrank,3),noac,numitrans), cmo(databasis%nao,databasis%nao)
+      real(8),intent(in) :: pmn(databasis%nao,databasis%nao)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(out) :: tisml(numitrans,databasis%nao,numml), xlmi(numitrans,databasis%nao)
+      real(8),intent(out) :: xlmn(databasis%nao,databasis%nao)
+      real(8),intent(out) :: egradtmp(3*natom), cmotrans(noac,*), work2(databasis%nao,numml)
       real(8),intent(inout) :: xlai(nocc,nvir), egrad(3*natom)
       real(8) :: twoeri(maxgraddim**4), twork(maxdim,maxdim,maxdim,maxdim)
       real(8) :: dtwoeri(maxdim,maxdim,maxdim,maxdim,3), tmax, tmp, xijkl
+!
+      nao= databasis%nao
 !
       do moi= 1,numitrans
         call dgemm('N','T',nao,numml,noac,one,cmo(1,ncore+1),nao, &
@@ -1942,24 +1947,24 @@ end
 !$OMP locbfi,locbfj,locbfk,locbfl,ij,kl,i2,ik,xijkl,tmax,tmp,twoeri,twork,dtwoeri) &
 !$OMP reduction(+:xlmi,xlmn,egradtmp)
       do numshell= mlstart,mlend
-        do lsh= 1,nshell
+        do lsh= 1,databasis%nshell
           ish= mlindex(1,numshell)
           ksh= mlindex(2,numshell)
           mlcount= mlindex(3,numshell)-mlindex(3,mlstart)
-          nbfi= mbf(ish)
-          nbfk= mbf(ksh)
-          nbfl= mbf(lsh)
-          locbfi= locbf(ish)
-          locbfk= locbf(ksh)
-          locbfl= locbf(lsh)
+          nbfi= databasis%mbf(ish)
+          nbfk= databasis%mbf(ksh)
+          nbfl= databasis%mbf(lsh)
+          locbfi= databasis%locbf(ish)
+          locbfk= databasis%locbf(ksh)
+          locbfl= databasis%locbf(lsh)
           if(ksh >= lsh) then
             kl= ksh*(ksh-1)/2+lsh
           else
             kl= lsh*(lsh-1)/2+ksh
           endif
-          do jsh= 1,nshell
-            nbfj  = mbf(jsh)
-            locbfj= locbf(jsh)
+          do jsh= 1,databasis%nshell
+            nbfj  = databasis%mbf(jsh)
+            locbfj= databasis%locbf(jsh)
             if(ish >= jsh) then
               ij= ish*(ish-1)/2+jsh
             else
