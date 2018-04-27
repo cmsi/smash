@@ -1409,7 +1409,7 @@ end
 !
 ! Calculate two-electron integrals and Fock-like matrix
 !
-        call formrfock(paifock,work1,pls,pmax,xint,maxdim,nproc,myrank,mpi_comm)
+        call formrfock(paifock,work1,pls,pmax,xint,maxdim,nproc,myrank,mpi_comm,databasis)
 !
 ! Transform Fock-like matrix to MO basis
 !
@@ -1598,7 +1598,7 @@ end
 !
 ! Calculate two-electron integrals and Fock-like matrix
 !
-      call formrfock(pmnfock,work1,pmn2,pmax,xint,maxdim,nproc,myrank,mpi_comm)
+      call formrfock(pmnfock,work1,pmn2,pmax,xint,maxdim,nproc,myrank,mpi_comm,databasis)
 !
 ! Calculate Wij[III]
 !

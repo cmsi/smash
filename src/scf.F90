@@ -174,7 +174,7 @@
 ! Calculate two-electron integrals and Fock matrix
 !
         call cpu_time(time1)
-        call formrfock(fock,work,dmtrx,dmax,xint,maxdim,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1)
+        call formrfock(fock,work,dmtrx,dmax,xint,maxdim,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis)
         call dscal(nao3,half,fock,1)
         call cpu_time(time2)
 !
@@ -386,25 +386,30 @@ end
 
 
 !------------------------------------------------------------------------------------
-  subroutine formrfock(focktotal,fock,dmtrx,dmax,xint,maxdim,nproc,myrank,mpi_comm)
+  subroutine formrfock(focktotal,fock,dmtrx,dmax,xint,maxdim,nproc,myrank,mpi_comm,databasis)
 !------------------------------------------------------------------------------------
 !
 ! Driver of Fock matrix formation from two-electron intgrals
 !
-      use modbasis, only : nshell, nao
       use modjob, only : cutint2
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart, ishcheck
-      integer(8) :: ncount, icount(nshell)
+      integer(8) :: ncount, icount(databasis%nshell)
       real(8),parameter :: zero=0.0D+00, two=2.0D+00, four=4.0D+00
-      real(8),intent(in) :: dmtrx(nao*(nao+1)/2), dmax(nshell*(nshell+1)/2)
-      real(8),intent(in) :: xint(nshell*(nshell+1)/2)
-      real(8),intent(out) :: focktotal(nao*(nao+1)/2), fock(nao*(nao+1)/2)
+      real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: dmax(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(out) :: focktotal(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8) :: xijkl, denmax, twoeri(maxdim**4), denmax1
-      integer :: last, ltmp(nshell), lnum, ll
+      integer :: nao, nshell, last, ltmp(databasis%nshell), lnum, ll
 !
+      nao= databasis%nao
+      nshell= databasis%nshell
       fock(:)= zero
 !
       ncount= 0
@@ -1450,7 +1455,7 @@ end
 ! Calculate two-electron integrals and Fock matrix
 !
         call cpu_time(time1)
-        call formufock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1)
+        call formufock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis)
         call dscal(nao3,half,focka,1)
         call dscal(nao3,half,fockb,1)
         call cpu_time(time2)
@@ -1678,7 +1683,7 @@ end
 
 
 !-----------------------------------------------------------------------------------------------
-  subroutine formufock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,nproc,myrank,mpi_comm)
+  subroutine formufock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,nproc,myrank,mpi_comm,databasis)
 !-----------------------------------------------------------------------------------------------
 !
 ! Driver of Fock matrix formation from two-electron intgrals
@@ -1689,20 +1694,27 @@ end
 !       fock2  (Beta Fock matrix)
 !       fock3  (Work space)
 !
-      use modbasis, only : nshell, nao
       use modjob, only : cutint2
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart, ishcheck
-      integer(8) :: ncount, icount(nshell)
+      integer(8) :: ncount, icount(databasis%nshell)
       real(8),parameter :: zero=0.0D+00, two=2.0D+00, four=4.0D+00
-      real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
-      real(8),intent(in) :: dmax(nshell*(nshell+1)/2), xint(nshell*(nshell+1)/2)
-      real(8),intent(out) :: fock1(nao*(nao+1)/2), fock2(nao*(nao+1)/2), fock3(nao*(nao+1)/2)
+      real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: dmax(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(out) :: fock1(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fock2(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fock3(databasis%nao*(databasis%nao+1)/2)
       real(8) :: xijkl, denmax, twoeri(maxdim**4), denmax1
-      integer :: last, ltmp(nshell), lnum, ll
+      integer :: nao, nshell, last, ltmp(databasis%nshell), lnum, ll
 !
+      nao= databasis%nao
+      nshell= databasis%nshell
       fock2(:)= zero
       fock3(:)= zero
 !
