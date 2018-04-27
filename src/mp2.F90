@@ -701,7 +701,6 @@ end
 ! Out : trint4  (Second transformed integrals, [l,m])
 ! Work: trint3  (Receiving data)
 !
-      use modbasis, only : nao, nshell, mbf, locbf
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis

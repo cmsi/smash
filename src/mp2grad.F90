@@ -23,7 +23,6 @@
 !       xint    (Exchange integral matrix)
 ! Out : egrad   (MP2 energy gradients)
 !
-      use modbasis, only : nao, nshell, mbf, mtype
       use modmolecule, only : nmo, natom, neleca, numatomic, escf, emp2, escsmp2
       use modjob, only : ncore, nvfz, maxmp2diis
       use modtype, only : typebasis, typecomp
@@ -33,11 +32,13 @@
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: maxfunc(0:7), maxdim, maxgraddim, nocc, nvir, noac, nvac, icount, ish, jsh
       integer :: idis(0:nproc-1,8), iproc, nvac2, numab, numov, maxsize, numirecv
-      integer :: nocc2, nocc3, nvir2, nao2, nao3, mem1, mem2, mem2i, mem3, mem3i, mem4, mem5
+      integer :: nocc2, nocc3, nvir2, nao, nshell, nao2, nao3
+      integer :: mem1, mem2, mem2i, mem3, mem3i, mem4, mem5
       integer :: mem5i, mem6, memmin345, memmin16, msize, memmin3, memmin4, memmin5
       integer :: numi3, numi4, numi5, numi, npass, ii, jj
       real(8),parameter :: zero=0.0D+00, three=3.0D+00, p12=1.2D+00
-      real(8),intent(in) :: cmo(nao,nao), energymo(nao), xint(nshell*(nshell+1)/2)
+      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(databasis%nao)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
       real(8),intent(out) :: egrad(3,natom)
       real(8) :: emp2st(2), emp2stsum(2), egradtmp(3*natom)
       character(len=3) :: table(-9:112)= &
@@ -52,11 +53,13 @@
 &       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
       data maxfunc/1,3,6,10,15,21,28,36/
 !
+      nao= databasis%nao
+      nshell= databasis%nshell
       emp2= zero
       emp2st(:)= zero
       egrad(:,:)= zero
       egradtmp(:)= zero
-      maxdim= maxval(mtype(1:nshell))
+      maxdim= maxval(databasis%mtype(1:nshell))
       maxgraddim= maxfunc(maxdim+1)
       maxdim= maxfunc(maxdim)
       nocc= neleca
@@ -98,7 +101,7 @@
       if(nproc /= 1) then
         do ish= 1,nshell
           do jsh= 1,nshell
-            idis(iproc,3)= idis(iproc,3)+mbf(ish)*mbf(jsh)
+            idis(iproc,3)= idis(iproc,3)+databasis%mbf(ish)*databasis%mbf(jsh)
             idis(iproc,4)= idis(iproc,4)+1
             icount= icount+1
             if(mod(icount,nproc) == 0) then
@@ -261,7 +264,6 @@ end
 !       egrad   (Partial MP2 energy gradients)
 ! Work: egradtmp(Work space for MP2 energy gradients)
 !
-      use modbasis, only : nshell, nao
       use modmolecule, only : nmo, natom
       use modjob, only : maxmp2diis
       use modtype, only : typebasis, typecomp
@@ -271,10 +273,11 @@ end
       integer,intent(in) :: nocc, noac, nvir, nvac, ncore, nvfz, maxsize, maxdim, maxgraddim
       integer,intent(in) :: nproc, myrank, mpi_comm, idis(0:nproc-1,8), npass
       integer,intent(in) :: numi, numab, numirecv
-      integer :: nao2, nao3, nocc2, nocc3, nvir2, numitrans, ipass, msize, mlsize, istart
-      integer :: mlsize2
+      integer :: nao, nshell, nao2, nao3, nocc2, nocc3, nvir2, numitrans, ipass
+      integer :: msize, mlsize, istart, mlsize2
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: cmo(nao,nao), energymo(nmo), xint(nshell*(nshell+1)/2)
+      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(nmo)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
       real(8),intent(inout) :: emp2st(2), egrad(3*natom), egradtmp(3*natom)
       real(8),allocatable :: wij(:), wab(:), wai(:), xlai(:), pmn(:)
       real(8),allocatable :: trint2(:), trint2core(:), pij(:), pab(:)
@@ -285,6 +288,8 @@ end
       real(8),allocatable :: pai(:), paiprev(:), pls(:), pmax(:), paifock(:)
       real(8),allocatable :: errdiis(:), paidiis(:), diismtrx(:), work2(:)
 !
+      nao= databasis%nao
+      nshell= databasis%nshell
       nao2= nao*nao
       nao3= nao*(nao+1)/2
       nocc2= nocc*nocc
@@ -491,8 +496,8 @@ end
 !
 ! Second integral transformation
 !
-          call transmointgrad2(trint2,trint2core,trint1b,cmo,noac,ncore,numitrans,mlcount, &
-&                              mlstart,mlsize,idis,nproc,myrank)
+          call transmointgrad2(trint2,trint2core,trint1b,cmo,noac,ncore,databasis%nao, &
+&                              numitrans,mlcount,mlstart,mlsize,idis,nproc,myrank)
         else
           if(jcount == myrank) then
             ksh= ksh+2*nproc-1
@@ -512,8 +517,8 @@ end
           if(mlcount+databasis%mbf(ish)*databasis%mbf(ksh) > mlsize) then
             call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,numitrans,jcount1, &
 &                            mlshell,mlsize,nproc,myrank,databasis)
-            call transmointgrad2(trint2,trint2core,trint1b,cmo,noac,ncore,numitrans,mlcount, &
-&                                mlstart,mlsize,idis,nproc,myrank)
+            call transmointgrad2(trint2,trint2core,trint1b,cmo,noac,ncore,databasis%nao, &
+&                                numitrans,mlcount,mlstart,mlsize,idis,nproc,myrank)
             mlstart= mlstart+mlcount
             mlshell= 0
             mlcount= 0
@@ -529,8 +534,8 @@ end
 
 
 !-------------------------------------------------------------------------------------------
-  subroutine transmointgrad2(trint2,trint2core,trint1b,cmo,noac,ncore,numitrans,mlcount, &
-&                            mlstart,mlsize,idis,nproc,myrank)
+  subroutine transmointgrad2(trint2,trint2core,trint1b,cmo,noac,ncore,nao, &
+&                            numitrans,mlcount,mlstart,mlsize,idis,nproc,myrank)
 !-------------------------------------------------------------------------------------------
 !
 ! Second-quarter integral transformation for MP2 energy gradient calculation
@@ -547,10 +552,9 @@ end
 ! Out : trint2   (Second transformed integrals of active MOs, [ml,ij])
 !       trint2core(Second transformed integrals of core MOs, [ml,ij])
 !
-      use modbasis, only : nao
       implicit none
-      integer,intent(in) :: noac, ncore, numitrans, mlcount, mlstart, mlsize, nproc, myrank
-      integer,intent(in) :: idis(0:nproc-1,8)
+      integer,intent(in) :: noac, ncore, nao, numitrans, mlcount, mlstart, mlsize
+      integer,intent(in) :: nproc, myrank, idis(0:nproc-1,8)
       integer :: moi
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: trint1b(nao,numitrans,mlsize), cmo(nao,nao)
