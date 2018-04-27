@@ -19,8 +19,8 @@
 ! Driver of setting basis functions
 !
       use modmolecule, only : natom, numatomic
-      use modbasis, only : basis, locprim, locbf, locatom, mprim, mbf, mtype, &
-&                          nshell, nao, nprim, ex, coeff, coeffinp
+!      use modbasis, only : basis, locprim, locbf, locatom, mprim, mbf, mtype, &
+!&                          nshell, nao, nprim, ex, coeff, coeffinp
       use modjob, only : flagecp
       use modtype, only : typebasis, typecomp
       implicit none
@@ -36,7 +36,7 @@
         databasis%locbf(1)=0
         ishell= 0
 !
-        select case(basis)
+        select case(databasis%basis)
           case('STO-3G')
             do iatom= 1, natom
               call bssto3g(iatom,ishell,databasis)
@@ -104,7 +104,7 @@
             call setcheckbasis(databasis)
             ishell= databasis%nshell
           case default
-            write(*,'(" Error! Basis set ",a16,"is not supported.")') basis
+            write(*,'(" Error! Basis set ",a16,"is not supported.")') databasis%basis
             call iabort
         end select
 !
@@ -131,18 +131,18 @@
       call bsnrmlz(databasis)
 !ishimura-start
 !!!!!!!!!!!
-    nshell= databasis%nshell
-    nao= databasis%nao
-    nprim= databasis%nprim
-    locprim(:)= databasis%locprim(:)
-    locbf(:)  = databasis%locbf(:)
-    locatom(:)= databasis%locatom(:)
-    ex(:)     = databasis%ex(:)
-    coeff(:)  = databasis%coeff(:)
-    mprim(:)  = databasis%mprim(:)
-    mbf(:)    = databasis%mbf(:)
-    mtype(:)  = databasis%mtype(:)
-    coeffinp(:)  = databasis%coeffinp(:)
+!   nshell= databasis%nshell
+!   nao= databasis%nao
+!   nprim= databasis%nprim
+!   locprim(:)= databasis%locprim(:)
+!   locbf(:)  = databasis%locbf(:)
+!   locatom(:)= databasis%locatom(:)
+!   ex(:)     = databasis%ex(:)
+!   coeff(:)  = databasis%coeff(:)
+!   mprim(:)  = databasis%mprim(:)
+!   mbf(:)    = databasis%mbf(:)
+!   mtype(:)  = databasis%mtype(:)
+!   coeffinp(:)  = databasis%coeffinp(:)
 !!!!!!!!!!!
 !ishimura-end
       return

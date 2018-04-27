@@ -1528,7 +1528,7 @@ end
 
 
 !---------------------------------------------------------------------
-  subroutine writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob)
+  subroutine writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,databasis)
 !---------------------------------------------------------------------
 !
 ! Write checkpoint file
@@ -1536,17 +1536,19 @@ end
       use modparam, only : icheck
       use modmolecule, only : numatomic, natom, coord, nmo, neleca, nelecb, charge, multi, znuc
       use modjob, only : method, runtype, scftype, version, flagecp
-      use modbasis, only : nshell, nao, nprim, ex, coeffinp, locprim, locbf, locatom, &
-&                          mprim, mbf, mtype
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer :: ii, jj
-      real(8),intent(in) :: cmoa(nao,nao), dmtrxa(nao*(nao+1)/2), energymoa(nao)
-      real(8),intent(in) :: cmob(nao,nao), dmtrxb(nao*(nao+1)/2), energymob(nao)
+      real(8),intent(in) :: cmoa(databasis%nao,databasis%nao)
+      real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2), energymoa(databasis%nao)
+      real(8),intent(in) :: cmob(databasis%nao,databasis%nao)
+      real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2), energymob(databasis%nao)
       character(len=16) :: datatype
 !
       rewind(icheck)
       write(icheck) version
-      write(icheck) scftype, natom, nao, nmo, nshell, nprim, neleca, nelecb,  &
+      write(icheck) scftype, natom, databasis%nao, nmo, databasis%nshell, databasis%nprim, neleca, nelecb,  &
 &                   method, runtype, charge, multi, flagecp
 !
       datatype= 'numatomic'
@@ -1563,44 +1565,44 @@ end
 !
       datatype= 'ex'
       write(icheck) datatype
-      write(icheck) (ex(ii),ii=1,nprim)
+      write(icheck) (databasis%ex(ii),ii=1,databasis%nprim)
 !
       datatype= 'coeffinp'
       write(icheck) datatype
-      write(icheck) (coeffinp(ii),ii=1,nprim)
+      write(icheck) (databasis%coeffinp(ii),ii=1,databasis%nprim)
 !
       datatype= 'locprim'
       write(icheck) datatype
-      write(icheck) (locprim(ii),ii=1,nshell)
+      write(icheck) (databasis%locprim(ii),ii=1,databasis%nshell)
 !
       datatype= 'locbf'
       write(icheck) datatype
-      write(icheck) (locbf(ii),ii=1,nshell)
+      write(icheck) (databasis%locbf(ii),ii=1,databasis%nshell)
 !
       datatype= 'locatom'
       write(icheck) datatype
-      write(icheck) (locatom(ii),ii=1,nshell)
+      write(icheck) (databasis%locatom(ii),ii=1,databasis%nshell)
 !
       datatype= 'mprim'
       write(icheck) datatype
-      write(icheck) (mprim(ii),ii=1,nshell)
+      write(icheck) (databasis%mprim(ii),ii=1,databasis%nshell)
 !
       datatype= 'mbf'
       write(icheck) datatype
-      write(icheck) (mbf(ii),ii=1,nshell)
+      write(icheck) (databasis%mbf(ii),ii=1,databasis%nshell)
 !
       datatype= 'mtype'
       write(icheck) datatype
-      write(icheck) (mtype(ii),ii=1,nshell)
+      write(icheck) (databasis%mtype(ii),ii=1,databasis%nshell)
 !
       if(scftype == 'RHF') then
         datatype= 'cmo'
         write(icheck) datatype
-        write(icheck)((cmoa(jj,ii),jj=1,nao),ii=1,nmo)
+        write(icheck)((cmoa(jj,ii),jj=1,databasis%nao),ii=1,nmo)
 !
         datatype= 'dmtrx'
         write(icheck) datatype
-        write(icheck) (dmtrxa(ii),ii=1,nao*(nao+1)/2)
+        write(icheck) (dmtrxa(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
 !
         datatype= 'energymo'
         write(icheck) datatype
@@ -1608,19 +1610,19 @@ end
       elseif(scftype == 'UHF') then
         datatype= 'cmoa'
         write(icheck) datatype
-        write(icheck)((cmoa(jj,ii),jj=1,nao),ii=1,nmo)
+        write(icheck)((cmoa(jj,ii),jj=1,databasis%nao),ii=1,nmo)
 !
         datatype= 'cmob'
         write(icheck) datatype
-        write(icheck)((cmob(jj,ii),jj=1,nao),ii=1,nmo)
+        write(icheck)((cmob(jj,ii),jj=1,databasis%nao),ii=1,nmo)
 !
         datatype= 'dmtrxa'
         write(icheck) datatype
-        write(icheck) (dmtrxa(ii),ii=1,nao*(nao+1)/2)
+        write(icheck) (dmtrxa(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
 !
         datatype= 'dmtrxb'
         write(icheck) datatype
-        write(icheck) (dmtrxb(ii),ii=1,nao*(nao+1)/2)
+        write(icheck) (dmtrxb(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
 !
         datatype= 'energymoa'
         write(icheck) datatype
