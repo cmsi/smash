@@ -487,7 +487,7 @@ end
 ! AO integral generation and first integral transformation
 !
           call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,numitrans,jcount1, &
-&                          mlshell,mlsize,nproc,myrank)
+&                          mlshell,mlsize,nproc,myrank,databasis)
 !
 ! Second integral transformation
 !
