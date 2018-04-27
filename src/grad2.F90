@@ -14,7 +14,7 @@
 !
 !----------------------------------------------------------------------------
   subroutine grad2eri(egrad,egrad2,fulldmtrx1,fulldmtrx2,xint,hfexchange, &
-&                     maxdim,maxgraddim,nproc,myrank,itype)
+&                     maxdim,maxgraddim,nproc,myrank,itype,databasis)
 !----------------------------------------------------------------------------
 !
 ! Main driver of derivatives for two-electron integrals
@@ -31,22 +31,26 @@
 !         itype     (1:RHF, 2:UHF)
 ! Inout : egrad2    (Energy gradient values)
 !
-      use modbasis, only : nshell, nao
       use modjob, only : cutint2
       use modmolecule, only : natom
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, maxgraddim, nproc, myrank, itype
-      integer :: ijsh, ish, jsh, ksh, lsh, ij, kl
+      integer :: nao, nshell, ijsh, ish, jsh, ksh, lsh, ij, kl
       integer :: ii, kk, kstart, ishcheck
-      integer(8) :: ncount, icount(nshell)
+      integer(8) :: ncount, icount(databasis%nshell)
       real(8),parameter :: zero=0.0D+00, four=4.0D+00
-      real(8),intent(in) :: fulldmtrx1(nao,nao), fulldmtrx2(nao,nao)
-      real(8),intent(in) :: xint(nshell*(nshell+1)/2), hfexchange
+      real(8),intent(in) :: fulldmtrx1(databasis%nao,databasis%nao)
+      real(8),intent(in) :: fulldmtrx2(databasis%nao,databasis%nao)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2), hfexchange
       real(8),intent(out) :: egrad2(3*natom)
       real(8),intent(inout) :: egrad(3*natom)
       real(8) :: xijkl, twoeri(maxgraddim**4), dtwoeri(maxdim**4,3), pdmtrx(maxdim**4)
       real(8) :: pdmax
 !
+      nao= databasis%nao
+      nshell= databasis%nshell
       egrad2(:)= zero
 !
       ncount= 0

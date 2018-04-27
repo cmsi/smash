@@ -1698,7 +1698,7 @@ end
 ! Calculate derivatives for two-electron integrals
 !
       call grad2eri(egradtmp,egradtmp2,pmnhf,pmn,xint,one, &
-&                   maxdim,maxgraddim,nproc,myrank,3)
+&                   maxdim,maxgraddim,nproc,myrank,3,databasis)
 !
 ! Calculate HF+MP2 density matrix
 !
