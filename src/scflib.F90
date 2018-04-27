@@ -2171,7 +2171,7 @@ end
 &                       itdav,maxqcdiagsub)
         call calcudmax(qcworka,qcworkb,qcrmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
         call calcqcugmn(qcgmna,qcgmnb,work,qcworka,qcworkb,qcrmax,xint,hfexchange,maxdim, &
-&                       nao,nshell,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1)
+&                       nao,nshell,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis)
 !
 ! Add two-electron integral contribution
 !
@@ -2464,13 +2464,15 @@ end
 
 !---------------------------------------------------------------------------------
   subroutine calcqcugmn(gmn1,gmn2,gmn3,rmna,rmnb,rmtrx,xint,hfexchange,maxdim, &
-&                       nao,nshell,nproc,myrank,mpi_comm)
+&                       nao,nshell,nproc,myrank,mpi_comm,databasis)
 !---------------------------------------------------------------------------------
 !
 ! Driver of Gmn matrix formation from two-electron intgrals
 !
       use modjob, only : cutint2
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nshell, nao, maxdim, nproc, myrank, mpi_comm
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart, ishcheck
@@ -2547,7 +2549,7 @@ end
           enddo
           do lsh= 1,lnum
             call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
-            call ugmneri(gmn2,gmn3,rmna,rmnb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,hfexchange)
+            call ugmneri(gmn2,gmn3,rmna,rmnb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,hfexchange,databasis)
           enddo
         enddo
       enddo
@@ -2565,34 +2567,37 @@ end
 
 
 !-----------------------------------------------------------------------------------
-  subroutine ugmneri(gmna,gmnb,rmna,rmnb,twoeri,ish,jsh,ksh,lsh,maxdim,hfexchange)
+  subroutine ugmneri(gmna,gmnb,rmna,rmnb,twoeri,ish,jsh,ksh,lsh,maxdim,hfexchange,databasis)
 !-----------------------------------------------------------------------------------
 !
 ! Form Gmn matrix from two-electron intgrals
 !
-      use modbasis, only : nao, mbf, locbf
       use modjob, only : cutint2
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nbfi, nbfj, nbfk, nbfl
       integer :: locbfi, locbfj, locbfk, locbfl, jmax, lmax, i, j, k, l, ij, kl
       integer :: nij, nkl, nik, nil, njk, njl
       integer :: iloc, jloc, kloc, lloc, iloc2, jloc2, kloc2, lloc2, kloc0, jloc0
       real(8),parameter :: half=0.5D+00, two=2.0D+00
-      real(8),intent(in) :: rmna(nao*(nao+1)/2), rmnb(nao*(nao+1)/2)
+      real(8),intent(in) :: rmna(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: rmnb(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim), hfexchange
-      real(8),intent(inout) :: gmna(nao*(nao+1)/2), gmnb(nao*(nao+1)/2)
+      real(8),intent(inout) :: gmna(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(inout) :: gmnb(databasis%nao*(databasis%nao+1)/2)
       real(8) :: val, val2
       logical :: ieqj, keql, ieqk, jeql, ikandjl, ijorkl
 !
-      nbfi = mbf(ish)
-      nbfj = mbf(jsh)
-      nbfk = mbf(ksh)
-      nbfl = mbf(lsh)
-      locbfi= locbf(ish)
-      locbfj= locbf(jsh)
-      locbfk= locbf(ksh)
-      locbfl= locbf(lsh)
+      nbfi = databasis%mbf(ish)
+      nbfj = databasis%mbf(jsh)
+      nbfk = databasis%mbf(ksh)
+      nbfl = databasis%mbf(lsh)
+      locbfi= databasis%locbf(ish)
+      locbfj= databasis%locbf(jsh)
+      locbfk= databasis%locbf(ksh)
+      locbfl= databasis%locbf(lsh)
 !
       ieqj= ish.eq.jsh
       keql= ksh.eq.lsh
