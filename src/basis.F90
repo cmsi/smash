@@ -127,22 +127,6 @@
         databasis%coeffinp(i)= databasis%coeff(i)
       enddo
       call bsnrmlz(databasis)
-!ishimura-start
-!!!!!!!!!!!
-!   nshell= databasis%nshell
-!   nao= databasis%nao
-!   nprim= databasis%nprim
-!   locprim(:)= databasis%locprim(:)
-!   locbf(:)  = databasis%locbf(:)
-!   locatom(:)= databasis%locatom(:)
-!   ex(:)     = databasis%ex(:)
-!   coeff(:)  = databasis%coeff(:)
-!   mprim(:)  = databasis%mprim(:)
-!   mbf(:)    = databasis%mbf(:)
-!   mtype(:)  = databasis%mtype(:)
-!   coeffinp(:)  = databasis%coeffinp(:)
-!!!!!!!!!!!
-!ishimura-end
       return
 end
 
@@ -213,45 +197,6 @@ end
       do iprim= iloc+1,iloc+nprimi
         coeff(iprim)= coeff(iprim)*fac2
       enddo
-      return
-end
-
-
-!-----------------------
-  subroutine bsnrmlz_g
-!-----------------------
-!
-! Normalize basis functions for guess calculation
-!
-      use modguess, only : nshell_g, mtype_g, ex_g, coeff_g, locprim_g, mprim_g
-      implicit none
-      integer :: ishell
-!
-!$OMP parallel do
-      do ishell= 1,nshell_g
-        call bsnor(ishell,ex_g,coeff_g,locprim_g,mprim_g,mtype_g)
-      enddo
-!$OMP end parallel do
-      return
-end
-
-
-!---------------------------
-  subroutine bsnrmlz_gcore
-!---------------------------
-!
-! Normalize basis functions for guess calculation of core orbitals
-!
-      use modguess, only : nshell_gcore, mtype_gcore, ex_gcore, coeff_gcore, &
-&                          locprim_gcore, mprim_gcore
-      implicit none
-      integer :: ishell
-!
-!$OMP parallel do
-      do ishell= 1,nshell_gcore
-        call bsnor(ishell,ex_gcore,coeff_gcore,locprim_gcore,mprim_gcore,mtype_gcore)
-      enddo
-!$OMP end parallel do
       return
 end
 
@@ -1034,10 +979,6 @@ end
 !            =2 (For extended Huckel calculation of only core orbitals)
 !
       use modmolecule, only : natom, numatomic
-      use modguess
-!      use modguess, only : locprim_g, locbf_g, nshell_g, &
-!&                          nao_g, nprim_g, &
-!&                          locprim_gcore, locbf_gcore, nao_gcore, nshell_gcore
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
@@ -1080,21 +1021,6 @@ end
           dataguessbs%nao   = dataguessbs%locbf(ishell+1)
           dataguessbs%nprim = dataguessbs%locprim(ishell+1)
           call bsnrmlz(dataguessbs)
-!ishimura-start
-!!!!!!!!!!!
-    nshell_g    = dataguessbs%nshell
-    nao_g       = dataguessbs%nao
-    nprim_g     = dataguessbs%nprim
-    locprim_g(:)= dataguessbs%locprim(:)
-    locbf_g(:)  = dataguessbs%locbf(:)
-    locatom_g(:)= dataguessbs%locatom(:)
-    ex_g(:)     = dataguessbs%ex(:)
-    coeff_g(:)  = dataguessbs%coeff(:)
-    mprim_g(:)  = dataguessbs%mprim(:)
-    mbf_g(:)    = dataguessbs%mbf(:)
-    mtype_g(:)  = dataguessbs%mtype(:)
-!!!!!!!!!!!
-!ishimura-end
 !
 ! For extended Huckel calculation of only core orbitals
 !
@@ -1112,20 +1038,6 @@ end
           dataguessbs%nshell= ishell
           dataguessbs%nao   = dataguessbs%locbf(ishell+1)
           call bsnrmlz(dataguessbs)
-!ishimura-start
-!!!!!!!!!!!
-    nshell_gcore    = dataguessbs%nshell
-    nao_gcore       = dataguessbs%nao
-    locprim_gcore(:)= dataguessbs%locprim(:)
-    locbf_gcore(:)  = dataguessbs%locbf(:)
-    locatom_gcore(:)= dataguessbs%locatom(:)
-    ex_gcore(:)     = dataguessbs%ex(:)
-    coeff_gcore(:)  = dataguessbs%coeff(:)
-    mprim_gcore(:)  = dataguessbs%mprim(:)
-    mbf_gcore(:)    = dataguessbs%mbf(:)
-    mtype_gcore(:)  = dataguessbs%mtype(:)
-!!!!!!!!!!!
-!ishimura-end
       end select
 !
       return

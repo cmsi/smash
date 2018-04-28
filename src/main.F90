@@ -198,7 +198,6 @@ end
 !
 ! Set defaults before reading input file
 !
-      use modguess, only : spher_g
       use modjob, only : scftype, runtype, method, bohr, memory, iprint, octupole, check, &
 &                        precision, cutint2, threshsoscf, threshqc, threshover, threshatom, &
 &                        threshdiis, threshweight, threshrho, threshdfock, threshdftao, &
@@ -237,7 +236,7 @@ end
       iprint = 2
       bohr   =.false.
 !     spher  =.true.
-      spher_g=.true.
+!     spher_g=.true.
       nopt   = 100
       optconv= 1.0D-04
       cartesian=.false.
