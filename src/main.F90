@@ -199,7 +199,6 @@ end
 ! Set defaults before reading input file
 !
       use modguess, only : spher_g
-      use modbasis, only : spher, basis, ecp
       use modjob, only : scftype, runtype, method, bohr, memory, iprint, octupole, check, &
 &                        precision, cutint2, threshsoscf, threshqc, threshover, threshatom, &
 &                        threshdiis, threshweight, threshrho, threshdfock, threshdftao, &
@@ -237,7 +236,7 @@ end
       idftcor= 0
       iprint = 2
       bohr   =.false.
-      spher  =.true.
+!     spher  =.true.
       spher_g=.true.
       nopt   = 100
       optconv= 1.0D-04
@@ -264,9 +263,9 @@ end
       scftype='RHF'
       method='HARTREE-FOCK'
       runtype='ENERGY'
-      basis='STO-3G'
+!     basis='STO-3G'
       guess='HUCKEL'
-      ecp=''
+!     ecp=''
       check=''
       octupole=.false.
 !

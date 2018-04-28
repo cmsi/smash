@@ -19,8 +19,6 @@
 ! Driver of setting basis functions
 !
       use modmolecule, only : natom, numatomic
-!      use modbasis, only : basis, locprim, locbf, locatom, mprim, mbf, mtype, &
-!&                          nshell, nao, nprim, ex, coeff, coeffinp
       use modjob, only : flagecp
       use modtype, only : typebasis, typecomp
       implicit none

@@ -117,7 +117,6 @@ end
 !
       use modparam, only : mxprsh
       use modmolecule, only : coord, natom
-!     use modbasis, only : locatom, locprim, mprim, mbf, mtype, ex, coeff
       use modjob, only : threshex
       use modtype, only : typebasis
       implicit none

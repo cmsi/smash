@@ -133,42 +133,6 @@ end
 
 
 !------------------
-  module modbasis
-!------------------
-!
-! nshell : Number of shells
-! nao    : Number of AOs (=contracted basis functions)
-! nprim  : Number of primitive basis functions
-! ex    : Exponents of basis functions
-! coeff : Normalized coefficients of basis functions
-! coeffinp : Input coefficients of basis functions
-!
-! locprim : Starting address of primitive basis functions for a shell
-! locbf   : Starting address of basis functions for a shell
-! locatom : Atom center for a shell
-! mprim   : Number of basis primitive functions for a shell
-! mbf     : Number of basis functions for a shell
-! mtype   : Type of a basis shell (s=0, p=1, d=2, f=3,...)
-! basis   : Name of basis functions
-! atombasis : Type of basis set for each atom
-!
-      use modparam, only : mxprim, mxshell, mxatom
-      implicit none
-      integer :: nshell, nao, nprim
-      integer :: locprim(mxshell+1), locbf(mxshell+1), locatom(mxshell)
-      integer :: mprim(mxshell),  mbf(mxshell), mtype(mxshell)
-      real(8) :: ex(mxprim), coeff(mxprim), coeffinp(mxprim)
-      character(len=16) :: basis
-      logical :: spher
-!
-      integer :: maxangecp(mxatom), izcore(mxatom)=0, mtypeecp(mxprim)
-      integer :: locecp(0:5,mxatom), mprimecp(0:5,mxatom)
-      real(8) :: execp(mxprim), coeffecp(mxprim)
-      character(len=16) :: ecp
-end
-
-
-!------------------
   module modguess
 !------------------
 !
@@ -311,6 +275,21 @@ end
         logical :: master
       end type
 !
+! nshell : Number of shells
+! nao    : Number of AOs (=contracted basis functions)
+! nprim  : Number of primitive basis functions
+! ex    : Exponents of basis functions
+! coeff : Normalized coefficients of basis functions
+! coeffinp : Input coefficients of basis functions
+!
+! locprim : Starting address of primitive basis functions for a shell
+! locbf   : Starting address of basis functions for a shell
+! locatom : Atom center for a shell
+! mprim   : Number of basis primitive functions for a shell
+! mbf     : Number of basis functions for a shell
+! mtype   : Type of a basis shell (s=0, p=1, d=2, f=3,...)
+! basis   : Name of basis functions
+! atombasis : Type of basis set for each atom
       type typebasis
         integer :: nshell, nao, nprim
         integer :: locprim(mxshell+1), locbf(mxshell+1), locatom(mxshell)

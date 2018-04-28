@@ -19,7 +19,6 @@
 ! Read input data and open checkpoint file if necessary
 !
       use modparam, only : maxline, input
-      use modbasis, only : basis, spher, ecp
       use modmolecule, only : numatomic, natom, coord, znuc, charge, multi
       use modjob, only : method, runtype, scftype, bohr, memory, iprint, octupole, check, &
 &                        precision, cutint2, threshdiis, threshsoscf, threshqc, threshweight, &
@@ -35,8 +34,10 @@
       integer :: ii, llen, intarray(16), info
       real(8) :: realarray(23)
       character(len=254) :: line
-      character(len=16) :: chararray(9), mem=''
+      character(len=16) :: chararray(9)
+      character(len=16) :: basis, ecp, mem=''
       logical :: logarray(5)
+      logical :: spher
       namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp
       namelist /control/ precision, cutint2, spher, guess, iprint, bohr, check, threshover, &
 &                        threshatom, octupole
@@ -84,6 +85,7 @@
             call iabort
           endif
         enddo
+100     rewind(input)
 !
 !       method
 !       runtype
@@ -139,7 +141,6 @@
 !       cartesian
 !       octupole
 !
-100     rewind(input)
         read(input,nml=job,end=110,iostat=info)
 110     if(info > 0) then
           write(*,'(" Error was found in job line of input file!")')
@@ -267,11 +268,11 @@
 !
       method  = chararray(1)
       runtype = chararray(2)
-      basis   = chararray(3)
+!     basis   = chararray(3)
       scftype = chararray(4)
       memory  = chararray(5)
       guess   = chararray(6)
-      ecp     = chararray(7)
+!     ecp     = chararray(7)
       scfconv = chararray(8)
       precision=chararray(9)
       charge  = realarray( 1)
@@ -312,7 +313,7 @@
       nvfz    = intarray(14)
       maxmp2diis= intarray(15)
       maxmp2iter= intarray(16)
-      spher   = logarray(1)
+!     spher   = logarray(1)
       bohr    = logarray(2)
       flagecp = logarray(3)
       cartesian=logarray(4)
