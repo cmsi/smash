@@ -172,11 +172,11 @@ end
 !
 ! Set functional information and adjust the number of DFT grids
 !
-      call setdft(databasis,datacomp)
+      call setdft(datajob,databasis,datacomp)
 !
 ! Set functional information and adjust the number of DFT grids
 !
-      call setmp2(databasis)
+      call setmp2(datajob,databasis)
 !
 ! Write input data
 !
@@ -1710,7 +1710,7 @@ end
 
 
 !--------------------
-  subroutine setdft(databasis,datacomp)
+  subroutine setdft(datajob,databasis,datacomp)
 !--------------------
 !
 ! Set functional information
@@ -1718,36 +1718,45 @@ end
 !
       use modmolecule, only : natom, numatomic, atomrad
       use modjob, only : method, idftex, idftcor, nrad, nleb, hfexchange, bqrad
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(inout) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: ii, maxelem
 !
       do ii= 1,9
-        atomrad(-ii)= bqrad(ii)
+        atomrad(-ii)= datajob%bqrad(ii)
       enddo
 !
       select case(method)
         case('B3LYP')
+!ishimura
           idftex = 1
           idftcor= 1
           hfexchange= 0.2D+00
+          datajob%idftex = 1
+          datajob%idftcor= 1
+          datajob%hfexchange= 0.2D+00
         case('B3LYP5')
+!ishimura
           idftex = 1
           idftcor= 2
           hfexchange= 0.2D+00
+          datajob%idftex = 1
+          datajob%idftcor= 2
+          datajob%hfexchange= 0.2D+00
         case('HARTREE-FOCK','MP2')
         case default
           if(datacomp%master) then
-            write(*,'(" Error! This program does not support method= ",a16,".")') method
+            write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
             call iabort
           endif
       endselect
 !
-      if((idftex >= 1).or.(idftcor >= 1)) then
+      if((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
         maxelem= maxval(numatomic(1:natom))
-        if(((maxelem >= 55).or.(databasis%nao >= 2000)).and.((nrad == 96).and.(nleb == 302))) then
+        if(((maxelem >= 55).or.(databasis%nao >= 2000)).and.((datajob%nrad == 96).and.(datajob%nleb == 302))) then
           datacomp%nwarn= datacomp%nwarn+1
           if(datacomp%master) write(*,'(" Warning! The number of DFT grids may not be enough.")')
         endif
@@ -1758,18 +1767,20 @@ end
 
 
 !--------------------
-  subroutine setmp2(databasis)
+  subroutine setmp2(datajob,databasis)
 !--------------------
 !
 ! Set MP2 information
 !
       use modjob, only : ncore
-      use modtype, only : typebasis
+      use modtype, only : typejob, typebasis
       implicit none
+      type(typejob),intent(inout) :: datajob
       type(typebasis),intent(in) :: databasis
       integer :: ncorecalc
 !
       if(ncore == -1) ncore= ncorecalc(databasis)
+      if(datajob%ncore == -1) datajob%ncore= ncorecalc(databasis)
 !
       return
 end
