@@ -479,7 +479,7 @@ end
 !
 ! Calculate initial MOs
 !
-      call guessmo(cmo,cmo,overinv,h1mtrx,ortho,databasis,datacomp)
+      call guessmo(cmo,cmo,overinv,h1mtrx,ortho,datajob,databasis,datacomp)
 !
 ! Unset arrays 2
 !
@@ -635,7 +635,7 @@ end
 !
 ! Calculate initial MOs
 !
-      call guessmo(cmoa,cmob,overinv,h1mtrx,ortho,databasis,datacomp)
+      call guessmo(cmoa,cmob,overinv,h1mtrx,ortho,datajob,databasis,datacomp)
 !
 ! Unset arrays 2
 !
@@ -795,7 +795,7 @@ end
 !
 ! Calculate initial MOs
 !
-      call guessmo(cmo,cmo,overinv,h1mtrx,ortho,databasis,datacomp)
+      call guessmo(cmo,cmo,overinv,h1mtrx,ortho,datajob,databasis,datacomp)
 !
 ! Unset arrays 2
 !
@@ -981,7 +981,7 @@ end
 !
 ! Calculate initial MOs
 !
-      call guessmo(cmoa,cmob,overinv,h1mtrx,ortho,databasis,datacomp)
+      call guessmo(cmoa,cmob,overinv,h1mtrx,ortho,datajob,databasis,datacomp)
 !
 ! Unset arrays 2
 !
@@ -1218,7 +1218,7 @@ end
 ! Calculate initial MOs
 !
         if(iopt == 1) then
-          call guessmo(cmo,cmo,overinv,h1mtrx,ortho,databasis,datacomp)
+          call guessmo(cmo,cmo,overinv,h1mtrx,ortho,datajob,databasis,datacomp)
         endif
 !
 ! Unset work arrays 1
@@ -1532,7 +1532,7 @@ end
 ! Calculate initial MOs
 !
         if(iopt == 1) then
-          call guessmo(cmoa,cmob,overinv,h1mtrx,ortho,databasis,datacomp)
+          call guessmo(cmoa,cmob,overinv,h1mtrx,ortho,datajob,databasis,datacomp)
         endif
 !
 ! Unset arrays 1
