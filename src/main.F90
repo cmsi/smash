@@ -180,10 +180,10 @@ end
 !
 ! Write input data
 !
-      call writecondition(databasis,datacomp)
+      call writecondition(datajob,databasis,datacomp)
       call writegeom(datacomp)
-      call writebasis(databasis,datacomp)
-      if(datajob%flagecp) call writeecp(databasis,datacomp)
+      call writebasis(datajob,databasis,datacomp)
+      if(datajob%flagecp) call writeecp(datajob,databasis,datacomp)
 !
 ! Set atom charge including dummy atom
 !

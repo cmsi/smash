@@ -133,6 +133,7 @@
         flagecp    = datajob%flagecp
         cartesian  = datajob%cartesian
         octupole   = datajob%octupole
+        check      = datajob%check
 !
         read(input,nml=job,end=110,iostat=info)
 110     if(info > 0) then
@@ -312,6 +313,7 @@
       cartesian=logarray(4)
       octupole =logarray(5)
 !
+      datajob%check   = check
       datajob%method  = chararray(1)
       datajob%runtype = chararray(2)
       databasis%basis   = chararray(3)
@@ -407,15 +409,15 @@ end
 
 
 !------------------------
-  subroutine writebasis(databasis,datacomp)
+  subroutine writebasis(datajob,databasis,datacomp)
 !------------------------
 !
 ! Write basis functions
 !
       use modmolecule, only : numatomic
-      use modjob, only : iprint
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
       integer :: iatom, ishell, iloc, iprim, jatomcheck(-9:112)
@@ -436,7 +438,7 @@ end
 ! Write basis functions
 !
       second=.false.
-      if(datacomp%master.and.(iprint >= 1)) then
+      if(datacomp%master.and.(datajob%iprint >= 1)) then
         iatom= 0
         write(*,'(" -------------")')
         write(*,'("   Basis set")')
@@ -475,15 +477,15 @@ end
 
 
 !----------------------
-  subroutine writeecp(databasis,datacomp)
+  subroutine writeecp(datajob,databasis,datacomp)
 !----------------------
 !
 ! Write ECP functions
 !
       use modmolecule, only : numatomic, natom
-      use modjob, only : iprint
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
       integer :: iatom, ll, jprim, jloc, k, nprim, jatomcheck(-9:112)
@@ -503,7 +505,7 @@ end
 !
 ! Write ECP functions
 !
-      if(datacomp%master.and.(iprint >= 1)) then
+      if(datacomp%master.and.(datajob%iprint >= 1)) then
         write(*,'(" ----------------")')
         write(*,'("   ECP function")')
         write(*,'(" ----------------")')
@@ -555,16 +557,15 @@ end
 
 
 !----------------------------
-  subroutine writecondition(databasis,datacomp)
+  subroutine writecondition(datajob,databasis,datacomp)
 !----------------------------
 !
 ! Write computational conditions
 !
       use modmolecule, only : natom, neleca, nelecb, charge, multi
-      use modjob, only : method, runtype, scftype, bohr, octupole, check, precision, &
-&                        nopt, optconv, cartesian, guess
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
 !
@@ -581,18 +582,18 @@ end
         write(*,'("   Job infomation")')
         write(*,'(" -------------------------------------------------------------------------")')
         write(*,'("   Runtype = ",a12,  ",  Method  = ",a12,     " ,  Basis    = ",a12)') &
-&                  runtype, method, databasis%basis
+&                  datajob%runtype, datajob%method, databasis%basis
         write(*,'("   Memory  =",i10, "MB ,  SCFtype = ",a12,     " ,  Precision= ",a12)') &
-&                  datacomp%memmax/125000, scftype, precision
+&                  datacomp%memmax/125000, datajob%scftype, datajob%precision
         write(*,'("   Charge  = ",F11.1," ,  Multi   = ",i12,     " ,  Spher    = ",l1)') &
 &                  charge, multi, databasis%spher
         write(*,'("   Bohr    = ",l1,11x,",  Guess   = ",a12,     " ,  Octupole = ",l1)') &
-&                  bohr, guess, octupole
-        if(runtype == 'OPTIMIZE') &
+&                  datajob%bohr, datajob%guess, datajob%octupole
+        if(datajob%runtype == 'OPTIMIZE') &
 &       write(*,'("   Nopt    =  ",i10," ,  Optconv = ",1p,D12.1," ,  Cartesian= ",l1)') &
-&                  nopt, optconv, cartesian
-        if(check /= '') &
-        write(*,'("   Check   = ",a64)') check
+&                  datajob%nopt, datajob%optconv, datajob%cartesian
+        if(datajob%check /= '') &
+        write(*,'("   Check   = ",a64)') datajob%check
         write(*,'(" -------------------------------------------------------------------------")')
 
         write(*,'(/," ------------------------------------------------")')

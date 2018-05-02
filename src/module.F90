@@ -313,7 +313,7 @@ end
         real(8) :: threshdftao=-1.0D+00, threshmp2cphf=1.0D-10
         character(len=16) :: method='HARTREE-FOCK', runtype='ENERGY', scftype='RHF', memory=''
         character(len=16) :: version='2.3', guess='HUCKEL', precision='MEDIUM'
-        character(len=64) :: check
+        character(len=64) :: check=''
         logical :: bohr=.false., octupole=.false., flagecp=.false.
 !
         integer :: maxiter=150, maxdiis=20, maxsoscf=20, maxqc=15, maxqcdiag=199, maxqcdiagsub=10
