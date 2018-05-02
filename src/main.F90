@@ -436,11 +436,10 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modmolecule, only : nmo, enuc
-      use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
-&                        idftex, idftcor, guess
+      use modjob, only : cutint2, dconv
       use modtype, only : typejob, typebasis, typecomp
       implicit none
-      type(typejob),intent(in) :: datajob
+      type(typejob),intent(inout) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao, nao2, nao3, nshell3
@@ -479,7 +478,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,datacomp)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo,datajob%threshover,datacomp)
 !
 ! Calculate initial MOs
 !
@@ -493,25 +492,35 @@ end
 !
 ! Start SCF
 !
-      if(method == 'HARTREE-FOCK') then
+      if(datajob%method == 'HARTREE-FOCK') then
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
         call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
-      elseif((idftex >= 1).or.(idftcor >= 1)) then
-        if(guess == 'HUCKEL') then
+      elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
+        if(datajob%guess == 'HUCKEL') then
+!ishimura-start
           savedconv= dconv
           savecutint2= cutint2
           dconv= max(dconv,1.0D-2)
           cutint2= max(cutint2,1.0D-9)
+          savedconv= datajob%dconv
+          savecutint2= datajob%cutint2
+          datajob%dconv= max(datajob%dconv,1.0D-2)
+          datajob%cutint2= max(datajob%cutint2,1.0D-9)
+!ishimura-end
           call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
+!ishimura-start
           dconv= savedconv
           cutint2= savecutint2
+          datajob%dconv= savedconv
+          datajob%cutint2= savecutint2
+!ishimura-end
           call tstamp(1,datacomp)
         endif
         call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
         call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
-      elseif(method == 'MP2') then
+      elseif(datajob%method == 'MP2') then
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
         call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
@@ -519,14 +528,14 @@ end
         call tstamp(1,datacomp)
       else
         if(datacomp%master) then
-          write(*,'(" Error! This program does not support method= ",a16,".")')method
+          write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
           call iabort
         endif
       endif
 !
 ! Print MOs
 !
-      if(datacomp%master.and.(iprint >= 2)) then
+      if(datacomp%master.and.(datajob%iprint >= 2)) then
         write(*,'("  -------------------")')
         write(*,'("    MO coefficients")')
         write(*,'("  -------------------")')
@@ -539,7 +548,7 @@ end
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
-      if(octupole) then
+      if(datajob%octupole) then
         call memset(nao3*29,datacomp)
         allocate(work(nao3*29))
         call calcroctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrx, &
@@ -559,7 +568,7 @@ end
 !
 ! Write checkpoint file
 !
-      if(datacomp%master.and.(check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,databasis)
+      if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,databasis)
 !
 ! Unset arrays 1
 !
