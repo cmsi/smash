@@ -13,18 +13,18 @@
 ! limitations under the License.
 !
 !-----------------------
-  subroutine nucenergy(datacomp)
+  subroutine nucenergy(threshatom,datacomp)
 !-----------------------
 !
 ! Calculate nuclear replusion energy
 !
       use modmolecule, only : natom, coord, znuc, enuc
-      use modjob, only : threshatom
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
       integer :: iatom, jatom
       real(8),parameter :: zero=0.0D+00
+      real(8),intent(in) :: threshatom
       real(8) :: xyz(3), rr, chrgij
 !
       enuc= zero

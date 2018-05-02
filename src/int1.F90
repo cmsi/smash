@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !--------------------------------------------------------------------------
-  subroutine oneei(hstmat1,hstmat2,hstmat3,hstmat4,nproc,myrank,mpi_comm,databasis)
+  subroutine oneei(hstmat1,hstmat2,hstmat3,hstmat4,nproc,myrank,mpi_comm,datajob,databasis)
 !--------------------------------------------------------------------------
 !
 ! Driver of one-electron and overlap integrals
@@ -23,9 +23,9 @@
 !       hstmat3 (Kinetic energy matrix)
 !       hstmat4 (Work array)
 !
-      use modjob, only : flagecp
-      use modtype, only : typebasis
+      use modtype, only : typejob, typebasis
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh, num, maxfunc(0:6), maxbasis, maxdim
@@ -48,7 +48,7 @@
       do ish= databasis%nshell-myrank,1,-nproc
 !$OMP do
         do jsh= 1,ish
-          call calcintst1c(hstmat2,hstmat3,hstmat4,ish,jsh,maxdim,databasis)
+          call calcintst1c(hstmat2,hstmat3,hstmat4,ish,jsh,maxdim,datajob%threshex,databasis)
         enddo
 !$OMP enddo
       enddo
@@ -56,7 +56,7 @@
 !
 ! Calculate ECP integrals
 !
-      if(flagecp) call oneeiecp(hstmat2,nproc,myrank,databasis)
+      if(datajob%flagecp) call oneeiecp(hstmat2,nproc,myrank,databasis)
 !
       call para_allreducer(hstmat2,hstmat1,num,mpi_comm)
       call para_allreducer(hstmat3,hstmat2,num,mpi_comm)
@@ -67,20 +67,20 @@ end
 
 
 !------------------------------------------------------
-  subroutine calcintst1c(hmat,smat,tmat,ish,jsh,len1,databasis)
+  subroutine calcintst1c(hmat,smat,tmat,ish,jsh,len1,threshex,databasis)
 !------------------------------------------------------
 !
 ! Driver of overlap, kinetic, and 1-electron Coulomb integrals (j|Z/r|i)
 !
       use modparam, only : mxprsh
       use modmolecule, only : natom, coord, znuc
-      use modjob, only : threshex
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, len1
       integer :: nangij(2), nprimij(2), nbfij(2), iatom, jatom
       integer :: iloc, jloc, ilocbf, jlocbf, iprim, jprim, i, j, ii, ij, maxj
+      real(8),intent(in) :: threshex
       real(8),intent(inout) :: hmat((databasis%nao*(databasis%nao+1))/2)
       real(8),intent(inout) :: smat((databasis%nao*(databasis%nao+1))/2)
       real(8),intent(inout) :: tmat((databasis%nao*(databasis%nao+1))/2)

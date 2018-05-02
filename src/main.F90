@@ -431,9 +431,6 @@ end
 ! Driver of closed-shell energy calculation
 !
 ! Parallel information
-!   nproc1, myrank1, mpi_comm1 : MPI_COMM_WORLD (all nodes)
-!   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
-!                               (default: MPI_COMM_WORLD)
 !
       use modmolecule, only : nmo, enuc
       use modjob, only : cutint2, dconv
@@ -461,7 +458,7 @@ end
 !
 ! Calculate nuclear repulsion energy
 !
-      call nucenergy(datacomp)
+      call nucenergy(datajob%threshatom,datacomp)
       if(datacomp%master) then
         write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
       endif
@@ -473,7 +470,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-      call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
+      call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datajob,databasis)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -617,7 +614,7 @@ end
 !
 ! Calculate nuclear repulsion energy
 !
-      call nucenergy(datacomp)
+      call nucenergy(datajob%threshatom,datacomp)
       if(datacomp%master) then
         write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
       endif
@@ -629,7 +626,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-      call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
+      call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datajob,databasis)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -777,7 +774,7 @@ end
 !
 ! Calculate nuclear repulsion energy
 !
-      call nucenergy(datacomp)
+      call nucenergy(datajob%threshatom,datacomp)
       if(datacomp%master) then
         write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
       endif
@@ -789,7 +786,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-      call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
+      call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datajob,databasis)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -963,7 +960,7 @@ end
 !
 ! Calculate nuclear repulsion energy
 !
-      call nucenergy(datacomp)
+      call nucenergy(datajob%threshatom,datacomp)
       if(datacomp%master) then
         write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
       endif
@@ -975,7 +972,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-      call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
+      call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datajob,databasis)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -1199,7 +1196,7 @@ end
 !
 ! Calculate nuclear repulsion energy
 !
-        call nucenergy(datacomp)
+        call nucenergy(datajob%threshatom,datacomp)
         if(datacomp%master) then
           write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
         endif
@@ -1211,7 +1208,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-        call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
+        call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datajob,databasis)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
@@ -1513,7 +1510,7 @@ end
 !
 ! Calculate nuclear repulsion energy
 !
-        call nucenergy(datacomp)
+        call nucenergy(datajob%threshatom,datacomp)
         if(datacomp%master) then
           write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
         endif
@@ -1525,7 +1522,7 @@ end
 !
 ! Calculate overlap and 1-electron integrals
 !
-        call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
+        call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datajob,databasis)
 !
 ! Calculate canonicalization and inverse overlap matrices
 !
