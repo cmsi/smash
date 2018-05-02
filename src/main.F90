@@ -21,14 +21,15 @@
 !
       use modparam, only : input, icheck
       use modjob, only : runtype, scftype, check, version
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob) :: datajob
       type(typebasis) :: databasis
       type(typecomp) :: datacomp
       logical :: converged
 !
       call setparallel(datacomp)
-      version='2.2.0'
+      version= '2.3.0'
 !
       if(datacomp%master) then
         write(*,&
@@ -37,14 +38,14 @@
 &             "      High performance computing systems",/,&
 &             "            SMASH Version ",a10/,&
 &             "           written by K. ISHIMURA",/,&
-&             " *******************************************",/)') version
+&             " *******************************************",/)') datajob%version
       endif
       call tstamp(0,datacomp)
       call parallelinfo(datacomp)
 !
 ! Read input file and set details
 !
-      call setdetails(databasis,datacomp)
+      call setdetails(datajob,databasis,datacomp)
 !
 ! Start calculations
 !
@@ -129,14 +130,15 @@ end
 
 
 !----------------------------------
-  subroutine setdetails(databasis,datacomp)
+  subroutine setdetails(datajob,databasis,datacomp)
 !----------------------------------
 !
 ! Read input file and set variables
 !
       use modjob, only : flagecp
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(inout) :: datajob
       type(typebasis),intent(inout) :: databasis
       type(typecomp),intent(inout) :: datacomp
 !
@@ -147,11 +149,11 @@ end
 ! Read input data and open checkpoint file if necessary
 !
       if(datacomp%master) call opendatfile(datacomp)
-      call readinput(databasis,datacomp)
+      call readinput(datajob,databasis,datacomp)
 !
 ! Set basis functions
 !
-      call setbasis(databasis,datacomp)
+      call setbasis(datajob,databasis,datacomp)
 !
 ! Set ECP functions
 !
@@ -211,10 +213,10 @@ end
       implicit none
       type(typecomp),intent(inout) :: datacomp
 !
-      datacomp%nwarn= 0
-      datacomp%memmax = 1000000000
-      datacomp%memused= 0
-      datacomp%memusedmax= 0
+!     datacomp%nwarn= 0
+!     datacomp%memmax = 1000000000
+!     datacomp%memused= 0
+!     datacomp%memusedmax= 0
       memory = ''
       maxiter= 150
       maxdiis= 20

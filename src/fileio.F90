@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !---------------------------------
-  subroutine readinput(databasis,datacomp)
+  subroutine readinput(datajob,databasis,datacomp)
 !---------------------------------
 !
 ! Read input data and open checkpoint file if necessary
@@ -27,8 +27,9 @@
 &                        ncore, nvfz, maxmp2diis, maxmp2iter, &
 &                        nopt, optconv, cartesian, flagecp, guess, &
 &                        scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(inout) :: datajob
       type(typebasis),intent(inout) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: ii, llen, intarray(16), info
@@ -87,59 +88,51 @@
         enddo
 100     rewind(input)
 !
-!       method
-!       runtype
-        basis    = databasis%basis
-!       scftype
-!       memory
-!       guess
-        ecp      = databasis%ecp
-!       scfconv
-!       precision
+        method     = datajob%method
+        runtype    = datajob%runtype
+        basis      = databasis%basis
+        scftype    = datajob%scftype
+        memory     = datajob%memory
+        guess      = datajob%guess
+        ecp        = databasis%ecp
+        scfconv    = datajob%scfconv
+        precision  = datajob%precision
 !       charge
-!       cutint2
-!       dconv
-!       optconv
-!       threshdiis
-!       threshsoscf
-!       threshqc
-!       bqrad(1)
-!       bqrad(2)
-!       bqrad(3)
-!       bqrad(4)
-!       bqrad(5)
-!       bqrad(6)
-!       bqrad(7)
-!       bqrad(8)
-!       bqrad(9)
-!       threshweight
-!       threshrho
-!       threshdfock
-!       threshdftao
-!       threshover
-!       threshatom
-!       threshmp2cphf
+        cutint2    = datajob%cutint2
+        dconv      = datajob%dconv
+        optconv    = datajob%optconv
+        threshdiis = datajob%threshdiis
+        threshsoscf= datajob%threshsoscf
+        threshqc   = datajob%threshqc
+        bqrad(1:9) = datajob%bqrad(1:9)
+        threshweight=datajob%threshweight
+        threshrho  = datajob%threshrho
+        threshdfock= datajob%threshdfock
+        threshdftao= datajob%threshdftao
+        threshover = datajob%threshover
+        threshatom = datajob%threshatom
+        threshmp2cphf=datajob%threshmp2cphf
 !       natom
 !       multi
-!       iprint
-!       maxiter
-!       maxdiis
-!       maxsoscf
-!       maxqc
-!       maxqcdiag
-!       maxqcdiagsub
-!       nopt
-!       nrad
-!       nleb
-!       ncore
-!       nvfz
-!       maxmp2diis
-!       maxmp2iter
-        spher       = databasis%spher
-!       bohr
-!       flagecp
-!       cartesian
-!       octupole
+        iprint     = datajob%iprint
+        maxiter    = datajob%maxiter
+        maxdiis    = datajob%maxdiis
+        maxsoscf   = datajob%maxsoscf
+        maxqc      = datajob%maxqc
+        maxqcdiag  = datajob%maxqcdiag
+        maxqcdiagsub=datajob%maxqcdiagsub
+        nopt       = datajob%nopt
+        nrad       = datajob%nrad
+        nleb       = datajob%nleb
+        ncore      = datajob%ncore
+        nvfz       = datajob%nvfz
+        maxmp2diis = datajob%maxmp2diis
+        maxmp2iter = datajob%maxmp2iter
+        spher      = databasis%spher
+        bohr       = datajob%bohr
+        flagecp    = datajob%flagecp
+        cartesian  = datajob%cartesian
+        octupole   = datajob%octupole
 !
         read(input,nml=job,end=110,iostat=info)
 110     if(info > 0) then
@@ -319,58 +312,58 @@
       cartesian=logarray(4)
       octupole =logarray(5)
 !
-!     method  = chararray(1)
-!     runtype = chararray(2)
+      datajob%method  = chararray(1)
+      datajob%runtype = chararray(2)
       databasis%basis   = chararray(3)
-!     scftype = chararray(4)
-!     memory  = chararray(5)
-!     guess   = chararray(6)
+      datajob%scftype = chararray(4)
+      datajob%memory  = chararray(5)
+      datajob%guess   = chararray(6)
       databasis%ecp     = chararray(7)
-!     scfconv = chararray(8)
-!     precision=chararray(9)
+      datajob%scfconv = chararray(8)
+      datajob%precision=chararray(9)
 !     charge  = realarray( 1)
-!     cutint2 = realarray( 2)
-!     dconv   = realarray( 3)
-!     optconv = realarray( 4)
-!     threshdiis = realarray( 5)
-!     threshsoscf= realarray( 6)
-!     threshqc= realarray( 7)
-!     bqrad(1)= realarray( 8)
-!     bqrad(2)= realarray( 9)
-!     bqrad(3)= realarray(10)
-!     bqrad(4)= realarray(11)
-!     bqrad(5)= realarray(12)
-!     bqrad(6)= realarray(13)
-!     bqrad(7)= realarray(14)
-!     bqrad(8)= realarray(15)
-!     bqrad(9)= realarray(16)
-!     threshweight= realarray(17)
-!     threshrho   = realarray(18)
-!     threshdfock = realarray(19)
-!     threshdftao = realarray(20)
-!     threshover  = realarray(21)
-!     threshatom  = realarray(22)
-!     threshmp2cphf=realarray(23)
+      datajob%cutint2 = realarray( 2)
+      datajob%dconv   = realarray( 3)
+      datajob%optconv = realarray( 4)
+      datajob%threshdiis = realarray( 5)
+      datajob%threshsoscf= realarray( 6)
+      datajob%threshqc= realarray( 7)
+      datajob%bqrad(1)= realarray( 8)
+      datajob%bqrad(2)= realarray( 9)
+      datajob%bqrad(3)= realarray(10)
+      datajob%bqrad(4)= realarray(11)
+      datajob%bqrad(5)= realarray(12)
+      datajob%bqrad(6)= realarray(13)
+      datajob%bqrad(7)= realarray(14)
+      datajob%bqrad(8)= realarray(15)
+      datajob%bqrad(9)= realarray(16)
+      datajob%threshweight= realarray(17)
+      datajob%threshrho   = realarray(18)
+      datajob%threshdfock = realarray(19)
+      datajob%threshdftao = realarray(20)
+      datajob%threshover  = realarray(21)
+      datajob%threshatom  = realarray(22)
+      datajob%threshmp2cphf=realarray(23)
 !     multi   = intarray( 2)
-!     iprint  = intarray( 3)
-!     maxiter = intarray( 4)
-!     maxdiis = intarray( 5)
-!     maxsoscf= intarray( 6)
-!     maxqc   = intarray( 7)
-!     maxqcdiag=intarray( 8)
-!     maxqcdiagsub=intarray( 9)
-!     nopt    = intarray(10)
-!     nrad    = intarray(11)
-!     nleb    = intarray(12)
-!     ncore   = intarray(13)
-!     nvfz    = intarray(14)
-!     maxmp2diis= intarray(15)
-!     maxmp2iter= intarray(16)
+      datajob%iprint  = intarray( 3)
+      datajob%maxiter = intarray( 4)
+      datajob%maxdiis = intarray( 5)
+      datajob%maxsoscf= intarray( 6)
+      datajob%maxqc   = intarray( 7)
+      datajob%maxqcdiag=intarray( 8)
+      datajob%maxqcdiagsub=intarray( 9)
+      datajob%nopt    = intarray(10)
+      datajob%nrad    = intarray(11)
+      datajob%nleb    = intarray(12)
+      datajob%ncore   = intarray(13)
+      datajob%nvfz    = intarray(14)
+      datajob%maxmp2diis= intarray(15)
+      datajob%maxmp2iter= intarray(16)
       databasis%spher   = logarray(1)
-!     bohr    = logarray(2)
-!     flagecp = logarray(3)
-!     cartesian=logarray(4)
-!     octupole =logarray(5)
+      datajob%bohr    = logarray(2)
+      datajob%flagecp = logarray(3)
+      datajob%cartesian=logarray(4)
+      datajob%octupole =logarray(5)
 !
       return
 end

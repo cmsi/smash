@@ -13,15 +13,15 @@
 ! limitations under the License.
 !
 !--------------------------------
-  subroutine setbasis(databasis,datacomp)
+  subroutine setbasis(datajob,databasis,datacomp)
 !--------------------------------
 !
 ! Driver of setting basis functions
 !
       use modmolecule, only : natom, numatomic
-      use modjob, only : flagecp
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(inout) :: datajob
       type(typebasis),intent(inout) :: databasis
       type(typecomp),intent(inout) :: datacomp
       type(typebasis) :: datagenbasis
@@ -84,7 +84,7 @@
               call bsd95v(iatom,ishell,databasis)
             enddo
           case('LANL2DZ')
-            if(.not.flagecp) then
+            if(.not.datajob%flagecp) then
               if(datacomp%master) write(*,'(" Error! ECP is not set!.")')
               call iabort
             endif

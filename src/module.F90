@@ -269,7 +269,7 @@ end
       type typecomp
         integer :: memmax=1000000000, memused=0, memusedmax=0
         integer :: iwall0, iwall1
-        integer :: nwarn
+        integer :: nwarn=0
         integer :: nproc1, myrank1, nproc2, myrank2, mpi_comm1, mpi_comm2
         real(8) :: cpu0, cpu1
         logical :: master
@@ -302,5 +302,33 @@ end
         integer :: locecp(0:5,mxatom), mprimecp(0:5,mxatom)
         real(8) :: execp(mxprim), coeffecp(mxprim)
         character(len=16) :: ecp='', atomecp(-9:112)
-     end type
+      end type
+!
+      type typejob
+        integer :: iprint=2
+        real(8) :: threshex=30.0D+00
+        real(8) :: threshover=1.0D-06, threshatom=2.0D-01, threshdiis=6.0D-01
+        real(8) :: cutint2=-1.0D+00, threshsoscf=0.25D+00, threshqc=1.0D-05
+        real(8) :: threshweight=-1.0D+00, threshrho=-1.0D+00, threshdfock=-1.0D+00
+        real(8) :: threshdftao=-1.0D+00, threshmp2cphf=1.0D-10
+        character(len=16) :: method='HARTREE-FOCK', runtype='ENERGY', scftype='RHF', memory=''
+        character(len=16) :: version='2.3', guess='HUCKEL', precision='MEDIUM'
+        character(len=64) :: check
+        logical :: bohr=.false., octupole=.false., flagecp=.false.
+!
+        integer :: maxiter=150, maxdiis=20, maxsoscf=20, maxqc=15, maxqcdiag=199, maxqcdiagsub=10
+        real(8) :: dconv=-1.0d00
+        logical :: fdiff=.true., extrap=.false.
+        character(len=16) :: scfconv='DIIS'
+!
+        integer :: idftex=0, idftcor=0, nrad=0, nleb=0
+        real(8) :: hfexchange=1.0D+00, bqrad(9)=1.0D+00
+!
+        integer :: ncore=-1, nvfz=0, maxmp2diis=20, maxmp2iter=100
+!
+        integer :: nopt=100
+        real(8) :: optconv=1.0D-04
+        logical :: cartesian=.false.
+!
+      end type
 end module
