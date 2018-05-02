@@ -592,11 +592,10 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modmolecule, only : nmo, enuc
-      use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
-&                        idftex, idftcor, guess
+      use modjob, only : cutint2, dconv
       use modtype, only : typejob, typebasis, typecomp
       implicit none
-      type(typejob),intent(in) :: datajob
+      type(typejob),intent(inout) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao, nao2, nao3, nshell3
@@ -635,7 +634,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,datacomp)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo,datajob%threshover,datacomp)
 !
 ! Calculate initial MOs
 !
@@ -649,19 +648,29 @@ end
 !
 ! Start SCF
 !
-      if(method == 'HARTREE-FOCK') then
+      if(datajob%method == 'HARTREE-FOCK') then
         call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
         call writeeigenvalue(energymoa,energymob,2,datacomp)
         call tstamp(1,datacomp)
-      elseif((idftex >= 1).or.(idftcor >= 1)) then
-        if(guess == 'HUCKEL') then
+      elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
+        if(datajob%guess == 'HUCKEL') then
+!ishimura-start
           savedconv= dconv
           savecutint2= cutint2
           dconv= max(dconv,1.0D-2)
           cutint2= max(cutint2,1.0D-9)
+          savedconv= datajob%dconv
+          savecutint2= datajob%cutint2
+          datajob%dconv= max(datajob%dconv,1.0D-2)
+          datajob%cutint2= max(datajob%cutint2,1.0D-9)
+!ishimura-end
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
+!ishimura-start
           dconv= savedconv
           cutint2= savecutint2
+          datajob%dconv= savedconv
+          datajob%cutint2= savecutint2
+!ishimura-end
           call tstamp(1,datacomp)
         endif
         call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
@@ -674,14 +683,14 @@ end
 !       call tstamp(1)
       else
         if(datacomp%master) then
-          write(*,'(" Error! This program does not support method= ",a16,".")')method
+          write(*,'(" Error! This program does not support method= ",a16,".")')datajob%method
           call iabort
         endif
       endif
 !
 ! Print MOs
 !
-      if(datacomp%master.and.(iprint >= 2)) then
+      if(datacomp%master.and.(datajob%iprint >= 2)) then
         write(*,'("  -------------------------")')
         write(*,'("    Alpha MO coefficients")')
         write(*,'("  -------------------------")')
@@ -698,7 +707,7 @@ end
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
-      if(octupole) then
+      if(datajob%octupole) then
         call memset(nao3*29,datacomp)
         allocate(work(nao3*29))
         call calcuoctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrxa,dmtrxb, &
@@ -718,7 +727,7 @@ end
 !
 ! Write checkpoint file
 !
-      if(datacomp%master.and.(check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,databasis)
+      if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,databasis)
 !
 ! Unset arrays 1
 !
@@ -741,11 +750,10 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modmolecule, only : nmo, natom, enuc
-      use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
-&                        idftex, idftcor, guess
+      use modjob, only : cutint2, dconv
       use modtype, only : typejob, typebasis, typecomp
       implicit none
-      type(typejob),intent(in) :: datajob
+      type(typejob),intent(inout) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao, nao2, nao3, nshell3
@@ -786,7 +794,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,datacomp)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo,datajob%threshover,datacomp)
 !
 ! Calculate initial MOs
 !
@@ -800,19 +808,29 @@ end
 !
 ! Start SCF
 !
-      if((method == 'HARTREE-FOCK').or.(method == 'MP2')) then
+      if((datajob%method == 'HARTREE-FOCK').or.(datajob%method == 'MP2')) then
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
         call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
-      elseif((idftex >= 1).or.(idftcor >= 1)) then
-        if(guess == 'HUCKEL') then
+      elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
+        if(datajob%guess == 'HUCKEL') then
+!ishimura-start
           savedconv= dconv
           savecutint2= cutint2
           dconv= max(dconv,1.0D-2)
           cutint2= max(cutint2,1.0D-9)
+          savedconv= datajob%dconv
+          savecutint2= datajob%cutint2
+          datajob%dconv= max(datajob%dconv,1.0D-2)
+          datajob%cutint2= max(datajob%cutint2,1.0D-9)
+!ishimura-end
           call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
+!ishimura-start
           dconv= savedconv
           cutint2= savecutint2
+          datajob%dconv= savedconv
+          datajob%cutint2= savecutint2
+!ishimura-end
           call tstamp(1,datacomp)
         endif
         call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
@@ -820,7 +838,7 @@ end
         call tstamp(1,datacomp)
       else
         if(datacomp%master) then
-          write(*,'(" Error! This program does not support method= ",a16,".")')method
+          write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
           call iabort
         endif
       endif
@@ -832,18 +850,18 @@ end
 !
 ! Calculate energy gradient
 !
-      if(method == 'HARTREE-FOCK') then
+      if(datajob%method == 'HARTREE-FOCK') then
         call calcgradrhf(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
         call tstamp(1,datacomp)
-      elseif((idftex >= 1).or.(idftcor >= 1)) then
+      elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
         call calcgradrdft(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
         call tstamp(1,datacomp)
-      elseif(method == 'MP2') then
+      elseif(datajob%method == 'MP2') then
         call calcgradrmp2(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
         call tstamp(1,datacomp)
       else
         if(datacomp%master) then
-          write(*,'(" Error! This program does not support method= ",a16,".")')method
+          write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
           call iabort
         endif
       endif
@@ -861,7 +879,7 @@ end
 !
 ! Print MOs
 !
-      if(datacomp%master.and.(iprint >= 2)) then
+      if(datacomp%master.and.(datajob%iprint >= 2)) then
         write(*,'("  -------------------")')
         write(*,'("    MO coefficients")')
         write(*,'("  -------------------")')
@@ -874,7 +892,7 @@ end
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
-      if(octupole) then
+      if(datajob%octupole) then
         call memset(nao3*29,datacomp)
         allocate(work(nao3*29))
         call calcroctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrx, &
@@ -894,7 +912,7 @@ end
 !
 ! Write checkpoint file
 !
-      if(datacomp%master.and.(check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,databasis)
+      if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,databasis)
 !
 ! Unset arrays 1
 !
@@ -918,11 +936,10 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modmolecule, only : nmo, natom, enuc
-      use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
-&                        idftex, idftcor, guess
+      use modjob, only : cutint2, dconv
       use modtype, only : typejob, typebasis, typecomp
       implicit none
-      type(typejob),intent(in) :: datajob
+      type(typejob),intent(inout) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao, nao2, nao3, nshell3
@@ -963,7 +980,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,datacomp)
+      call mtrxcanoninv(ortho,overinv,work,nao,nmo,datajob%threshover,datacomp)
 !
 ! Calculate initial MOs
 !
@@ -977,32 +994,37 @@ end
 !
 ! Start SCF
 !
-      if(method == 'HARTREE-FOCK') then
+      if(datajob%method == 'HARTREE-FOCK') then
         call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
         call writeeigenvalue(energymoa,energymob,2,datacomp)
         call tstamp(1,datacomp)
-      elseif((idftex >= 1).or.(idftcor >= 1)) then
-        if(guess == 'HUCKEL') then
+      elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
+        if(datajob%guess == 'HUCKEL') then
+!ishimura-start
           savedconv= dconv
           savecutint2= cutint2
           dconv= max(dconv,1.0D-2)
           cutint2= max(cutint2,1.0D-9)
+          savedconv= datajob%dconv
+          savecutint2= datajob%cutint2
+          datajob%dconv= max(datajob%dconv,1.0D-2)
+          datajob%cutint2= max(datajob%cutint2,1.0D-9)
+!ishimura-end
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
+!ishimura-start
           dconv= savedconv
           cutint2= savecutint2
+          datajob%dconv= savedconv
+          datajob%cutint2= savecutint2
+!ishimura-end
           call tstamp(1,datacomp)
         endif
         call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
         call writeeigenvalue(energymoa,energymob,2,datacomp)
         call tstamp(1,datacomp)
-!     elseif(method == 'MP2') then
-!       call calcuhf(h1mtrx,cmoa,ortho,smtrx,xint,energymoa)
-!       call tstamp(1)
-!       call calcump2(cmoa,energymoa,xint)
-!       call tstamp(1)
       else
         if(datacomp%master) then
-          write(*,'(" Error! This program does not support method= ",a16,".")')method
+          write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
           call iabort
         endif
       endif
@@ -1014,14 +1036,14 @@ end
 !
 ! Calculate energy gradient
 !
-      if(method == 'HARTREE-FOCK') then
+      if(datajob%method == 'HARTREE-FOCK') then
         call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
-      elseif((idftex >= 1).or.(idftcor >= 1)) then
+      elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
         call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
       else
         if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16," in energy gradient.")') &
-&               method
+&               datajob%method
           call iabort
         endif
       endif
@@ -1039,7 +1061,7 @@ end
 !
 ! Print MOs
 !
-      if(datacomp%master.and.(iprint >= 2)) then
+      if(datacomp%master.and.(datajob%iprint >= 2)) then
         write(*,'("  -------------------------")')
         write(*,'("    Alpha MO coefficients")')
         write(*,'("  -------------------------")')
@@ -1056,7 +1078,7 @@ end
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
-      if(octupole) then
+      if(datajob%octupole) then
         call memset(nao3*29,datacomp)
         allocate(work(nao3*29))
         call calcuoctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrxa,dmtrxb, &
@@ -1076,7 +1098,7 @@ end
 !
 ! Write checkpoint file
 !
-      if(datacomp%master.and.(check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,databasis)
+      if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,databasis)
 !
 ! Unset arrays 1
 !
@@ -1100,11 +1122,10 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modmolecule, only : nmo, natom, coord, coordold, enuc
-      use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
-&                        idftex, idftcor, nopt, optconv, cartesian, guess
+      use modjob, only : cutint2, dconv
       use modtype, only : typejob, typebasis, typecomp
       implicit none
-      type(typejob),intent(in) :: datajob
+      type(typejob),intent(inout) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,allocatable :: iredun(:)
@@ -1130,7 +1151,7 @@ end
 !
 ! Calculate redundant coordinate
 !
-      if(.not.cartesian) then
+      if(.not.datajob%cartesian) then
         isizered= natom*4*10
         call memset(isizered,datacomp)
         allocate(iredun(isizered))
@@ -1159,7 +1180,7 @@ end
 !
 ! Set arrays for energy gradient and geometry optimization
 !
-      if(cartesian) then
+      if(datajob%cartesian) then
         call memset(natom3*2+natom3*(natom3+1)/2,datacomp)
         allocate(egrad(natom3),egradold(natom3),ehess(natom3*(natom3+1)/2))
       else
@@ -1170,7 +1191,7 @@ end
 !
 ! Start geometry optimization cycle
 !
-      do iopt= 1,nopt
+      do iopt= 1,datajob%nopt
 !
 ! Print geometry
 !
@@ -1195,7 +1216,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
         call fullmtrx(smtrx,work,nao)
-        call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,datacomp)
+        call mtrxcanoninv(ortho,overinv,work,nao,nmo,datajob%threshover,datacomp)
 !
 ! Calculate initial MOs
 !
@@ -1211,19 +1232,29 @@ end
 !
 ! Calculate energy
 !
-        if((method == 'HARTREE-FOCK').or.(method == 'MP2')) then
+        if((datajob%method == 'HARTREE-FOCK').or.(datajob%method == 'MP2')) then
           call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1,datacomp)
           call tstamp(1,datacomp)
-        elseif((idftex >= 1).or.(idftcor >= 1)) then
-          if((iopt == 1).and.(guess == 'HUCKEL')) then
+        elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
+          if((iopt == 1).and.(datajob%guess == 'HUCKEL')) then
+!ishimura-start
             savedconv= dconv
             savecutint2= cutint2
             dconv= max(dconv,1.0D-2)
             cutint2= max(cutint2,1.0D-9)
+            savedconv= datajob%dconv
+            savecutint2= datajob%cutint2
+            datajob%dconv= max(datajob%dconv,1.0D-2)
+            datajob%cutint2= max(datajob%cutint2,1.0D-9)
+!ishimura-end
             call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
+!ishimura-start
             dconv= savedconv
             cutint2= savecutint2
+            datajob%dconv= savedconv
+            datajob%cutint2= savecutint2
+!ishimura-end
             call tstamp(1,datacomp)
           endif
           call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,databasis,datacomp)
@@ -1231,25 +1262,25 @@ end
           call tstamp(1,datacomp)
         else
           if(datacomp%master) then
-            write(*,'(" Error! This program does not support method= ",a16,".")')method
+            write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
             call iabort
           endif
         endif
 !
 ! Calculate energy gradient
 !
-        if(method == 'HARTREE-FOCK') then
+        if(datajob%method == 'HARTREE-FOCK') then
           call calcgradrhf(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
           call tstamp(1,datacomp)
-        elseif((idftex >= 1).or.(idftcor >= 1)) then
+        elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
           call calcgradrdft(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
           call tstamp(1,datacomp)
-        elseif(method == 'MP2') then
+        elseif(datajob%method == 'MP2') then
           call calcgradrmp2(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
           call tstamp(1,datacomp)
         else
           if(datacomp%master) then
-            write(*,'(" Error! This program does not support method= ",a16,".")')method
+            write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
             call iabort
           endif
         endif
@@ -1262,7 +1293,7 @@ end
 !
 ! Check convergence
 !
-        if((egradmax <= optconv).and.(egradrms <= optconv*third)) then
+        if((egradmax <= datajob%optconv).and.(egradrms <= datajob%optconv*third)) then
           if(datacomp%master) write(*,'(" Geometry converged.",/)')
           converged=.true.
           exit
@@ -1270,11 +1301,11 @@ end
 !
 ! Write checkpoint file
 !
-        if(datacomp%master.and.(check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,databasis)
+        if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,databasis)
 !
 ! Set work arrays 2
 !
-        if(cartesian) then
+        if(datajob%cartesian) then
           call memset(natom3*3,datacomp)
           allocate(workv(natom3*3))
         else
@@ -1284,7 +1315,7 @@ end
 !
 ! Calculate new coordinate
 !
-        if(cartesian) then
+        if(datajob%cartesian) then
           call calcnewcoord(coord,coordold,egrad,egradold,ehess,workv,natom3,iopt,datacomp)
         else
           call calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
@@ -1294,7 +1325,7 @@ end
 !
 ! Unset work arrays 2
 !
-        if(cartesian) then
+        if(datajob%cartesian) then
           deallocate(workv)
           call memunset(natom3*3,datacomp)
         else
@@ -1306,7 +1337,7 @@ end
 !
         call setnextopt(coordold,natom,iopt)
 !
-        if((iopt == nopt).and.datacomp%master) then
+        if((iopt == datajob%nopt).and.datacomp%master) then
           write(*,'("Warning! Geometry did not converge.")')
           datacomp%nwarn= datacomp%nwarn+1
           exit
@@ -1320,7 +1351,7 @@ end
 !
 ! Print MOs
 !
-      if(datacomp%master.and.(iprint >= 2)) then
+      if(datacomp%master.and.(datajob%iprint >= 2)) then
         write(*,'("  -------------------")')
         write(*,'("    MO coefficients")')
         write(*,'("  -------------------")')
@@ -1333,7 +1364,7 @@ end
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
-      if(octupole) then
+      if(datajob%octupole) then
         call memset(nao3*29,datacomp)
         allocate(work(nao3,29))
         call calcroctupole(work,work(1,4),work(1,10),work(1,20),dmtrx, &
@@ -1362,11 +1393,11 @@ end
 !
 ! Write checkpoint file
 !
-      if(datacomp%master.and.(check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,databasis)
+      if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,databasis)
 !
 ! Unset arrays for energy gradient and geometry optimization
 !
-      if(cartesian) then
+      if(datajob%cartesian) then
         deallocate(egrad,egradold,ehess)
         call memunset(natom3*2+natom3*(natom3+1)/2,datacomp)
       else
@@ -1383,7 +1414,7 @@ end
 !
 ! Unset array for redundant coordinate
 !
-      if(.not.cartesian) then
+      if(.not.datajob%cartesian) then
         deallocate(iredun)
         call memunset(isizered,datacomp)
       endif
@@ -1405,11 +1436,10 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modmolecule, only : nmo, natom, coord, coordold, enuc
-      use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
-&                        idftex, idftcor, nopt, optconv, cartesian, guess
+      use modjob, only : cutint2, dconv
       use modtype, only : typejob, typebasis, typecomp
       implicit none
-      type(typejob),intent(in) :: datajob
+      type(typejob),intent(inout) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,allocatable :: iredun(:)
@@ -1435,7 +1465,7 @@ end
 !
 ! Calculate redundant coordinate
 !
-      if(.not.cartesian) then
+      if(.not.datajob%cartesian) then
         isizered= natom*4*10
         call memset(isizered,datacomp)
         allocate(iredun(isizered))
@@ -1464,7 +1494,7 @@ end
 !
 ! Set arrays for energy gradient and geometry optimization
 !
-      if(cartesian) then
+      if(datajob%cartesian) then
         call memset(natom3*2+natom3*(natom3+1)/2,datacomp)
         allocate(egrad(natom3),egradold(natom3),ehess(natom3*(natom3+1)/2))
       else
@@ -1475,7 +1505,7 @@ end
 !
 ! Start geometry optimization cycle
 !
-      do iopt= 1,nopt
+      do iopt= 1,datajob%nopt
 !
 ! Print geometry
 !
@@ -1500,7 +1530,7 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
         call fullmtrx(smtrx,work,nao)
-        call mtrxcanoninv(ortho,overinv,work,nao,nmo,threshover,datacomp)
+        call mtrxcanoninv(ortho,overinv,work,nao,nmo,datajob%threshover,datacomp)
 !
 ! Calculate initial MOs
 !
@@ -1516,46 +1546,51 @@ end
 !
 ! Calculate energy
 !
-        if(method == 'HARTREE-FOCK') then
+        if(datajob%method == 'HARTREE-FOCK') then
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2,datacomp)
           call tstamp(1,datacomp)
-        elseif((idftex >= 1).or.(idftcor >= 1)) then
-          if((iopt == 1).and.(guess == 'HUCKEL')) then
+        elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
+          if((iopt == 1).and.(datajob%guess == 'HUCKEL')) then
+!ishimura-start
             savedconv= dconv
             savecutint2= cutint2
             dconv= max(dconv,1.0D-2)
             cutint2= max(cutint2,1.0D-9)
+            savedconv= datajob%dconv
+            savecutint2= datajob%cutint2
+            datajob%dconv= max(datajob%dconv,1.0D-2)
+            datajob%cutint2= max(datajob%cutint2,1.0D-9)
+!ishimura-end
             call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
+!ishimura-start
             dconv= savedconv
             cutint2= savecutint2
+            datajob%dconv= savedconv
+            datajob%cutint2= savecutint2
+!ishimura-end
             call tstamp(1,datacomp)
           endif
           call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2,datacomp)
           call tstamp(1,datacomp)
-!       elseif(method == 'MP2') then
-!         call calcuhf(h1mtrx,cmoa,ortho,smtrx,xint,energymoa)
-!         call tstamp(1)
-!         call calcump2(cmoa,energymoa,xint)
-!         call tstamp(1)
         else
           if(datacomp%master) then
-            write(*,'(" Error! This program does not support method= ",a16,".")')method
+            write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
             call iabort
           endif
         endif
 !
 ! Calculate energy gradient
 !
-        if(method == 'HARTREE-FOCK') then
+        if(datajob%method == 'HARTREE-FOCK') then
           call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
-        elseif((idftex >= 1).or.(idftcor >= 1)) then
+        elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
           call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
         else
           if(datacomp%master) then
             write(*,'(" Error! This program does not support method= ",a16," in energy gradient.")') &
-&                 method
+&                 datajob%method
             call iabort
           endif
         endif
@@ -1569,11 +1604,11 @@ end
 !
 ! Write checkpoint file
 !
-        if(datacomp%master.and.(check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,databasis)
+        if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,databasis)
 !
 ! Check convergence
 !
-        if((egradmax <= optconv).and.(egradrms <= optconv*third)) then
+        if((egradmax <= datajob%optconv).and.(egradrms <= datajob%optconv*third)) then
           if(datacomp%master) write(*,'(" Geometry converged.",/)')
           converged=.true.
           exit
@@ -1581,7 +1616,7 @@ end
 !
 ! Set work arrays 2
 !
-        if(cartesian) then
+        if(datajob%cartesian) then
           call memset(natom3*3,datacomp)
           allocate(workv(natom3*3))
         else
@@ -1591,7 +1626,7 @@ end
 !
 ! Calculate new coordinate
 !
-        if(cartesian) then
+        if(datajob%cartesian) then
           call calcnewcoord(coord,coordold,egrad,egradold,ehess,workv,natom3,iopt,datacomp)
         else
           call calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
@@ -1601,7 +1636,7 @@ end
 !
 ! Unset work arrays 2
 !
-        if(cartesian) then
+        if(datajob%cartesian) then
           deallocate(workv)
           call memunset(natom3*3,datacomp)
         else
@@ -1613,7 +1648,7 @@ end
 !
         call setnextopt(coordold,natom,iopt)
 !
-        if((iopt == nopt).and.datacomp%master) then
+        if((iopt == datajob%nopt).and.datacomp%master) then
           write(*,'("Warning! Geometry did not converge.")')
           datacomp%nwarn= datacomp%nwarn+1
           exit
@@ -1627,7 +1662,7 @@ end
 !
 ! Print MOs
 !
-      if(datacomp%master.and.(iprint >= 2)) then
+      if(datacomp%master.and.(datajob%iprint >= 2)) then
         write(*,'("  -------------------------")')
         write(*,'("    Alpha MO coefficients")')
         write(*,'("  -------------------------")')
@@ -1644,7 +1679,7 @@ end
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
-      if(octupole) then
+      if(datajob%octupole) then
         call memset(nao3*29,datacomp)
         allocate(work(nao3,29))
         call calcuoctupole(work,work(1,4),work(1,10),work(1,20),dmtrxa,dmtrxb, &
@@ -1673,11 +1708,11 @@ end
 !
 ! Write checkpoint file
 !
-      if(datacomp%master.and.(check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,databasis)
+      if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,databasis)
 !
 ! Unset arrays for energy gradient and geometry optimization
 !
-      if(cartesian) then
+      if(datajob%cartesian) then
         deallocate(egrad,egradold,ehess)
         call memunset(natom3*2+natom3*(natom3+1)/2,datacomp)
       else
@@ -1695,7 +1730,7 @@ end
 !
 ! Unset array for redundant coordinate
 !
-      if(.not.cartesian) then
+      if(.not.datajob%cartesian) then
         deallocate(iredun)
         call memunset(isizered,datacomp)
       endif
