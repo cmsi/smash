@@ -135,7 +135,6 @@ end
 !
 ! Read input file and set variables
 !
-      use modjob, only : flagecp
       use modtype, only : typejob, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -157,19 +156,19 @@ end
 !
 ! Set ECP functions
 !
-      if(flagecp) call setecp(databasis,datacomp)
+      if(datajob%flagecp) call setecp(databasis,datacomp)
 !
 ! Set maximum memory size
 !
-      call maxmemset(datacomp)
+      call maxmemset(datajob,datacomp)
 !
 ! Set number of electrons
 !
-      call setelectron(databasis,datacomp)
+      call setelectron(datajob,databasis,datacomp)
 !
 ! Reset defaults after reading input file
 !
-      call setdefault2(datacomp)
+      call setdefault2(datajob,datacomp)
 !
 ! Set functional information and adjust the number of DFT grids
 !
@@ -184,7 +183,7 @@ end
       call writecondition(databasis,datacomp)
       call writegeom(datacomp)
       call writebasis(databasis,datacomp)
-      if(flagecp) call writeecp(databasis,datacomp)
+      if(datajob%flagecp) call writeecp(databasis,datacomp)
 !
 ! Set atom charge including dummy atom
 !
@@ -275,15 +274,16 @@ end
 
 
 !-------------------------
-  subroutine setdefault2(datacomp)
+  subroutine setdefault2(datajob,datacomp)
 !-------------------------
 !
 ! Reset defaults after reading input file
 !
       use modjob, only : precision, cutint2, threshweight, threshrho, threshdfock, threshdftao, &
 &                        dconv, nrad, nleb
-      use modtype, only : typecomp
+      use modtype, only : typejob, typecomp
       implicit none
+      type(typejob),intent(inout) :: datajob
       type(typecomp),intent(inout) :: datacomp
       real(8),parameter :: zero= 0.0D+00
 
@@ -321,20 +321,55 @@ end
           call iabort
       end select
 !
+      select case(datajob%precision)
+        case('HIGH')
+          if(datajob%cutint2 < zero) datajob%cutint2= 1.0D-12
+          if(datajob%dconv   < zero) datajob%dconv  = 5.0D-06
+          if(datajob%threshweight < zero) datajob%threshweight=1.0D-08
+          if(datajob%threshrho    < zero) datajob%threshrho   =1.0D-06
+          if(datajob%threshdfock  < zero) datajob%threshdfock =1.0D-05
+          if(datajob%threshdftao  < zero) datajob%threshdftao =1.0D-04
+          if(datajob%nrad == 0) datajob%nrad= 150
+          if(datajob%nleb == 0) datajob%nleb= 590
+        case('MEDIUM')
+          if(datajob%cutint2 < zero) datajob%cutint2= 1.0D-11
+          if(datajob%dconv   < zero) datajob%dconv  = 5.0D-06
+          if(datajob%threshweight < zero) datajob%threshweight=1.0D-08
+          if(datajob%threshrho    < zero) datajob%threshrho   =1.0D-05
+          if(datajob%threshdfock  < zero) datajob%threshdfock =1.0D-04
+          if(datajob%threshdftao  < zero) datajob%threshdftao =1.0D-03
+          if(datajob%nrad == 0) datajob%nrad= 96
+          if(datajob%nleb == 0) datajob%nleb= 302
+        case('LOW')
+          if(datajob%cutint2 < zero) datajob%cutint2= 1.0D-10
+          if(datajob%dconv   < zero) datajob%dconv  = 1.0D-05
+          if(datajob%threshweight < zero) datajob%threshweight=1.0D-08
+          if(datajob%threshrho    < zero) datajob%threshrho   =1.0D-04
+          if(datajob%threshdfock  < zero) datajob%threshdfock =1.0D-04
+          if(datajob%threshdftao  < zero) datajob%threshdftao =1.0D-02
+          if(datajob%nrad == 0) datajob%nrad= 72
+          if(datajob%nleb == 0) datajob%nleb= 302
+        case default
+          if(datacomp%master) write(*,'(" Error! This program does not support precision= ", &
+&                                       a16,".")') datajob%precision
+          call iabort
+      end select
+!
       return
 end
 
 
 !-------------------------
-  subroutine setelectron(databasis,datacomp)
+  subroutine setelectron(datajob,databasis,datacomp)
 !-------------------------
 !
 ! Set number of electrons
 !
       use modmolecule, only : numatomic, neleca, nelecb, natom, multi, charge
-      use modjob, only : scftype, flagecp
-      use modtype, only : typebasis, typecomp
+      use modjob, only : scftype
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(inout) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nume, ii
@@ -348,7 +383,7 @@ end
 !
 ! Subtract electrons of core potentials
 !
-      if(flagecp) then
+      if(datajob%flagecp) then
         do ii= 1,natom
           nume= nume-databasis%izcore(ii)
         enddo
@@ -357,9 +392,11 @@ end
 !
 ! Calculate numbers of alpha and beta electrons
 !
-      if((scftype == 'RHF').and.(multi /= 1)) then
+      if((datajob%scftype == 'RHF').and.(multi /= 1)) then
         if(datacomp%master) write(*,'(" Warning! SCFtype changes from RHF to UHF.")')
+!ishimura
         scftype = 'UHF'
+        datajob%scftype = 'UHF'
         datacomp%nwarn= datacomp%nwarn+1
       endif
 !

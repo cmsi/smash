@@ -13,40 +13,40 @@
 ! limitations under the License.
 !
 !-----------------------
-  subroutine maxmemset(datacomp)
+  subroutine maxmemset(datajob,datacomp)
 !-----------------------
 !
 ! Set maximum memory size
 !
-      use modjob, only : memory
-      use modtype, only : typecomp
+      use modtype, only : typejob, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typecomp),intent(inout) :: datacomp
       integer :: lock, locm, locg, loct, locb
 !
-      if(len_trim(memory) /= 0) then
-        lock=scan(memory,'K')
-        locm=scan(memory,'M')
-        locg=scan(memory,'G')
-        loct=scan(memory,'T')
-        locb=scan(memory,'B')
+      if(len_trim(datajob%memory) /= 0) then
+        lock=scan(datajob%memory,'K')
+        locm=scan(datajob%memory,'M')
+        locg=scan(datajob%memory,'G')
+        loct=scan(datajob%memory,'T')
+        locb=scan(datajob%memory,'B')
         if(lock /= 0) then
-          read(memory(1:lock-1),*)datacomp%memmax
+          read(datajob%memory(1:lock-1),*)datacomp%memmax
           datacomp%memmax=datacomp%memmax*125
         elseif(locm /= 0) then
-          read(memory(1:locm-1),*)datacomp%memmax
+          read(datajob%memory(1:locm-1),*)datacomp%memmax
           datacomp%memmax=datacomp%memmax*125000
         elseif(locg /= 0) then
-          read(memory(1:locg-1),*)datacomp%memmax
+          read(datajob%memory(1:locg-1),*)datacomp%memmax
           datacomp%memmax=datacomp%memmax*125000000
         elseif(loct /= 0) then
-          read(memory(1:loct-1),*)datacomp%memmax
+          read(datajob%memory(1:loct-1),*)datacomp%memmax
           datacomp%memmax=datacomp%memmax*125000000*1000
         elseif(locb /= 0) then
-          read(memory(1:locb-1),*)datacomp%memmax
+          read(datajob%memory(1:locb-1),*)datacomp%memmax
           datacomp%memmax=datacomp%memmax/8
         else
-          read(memory,*)datacomp%memmax
+          read(datajob%memory,*)datacomp%memmax
           datacomp%memmax=datacomp%memmax/8
         endif
       endif
