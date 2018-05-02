@@ -20,7 +20,7 @@
 ! for High performance computing systems (SMASH).
 !
       use modparam, only : input, icheck
-      use modjob, only : runtype, scftype, check, version
+      use modjob, only : version
       use modtype, only : typejob, typebasis, typecomp
       implicit none
       type(typejob) :: datajob
@@ -49,50 +49,62 @@
 !
 ! Start calculations
 !
-      if(scftype == 'RHF') then
-        if(runtype == 'ENERGY') then
-          call calcrenergy(databasis,datacomp)
-        elseif(runtype == 'GRADIENT') then
-          call calcrgradient(databasis,datacomp)
-        elseif(runtype == 'OPTIMIZE') then
-          call calcrgeometry(converged,databasis,datacomp)
-        else
-          if(datacomp%master) then
-            write(*,'(" Error! This program does not support runtype= ",a16,".")')runtype
-            call iabort
-          endif
-        endif
-      elseif(scftype == 'UHF') then
-        if(runtype == 'ENERGY') then
-          call calcuenergy(databasis,datacomp)
-        elseif(runtype == 'GRADIENT') then
-          call calcugradient(databasis,datacomp)
-        elseif(runtype == 'OPTIMIZE') then
-          call calcugeometry(converged,databasis,datacomp)
-        endif
-      else
-        if(datacomp%master) write(*,'(" Error! SCFtype=",a16," is not supported.")')scftype
-        call iabort
-      endif
+      select case(datajob%scftype)
+        case('RHF')
+          select case(datajob%runtype)
+            case('ENERGY')
+              call calcrenergy(databasis,datacomp)
+            case('GRADIENT')
+              call calcrgradient(databasis,datacomp)
+            case('OPTIMIZE')
+              call calcrgeometry(converged,databasis,datacomp)
+            case default
+              if(datacomp%master) then
+                write(*,'(" Error! This program does not support runtype= ",a16,".")') &
+&                       datajob%runtype
+                call iabort
+              endif
+          end select
+        case('UHF')
+          select case(datajob%runtype)
+            case('ENERGY')
+              call calcuenergy(databasis,datacomp)
+            case('GRADIENT')
+              call calcugradient(databasis,datacomp)
+            case('OPTIMIZE')
+              call calcugeometry(converged,databasis,datacomp)
+            case default
+              if(datacomp%master) then
+                write(*,'(" Error! This program does not support runtype= ",a16,".")') &
+&                       datajob%runtype
+                call iabort
+              endif
+          end select
+        case default
+          if(datacomp%master) &
+&           write(*,'(" Error! SCFtype=",a16," is not supported.")') datajob%scftype
+          call iabort
+      end select
 !
 ! Close input.dat and checkpoint files
 !
       if(datacomp%master) close(unit=input,status='DELETE')
-      if(datacomp%master.and.(check /= '')) close(unit=icheck)
+      if(datacomp%master.and.(datajob%check /= '')) close(unit=icheck)
 !
       call para_finalize
       call memcheck(datacomp)
       call tstamp(2,datacomp)
+!
       if(datacomp%master) then
-        write(*,'(" Used memory :",1x,i6," MB")')datacomp%memusedmax/125000
-        if((runtype =='OPTIMIZE').and.(.not.converged))then
+        write(*,'(" Used memory :",1x,i6," MB")') datacomp%memusedmax/125000
+        if((datajob%runtype =='OPTIMIZE').and.(.not.converged)) then
           write(*,'(/," ============================================================")')
-          write(*,'("  Geometry optimization did not finish with",i3," warning(s)!")')datacomp%nwarn
+          write(*,'("  Geometry optimization did not finish with",i3," warning(s)!")') &
+&                 datacomp%nwarn
           write(*,'(" ============================================================")')
         else
-          write(*,'(" Your calculation finished with",i3," warning(s).")')datacomp%nwarn
+          write(*,'(" Your calculation finished with",i3," warning(s).")') datacomp%nwarn
         endif
-
       endif
 end program main
 
