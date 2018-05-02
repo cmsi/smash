@@ -41,7 +41,7 @@
         case('HUCKEL')
           if(datacomp%master) &
 &           write(*,'("   Guess MOs are generated using extended Huckel orbitals.")')
-          call huckelguess(cmoa,overinv,databasis,datacomp)
+          call huckelguess(cmoa,overinv,datajob,databasis,datacomp)
           if(datacomp%master) write(*,*)
           if(datajob%scftype == 'UHF') call dcopy(databasis%nao**2,cmoa,1,cmob,1)
 !
@@ -86,7 +86,7 @@ end
 
 
 !------------------------------------------------------------
-  subroutine huckelguess(cmo,overinv,databasis,datacomp)
+  subroutine huckelguess(cmo,overinv,datajob,databasis,datacomp)
 !------------------------------------------------------------
 !
 ! Calculate initial guess MOs by extended Huckel
@@ -96,8 +96,9 @@ end
 !
       use modguess, only : coord_g
       use modmolecule, only : coord, natom
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       type(typebasis) :: dataguessbs
@@ -132,7 +133,7 @@ end
 !
 ! Calculate Extended Huckel method
 !
-      call calchuckelg(hmo,eigen,nao_v,databasis,dataguessbs,datacomp)
+      call calchuckelg(hmo,eigen,nao_v,datajob,databasis,dataguessbs,datacomp)
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
@@ -149,16 +150,16 @@ end
 
 
 !----------------------------------------------------------
-  subroutine calchuckelg(hmo,eigen,nao_v,databasis,dataguessbs,datacomp)
+  subroutine calchuckelg(hmo,eigen,nao_v,datajob,databasis,dataguessbs,datacomp)
 !----------------------------------------------------------
 !
 ! Driver of extended Huckel calculation for guess generation
 !
 ! Out : hmo (extended Huckel orbitals)
 !
-      use modjob, only : iprint
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis, dataguessbs
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nao_v
@@ -182,7 +183,7 @@ end
 !
       call diag('V','U',dataguessbs%nao,hmo,dataguessbs%nao,eigen,datacomp)
 !
-      if(datacomp%master.and.(iprint >= 3)) then
+      if(datacomp%master.and.(datajob%iprint >= 3)) then
         write(*,'("   Eigenvalues of Huckel guess")')
         write(*,'(4x,8f9.3)')eigen
       endif
@@ -1573,7 +1574,6 @@ end
         call memunset(nao_g*nao_g*2,datacomp)
         deallocate(cmoa_g,cmob_g)
       endif
-write(*,*)"ishimura4"
 !
       return
 end
