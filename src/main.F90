@@ -53,11 +53,11 @@
         case('RHF')
           select case(datajob%runtype)
             case('ENERGY')
-              call calcrenergy(databasis,datacomp)
+              call calcrenergy(datajob,databasis,datacomp)
             case('GRADIENT')
-              call calcrgradient(databasis,datacomp)
+              call calcrgradient(datajob,databasis,datacomp)
             case('OPTIMIZE')
-              call calcrgeometry(converged,databasis,datacomp)
+              call calcrgeometry(converged,datajob,databasis,datacomp)
             case default
               if(datacomp%master) then
                 write(*,'(" Error! This program does not support runtype= ",a16,".")') &
@@ -68,11 +68,11 @@
         case('UHF')
           select case(datajob%runtype)
             case('ENERGY')
-              call calcuenergy(databasis,datacomp)
+              call calcuenergy(datajob,databasis,datacomp)
             case('GRADIENT')
-              call calcugradient(databasis,datacomp)
+              call calcugradient(datajob,databasis,datacomp)
             case('OPTIMIZE')
-              call calcugeometry(converged,databasis,datacomp)
+              call calcugeometry(converged,datajob,databasis,datacomp)
             case default
               if(datacomp%master) then
                 write(*,'(" Error! This program does not support runtype= ",a16,".")') &
@@ -425,7 +425,7 @@ end
 
 
 !----------------------------------------------------------------------------
-  subroutine calcrenergy(databasis,datacomp)
+  subroutine calcrenergy(datajob,databasis,datacomp)
 !----------------------------------------------------------------------------
 !
 ! Driver of closed-shell energy calculation
@@ -438,8 +438,9 @@ end
       use modmolecule, only : nmo, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor, guess
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao, nao2, nao3, nshell3
@@ -571,7 +572,7 @@ end
 
 
 !----------------------------------------------------------------------------
-  subroutine calcuenergy(databasis,datacomp)
+  subroutine calcuenergy(datajob,databasis,datacomp)
 !----------------------------------------------------------------------------
 !
 ! Driver of open-shell energy calculation
@@ -584,8 +585,9 @@ end
       use modmolecule, only : nmo, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor, guess
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao, nao2, nao3, nshell3
@@ -719,7 +721,7 @@ end
 
 
 !------------------------------------------------------------------------------
-  subroutine calcrgradient(databasis,datacomp)
+  subroutine calcrgradient(datajob,databasis,datacomp)
 !------------------------------------------------------------------------------
 !
 ! Driver of energy gradient calculation
@@ -732,8 +734,9 @@ end
       use modmolecule, only : nmo, natom, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor, guess
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao, nao2, nao3, nshell3
@@ -895,7 +898,7 @@ end
 
 
 !------------------------------------------------------------------------------
-  subroutine calcugradient(databasis,datacomp)
+  subroutine calcugradient(datajob,databasis,datacomp)
 !------------------------------------------------------------------------------
 !
 ! Driver of open-shell energy gradient calculation
@@ -908,8 +911,9 @@ end
       use modmolecule, only : nmo, natom, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor, guess
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao, nao2, nao3, nshell3
@@ -1076,7 +1080,7 @@ end
 
 
 !----------------------------------------------------------------------------------------
-  subroutine calcrgeometry(converged,databasis,datacomp)
+  subroutine calcrgeometry(converged,datajob,databasis,datacomp)
 !----------------------------------------------------------------------------------------
 !
 ! Driver of geometry optimization calculation
@@ -1089,8 +1093,9 @@ end
       use modmolecule, only : nmo, natom, coord, coordold, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor, nopt, optconv, cartesian, guess
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,allocatable :: iredun(:)
@@ -1380,7 +1385,7 @@ end
 
 
 !----------------------------------------------------------------------------------------
-  subroutine calcugeometry(converged,databasis,datacomp)
+  subroutine calcugeometry(converged,datajob,databasis,datacomp)
 !----------------------------------------------------------------------------------------
 !
 ! Driver of open-shell geometry optimization calculation
@@ -1393,8 +1398,9 @@ end
       use modmolecule, only : nmo, natom, coord, coordold, enuc
       use modjob, only : method, iprint, octupole, check, cutint2, threshover, dconv, &
 &                        idftex, idftcor, nopt, optconv, cartesian, guess
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,allocatable :: iredun(:)
