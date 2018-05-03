@@ -52,7 +52,7 @@
           if(datajob%scftype == 'UHF') call dcopy(databasis%nao**2,cmoa,1,cmob,1)
 !
         case('UPDATE')
-          call updatemo(cmoa,overinv,databasis,datacomp)
+          call updatemo(cmoa,overinv,datajob,databasis,datacomp)
           if(datajob%scftype == 'UHF') call dcopy(databasis%nao**2,cmoa,1,cmob,1)
 !
         case('CHECK')
@@ -134,7 +134,7 @@ end
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
-      call calcover2(overlap,work1,databasis,dataguessbs,datacomp)
+      call calcover2(overlap,work1,datajob%threshex,databasis,dataguessbs,datacomp)
 !
 ! Project orbitals from Huckel to SCF
 !
@@ -1089,7 +1089,7 @@ end
 
 
 !-----------------------------------------------------------
-  subroutine calcover2(overlap,work,databasis,dataguessbs,datacomp)
+  subroutine calcover2(overlap,work,threshex,databasis,dataguessbs,datacomp)
 !-----------------------------------------------------------
 !
 ! Driver of overlap integral calculation
@@ -1104,6 +1104,7 @@ end
       type(typecomp),intent(inout) :: datacomp
       integer :: ish, jsh
       real(8),parameter :: zero=0.0D+00
+      real(8),intent(in) :: threshex
       real(8),intent(out) :: overlap(databasis%nao*dataguessbs%nao)
       real(8),intent(out) :: work(databasis%nao*dataguessbs%nao)
 !
@@ -1112,7 +1113,7 @@ end
       do ish= dataguessbs%nshell-datacomp%myrank2,1,-datacomp%nproc2
 !$OMP do
         do jsh= 1,databasis%nshell
-          call intover2(work,ish,jsh,databasis,dataguessbs)
+          call intover2(work,ish,jsh,threshex,databasis,dataguessbs)
         enddo
 !$OMP enddo
       enddo
@@ -1124,7 +1125,7 @@ end
 
 
 !---------------------------------------------------------------
-  subroutine calcover2core(overlap,work,dataguessbs,datacorebs,datacomp)
+  subroutine calcover2core(overlap,work,threshex,dataguessbs,datacorebs,datacomp)
 !---------------------------------------------------------------
 !
 ! Driver of overlap integral calculation for only core orbitals
@@ -1139,6 +1140,7 @@ end
       type(typecomp),intent(in) :: datacomp
       integer :: ish, jsh
       real(8),parameter :: zero=0.0D+00
+      real(8),intent(in) :: threshex
       real(8),intent(out) :: overlap(datacorebs%nao*dataguessbs%nao)
       real(8),intent(out) :: work(datacorebs%nao*dataguessbs%nao)
 !
@@ -1147,7 +1149,7 @@ end
       do ish= dataguessbs%nshell-datacomp%myrank2,1,-datacomp%nproc2
 !$OMP do
         do jsh= 1,datacorebs%nshell
-          call intover2core(work,ish,jsh,dataguessbs,datacorebs)
+          call intover2core(work,ish,jsh,threshex,dataguessbs,datacorebs)
         enddo
 !$OMP enddo
       enddo
@@ -1225,7 +1227,7 @@ end
 
 
 !---------------------------------------
-  subroutine intover2(overlap,ish,jsh,databasis,dataguessbs)
+  subroutine intover2(overlap,ish,jsh,threshex,databasis,dataguessbs)
 !---------------------------------------
 !
 ! Overlap integral calculation
@@ -1235,7 +1237,6 @@ end
 ! Out : overlap (overlap integral of guess and SCF basis sets)
 !
       use modparam, only : mxprsh
-      use modjob, only : threshex
       use modmolecule, only : coord
       use modguess, only : coord_g
       use modtype, only : typebasis
@@ -1245,6 +1246,7 @@ end
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, iprim, jprim
       integer :: nbfij(2), nprimij(2), nangij(2), ii, jj
       real(8),parameter :: zero=0.0D+0, one=1.0D+0
+      real(8),intent(in) :: threshex
       real(8),intent(out) :: overlap(databasis%nao,dataguessbs%nao)
       real(8) :: sint(28,28), exij(mxprsh,2), coij(mxprsh,2), coordij(3,2)
 !
@@ -1289,7 +1291,7 @@ end
 
 
 !-------------------------------------------
-  subroutine intover2core(overlap,ish,jsh,dataguessbs,datacorebs)
+  subroutine intover2core(overlap,ish,jsh,threshex,dataguessbs,datacorebs)
 !-------------------------------------------
 !
 ! Overlap integral calculation for only core orbitals
@@ -1299,7 +1301,6 @@ end
 ! Out : overlap (overlap integral of core-guess and guess basis sets)
 !
       use modparam, only : mxprsh
-      use modjob, only : threshex
       use modguess, only : coord_g
       use modtype, only : typebasis
       implicit none
@@ -1308,6 +1309,7 @@ end
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, iprim, jprim
       integer :: nbfij(2), nprimij(2), nangij(2), ii, jj
       real(8),parameter :: zero=0.0D+0, one=1.0D+0
+      real(8),intent(in) :: threshex
       real(8),intent(out) :: overlap(datacorebs%nao,dataguessbs%nao)
       real(8) :: sint(28,28), exij(mxprsh,2), coij(mxprsh,2), coordij(3,2)
 !
@@ -1352,7 +1354,7 @@ end
 
 
 !---------------------------------------------------------
-  subroutine updatemo(cmo,overinv,databasis,datacomp)
+  subroutine updatemo(cmo,overinv,datajob,databasis,datacomp)
 !---------------------------------------------------------
 !
 ! Read and project MOs
@@ -1361,8 +1363,9 @@ end
 !         cmo     (initial guess orbitals)
 !
       use modguess, only :  nmo_g
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: ndim
@@ -1379,7 +1382,7 @@ end
 !
 ! Calculate overlap integrals between previous and present bases
 !
-      call calcover2(overlap(1,1),overlap(1,2),databasis,databasis,datacomp)
+      call calcover2(overlap(1,1),overlap(1,2),datajob%threshex,databasis,databasis,datacomp)
 !
 ! Project orbitals from previous basis to current basis
 !
@@ -1544,7 +1547,7 @@ end
 !
 ! Calculate overlap integrals between previous and present bases
 !
-      call calcover2(overlap,work2,databasis,dataguessbs,datacomp)
+      call calcover2(overlap,work2,datajob%threshex,databasis,dataguessbs,datacomp)
 !
 ! Project orbitals from previous basis to current basis
 !
@@ -1675,7 +1678,7 @@ end
 !
 ! Calculate overlap integrals between core-guess basis and guess bases
 !
-      call calcover2core(overlap,work2,dataguessbs,datacorebs,datacomp)
+      call calcover2core(overlap,work2,datajob%threshex,dataguessbs,datacorebs,datacomp)
 !
 ! Calculate Cguess-t*Overlap*Ccore
 !
@@ -1959,7 +1962,7 @@ end
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
-      call calcover2(overlap,work1,databasis,dataguessbs,datacomp)
+      call calcover2(overlap,work1,datajob%threshex,databasis,dataguessbs,datacomp)
 !
 ! Project orbitals from Huckel to SCF
 !
