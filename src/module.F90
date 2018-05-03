@@ -316,7 +316,7 @@ end
         character(len=64) :: check=''
         logical :: bohr=.false., octupole=.false., flagecp=.false.
 !
-        integer :: maxiter=150, maxdiis=20, maxsoscf=20, maxqc=15, maxqcdiag=199, maxqcdiagsub=10
+        integer :: maxiter=150, maxdiis=20, maxsoscf=20, maxqc=15, maxqcdiag=100, maxqcdiagsub=10
         real(8) :: dconv=-1.0d00
         logical :: fdiff=.true., extrap=.false.
         character(len=16) :: scfconv='DIIS'

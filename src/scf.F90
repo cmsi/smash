@@ -250,7 +250,7 @@
               itqc= 1
             else
               call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
-&                        work,work2,one,nao,nmo,nocc,nvir,nshell,maxdim,datajob%maxqcdiag, &
+&                        work,work2,datajob%cutint2,one,nao,nmo,nocc,nvir,nshell,maxdim,datajob%maxqcdiag, &
 &                        maxqcdiagsub,datajob%threshqc,databasis,datacomp)
               itqc= itqc+1
             endif
@@ -1169,12 +1169,12 @@ end
             if((itqc == 0).or.(convqc)) then
               call diagfock(fock,work,ortho,cmo,work2,eigen,nao,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= itqc+1
-            elseif((itqc == datajob%maxqc)) then
+            elseif(itqc == datajob%maxqc) then
               call diagfock(fock,work,ortho,cmo,work2,eigen,nao,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= 1
             else
               call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
-&                        work,work2,datajob%hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,datajob%maxqcdiag, &
+&                        work,work2,datajob%cutint2,datajob%hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,datajob%maxqcdiag, &
 &                        maxqcdiagsub,datajob%threshqc,databasis,datacomp)
               itqc= itqc+1
             endif
@@ -1578,7 +1578,7 @@ end
             else
               call uhfqc(focka,fockb,cmoa,cmob,dmax,qcgmna,qcgmnb,qcvec, &
 &                        qcmat,qcmatsave,qceigen,overlap,xint, &
-&                        work,work2,work3,one,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
+&                        work,work2,work3,datajob%cutint2,one,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
 &                        maxdim,datajob%maxqcdiag,maxqcdiagsub,datajob%threshqc, &
 &                        databasis,datacomp)
               itqc= itqc+1
@@ -2328,7 +2328,7 @@ end
             else
               call uhfqc(focka,fockb,cmoa,cmob,dmax,qcgmna,qcgmnb,qcvec, &
 &                        qcmat,qcmatsave,qceigen,overlap,xint, &
-&                        work,work2,work3,datajob%hfexchange,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
+&                        work,work2,work3,datajob%cutint2,datajob%hfexchange,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
 &                        maxdim,datajob%maxqcdiag,maxqcdiagsub,datajob%threshqc, &
 &                        databasis,datacomp)
               itqc= itqc+1

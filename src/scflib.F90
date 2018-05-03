@@ -1779,7 +1779,7 @@ end
 
 !--------------------------------------------------------------------------------------------
   subroutine rhfqc(fock,cmo,qcrmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
-&                  qcwork,work,hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,maxqcdiag, &
+&                  qcwork,work,cutint2,hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,maxqcdiag, &
 &                  maxqcdiagsub,threshqc,databasis,datacomp)
 !--------------------------------------------------------------------------------------------
 !
@@ -1793,7 +1793,7 @@ end
       integer :: itdav, itqcdiag, ii, ij, jj, kk, ia, ib, istart, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: overlap(nao*(nao+1)/2), xint(nshell*(nshell+1)/2)
-      real(8),intent(in) :: hfexchange, threshqc
+      real(8),intent(in) :: cutint2, hfexchange, threshqc
       real(8),intent(out) :: qcvec(nocc*nvir+1,maxqcdiagsub+1,2), qcrmax(nshell*(nshell+1)/2)
       real(8),intent(out) :: qcwork(nao,nao), qcmat(maxqcdiagsub,maxqcdiagsub)
       real(8),intent(out) :: qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2), qceigen(maxqcdiagsub)
@@ -1844,8 +1844,8 @@ end
 !
         call calcqcrmn(qcwork,qcvec,cmo,work,nao,nocc,nvir,itdav,maxqcdiagsub)
         call calcrdmax(qcwork,qcrmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
-        call formrdftfock(qcgmn,work,qcwork,qcrmax,xint,maxdim,hfexchange, &
-&                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1)
+        call formrdftfock(qcgmn,work,qcwork,qcrmax,xint,maxdim,cutint2,hfexchange, &
+&                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis)
 !
 ! Add two-electron integral contribution
 !
@@ -2085,7 +2085,7 @@ end
 !---------------------------------------------------------------------------------------------
   subroutine uhfqc(focka,fockb,cmoa,cmob,qcrmax,qcgmna,qcgmnb,qcvec, &
 &                  qcmat,qcmatsave,qceigen,overlap,xint, &
-&                  qcworka,qcworkb,work,hfexchange,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
+&                  qcworka,qcworkb,work,cutint2,hfexchange,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
 &                  maxdim,maxqcdiag,maxqcdiagsub,threshqc,databasis,datacomp)
 !---------------------------------------------------------------------------------------------
 !
@@ -2100,7 +2100,7 @@ end
       integer :: itdav, itqcdiag, ii, ij, jj, kk, ia, ib, istart, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: overlap(nao*(nao+1)/2), xint(nshell*(nshell+1)/2)
-      real(8),intent(in) :: hfexchange, threshqc
+      real(8),intent(in) :: cutint2, hfexchange, threshqc
       real(8),intent(inout) :: qcrmax(nshell*(nshell+1)/2)
       real(8),intent(inout) :: qcgmna(nao*(nao+1)/2), qcgmnb(nao*(nao+1)/2)
       real(8),intent(inout) :: qcvec(nocca*nvira+noccb*nvirb+1,maxqcdiagsub+1,2)
@@ -2170,7 +2170,7 @@ end
         call calcqcurmn(qcworka,qcworkb,qcvec,cmoa,cmob,work,nao,nocca,noccb,nvira,nvirb, &
 &                       itdav,maxqcdiagsub)
         call calcudmax(qcworka,qcworkb,qcrmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
-        call calcqcugmn(qcgmna,qcgmnb,work,qcworka,qcworkb,qcrmax,xint,hfexchange,maxdim, &
+        call calcqcugmn(qcgmna,qcgmnb,work,qcworka,qcworkb,qcrmax,xint,cutint2,hfexchange,maxdim, &
 &                       nao,nshell,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis)
 !
 ! Add two-electron integral contribution
@@ -2463,13 +2463,12 @@ end
 
 
 !---------------------------------------------------------------------------------
-  subroutine calcqcugmn(gmn1,gmn2,gmn3,rmna,rmnb,rmtrx,xint,hfexchange,maxdim, &
+  subroutine calcqcugmn(gmn1,gmn2,gmn3,rmna,rmnb,rmtrx,xint,cutint2,hfexchange,maxdim, &
 &                       nao,nshell,nproc,myrank,mpi_comm,databasis)
 !---------------------------------------------------------------------------------
 !
 ! Driver of Gmn matrix formation from two-electron intgrals
 !
-      use modjob, only : cutint2
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
@@ -2480,7 +2479,7 @@ end
       real(8),parameter :: zero=0.0D+00, two=2.0D+00
       real(8),intent(in) :: rmna(nao*(nao+1)/2), rmnb(nao*(nao+1)/2)
       real(8),intent(in) :: rmtrx(nshell*(nshell+1)/2), xint(nshell*(nshell+1)/2)
-      real(8),intent(in) :: hfexchange
+      real(8),intent(in) :: cutint2, hfexchange
       real(8),intent(out) :: gmn1(nao*(nao+1)/2), gmn2(nao*(nao+1)/2), gmn3(nao*(nao+1)/2)
       real(8) :: xijkl, rmax, twoeri(maxdim**4), rmax1
       integer :: last, ltmp(nshell), lnum, ll
@@ -2549,7 +2548,7 @@ end
           enddo
           do lsh= 1,lnum
             call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,databasis)
-            call ugmneri(gmn2,gmn3,rmna,rmnb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,hfexchange,databasis)
+            call ugmneri(gmn2,gmn3,rmna,rmnb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,cutint2,hfexchange,databasis)
           enddo
         enddo
       enddo
@@ -2567,12 +2566,11 @@ end
 
 
 !-----------------------------------------------------------------------------------
-  subroutine ugmneri(gmna,gmnb,rmna,rmnb,twoeri,ish,jsh,ksh,lsh,maxdim,hfexchange,databasis)
+  subroutine ugmneri(gmna,gmnb,rmna,rmnb,twoeri,ish,jsh,ksh,lsh,maxdim,cutint2,hfexchange,databasis)
 !-----------------------------------------------------------------------------------
 !
 ! Form Gmn matrix from two-electron intgrals
 !
-      use modjob, only : cutint2
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
@@ -2584,7 +2582,8 @@ end
       real(8),parameter :: half=0.5D+00, two=2.0D+00
       real(8),intent(in) :: rmna(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: rmnb(databasis%nao*(databasis%nao+1)/2)
-      real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim), hfexchange
+      real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim)
+      real(8),intent(in) :: cutint2, hfexchange
       real(8),intent(inout) :: gmna(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(inout) :: gmnb(databasis%nao*(databasis%nao+1)/2)
       real(8) :: val, val2
