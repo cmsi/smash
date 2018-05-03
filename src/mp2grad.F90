@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !-------------------------------------------------------------------------
-  subroutine calcgradrmp2(cmo,energymo,xint,egrad,nproc,myrank,mpi_comm,databasis,datacomp)
+  subroutine calcgradrmp2(cmo,energymo,xint,egrad,nproc,myrank,mpi_comm,datajob,databasis,datacomp)
 !-------------------------------------------------------------------------
 !
 ! Main driver of closed-shell MP2 energy gradient calculation
@@ -25,8 +25,9 @@
 !
       use modmolecule, only : nmo, natom, neleca, numatomic, escf, emp2, escsmp2
       use modjob, only : ncore, nvfz, maxmp2diis
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
@@ -201,7 +202,7 @@
         endif
         call mp2gradmulti(emp2st,egradtmp,egrad,cmo,energymo,xint,nocc,noac,nvir,nvac, &
 &                         ncore,nvfz,maxsize,maxdim,maxgraddim,idis,npass,numi,numab,numirecv, &
-&                         nproc,myrank,mpi_comm,databasis,datacomp)
+&                         nproc,myrank,mpi_comm,datajob,databasis,datacomp)
       endif
 !
       call para_allreducer(emp2st,emp2stsum,2,mpi_comm)
@@ -238,7 +239,7 @@ end
 !-------------------------------------------------------------------------------------------------
   subroutine mp2gradmulti(emp2st,egrad,egradtmp,cmo,energymo,xint,nocc,noac,nvir,nvac, &
 &                         ncore,nvfz,maxsize,maxdim,maxgraddim,idis,npass,numi,numab,numirecv, &
-&                         nproc,myrank,mpi_comm,databasis,datacomp)
+&                         nproc,myrank,mpi_comm,datajob,databasis,datacomp)
 !-------------------------------------------------------------------------------------------------
 !
 ! Driver of single pass MP2 energy calculation
@@ -266,8 +267,9 @@ end
 !
       use modmolecule, only : nmo, natom
       use modjob, only : maxmp2diis
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nocc, noac, nvir, nvac, ncore, nvfz, maxsize, maxdim, maxgraddim
@@ -397,14 +399,14 @@ end
 ! Solve CPHF equation and obtain Pai
 !
       call mp2gradcphf(pai,xlai,cmo,xint,energymo,paiprev,pls,pmax,paifock,errdiis,paidiis, &
-&                      diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm,databasis,datacomp)
+&                      diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm,datajob,databasis,datacomp)
 !ishimura
 !call tstamp(1)
 !
 ! Calculate Wij[III] and Wai[II]
 !
       call mp2gradwij3(wij,wai,pmn,pai,paifock,cmo,energymo,xint,pls,pmax,work1,work2, &
-&                      nocc,nvir,nvac,maxdim,nproc,myrank,mpi_comm,databasis)
+&                      nocc,nvir,nvac,maxdim,nproc,myrank,mpi_comm,datajob,databasis)
 !ishimura
 !call tstamp(1)
 !
@@ -1357,7 +1359,7 @@ end
 
 !------------------------------------------------------------------------------------------------
   subroutine mp2gradcphf(pai,xlai,cmo,xint,energymo,paiprev,pls,pmax,paifock,errdiis,paidiis, &
-&                        diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm,databasis,datacomp)
+&                        diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm,datajob,databasis,datacomp)
 !------------------------------------------------------------------------------------------------
 !
 ! Solve CPHF equation for MP2 energy gradient
@@ -1376,8 +1378,9 @@ end
 !       diismtrx  (DIIS matrix)
 !
       use modjob, only : threshmp2cphf, maxmp2diis, maxmp2iter
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nocc, nvir, maxdim, nproc, myrank, mpi_comm, idis(0:nproc-1,8)
@@ -1431,7 +1434,7 @@ end
 !
 ! Calculate two-electron integrals and Fock-like matrix
 !
-        call formrfock(paifock,work1,pls,pmax,xint,maxdim,nproc,myrank,mpi_comm,databasis)
+        call formrfock(paifock,work1,pls,pmax,xint,maxdim,datajob%cutint2,nproc,myrank,mpi_comm,databasis)
 !
 ! Transform Fock-like matrix to MO basis
 !
@@ -1564,7 +1567,7 @@ end
 
 !--------------------------------------------------------------------------------------------
   subroutine mp2gradwij3(wij,wai,pmn,pai,pmnfock,cmo,energymo,xint,pmn2,pmax,work1,work2, &
-&                        nocc,nvir,nvac,maxdim,nproc,myrank,mpi_comm,databasis)
+&                        nocc,nvir,nvac,maxdim,nproc,myrank,mpi_comm,datajob,databasis)
 !--------------------------------------------------------------------------------------------
 !
 ! Calculate Wij[III] and Wai[II]
@@ -1578,8 +1581,9 @@ end
 !       pmn       (Pmn (AO bais)
 ! Work :pmnfock,pmn2,pmax,work1,work2
 !
-      use modtype, only : typebasis
+      use modtype, only : typejob, typebasis
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nocc, nvir, nvac, maxdim, nproc, myrank, mpi_comm
       integer :: nao, moa, moi, moj, ii, ij, jj
@@ -1623,7 +1627,7 @@ end
 !
 ! Calculate two-electron integrals and Fock-like matrix
 !
-      call formrfock(pmnfock,work1,pmn2,pmax,xint,maxdim,nproc,myrank,mpi_comm,databasis)
+      call formrfock(pmnfock,work1,pmn2,pmax,xint,maxdim,datajob%cutint2,nproc,myrank,mpi_comm,databasis)
 !
 ! Calculate Wij[III]
 !

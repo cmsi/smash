@@ -854,7 +854,7 @@ end
         call calcgradrdft(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
         call tstamp(1,datacomp)
       elseif(datajob%method == 'MP2') then
-        call calcgradrmp2(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
+        call calcgradrmp2(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
         call tstamp(1,datacomp)
       else
         if(datacomp%master) then
@@ -1273,7 +1273,7 @@ end
           call calcgradrdft(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
           call tstamp(1,datacomp)
         elseif(datajob%method == 'MP2') then
-          call calcgradrmp2(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
+          call calcgradrmp2(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
           call tstamp(1,datacomp)
         else
           if(datacomp%master) then

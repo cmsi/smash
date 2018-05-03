@@ -179,7 +179,7 @@
 ! Calculate two-electron integrals and Fock matrix
 !
         call cpu_time(time1)
-        call formrfock(fock,work,dmtrx,dmax,xint,maxdim,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis)
+        call formrfock(fock,work,dmtrx,dmax,xint,maxdim,datajob%cutint2,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis)
         call dscal(nao3,half,fock,1)
         call cpu_time(time2)
 !
@@ -390,12 +390,11 @@ end
 
 
 !------------------------------------------------------------------------------------
-  subroutine formrfock(focktotal,fock,dmtrx,dmax,xint,maxdim,nproc,myrank,mpi_comm,databasis)
+  subroutine formrfock(focktotal,fock,dmtrx,dmax,xint,maxdim,cutint2,nproc,myrank,mpi_comm,databasis)
 !------------------------------------------------------------------------------------
 !
 ! Driver of Fock matrix formation from two-electron intgrals
 !
-      use modjob, only : cutint2
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
@@ -407,6 +406,7 @@ end
       real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: dmax(databasis%nshell*(databasis%nshell+1)/2)
       real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: cutint2
       real(8),intent(out) :: focktotal(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8) :: xijkl, denmax, twoeri(maxdim**4), denmax1
@@ -477,7 +477,7 @@ end
           enddo
           do lsh= 1,lnum
             call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,databasis)
-            call rfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,databasis)
+            call rfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,cutint2,databasis)
           enddo
         enddo
       enddo
@@ -493,12 +493,11 @@ end
 
 
 !----------------------------------------------------------------
-  subroutine rfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,lsh,maxdim,databasis)
+  subroutine rfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,lsh,maxdim,cutint2,databasis)
 !----------------------------------------------------------------
 !
 ! Form Fock matrix from two-electron intgrals
 !
-      use modjob, only : cutint2
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
@@ -510,6 +509,7 @@ end
       real(8),parameter :: half=0.5D+00, four=4.0D+00
       real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim)
+      real(8),intent(in) :: cutint2
       real(8),intent(inout) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8) :: val, val4
       logical :: ieqj, keql, ieqk, jeql, ikandjl, ijorkl
@@ -642,13 +642,12 @@ end
 
 
 !------------------------------------------------------------------------------
-  subroutine formrdftfock(focktotal,fock,dmtrx,dmax,xint,maxdim,hfexchange, &
+  subroutine formrdftfock(focktotal,fock,dmtrx,dmax,xint,maxdim,cutint2,hfexchange, &
 &                         nproc,myrank,mpi_comm,databasis)
 !------------------------------------------------------------------------------
 !
 ! Driver of DFT Fock matrix formation from two-electron intgrals
 !
-      use modjob, only : cutint2
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
@@ -659,7 +658,8 @@ end
       real(8),parameter :: zero=0.0D+00, two=2.0D+00, four=4.0D+00
       real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: dmax(databasis%nshell*(databasis%nshell+1)/2)
-      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2), hfexchange
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: cutint2, hfexchange
       real(8),intent(out) :: focktotal(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8) :: xijkl, denmax, twoeri(maxdim**4), denmax1
@@ -730,7 +730,7 @@ end
           enddo
           do lsh= 1,lnum
             call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,databasis)
-            call rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,hfexchange,databasis)
+            call rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,cutint2,hfexchange,databasis)
           enddo
         enddo
       enddo
@@ -746,12 +746,11 @@ end
 
 
 !------------------------------------------------------------------------------
-  subroutine rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,lsh,maxdim,hfexchange,databasis)
+  subroutine rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,lsh,maxdim,cutint2,hfexchange,databasis)
 !------------------------------------------------------------------------------
 !
 ! Form DFT Fock matrix from two-electron intgrals
 !
-      use modjob, only : cutint2
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
@@ -763,7 +762,7 @@ end
       real(8),parameter :: half=0.5D+00, four=4.0D+00
       real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim)
-      real(8),intent(in) :: hfexchange
+      real(8),intent(in) :: cutint2, hfexchange
       real(8),intent(inout) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8) :: val, val4
       logical :: ieqj, keql, ieqk, jeql, ikandjl, ijorkl
@@ -1099,7 +1098,7 @@ end
 !
 ! Calculate two-electron integrals
 !
-        call formrdftfock(fock,work,dmtrx,dmax,xint,maxdim,datajob%hfexchange, &
+        call formrdftfock(fock,work,dmtrx,dmax,xint,maxdim,datajob%cutint2,datajob%hfexchange, &
 &                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis)
         call dscal(nao3,half,fock,1)
         call cpu_time(time2)
@@ -1477,7 +1476,7 @@ end
 ! Calculate two-electron integrals and Fock matrix
 !
         call cpu_time(time1)
-        call formufock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis)
+        call formufock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,datajob%cutint2,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis)
         call dscal(nao3,half,focka,1)
         call dscal(nao3,half,fockb,1)
         call cpu_time(time2)
@@ -1705,7 +1704,7 @@ end
 
 
 !-----------------------------------------------------------------------------------------------
-  subroutine formufock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,nproc,myrank,mpi_comm,databasis)
+  subroutine formufock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,cutint2,nproc,myrank,mpi_comm,databasis)
 !-----------------------------------------------------------------------------------------------
 !
 ! Driver of Fock matrix formation from two-electron intgrals
@@ -1716,7 +1715,6 @@ end
 !       fock2  (Beta Fock matrix)
 !       fock3  (Work space)
 !
-      use modjob, only : cutint2
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
@@ -1729,6 +1727,7 @@ end
       real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: dmax(databasis%nshell*(databasis%nshell+1)/2)
       real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: cutint2
       real(8),intent(out) :: fock1(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: fock2(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: fock3(databasis%nao*(databasis%nao+1)/2)
@@ -1801,7 +1800,7 @@ end
           enddo
           do lsh= 1,lnum
             call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,databasis)
-            call ufockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,databasis)
+            call ufockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,cutint2,databasis)
           enddo
         enddo
       enddo
@@ -1819,12 +1818,11 @@ end
 
 
 !-------------------------------------------------------------------------------
-  subroutine ufockeri(focka,fockb,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,lsh,maxdim,databasis)
+  subroutine ufockeri(focka,fockb,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,lsh,maxdim,cutint2,databasis)
 !-------------------------------------------------------------------------------
 !
 ! Form unrestricted Fock matrix from two-electron intgrals
 !
-      use modjob, only : cutint2
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
@@ -1837,6 +1835,7 @@ end
       real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim)
+      real(8),intent(in) :: cutint2
       real(8),intent(inout) :: focka(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(inout) :: fockb(databasis%nao*(databasis%nao+1)/2)
       real(8) :: val, val2, val4
@@ -2221,7 +2220,7 @@ end
 !
 ! Calculate two-electron integrals
 !
-        call formudftfock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,datajob%hfexchange, &
+        call formudftfock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,datajob%cutint2,datajob%hfexchange, &
 &                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis)
         call dscal(nao3,half,focka,1)
         call dscal(nao3,half,fockb,1)
@@ -2468,7 +2467,7 @@ end
 
 
 !-----------------------------------------------------------------------------------------
-  subroutine formudftfock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,hfexchange, &
+  subroutine formudftfock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,cutint2,hfexchange, &
 &                         nproc,myrank,mpi_comm,databasis)
 !-----------------------------------------------------------------------------------------
 !
@@ -2480,7 +2479,6 @@ end
 !       fock2  (Beta Fock matrix)
 !       fock3  (Work space)
 !
-      use modjob, only : cutint2
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
@@ -2492,7 +2490,8 @@ end
       real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: dmax(databasis%nshell*(databasis%nshell+1)/2)
-      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2), hfexchange
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: cutint2, hfexchange
       real(8),intent(out) :: fock1(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: fock2(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: fock3(databasis%nao*(databasis%nao+1)/2)
@@ -2566,7 +2565,7 @@ end
           do lsh= 1,lnum
             call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,databasis)
             call udftfockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim, &
-&                            hfexchange,databasis)
+&                            cutint2,hfexchange,databasis)
           enddo
         enddo
       enddo
@@ -2585,12 +2584,11 @@ end
 
 !------------------------------------------------------------------------------------
   subroutine udftfockeri(focka,fockb,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,lsh,maxdim, &
-&                        hfexchange,databasis)
+&                        cutint2,hfexchange,databasis)
 !------------------------------------------------------------------------------------
 !
 ! Form unrestricted DFT Fock matrix from two-electron intgrals
 !
-      use modjob, only : cutint2
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
@@ -2602,7 +2600,8 @@ end
       real(8),parameter :: half=0.5D+00, two=2.0D+00, four=4.0D+00
       real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
-      real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim), hfexchange
+      real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim)
+      real(8),intent(in) :: cutint2, hfexchange
       real(8),intent(inout) :: focka(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(inout) :: fockb(databasis%nao*(databasis%nao+1)/2)
       real(8) :: val, val2, val4
