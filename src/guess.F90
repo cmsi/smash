@@ -1983,7 +1983,6 @@ end
 ! Out : dftbmo (DFTB MOs)
 !       overlap,ortho,work,eigen (work space)
 !
-      use modjob, only : threshover
       use modmolecule, only : neleca, nelecb
       use modtype, only : typejob,typebasis, typecomp
       implicit none
@@ -2020,7 +2019,7 @@ end
 !
 ! Calculate orthogonalization matrix
 !
-      call mtrxcanon(ortho,work,eigen,nao_g,nmo_g,threshover,datacomp)
+      call mtrxcanon(ortho,work,eigen,nao_g,nmo_g,datajob%threshover,datacomp)
 !
 ! Set parameters
 !
@@ -2032,7 +2031,7 @@ end
 ! Calculate core Hamiltonian matrix for DFTB
 !
       dftb0=zero
-      call formdftb0(dftb0,overlap,eigen,nao_v,nshell_v,dataguessbs)
+      call formdftb0(dftb0,overlap,eigen,nao_v,nshell_v,datajob%threshex,dataguessbs)
 !
 ! Calculate gamma12 calculation for DFTB
 !
@@ -2076,14 +2075,13 @@ end
 
 
 !---------------------------------------------
-  subroutine formdftb0(dftb0,overlap,energy,nao_v,nshell_v,dataguessbs)
+  subroutine formdftb0(dftb0,overlap,energy,nao_v,nshell_v,threshex,dataguessbs)
 !---------------------------------------------
 !
 ! Form charge independent DFTB matrix elements
 !
       use modparam, only : mxprsh
       use modguess, only : coord_g
-      use modjob, only : threshex
       use modmolecule, only : numatomic
       use modtype, only : typebasis
       implicit none
@@ -2094,6 +2092,7 @@ end
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf
       real(8),parameter :: zero=0.0D+00, factor=0.875D+00, fdown=0.05D+00
       real(8),intent(in) :: overlap(dataguessbs%nao,dataguessbs%nao), energy(dataguessbs%nao)
+      real(8),intent(in) :: threshex
       real(8),intent(out) :: dftb0(dataguessbs%nao,dataguessbs%nao)
       real(8) :: coordij(3,2), exij(mxprsh,2), coij(mxprsh,2), znucdftb(2)
       real(8) :: sint(len1,len1), tint(len1,len1), cint(len1,len1)
