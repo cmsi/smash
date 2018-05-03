@@ -166,7 +166,7 @@ end
 ! Calculate overlap integrals
 ! (guess basis)x(guess basis)
 !
-      call calcover1(hmo,dataguessbs)
+      call calcover1(hmo,datajob%threshex,dataguessbs)
 !
 ! Set ionization potentials
 !
@@ -208,7 +208,7 @@ end
 ! Calculate overlap integrals
 ! (guess basis)x(guess basis)
 !
-      call calcover1(hmo,datacorebs)
+      call calcover1(hmo,datajob%threshex,datacorebs)
 !
 ! Set ionization potentials
 !
@@ -1062,7 +1062,7 @@ end
 
 
 !--------------------------------
-  subroutine calcover1(overlap,dataguessbs)
+  subroutine calcover1(overlap,threshex,dataguessbs)
 !--------------------------------
 !
 ! Driver of overlap integral calculation
@@ -1074,12 +1074,13 @@ end
       implicit none
       type(typebasis),intent(in) :: dataguessbs
       integer :: ish, jsh
+      real(8),intent(in) :: threshex
       real(8),intent(out) :: overlap(dataguessbs%nao**2)
 !
 !$OMP parallel do private(jsh)
       do ish= dataguessbs%nshell,1,-1
         do jsh= 1,ish
-          call intover1(overlap,ish,jsh,dataguessbs)
+          call intover1(overlap,ish,jsh,threshex,dataguessbs)
         enddo
       enddo
 !$OMP end parallel do
@@ -1158,7 +1159,7 @@ end
 
 
 !---------------------------------------
-  subroutine intover1(overlap,ish,jsh,dataguessbs)
+  subroutine intover1(overlap,ish,jsh,threshex,dataguessbs)
 !---------------------------------------
 !
 ! Overlap integral calculation
@@ -1168,7 +1169,6 @@ end
 ! Out : overlap (overlap integral of guess basis set)
 !
       use modparam, only : mxprsh
-      use modjob, only : threshex
       use modguess, only : coord_g
       use modtype, only : typebasis
       implicit none
@@ -1176,6 +1176,7 @@ end
       integer,intent(in) :: ish, jsh
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, iprim, jprim
       integer :: nbfij(2), nprimij(2), nangij(2), ii, jj, maxj
+      real(8),intent(in) :: threshex
       real(8),intent(out) :: overlap(dataguessbs%nao,dataguessbs%nao)
       real(8) :: sint(28,28), exij(mxprsh,2), coij(mxprsh,2), coordij(3,2)
       logical :: iandj
@@ -1954,7 +1955,7 @@ end
 !
 ! Calculate DFTB orbitals
 !
-      call calcdftb(hmo,overlap,work1,work2,eigen,nao_v,nshell_v,nmo_g,databasis,dataguessbs,datacomp)
+      call calcdftb(hmo,overlap,work1,work2,eigen,nao_v,nshell_v,nmo_g,datajob,databasis,dataguessbs,datacomp)
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
@@ -1970,7 +1971,7 @@ end
 
 
 !-----------------------------------------------------------------------------
-  subroutine calcdftb(dftbmo,overlap,ortho,work,eigen,nao_v,nshell_v,nmo_g,databasis,dataguessbs,datacomp)
+  subroutine calcdftb(dftbmo,overlap,ortho,work,eigen,nao_v,nshell_v,nmo_g,datajob,databasis,dataguessbs,datacomp)
 !-----------------------------------------------------------------------------
 !
 ! Driver of DFTB calculation
@@ -1981,8 +1982,9 @@ end
 !
       use modjob, only : threshover
       use modmolecule, only : neleca, nelecb
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob,typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis, dataguessbs
       type(typecomp),intent(inout) :: datacomp
       integer,parameter :: maxiter=1000
@@ -2006,7 +2008,7 @@ end
 ! Calculate overlap integrals
 ! (guess basis)x(guess basis)
 !
-      call calcover1(overlap,dataguessbs)
+      call calcover1(overlap,datajob%threshex,dataguessbs)
       do ii= 1,nao_g
         do jj= 1,ii
           work(jj,ii)= overlap(jj,ii)
