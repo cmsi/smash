@@ -408,16 +408,16 @@ end
 
 
 !------------------------------------------------------------------------------------
-  subroutine calcnewcoord(coord,coordold,egrad,egradold,ehess,displc,natom3,iopt,datacomp)
+  subroutine calcnewcoord(coord,coordold,egrad,egradold,ehess,displc,natom3,iopt,datajob,datacomp)
 !------------------------------------------------------------------------------------
 !
 ! Calculate new Cartesian coordinate with gradient and hessian
 !
-      use modjob, only : iprint
       use modparam, only : toang
       use modmolecule, only : numatomic
-      use modtype, only : typecomp
+      use modtype, only : typejob, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: natom3, iopt
       integer :: i, j, ii
@@ -484,7 +484,7 @@ end
 !
 ! Print delta xyz
 !
-      if(datacomp%master.and.(iprint >= 2)) then
+      if(datacomp%master.and.(datajob%iprint >= 2)) then
         write(*,'(" ----------------------------------------------------")')
         write(*,'("          Delta xyz (Angstrom)")')
         write(*,'("  Atom            X             Y             Z")')
@@ -503,7 +503,7 @@ end
 !---------------------------------------------------------------------------------------
   subroutine calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess,work1, &
 &                            work2,work3,work4,workv,iopt,iredun,isizered, &
-&                            maxredun,numbond,numangle,numtorsion,numredun,datacomp)
+&                            maxredun,numbond,numangle,numtorsion,numredun,datajob,datacomp)
 !---------------------------------------------------------------------------------------
 !
 ! Calculate new Cartesian coordinate with gradient, hessian and redundant coordinate
@@ -516,11 +516,11 @@ end
 ! Covalent raddi (H - Kr): H. B. Schlegel, Theoret. Chim. Acta, 333 (1984) 66.
 ! Covalent radii (Rb- Cn): P. Pyykko, M. Atsumi, Chem. Eur. J., 186 (2009) 15.
 !
-      use modjob, only : iprint
       use modparam, only : toang, tobohr
       use modmolecule, only : numatomic, natom
-      use modtype, only : typecomp
+      use modtype, only : typejob, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typecomp),intent(inout) :: datacomp
       integer,parameter :: maxiterdx=100, maxiterrfo=1000
       integer,intent(in) :: iopt, isizered, maxredun, iredun(4,isizered/4)
@@ -701,7 +701,7 @@ end
         do ii= 1,numdim
           suml= suml+workv(ii,1)*workv(ii,1)/(rlambda-workv(ii,3))
         enddo
-        if(datacomp%master.and.(iprint >= 3)) then
+        if(datacomp%master.and.(datajob%iprint >= 3)) then
           write(*,'(" Lambda iteration of RFO",i3,3x,"Lambda=",1p,d15.8,4x,"Sum=",1p,d15.8)') &
 &               iterrfo,rlambda,suml
         endif
@@ -741,7 +741,7 @@ end
 !
         rmsdx= sqrt(ddot(natom3,workv,1,workv,1)/natom3)
         rmsqx= sqrt(ddot(numredun,workv(1,2),1,workv(1,2),1)/numredun)
-        if(datacomp%master.and.(iprint >= 3)) then
+        if(datacomp%master.and.(datajob%iprint >= 3)) then
           write(*,'(" Displacement Iteration",i3,2x,"RMS(Cart)=",1p,d10.3,4x, &
 &                   "RMS(Red)=",1p,d10.3)') iterdx, rmsdx, rmsqx
         endif
@@ -808,7 +808,7 @@ end
         endif
       enddo
       if(datacomp%master) then
-        if(iprint >= 3) write(*,*)
+        if(datajob%iprint >= 3) write(*,*)
         write(*,'(" ---------------------------------------------------------------")')
         write(*,'("   Redundant coordinate parameters (Angstrom and Degree)")')
         write(*,'("                                        New           Old")')
@@ -841,7 +841,7 @@ end
 !
 ! Print delta xyz
 !
-      if(datacomp%master.and.(iprint >= 2)) then
+      if(datacomp%master.and.(datajob%iprint >= 2)) then
         write(*,'(" ----------------------------------------------------")')
         write(*,'("          Delta xyz (Angstrom)")')
         write(*,'("  Atom            X             Y             Z")')
