@@ -646,7 +646,7 @@ end
 ! Start SCF
 !
       if(datajob%method == 'HARTREE-FOCK') then
-        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
+        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
         call writeeigenvalue(energymoa,energymob,2,datacomp)
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
@@ -661,7 +661,7 @@ end
           datajob%dconv= max(datajob%dconv,1.0D-2)
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
 !ishimura-end
-          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
+          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
 !ishimura-start
           dconv= savedconv
           cutint2= savecutint2
@@ -992,7 +992,7 @@ end
 ! Start SCF
 !
       if(datajob%method == 'HARTREE-FOCK') then
-        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
+        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
         call writeeigenvalue(energymoa,energymob,2,datacomp)
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
@@ -1007,7 +1007,7 @@ end
           datajob%dconv= max(datajob%dconv,1.0D-2)
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
 !ishimura-end
-          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
+          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
 !ishimura-start
           dconv= savedconv
           cutint2= savecutint2
@@ -1544,7 +1544,7 @@ end
 ! Calculate energy
 !
         if(datajob%method == 'HARTREE-FOCK') then
-          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
+          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2,datacomp)
           call tstamp(1,datacomp)
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
@@ -1559,7 +1559,7 @@ end
             datajob%dconv= max(datajob%dconv,1.0D-2)
             datajob%cutint2= max(datajob%cutint2,1.0D-9)
 !ishimura-end
-            call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,databasis,datacomp)
+            call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
 !ishimura-start
             dconv= savedconv
             cutint2= savecutint2

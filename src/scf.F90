@@ -1281,7 +1281,7 @@ end
 
 
 !----------------------------------------------------------------------------------------
-  subroutine calcuhf(h1mtrx,cmoa,cmob,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb,databasis,datacomp)
+  subroutine calcuhf(h1mtrx,cmoa,cmob,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb,datajob,databasis,datacomp)
 !----------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted Hartree-Fock calculation
@@ -1298,14 +1298,12 @@ end
 !         cmob  (Beta MO coefficient matrix)
 !
       use modmolecule, only : neleca, nelecb, nmo, enuc, escf, escfe
-      use modjob, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
-&                        iprint, &
-&                        maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
-&                        maxqcdiagsub, scfconv, extrap
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
+      integer :: maxdiis, maxsoscf, maxqcdiagsub
       integer :: nao, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
       integer :: itextra, itsoscf, itqc, nocca, nvira, noccb, nvirb
       integer :: idis(datacomp%nproc2,14), isize1, isize2, isize3
@@ -1333,7 +1331,13 @@ end
       real(8) :: s2, sz
       real(8) :: time1, time2, time3, time4
       logical :: convsoscf, convqc
+      character(len=16) :: scfconv
       data maxfunc/1,3,6,10,15,21,28/
+!
+      maxdiis= datajob%maxdiis
+      maxsoscf= datajob%maxsoscf
+      maxqcdiagsub= datajob%maxqcdiagsub
+      scfconv= datajob%scfconv
 !
       nao= databasis%nao
       nao2= nao*nao
@@ -1418,19 +1422,19 @@ end
         write(*,'("   Unrestricted Hartree-Fock calculation")')
         write(*,'(1x,74("-"))')
         write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter    =",i9)') &
-&                    scfconv, dconv, maxiter
+&                    scfconv, datajob%dconv, datajob%maxiter
         write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver =",d9.2)') &
-&                    cutint2, threshex, threshover
+&                    datajob%cutint2, datajob%threshex, datajob%threshover
         select case(scfconv)
           case('DIIS')
             write(*,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
-&                    maxdiis, threshdiis
+&                    maxdiis, datajob%threshdiis
           case('SOSCF')
             write(*,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
-&                    maxdiis, threshdiis
+&                    maxsoscf, datajob%threshsoscf
           case('QC')
             write(*,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
-&                    maxqc, threshqc, maxqcdiag
+&                    datajob%maxqc, datajob%threshqc, datajob%maxqcdiag
             write(*,'("   MaxQCDiagSub=",i8)') &
 &                    maxqcdiagsub
         end select
@@ -1459,7 +1463,7 @@ end
 !
 ! Start SCF iteration
 !
-      do iter= 1,maxiter
+      do iter= 1,datajob%maxiter
 !
 ! Calculate maximum density matrix elements
 !
@@ -1496,7 +1500,7 @@ end
             call calcdiiserr(fockb,dmtrxprevb,overlap,ortho,cmob,work,work2,errmaxb,nao,nmo, &
 &                            idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
             errmax= max(errmaxa,errmaxb)
-            if(((itdiis /= 0).or.(errmax <= threshdiis)).and.(errmax > small))then
+            if(((itdiis /= 0).or.(errmax <= datajob%threshdiis)).and.(errmax > small))then
               itdiis= itdiis+1
               call calcudiis(focka,fockb,errdiisa,errdiisb,fockdiisa,fockdiisb, &
 &                            diismtrx,cmoa,cmob,work2,itdiis,nao,maxdiis, &
@@ -1505,7 +1509,7 @@ end
 !
 ! Extrapolate Fock matrix
 !
-            if(extrap.and.itdiis == 0) then
+            if(datajob%extrap.and.itdiis == 0) then
               call fockextrap(focka,fockdiisa,work,cmoa,dmtrxa,itextra,nao,maxdiis, &
 &                             idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               call fockextrap(fockb,fockdiisb,work,cmob,dmtrxb,itextra,nao,maxdiis, &
@@ -1537,7 +1541,7 @@ end
                 sogradmaxb= zero
               endif
               sogradmax= max(sogradmaxa,sogradmaxb)
-              if(sogradmax <= threshsoscf) then
+              if(sogradmax <= datajob%threshsoscf) then
                 if(itsoscf == 1) then
                   call soscfinith(hstarta,eigena,nocca,nvira,nao)
                   if(noccb /= 0) call soscfinith(hstartb,eigenb,noccb,nvirb,nao)
@@ -1563,7 +1567,7 @@ end
               call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= itqc+1
-            elseif((itqc == maxqc)) then
+            elseif((itqc == datajob%maxqc)) then
               call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= 1
@@ -1571,7 +1575,7 @@ end
               call uhfqc(focka,fockb,cmoa,cmob,dmax,qcgmna,qcgmnb,qcvec, &
 &                        qcmat,qcmatsave,qceigen,overlap,xint, &
 &                        work,work2,work3,one,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
-&                        maxdim,maxqcdiag,maxqcdiagsub,threshqc, &
+&                        maxdim,datajob%maxqcdiag,maxqcdiagsub,datajob%threshqc, &
 &                        databasis,datacomp)
               itqc= itqc+1
             endif
@@ -1587,7 +1591,7 @@ end
 !
         select case(scfconv)
           case('DIIS')
-            if(extrap.and.(itdiis==0)) then
+            if(datajob%extrap.and.(itdiis==0)) then
               itsub= itextra
             else
               itsub= itdiis
@@ -1608,24 +1612,24 @@ end
 !
         select case(scfconv)
           case('DIIS')
-            if(diffmax.lt.dconv) exit
+            if(diffmax.lt.datajob%dconv) exit
             if(itdiis >= maxdiis) itdiis= 0
           case('SOSCF')
-            if((diffmax.lt.dconv).and.(convsoscf)) exit
-            if((diffmax.lt.dconv).and.(itsoscf==1)) exit
-            if((diffmax.lt.dconv).and.(.not.convsoscf)) convsoscf=.true.
+            if((diffmax.lt.datajob%dconv).and.(convsoscf)) exit
+            if((diffmax.lt.datajob%dconv).and.(itsoscf==1)) exit
+            if((diffmax.lt.datajob%dconv).and.(.not.convsoscf)) convsoscf=.true.
             if(itsoscf >= maxsoscf) itsoscf= 0
           case('QC')
-            if((diffmax < dconv).and.(convqc)) exit
-            if((diffmax < dconv).and.(itqc == 1)) exit
-            if((diffmax < dconv).and.(.not.convqc)) convqc=.true.
-            if((diffmax >= dconv).and.(convqc)) then
+            if((diffmax < datajob%dconv).and.(convqc)) exit
+            if((diffmax < datajob%dconv).and.(itqc == 1)) exit
+            if((diffmax < datajob%dconv).and.(.not.convqc)) convqc=.true.
+            if((diffmax >= datajob%dconv).and.(convqc)) then
               itqc= 0
               convqc=.false.
             endif
         end select
 !
-        if(iter == maxiter) then
+        if(iter == datajob%maxiter) then
           if(datacomp%master) then
             write(*,'(" SCF did not converge.")')
             call iabort
@@ -1636,7 +1640,7 @@ end
         call dcopy(nao3,work(1),1,dmtrxa,1)
         call dcopy(nao3,work(nao3+1),1,dmtrxb,1)
         call cpu_time(time4)
-        if(datacomp%master.and.(iprint >= 3)) &
+        if(datacomp%master.and.(datajob%iprint >= 3)) &
 &         write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
