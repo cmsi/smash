@@ -970,7 +970,7 @@ end
 
 
 !-------------------------------
-  subroutine setbasis_g(nao_v,nshell_v,itype,databasis,dataguessbs)
+  subroutine setbasis_g(nao_v,nshell_v,itype,datajob,databasis,dataguessbs)
 !-------------------------------
 !
 ! Driver of setting basis functions for guess calculations
@@ -979,8 +979,9 @@ end
 !            =2 (For extended Huckel calculation of only core orbitals)
 !
       use modmolecule, only : natom, numatomic
-      use modtype, only : typebasis
+      use modtype, only : typejob, typebasis
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typebasis),intent(inout) :: dataguessbs
       integer,intent(out) :: nao_v, nshell_v
@@ -1000,9 +1001,9 @@ end
 !
           do iatom= 1,natom
             if((numatomic(iatom) >= 1).and.(numatomic(iatom) <= 54)) then
-              call bssto3g_g(iatom,ishell,1,databasis,dataguessbs)
+              call bssto3g_g(iatom,ishell,1,datajob%flagecp,databasis,dataguessbs)
             elseif(numatomic(iatom) >= 55) then
-              call bshuzmini6_g(iatom,ishell,1,databasis,dataguessbs)
+              call bshuzmini6_g(iatom,ishell,1,datajob%flagecp,databasis,dataguessbs)
             endif
           enddo
           nshell_v= ishell
@@ -1012,9 +1013,9 @@ end
 !
           do iatom= 1,natom
             if((numatomic(iatom) >= 1).and.(numatomic(iatom) <= 54)) then
-              call bssto3g_g(iatom,ishell,2,databasis,dataguessbs)
+              call bssto3g_g(iatom,ishell,2,datajob%flagecp,databasis,dataguessbs)
             elseif(numatomic(iatom) >= 55) then
-              call bshuzmini6_g(iatom,ishell,2,databasis,dataguessbs)
+              call bshuzmini6_g(iatom,ishell,2,datajob%flagecp,databasis,dataguessbs)
             endif
           enddo
           dataguessbs%nshell= ishell
@@ -1030,9 +1031,9 @@ end
           dataguessbs%locbf(1)=0
           do iatom= 1,natom
             if((numatomic(iatom) >= 1).and.(numatomic(iatom) <= 54)) then
-              call bssto3g_g(iatom,ishell,3,databasis,dataguessbs)
+              call bssto3g_g(iatom,ishell,3,datajob%flagecp,databasis,dataguessbs)
             elseif(numatomic(iatom) >= 55) then
-              call bshuzmini6_g(iatom,ishell,3,databasis,dataguessbs)
+              call bshuzmini6_g(iatom,ishell,3,datajob%flagecp,databasis,dataguessbs)
             endif
           enddo
           dataguessbs%nshell= ishell
@@ -1045,7 +1046,7 @@ end
 
 
 !-------------------------------------------
-  subroutine bssto3g_g(iatom,ishell,itype,databasis,dataguessbs)
+  subroutine bssto3g_g(iatom,ishell,itype,flagecp,databasis,dataguessbs)
 !-------------------------------------------
 !
 ! Set basis functions of STO-3G for guess calculation
@@ -1055,7 +1056,6 @@ end
 !
       use modmolecule, only : numatomic
       use modparam, only : mxao, mxshell, mxprim
-      use modjob, only : flagecp
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
@@ -1472,6 +1472,7 @@ end
 &        0.1250662138D+00, 0.6686785577D+00, 0.3052468245D+00, 0.2197679508D+00, 0.6555473627D+00,&
 &        0.2865732590D+00, 0.1250662138D+00, 0.6686785577D+00, 0.3052468245D+00, 0.2197679508D+00,&
 &        0.6555473627D+00, 0.2865732590D+00, 0.1250662138D+00, 0.6686785577D+00, 0.3052468245D+00/)
+      logical,intent(in) :: flagecp
 !
 ! Set valence basis functions
 !
@@ -9612,7 +9613,7 @@ end
 
 
 !----------------------------------------------
-  subroutine bshuzmini6_g(iatom,ishell,itype,databasis,dataguessbs)
+  subroutine bshuzmini6_g(iatom,ishell,itype,flagecp,databasis,dataguessbs)
 !----------------------------------------------
 !
 ! Set 6th row basis functions of minimal Huzinaga set for guess calculation
@@ -9621,7 +9622,6 @@ end
 !
       use modmolecule, only : numatomic
       use modparam, only : mxao, mxshell, mxprim
-      use modjob, only : flagecp
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
@@ -9633,6 +9633,7 @@ end
       real(8) :: expf1(4,57:70), expf2(3,71:86)
       real(8) :: coeffs(3,6,55:86), coeffp(3,2:6,55:86), coeffd(3,2:5,55:86)
       real(8) :: coefff1(4,57:70), coefff2(3,71:86)
+      logical,intent(in) :: flagecp
       data exps/ &
 &       1.5525866D+04,2.3490055D+03,5.1623555D+02,6.8750505D+02,6.7191157D+01,2.7992003D+01,&
 &       6.0168188D+01,1.0868694D+01,4.7407047D+00,9.8871626D+00,2.3693425D+00,1.1416761D+00,&
