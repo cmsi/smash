@@ -47,7 +47,7 @@
 !
         case('DFTB')
           if(datacomp%master) write(*,'("   Guess MOs are generated using DFTB orbitals.")')
-          call dftbguess(cmoa,overinv,databasis,datacomp)
+          call dftbguess(cmoa,overinv,datajob,databasis,datacomp)
           if(datacomp%master) write(*,*)
           if(datajob%scftype == 'UHF') call dcopy(databasis%nao**2,cmoa,1,cmob,1)
 !
@@ -58,7 +58,7 @@
         case('CHECK')
           if(datacomp%master) &
 &           write(*,'("   Guess MOs are read from checkpoint file and projected.",/)')
-          call checkguess(cmoa,cmob,overinv,databasis,datacomp)
+          call checkguess(cmoa,cmob,overinv,datajob,databasis,datacomp)
 !
         case('HCORE')
           if(datacomp%master) &
@@ -109,10 +109,7 @@ end
 !
 ! Set basis functions
 !
-!ishimura-start
-!     spher_g=.true.
       dataguessbs%spher=.true.
-!ishimura-end
       call setbasis_g(nao_v,ntmp,1,databasis,dataguessbs)
 !
 ! Set coordinate
@@ -173,7 +170,7 @@ end
 !
 ! Set ionization potentials
 !
-      call huckelip(eigen,1,databasis%izcore,datacomp)
+      call huckelip(eigen,1,datajob%flagecp,databasis%izcore,datacomp)
 !
 ! Form extended Huckel matrix
 !
@@ -193,15 +190,16 @@ end
 
 
 !--------------------------------------------------------------
-  subroutine calchuckelgcore(hmo,eigen,databasis,datacorebs,datacomp)
+  subroutine calchuckelgcore(hmo,eigen,datajob,databasis,datacorebs,datacomp)
 !--------------------------------------------------------------
 !
 ! Driver of extended Huckel calculation for only core orbitals
 !
 ! Out : hmo (extended Huckel orbitals)
 !
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis, datacorebs
       type(typecomp),intent(inout) :: datacomp
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
@@ -214,7 +212,7 @@ end
 !
 ! Set ionization potentials
 !
-      call huckelip(eigen,2,databasis%izcore,datacomp)
+      call huckelip(eigen,2,datajob%flagecp,databasis%izcore,datacomp)
 !
 ! Form extended Huckel matrix
 !
@@ -298,7 +296,7 @@ end
 
 
 !------------------------------------
-  subroutine huckelip(energy,itype,izcore,datacomp)
+  subroutine huckelip(energy,itype,flagecp,izcore,datacomp)
 !------------------------------------
 !
 ! Set ionization potentials
@@ -309,7 +307,6 @@ end
 !
       use modparam, only : mxatom
       use modmolecule, only : natom, numatomic
-      use modjob, only : flagecp
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -323,6 +320,7 @@ end
       real(8) :: row4(8,19:36)
       real(8) :: row5(11,37:54)
       real(8) :: row6(15,55:86)
+      logical,intent(in) :: flagecp
 ! The order is 1S,2S,2P
       data row2/-2.48D+00,-1.960D-01, 0.000D+00, -4.73D+00,-3.090D-01, 0.000D+00,&
 &               -7.70D+00,-4.950D-01,-3.100D-01, -1.13D+01,-7.060D-01,-4.330D-01,&
@@ -1456,7 +1454,7 @@ end
 
 
 !------------------------------------------------------------------------------
-  subroutine checkguess(cmoa,cmob,overinv,databasis,datacomp)
+  subroutine checkguess(cmoa,cmob,overinv,datajob,databasis,datacomp)
 !------------------------------------------------------------------------------
 !
 ! Read and project MOs
@@ -1465,10 +1463,10 @@ end
 ! Out   : cmoa    (Alpha initial guess orbitals)
 !         cmob    (Beta initial guess orbitals)
 !
-      use modjob, only : scftype
       use modmolecule, only : neleca, nelecb, charge
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       type(typebasis) :: dataguessbs, datacorebs
@@ -1489,10 +1487,10 @@ end
 !
       nao= databasis%nao
       nao_g= dataguessbs%nao
-      if(scftype == 'RHF') then
+      if(datajob%scftype == 'RHF') then
         call memset(nao_g*nao_g,datacomp)
         allocate(cmoa_g(nao_g,nao_g))
-      elseif(scftype == 'UHF') then
+      elseif(datajob%scftype == 'UHF') then
         call memset(nao_g*nao_g*2,datacomp)
         allocate(cmoa_g(nao_g,nao_g),cmob_g(nao_g,nao_g))
       endif
@@ -1523,7 +1521,6 @@ end
       endif
 !
       if(ncore > 0) then
-!ishimura
         datacorebs%spher=.true.
         call setbasis_g(ntmp,ntmp,2,databasis,datacorebs)
         nao_gcore= datacorebs%nao
@@ -1531,7 +1528,7 @@ end
         allocate(coremo(nao_gcore,nao_gcore),work1(nao_g*nao_gcore),work2(nao_g*nao_gcore), &
 &                work3(nao_g*nao_gcore),eigen(nao_gcore))
         call calccoremo(cmoa_g,cmob_g,coremo,work1,work2,work3,eigen,scftype_g,nmo_g, &
-&                       databasis,dataguessbs,datacorebs,datacomp)
+&                       datajob,databasis,dataguessbs,datacorebs,datacomp)
         call memunset(nao_gcore*(nao_gcore+nao_g*3+1),datacomp)
         deallocate(coremo,work1,work2,work3,eigen)
         nmo_g= nmo_g-ncore
@@ -1552,7 +1549,7 @@ end
 !
       call projectmo3(cmoa,cmoa_g,overinv,overlap,work1,work2,work3,eigen, &
 &                     databasis%nao,dataguessbs%nao,nmo_g,ndim,datacomp)
-      if(scftype == 'UHF') then
+      if(datajob%scftype == 'UHF') then
         if(scftype_g == 'RHF') then
           call dcopy(nao*nao,cmoa,1,cmob,1)
         elseif(scftype_g == 'UHF') then
@@ -1567,10 +1564,10 @@ end
       deallocate(overlap,work1,work2,work3, &
 &                eigen)
 !
-      if(scftype == 'RHF') then
+      if(datajob%scftype == 'RHF') then
         call memunset(nao_g*nao_g,datacomp)
         deallocate(cmoa_g)
-      elseif(scftype == 'UHF') then
+      elseif(datajob%scftype == 'UHF') then
         call memunset(nao_g*nao_g*2,datacomp)
         deallocate(cmoa_g,cmob_g)
       endif
@@ -1646,14 +1643,14 @@ end
 
 !------------------------------------------------------------------------------------
   subroutine calccoremo(cmoa_g,cmob_g,coremo,overlap,work2,work3,eigen,scftype_g,nmo_g, &
-&                       databasis,dataguessbs,datacorebs,datacomp)
+&                       datajob,databasis,dataguessbs,datacorebs,datacomp)
 !------------------------------------------------------------------------------------
 !
 ! Calculate and remove core orbitals corresponding ECP
 !
-      use modjob, only : scftype
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis, dataguessbs, datacorebs
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nmo_g
@@ -1673,7 +1670,7 @@ end
 !
 ! Calculate Extended Huckel method
 !
-      call calchuckelgcore(coremo,eigen,databasis,datacorebs,datacomp)
+      call calchuckelgcore(coremo,eigen,datajob,databasis,datacorebs,datacomp)
 !
 ! Calculate overlap integrals between core-guess basis and guess bases
 !
@@ -1715,7 +1712,7 @@ end
         enddo 
       enddo 
 !
-      if((scftype == 'UHF').and.(scftype_g == 'UHF')) then
+      if((datajob%scftype == 'UHF').and.(scftype_g == 'UHF')) then
 !
 ! Calculate Cguess-t*Overlap*Ccore
 !
@@ -1913,7 +1910,7 @@ end
 
 
 !----------------------------------------------------------
-  subroutine dftbguess(cmo,overinv,databasis,datacomp)
+  subroutine dftbguess(cmo,overinv,datajob,databasis,datacomp)
 !----------------------------------------------------------
 !
 ! Calculate initial guess MOs by extended Huckel
@@ -1923,8 +1920,9 @@ end
 !
       use modguess, only : coord_g
       use modmolecule, only : coord, natom
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       type(typebasis) :: dataguessbs
