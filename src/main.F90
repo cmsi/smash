@@ -851,7 +851,7 @@ end
         call calcgradrhf(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
-        call calcgradrdft(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
+        call calcgradrdft(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
         call tstamp(1,datacomp)
       elseif(datajob%method == 'MP2') then
         call calcgradrmp2(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
@@ -1036,7 +1036,7 @@ end
       if(datajob%method == 'HARTREE-FOCK') then
         call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
-        call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
+        call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
       else
         if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16," in energy gradient.")') &
@@ -1270,7 +1270,7 @@ end
           call calcgradrhf(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
           call tstamp(1,datacomp)
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
-          call calcgradrdft(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
+          call calcgradrdft(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
           call tstamp(1,datacomp)
         elseif(datajob%method == 'MP2') then
           call calcgradrmp2(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
@@ -1583,7 +1583,7 @@ end
         if(datajob%method == 'HARTREE-FOCK') then
           call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
-          call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
+          call calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
         else
           if(datacomp%master) then
             write(*,'(" Error! This program does not support method= ",a16," in energy gradient.")') &

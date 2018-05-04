@@ -546,7 +546,7 @@ end
 
 
 !----------------------------------------------------------------------------------------------
-  subroutine calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work,nproc,myrank)
+  subroutine calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work,nrad,nleb,nproc,myrank)
 !----------------------------------------------------------------------------------------------
 !
 ! Calculate weights of grid points
@@ -559,10 +559,9 @@ end
 ! Out : ptweight  (weight of grid point)
 !       xyzpt, work (work space)
 !
-      use modjob, only : nrad, nleb
       use modmolecule, only : natom
       implicit none
-      integer,intent(in) :: nproc, myrank
+      integer,intent(in) :: nrad, nleb, nproc, myrank
       integer :: katom, irad, ileb, iatom, jatom, i, icount, ilebstart, ngridatom
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, oneh=1.5D+00
       real(8),intent(in) :: rad(natom), radpt(2,nrad), angpt(4,nleb), atomvec(5,natom,natom)

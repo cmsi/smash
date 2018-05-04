@@ -191,20 +191,20 @@ end
 
 
 !----------------------------------------------------------------------------
-  subroutine calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,databasis,datacomp)
+  subroutine calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datajob,databasis,datacomp)
 !----------------------------------------------------------------------------
 !
 ! Driver of closed-shell DFT energy gradient calculation
 !
       use modmolecule, only : natom, neleca, numatomic, atomrad
-      use modjob, only : nrad, nleb, idftex, idftcor, hfexchange
       use modparam, only : tobohr
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc1, myrank1, mpi_comm1
-      integer :: nao, nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j, iatom
+      integer :: nrad, nleb, nao, nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j, iatom
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmo(databasis%nao*databasis%nao), energymo(databasis%nao)
       real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
@@ -233,6 +233,8 @@ end
 !
 ! Set arrays
 !
+      nrad= datajob%nrad
+      nleb= datajob%nleb
       nao= databasis%nao
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
@@ -266,20 +268,20 @@ end
       do iatom= 1,natom
         rad(iatom)= atomrad(numatomic(iatom))*tobohr
       enddo
-      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,dweight,nproc1,myrank1)
+      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,dweight,nrad,nleb,nproc1,myrank1)
 !
 ! Calculate derivatives of two-electron integrals
 !
       maxdim= maxval(databasis%mtype(1:databasis%nshell))
       maxgraddim= maxfunc(maxdim+1)
       maxdim= maxfunc(maxdim)
-      call grad2eri(egradtmp,egrad,fulldmtrx,fulldmtrx,xint,hfexchange, &
+      call grad2eri(egradtmp,egrad,fulldmtrx,fulldmtrx,xint,datajob%hfexchange, &
 &                   maxdim,maxgraddim,nproc1,myrank1,1,databasis)
 !
 ! Calculate derivatives of exchange-correlation terms 
 !
       call gradrexcor(egradtmp,egrad,cmo,fulldmtrx,atomvec,surface,radpt,angpt,rad,ptweight, &
-&                     xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,work,idftex,idftcor, &
+&                     xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,work,datajob%idftex,datajob%idftcor, &
 &                     nproc1,myrank1,databasis,datacomp)
 !
       call para_allreducer(egradtmp(1,1),egrad(1,1),3*natom,mpi_comm1)
@@ -310,19 +312,19 @@ end
 
 
 !---------------------------------------------------------------------------------------------
-  subroutine calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,databasis,datacomp)
+  subroutine calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,datajob,databasis,datacomp)
 !---------------------------------------------------------------------------------------------
 !
 ! Driver of open-shell DFT energy gradient calculation
 !
       use modmolecule, only : natom, neleca, nelecb, numatomic, atomrad
-      use modjob, only : nrad, nleb, idftex, idftcor, hfexchange
       use modparam, only : tobohr
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
-      integer :: nao, nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j, iatom
+      integer :: nrad, nleb, nao, nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j, iatom
       integer,intent(in) :: nproc1, myrank1, mpi_comm1
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmoa(databasis%nao*databasis%nao), cmob(databasis%nao*databasis%nao)
@@ -353,6 +355,8 @@ end
 !
 ! Set arrays
 !
+      nrad= datajob%nrad
+      nleb= datajob%nleb
       nao= databasis%nao
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
@@ -388,21 +392,21 @@ end
       do iatom= 1,natom
         rad(iatom)= atomrad(numatomic(iatom))*tobohr
       enddo
-      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,dweight,nproc1,myrank1)
+      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,dweight,nrad,nleb,nproc1,myrank1)
 !
 ! Calculate derivatives of two-electron integrals
 !
       maxdim= maxval(databasis%mtype(1:databasis%nshell))
       maxgraddim= maxfunc(maxdim+1)
       maxdim= maxfunc(maxdim)
-      call grad2eri(egradtmp,egrad,fulldmtrx1,fulldmtrx2,xint,hfexchange, &
+      call grad2eri(egradtmp,egrad,fulldmtrx1,fulldmtrx2,xint,datajob%hfexchange, &
 &                   maxdim,maxgraddim,nproc1,myrank1,2,databasis)
 !
 ! Calculate derivatives of exchange-correlation terms 
 !
       call graduexcor(egradtmp,egrad,cmoa,cmob,fulldmtrx1,fulldmtrx2,atomvec,surface,radpt, &
 &                     angpt,rad,ptweight,xyzpt,rsqrd,rr,uvec,vao,vmoa,vmob,dweight, &
-&                     dpa,pa,work,work(neleca*nao+1),idftex,idftcor,nproc1,myrank1,databasis,datacomp)
+&                     dpa,pa,work,work(neleca*nao+1),datajob%idftex,datajob%idftcor,nproc1,myrank1,databasis,datacomp)
 !
       call para_allreducer(egradtmp(1,1),egrad(1,1),3*natom,mpi_comm1)
 !
