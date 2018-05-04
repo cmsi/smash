@@ -82,7 +82,7 @@
 &                          +xyzpt(3,jatom)*xyzpt(3,jatom)
             enddo
 !
-            call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,databasis)
+            call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,datajob%threshex,databasis)
 !
             rhoa= zero
             grhoa(1:3)= zero
@@ -270,7 +270,7 @@ end
 &                          +xyzpt(3,jatom)*xyzpt(3,jatom)
             enddo
 !
-            call griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff,databasis)
+            call griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff,datajob%threshex,databasis)
 !
             rhoa= zero
             grhoa(1:3)= zero
@@ -627,7 +627,7 @@ end
 
 
 !--------------------------------------------------------------
-  subroutine gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,databasis)
+  subroutine gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,threshex,databasis)
 !--------------------------------------------------------------
 !
 ! Calculate closed-shell AO and MO values for a grid point
@@ -638,13 +638,14 @@ end
       type(typebasis),intent(in) :: databasis
       integer :: ii, jj
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom), transcmo(neleca,databasis%nao), aocutoff
+      real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom), transcmo(neleca,databasis%nao)
+      real(8),intent(in) :: aocutoff, threshex
       real(8),intent(out) :: vao(databasis%nao,4), vmo(neleca,4)
 !
 ! Calculate AO values for a grid point
 !
       vao(:,:)= zero
-      call gridao(vao,xyzpt,rsqrd,databasis)
+      call gridao(vao,xyzpt,rsqrd,threshex,databasis)
 !
 ! Calculate MO values for a grid point
 !
@@ -666,7 +667,7 @@ end
 
 
 !-------------------------------------------------------------------------------
-  subroutine griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff,databasis)
+  subroutine griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff,threshex,databasis)
 !-------------------------------------------------------------------------------
 !
 ! Calculate open-shell AO and MO values for a grid point
@@ -678,12 +679,12 @@ end
       integer :: ii, jj
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom), transcmoa(neleca,databasis%nao)
-      real(8),intent(in) :: transcmob(nelecb,databasis%nao), aocutoff
+      real(8),intent(in) :: transcmob(nelecb,databasis%nao), aocutoff, threshex
       real(8),intent(out) :: vao(databasis%nao,4), vmoa(neleca,4), vmob(nelecb,4)
 !
       vao(:,:)= zero
 !
-      call gridao(vao,xyzpt,rsqrd,databasis)
+      call gridao(vao,xyzpt,rsqrd,threshex,databasis)
 !
       vmoa(:,:)= zero
       vmob(:,:)= zero
@@ -710,13 +711,12 @@ end
 
 
 !-------------------------------------
-  subroutine gridao(vao,xyzpt,rsqrd,databasis)
+  subroutine gridao(vao,xyzpt,rsqrd,threshex,databasis)
 !-------------------------------------
 !
 ! Calculate AO values for a grid point
 !
       use modmolecule, only : natom
-      use modjob, only : threshex
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
@@ -758,7 +758,7 @@ end
       real(8),parameter :: faci4=0.90571104663683991D+00 ! sqrt(105/2)/8
       real(8),parameter :: faci5=0.45285552331841995D+00 ! sqrt(105/2)/16
       real(8),parameter :: faci6=0.57282196186948000D+00 ! sqrt(21)/8
-      real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom)
+      real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom), threshex
       real(8),intent(inout) :: vao(databasis%nao,4)
       real(8) :: expval, fac, tmp(28,4), xx, yy, zz, xy, xz, yz
       real(8) :: xyz3(10), xyz4(15), xyz5(21), xyz6(28), xyz7(36)
@@ -2357,15 +2357,16 @@ end
 !-------------------------------------------------------------------------------------------------
   subroutine gradrexcor(egrad,edftgrad,cmo,fulldmtrx,atomvec,surface,radpt,angpt,rad,ptweight, &
 &                       xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,transcmo,idftex,idftcor, &
-&                       nproc,myrank,databasis,datacomp)
+&                       nproc,myrank,datajob,databasis,datacomp)
 !-------------------------------------------------------------------------------------------------
 !
 ! Driver of derivatives for closed-shell exchange-correlation terms
 !
       use modmolecule, only : natom, neleca
       use modjob, only : threshweight, threshrho, threshdfock, threshdftao, nrad, nleb
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: idftex, idftcor, nproc, myrank
@@ -2421,7 +2422,7 @@ end
               uvec(3,jatom)= xyzpt(3,jatom)*tmp
             enddo
 !
-            call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,databasis)
+            call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,datajob%threshex,databasis)
 !
             rhoa= zero
             grhoa(1:3)= zero
@@ -2473,15 +2474,16 @@ end
 !------------------------------------------------------------------------------------------------
   subroutine graduexcor(egrad,edftgrad,cmoa,cmob,fulldmtrx1,fulldmtrx2,atomvec,surface,radpt, &
 &                       angpt,rad,ptweight,xyzpt,rsqrd,rr,uvec,vao,vmoa,vmob,dweight, &
-&                       dpa,pa,transcmoa,transcmob,idftex,idftcor,nproc,myrank,databasis,datacomp)
+&                       dpa,pa,transcmoa,transcmob,idftex,idftcor,nproc,myrank,datajob,databasis,datacomp)
 !------------------------------------------------------------------------------------------------
 !
 ! Driver of derivatives for open-shell exchange-correlation terms
 !
       use modmolecule, only : natom, neleca, nelecb
       use modjob, only : threshweight, threshrho, threshdfock, threshdftao, nrad, nleb
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: idftex, idftcor, nproc, myrank
@@ -2542,7 +2544,7 @@ end
               uvec(3,jatom)= xyzpt(3,jatom)*tmp
             enddo
 !
-            call griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff,databasis)
+            call griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff,datajob%threshex,databasis)
 !
             rhoa= zero
             grhoa(1:3)= zero
