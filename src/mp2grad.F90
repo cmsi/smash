@@ -266,7 +266,6 @@ end
 ! Work: egradtmp(Work space for MP2 energy gradients)
 !
       use modmolecule, only : nmo, natom
-      use modjob, only : maxmp2diis
       use modtype, only : typejob, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
@@ -275,7 +274,7 @@ end
       integer,intent(in) :: nocc, noac, nvir, nvac, ncore, nvfz, maxsize, maxdim, maxgraddim
       integer,intent(in) :: nproc, myrank, mpi_comm, idis(0:nproc-1,8), npass
       integer,intent(in) :: numi, numab, numirecv
-      integer :: nao, nshell, nao2, nao3, nocc2, nocc3, nvir2, numitrans, ipass
+      integer :: maxmp2diis, nao, nshell, nao2, nao3, nocc2, nocc3, nvir2, numitrans, ipass
       integer :: msize, mlsize, istart, mlsize2
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(nmo)
@@ -290,6 +289,7 @@ end
       real(8),allocatable :: pai(:), paiprev(:), pls(:), pmax(:), paifock(:)
       real(8),allocatable :: errdiis(:), paidiis(:), diismtrx(:), work2(:)
 !
+      maxmp2diis= datajob%maxmp2diis
       nao= databasis%nao
       nshell= databasis%nshell
       nao2= nao*nao
@@ -334,7 +334,7 @@ end
         allocate(cmowrk(nao*noac),trint1a(numi*maxdim**3),trint1b(mlsize*nao*numi))
 !
         call mp2gradtrans12(cmo,cmowrk,trint1a,trint1b,trint2,trint2core,xint,istart,mlsize, &
-&                           noac,ncore,maxdim,numitrans,idis,nproc,myrank,databasis)
+&                           noac,ncore,maxdim,numitrans,datajob%cutint2,idis,nproc,myrank,databasis)
 !
         deallocate(cmowrk,trint1a,trint1b)
         call memunset(nao*noac+numi*maxdim**3+mlsize*nao*numi,datacomp)
@@ -433,7 +433,7 @@ end
 
 !-----------------------------------------------------------------------------------------------
   subroutine mp2gradtrans12(cmo,cmowrk,trint1a,trint1b,trint2,trint2core,xint,istart,mlsize, &
-&                           noac,ncore,maxdim,numitrans,idis,nproc,myrank,databasis)
+&                           noac,ncore,maxdim,numitrans,cutint2,idis,nproc,myrank,databasis)
 !-----------------------------------------------------------------------------------------------
 !
 ! Driver of AO intengral generation and first and second integral transformations
@@ -462,7 +462,7 @@ end
       integer :: ii, jj, ish, ksh, ish1, ksh1, jcount, jcount1, mlcount, mlstart, mlshell
       integer :: numshell
       real(8),intent(in) :: cmo(databasis%nao,databasis%nao)
-      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2), cutint2
       real(8),intent(out) :: cmowrk(numitrans,databasis%nao)
       real(8),intent(out) :: trint1a(numitrans,maxdim,maxdim**2)
       real(8),intent(out) :: trint1b(mlsize*numitrans*databasis%nao)
@@ -494,7 +494,7 @@ end
 ! AO integral generation and first integral transformation
 !
           call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,numitrans,jcount1, &
-&                          mlshell,mlsize,nproc,myrank,databasis)
+&                          mlshell,mlsize,cutint2,nproc,myrank,databasis)
 !
 ! Second integral transformation
 !
@@ -518,7 +518,7 @@ end
           endif
           if(mlcount+databasis%mbf(ish)*databasis%mbf(ksh) > mlsize) then
             call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,numitrans,jcount1, &
-&                            mlshell,mlsize,nproc,myrank,databasis)
+&                            mlshell,mlsize,cutint2,nproc,myrank,databasis)
             call transmointgrad2(trint2,trint2core,trint1b,cmo,noac,ncore,databasis%nao, &
 &                                numitrans,mlcount,mlstart,mlsize,idis,nproc,myrank)
             mlstart= mlstart+mlcount

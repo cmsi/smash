@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !---------------------------------------------------------------
-  subroutine calcrmp2(cmo,energymo,xint,nproc,myrank,mpi_comm,databasis,datacomp)
+  subroutine calcrmp2(cmo,energymo,xint,nproc,myrank,mpi_comm,datajob,databasis,datacomp)
 !---------------------------------------------------------------
 !
 ! Driver of restricted MP2 calculation
@@ -23,9 +23,9 @@
 !       xint    (Exchange integral matrix)
 !       
       use modmolecule, only : neleca, nmo, escf, emp2, escsmp2
-      use modjob, only : ncore, nvfz
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
@@ -42,15 +42,15 @@
       emp2= zero
       emp2st(:)= zero
       maxdim= maxval(databasis%mbf(1:nshell))
-      noac= neleca-ncore
-      nvac= nmo-neleca-nvfz
+      noac= neleca-datajob%ncore
+      nvac= nmo-neleca-datajob%nvfz
       noac3= noac*(noac+1)/2
 !
       if(datacomp%master) then
         write(*,'(" ----------------------------------------------")')
         write(*,'("   MP2 calculation ")')
         write(*,'(" ----------------------------------------------")')
-        write(*,'("     Ncore=",i4,",   Nvfz=",i4)')ncore,nvfz
+        write(*,'("     Ncore=",i4,",   Nvfz=",i4)') datajob%ncore, datajob%nvfz
         write(*,'(" ----------------------------------------------")')
         write(*,'("     Number of basis functions         =",i5)')nao
         write(*,'("     Number of basis shells            =",i5)')nshell
@@ -113,8 +113,8 @@
 !
       elseif(numocc3 >= noac3) then
         if(datacomp%master) write(*,'(" == Single pass calculation ==")')
-        call mp2single(emp2st,cmo,energymo,xint,noac,nvac,ncore,maxsize,maxdim,idis, &
-&                      nproc,myrank,mpi_comm,databasis,datacomp)
+        call mp2single(emp2st,cmo,energymo,xint,noac,nvac,datajob%ncore,maxsize,maxdim,idis, &
+&                      nproc,myrank,mpi_comm,datajob,databasis,datacomp)
 !
 ! Multiple pass
 !
@@ -125,8 +125,8 @@
           write(*,'(" == Multiple pass calculation ==")')
           write(*,'("    Number of passes :",i5)')npass
         endif
-        call mp2multi(emp2st,cmo,energymo,xint,noac,nvac,ncore,maxsize,maxdim,idis, &
-&                     npass,numocc3,nproc,myrank,mpi_comm,databasis,datacomp)
+        call mp2multi(emp2st,cmo,energymo,xint,noac,nvac,datajob%ncore,maxsize,maxdim,idis, &
+&                     npass,numocc3,nproc,myrank,mpi_comm,datajob,databasis,datacomp)
       endif
 !
       call para_allreducer(emp2st,emp2stsum,2,mpi_comm)
@@ -172,7 +172,7 @@ end
 
 !---------------------------------------------------------------------------------------
   subroutine mp2single(emp2st,cmo,energymo,xint,noac,nvac,ncore,maxsize,maxdim,idis, &
-&                      nproc,myrank,mpi_comm,databasis,datacomp)
+&                      nproc,myrank,mpi_comm,datajob,databasis,datacomp)
 !---------------------------------------------------------------------------------------
 !
 ! Driver of single pass MP2 energy calculation
@@ -189,8 +189,9 @@ end
 ! Out : emp2st  (Partial MP2 energies)
 !
       use modmolecule, only : neleca, nmo
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: noac, nvac, ncore, maxsize, maxdim, nproc, myrank, mpi_comm
@@ -222,7 +223,7 @@ end
 !
       if(datacomp%master) write(*,'("    Start first and second integral transformations")')
       call mp2trans12(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
-&                     mlsize,noac,maxdim,idis,nproc,myrank,databasis)
+&                     mlsize,noac,maxdim,datajob%cutint2,idis,nproc,myrank,databasis)
 !
       deallocate(cmowrk,trint1a,trint1b)
       call memunset(nao*noac+noac*maxdim**3+mlsize*noac*nao,datacomp)
@@ -247,7 +248,7 @@ end
 
 !---------------------------------------------------------------------------------------
   subroutine mp2multi(emp2st,cmo,energymo,xint,noac,nvac,ncore,maxsize,maxdim,idis, &
-&                     npass,numocc3,nproc,myrank,mpi_comm,databasis,datacomp)
+&                     npass,numocc3,nproc,myrank,mpi_comm,datajob,databasis,datacomp)
 !---------------------------------------------------------------------------------------
 !
 ! Driver of multiple pass MP2 energy calculation
@@ -266,8 +267,9 @@ end
 ! Out : emp2st  (Partial MP2 energies)
 !
       use modmolecule, only : neleca, nmo
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: noac, nvac, ncore, maxsize, maxdim, nproc, myrank, mpi_comm
@@ -340,7 +342,7 @@ end
         if(datacomp%master) &
 &         write(*,'("    Start first and second integral transformations of Pass",i5)')ipass
         call mp2trans12m(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
-&                        mlsize,noac,maxdim,idis,numij,ijindex(1,ipass),nproc,myrank,databasis)
+&                        mlsize,noac,maxdim,datajob%cutint2,idis,numij,ijindex(1,ipass),nproc,myrank,databasis)
 !
         deallocate(cmowrk,trint1a,trint1b)
         call memunset(nao*noac+noac*maxdim**3+mlsize*noac*nao,datacomp)
@@ -367,7 +369,7 @@ end
 
 !---------------------------------------------------------------------
   subroutine mp2trans12(cmoocc,cmowrk,trint1a,trint1b,trint2,xint, &
-&                       mlsize,noac,maxdim,idis,nproc,myrank,databasis)
+&                       mlsize,noac,maxdim,cutint2,idis,nproc,myrank,databasis)
 !---------------------------------------------------------------------
 !
 ! Driver of AO intengral generation and first and second integral transformations
@@ -392,7 +394,7 @@ end
       integer :: jcount1
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmoocc(databasis%nao,noac)
-      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2), cutint2
       real(8),intent(out) :: cmowrk(noac,databasis%nao), trint1a(noac,maxdim,maxdim**2)
       real(8),intent(out) :: trint1b(mlsize*noac*databasis%nao)
       real(8),intent(out) :: trint2(idis(myrank,3)*noac*(noac+1)/2)
@@ -416,7 +418,7 @@ end
 ! AO intengral generation and first integral transformation
 !
           call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,noac,jcount1, &
-&                          mlshell,mlsize,nproc,myrank,databasis)
+&                          mlshell,mlsize,cutint2,nproc,myrank,databasis)
 !
 ! Second integral transformation
 !
@@ -439,7 +441,7 @@ end
           endif
           if(mlcount+databasis%mbf(ish)*databasis%mbf(ksh) > mlsize) then
             call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,noac,jcount1, &
-&                            mlshell,mlsize,nproc,myrank,databasis)
+&                            mlshell,mlsize,cutint2,nproc,myrank,databasis)
             call transmoint2(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,databasis%nao,idis,nproc,myrank)
             mlstart= mlstart+mlcount
             mlshell= 0
@@ -522,7 +524,7 @@ end
 
 !-----------------------------------------------------------------------------------
   subroutine transmoint1(trint1a,trint1b,cmowrk,xint,ish,ksh,maxdim,numi,jcount, &
-&                        mlshell,mlsize,nproc,myrank,databasis)
+&                        mlshell,mlsize,cutint2,nproc,myrank,databasis)
 !-----------------------------------------------------------------------------------
 !
 ! AO intengral generation and first-quarter integral transformation
@@ -539,7 +541,6 @@ end
 ! Work: trint1a (First transformed integrals, [i,s,ml])
 ! Inout : ish,ksh (Basis shell indices)
 !
-      use modjob, only : cutint2
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
@@ -549,7 +550,7 @@ end
       integer :: nbfik, locbfj, locbfl, moi, i, j, k, l, ik, kl, ij, ii, jloc, lloc
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmowrk(numi,databasis%nao)
-      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2), cutint2
       real(8),intent(out) :: trint1a(numi,maxdim,maxdim*maxdim), trint1b(databasis%nao,numi,mlsize)
       real(8) :: twoeri(maxdim,maxdim,maxdim,maxdim)
 !
@@ -852,7 +853,7 @@ end
 
 !-----------------------------------------------------------------------------
   subroutine mp2trans12m(cmoocc,cmowrk,trint1a,trint1b,trint2,xint, &
-&                        mlsize,noac,maxdim,idis,numij,ijindex,nproc,myrank,databasis)
+&                        mlsize,noac,maxdim,cutint2,idis,numij,ijindex,nproc,myrank,databasis)
 !-----------------------------------------------------------------------------
 !
 ! Driver of AO intengral generation and first and second integral transformations
@@ -880,7 +881,7 @@ end
       integer :: jcount1, numi
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmoocc(databasis%nao,noac)
-      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2), cutint2
       real(8),intent(out) :: cmowrk(ijindex(3)-ijindex(1)+1,databasis%nao)
       real(8),intent(out) :: trint1a(noac,maxdim,maxdim**2)
       real(8),intent(out) :: trint1b(mlsize*noac*databasis%nao)
@@ -912,7 +913,7 @@ end
 ! AO intengral generation and first integral transformation
 !
           call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,numi,jcount1, &
-&                          mlshell,mlsize,nproc,myrank,databasis)
+&                          mlshell,mlsize,cutint2,nproc,myrank,databasis)
 !
 ! Second integral transformation
 !
@@ -936,7 +937,7 @@ end
           endif
           if(mlcount+databasis%mbf(ish)*databasis%mbf(ksh) > mlsize) then
             call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,numi,jcount1, &
-&                            mlshell,mlsize,nproc,myrank,databasis)
+&                            mlshell,mlsize,cutint2,nproc,myrank,databasis)
             call transmoint2m(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,databasis%nao,idis, &
 &                             numij,ijindex,nproc,myrank)
             mlstart= mlstart+mlcount

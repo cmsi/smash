@@ -521,7 +521,7 @@ end
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
         call writeeigenvalue(energymo,energymo,1,datacomp)
         call tstamp(1,datacomp)
-        call calcrmp2(cmo,energymo,xint,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
+        call calcrmp2(cmo,energymo,xint,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
         call tstamp(1,datacomp)
       else
         if(datacomp%master) then
