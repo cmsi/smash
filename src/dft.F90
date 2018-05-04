@@ -1585,13 +1585,12 @@ end
 
 
 !-----------------------------------------
-  subroutine gridd2ao(vg2ao,xyzpt,rsqrd,databasis)
+  subroutine gridd2ao(vg2ao,xyzpt,rsqrd,threshex,databasis)
 !-----------------------------------------
 !
 ! Calculate second derivatives of AO values for a grid point
 !
       use modmolecule, only : natom
-      use modjob, only : threshex
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
@@ -1623,7 +1622,7 @@ end
       real(8),parameter :: fach3=0.52291251658379721D+00 ! sqrt(35/2)/8
       real(8),parameter :: fach4=2.56173769148989959D+00 ! sqrt(105)/4
       real(8),parameter :: fach5=0.48412291827592711D+00 ! sqrt(15)/8
-      real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom)
+      real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom), threshex
       real(8),intent(out) :: vg2ao(databasis%nao,6)
       real(8) :: fac, fac2, expval, tmp(21,6), xx, xy, xz, yy, yz, zz
       real(8) :: xyz3(10), xyz4(15), xyz5(21), xyz6(28), xyz7(36)
@@ -2363,7 +2362,6 @@ end
 ! Driver of derivatives for closed-shell exchange-correlation terms
 !
       use modmolecule, only : natom, neleca
-      use modjob, only : threshweight, threshrho, threshdfock, threshdftao, nrad, nleb
       use modtype, only : typejob, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
@@ -2373,8 +2371,8 @@ end
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: cmo(databasis%nao,neleca), fulldmtrx(databasis%nao,databasis%nao)
-      real(8),intent(in) :: atomvec(5,natom,natom), surface(natom,natom), radpt(2,nrad)
-      real(8),intent(in) :: angpt(4,nleb), rad(natom), ptweight(nleb,nrad,natom)
+      real(8),intent(in) :: atomvec(5,natom,natom), surface(natom,natom), radpt(2,datajob%nrad)
+      real(8),intent(in) :: angpt(4,datajob%nleb), rad(natom), ptweight(datajob%nleb,datajob%nrad,natom)
       real(8),intent(out) :: edftgrad(3*natom), xyzpt(3,natom), rsqrd(natom), rr(natom)
       real(8),intent(out) :: uvec(3,natom), vao(databasis%nao,10), vmo(neleca,4), dweight(3*natom)
       real(8),intent(out) :: dpa(3,natom,natom), pa(natom), transcmo(neleca,databasis%nao)
@@ -2385,23 +2383,23 @@ end
       transcmo= transpose(cmo)
 !
       edftgrad(:)= zero
-      ngridatom= nrad*nleb
+      ngridatom= datajob%nrad*datajob%nleb
 !
-      wcutoff= threshweight/(natom*ngridatom)
-      rcutoff= threshrho/(natom*ngridatom)
-      fcutoff= threshdfock/(natom*ngridatom)
-      aocutoff=threshdftao/(natom*ngridatom)
+      wcutoff= datajob%threshweight/(natom*ngridatom)
+      rcutoff= datajob%threshrho/(natom*ngridatom)
+      fcutoff= datajob%threshdfock/(natom*ngridatom)
+      aocutoff=datajob%threshdftao/(natom*ngridatom)
 !
 !$OMP parallel do collapse(2) schedule(dynamic,1) private(icount,ilebstart,radpoint,radweight, &
 !$OMP weight,xgrid,ygrid,zgrid,xyzpt,rsqrd,rr,tmp,uvec,vao,vmo,rhoa,grhoa,sphweight, &
 !$OMP dweight,dpa,pa,excora,ptenergy) reduction(+:edftgrad)
       do iatom= 1,natom
-        do irad= 1,nrad
-          icount=(iatom-1)*ngridatom+(irad-1)*nleb+1+myrank
+        do irad= 1,datajob%nrad
+          icount=(iatom-1)*ngridatom+(irad-1)*datajob%nleb+1+myrank
           ilebstart=mod(icount,nproc)+1
           radpoint= rad(iatom)*radpt(1,irad)
           radweight= rad(iatom)*rad(iatom)*rad(iatom)*radpt(2,irad)
-          do ileb= ilebstart,nleb,nproc
+          do ileb= ilebstart,datajob%nleb,nproc
 !
             weight=ptweight(ileb,irad,iatom)
             if(weight < wcutoff) cycle
@@ -2436,7 +2434,7 @@ end
             grhoa(1)= grhoa(1)*two
             grhoa(2)= grhoa(2)*two
             grhoa(3)= grhoa(3)*two
-            call gridd2ao(vao(1,5),xyzpt,rsqrd,databasis)
+            call gridd2ao(vao(1,5),xyzpt,rsqrd,datajob%threshex,databasis)
 !
 ! Calculate weight derivative
 !
@@ -2480,7 +2478,6 @@ end
 ! Driver of derivatives for open-shell exchange-correlation terms
 !
       use modmolecule, only : natom, neleca, nelecb
-      use modjob, only : threshweight, threshrho, threshdfock, threshdftao, nrad, nleb
       use modtype, only : typejob, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
@@ -2493,7 +2490,7 @@ end
       real(8),intent(in) :: fulldmtrx1(databasis%nao,databasis%nao)
       real(8),intent(in) :: fulldmtrx2(databasis%nao,databasis%nao)
       real(8),intent(in) :: atomvec(5,natom,natom), surface(natom,natom)
-      real(8),intent(in) :: radpt(2,nrad), angpt(4,nleb), rad(natom), ptweight(nleb,nrad,natom)
+      real(8),intent(in) :: radpt(2,datajob%nrad), angpt(4,datajob%nleb), rad(natom), ptweight(datajob%nleb,datajob%nrad,natom)
       real(8),intent(out) :: edftgrad(3*natom), xyzpt(3,natom), rsqrd(natom), rr(natom)
       real(8),intent(out) :: uvec(3,natom), vao(databasis%nao,10), vmoa(neleca,4)
       real(8),intent(out) :: vmob(nelecb,4), dweight(3*natom), dpa(3,natom,natom), pa(natom)
@@ -2507,23 +2504,23 @@ end
       transcmob= transpose(cmob)
 !
       edftgrad(:)= zero
-      ngridatom= nrad*nleb
+      ngridatom= datajob%nrad*datajob%nleb
 !
-      wcutoff= threshweight/(natom*ngridatom)
-      rcutoff= threshrho/(natom*ngridatom)
-      fcutoff= threshdfock/(natom*ngridatom)
-      aocutoff=threshdftao/(natom*ngridatom)
+      wcutoff= datajob%threshweight/(natom*ngridatom)
+      rcutoff= datajob%threshrho/(natom*ngridatom)
+      fcutoff= datajob%threshdfock/(natom*ngridatom)
+      aocutoff=datajob%threshdftao/(natom*ngridatom)
 !
 !$OMP parallel do collapse(2) schedule(dynamic,1) private(icount,ilebstart,radpoint,radweight, &
 !$OMP weight,xgrid,ygrid,zgrid,xyzpt,rsqrd,rr,tmp,uvec,vao,vmoa,vmob,rhoa,rhob,grhoa, &
 !$OMP grhob,sphweight,dweight,dpa,pa,excora,excorb,ptenergy) reduction(+:edftgrad)
       do iatom= 1,natom
-        do irad= 1,nrad
-          icount=(iatom-1)*ngridatom+(irad-1)*nleb+1+myrank
+        do irad= 1,datajob%nrad
+          icount=(iatom-1)*ngridatom+(irad-1)*datajob%nleb+1+myrank
           ilebstart=mod(icount,nproc)+1
           radpoint= rad(iatom)*radpt(1,irad)
           radweight= rad(iatom)*rad(iatom)*rad(iatom)*radpt(2,irad)
-          do ileb= ilebstart,nleb,nproc
+          do ileb= ilebstart,datajob%nleb,nproc
 !
             weight=ptweight(ileb,irad,iatom)
             if(weight < wcutoff) cycle
@@ -2565,7 +2562,7 @@ end
             if((rhoa+rhob) < rcutoff)cycle
             grhoa(1:3)= grhoa(1:3)*two
             grhob(1:3)= grhob(1:3)*two
-            call gridd2ao(vao(1,5),xyzpt,rsqrd,databasis)
+            call gridd2ao(vao(1,5),xyzpt,rsqrd,datajob%threshex,databasis)
 !
 ! Calculate weight derivative
 !
