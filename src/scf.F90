@@ -1093,8 +1093,8 @@ end
 ! Calculate exchange-correlation terms
 !
         call formrfockexcor(fockd,fock,edft,totalelec,cmo,atomvec,radpt,angpt, &
-&                           rad,ptweight,vao,vmo,xyzpt,rsqrd,work,work2,datajob%idftex,datajob%idftcor, &
-&                           datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis)
+&                           rad,ptweight,vao,vmo,xyzpt,rsqrd,work,work2, &
+&                           datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis)
 !
 ! Calculate two-electron integrals
 !
@@ -2216,7 +2216,7 @@ end
 !
         call formufockexcor(fockda,fockdb,focka,edft,totalelec,cmoa,cmob,atomvec,&
 &                           radpt,angpt,rad,ptweight,vao,vmoa,vmob,xyzpt,rsqrd, &
-&                           work,work(neleca*nao+1),work2,datajob%idftex,datajob%idftcor,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis)
+&                           work,work(neleca*nao+1),work2,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis)
 !
 ! Calculate two-electron integrals
 !

@@ -14,8 +14,8 @@
 !
 !---------------------------------------------------------------------------------------------
   subroutine formrfockexcor(fockdsum,fockd,energy,totalelec,cmo,atomvec,radpt,angpt, &
-&                           rad,ptweight,vao,vmo,xyzpt,rsqrd,transcmo,work,idftex,idftcor, &
-&                           nproc,myrank,mpi_comm,databasis)
+&                           rad,ptweight,vao,vmo,xyzpt,rsqrd,transcmo,work, &
+&                           nproc,myrank,mpi_comm,datajob,databasis)
 !---------------------------------------------------------------------------------------------
 !
 ! Driver of DFT Fock matrix formation from exchange-correlation functionals
@@ -33,15 +33,15 @@
 !       vao,vmo,xyzpt,work (work space)
 !
       use modmolecule, only : natom, neleca
-      use modjob, only : threshweight, threshrho, threshdfock, threshdftao, nrad, nleb
-      use modtype, only : typebasis
+      use modtype, only : typejob, typebasis
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
-      integer,intent(in) :: idftex, idftcor, nproc, myrank, mpi_comm
+      integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
-      real(8),intent(in) :: cmo(databasis%nao,neleca), atomvec(5,natom,natom), radpt(2,nrad)
-      real(8),intent(in) :: angpt(4,nleb), rad(natom), ptweight(nleb,nrad,natom)
+      real(8),intent(in) :: cmo(databasis%nao,neleca), atomvec(5,natom,natom), radpt(2,datajob%nrad)
+      real(8),intent(in) :: angpt(4,datajob%nleb), rad(natom), ptweight(datajob%nleb,datajob%nrad,natom)
       real(8),intent(out) :: fockdsum(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: fockd(databasis%nao*(databasis%nao+1)/2), energy, totalelec
       real(8),intent(out) :: vao(databasis%nao,4), vmo(neleca,4), xyzpt(3,natom), rsqrd(natom)
@@ -54,22 +54,22 @@
 !
       energy= zero
       totalelec= zero
-      ngridatom= nrad*nleb
+      ngridatom= datajob%nrad*datajob%nleb
 !
-      wcutoff= threshweight/(natom*ngridatom)
-      rcutoff= threshrho/(natom*ngridatom)
-      fcutoff= threshdfock/(natom*ngridatom)
-      aocutoff=threshdftao/(natom*ngridatom)
+      wcutoff= datajob%threshweight/(natom*ngridatom)
+      rcutoff= datajob%threshrho/(natom*ngridatom)
+      fcutoff= datajob%threshdfock/(natom*ngridatom)
+      aocutoff=datajob%threshdftao/(natom*ngridatom)
 !
 !$OMP parallel do collapse(2) schedule(dynamic,1) private(icount,ilebstart,xyzpt, &
 !$OMP rsqrd,weight,rhoa,grhoa,excora,radpoint,vao,vmo,work) &
 !$OMP reduction(+:energy,fockd,totalelec)
       do iatom= 1,natom
-        do irad= 1,nrad
-          icount=(iatom-1)*ngridatom+(irad-1)*nleb+1+myrank
+        do irad= 1,datajob%nrad
+          icount=(iatom-1)*ngridatom+(irad-1)*datajob%nleb+1+myrank
           ilebstart=mod(icount,nproc)+1
           radpoint= rad(iatom)*radpt(1,irad)
-          do ileb= ilebstart,nleb,nproc
+          do ileb= ilebstart,datajob%nleb,nproc
 !
             weight=ptweight(ileb,irad,iatom)
             if(weight < wcutoff) cycle
@@ -96,7 +96,7 @@
             grhoa(1)= grhoa(1)*two
             grhoa(2)= grhoa(2)*two
             grhoa(3)= grhoa(3)*two
-            call calcexcor(excora,excora,energy,rhoa,rhoa,grhoa,grhoa,weight,idftex,idftcor,1)
+            call calcexcor(excora,excora,energy,rhoa,rhoa,grhoa,grhoa,weight,datajob%idftex,datajob%idftcor,1)
             call fockexcor(fockd,excora,vao,vao(1,2),work,weight,databasis%nao,fcutoff)
             totalelec=totalelec+weight*rhoa*two
           enddo
@@ -204,7 +204,7 @@ end
 !-------------------------------------------------------------------------------------------
   subroutine formufockexcor(fockd1,fockd2,fockd3,energy,totalelec,cmoa,cmob,atomvec, &
 &                           radpt,angpt,rad,ptweight,vao,vmoa,vmob,xyzpt,rsqrd, &
-&                           transcmoa,transcmob,work,idftex,idftcor,nproc,myrank,mpi_comm,databasis)
+&                           transcmoa,transcmob,work,nproc,myrank,mpi_comm,datajob,databasis)
 !-------------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted DFT Fock matrix formation from exchange-correlation functionals
@@ -216,16 +216,16 @@ end
 !       fock3 (Work space)
 !
       use modmolecule, only : natom, neleca, nelecb
-      use modjob, only : threshweight, threshrho, threshdfock, threshdftao, nrad, nleb
-      use modtype, only : typebasis
+      use modtype, only : typejob, typebasis
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
-      integer,intent(in) :: idftex, idftcor, nproc, myrank, mpi_comm
+      integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: cmoa(databasis%nao,neleca), cmob(databasis%nao,nelecb)
-      real(8),intent(in) :: atomvec(5,natom,natom), radpt(2,nrad), angpt(4,nleb)
-      real(8),intent(in) :: rad(natom), ptweight(nleb,nrad,natom)
+      real(8),intent(in) :: atomvec(5,natom,natom), radpt(2,datajob%nrad), angpt(4,datajob%nleb)
+      real(8),intent(in) :: rad(natom), ptweight(datajob%nleb,datajob%nrad,natom)
       real(8),intent(out) :: fockd1(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: fockd2(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: fockd3(databasis%nao*(databasis%nao+1)/2)
@@ -243,22 +243,22 @@ end
 !
       energy= zero
       totalelec= zero
-      ngridatom= nrad*nleb
+      ngridatom= datajob%nrad*datajob%nleb
 !
-      wcutoff= threshweight/(natom*ngridatom)
-      rcutoff= threshrho/(natom*ngridatom)
-      fcutoff= threshdfock/(natom*ngridatom)
-      aocutoff=threshdftao/(natom*ngridatom)
+      wcutoff= datajob%threshweight/(natom*ngridatom)
+      rcutoff= datajob%threshrho/(natom*ngridatom)
+      fcutoff= datajob%threshdfock/(natom*ngridatom)
+      aocutoff=datajob%threshdftao/(natom*ngridatom)
 !
 !$OMP parallel do collapse(2) schedule(dynamic,1) private(icount,ilebstart,xyzpt, &
 !$OMP rsqrd,weight,rhoa,rhob,grhoa,grhob,excora,excorb,radpoint,vao,vmoa,vmob,work) &
 !$OMP reduction(+:energy,fockd2,fockd3,totalelec)
       do iatom= 1,natom
-        do irad= 1,nrad
-          icount=(iatom-1)*ngridatom+(irad-1)*nleb+1+myrank
+        do irad= 1,datajob%nrad
+          icount=(iatom-1)*ngridatom+(irad-1)*datajob%nleb+1+myrank
           ilebstart=mod(icount,nproc)+1
           radpoint= rad(iatom)*radpt(1,irad)
-          do ileb= ilebstart,nleb,nproc
+          do ileb= ilebstart,datajob%nleb,nproc
 !
             weight=ptweight(ileb,irad,iatom)
             if(weight < wcutoff) cycle
@@ -295,7 +295,7 @@ end
             grhob(1)= grhob(1)*two
             grhob(2)= grhob(2)*two
             grhob(3)= grhob(3)*two
-            call calcexcor(excora,excorb,energy,rhoa,rhob,grhoa,grhob,weight,idftex,idftcor,2)
+            call calcexcor(excora,excorb,energy,rhoa,rhob,grhoa,grhob,weight,datajob%idftex,datajob%idftcor,2)
             call ufockexcor(fockd2,fockd3,excora,excorb,vao,vao(1,2),work,weight,databasis%nao,fcutoff)
             totalelec=totalelec+weight*(rhoa+rhob)
           enddo
