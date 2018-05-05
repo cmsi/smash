@@ -1292,23 +1292,23 @@ end
 
 
 !--------------------------------------------------
-  subroutine writeeigenvalue(eigena,eigenb,itype,datacomp)
+  subroutine writeeigenvalue(eigena,eigenb,itype,datajob,datacomp)
 !--------------------------------------------------
 !
 ! Write eigenvalues
 !
       use modmolecule, only : nmo, neleca, nelecb
-      use modjob, only : iprint
-      use modtype, only : typecomp
+      use modtype, only : typejob, typecomp
       implicit none
-      type(typecomp),intent(inout) :: datacomp
+      type(typejob),intent(in) :: datajob
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: itype
       integer :: imo
       real(8),intent(in) :: eigena(nmo), eigenb(nmo)
 !
 ! Closed-shell
 !
-      if(datacomp%master.and.(iprint >= 1)) then
+      if(datacomp%master.and.(datajob%iprint >= 1)) then
         if(itype == 1) then
           write(*,'(1x,80("-"))')
           write(*,'("   Eigenvalues (Hartree)")')
