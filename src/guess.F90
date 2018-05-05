@@ -1501,7 +1501,7 @@ end
 !
 ! Read guess basis functions and MOs from checkpoint file
 !
-      call readcheckguess(cmoa_g,cmob_g,scftype_g,nmo_g,dataguessbs,datacomp)
+      call readcheckguess(datajob%scftype,cmoa_g,cmob_g,scftype_g,nmo_g,dataguessbs,datacomp)
 !
 ! Orthonormalize guess basis functions
 !

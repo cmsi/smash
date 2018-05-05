@@ -1084,7 +1084,7 @@ end
 
 
 !--------------------------------------------------------------
-  subroutine readcheckguess(cmoa_g,cmob_g,scftype_g,nmo_g,dataguessbs,datacomp)
+  subroutine readcheckguess(scftype,cmoa_g,cmob_g,scftype_g,nmo_g,dataguessbs,datacomp)
 !--------------------------------------------------------------
 !
 ! Read guess basis functions and MOs from checkpoint file
@@ -1092,7 +1092,6 @@ end
       use modparam, only : icheck
       use modguess, only : coord_g
       use modmolecule, only : natom
-      use modjob, only : scftype
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(inout) :: dataguessbs
@@ -1101,7 +1100,7 @@ end
       integer :: ii, jj
       real(8),intent(out) :: cmoa_g(dataguessbs%nao,dataguessbs%nao)
       real(8),intent(out) :: cmob_g(dataguessbs%nao,dataguessbs%nao)
-      character(len=16),intent(in) :: scftype_g
+      character(len=16),intent(in) :: scftype, scftype_g
       character(len=16) :: checkversion
 !
       if(datacomp%master) then
