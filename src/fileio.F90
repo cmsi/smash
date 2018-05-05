@@ -183,14 +183,14 @@
 !
       if(check /= '') call opencheckfile(datacomp)
 !
-! Read geometry data
-!
-      call readatom(datacomp)
-!
       if(runtype == 'OPT') runtype='OPTIMIZE'
       if(method == 'HF') method='HARTREE-FOCK'
       if(ecp =='NONE') ecp = ''
       if(ecp /= '') flagecp=.true.
+!
+! Read geometry data
+!
+      call readatom(datacomp,runtype,bohr,cartesian)
 !
       if(datacomp%master) then
         chararray(1)= method
@@ -640,19 +640,21 @@ end
 
 
 !----------------------
-  subroutine readatom(datacomp)
+  subroutine readatom(datacomp,runtype,bohr,cartesian)
 !----------------------
 !
 ! Read atomic data
 !
       use modmolecule, only : numatomic, natom, coord, znuc
       use modparam, only : mxatom, tobohr, maxline, input, icheck
-      use modjob, only : runtype, bohr, cartesian
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
       integer :: ii, jj, minatomic
       real(8),parameter :: zero=0.0D+00
+      logical,intent(in) :: bohr
+      logical,intent(inout) :: cartesian
+      character(len=16),intent(in) :: runtype
       character(len=16) :: cdummy
       character(len=254) :: line
       character(len=3) :: atomin(mxatom)
