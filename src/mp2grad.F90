@@ -333,7 +333,7 @@ end
         allocate(cmowrk(nao*noac),trint1a(numi*maxdim**3),trint1b(mlsize*nao*numi))
 !
         call mp2gradtrans12(cmo,cmowrk,trint1a,trint1b,trint2,trint2core,xint,istart,mlsize, &
-&                           noac,ncore,maxdim,numitrans,datajob%cutint2,idis,nproc,myrank,databasis)
+&                           noac,ncore,maxdim,numitrans,datajob%cutint2,idis,nproc,myrank,datajob,databasis)
 !
         deallocate(cmowrk,trint1a,trint1b)
         call memunset(nao*noac+numi*maxdim**3+mlsize*nao*numi,datacomp)
@@ -432,7 +432,7 @@ end
 
 !-----------------------------------------------------------------------------------------------
   subroutine mp2gradtrans12(cmo,cmowrk,trint1a,trint1b,trint2,trint2core,xint,istart,mlsize, &
-&                           noac,ncore,maxdim,numitrans,cutint2,idis,nproc,myrank,databasis)
+&                           noac,ncore,maxdim,numitrans,cutint2,idis,nproc,myrank,datajob,databasis)
 !-----------------------------------------------------------------------------------------------
 !
 ! Driver of AO intengral generation and first and second integral transformations
@@ -453,8 +453,9 @@ end
 !       trint1a  (First transformed integrals)
 !       trint1b  (First transformed integrals)
 !
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: istart, mlsize, noac, ncore, maxdim, numitrans
       integer,intent(in) :: nproc, myrank, idis(0:nproc-1,8)
@@ -493,7 +494,7 @@ end
 ! AO integral generation and first integral transformation
 !
           call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,numitrans,jcount1, &
-&                          mlshell,mlsize,cutint2,nproc,myrank,databasis)
+&                          mlshell,mlsize,cutint2,nproc,myrank,datajob,databasis)
 !
 ! Second integral transformation
 !
@@ -517,7 +518,7 @@ end
           endif
           if(mlcount+databasis%mbf(ish)*databasis%mbf(ksh) > mlsize) then
             call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,numitrans,jcount1, &
-&                            mlshell,mlsize,cutint2,nproc,myrank,databasis)
+&                            mlshell,mlsize,cutint2,nproc,myrank,datajob,databasis)
             call transmointgrad2(trint2,trint2core,trint1b,cmo,noac,ncore,databasis%nao, &
 &                                numitrans,mlcount,mlstart,mlsize,idis,nproc,myrank)
             mlstart= mlstart+mlcount
@@ -1434,7 +1435,7 @@ end
 !
 ! Calculate two-electron integrals and Fock-like matrix
 !
-        call formrfock(paifock,work1,pls,pmax,xint,maxdim,datajob%cutint2,nproc,myrank,mpi_comm,databasis)
+        call formrfock(paifock,work1,pls,pmax,xint,maxdim,datajob%cutint2,nproc,myrank,mpi_comm,datajob,databasis)
 !
 ! Transform Fock-like matrix to MO basis
 !
@@ -1627,7 +1628,7 @@ end
 !
 ! Calculate two-electron integrals and Fock-like matrix
 !
-      call formrfock(pmnfock,work1,pmn2,pmax,xint,maxdim,datajob%cutint2,nproc,myrank,mpi_comm,databasis)
+      call formrfock(pmnfock,work1,pmn2,pmax,xint,maxdim,datajob%cutint2,nproc,myrank,mpi_comm,datajob,databasis)
 !
 ! Calculate Wij[III]
 !
@@ -1840,7 +1841,7 @@ end
 !
             xijkl= xint(ij)*xint(kl)
             if(xijkl < datajob%cutint2) cycle
-            call calc2eri(dtwoeri,ish,jsh,ksh,lsh,maxdim,databasis)
+            call calc2eri(dtwoeri,ish,jsh,ksh,lsh,maxdim,datajob%threshex,databasis)
 !
             tmax= zero
             do ii= 1,nbfi
@@ -1979,7 +1980,7 @@ end
 !
             xijkl= xint(ij)*xint(kl)
             if(xijkl < datajob%cutint2) cycle
-            call calc2eri(dtwoeri,ish,jsh,ksh,lsh,maxdim,databasis)
+            call calc2eri(dtwoeri,ish,jsh,ksh,lsh,maxdim,datajob%threshex,databasis)
 !
             tmax= zero
             do ii= 1,nbfi

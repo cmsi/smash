@@ -1780,13 +1780,14 @@ end
 !--------------------------------------------------------------------------------------------
   subroutine rhfqc(fock,cmo,qcrmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
 &                  qcwork,work,cutint2,hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,maxqcdiag, &
-&                  maxqcdiagsub,threshqc,databasis,datacomp)
+&                  maxqcdiagsub,threshqc,datajob,databasis,datacomp)
 !--------------------------------------------------------------------------------------------
 !
 ! Driver of Davidson diagonalization for quadratically convergent of RHF
 !
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(inout) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nao, nmo, nocc, nvir, nshell, maxdim, maxqcdiag, maxqcdiagsub
@@ -1845,7 +1846,7 @@ end
         call calcqcrmn(qcwork,qcvec,cmo,work,nao,nocc,nvir,itdav,maxqcdiagsub)
         call calcrdmax(qcwork,qcrmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
         call formrdftfock(qcgmn,work,qcwork,qcrmax,xint,maxdim,cutint2,hfexchange, &
-&                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis)
+&                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis)
 !
 ! Add two-electron integral contribution
 !
@@ -2086,13 +2087,14 @@ end
   subroutine uhfqc(focka,fockb,cmoa,cmob,qcrmax,qcgmna,qcgmnb,qcvec, &
 &                  qcmat,qcmatsave,qceigen,overlap,xint, &
 &                  qcworka,qcworkb,work,cutint2,hfexchange,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
-&                  maxdim,maxqcdiag,maxqcdiagsub,threshqc,databasis,datacomp)
+&                  maxdim,maxqcdiag,maxqcdiagsub,threshqc,datajob,databasis,datacomp)
 !---------------------------------------------------------------------------------------------
 !
 ! Driver of Davidson diagonalization for quadratically convergent of UHF
 !
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nao, nmo, nocca, noccb, nvira, nvirb, nshell, maxdim, maxqcdiag
@@ -2171,7 +2173,7 @@ end
 &                       itdav,maxqcdiagsub)
         call calcudmax(qcworka,qcworkb,qcrmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
         call calcqcugmn(qcgmna,qcgmnb,work,qcworka,qcworkb,qcrmax,xint,cutint2,hfexchange,maxdim, &
-&                       nao,nshell,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis)
+&                       nao,nshell,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis)
 !
 ! Add two-electron integral contribution
 !
@@ -2464,13 +2466,14 @@ end
 
 !---------------------------------------------------------------------------------
   subroutine calcqcugmn(gmn1,gmn2,gmn3,rmna,rmnb,rmtrx,xint,cutint2,hfexchange,maxdim, &
-&                       nao,nshell,nproc,myrank,mpi_comm,databasis)
+&                       nao,nshell,nproc,myrank,mpi_comm,datajob,databasis)
 !---------------------------------------------------------------------------------
 !
 ! Driver of Gmn matrix formation from two-electron intgrals
 !
-      use modtype, only : typebasis
+      use modtype, only : typejob, typebasis
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nshell, nao, maxdim, nproc, myrank, mpi_comm
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
@@ -2547,7 +2550,7 @@ end
             endif
           enddo
           do lsh= 1,lnum
-            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,databasis)
+            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,datajob%threshex,databasis)
             call ugmneri(gmn2,gmn3,rmna,rmnb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,cutint2,hfexchange,databasis)
           enddo
         enddo

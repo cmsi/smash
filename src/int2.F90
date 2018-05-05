@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !-----------------------------------------------------
-  subroutine calc2eri(twoeri,ish,jsh,ksh,lsh,maxdim,databasis)
+  subroutine calc2eri(twoeri,ish,jsh,ksh,lsh,maxdim,threshex,databasis)
 !-----------------------------------------------------
 !
 ! Driver of two-electron repulsion integrals 
@@ -25,13 +25,13 @@
 !
       use modparam, only : mxprsh
       use modmolecule, only : coord
-      use modjob, only : threshex
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(inout) :: databasis
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nangijkl(4), nprimijkl(4), nbfijkl(4)
       integer :: iloc, jloc, kloc, lloc, i, j, k, l
+      real(8),intent(in) :: threshex
       real(8),intent(out) :: twoeri(maxdim,maxdim,maxdim,maxdim)
       real(8) :: xyzijkl(3,4), exijkl(mxprsh,4), coijkl(mxprsh,4)
 !
@@ -84,7 +84,7 @@ end
 
 
 !-----------------------------------------------------------------------
-  subroutine calcschwarzeri(xint,xinttmp,maxdim,nproc,myrank,mpi_comm,databasis)
+  subroutine calcschwarzeri(xint,xinttmp,maxdim,nproc,myrank,mpi_comm,datajob,databasis)
 !-----------------------------------------------------------------------
 !
 ! Driver of (ij|ij) integral calculation
@@ -92,9 +92,10 @@ end
 ! Out : xint    ((ij|ij) integrals for Schwarz screening)
 !       xinttmp (Work array)
 !
-      use modtype, only : typebasis
+      use modtype, only : typejob, typebasis
       implicit none
-      type(typebasis),intent(inout) :: databasis
+      type(typejob),intent(in) :: datajob
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ish, jsh, nbfi, nbfj, i, j, ii, ij
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, two=2.0D+00
@@ -111,7 +112,7 @@ end
 !$OMP do
         do jsh = 1,ish
           nbfj = databasis%mbf(jsh)
-          call calc2eri(twoeri,ish,jsh,ish,jsh,maxdim,databasis)
+          call calc2eri(twoeri,ish,jsh,ish,jsh,maxdim,datajob%threshex,databasis)
           xintmax= zero
           do i= 1,nbfi
             do j= 1,nbfj

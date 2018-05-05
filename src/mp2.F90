@@ -223,7 +223,7 @@ end
 !
       if(datacomp%master) write(*,'("    Start first and second integral transformations")')
       call mp2trans12(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
-&                     mlsize,noac,maxdim,datajob%cutint2,idis,nproc,myrank,databasis)
+&                     mlsize,noac,maxdim,datajob%cutint2,idis,nproc,myrank,datajob,databasis)
 !
       deallocate(cmowrk,trint1a,trint1b)
       call memunset(nao*noac+noac*maxdim**3+mlsize*noac*nao,datacomp)
@@ -342,7 +342,7 @@ end
         if(datacomp%master) &
 &         write(*,'("    Start first and second integral transformations of Pass",i5)')ipass
         call mp2trans12m(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
-&                        mlsize,noac,maxdim,datajob%cutint2,idis,numij,ijindex(1,ipass),nproc,myrank,databasis)
+&                        mlsize,noac,maxdim,datajob%cutint2,idis,numij,ijindex(1,ipass),nproc,myrank,datajob,databasis)
 !
         deallocate(cmowrk,trint1a,trint1b)
         call memunset(nao*noac+noac*maxdim**3+mlsize*noac*nao,datacomp)
@@ -369,7 +369,7 @@ end
 
 !---------------------------------------------------------------------
   subroutine mp2trans12(cmoocc,cmowrk,trint1a,trint1b,trint2,xint, &
-&                       mlsize,noac,maxdim,cutint2,idis,nproc,myrank,databasis)
+&                       mlsize,noac,maxdim,cutint2,idis,nproc,myrank,datajob,databasis)
 !---------------------------------------------------------------------
 !
 ! Driver of AO intengral generation and first and second integral transformations
@@ -386,8 +386,9 @@ end
 !       trint1a (First transformed integrals)
 !       trint1b (First transformed integrals)
 !       
-      use modtype, only : typebasis
+      use modtype, only : typejob, typebasis
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, mlsize, noac, nproc, myrank, idis(0:nproc-1,4)
       integer :: ish, ksh, ish1, ksh1, mlcount, mlstart, mlshell, numshell, ii, jcount
@@ -418,7 +419,7 @@ end
 ! AO intengral generation and first integral transformation
 !
           call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,noac,jcount1, &
-&                          mlshell,mlsize,cutint2,nproc,myrank,databasis)
+&                          mlshell,mlsize,cutint2,nproc,myrank,datajob,databasis)
 !
 ! Second integral transformation
 !
@@ -441,7 +442,7 @@ end
           endif
           if(mlcount+databasis%mbf(ish)*databasis%mbf(ksh) > mlsize) then
             call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,noac,jcount1, &
-&                            mlshell,mlsize,cutint2,nproc,myrank,databasis)
+&                            mlshell,mlsize,cutint2,nproc,myrank,datajob,databasis)
             call transmoint2(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,databasis%nao,idis,nproc,myrank)
             mlstart= mlstart+mlcount
             mlshell= 0
@@ -524,7 +525,7 @@ end
 
 !-----------------------------------------------------------------------------------
   subroutine transmoint1(trint1a,trint1b,cmowrk,xint,ish,ksh,maxdim,numi,jcount, &
-&                        mlshell,mlsize,cutint2,nproc,myrank,databasis)
+&                        mlshell,mlsize,cutint2,nproc,myrank,datajob,databasis)
 !-----------------------------------------------------------------------------------
 !
 ! AO intengral generation and first-quarter integral transformation
@@ -541,8 +542,9 @@ end
 ! Work: trint1a (First transformed integrals, [i,s,ml])
 ! Inout : ish,ksh (Basis shell indices)
 !
-      use modtype, only : typebasis
+      use modtype, only : typejob, typebasis
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, numi, mlshell, mlsize, nproc, myrank
       integer,intent(inout) :: ish, ksh, jcount
@@ -614,7 +616,7 @@ end
 ! AO integral calculation
 !
             if(xint(ij)*xint(kl) < cutint2) cycle
-            call calc2eri(twoeri,ksh,lsh,ish,jsh,maxdim,databasis)
+            call calc2eri(twoeri,ksh,lsh,ish,jsh,maxdim,datajob%threshex,databasis)
 !
 ! First integral transformation
 !
@@ -853,7 +855,7 @@ end
 
 !-----------------------------------------------------------------------------
   subroutine mp2trans12m(cmoocc,cmowrk,trint1a,trint1b,trint2,xint, &
-&                        mlsize,noac,maxdim,cutint2,idis,numij,ijindex,nproc,myrank,databasis)
+&                        mlsize,noac,maxdim,cutint2,idis,numij,ijindex,nproc,myrank,datajob,databasis)
 !-----------------------------------------------------------------------------
 !
 ! Driver of AO intengral generation and first and second integral transformations
@@ -872,8 +874,9 @@ end
 !       trint1a (First transformed integrals)
 !       trint1b (First transformed integrals)
 !       
-      use modtype, only : typebasis
+      use modtype, only : typejob, typebasis
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, mlsize, noac, nproc, myrank, idis(0:nproc-1,4)
       integer,intent(in) :: numij, ijindex(4)
@@ -913,7 +916,7 @@ end
 ! AO intengral generation and first integral transformation
 !
           call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,numi,jcount1, &
-&                          mlshell,mlsize,cutint2,nproc,myrank,databasis)
+&                          mlshell,mlsize,cutint2,nproc,myrank,datajob,databasis)
 !
 ! Second integral transformation
 !
