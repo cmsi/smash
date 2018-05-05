@@ -134,16 +134,16 @@ end
 
 
 !---------------------------
-  subroutine opencheckfile(datacomp)
+  subroutine opencheckfile(check,datacomp)
 !---------------------------
 !
 ! Open checkpoint file
 !
       use modparam, only : icheck
-      use modjob, only : check
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
+      character(len=64),intent(in) :: check
 !
       if(datacomp%master) then
         open(unit=icheck,file=check,form='unformatted',status='unknown')

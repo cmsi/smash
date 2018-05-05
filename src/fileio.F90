@@ -181,7 +181,7 @@
 !
 ! Open checkpoint file
 !
-      if(check /= '') call opencheckfile(datacomp)
+      if(check /= '') call opencheckfile(check,datacomp)
 !
       if(runtype == 'OPT') runtype='OPTIMIZE'
       if(method == 'HF') method='HARTREE-FOCK'
