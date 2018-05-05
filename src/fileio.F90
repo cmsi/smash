@@ -1513,16 +1513,16 @@ end
 
 
 !---------------------------------------------------------------------
-  subroutine writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,databasis)
+  subroutine writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,databasis)
 !---------------------------------------------------------------------
 !
 ! Write checkpoint file
 !
       use modparam, only : icheck
       use modmolecule, only : numatomic, natom, coord, nmo, neleca, nelecb, charge, multi, znuc
-      use modjob, only : method, runtype, scftype, version, flagecp
-      use modtype, only : typebasis
+      use modtype, only : typejob, typebasis
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       integer :: ii, jj
       real(8),intent(in) :: cmoa(databasis%nao,databasis%nao)
@@ -1532,9 +1532,9 @@ end
       character(len=16) :: datatype
 !
       rewind(icheck)
-      write(icheck) version
-      write(icheck) scftype, natom, databasis%nao, nmo, databasis%nshell, databasis%nprim, neleca, nelecb,  &
-&                   method, runtype, charge, multi, flagecp
+      write(icheck) datajob%version
+      write(icheck) datajob%scftype, natom, databasis%nao, nmo, databasis%nshell, databasis%nprim, neleca, nelecb,  &
+&                   datajob%method, datajob%runtype, charge, multi, datajob%flagecp
 !
       datatype= 'numatomic'
       write(icheck) datatype
@@ -1580,7 +1580,7 @@ end
       write(icheck) datatype
       write(icheck) (databasis%mtype(ii),ii=1,databasis%nshell)
 !
-      if(scftype == 'RHF') then
+      if(datajob%scftype == 'RHF') then
         datatype= 'cmo'
         write(icheck) datatype
         write(icheck)((cmoa(jj,ii),jj=1,databasis%nao),ii=1,nmo)
@@ -1592,7 +1592,7 @@ end
         datatype= 'energymo'
         write(icheck) datatype
         write(icheck) (energymoa(ii),ii=1,nmo)
-      elseif(scftype == 'UHF') then
+      elseif(datajob%scftype == 'UHF') then
         datatype= 'cmoa'
         write(icheck) datatype
         write(icheck)((cmoa(jj,ii),jj=1,databasis%nao),ii=1,nmo)
