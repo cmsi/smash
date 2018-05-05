@@ -97,7 +97,7 @@
             enddo
           case('GEN')
             call readbasis(atombasis,locgenshell,ngenshell,datagenbasis,datacomp)
-            call setgenbasis(atombasis,locgenshell,ngenshell,ishell,databasis,datagenbasis)
+            call setgenbasis(atombasis,locgenshell,ngenshell,ishell,datajob%flagecp,databasis,datagenbasis)
           case('CHECK')
             call setcheckbasis(databasis)
             ishell= databasis%nshell
@@ -202,14 +202,13 @@ end
 
 
 !---------------------------------
-  subroutine setgenbasis(atombasis,locgenshell,ngenshell,ishell,databasis,datagenbasis)
+  subroutine setgenbasis(atombasis,locgenshell,ngenshell,ishell,flagecp,databasis,datagenbasis)
 !---------------------------------
 !
 ! Driver of setting basis functions from input file
 ! This routine must be called only from master node.
 !
       use modmolecule, only : natom, numatomic
-      use modjob, only : flagecp
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(inout) :: databasis
@@ -228,6 +227,7 @@ end
 &       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
 &       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
+      logical,intent(in) :: flagecp
 !
       do iatom= 1,natom
         nn= numatomic(iatom)

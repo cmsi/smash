@@ -652,8 +652,6 @@ end
       type(typecomp),intent(inout) :: datacomp
       integer :: ii, jj, minatomic
       real(8),parameter :: zero=0.0D+00
-      logical,intent(in) :: bohr
-      logical,intent(inout) :: cartesian
       character(len=16),intent(in) :: runtype
       character(len=16) :: cdummy
       character(len=254) :: line
@@ -678,6 +676,8 @@ end
 &       '76 ','77 ','78 ','79 ','80 ','81 ','82 ','83 ','84 ','85 ','86 ','87 ','88 ','89 ','90 ',&
 &       '91 ','92 ','93 ','94 ','95 ','96 ','97 ','98 ','99 ','100','101','102','103','104','105',&
 &       '106','107','108','109','110','111','112'/)
+      logical,intent(in) :: bohr
+      logical,intent(inout) :: cartesian
 !
       if(datacomp%master) then
         rewind(input)
