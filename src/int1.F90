@@ -1917,7 +1917,7 @@ end
 
 
 !------------------------------------------------------------------------
-  subroutine calcmatdipole(dipmat,work,dipcenter,nproc,myrank,mpi_comm,databasis)
+  subroutine calcmatdipole(dipmat,work,dipcenter,nproc,myrank,mpi_comm,datajob,databasis)
 !------------------------------------------------------------------------
 !
 ! Driver of dipole moment matrix calculation
@@ -1926,8 +1926,9 @@ end
 ! Out : dipmat    (One electron Hamiltonian matrix)
 !       work      (Overlap integral matrix)
 !
-      use modtype, only : typebasis
+      use modtype, only : typejob, typebasis
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh, num, maxfunc(0:6), maxbasis, maxdim
@@ -1947,7 +1948,7 @@ end
       do ish= databasis%nshell-myrank,1,-nproc
 !$OMP do
         do jsh= 1,ish
-          call calcintdipole(work,dipcenter,ish,jsh,maxdim,databasis)
+          call calcintdipole(work,dipcenter,ish,jsh,maxdim,datajob%threshex,databasis)
         enddo
 !$OMP enddo
       enddo
@@ -1960,21 +1961,20 @@ end
 
 
 !----------------------------------------------------------
-  subroutine calcintdipole(dipmat,dipcenter,ish,jsh,len1,databasis)
+  subroutine calcintdipole(dipmat,dipcenter,ish,jsh,len1,threshex,databasis)
 !----------------------------------------------------------
 !
 ! Driver of dipole moment integrals (j|r|i)
 !
       use modparam, only : mxprsh
       use modmolecule, only : coord
-      use modjob, only : threshex
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, len1
       integer :: nangij(2), nprimij(2), nbfij(2), iatom, jatom
       integer :: iloc, jloc, ilocbf, jlocbf, iprim, jprim, i, j, ii, ij, maxj
-      real(8),intent(in) :: dipcenter(3)
+      real(8),intent(in) :: dipcenter(3), threshex
       real(8),intent(inout) :: dipmat((databasis%nao*(databasis%nao+1))/2,3)
       real(8) :: exij(mxprsh,2), coij(mxprsh,2), coordijk(3,3)
       real(8) :: dipint(len1,len1,3)
@@ -2146,7 +2146,7 @@ end
 
 
 !-------------------------------------------------------------------------------------------
-  subroutine calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm,databasis)
+  subroutine calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm,datajob,databasis)
 !-------------------------------------------------------------------------------------------
 !
 ! Driver of dipole, quadrupole, and octupole moment matrix calculation
@@ -2157,8 +2157,9 @@ end
 !       octpmat   (Octupole moment matrix)
 !       work      (Working matrix)
 !
-      use modtype, only : typebasis
+      use modtype, only : typejob, typebasis
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh, maxfunc(0:6), maxbasis, maxdim
@@ -2181,7 +2182,7 @@ end
       do ish= databasis%nshell-myrank,1,-nproc
 !$OMP do
         do jsh= 1,ish
-          call calcintoctupole(quadpmat,octpmat,work,dipcenter,ish,jsh,maxdim,databasis)
+          call calcintoctupole(quadpmat,octpmat,work,dipcenter,ish,jsh,maxdim,datajob%threshex,databasis)
         enddo
 !$OMP enddo
       enddo
@@ -2196,7 +2197,7 @@ end
 
 
 !-----------------------------------------------------------------------------
-  subroutine calcintoctupole(dipmat,quadpmat,octpmat,dipcenter,ish,jsh,len1,databasis)
+  subroutine calcintoctupole(dipmat,quadpmat,octpmat,dipcenter,ish,jsh,len1,threshex,databasis)
 !-----------------------------------------------------------------------------
 !
 ! Driver of dipole (j|r|i), quadrupole (j|r^2|i), and octupole (j|r^3|i) 
@@ -2204,14 +2205,13 @@ end
 !
       use modparam, only : mxprsh
       use modmolecule, only : coord
-      use modjob, only : threshex
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, len1
       integer :: nangij(2), nprimij(2), nbfij(2), iatom, jatom
       integer :: iloc, jloc, ilocbf, jlocbf, iprim, jprim, i, j, ii, ij, maxj, kk
-      real(8),intent(in) :: dipcenter(3)
+      real(8),intent(in) :: dipcenter(3), threshex
       real(8),intent(out) :: dipmat((databasis%nao*(databasis%nao+1))/2,3)
       real(8),intent(out) :: quadpmat((databasis%nao*(databasis%nao+1))/2,6)
       real(8),intent(out) :: octpmat((databasis%nao*(databasis%nao+1))/2,10) 

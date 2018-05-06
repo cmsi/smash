@@ -549,7 +549,7 @@ end
         call memset(nao3*29,datacomp)
         allocate(work(nao3*29))
         call calcroctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrx, &
-&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
+&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
         deallocate(work)
         call memunset(nao3*29,datacomp)
       else
@@ -558,7 +558,7 @@ end
 !
         call memset(nao3*6,datacomp)
         allocate(work(nao3*6))
-        call calcrdipole(work,work(nao3*3+1),dmtrx,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
+        call calcrdipole(work,work(nao3*3+1),dmtrx,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
         deallocate(work)
         call memunset(nao3*6,datacomp)
       endif
@@ -708,7 +708,7 @@ end
         call memset(nao3*29,datacomp)
         allocate(work(nao3*29))
         call calcuoctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrxa,dmtrxb, &
-&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
+&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
         deallocate(work)
         call memunset(nao3*29,datacomp)
       else
@@ -717,7 +717,7 @@ end
 !
         call memset(nao3*6,datacomp)
         allocate(work(nao3*6))
-        call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
+        call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
         deallocate(work)
         call memunset(nao3*6,datacomp)
       endif
@@ -893,7 +893,7 @@ end
         call memset(nao3*29,datacomp)
         allocate(work(nao3*29))
         call calcroctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrx, &
-&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
+&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
         deallocate(work)
         call memunset(nao3*29,datacomp)
       else
@@ -902,7 +902,7 @@ end
 !
         call memset(nao3*6,datacomp)
         allocate(work(nao3*6))
-        call calcrdipole(work,work(nao3*3+1),dmtrx,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
+        call calcrdipole(work,work(nao3*3+1),dmtrx,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
         deallocate(work)
         call memunset(nao3*6,datacomp)
       endif
@@ -1079,7 +1079,7 @@ end
         call memset(nao3*29,datacomp)
         allocate(work(nao3*29))
         call calcuoctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrxa,dmtrxb, &
-&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
+&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
         deallocate(work)
         call memunset(nao3*29,datacomp)
       else
@@ -1088,7 +1088,7 @@ end
 !
         call memset(nao3*6,datacomp)
         allocate(work(nao3*6))
-        call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
+        call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
         deallocate(work)
         call memunset(nao3*6,datacomp)
       endif
@@ -1365,7 +1365,7 @@ end
         call memset(nao3*29,datacomp)
         allocate(work(nao3,29))
         call calcroctupole(work,work(1,4),work(1,10),work(1,20),dmtrx, &
-&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
+&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
         deallocate(work)
         call memunset(nao3*29,datacomp)
       else
@@ -1374,7 +1374,7 @@ end
 !
         call memset(nao3*6,datacomp)
         allocate(work(nao3,6))
-        call calcrdipole(work,work(1,4),dmtrx,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
+        call calcrdipole(work,work(1,4),dmtrx,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
         deallocate(work)
         call memunset(nao3*6,datacomp)
       endif
@@ -1680,7 +1680,7 @@ end
         call memset(nao3*29,datacomp)
         allocate(work(nao3,29))
         call calcuoctupole(work,work(1,4),work(1,10),work(1,20),dmtrxa,dmtrxb, &
-&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
+&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
         deallocate(work)
         call memunset(nao3*29,datacomp)
       else
@@ -1689,7 +1689,7 @@ end
 !
         call memset(nao3*6,datacomp)
         allocate(work(nao3,6))
-        call calcudipole(work,work(1,4),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,databasis,datacomp)
+        call calcudipole(work,work(1,4),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
         deallocate(work)
         call memunset(nao3*6,datacomp)
       endif
