@@ -52,11 +52,11 @@
         case('RHF')
           select case(datajob%runtype)
             case('ENERGY')
-              call calcrenergy(datajob,databasis,datacomp)
+              call calcrenergy(datajob,datamol,databasis,datacomp)
             case('GRADIENT')
-              call calcrgradient(datajob,databasis,datacomp)
+              call calcrgradient(datajob,datamol,databasis,datacomp)
             case('OPTIMIZE')
-              call calcrgeometry(converged,datajob,databasis,datacomp)
+              call calcrgeometry(converged,datajob,datamol,databasis,datacomp)
             case default
               if(datacomp%master) then
                 write(*,'(" Error! This program does not support runtype= ",a16,".")') &
@@ -67,11 +67,11 @@
         case('UHF')
           select case(datajob%runtype)
             case('ENERGY')
-              call calcuenergy(datajob,databasis,datacomp)
+              call calcuenergy(datajob,datamol,databasis,datacomp)
             case('GRADIENT')
-              call calcugradient(datajob,databasis,datacomp)
+              call calcugradient(datajob,datamol,databasis,datacomp)
             case('OPTIMIZE')
-              call calcugeometry(converged,datajob,databasis,datacomp)
+              call calcugeometry(converged,datajob,datamol,databasis,datacomp)
             case default
               if(datacomp%master) then
                 write(*,'(" Error! This program does not support runtype= ",a16,".")') &
@@ -192,14 +192,14 @@ end
 !
 ! Write input data
 !
-      call writecondition(datajob,databasis,datacomp)
-      call writegeom(datacomp)
-      call writebasis(datajob,databasis,datacomp)
-      if(datajob%flagecp) call writeecp(datajob,databasis,datacomp)
+      call writecondition(datajob,datamol,databasis,datacomp)
+      call writegeom(datamol,datacomp)
+      call writebasis(datajob,datamol,databasis,datacomp)
+      if(datajob%flagecp) call writeecp(datajob,datamol,databasis,datacomp)
 !
 ! Set atom charge including dummy atom
 !
-      call setcharge(datacomp)
+      call setcharge(datamol,datacomp)
 !
       return
 end
@@ -382,7 +382,7 @@ end
 
 
 !----------------------------------------------------------------------------
-  subroutine calcrenergy(datajob,databasis,datacomp)
+  subroutine calcrenergy(datajob,datamol,databasis,datacomp)
 !----------------------------------------------------------------------------
 !
 ! Driver of closed-shell energy calculation
@@ -390,9 +390,10 @@ end
 ! Parallel information
 !
       use modmolecule, only : nmo, enuc
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
+      type(typemol),intent(inout) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao, nao2, nao3, nshell3
@@ -524,7 +525,7 @@ end
 
 
 !----------------------------------------------------------------------------
-  subroutine calcuenergy(datajob,databasis,datacomp)
+  subroutine calcuenergy(datajob,datamol,databasis,datacomp)
 !----------------------------------------------------------------------------
 !
 ! Driver of open-shell energy calculation
@@ -535,9 +536,10 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modmolecule, only : nmo, enuc
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
+      type(typemol),intent(inout) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao, nao2, nao3, nshell3
@@ -671,7 +673,7 @@ end
 
 
 !------------------------------------------------------------------------------
-  subroutine calcrgradient(datajob,databasis,datacomp)
+  subroutine calcrgradient(datajob,datamol,databasis,datacomp)
 !------------------------------------------------------------------------------
 !
 ! Driver of energy gradient calculation
@@ -682,9 +684,10 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modmolecule, only : nmo, natom, enuc
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
+      type(typemol),intent(inout) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao, nao2, nao3, nshell3
@@ -846,7 +849,7 @@ end
 
 
 !------------------------------------------------------------------------------
-  subroutine calcugradient(datajob,databasis,datacomp)
+  subroutine calcugradient(datajob,datamol,databasis,datacomp)
 !------------------------------------------------------------------------------
 !
 ! Driver of open-shell energy gradient calculation
@@ -857,9 +860,10 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modmolecule, only : nmo, natom, enuc
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
+      type(typemol),intent(inout) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao, nao2, nao3, nshell3
@@ -1021,7 +1025,7 @@ end
 
 
 !----------------------------------------------------------------------------------------
-  subroutine calcrgeometry(converged,datajob,databasis,datacomp)
+  subroutine calcrgeometry(converged,datajob,datamol,databasis,datacomp)
 !----------------------------------------------------------------------------------------
 !
 ! Driver of geometry optimization calculation
@@ -1032,9 +1036,10 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modmolecule, only : nmo, natom, coord, coordold, enuc
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
+      type(typemol),intent(inout) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,allocatable :: iredun(:)
@@ -1104,7 +1109,7 @@ end
 !
 ! Print geometry
 !
-        if(iopt >= 2) call writegeom(datacomp)
+        if(iopt >= 2) call writegeom(datamol,datacomp)
 !
 ! Calculate nuclear repulsion energy
 !
@@ -1215,12 +1220,14 @@ end
 ! Calculate new coordinate
 !
         if(datajob%cartesian) then
-          call calcnewcoord(coord,coordold,egrad,egradold,ehess,workv,natom3,iopt,datajob,datacomp)
+          call calcnewcoord(datamol%coord,coordold,egrad,egradold,ehess,workv,natom3,iopt,datajob,datacomp)
         else
-          call calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
+          call calcnewcoordred(datamol%coord,coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
 &                              work(1,2),work(1,3),work(1,4),workv,iopt,iredun,isizered, &
 &                              maxredun,numbond,numangle,numtorsion,numredun,datajob,datacomp)
         endif
+!ishimura
+        coord=datamol%coord
 !
 ! Unset work arrays 2
 !
@@ -1287,7 +1294,7 @@ end
         write(*,'(" ==========================")')
         write(*,'("     Optimized Geometry")')
         write(*,'(" ==========================")')
-        call writegeom(datacomp)
+        call writegeom(datamol,datacomp)
       endif
 !
 ! Write checkpoint file
@@ -1324,7 +1331,7 @@ end
 
 
 !----------------------------------------------------------------------------------------
-  subroutine calcugeometry(converged,datajob,databasis,datacomp)
+  subroutine calcugeometry(converged,datajob,datamol,databasis,datacomp)
 !----------------------------------------------------------------------------------------
 !
 ! Driver of open-shell geometry optimization calculation
@@ -1335,9 +1342,10 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modmolecule, only : nmo, natom, coord, coordold, enuc
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
+      type(typemol),intent(inout) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,allocatable :: iredun(:)
@@ -1407,7 +1415,7 @@ end
 !
 ! Print geometry
 !
-        if(iopt >= 2) call writegeom(datacomp)
+        if(iopt >= 2) call writegeom(datamol,datacomp)
 !
 ! Calculate nuclear repulsion energy
 !
@@ -1515,12 +1523,14 @@ end
 ! Calculate new coordinate
 !
         if(datajob%cartesian) then
-          call calcnewcoord(coord,coordold,egrad,egradold,ehess,workv,natom3,iopt,datajob,datacomp)
+          call calcnewcoord(datamol%coord,coordold,egrad,egradold,ehess,workv,natom3,iopt,datajob,datacomp)
         else
-          call calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
+          call calcnewcoordred(datamol%coord,coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
 &                              work(1,2),work(1,3),work(1,4),workv,iopt,iredun,isizered, &
 &                              maxredun,numbond,numangle,numtorsion,numredun,datajob,datacomp)
         endif
+!ishimura
+        coord= datamol%coord
 !
 ! Unset work arrays 2
 !
@@ -1591,7 +1601,7 @@ end
         write(*,'(" ==========================")')
         write(*,'("     Optimized Geometry")')
         write(*,'(" ==========================")')
-        call writegeom(datacomp)
+        call writegeom(datamol,datacomp)
       endif
 !
 ! Write checkpoint file

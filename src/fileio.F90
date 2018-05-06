@@ -379,15 +379,15 @@ end
 
 
 !-----------------------
-  subroutine writegeom(datacomp)
+  subroutine writegeom(datamol,datacomp)
 !-----------------------
 !
 ! Write molecular geometry
 !
-      use modmolecule, only : numatomic, natom, coord
       use modparam, only : toang
-      use modtype, only : typecomp
+      use modtype, only : typemol, typecomp
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typecomp),intent(in) :: datacomp
       integer :: i, j
       character(len=3) :: table(-9:112)= &
@@ -406,8 +406,8 @@ end
         write(*,'("          Molecular Geometry (Angstrom)")')
         write(*,'("  Atom            X             Y             Z")')
         write(*,'(" ----------------------------------------------------")')
-        do i= 1,natom
-          write(*,'(3x,a3,3x,3f14.7)')table(numatomic(i)),(coord(j,i)*toang,j=1,3)
+        do i= 1,datamol%natom
+          write(*,'(3x,a3,3x,3f14.7)')table(datamol%numatomic(i)),(datamol%coord(j,i)*toang,j=1,3)
         enddo
         write(*,'(" ----------------------------------------------------",/)')
       endif
@@ -416,15 +416,15 @@ end
 
 
 !------------------------
-  subroutine writebasis(datajob,databasis,datacomp)
+  subroutine writebasis(datajob,datamol,databasis,datacomp)
 !------------------------
 !
 ! Write basis functions
 !
-      use modmolecule, only : numatomic
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
       integer :: iatom, ishell, iloc, iprim, jatomcheck(-9:112)
@@ -452,11 +452,11 @@ end
         write(*,'(" -------------")')
         do ishell= 1, databasis%nshell
           if(iatom /= databasis%locatom(ishell)) then
-            if(jatomcheck(numatomic(databasis%locatom(ishell))) /= 0)cycle
-            jatomcheck(numatomic(databasis%locatom(ishell)))= 1
+            if(jatomcheck(datamol%numatomic(databasis%locatom(ishell))) /= 0)cycle
+            jatomcheck(datamol%numatomic(databasis%locatom(ishell)))= 1
             if(second) write(*,'("  ****")')
             second=.true.
-            write(*,'(2x,a3)')table(numatomic(databasis%locatom(ishell)))
+            write(*,'(2x,a3)')table(datamol%numatomic(databasis%locatom(ishell)))
             iatom= databasis%locatom(ishell)
           endif
           if(databasis%mtype(ishell) == 0) write(*,'(4x,"S",i3)') databasis%mprim(ishell)
@@ -484,15 +484,15 @@ end
 
 
 !----------------------
-  subroutine writeecp(datajob,databasis,datacomp)
+  subroutine writeecp(datajob,datamol,databasis,datacomp)
 !----------------------
 !
 ! Write ECP functions
 !
-      use modmolecule, only : numatomic, natom
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
       integer :: iatom, ll, jprim, jloc, k, nprim, jatomcheck(-9:112)
@@ -517,12 +517,12 @@ end
         write(*,'("   ECP function")')
         write(*,'(" ----------------")')
 !
-        do iatom= 1,natom
+        do iatom= 1,datamol%natom
           if(databasis%maxangecp(iatom) /= -1)then
-            if(jatomcheck(numatomic(iatom)) == 0) then
-              jatomcheck(numatomic(iatom))= iatom
-              write(*,'(2x,a3)')table(numatomic(iatom))
-              tblecp=table(numatomic(iatom))
+            if(jatomcheck(datamol%numatomic(iatom)) == 0) then
+              jatomcheck(datamol%numatomic(iatom))= iatom
+              write(*,'(2x,a3)')table(datamol%numatomic(iatom))
+              tblecp=table(datamol%numatomic(iatom))
               ll= len_trim(tblecp)
               tblecp= tblecp(1:ll)//'-ECP'
               write(*,'(2x,a7,2x,i3,2x,i3)') &
@@ -564,15 +564,15 @@ end
 
 
 !----------------------------
-  subroutine writecondition(datajob,databasis,datacomp)
+  subroutine writecondition(datajob,datamol,databasis,datacomp)
 !----------------------------
 !
 ! Write computational conditions
 !
-      use modmolecule, only : natom, neleca, nelecb, charge, multi
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
 !
@@ -580,7 +580,7 @@ end
 !
 ! Check the numbers of electrons and basis functions
 !
-        if(neleca > databasis%nao) then
+        if(datamol%neleca > databasis%nao) then
           write(*,'(" Error! The number of basis functions is smaller than that of electrons.")')
           call iabort
         endif
@@ -593,7 +593,7 @@ end
         write(*,'("   Memory  =",i10, "MB ,  SCFtype = ",a12,     " ,  Precision= ",a12)') &
 &                  datacomp%memmax/125000, datajob%scftype, datajob%precision
         write(*,'("   Charge  = ",F11.1," ,  Multi   = ",i12,     " ,  Spher    = ",l1)') &
-&                  charge, multi, databasis%spher
+&                  datamol%charge, datamol%multi, databasis%spher
         write(*,'("   Bohr    = ",l1,11x,",  Guess   = ",a12,     " ,  Octupole = ",l1)') &
 &                  datajob%bohr, datajob%guess, datajob%octupole
         if(datajob%runtype == 'OPTIMIZE') &
@@ -606,9 +606,9 @@ end
         write(*,'(/," ------------------------------------------------")')
         write(*,'("   Computational condition")')
         write(*,'(" ------------------------------------------------")')
-        write(*,'("   Number of atoms                      =",i5)') natom
-        write(*,'("   Number of alpha electrons            =",i5)') neleca
-        write(*,'("   Number of beta electrons             =",i5)') nelecb
+        write(*,'("   Number of atoms                      =",i5)') datamol%natom
+        write(*,'("   Number of alpha electrons            =",i5)') datamol%neleca
+        write(*,'("   Number of beta electrons             =",i5)') datamol%nelecb
         write(*,'("   Number of basis shells               =",i5)') databasis%nshell
         write(*,'("   Number of basis contracted functions =",i5)') databasis%nao
         write(*,'("   Number of basis primitive functions  =",i5)') databasis%nprim
@@ -1632,15 +1632,16 @@ end
 
 
 !---------------------------------
-  subroutine setcharge(datacomp)
+  subroutine setcharge(datamol,datacomp)
 !---------------------------------
 !
 ! Set atom charge
 !
-      use modmolecule, only : znuc, natom
+      use modmolecule, only : znuc
       use modparam, only : mxatom, maxline, input
-      use modtype, only : typecomp
+      use modtype, only : typemol, typecomp
       implicit none
+      type(typemol),intent(inout) :: datamol
       type(typecomp),intent(inout) :: datacomp
       integer :: ii, jj, iatom
       real(8) :: znew
@@ -1658,7 +1659,9 @@ end
             do jj= 1,mxatom
               read(input,'(a)',end=100) line
               read(line,*,end=100) iatom, znew
+!ishimura
               znuc(iatom)= znew
+              datamol%znuc(iatom)= znew
               write(*,'("   Charge of Atom ",i5,"     ",f7.3)')iatom, znew
             enddo
           endif
@@ -1667,7 +1670,9 @@ end
       endif
  200  continue
 !
-      call para_bcastr(znuc,natom,0,datacomp%mpi_comm1)
+!ishimura
+      call para_bcastr(znuc,datamol%natom,0,datacomp%mpi_comm1)
+      call para_bcastr(datamol%znuc,datamol%natom,0,datacomp%mpi_comm1)
 !
       return
 end
