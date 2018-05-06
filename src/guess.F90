@@ -111,7 +111,7 @@ end
 ! Set basis functions
 !
       dataguessbs%spher=.true.
-      call setbasis_g(nao_v,ntmp,1,datajob,databasis,dataguessbs)
+      call setbasis_g(nao_v,ntmp,1,datajob,datamol,databasis,dataguessbs)
 !
 ! Set coordinate
 !
@@ -1529,7 +1529,7 @@ end
 !
       if(ncore > 0) then
         datacorebs%spher=.true.
-        call setbasis_g(ntmp,ntmp,2,datajob,databasis,datacorebs)
+        call setbasis_g(ntmp,ntmp,2,datajob,datamol,databasis,datacorebs)
         nao_gcore= datacorebs%nao
         call memset(nao_gcore*(nao_gcore+nao_g*3+1),datacomp)
         allocate(coremo(nao_gcore,nao_gcore),work1(nao_g*nao_gcore),work2(nao_g*nao_gcore), &
@@ -1941,7 +1941,7 @@ end
 ! Set basis functions
 !
       dataguessbs%spher=.true.
-      call setbasis_g(nao_v,nshell_v,1,datajob,databasis,dataguessbs)
+      call setbasis_g(nao_v,nshell_v,1,datajob,datamol,databasis,dataguessbs)
       nao_g= dataguessbs%nao
 !
 ! Set coordinate

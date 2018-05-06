@@ -969,7 +969,7 @@ end
 
 
 !-------------------------------
-  subroutine setbasis_g(nao_v,nshell_v,itype,datajob,databasis,dataguessbs)
+  subroutine setbasis_g(nao_v,nshell_v,itype,datajob,datamol,databasis,dataguessbs)
 !-------------------------------
 !
 ! Driver of setting basis functions for guess calculations
@@ -977,10 +977,10 @@ end
 ! In : itype =1 (For normal extended Huckel calculation)
 !            =2 (For extended Huckel calculation of only core orbitals)
 !
-      use modmolecule, only : natom, numatomic
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typebasis),intent(inout) :: dataguessbs
       integer,intent(out) :: nao_v, nshell_v
@@ -998,11 +998,11 @@ end
 !
 ! Set valence basis functions
 !
-          do iatom= 1,natom
-            if((numatomic(iatom) >= 1).and.(numatomic(iatom) <= 54)) then
-              call bssto3g_g(iatom,ishell,1,datajob%flagecp,databasis,dataguessbs)
-            elseif(numatomic(iatom) >= 55) then
-              call bshuzmini6_g(iatom,ishell,1,datajob%flagecp,databasis,dataguessbs)
+          do iatom= 1,datamol%natom
+            if((datamol%numatomic(iatom) >= 1).and.(datamol%numatomic(iatom) <= 54)) then
+              call bssto3g_g(iatom,ishell,1,datajob%flagecp,datamol%numatomic,databasis,dataguessbs)
+            elseif(datamol%numatomic(iatom) >= 55) then
+              call bshuzmini6_g(iatom,ishell,1,datajob%flagecp,datamol%numatomic,databasis,dataguessbs)
             endif
           enddo
           nshell_v= ishell
@@ -1010,11 +1010,11 @@ end
 !
 ! Set core basis functions
 !
-          do iatom= 1,natom
-            if((numatomic(iatom) >= 1).and.(numatomic(iatom) <= 54)) then
-              call bssto3g_g(iatom,ishell,2,datajob%flagecp,databasis,dataguessbs)
-            elseif(numatomic(iatom) >= 55) then
-              call bshuzmini6_g(iatom,ishell,2,datajob%flagecp,databasis,dataguessbs)
+          do iatom= 1,datamol%natom
+            if((datamol%numatomic(iatom) >= 1).and.(datamol%numatomic(iatom) <= 54)) then
+              call bssto3g_g(iatom,ishell,2,datajob%flagecp,datamol%numatomic,databasis,dataguessbs)
+            elseif(datamol%numatomic(iatom) >= 55) then
+              call bshuzmini6_g(iatom,ishell,2,datajob%flagecp,datamol%numatomic,databasis,dataguessbs)
             endif
           enddo
           dataguessbs%nshell= ishell
@@ -1028,11 +1028,11 @@ end
           ishell= 0
           dataguessbs%locprim(1)=0
           dataguessbs%locbf(1)=0
-          do iatom= 1,natom
-            if((numatomic(iatom) >= 1).and.(numatomic(iatom) <= 54)) then
-              call bssto3g_g(iatom,ishell,3,datajob%flagecp,databasis,dataguessbs)
-            elseif(numatomic(iatom) >= 55) then
-              call bshuzmini6_g(iatom,ishell,3,datajob%flagecp,databasis,dataguessbs)
+          do iatom= 1,datamol%natom
+            if((datamol%numatomic(iatom) >= 1).and.(datamol%numatomic(iatom) <= 54)) then
+              call bssto3g_g(iatom,ishell,3,datajob%flagecp,datamol%numatomic,databasis,dataguessbs)
+            elseif(datamol%numatomic(iatom) >= 55) then
+              call bshuzmini6_g(iatom,ishell,3,datajob%flagecp,datamol%numatomic,databasis,dataguessbs)
             endif
           enddo
           dataguessbs%nshell= ishell
@@ -1045,7 +1045,7 @@ end
 
 
 !-------------------------------------------
-  subroutine bssto3g_g(iatom,ishell,itype,flagecp,databasis,dataguessbs)
+  subroutine bssto3g_g(iatom,ishell,itype,flagecp,numatomic,databasis,dataguessbs)
 !-------------------------------------------
 !
 ! Set basis functions of STO-3G for guess calculation
@@ -1053,13 +1053,12 @@ end
 !       = 2 : core functions
 !       = 3 : core functions for core calculation
 !
-      use modmolecule, only : numatomic
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
       type(typebasis),intent(inout) :: dataguessbs
-      integer,intent(in) :: iatom, itype
+      integer,intent(in) :: iatom, itype, numatomic(mxatom)
       integer,intent(inout):: ishell
       integer :: j
       integer :: is(54)=(/0,3, 6,12,18,24,30,36,42,48, 54,63,72,81,90,99,108,117, &
@@ -9602,20 +9601,19 @@ end
 
 
 !----------------------------------------------
-  subroutine bshuzmini6_g(iatom,ishell,itype,flagecp,databasis,dataguessbs)
+  subroutine bshuzmini6_g(iatom,ishell,itype,flagecp,numatomic,databasis,dataguessbs)
 !----------------------------------------------
 !
 ! Set 6th row basis functions of minimal Huzinaga set for guess calculation
 ! itype = 1 : valence functions
 !       = 2 : core functions
 !
-      use modmolecule, only : numatomic
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
       type(typebasis),intent(inout) :: dataguessbs
-      integer,intent(in) :: iatom, itype
+      integer,intent(in) :: iatom, itype, numatomic(mxatom)
       integer,intent(inout) :: ishell
       integer :: j
       real(8) :: exps(3,6,55:86), expp(3,2:6,55:86), expd(3,2:5,55:86)
