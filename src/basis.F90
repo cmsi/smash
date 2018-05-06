@@ -41,19 +41,19 @@
             enddo
           case('3-21G')
             do iatom= 1, datamol%natom
-              call bs321g(iatom,ishell,databasis)
+              call bs321g(iatom,ishell,datamol%numatomic,databasis)
             enddo
           case('6-31G')
             do iatom= 1, datamol%natom
-              call bs631g(iatom,ishell,databasis)
+              call bs631g(iatom,ishell,datamol%numatomic,databasis)
             enddo
           case('6-31G(D)','6-31G*')
             do iatom= 1, datamol%natom
-              call bs631gd(iatom,ishell,databasis)
+              call bs631gd(iatom,ishell,datamol%numatomic,databasis)
             enddo
           case('6-31G(D,P)','6-31G**')
             do iatom= 1, datamol%natom
-              call bs631gdp(iatom,ishell,databasis)
+              call bs631gdp(iatom,ishell,datamol%numatomic,databasis)
             enddo
           case('6-311G')
             do iatom= 1, datamol%natom
@@ -235,13 +235,13 @@ end
           case('STO-3G')
             call bssto3g(iatom,ishell,datamol%numatomic,databasis)
           case('3-21G')
-            call bs321g(iatom,ishell,databasis)
+            call bs321g(iatom,ishell,datamol%numatomic,databasis)
           case('6-31G')
-            call bs631g(iatom,ishell,databasis)
+            call bs631g(iatom,ishell,datamol%numatomic,databasis)
           case('6-31G(D)','6-31G*')
-            call bs631gd(iatom,ishell,databasis)
+            call bs631gd(iatom,ishell,datamol%numatomic,databasis)
           case('6-31G(D,P)','6-31G**')
-            call bs631gdp(iatom,ishell,databasis)
+            call bs631gdp(iatom,ishell,datamol%numatomic,databasis)
           case('6-311G')
             call bs6311g(iatom,ishell,databasis)
           case('6-311G(D)','6-311G*')
@@ -1958,17 +1958,16 @@ end
 
 
 !-----------------------------------
-  subroutine bs321g(iatom,ishell,databasis)
+  subroutine bs321g(iatom,ishell,numatomic,databasis)
 !-----------------------------------
 !
 ! Set basis functions of 3-21G
 !
-      use modmolecule, only : numatomic
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(inout) :: databasis
-      integer,intent(in) :: iatom
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       integer :: j
       integer :: is1(2)= (/0,6/)
@@ -2963,17 +2962,16 @@ end
 
 
 !-----------------------------------
-  subroutine bs631g(iatom,ishell,databasis)
+  subroutine bs631g(iatom,ishell,numatomic,databasis)
 !-----------------------------------
 !
 ! Set basis functions of 6-31G
 !
-      use modmolecule, only : numatomic
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(inout) :: databasis
-      integer,intent(in) :: iatom
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       integer :: j
       integer :: is(30)= (/0,4,8,18,28,38,48,58,68,78,88,104,120,136,152,168,184,200, &
@@ -3592,45 +3590,46 @@ end
 
 
 !-----------------------------------
-  subroutine bs631gd(iatom,ishell,databasis)
+  subroutine bs631gd(iatom,ishell,numatomic,databasis)
 !-----------------------------------
 !
 ! Set basis functions of 6-31G(d)
 !
+      use modparam, only : mxatom
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(inout) :: databasis
-      integer,intent(in) :: iatom
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
 !
-      call bs631g(iatom,ishell,databasis)
+      call bs631g(iatom,ishell,numatomic,databasis)
 !
-      call bs631gs(iatom,ishell,databasis)
+      call bs631gs(iatom,ishell,numatomic,databasis)
 !
       return
 end
 
 
 !------------------------------------
-  subroutine bs631gdp(iatom,ishell,databasis)
+  subroutine bs631gdp(iatom,ishell,numatomic,databasis)
 !------------------------------------
 !
 ! Set basis functions of 6-31G(d,p)
 !
-      use modmolecule, only : numatomic
+      use modparam, only : mxatom
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(inout) :: databasis
-      integer,intent(in) :: iatom
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
 !
-      call bs631g(iatom,ishell,databasis)
+      call bs631g(iatom,ishell,numatomic,databasis)
 !
       select case(numatomic(iatom))
         case(1:2)
-          call bs631gss(iatom,ishell,databasis)
+          call bs631gss(iatom,ishell,numatomic,databasis)
         case(3:)
-          call bs631gs(iatom,ishell,databasis)
+          call bs631gs(iatom,ishell,numatomic,databasis)
       end select
 !
       return
@@ -3638,17 +3637,16 @@ end
 
 
 !-----------------------------------
-  subroutine bs631gs(iatom,ishell,databasis)
+  subroutine bs631gs(iatom,ishell,numatomic,databasis)
 !-----------------------------------
 !
 ! Set basis polarization function of 6-31G(d)
 !
-      use modmolecule, only : numatomic
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(inout) :: databasis
-      integer,intent(in) :: iatom
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       real(8),parameter :: one=1.0D+00
       real(8) :: ex631gs(3:30)= &
@@ -3712,17 +3710,16 @@ end
 
 
 !------------------------------------
-  subroutine bs631gss(iatom,ishell,databasis)
+  subroutine bs631gss(iatom,ishell,numatomic,databasis)
 !------------------------------------
 !
 ! Set basis polarization function of Hydrogen 6-31G(d,p)
 !
-      use modmolecule, only : numatomic
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(inout) :: databasis
-      integer,intent(in) :: iatom
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       real(8),parameter :: one=1.0D+00, ex631gss=1.1D+00 
 !
