@@ -1219,16 +1219,17 @@ end
 
 
 !------------------------------------------------------------------
-  subroutine calcrdipole(dipmat,work,dmtrx,nproc,myrank,mpi_comm,datajob,databasis,datacomp)
+  subroutine calcrdipole(dipmat,work,dmtrx,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
 !------------------------------------------------------------------
 !
 ! Driver of dipole moment calculation for closed-shell
 !
       use modparam, only : todebye
       use modmolecule, only : natom, coord, znuc
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
@@ -1256,7 +1257,7 @@ end
 !
       dipcenter(:)= zero
 !
-      call calcmatdipole(dipmat,work,dipcenter,nproc,myrank,mpi_comm,datajob,databasis)
+      call calcmatdipole(dipmat,work,dipcenter,nproc,myrank,mpi_comm,datajob,datamol,databasis)
 !
       xdipminus=-tridot(dmtrx,dipmat(1,1),databasis%nao)
       ydipminus=-tridot(dmtrx,dipmat(1,2),databasis%nao)
@@ -1284,16 +1285,17 @@ end
 
 !-----------------------------------------------------------------
   subroutine calcroctupole(dipmat,quadpmat,octpmat,work,dmtrx, &
-&                          nproc,myrank,mpi_comm,datajob,databasis,datacomp)
+&                          nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
 !-----------------------------------------------------------------
 !
 ! Driver of dipole, quadrupole, and octupole moment calculation for closed-shell
 !
       use modparam, only : todebye, toang
       use modmolecule, only : natom, coord, znuc
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
@@ -1365,7 +1367,7 @@ end
 !
       dipcenter(:)= zero
 !
-      call calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm,datajob,databasis)
+      call calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm,datajob,datamol,databasis)
 !
       xdipminus=-tridot(dmtrx,dipmat(1,1),databasis%nao)
       ydipminus=-tridot(dmtrx,dipmat(1,2),databasis%nao)
@@ -1459,16 +1461,17 @@ end
 
 
 !--------------------------------------------------------------------------
-  subroutine calcudipole(dipmat,work,dmtrxa,dmtrxb,nproc,myrank,mpi_comm,datajob,databasis,datacomp)
+  subroutine calcudipole(dipmat,work,dmtrxa,dmtrxb,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
 !--------------------------------------------------------------------------
 !
 ! Driver of dipole moment calculation for open-shell
 !
       use modparam, only : todebye
       use modmolecule, only : natom, coord, znuc
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
@@ -1497,7 +1500,7 @@ end
 !
       dipcenter(:)= zero
 !
-      call calcmatdipole(dipmat,work,dipcenter,nproc,myrank,mpi_comm,datajob,databasis)
+      call calcmatdipole(dipmat,work,dipcenter,nproc,myrank,mpi_comm,datajob,datamol,databasis)
 !
       xdipminus=-tridot(dmtrxa,dipmat(1,1),databasis%nao)-tridot(dmtrxb,dipmat(1,1),databasis%nao)
       ydipminus=-tridot(dmtrxa,dipmat(1,2),databasis%nao)-tridot(dmtrxb,dipmat(1,2),databasis%nao)
@@ -1525,16 +1528,17 @@ end
 
 !-------------------------------------------------------------------------
   subroutine calcuoctupole(dipmat,quadpmat,octpmat,work,dmtrxa,dmtrxb, &
-&                          nproc,myrank,mpi_comm,datajob,databasis,datacomp)
+&                          nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
 !-------------------------------------------------------------------------
 !
 ! Driver of dipole, quadrupole, and octupole moment calculation for open-shell
 !
       use modparam, only : todebye, toang
       use modmolecule, only : natom, coord, znuc
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
@@ -1607,7 +1611,7 @@ end
 !
       dipcenter(:)= zero
 !
-      call calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm,datajob,databasis)
+      call calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm,datajob,datamol,databasis)
 !
       do ii= 1,databasis%nao*(databasis%nao+1)/2
         work(ii)= dmtrxa(ii)+dmtrxb(ii)

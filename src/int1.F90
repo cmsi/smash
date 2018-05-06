@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !--------------------------------------------------------------------------
-  subroutine oneei(hstmat1,hstmat2,hstmat3,hstmat4,nproc,myrank,mpi_comm,datajob,databasis)
+  subroutine oneei(hstmat1,hstmat2,hstmat3,hstmat4,nproc,myrank,mpi_comm,datajob,datamol,databasis)
 !--------------------------------------------------------------------------
 !
 ! Driver of one-electron and overlap integrals
@@ -23,9 +23,10 @@
 !       hstmat3 (Kinetic energy matrix)
 !       hstmat4 (Work array)
 !
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh, num, maxfunc(0:6), maxbasis, maxdim
@@ -48,7 +49,7 @@
       do ish= databasis%nshell-myrank,1,-nproc
 !$OMP do
         do jsh= 1,ish
-          call calcintst1c(hstmat2,hstmat3,hstmat4,ish,jsh,maxdim,datajob%threshex,databasis)
+          call calcintst1c(hstmat2,hstmat3,hstmat4,ish,jsh,maxdim,datajob%threshex,datamol,databasis)
         enddo
 !$OMP enddo
       enddo
@@ -67,15 +68,15 @@ end
 
 
 !------------------------------------------------------
-  subroutine calcintst1c(hmat,smat,tmat,ish,jsh,len1,threshex,databasis)
+  subroutine calcintst1c(hmat,smat,tmat,ish,jsh,len1,threshex,datamol,databasis)
 !------------------------------------------------------
 !
 ! Driver of overlap, kinetic, and 1-electron Coulomb integrals (j|Z/r|i)
 !
       use modparam, only : mxprsh
-      use modmolecule, only : natom, coord, znuc
-      use modtype, only : typebasis
+      use modtype, only : typemol, typebasis
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, len1
       integer :: nangij(2), nprimij(2), nbfij(2), iatom, jatom
@@ -102,8 +103,8 @@ end
       jloc  = databasis%locprim(jsh)
       jlocbf= databasis%locbf(jsh)
       do i= 1,3
-        coordij(i,1)= coord(i,iatom)
-        coordij(i,2)= coord(i,jatom)
+        coordij(i,1)= datamol%coord(i,iatom)
+        coordij(i,2)= datamol%coord(i,jatom)
       enddo
       do iprim= 1,nprimij(1)
         exij(iprim,1)= databasis%ex(iloc+iprim)
@@ -127,10 +128,10 @@ end
 ! 1-electron Coulomb integrals
 !
       if((nangij(1) <= 2).and.(nangij(2) <= 2)) then
-        call int1cmd(cint,exij,coij,coordij,coord,znuc,natom, &
+        call int1cmd(cint,exij,coij,coordij,datamol%coord,datamol%znuc,datamol%natom, &
 &                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
       else
-        call int1rys(cint,exij,coij,coordij,coord,znuc,natom, &
+        call int1rys(cint,exij,coij,coordij,datamol%coord,datamol%znuc,datamol%natom, &
 &                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
       endif
 !
@@ -1917,7 +1918,7 @@ end
 
 
 !------------------------------------------------------------------------
-  subroutine calcmatdipole(dipmat,work,dipcenter,nproc,myrank,mpi_comm,datajob,databasis)
+  subroutine calcmatdipole(dipmat,work,dipcenter,nproc,myrank,mpi_comm,datajob,datamol,databasis)
 !------------------------------------------------------------------------
 !
 ! Driver of dipole moment matrix calculation
@@ -1926,9 +1927,10 @@ end
 ! Out : dipmat    (One electron Hamiltonian matrix)
 !       work      (Overlap integral matrix)
 !
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh, num, maxfunc(0:6), maxbasis, maxdim
@@ -1948,7 +1950,7 @@ end
       do ish= databasis%nshell-myrank,1,-nproc
 !$OMP do
         do jsh= 1,ish
-          call calcintdipole(work,dipcenter,ish,jsh,maxdim,datajob%threshex,databasis)
+          call calcintdipole(work,dipcenter,ish,jsh,maxdim,datajob%threshex,datamol,databasis)
         enddo
 !$OMP enddo
       enddo
@@ -1961,15 +1963,15 @@ end
 
 
 !----------------------------------------------------------
-  subroutine calcintdipole(dipmat,dipcenter,ish,jsh,len1,threshex,databasis)
+  subroutine calcintdipole(dipmat,dipcenter,ish,jsh,len1,threshex,datamol,databasis)
 !----------------------------------------------------------
 !
 ! Driver of dipole moment integrals (j|r|i)
 !
       use modparam, only : mxprsh
-      use modmolecule, only : coord
-      use modtype, only : typebasis
+      use modtype, only : typemol, typebasis
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, len1
       integer :: nangij(2), nprimij(2), nbfij(2), iatom, jatom
@@ -1994,8 +1996,8 @@ end
       jloc  = databasis%locprim(jsh)
       jlocbf= databasis%locbf(jsh)
       do i= 1,3
-        coordijk(i,1)= coord(i,iatom)
-        coordijk(i,2)= coord(i,jatom)
+        coordijk(i,1)= datamol%coord(i,iatom)
+        coordijk(i,2)= datamol%coord(i,jatom)
         coordijk(i,3)= dipcenter(i)
       enddo
       do iprim= 1,nprimij(1)
@@ -2146,7 +2148,7 @@ end
 
 
 !-------------------------------------------------------------------------------------------
-  subroutine calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm,datajob,databasis)
+  subroutine calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm,datajob,datamol,databasis)
 !-------------------------------------------------------------------------------------------
 !
 ! Driver of dipole, quadrupole, and octupole moment matrix calculation
@@ -2157,9 +2159,10 @@ end
 !       octpmat   (Octupole moment matrix)
 !       work      (Working matrix)
 !
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh, maxfunc(0:6), maxbasis, maxdim
@@ -2182,7 +2185,7 @@ end
       do ish= databasis%nshell-myrank,1,-nproc
 !$OMP do
         do jsh= 1,ish
-          call calcintoctupole(quadpmat,octpmat,work,dipcenter,ish,jsh,maxdim,datajob%threshex,databasis)
+          call calcintoctupole(quadpmat,octpmat,work,dipcenter,ish,jsh,maxdim,datajob%threshex,datamol,databasis)
         enddo
 !$OMP enddo
       enddo
@@ -2197,16 +2200,16 @@ end
 
 
 !-----------------------------------------------------------------------------
-  subroutine calcintoctupole(dipmat,quadpmat,octpmat,dipcenter,ish,jsh,len1,threshex,databasis)
+  subroutine calcintoctupole(dipmat,quadpmat,octpmat,dipcenter,ish,jsh,len1,threshex,datamol,databasis)
 !-----------------------------------------------------------------------------
 !
 ! Driver of dipole (j|r|i), quadrupole (j|r^2|i), and octupole (j|r^3|i) 
 ! moment integrals
 !
       use modparam, only : mxprsh
-      use modmolecule, only : coord
-      use modtype, only : typebasis
+      use modtype, only : typemol, typebasis
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, len1
       integer :: nangij(2), nprimij(2), nbfij(2), iatom, jatom
@@ -2233,8 +2236,8 @@ end
       jloc  = databasis%locprim(jsh)
       jlocbf= databasis%locbf(jsh)
       do i= 1,3
-        coordijk(i,1)= coord(i,iatom)
-        coordijk(i,2)= coord(i,jatom)
+        coordijk(i,1)= datamol%coord(i,iatom)
+        coordijk(i,2)= datamol%coord(i,jatom)
         coordijk(i,3)= dipcenter(i)
       enddo
       do iprim= 1,nprimij(1)
