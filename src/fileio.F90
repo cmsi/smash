@@ -256,7 +256,9 @@
       call para_bcasti(intarray,16,0,datacomp%mpi_comm1)
       call para_bcastl(logarray,5,0,datacomp%mpi_comm1)
 !
+!ishimura
       natom= intarray(1)
+      datamol%natom= intarray(1)
 !
       call para_bcasti(datamol%numatomic,natom,0,datacomp%mpi_comm1)
       call para_bcastr(datamol%coord(1,1),natom*3,0,datacomp%mpi_comm1)

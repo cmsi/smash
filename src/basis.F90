@@ -13,15 +13,15 @@
 ! limitations under the License.
 !
 !--------------------------------
-  subroutine setbasis(datajob,databasis,datacomp)
+  subroutine setbasis(datajob,datamol,databasis,datacomp)
 !--------------------------------
 !
 ! Driver of setting basis functions
 !
-      use modmolecule, only : natom, numatomic
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
+      type(typemol),intent(inout) :: datamol
       type(typebasis),intent(inout) :: databasis
       type(typecomp),intent(inout) :: datacomp
       type(typebasis) :: datagenbasis
@@ -36,51 +36,51 @@
 !
         select case(databasis%basis)
           case('STO-3G')
-            do iatom= 1, natom
+            do iatom= 1, datamol%natom
               call bssto3g(iatom,ishell,databasis)
             enddo
           case('3-21G')
-            do iatom= 1, natom
+            do iatom= 1, datamol%natom
               call bs321g(iatom,ishell,databasis)
             enddo
           case('6-31G')
-            do iatom= 1, natom
+            do iatom= 1, datamol%natom
               call bs631g(iatom,ishell,databasis)
             enddo
           case('6-31G(D)','6-31G*')
-            do iatom= 1, natom
+            do iatom= 1, datamol%natom
               call bs631gd(iatom,ishell,databasis)
             enddo
           case('6-31G(D,P)','6-31G**')
-            do iatom= 1, natom
+            do iatom= 1, datamol%natom
               call bs631gdp(iatom,ishell,databasis)
             enddo
           case('6-311G')
-            do iatom= 1, natom
+            do iatom= 1, datamol%natom
               call bs6311g(iatom,ishell,databasis)
             enddo
           case('6-311G(D)','6-311G*')
-            do iatom= 1, natom
+            do iatom= 1, datamol%natom
               call bs6311gd(iatom,ishell,databasis)
             enddo
           case('6-311G(D,P)','6-311G**')
-            do iatom= 1, natom
+            do iatom= 1, datamol%natom
               call bs6311gdp(iatom,ishell,databasis)
             enddo
           case('CC-PVDZ')
-            do iatom= 1, natom
+            do iatom= 1, datamol%natom
               call bsccpvdz(iatom,ishell,databasis)
             enddo
           case('CC-PVTZ')
-            do iatom= 1, natom
+            do iatom= 1, datamol%natom
               call bsccpvtz(iatom,ishell,databasis)
             enddo
           case('CC-PVQZ')
-            do iatom= 1, natom
+            do iatom= 1, datamol%natom
               call bsccpvqz(iatom,ishell,databasis)
             enddo
           case('D95V')
-            do iatom= 1, natom
+            do iatom= 1, datamol%natom
               call bsd95v(iatom,ishell,databasis)
             enddo
           case('LANL2DZ')
@@ -88,8 +88,8 @@
               if(datacomp%master) write(*,'(" Error! ECP is not set!.")')
               call iabort
             endif
-            do iatom= 1, natom
-              if(numatomic(iatom) < 11) then
+            do iatom= 1, datamol%natom
+              if(datamol%numatomic(iatom) < 11) then
                 call bsd95v(iatom,ishell,databasis)
               else
                 call bslanl2dz(iatom,ishell,databasis)
@@ -97,7 +97,7 @@
             enddo
           case('GEN')
             call readbasis(atombasis,locgenshell,ngenshell,datagenbasis,datacomp)
-            call setgenbasis(atombasis,locgenshell,ngenshell,ishell,datajob%flagecp,databasis,datagenbasis)
+            call setgenbasis(atombasis,locgenshell,ngenshell,ishell,datajob%flagecp,datamol,databasis,datagenbasis)
           case('CHECK')
             call setcheckbasis(databasis)
             ishell= databasis%nshell
@@ -202,15 +202,15 @@ end
 
 
 !---------------------------------
-  subroutine setgenbasis(atombasis,locgenshell,ngenshell,ishell,flagecp,databasis,datagenbasis)
+  subroutine setgenbasis(atombasis,locgenshell,ngenshell,ishell,flagecp,datamol,databasis,datagenbasis)
 !---------------------------------
 !
 ! Driver of setting basis functions from input file
 ! This routine must be called only from master node.
 !
-      use modmolecule, only : natom, numatomic
-      use modtype, only : typebasis
+      use modtype, only : typemol, typebasis
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(inout) :: databasis
       type(typebasis),intent(in) :: datagenbasis
       integer,intent(in) :: locgenshell(-9:112), ngenshell(-9:112)
@@ -229,8 +229,8 @@ end
 &       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
       logical,intent(in) :: flagecp
 !
-      do iatom= 1,natom
-        nn= numatomic(iatom)
+      do iatom= 1,datamol%natom
+        nn= datamol%numatomic(iatom)
         select case(atombasis(nn))
           case('STO-3G')
             call bssto3g(iatom,ishell,databasis)

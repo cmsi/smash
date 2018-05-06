@@ -164,7 +164,7 @@ end
 !
 ! Set basis functions
 !
-      call setbasis(datajob,databasis,datacomp)
+      call setbasis(datajob,datamol,databasis,datacomp)
 !
 ! Set ECP functions
 !
