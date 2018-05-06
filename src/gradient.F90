@@ -13,14 +13,15 @@
 ! limitations under the License.
 !
 !---------------------------------------------------------------------------
-  subroutine calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,databasis,datacomp)
+  subroutine calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datajob,databasis,datacomp)
 !---------------------------------------------------------------------------
 !
 ! Driver of RHF energy gradient calculation
 !
       use modmolecule, only : natom, neleca, numatomic
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc1, myrank1, mpi_comm1
@@ -76,7 +77,7 @@
       maxgraddim= maxfunc(maxdim+1)
       maxdim= maxfunc(maxdim)
       call grad2eri(egradtmp,egrad,fulldmtrx,fulldmtrx,xint,one, &
-&                   maxdim,maxgraddim,nproc1,myrank1,1,databasis)
+&                   maxdim,maxgraddim,nproc1,myrank1,1,datajob,databasis)
 !
       call para_allreducer(egradtmp(1),egrad(1,1),3*natom,mpi_comm1)
 !
@@ -101,14 +102,15 @@ end
 
 
 !--------------------------------------------------------------------------------------------
-  subroutine calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,databasis,datacomp)
+  subroutine calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,datajob,databasis,datacomp)
 !--------------------------------------------------------------------------------------------
 !
 ! Driver of UHF energy gradient calculation
 !
       use modmolecule, only : natom, neleca, nelecb, numatomic
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc1, myrank1, mpi_comm1
@@ -166,7 +168,7 @@ end
       maxgraddim= maxfunc(maxdim+1)
       maxdim= maxfunc(maxdim)
       call grad2eri(egradtmp,egrad,fulldmtrx1,fulldmtrx2,xint,one, &
-&                   maxdim,maxgraddim,nproc1,myrank1,2,databasis)
+&                   maxdim,maxgraddim,nproc1,myrank1,2,datajob,databasis)
 !
       call para_allreducer(egradtmp(1),egrad(1,1),3*natom,mpi_comm1)
 !
@@ -276,7 +278,7 @@ end
       maxgraddim= maxfunc(maxdim+1)
       maxdim= maxfunc(maxdim)
       call grad2eri(egradtmp,egrad,fulldmtrx,fulldmtrx,xint,datajob%hfexchange, &
-&                   maxdim,maxgraddim,nproc1,myrank1,1,databasis)
+&                   maxdim,maxgraddim,nproc1,myrank1,1,datajob,databasis)
 !
 ! Calculate derivatives of exchange-correlation terms 
 !
@@ -400,7 +402,7 @@ end
       maxgraddim= maxfunc(maxdim+1)
       maxdim= maxfunc(maxdim)
       call grad2eri(egradtmp,egrad,fulldmtrx1,fulldmtrx2,xint,datajob%hfexchange, &
-&                   maxdim,maxgraddim,nproc1,myrank1,2,databasis)
+&                   maxdim,maxgraddim,nproc1,myrank1,2,datajob,databasis)
 !
 ! Calculate derivatives of exchange-correlation terms 
 !

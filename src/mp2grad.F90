@@ -412,7 +412,7 @@ end
 ! Calculate integral derivatives and their MP2 energy gradient
 !
       call mp2graddint(egrad,egradtmp,pmn,wij,wab,wai,xint,cmo,energymo,pls,work1,work2, &
-&                      nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm,databasis,datacomp)
+&                      nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm,datajob,databasis,datacomp)
 !ishimura
 !call tstamp(1)
 !
@@ -1658,7 +1658,7 @@ end
 
 !--------------------------------------------------------------------------------------------
   subroutine mp2graddint(egrad,egradtmp,pmn,wij,wab,wai,xint,cmo,energymo,wmn,pmnhf,work, &
-&                        nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm,databasis,datacomp)
+&                        nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm,datajob,databasis,datacomp)
 !--------------------------------------------------------------------------------------------
 !
 ! Calculate integral derivatives and MP2 energy gradient
@@ -1673,8 +1673,9 @@ end
 !       pmn       (Pmn)
 ! Work :egradtmp,wmn,work
       use modmolecule, only : natom
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nocc, nvir, maxdim, maxgraddim, nproc, myrank, mpi_comm
@@ -1703,7 +1704,7 @@ end
 ! Calculate derivatives for two-electron integrals
 !
       call grad2eri(egradtmp,egradtmp2,pmnhf,pmn,xint,one, &
-&                   maxdim,maxgraddim,nproc,myrank,3,databasis)
+&                   maxdim,maxgraddim,nproc,myrank,3,datajob,databasis)
 !
 ! Calculate HF+MP2 density matrix
 !
@@ -1866,7 +1867,7 @@ end
             enddo
 !
             if(xijkl*tmax < datajob%cutint2) cycle
-            call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,databasis)
+            call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,datajob,databasis)
           enddo
         enddo
       enddo
@@ -2018,7 +2019,7 @@ end
             enddo
 !
             if(xijkl*tmax < datajob%cutint2) cycle
-            call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,databasis)
+            call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,datajob,databasis)
           enddo
         enddo
       enddo

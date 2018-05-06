@@ -14,7 +14,7 @@
 !
 !----------------------------------------------------------------------------
   subroutine grad2eri(egrad,egrad2,fulldmtrx1,fulldmtrx2,xint,hfexchange, &
-&                     maxdim,maxgraddim,nproc,myrank,itype,databasis)
+&                     maxdim,maxgraddim,nproc,myrank,itype,datajob,databasis)
 !----------------------------------------------------------------------------
 !
 ! Main driver of derivatives for two-electron integrals
@@ -31,10 +31,10 @@
 !         itype     (1:RHF, 2:UHF)
 ! Inout : egrad2    (Energy gradient values)
 !
-      use modjob, only : cutint2
       use modmolecule, only : natom
-      use modtype, only : typebasis
+      use modtype, only : typejob, typebasis
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, maxgraddim, nproc, myrank, itype
       integer :: nao, nshell, ijsh, ish, jsh, ksh, lsh, ij, kl
@@ -84,11 +84,11 @@
             kl= kk+lsh
             if(kl.gt.ij) exit kloop
             xijkl=xint(ij)*xint(kl)
-            if(xijkl.lt.cutint2) cycle
+            if(xijkl.lt.datajob%cutint2) cycle
             call calcpdmtrx(fulldmtrx1,fulldmtrx2,pdmtrx,pdmax,hfexchange, &
 &                           ish,jsh,ksh,lsh,maxdim,itype,databasis)
-            if((xijkl*pdmax).lt.cutint2) cycle
-            call calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,databasis)
+            if((xijkl*pdmax).lt.datajob%cutint2) cycle
+            call calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,datajob,databasis)
           enddo
         enddo kloop
       enddo
@@ -102,7 +102,7 @@ end
 
 
 !---------------------------------------------------------------------------------------
-  subroutine calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,databasis)
+  subroutine calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,datajob,databasis)
 !---------------------------------------------------------------------------------------
 !
 ! Driver of derivatives for two-electron integrals
@@ -117,9 +117,9 @@ end
 !
       use modparam, only : mxprsh
       use modmolecule, only : coord, natom
-      use modjob, only : threshex
-      use modtype, only : typebasis
+      use modtype, only : typejob, typebasis
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       integer,parameter :: ncart(0:6)=(/1,3,6,10,15,21,28/)
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim, maxgraddim
@@ -226,7 +226,7 @@ end
 ! Two-electron integral calculation
 !
       call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxgraddim, &
-&                   mxprsh,threshex)
+&                   mxprsh,datajob%threshex)
 !
       select case(nangijkl(4))
         case(1)
@@ -454,7 +454,7 @@ end
 ! Two-electron integral calculation
 !
         call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxgraddim, &
-&                     mxprsh,threshex)
+&                     mxprsh,datajob%threshex)
 !
         select case(nangijkl(4))
           case(0)
@@ -782,7 +782,7 @@ end
 ! Two-electron integral calculation
 !
       call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxgraddim, &
-&                   mxprsh,threshex)
+&                   mxprsh,datajob%threshex)
 !
       select case(nangijkl(3))
         case(1)
@@ -1010,7 +1010,7 @@ end
 ! Two-electron integral calculation
 !
         call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxgraddim, &
-&                     mxprsh,threshex)
+&                     mxprsh,datajob%threshex)
 !
         select case(nangijkl(3))
           case(0)
@@ -1338,7 +1338,7 @@ end
 ! Two-electron integral calculation
 !
       call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxgraddim, &
-&                   mxprsh,threshex)
+&                   mxprsh,datajob%threshex)
 !
       select case(nangijkl(2))
         case(1)
@@ -1566,7 +1566,7 @@ end
 ! Two-electron integral calculation
 !
         call int2elec(twoeri,exijkl,coijkl,xyzijkl,nprimijkl,nangijkl,nbfijkl,maxgraddim, &
-&                     mxprsh,threshex)
+&                     mxprsh,datajob%threshex)
 !
         select case(nangijkl(2))
           case(0)
