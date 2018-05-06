@@ -13,16 +13,17 @@
 ! limitations under the License.
 !
 !---------------------------------
-  subroutine readinput(datajob,databasis,datacomp)
+  subroutine readinput(datajob,datamol,databasis,datacomp)
 !---------------------------------
 !
 ! Read input data and open checkpoint file if necessary
 !
       use modparam, only : maxline, input
       use modmolecule, only : numatomic, natom, coord, znuc, charge, multi
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
+      type(typemol),intent(inout) :: datamol
       type(typebasis),intent(inout) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: ii, llen, intarray(16), info
@@ -98,7 +99,7 @@
         ecp        = databasis%ecp
         scfconv    = datajob%scfconv
         precision  = datajob%precision
-!       charge
+        charge     = datamol%charge
         cutint2    = datajob%cutint2
         dconv      = datajob%dconv
         optconv    = datajob%optconv
@@ -113,8 +114,8 @@
         threshover = datajob%threshover
         threshatom = datajob%threshatom
         threshmp2cphf=datajob%threshmp2cphf
-!       natom
-!       multi
+!       natom      = datajob%natom
+        multi      = datamol%multi
         iprint     = datajob%iprint
         maxiter    = datajob%maxiter
         maxdiis    = datajob%maxdiis
@@ -191,7 +192,7 @@
 !
 ! Read geometry data
 !
-      call readatom(datacomp,runtype,bohr,cartesian)
+      call readatom(runtype,bohr,cartesian,natom,datamol,datacomp)
 !
       if(datacomp%master) then
         chararray(1)= method
@@ -257,10 +258,13 @@
 !
       natom= intarray(1)
 !
-      call para_bcasti(numatomic,natom,0,datacomp%mpi_comm1)
-      call para_bcastr(coord(1,1),natom*3,0,datacomp%mpi_comm1)
-      call para_bcastr(znuc,natom,0,datacomp%mpi_comm1)
+      call para_bcasti(datamol%numatomic,natom,0,datacomp%mpi_comm1)
+      call para_bcastr(datamol%coord(1,1),natom*3,0,datacomp%mpi_comm1)
+      call para_bcastr(datamol%znuc,natom,0,datacomp%mpi_comm1)
 !
+      numatomic(1:natom)= datamol%numatomic(1:natom)
+      coord(1:3,1:natom)= datamol%coord(1:3,1:natom)
+      znuc(1:natom)     = datamol%znuc(1:natom)
 !     method  = chararray(1)
 !     runtype = chararray(2)
 !     basis   = chararray(3)
@@ -324,7 +328,7 @@
       databasis%ecp     = chararray(7)
       datajob%scfconv = chararray(8)
       datajob%precision=chararray(9)
-!     charge  = realarray( 1)
+      datamol%charge  = realarray( 1)
       datajob%cutint2 = realarray( 2)
       datajob%dconv   = realarray( 3)
       datajob%optconv = realarray( 4)
@@ -347,7 +351,7 @@
       datajob%threshover  = realarray(21)
       datajob%threshatom  = realarray(22)
       datajob%threshmp2cphf=realarray(23)
-!     multi   = intarray( 2)
+      datamol%multi   = intarray( 2)
       datajob%iprint  = intarray( 3)
       datajob%maxiter = intarray( 4)
       datajob%maxdiis = intarray( 5)
@@ -641,16 +645,17 @@ end
 
 
 !----------------------
-  subroutine readatom(datacomp,runtype,bohr,cartesian)
+  subroutine readatom(runtype,bohr,cartesian,natom,datamol,datacomp)
 !----------------------
 !
 ! Read atomic data
 !
-      use modmolecule, only : numatomic, natom, coord, znuc
       use modparam, only : mxatom, tobohr, maxline, input, icheck
-      use modtype, only : typecomp
+      use modtype, only : typemol, typecomp
       implicit none
+      type(typemol),intent(inout) :: datamol
       type(typecomp),intent(inout) :: datacomp
+      integer,intent(out) :: natom
       integer :: ii, jj, minatomic
       real(8),parameter :: zero=0.0D+00
       character(len=16),intent(in) :: runtype
@@ -698,7 +703,7 @@ end
           do ii= 1,mxatom
             read(input,'(a)',end=100) line
             if(len_trim(line) == 0) exit
-            read(line,*,err=9997,end=9997) atomin(ii),(coord(jj,ii),jj=1,3)
+            read(line,*,err=9997,end=9997) atomin(ii),(datamol%coord(jj,ii),jj=1,3)
             natom= natom+1
             if(ii == mxatom) then
               write(*,'(" Error! Number of atoms exceeds mxatom=",i6,".")')mxatom
@@ -711,11 +716,11 @@ end
             if(atomin(ii) == 'BQ1') atomin(ii)= 'BQ'
             do jj= -9,112
               if((atomin(ii) == table1(jj)).or.(atomin(ii) == table2(jj))) then
-                numatomic(ii)= jj
+                datamol%numatomic(ii)= jj
                 if(jj > 0) then
-                  znuc(ii)= dble(jj)
+                  datamol%znuc(ii)= dble(jj)
                 else
-                  znuc(ii)= zero
+                  datamol%znuc(ii)= zero
                 endif
                 exit
               endif
@@ -731,7 +736,7 @@ end
           if(.not.bohr) then
             do ii= 1,natom
               do jj= 1,3
-                coord(jj,ii)= coord(jj,ii)*tobohr
+                datamol%coord(jj,ii)= datamol%coord(jj,ii)*tobohr
               enddo
             enddo
           endif
@@ -743,14 +748,14 @@ end
           read(icheck,err=9998)
           read(icheck) cdummy, natom
           read(icheck)
-          read(icheck)(numatomic(ii),ii=1,natom)
+          read(icheck)(datamol%numatomic(ii),ii=1,natom)
           read(icheck)
-          read(icheck)((coord(jj,ii),jj=1,3),ii=1,natom)
+          read(icheck)((datamol%coord(jj,ii),jj=1,3),ii=1,natom)
           do ii= 1,natom
-            if(numatomic(ii) > 0) then
-              znuc(ii)= dble(numatomic(ii))
+            if(datamol%numatomic(ii) > 0) then
+              datamol%znuc(ii)= dble(datamol%numatomic(ii))
             else
-              znuc(ii)= zero
+              datamol%znuc(ii)= zero
             endif
           enddo
           write(*,'(" Geometry is read from checkpoint file.")')
@@ -759,7 +764,7 @@ end
 ! Check dummy and ghost atoms
 !
         if(runtype=='OPTIMIZE') then
-          minatomic= minval(numatomic(1:natom))
+          minatomic= minval(datamol%numatomic(1:natom))
           if((minatomic <= 0).and.(.not.cartesian)) then
             cartesian=.true.
             write(*,'(" Warning! Cartesian coordinate is used during geometry optimization.")')

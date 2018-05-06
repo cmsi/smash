@@ -20,9 +20,10 @@
 ! for High performance computing systems (SMASH).
 !
       use modparam, only : input, icheck
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob) :: datajob
+      type(typemol) :: datamol
       type(typebasis) :: databasis
       type(typecomp) :: datacomp
       logical :: converged
@@ -43,7 +44,7 @@
 !
 ! Read input file and set details
 !
-      call setdetails(datajob,databasis,datacomp)
+      call setdetails(datajob,datamol,databasis,datacomp)
 !
 ! Start calculations
 !
@@ -140,14 +141,15 @@ end
 
 
 !----------------------------------
-  subroutine setdetails(datajob,databasis,datacomp)
+  subroutine setdetails(datajob,datamol,databasis,datacomp)
 !----------------------------------
 !
 ! Read input file and set variables
 !
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
+      type(typemol),intent(inout) :: datamol
       type(typebasis),intent(inout) :: databasis
       type(typecomp),intent(inout) :: datacomp
 !
@@ -158,7 +160,7 @@ end
 ! Read input data and open checkpoint file if necessary
 !
       if(datacomp%master) call opendatfile(datacomp)
-      call readinput(datajob,databasis,datacomp)
+      call readinput(datajob,datamol,databasis,datacomp)
 !
 ! Set basis functions
 !
