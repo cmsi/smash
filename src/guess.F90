@@ -135,7 +135,7 @@ end
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
-      call calcover2(overlap,work1,datajob%threshex,databasis,dataguessbs,datacomp)
+      call calcover2(overlap,work1,datajob%threshex,datamol,databasis,dataguessbs,datacomp)
 !
 ! Project orbitals from Huckel to SCF
 !
@@ -1091,7 +1091,7 @@ end
 
 
 !-----------------------------------------------------------
-  subroutine calcover2(overlap,work,threshex,databasis,dataguessbs,datacomp)
+  subroutine calcover2(overlap,work,threshex,datamol,databasis,dataguessbs,datacomp)
 !-----------------------------------------------------------
 !
 ! Driver of overlap integral calculation
@@ -1100,8 +1100,9 @@ end
 ! Out : overlap (overlap integral of guess and SCF basis sets)
 !       work    (work array)
 !
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typemol, typebasis, typecomp
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis, dataguessbs
       type(typecomp),intent(inout) :: datacomp
       integer :: ish, jsh
@@ -1115,7 +1116,7 @@ end
       do ish= dataguessbs%nshell-datacomp%myrank2,1,-datacomp%nproc2
 !$OMP do
         do jsh= 1,databasis%nshell
-          call intover2(work,ish,jsh,threshex,databasis,dataguessbs)
+          call intover2(work,ish,jsh,threshex,datamol,databasis,dataguessbs)
         enddo
 !$OMP enddo
       enddo
@@ -1229,7 +1230,7 @@ end
 
 
 !---------------------------------------
-  subroutine intover2(overlap,ish,jsh,threshex,databasis,dataguessbs)
+  subroutine intover2(overlap,ish,jsh,threshex,datamol,databasis,dataguessbs)
 !---------------------------------------
 !
 ! Overlap integral calculation
@@ -1239,10 +1240,10 @@ end
 ! Out : overlap (overlap integral of guess and SCF basis sets)
 !
       use modparam, only : mxprsh
-      use modmolecule, only : coord
       use modguess, only : coord_g
-      use modtype, only : typebasis
+      use modtype, only : typemol, typebasis
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis, dataguessbs
       integer,intent(in) :: ish, jsh
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, iprim, jprim
@@ -1268,7 +1269,7 @@ end
       jlocbf= databasis%locbf(jsh)
       do ii= 1,3
         coordij(ii,1)= coord_g(ii,iatom)
-        coordij(ii,2)= coord(ii,jatom)
+        coordij(ii,2)= datamol%coord(ii,jatom)
       enddo
       do iprim= 1,nprimij(1)
         exij(iprim,1)= dataguessbs%ex(iloc+iprim)
@@ -1384,7 +1385,7 @@ end
 !
 ! Calculate overlap integrals between previous and present bases
 !
-      call calcover2(overlap(1,1),overlap(1,2),datajob%threshex,databasis,databasis,datacomp)
+      call calcover2(overlap(1,1),overlap(1,2),datajob%threshex,datamol,databasis,databasis,datacomp)
 !
 ! Project orbitals from previous basis to current basis
 !
@@ -1549,7 +1550,7 @@ end
 !
 ! Calculate overlap integrals between previous and present bases
 !
-      call calcover2(overlap,work2,datajob%threshex,databasis,dataguessbs,datacomp)
+      call calcover2(overlap,work2,datajob%threshex,datamol,databasis,dataguessbs,datacomp)
 !
 ! Project orbitals from previous basis to current basis
 !
@@ -1964,7 +1965,7 @@ end
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
-      call calcover2(overlap,work1,datajob%threshex,databasis,dataguessbs,datacomp)
+      call calcover2(overlap,work1,datajob%threshex,datamol,databasis,dataguessbs,datacomp)
 !
 ! Project orbitals from Huckel to SCF
 !
@@ -1985,7 +1986,6 @@ end
 ! Out : dftbmo (DFTB MOs)
 !       overlap,ortho,work,eigen (work space)
 !
-      use modmolecule, only : neleca, nelecb
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
@@ -2027,18 +2027,18 @@ end
 ! Set parameters
 !
       call huckelip(eigen,1,datajob%flagecp,datamol%natom,databasis%izcore,datamol%numatomic,datacomp)
-      call dftbip(eigen,uhub,datacomp,nshell_v,dataguessbs%nao)
-      nelecdftb(1)= neleca
-      nelecdftb(2)= nelecb
+      call dftbip(eigen,uhub,nshell_v,dataguessbs%nao,datamol,datacomp)
+      nelecdftb(1)= datamol%neleca
+      nelecdftb(2)= datamol%nelecb
 !
 ! Calculate core Hamiltonian matrix for DFTB
 !
       dftb0=zero
-      call formdftb0(dftb0,overlap,eigen,nao_v,nshell_v,datajob%threshex,dataguessbs)
+      call formdftb0(dftb0,overlap,eigen,nao_v,nshell_v,datajob%threshex,datamol,dataguessbs)
 !
 ! Calculate gamma12 calculation for DFTB
 !
-      call calcgamma12(gamma12,uhub,nshell_v,dataguessbs)
+      call calcgamma12(gamma12,uhub,nshell_v,datamol,dataguessbs)
 !
 ! Set initial Mulliken charge
 !
@@ -2060,7 +2060,7 @@ end
 ! Calculate new Mulliken charge
 !
         qmulliken(1:nshell_v,2)= qmulliken(1:nshell_v,1)
-        call calcdftbmulliken(overlap,dftbmo,work,qmulliken,nelecdftb,nshell_v,dataguessbs)
+        call calcdftbmulliken(overlap,dftbmo,work,qmulliken,nelecdftb,nshell_v,datamol,dataguessbs)
         call diffqmulliken(qmulliken,qmax,nshell_v)
         if(qmax < 1.0D-4) exit
         if(iter == maxiter) then
@@ -2078,16 +2078,16 @@ end
 
 
 !---------------------------------------------
-  subroutine formdftb0(dftb0,overlap,energy,nao_v,nshell_v,threshex,dataguessbs)
+  subroutine formdftb0(dftb0,overlap,energy,nao_v,nshell_v,threshex,datamol,dataguessbs)
 !---------------------------------------------
 !
 ! Form charge independent DFTB matrix elements
 !
       use modparam, only : mxprsh
       use modguess, only : coord_g
-      use modmolecule, only : numatomic
-      use modtype, only : typebasis
+      use modtype, only : typemol, typebasis
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: dataguessbs
       integer,parameter :: len1=5
       integer,intent(in) :: nao_v, nshell_v
@@ -2135,7 +2135,7 @@ end
           exij(iprim,1)= dataguessbs%ex(iloc+iprim)
           coij(iprim,1)= dataguessbs%coeff(iloc+iprim)
         enddo
-        znucdftb(1)= znucvalence(numatomic(iatom))
+        znucdftb(1)= znucvalence(datamol%numatomic(iatom))
 !
         do jsh= 1,ish-1
           jatom = dataguessbs%locatom(jsh)
@@ -2160,7 +2160,7 @@ end
 !
 ! 1-electron Coulomb integrals
 !
-            znucdftb(2)= znucvalence(numatomic(jatom))
+            znucdftb(2)= znucvalence(datamol%numatomic(jatom))
             if((nangij(1) <= 2).and.(nangij(2) <= 2)) then
               call int1cmd(cint,exij,coij,coordij,coordij,znucdftb,2, &
 &                          nprimij,nangij,nbfij,len1,mxprsh,threshex)
@@ -2248,15 +2248,15 @@ end
 
 
 !---------------------------------------
-  subroutine calcgamma12(gamma12,uhub,nshell_v,dataguessbs)
+  subroutine calcgamma12(gamma12,uhub,nshell_v,datamol,dataguessbs)
 !---------------------------------------
 !
 ! Driver of gamma12 calculation for DFTB
 !
       use modguess, only : coord_g
-      use modmolecule, only : numatomic
-      use modtype, only : typebasis
+      use modtype, only : typemol, typebasis
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: dataguessbs
       integer,intent(in) :: nshell_v
       integer :: iatom, jatom, ish, jsh
@@ -2268,12 +2268,12 @@ end
 !$OMP parallel do schedule(static,1) private(iatom,hbondi,jatom,rr,hbondij)
       do ish= 1,nshell_v
         iatom= dataguessbs%locatom(ish)
-        hbondi=(numatomic(iatom) == 1)
+        hbondi=(datamol%numatomic(iatom) == 1)
         do jsh= 1,ish
           jatom= dataguessbs%locatom(jsh)
           rr= sqrt((coord_g(1,iatom)-coord_g(1,jatom))**2+(coord_g(2,iatom)-coord_g(2,jatom))**2 &
 &                 +(coord_g(3,iatom)-coord_g(3,jatom))**2)
-          hbondij= hbondi.or.(numatomic(jatom) == 1)
+          hbondij= hbondi.or.(datamol%numatomic(jatom) == 1)
           call dftbgamma(gamma12(jsh,ish),uhub(ish),uhub(jsh),rr,hbondij)
           gamma12(ish,jsh)= gamma12(jsh,ish)
         enddo
@@ -2284,14 +2284,14 @@ end
 
 
 !--------------------------------------------------------------------
-  subroutine calcdftbmulliken(overlap,cmo,work,qmulliken,nelecdftb,nshell_v,dataguessbs)
+  subroutine calcdftbmulliken(overlap,cmo,work,qmulliken,nelecdftb,nshell_v,datamol,dataguessbs)
 !--------------------------------------------------------------------
 !
 ! Calculate Mulliken population for DFTB
 !
-      use modmolecule, only : numatomic
-      use modtype, only : typebasis
+      use modtype, only : typemol, typebasis
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: dataguessbs
       integer,intent(in) :: nelecdftb(2), nshell_v
       integer :: nao_g, ii, jj, ish, locbfi
@@ -2359,7 +2359,7 @@ end
         enddo
         do ish= 1,nshell_v
           qmulliken(ish)= qmulliken(ish) &
-&                        -znucshell(dataguessbs%mtype(ish),numatomic(dataguessbs%locatom(ish)))
+&                        -znucshell(dataguessbs%mtype(ish),datamol%numatomic(dataguessbs%locatom(ish)))
         enddo
       else
         write(*,'(" Error! DFTB for open-shell has not been implemented yet!")')
@@ -2447,17 +2447,17 @@ end
 
 
 !---------------------------------
-  subroutine dftbip(energy,uhub,datacomp,nshell_v,nao_g)
+  subroutine dftbip(energy,uhub,nshell_v,nao_g,datamol,datacomp)
 !---------------------------------
 !
 ! Set valence ionization potentials for DFTB
 !
-      use modmolecule, only : natom, numatomic
-      use modtype, only : typecomp
+      use modtype, only : typemol, typecomp
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nshell_v, nao_g
-      integer :: iao, iatom, i, ishell
+      integer :: iao, iatom, i, ishell, numatom
       real(8),intent(inout) :: energy(nao_g), uhub(nshell_v)
       real(8) :: dftbips(84)= &
 &     (/-0.238603D+0, -0.579318D+0, -0.105624D+0, -0.206152D+0, -0.347026D+0, -0.505337D+0,&
@@ -2546,129 +2546,130 @@ end
 !
       iao= 0
       ishell= 0
-      do iatom= 1,natom
-        select case(numatomic(iatom))
+      do iatom= 1,datamol%natom
+        numatom= datamol%numatomic(iatom)
+        select case(numatom)
 ! H - He
             case(1:2)
               iao= iao+1
-              energy(iao)= dftbips(numatomic(iatom))
+              energy(iao)= dftbips(numatom)
               ishell= ishell+1
-              uhub(ishell)= uhubs(numatomic(iatom))
+              uhub(ishell)= uhubs(numatom)
 ! Li - Ar
             case(3:18)
               iao= iao+1
-              energy(iao)= dftbips(numatomic(iatom))
+              energy(iao)= dftbips(numatom)
               do i= 1,3
                 iao= iao+1
-                energy(iao)= dftbipp(numatomic(iatom))
+                energy(iao)= dftbipp(numatom)
               enddo
               ishell= ishell+1
-              uhub(ishell)= uhubs(numatomic(iatom))
+              uhub(ishell)= uhubs(numatom)
               ishell= ishell+1
-              uhub(ishell)= uhubp(numatomic(iatom))
+              uhub(ishell)= uhubp(numatom)
 ! K  - Ca, Ga - Kr
             case(19:20,31:36)
               iao= iao+1
-              energy(iao)= dftbips(numatomic(iatom))
+              energy(iao)= dftbips(numatom)
               do i= 1,3
                 iao= iao+1
-                energy(iao)= dftbipp(numatomic(iatom))
+                energy(iao)= dftbipp(numatom)
               enddo
               ishell= ishell+1
-              uhub(ishell)= uhubs(numatomic(iatom))
+              uhub(ishell)= uhubs(numatom)
               ishell= ishell+1
-              uhub(ishell)= uhubp(numatomic(iatom))
+              uhub(ishell)= uhubp(numatom)
 ! Sc - Zn
             case(21:30)
               iao= iao+1
-              energy(iao)= dftbips(numatomic(iatom))
+              energy(iao)= dftbips(numatom)
               do i= 1,3
                 iao= iao+1
-                energy(iao)= dftbipp(numatomic(iatom))
+                energy(iao)= dftbipp(numatom)
               enddo
               do i= 1,5
                 iao= iao+1
-                energy(iao)= dftbipd(numatomic(iatom))
+                energy(iao)= dftbipd(numatom)
               enddo
               ishell= ishell+1
-              uhub(ishell)= uhubs(numatomic(iatom))
+              uhub(ishell)= uhubs(numatom)
               ishell= ishell+1
-              uhub(ishell)= uhubp(numatomic(iatom))
+              uhub(ishell)= uhubp(numatom)
               ishell= ishell+1
-              uhub(ishell)= uhubd(numatomic(iatom))
+              uhub(ishell)= uhubd(numatom)
 ! Rb - Sr, In - Xe
             case(37:38,49:54)
               iao= iao+1
-              energy(iao)= dftbips(numatomic(iatom))
+              energy(iao)= dftbips(numatom)
               do i= 1,3
                 iao= iao+1
-                energy(iao)= dftbipp(numatomic(iatom))
+                energy(iao)= dftbipp(numatom)
               enddo
               ishell= ishell+1
-              uhub(ishell)= uhubs(numatomic(iatom))
+              uhub(ishell)= uhubs(numatom)
               ishell= ishell+1
-              uhub(ishell)= uhubp(numatomic(iatom))
+              uhub(ishell)= uhubp(numatom)
 ! Y  - Cd
             case(39:48)
               iao= iao+1
-              energy(iao)= dftbips(numatomic(iatom))
+              energy(iao)= dftbips(numatom)
               do i= 1,3
                 iao= iao+1
-                energy(iao)= dftbipp(numatomic(iatom))
+                energy(iao)= dftbipp(numatom)
               enddo
               do i= 1,5
                 iao= iao+1
-                energy(iao)= dftbipd(numatomic(iatom))
+                energy(iao)= dftbipd(numatom)
               enddo
               ishell= ishell+1
-              uhub(ishell)= uhubs(numatomic(iatom))
+              uhub(ishell)= uhubs(numatom)
               ishell= ishell+1
-              uhub(ishell)= uhubp(numatomic(iatom))
+              uhub(ishell)= uhubp(numatom)
               ishell= ishell+1
-              uhub(ishell)= uhubd(numatomic(iatom))
+              uhub(ishell)= uhubd(numatom)
 ! Cs - Ba
             case(55:56)
               iao= iao+1
-              energy(iao)= dftbips(numatomic(iatom))
+              energy(iao)= dftbips(numatom)
               ishell= ishell+1
-              uhub(ishell)= uhubs(numatomic(iatom))
+              uhub(ishell)= uhubs(numatom)
 ! La
 ! no d function in bshuzmini6_g
 !           case(57)
 !             iao= iao+1
-!             energy(iao)= dftbips(numatomic(iatom))
+!             energy(iao)= dftbips(numatom)
 !             do i= 1,5
 !               iao= iao+1
-!               energy(iao)= dftbipd(numatomic(iatom))
+!               energy(iao)= dftbipd(numatom)
 !             enddo
 !             ishell= ishell+1
-!             uhub(ishell)= uhubs(numatomic(iatom))
+!             uhub(ishell)= uhubs(numatom)
 !             ishell= ishell+1
-!             uhub(ishell)= uhubd(numatomic(iatom))
+!             uhub(ishell)= uhubd(numatom)
 ! Lu - Hg
             case(71:80)
               iao= iao+1
-              energy(iao)= dftbips(numatomic(iatom))
+              energy(iao)= dftbips(numatom)
               do i= 1,5
                 iao= iao+1
-                energy(iao)= dftbipd(numatomic(iatom))
+                energy(iao)= dftbipd(numatom)
               enddo
               ishell= ishell+1
-              uhub(ishell)= uhubs(numatomic(iatom))
+              uhub(ishell)= uhubs(numatom)
               ishell= ishell+1
-              uhub(ishell)= uhubd(numatomic(iatom))
+              uhub(ishell)= uhubd(numatom)
 ! Tl - Po
             case(81:84)
               iao= iao+1
-              energy(iao)= dftbips(numatomic(iatom))
+              energy(iao)= dftbips(numatom)
               do i= 1,3
                 iao= iao+1
-                energy(iao)= dftbipp(numatomic(iatom))
+                energy(iao)= dftbipp(numatom)
               enddo
               ishell= ishell+1
-              uhub(ishell)= uhubs(numatomic(iatom))
+              uhub(ishell)= uhubs(numatom)
               ishell= ishell+1
-              uhub(ishell)= uhubp(numatomic(iatom))
+              uhub(ishell)= uhubp(numatom)
 !
             case default
               if(datacomp%master) &
