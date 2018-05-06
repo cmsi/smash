@@ -81,7 +81,7 @@
             enddo
           case('D95V')
             do iatom= 1, datamol%natom
-              call bsd95v(iatom,ishell,databasis)
+              call bsd95v(iatom,ishell,datamol%numatomic,databasis)
             enddo
           case('LANL2DZ')
             if(.not.datajob%flagecp) then
@@ -90,9 +90,9 @@
             endif
             do iatom= 1, datamol%natom
               if(datamol%numatomic(iatom) < 11) then
-                call bsd95v(iatom,ishell,databasis)
+                call bsd95v(iatom,ishell,datamol%numatomic,databasis)
               else
-                call bslanl2dz(iatom,ishell,databasis)
+                call bslanl2dz(iatom,ishell,datamol%numatomic,databasis)
               endif
             enddo
           case('GEN')
@@ -255,7 +255,7 @@ end
           case('CC-PVQZ')
             call bsccpvqz(iatom,ishell,datamol%numatomic,databasis)
           case('D95V')
-            call bsd95v(iatom,ishell,databasis)
+            call bsd95v(iatom,ishell,datamol%numatomic,databasis)
           case('LANL2DZ')
             if(.not.flagecp) then
               write(*,'(" Error! ECP is not set!.")')
@@ -263,9 +263,9 @@ end
             endif
             if(nn > 0) then
               if(nn < 11) then
-                call bsd95v(iatom,ishell,databasis)
+                call bsd95v(iatom,ishell,datamol%numatomic,databasis)
               else
-                call bslanl2dz(iatom,ishell,databasis)
+                call bslanl2dz(iatom,ishell,datamol%numatomic,databasis)
               endif
             endif
           case('')
@@ -8352,17 +8352,16 @@ end
 
 
 !----------------------------------
-  subroutine bsd95v(iatom,ishell,databasis)
+  subroutine bsd95v(iatom,ishell,numatomic,databasis)
 !----------------------------------
 !
 ! Set basis functions of D95V
 !
-      use modmolecule, only : numatomic
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(inout) :: databasis
-      integer,intent(in) :: iatom
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       integer :: j, nump
       integer :: ise(10)=(/0,0,4,14,24,34,44,54,64,74/)
@@ -8541,17 +8540,16 @@ end
 
 
 !-------------------------------------
-  subroutine bslanl2dz(iatom,ishell,databasis)
+  subroutine bslanl2dz(iatom,ishell,numatomic,databasis)
 !-------------------------------------
 !
 ! Set basis functions of LanL2DZ
 !
-      use modmolecule, only : numatomic
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(inout) :: databasis
-      integer,intent(in) :: iatom
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       integer :: j, nump
       integer :: ise3(11:18)=(/0,3,6,9,12,15,18,21/)
