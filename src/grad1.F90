@@ -13,15 +13,15 @@
 ! limitations under the License.
 !
 !--------------------------------------------------------------------
-  subroutine gradoneei(egrad,egrad1,fulldmtrx,ewdmtrx,nproc,myrank,databasis,datacomp)
+  subroutine gradoneei(egrad,egrad1,fulldmtrx,ewdmtrx,nproc,myrank,datajob,databasis,datacomp)
 !--------------------------------------------------------------------
 !
 ! Driver of derivatives for one-electron and overlap integrals
 !
       use modmolecule, only : natom
-      use modjob, only : flagecp
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typejob, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank
@@ -46,8 +46,8 @@
       do ish= databasis%nshell-myrank,1,-nproc
 !$OMP do
         do jsh= 1,ish
-          call calcdoverlap(egrad1,ewdmtrx,ish,jsh,databasis)
-          call calchelfey(egrad1,fulldmtrx,ish,jsh,databasis)
+          call calcdoverlap(egrad1,ewdmtrx,ish,jsh,datajob%threshex,databasis)
+          call calchelfey(egrad1,fulldmtrx,ish,jsh,datajob%threshex,databasis)
         enddo
 !$OMP enddo
       enddo
@@ -55,8 +55,8 @@
       do ish= myrank+1,databasis%nshell,nproc
 !$OMP do
         do jsh= 1,databasis%nshell
-          call calcdkinetic(egrad1,fulldmtrx,ish,jsh,databasis)
-          call calcdcoulomb(egrad1,fulldmtrx,ish,jsh,len1,databasis)
+          call calcdkinetic(egrad1,fulldmtrx,ish,jsh,datajob%threshex,databasis)
+          call calcdcoulomb(egrad1,fulldmtrx,ish,jsh,len1,datajob%threshex,databasis)
         enddo
 !$OMP enddo
       enddo
@@ -68,7 +68,7 @@
 !
 ! Add ECP derivative terms
 !
-      if(flagecp) then
+      if(datajob%flagecp) then
         egrad1(:)= zero
         call gradoneeiecp(egrad1,fulldmtrx,nproc,myrank,databasis)
         do i= 1,3*natom
@@ -182,7 +182,7 @@ end
 
 
 !-------------------------------------------------
-  subroutine calcdoverlap(egrad,ewdmtrx,ish,jsh,databasis)
+  subroutine calcdoverlap(egrad,ewdmtrx,ish,jsh,threshex,databasis)
 !-------------------------------------------------
 !
 ! Driver of overlap derivative term
@@ -192,7 +192,6 @@ end
 ! Inout : egrad (Energy gradient value)
 !
       use modparam, only : mxprsh
-      use modjob, only : threshex
       use modmolecule, only : natom, coord
       use modtype, only : typebasis
       implicit none
@@ -202,7 +201,7 @@ end
       integer :: nbfi, nbfj, iprim, jprim, ncarti, ncartj, i, j, iang, jang, ii, ij
       integer :: ix, jx, iy, jy, iz, jz, ncart(0:6)
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
-      real(8),intent(in) :: ewdmtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: ewdmtrx(databasis%nao*(databasis%nao+1)/2), threshex
       real(8),intent(inout) :: egrad(3,natom)
       real(8) :: xyzij(3), rij, rij2, fac, exi, exj, exj2, ci, cj
       real(8) :: ex1, ex2, ex3, xyzpij(3,2), cij
@@ -330,7 +329,7 @@ end
 
 
 !---------------------------------------------------
-  subroutine calcdkinetic(egrad,fulldmtrx,ish,jsh,databasis)
+  subroutine calcdkinetic(egrad,fulldmtrx,ish,jsh,threshex,databasis)
 !---------------------------------------------------
 !
 ! Driver of kinetic derivative term
@@ -340,7 +339,6 @@ end
 ! Inout : egrad  (Energy gradient value)
 !
       use modparam, only : mxprsh
-      use modjob, only : threshex
       use modmolecule, only : natom, coord
       use modtype, only : typebasis
       implicit none
@@ -350,7 +348,7 @@ end
       integer :: nbfi, nbfj, iprim, jprim, ncarti, ncartj, i, j, iang, jang, ii
       integer :: ix, jx, iy, jy, iz, jz, ncart(0:6)
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, half=0.5D+00
-      real(8),intent(in) :: fulldmtrx(databasis%nao,databasis%nao)
+      real(8),intent(in) :: fulldmtrx(databasis%nao,databasis%nao), threshex
       real(8),intent(inout) :: egrad(3,natom)
       real(8) :: xyzij(3), rij, rij2, fac, exi, exi2, exj, exj2, ci, cj
       real(8) :: ex1, ex2, ex3, xyzpij(3,2), cij
@@ -515,7 +513,7 @@ end
 
 
 !--------------------------------------------------------
-  subroutine calcdcoulomb(egrad,fulldmtrx,ish,jsh,len1,databasis)
+  subroutine calcdcoulomb(egrad,fulldmtrx,ish,jsh,len1,threshex,databasis)
 !--------------------------------------------------------
 !
 ! Driver of Coulomb derivative term
@@ -525,7 +523,6 @@ end
 ! Inout : egrad  (energy gradient value)
 !
       use modparam, only : mxprsh
-      use modjob, only : threshex
       use modmolecule, only : natom, coord, znuc
       use modtype, only : typebasis
       implicit none
@@ -567,7 +564,7 @@ end
       real(8),parameter :: fach3=0.52291251658379721D+00 ! sqrt(35/2)/8
       real(8),parameter :: fach4=2.56173769148989959D+00 ! sqrt(105)/4
       real(8),parameter :: fach5=0.48412291827592711D+00 ! sqrt(15)/8
-      real(8),intent(in) :: fulldmtrx(databasis%nao,databasis%nao)
+      real(8),intent(in) :: fulldmtrx(databasis%nao,databasis%nao), threshex
       real(8),intent(inout) :: egrad(3,natom)
       real(8) :: exij(mxprsh,2), cij(mxprsh,2), coordij(3,2)
       real(8) :: cint1(len1,len1), cint2(len1,len1), dcint(28,28,3), work(21)
@@ -965,7 +962,7 @@ end
 
 
 !-------------------------------------------------
-  subroutine calchelfey(egrad,fulldmtrx,ish,jsh,databasis)
+  subroutine calchelfey(egrad,fulldmtrx,ish,jsh,threshex,databasis)
 !-------------------------------------------------
 !
 ! Driver of Helmann-Feynman gradient term
@@ -976,14 +973,13 @@ end
 !
       use modparam, only : mxprsh
       use modmolecule, only : natom, coord, znuc
-      use modjob, only : threshex
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh
       integer :: nangij(2), nprimij(2), nbfij(2), locbfij(2), iatom, jatom
       integer :: iloc, jloc, iprim, jprim, i
-      real(8),intent(in) :: fulldmtrx(databasis%nao,databasis%nao)
+      real(8),intent(in) :: fulldmtrx(databasis%nao,databasis%nao), threshex
       real(8),intent(inout) :: egrad(3,natom)
       real(8) :: exij(mxprsh,2), cij(mxprsh,2), coordij(3,2)
       logical :: iandj
