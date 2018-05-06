@@ -37,7 +37,7 @@
         select case(databasis%basis)
           case('STO-3G')
             do iatom= 1, datamol%natom
-              call bssto3g(iatom,ishell,databasis)
+              call bssto3g(iatom,ishell,datamol%numatomic,databasis)
             enddo
           case('3-21G')
             do iatom= 1, datamol%natom
@@ -233,7 +233,7 @@ end
         nn= datamol%numatomic(iatom)
         select case(atombasis(nn))
           case('STO-3G')
-            call bssto3g(iatom,ishell,databasis)
+            call bssto3g(iatom,ishell,datamol%numatomic,databasis)
           case('3-21G')
             call bs321g(iatom,ishell,databasis)
           case('6-31G')
@@ -349,17 +349,16 @@ end
 
 
 !-----------------------------------
-  subroutine bssto3g(iatom,ishell,databasis)
+  subroutine bssto3g(iatom,ishell,numatomic,databasis)
 !-----------------------------------
 !
 ! Set basis functions of STO-3G
 !
-      use modmolecule, only : numatomic
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(inout) :: databasis
-      integer,intent(in) :: iatom
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       integer :: j
       integer :: is(54)=(/0,3, 6,12,18,24,30,36,42,48, 54,63,72,81,90,99,108,117, &
