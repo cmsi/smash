@@ -13,14 +13,15 @@
 ! limitations under the License.
 !
 !------------------------------
-  subroutine setecp(databasis,datacomp)
+  subroutine setecp(datamol,databasis,datacomp)
 !------------------------------
 !
 ! Driver of setting ecp functions
 !
-      use modmolecule, only : natom, znuc
-      use modtype, only : typebasis, typecomp
+      use modmolecule, only : znuc
+      use modtype, only : typemol, typebasis, typecomp
       implicit none
+      type(typemol),intent(inout) :: datamol
       type(typebasis),intent(inout) :: databasis
       type(typecomp),intent(inout) :: datacomp
       type(typebasis) :: datagenbasis
@@ -29,20 +30,20 @@
       integer :: maxgenangecp(-9:112), izgencore(-9:112)
       character(len=16) :: atomecp(-9:112)
 !
-      databasis%maxangecp(1:natom)= -1
-      databasis%izcore(1:natom)= 0
-      databasis%locecp(:,1:natom)= 0
-      databasis%mprimecp(:,1:natom)= 0
+      databasis%maxangecp(1:datamol%natom)= -1
+      databasis%izcore(1:datamol%natom)= 0
+      databasis%locecp(:,1:datamol%natom)= 0
+      databasis%mprimecp(:,1:datamol%natom)= 0
       iprim= 0
 !
       if(datacomp%master) then
         if((databasis%ecp == 'LANL2DZ').or.(databasis%ecp == 'LANL2MB')) then
-          do iatom= 1,natom
-            call ecplanl2(iatom,iprim,databasis)
+          do iatom= 1,datamol%natom
+            call ecplanl2(iatom,iprim,datamol%numatomic,databasis)
           enddo
         elseif(databasis%ecp == 'GEN') then
           call readecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,datagenbasis,datacomp)
-          call setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim,databasis,datagenbasis)
+          call setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim,datamol,databasis,datagenbasis)
         else
           write(*,'(" Error! This program does not support ECP function,",a10,".")')databasis%ecp
           call iabort
@@ -50,16 +51,18 @@
       endif
 !
       call para_bcasti(iprim,1,0,datacomp%mpi_comm1)
-      call para_bcasti(databasis%maxangecp    ,natom  ,0,datacomp%mpi_comm1)
-      call para_bcasti(databasis%izcore       ,natom  ,0,datacomp%mpi_comm1)
-      call para_bcasti(databasis%locecp(0,1)  ,natom*6,0,datacomp%mpi_comm1)
-      call para_bcasti(databasis%mprimecp(0,1),natom*6,0,datacomp%mpi_comm1)
-      call para_bcastr(databasis%execp        ,iprim  ,0,datacomp%mpi_comm1)
-      call para_bcastr(databasis%coeffecp     ,iprim  ,0,datacomp%mpi_comm1)
-      call para_bcasti(databasis%mtypeecp     ,iprim  ,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%maxangecp    ,datamol%natom  ,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%izcore       ,datamol%natom  ,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%locecp(0,1)  ,datamol%natom*6,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%mprimecp(0,1),datamol%natom*6,0,datacomp%mpi_comm1)
+      call para_bcastr(databasis%execp        ,iprim          ,0,datacomp%mpi_comm1)
+      call para_bcastr(databasis%coeffecp     ,iprim          ,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%mtypeecp     ,iprim          ,0,datacomp%mpi_comm1)
 ! 
-      do iatom= 1,natom
+      do iatom= 1,datamol%natom
+!ishimura
         znuc(iatom)= znuc(iatom)-databasis%izcore(iatom)
+        datamol%znuc(iatom)= datamol%znuc(iatom)-databasis%izcore(iatom)
       enddo
 !
       return
@@ -67,15 +70,15 @@ end
 
 
 !------------------------------
-  subroutine setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim,databasis,datagenbasis)
+  subroutine setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim,datamol,databasis,datagenbasis)
 !------------------------------
 !
 ! Driver of setting ECP functions from input file
 ! This routine should be called only from master node.
 !
-      use modmolecule, only : natom, numatomic
-      use modtype, only : typebasis
+      use modtype, only : typemol, typebasis
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(inout) :: databasis
       type(typebasis),intent(in) :: datagenbasis
       integer,intent(in) :: locgenecp(0:5,-9:112), mgenprimecp(0:5,-9:112)
@@ -86,11 +89,11 @@ end
 !
       iprim= 0
 !
-      do iatom= 1,natom
-        nn= numatomic(iatom)
+      do iatom= 1,datamol%natom
+        nn= datamol%numatomic(iatom)
         select case(atomecp(nn))
           case('LANL2DZ','LANL2MB')
-            call ecplanl2(iatom,iprim,databasis)
+            call ecplanl2(iatom,iprim,datamol%numatomic,databasis)
           case('')
           case default
             write(*,'(" Error! This program does not support ECP function ",a10,".")')atomecp(nn)
@@ -121,17 +124,16 @@ end
 
 
 !-----------------------------------
-  subroutine ecplanl2(iatom,iprim,databasis)
+  subroutine ecplanl2(iatom,iprim,numatomic,databasis)
 !-----------------------------------
 !
 ! Set Hay-Wadt ECP functions
 !
-      use modmolecule, only : numatomic
-      use modparam, only : mxprim
+      use modparam, only : mxatom, mxprim
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(inout) :: databasis
-      integer,intent(in) :: iatom
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: iprim
       integer :: nangecp3(16)=(/1,2,2,2,2, 0,1,2,2,2, 0,1,2,2,2,2/)
       integer :: iecp4(19:36)=(/  0, 13, 26, 40, 53, 66, 79, 92,105, &

@@ -168,7 +168,7 @@ end
 !
 ! Set ECP functions
 !
-      if(datajob%flagecp) call setecp(databasis,datacomp)
+      if(datajob%flagecp) call setecp(datamol,databasis,datacomp)
 !
 ! Set maximum memory size
 !
