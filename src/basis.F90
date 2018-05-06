@@ -57,15 +57,15 @@
             enddo
           case('6-311G')
             do iatom= 1, datamol%natom
-              call bs6311g(iatom,ishell,databasis)
+              call bs6311g(iatom,ishell,datamol%numatomic,databasis)
             enddo
           case('6-311G(D)','6-311G*')
             do iatom= 1, datamol%natom
-              call bs6311gd(iatom,ishell,databasis)
+              call bs6311gd(iatom,ishell,datamol%numatomic,databasis)
             enddo
           case('6-311G(D,P)','6-311G**')
             do iatom= 1, datamol%natom
-              call bs6311gdp(iatom,ishell,databasis)
+              call bs6311gdp(iatom,ishell,datamol%numatomic,databasis)
             enddo
           case('CC-PVDZ')
             do iatom= 1, datamol%natom
@@ -243,11 +243,11 @@ end
           case('6-31G(D,P)','6-31G**')
             call bs631gdp(iatom,ishell,datamol%numatomic,databasis)
           case('6-311G')
-            call bs6311g(iatom,ishell,databasis)
+            call bs6311g(iatom,ishell,datamol%numatomic,databasis)
           case('6-311G(D)','6-311G*')
-            call bs6311gd(iatom,ishell,databasis)
+            call bs6311gd(iatom,ishell,datamol%numatomic,databasis)
           case('6-311G(D,P)','6-311G**')
-            call bs6311gdp(iatom,ishell,databasis)
+            call bs6311gdp(iatom,ishell,datamol%numatomic,databasis)
           case('CC-PVDZ')
             call bsccpvdz(iatom,ishell,databasis)
           case('CC-PVTZ')
@@ -3754,17 +3754,16 @@ end
 
 
 !-----------------------------------
-  subroutine bs6311g(iatom,ishell,databasis)
+  subroutine bs6311g(iatom,ishell,numatomic,databasis)
 !-----------------------------------
 !
 ! Set basis functions of 6-311G
 !
-      use modmolecule, only : numatomic
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(inout) :: databasis
-      integer,intent(in) :: iatom
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       integer :: j, num
       integer :: is1(2), is2(3:10), ip2(3:10), is3(11:18), ip3(11:18)
@@ -4488,45 +4487,46 @@ end
 
 
 !-----------------------------------
-  subroutine bs6311gd(iatom,ishell,databasis)
+  subroutine bs6311gd(iatom,ishell,numatomic,databasis)
 !-----------------------------------
 !
 ! Set basis functions of 6-311G(d)
 !
+      use modparam, only : mxatom
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(inout) :: databasis
-      integer,intent(in) :: iatom
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
 !
-      call bs6311g(iatom,ishell,databasis)
+      call bs6311g(iatom,ishell,numatomic,databasis)
 !
-      call bs6311gs(iatom,ishell,databasis)
+      call bs6311gs(iatom,ishell,numatomic,databasis)
 !
       return
 end
 
 
 !------------------------------------
-  subroutine bs6311gdp(iatom,ishell,databasis)
+  subroutine bs6311gdp(iatom,ishell,numatomic,databasis)
 !------------------------------------
 !
 ! Set basis functions of 6-311G(d,p)
 !
-      use modmolecule, only : numatomic
+      use modparam, only : mxatom
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(inout) :: databasis
-      integer,intent(in) :: iatom
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
 !
-      call bs6311g(iatom,ishell,databasis)
+      call bs6311g(iatom,ishell,numatomic,databasis)
 !
       select case(numatomic(iatom))
         case(1:2)
-          call bs6311gss(iatom,ishell,databasis)
+          call bs6311gss(iatom,ishell,numatomic,databasis)
         case(3:)
-        call bs6311gs(iatom,ishell,databasis)
+        call bs6311gs(iatom,ishell,numatomic,databasis)
       end select
 !
       return
@@ -4534,17 +4534,16 @@ end
 
 
 !-----------------------------------
-  subroutine bs6311gs(iatom,ishell,databasis)
+  subroutine bs6311gs(iatom,ishell,numatomic,databasis)
 !-----------------------------------
 !
 ! Set basis polarization function of 6-311G(d)
 !
-      use modmolecule, only : numatomic
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(inout) :: databasis
-      integer,intent(in) :: iatom
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       real(8),parameter :: one=1.0D+00
       real(8) :: ex6311gs(3:36)
@@ -4595,17 +4594,16 @@ end
 
 
 !------------------------------------
-  subroutine bs6311gss(iatom,ishell,databasis)
+  subroutine bs6311gss(iatom,ishell,numatomic,databasis)
 !------------------------------------
 !
 ! Set basis polarization function of Hydrogen 6-311G(d,p)
 !
-      use modmolecule, only : numatomic
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(inout) :: databasis
-      integer,intent(in) :: iatom
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       real(8),parameter :: one=1.0D+00, ex6311gss=0.75D+00
 !
