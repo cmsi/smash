@@ -20,7 +20,6 @@
 ! for High performance computing systems (SMASH).
 !
       use modparam, only : input, icheck
-      use modjob, only : version
       use modtype, only : typejob, typebasis, typecomp
       implicit none
       type(typejob) :: datajob
@@ -29,7 +28,6 @@
       logical :: converged
 !
       call setparallel(datacomp)
-      version= '2.3.0'
 !
       if(datacomp%master) then
         write(*,&
@@ -211,14 +209,6 @@ end
 !
 ! Set defaults before reading input file
 !
-      use modjob, only : scftype, runtype, method, bohr, memory, iprint, octupole, check, &
-&                        precision, cutint2, threshsoscf, threshqc, threshover, threshatom, &
-&                        threshdiis, threshweight, threshrho, threshdfock, threshdftao, &
-&                        threshmp2cphf, &
-&                        maxiter, dconv, fdiff, scfconv, maxdiis, maxsoscf, maxqc, &
-&                        maxqcdiag, maxqcdiagsub, extrap, &
-&                        idftex, idftcor, nrad, nleb, bqrad, flagecp, guess, &
-&                        ncore, nvfz, maxmp2diis, maxmp2iter, nopt, optconv, cartesian
       use modmolecule, only : multi, charge
       use modtype, only : typecomp
       implicit none
@@ -228,58 +218,58 @@ end
 !     datacomp%memmax = 1000000000
 !     datacomp%memused= 0
 !     datacomp%memusedmax= 0
-      memory = ''
-      maxiter= 150
-      maxdiis= 20
-      maxsoscf= 20
-      maxqc   = 15
-      maxqcdiag= 100
-      maxqcdiagsub= 10
-      fdiff  =.true.
-      scfconv='DIIS'
-      extrap =.false.
-      threshsoscf= 0.25D+00
-      threshqc   = 1.0D-05
-      threshover = 1.0D-06
-      threshatom = 2.0D-01
-      threshdiis = 6.0D-01
-      threshmp2cphf=1.0D-10
-      idftex = 0
-      idftcor= 0
-      iprint = 2
-      bohr   =.false.
+!     memory = ''
+!     maxiter= 150
+!     maxdiis= 20
+!     maxsoscf= 20
+!     maxqc   = 15
+!     maxqcdiag= 100
+!     maxqcdiagsub= 10
+!     fdiff  =.true.
+!     scfconv='DIIS'
+!     extrap =.false.
+!     threshsoscf= 0.25D+00
+!     threshqc   = 1.0D-05
+!     threshover = 1.0D-06
+!     threshatom = 2.0D-01
+!     threshdiis = 6.0D-01
+!     threshmp2cphf=1.0D-10
+!     idftex = 0
+!     idftcor= 0
+!     iprint = 2
+!     bohr   =.false.
 !     spher  =.true.
 !     spher_g=.true.
-      nopt   = 100
-      optconv= 1.0D-04
-      cartesian=.false.
+!     nopt   = 100
+!     optconv= 1.0D-04
+!     cartesian=.false.
       multi  = 1
       charge = 0.0D+00
-      bqrad(:)=1.0D+00
-      nvfz= 0
-      maxmp2diis= 20
-      maxmp2iter= 100
+!     bqrad(:)=1.0D+00
+!     nvfz= 0
+!     maxmp2diis= 20
+!     maxmp2iter= 100
 !
-      cutint2=-1.0d+00
-      nrad = 0
-      nleb = 0
-      ncore= -1
-      dconv=-1.0D+00
-      threshweight=-1.0D+00
-      threshrho=-1.0D+00
-      threshdfock=-1.0D+00
-      threshdftao=-1.0D+00
+!     cutint2=-1.0d+00
+!     nrad = 0
+!     nleb = 0
+!     ncore= -1
+!     dconv=-1.0D+00
+!     threshweight=-1.0D+00
+!     threshrho=-1.0D+00
+!     threshdfock=-1.0D+00
+!     threshdftao=-1.0D+00
 !
-      precision='MEDIUM'
-      flagecp= .false.
-      scftype='RHF'
-      method='HARTREE-FOCK'
-      runtype='ENERGY'
+!     precision='MEDIUM'
+!     flagecp= .false.
+!     scftype='RHF'
+!     method='HARTREE-FOCK'
+!     runtype='ENERGY'
 !     basis='STO-3G'
-      guess='HUCKEL'
+!     guess='HUCKEL'
 !     ecp=''
-      check=''
-      octupole=.false.
+!     check=''
+!     octupole=.false.
 !
       return
 end
@@ -291,47 +281,11 @@ end
 !
 ! Reset defaults after reading input file
 !
-      use modjob, only : precision, cutint2, threshweight, threshrho, threshdfock, threshdftao, &
-&                        dconv, nrad, nleb
       use modtype, only : typejob, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
       type(typecomp),intent(inout) :: datacomp
       real(8),parameter :: zero= 0.0D+00
-
-      select case(precision)
-        case('HIGH')
-          if(cutint2 < zero) cutint2= 1.0D-12
-          if(dconv   < zero) dconv  = 5.0D-06
-          if(threshweight < zero) threshweight=1.0D-08
-          if(threshrho    < zero) threshrho   =1.0D-06
-          if(threshdfock  < zero) threshdfock =1.0D-05
-          if(threshdftao  < zero) threshdftao =1.0D-04
-          if(nrad == 0) nrad= 150
-          if(nleb == 0) nleb= 590
-        case('MEDIUM')
-          if(cutint2 < zero) cutint2= 1.0D-11
-          if(dconv   < zero) dconv  = 5.0D-06
-          if(threshweight < zero) threshweight=1.0D-08
-          if(threshrho    < zero) threshrho   =1.0D-05
-          if(threshdfock  < zero) threshdfock =1.0D-04
-          if(threshdftao  < zero) threshdftao =1.0D-03
-          if(nrad == 0) nrad= 96
-          if(nleb == 0) nleb= 302
-        case('LOW')
-          if(cutint2 < zero) cutint2= 1.0D-10
-          if(dconv   < zero) dconv  = 1.0D-05
-          if(threshweight < zero) threshweight=1.0D-08
-          if(threshrho    < zero) threshrho   =1.0D-04
-          if(threshdfock  < zero) threshdfock =1.0D-04
-          if(threshdftao  < zero) threshdftao =1.0D-02
-          if(nrad == 0) nrad= 72
-          if(nleb == 0) nleb= 302
-        case default
-          if(datacomp%master) write(*,'(" Error! This program does not support precision= ", &
-&                                       a16,".")') precision
-          call iabort
-      end select
 !
       select case(datajob%precision)
         case('HIGH')
@@ -378,7 +332,6 @@ end
 ! Set number of electrons
 !
       use modmolecule, only : numatomic, neleca, nelecb, natom, multi, charge
-      use modjob, only : scftype
       use modtype, only : typejob, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -406,8 +359,6 @@ end
 !
       if((datajob%scftype == 'RHF').and.(multi /= 1)) then
         if(datacomp%master) write(*,'(" Warning! SCFtype changes from RHF to UHF.")')
-!ishimura
-        scftype = 'UHF'
         datajob%scftype = 'UHF'
         datacomp%nwarn= datacomp%nwarn+1
       endif
@@ -433,7 +384,6 @@ end
 ! Parallel information
 !
       use modmolecule, only : nmo, enuc
-      use modjob, only : cutint2, dconv
       use modtype, only : typejob, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -495,23 +445,13 @@ end
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
         if(datajob%guess == 'HUCKEL') then
-!ishimura-start
-          savedconv= dconv
-          savecutint2= cutint2
-          dconv= max(dconv,1.0D-2)
-          cutint2= max(cutint2,1.0D-9)
           savedconv= datajob%dconv
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
-!ishimura-end
           call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
-!ishimura-start
-          dconv= savedconv
-          cutint2= savecutint2
           datajob%dconv= savedconv
           datajob%cutint2= savecutint2
-!ishimura-end
           call tstamp(1,datacomp)
         endif
         call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
@@ -589,7 +529,6 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modmolecule, only : nmo, enuc
-      use modjob, only : cutint2, dconv
       use modtype, only : typejob, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -651,23 +590,13 @@ end
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
         if(datajob%guess == 'HUCKEL') then
-!ishimura-start
-          savedconv= dconv
-          savecutint2= cutint2
-          dconv= max(dconv,1.0D-2)
-          cutint2= max(cutint2,1.0D-9)
           savedconv= datajob%dconv
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
-!ishimura-end
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
-!ishimura-start
-          dconv= savedconv
-          cutint2= savecutint2
           datajob%dconv= savedconv
           datajob%cutint2= savecutint2
-!ishimura-end
           call tstamp(1,datacomp)
         endif
         call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
@@ -747,7 +676,6 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modmolecule, only : nmo, natom, enuc
-      use modjob, only : cutint2, dconv
       use modtype, only : typejob, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -811,23 +739,13 @@ end
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
         if(datajob%guess == 'HUCKEL') then
-!ishimura-start
-          savedconv= dconv
-          savecutint2= cutint2
-          dconv= max(dconv,1.0D-2)
-          cutint2= max(cutint2,1.0D-9)
           savedconv= datajob%dconv
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
-!ishimura-end
           call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
-!ishimura-start
-          dconv= savedconv
-          cutint2= savecutint2
           datajob%dconv= savedconv
           datajob%cutint2= savecutint2
-!ishimura-end
           call tstamp(1,datacomp)
         endif
         call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
@@ -933,7 +851,6 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modmolecule, only : nmo, natom, enuc
-      use modjob, only : cutint2, dconv
       use modtype, only : typejob, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -997,23 +914,13 @@ end
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
         if(datajob%guess == 'HUCKEL') then
-!ishimura-start
-          savedconv= dconv
-          savecutint2= cutint2
-          dconv= max(dconv,1.0D-2)
-          cutint2= max(cutint2,1.0D-9)
           savedconv= datajob%dconv
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
-!ishimura-end
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
-!ishimura-start
-          dconv= savedconv
-          cutint2= savecutint2
           datajob%dconv= savedconv
           datajob%cutint2= savecutint2
-!ishimura-end
           call tstamp(1,datacomp)
         endif
         call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
@@ -1119,7 +1026,6 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modmolecule, only : nmo, natom, coord, coordold, enuc
-      use modjob, only : cutint2, dconv
       use modtype, only : typejob, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -1235,23 +1141,13 @@ end
           call tstamp(1,datacomp)
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
           if((iopt == 1).and.(datajob%guess == 'HUCKEL')) then
-!ishimura-start
-            savedconv= dconv
-            savecutint2= cutint2
-            dconv= max(dconv,1.0D-2)
-            cutint2= max(cutint2,1.0D-9)
             savedconv= datajob%dconv
             savecutint2= datajob%cutint2
             datajob%dconv= max(datajob%dconv,1.0D-2)
             datajob%cutint2= max(datajob%cutint2,1.0D-9)
-!ishimura-end
             call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
-!ishimura-start
-            dconv= savedconv
-            cutint2= savecutint2
             datajob%dconv= savedconv
             datajob%cutint2= savecutint2
-!ishimura-end
             call tstamp(1,datacomp)
           endif
           call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
@@ -1433,7 +1329,6 @@ end
 !                               (default: MPI_COMM_WORLD)
 !
       use modmolecule, only : nmo, natom, coord, coordold, enuc
-      use modjob, only : cutint2, dconv
       use modtype, only : typejob, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -1549,23 +1444,13 @@ end
           call tstamp(1,datacomp)
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
           if((iopt == 1).and.(datajob%guess == 'HUCKEL')) then
-!ishimura-start
-            savedconv= dconv
-            savecutint2= cutint2
-            dconv= max(dconv,1.0D-2)
-            cutint2= max(cutint2,1.0D-9)
             savedconv= datajob%dconv
             savecutint2= datajob%cutint2
             datajob%dconv= max(datajob%dconv,1.0D-2)
             datajob%cutint2= max(datajob%cutint2,1.0D-9)
-!ishimura-end
             call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
-!ishimura-start
-            dconv= savedconv
-            cutint2= savecutint2
             datajob%dconv= savedconv
             datajob%cutint2= savecutint2
-!ishimura-end
             call tstamp(1,datacomp)
           endif
           call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
@@ -1777,7 +1662,6 @@ end
 ! Adjust the numbe of DFT grids when heavy elements are included
 !
       use modmolecule, only : natom, numatomic, atomrad
-      use modjob, only : method, idftex, idftcor, nrad, nleb, hfexchange, bqrad
       use modtype, only : typejob, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -1789,20 +1673,12 @@ end
         atomrad(-ii)= datajob%bqrad(ii)
       enddo
 !
-      select case(method)
+      select case(datajob%method)
         case('B3LYP')
-!ishimura
-          idftex = 1
-          idftcor= 1
-          hfexchange= 0.2D+00
           datajob%idftex = 1
           datajob%idftcor= 1
           datajob%hfexchange= 0.2D+00
         case('B3LYP5')
-!ishimura
-          idftex = 1
-          idftcor= 2
-          hfexchange= 0.2D+00
           datajob%idftex = 1
           datajob%idftcor= 2
           datajob%hfexchange= 0.2D+00
@@ -1832,14 +1708,12 @@ end
 !
 ! Set MP2 information
 !
-      use modjob, only : ncore
       use modtype, only : typejob, typebasis
       implicit none
       type(typejob),intent(inout) :: datajob
       type(typebasis),intent(in) :: databasis
       integer :: ncorecalc
 !
-      if(ncore == -1) ncore= ncorecalc(databasis)
       if(datajob%ncore == -1) datajob%ncore= ncorecalc(databasis)
 !
       return

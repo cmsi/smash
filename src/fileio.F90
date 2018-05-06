@@ -20,24 +20,25 @@
 !
       use modparam, only : maxline, input
       use modmolecule, only : numatomic, natom, coord, znuc, charge, multi
-      use modjob, only : method, runtype, scftype, bohr, memory, iprint, octupole, check, &
-&                        precision, cutint2, threshdiis, threshsoscf, threshqc, threshweight, &
-&                        threshrho, threshdfock, threshdftao, threshover, threshatom, &
-&                        threshmp2cphf, nrad, nleb, bqrad, &
-&                        ncore, nvfz, maxmp2diis, maxmp2iter, &
-&                        nopt, optconv, cartesian, flagecp, guess, &
-&                        scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
       use modtype, only : typejob, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
       type(typebasis),intent(inout) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: ii, llen, intarray(16), info
+      integer :: iprint, maxiter, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
+      integer :: idftex, idftcor, nrad, nleb, ncore, nvfz, maxmp2diis, maxmp2iter, nopt
       real(8) :: realarray(23)
+      real(8) :: threshover, threshatom, threshdiis, cutint2, threshsoscf
+      real(8) :: threshqc, threshweight,threshrho, threshdfock, threshdftao, threshmp2cphf
+      real(8) :: dconv, hfexchange, bqrad(9), optconv
       character(len=254) :: line
       character(len=16) :: chararray(9)
+      character(len=64) :: check
+      character(len=16) :: method, runtype, scftype, memory, version, guess, precision, scfconv
       character(len=16) :: basis, ecp, mem=''
       logical :: logarray(5)
+      logical :: bohr, octupole, flagecp, fdiff, extrap, cartesian
       logical :: spher
       namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp
       namelist /control/ precision, cutint2, spher, guess, iprint, bohr, check, threshover, &
@@ -260,58 +261,58 @@
       call para_bcastr(coord(1,1),natom*3,0,datacomp%mpi_comm1)
       call para_bcastr(znuc,natom,0,datacomp%mpi_comm1)
 !
-      method  = chararray(1)
-      runtype = chararray(2)
+!     method  = chararray(1)
+!     runtype = chararray(2)
 !     basis   = chararray(3)
-      scftype = chararray(4)
-      memory  = chararray(5)
-      guess   = chararray(6)
+!     scftype = chararray(4)
+!     memory  = chararray(5)
+!     guess   = chararray(6)
 !     ecp     = chararray(7)
-      scfconv = chararray(8)
-      precision=chararray(9)
+!     scfconv = chararray(8)
+!     precision=chararray(9)
       charge  = realarray( 1)
-      cutint2 = realarray( 2)
-      dconv   = realarray( 3)
-      optconv = realarray( 4)
-      threshdiis = realarray( 5)
-      threshsoscf= realarray( 6)
-      threshqc= realarray( 7)
-      bqrad(1)= realarray( 8)
-      bqrad(2)= realarray( 9)
-      bqrad(3)= realarray(10)
-      bqrad(4)= realarray(11)
-      bqrad(5)= realarray(12)
-      bqrad(6)= realarray(13)
-      bqrad(7)= realarray(14)
-      bqrad(8)= realarray(15)
-      bqrad(9)= realarray(16)
-      threshweight= realarray(17)
-      threshrho   = realarray(18)
-      threshdfock = realarray(19)
-      threshdftao = realarray(20)
-      threshover  = realarray(21)
-      threshatom  = realarray(22)
-      threshmp2cphf=realarray(23)
+!     cutint2 = realarray( 2)
+!     dconv   = realarray( 3)
+!     optconv = realarray( 4)
+!     threshdiis = realarray( 5)
+!     threshsoscf= realarray( 6)
+!     threshqc= realarray( 7)
+!     bqrad(1)= realarray( 8)
+!     bqrad(2)= realarray( 9)
+!     bqrad(3)= realarray(10)
+!     bqrad(4)= realarray(11)
+!     bqrad(5)= realarray(12)
+!     bqrad(6)= realarray(13)
+!     bqrad(7)= realarray(14)
+!     bqrad(8)= realarray(15)
+!     bqrad(9)= realarray(16)
+!     threshweight= realarray(17)
+!     threshrho   = realarray(18)
+!     threshdfock = realarray(19)
+!     threshdftao = realarray(20)
+!     threshover  = realarray(21)
+!     threshatom  = realarray(22)
+!     threshmp2cphf=realarray(23)
       multi   = intarray( 2)
-      iprint  = intarray( 3)
-      maxiter = intarray( 4)
-      maxdiis = intarray( 5)
-      maxsoscf= intarray( 6)
-      maxqc   = intarray( 7)
-      maxqcdiag=intarray( 8)
-      maxqcdiagsub=intarray( 9)
-      nopt    = intarray(10)
-      nrad    = intarray(11)
-      nleb    = intarray(12)
-      ncore   = intarray(13)
-      nvfz    = intarray(14)
-      maxmp2diis= intarray(15)
-      maxmp2iter= intarray(16)
+!     iprint  = intarray( 3)
+!     maxiter = intarray( 4)
+!     maxdiis = intarray( 5)
+!     maxsoscf= intarray( 6)
+!     maxqc   = intarray( 7)
+!     maxqcdiag=intarray( 8)
+!     maxqcdiagsub=intarray( 9)
+!     nopt    = intarray(10)
+!     nrad    = intarray(11)
+!     nleb    = intarray(12)
+!     ncore   = intarray(13)
+!     nvfz    = intarray(14)
+!     maxmp2diis= intarray(15)
+!     maxmp2iter= intarray(16)
 !     spher   = logarray(1)
-      bohr    = logarray(2)
-      flagecp = logarray(3)
-      cartesian=logarray(4)
-      octupole =logarray(5)
+!     bohr    = logarray(2)
+!     flagecp = logarray(3)
+!     cartesian=logarray(4)
+!     octupole =logarray(5)
 !
       datajob%check   = check
       datajob%method  = chararray(1)

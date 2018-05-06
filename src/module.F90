@@ -32,61 +32,6 @@
 end
 
 
-!----------------
-  module modjob
-!----------------
-!
-! iprint : print option
-!    = 0 : minimal output
-!    = 1 : standard output
-!    = 2 : verbose output
-! threshex    : threshold for overlap of two basis functions
-! threshover  : threshold for linear depencency of basis functions
-! threshatm   : threshold for distance of atoms
-! cutint2     : threshold for two-electron integrals
-! threshsoscf : threshold for second-order SCF
-! threshqc    : threshold for quadratically convergent SCF
-! threshweight: threshold for weight at a grid point
-! threshrho   : threshold for density at a grid point
-! threshdfock : threshold for functional at a grid point
-! threshmp2cphf : threshold for MP2-CPHF
-!
-      implicit none
-      integer :: iprint
-      character(len=16) :: method, runtype, scftype
-      character(len=16) :: memory!, mem
-      character(len=16) :: version
-      character(len=64) :: check
-      logical :: bohr
-      logical :: octupole
-      real(8),parameter :: threshex=30.0D+00
-      real(8) :: threshover, threshatom, threshdiis
-      real(8) :: cutint2, threshsoscf, threshqc
-      real(8) :: threshweight, threshrho, threshdfock, threshdftao
-      real(8) :: threshmp2cphf
-      character(len=16) :: precision
-!
-      integer :: maxiter, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
-      real(8) :: dconv
-      logical :: fdiff, extrap
-      character(len=16) :: scfconv
-!
-      integer :: idftex, idftcor, nrad, nleb
-      real(8) :: hfexchange, bqrad(9)
-!
-      integer :: ncore, nvfz, maxmp2diis, maxmp2iter
-!
-      integer :: nopt
-      real(8) :: optconv
-      logical :: cartesian
-!
-      logical :: flagecp
-!
-      character(len=16) :: guess
-!
-end
-
-
 !---------------------
   module modmolecule
 !---------------------
@@ -304,6 +249,20 @@ end
         character(len=16) :: ecp='', atomecp(-9:112)
       end type
 !
+! iprint : print option
+!    = 0 : minimal output
+!    = 1 : standard output
+!    = 2 : verbose output
+! threshex    : threshold for overlap of two basis functions
+! threshover  : threshold for linear depencency of basis functions
+! threshatm   : threshold for distance of atoms
+! cutint2     : threshold for two-electron integrals
+! threshsoscf : threshold for second-order SCF
+! threshqc    : threshold for quadratically convergent SCF
+! threshweight: threshold for weight at a grid point
+! threshrho   : threshold for density at a grid point
+! threshdfock : threshold for functional at a grid point
+! threshmp2cphf : threshold for MP2-CPHF
       type typejob
         integer :: iprint=2
         real(8) :: threshex=30.0D+00
