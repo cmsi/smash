@@ -1490,7 +1490,7 @@ end
 !
 ! Read checkpoint information
 !
-      call readcheckinfo(scftype_g,charge_g,flagecp_g,neleca_g,nelecb_g,nmo_g,dataguessbs,datacomp)
+      call readcheckinfo(scftype_g,charge_g,flagecp_g,neleca_g,nelecb_g,nmo_g,datamol%natom,dataguessbs,datacomp)
 !
       nao= databasis%nao
       nao_g= dataguessbs%nao
@@ -1504,7 +1504,7 @@ end
 !
 ! Read guess basis functions and MOs from checkpoint file
 !
-      call readcheckguess(datajob%scftype,cmoa_g,cmob_g,scftype_g,nmo_g,dataguessbs,datacomp)
+      call readcheckguess(datajob%scftype,cmoa_g,cmob_g,scftype_g,nmo_g,datamol%natom,dataguessbs,datacomp)
 !
 ! Orthonormalize guess basis functions
 !
