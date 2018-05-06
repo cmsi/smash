@@ -1332,7 +1332,7 @@ end
 !
 ! Set guess MO calculation flag from Huckel to projection
 !
-        call setnextopt(coordold,natom,iopt)
+        call setnextopt(coordold,natom,iopt,datajob)
 !
         if((iopt == datajob%nopt).and.datacomp%master) then
           write(*,'("Warning! Geometry did not converge.")')
@@ -1643,7 +1643,7 @@ end
 !
 ! Set guess MO calculation flag from Huckel to projection
 !
-        call setnextopt(coordold,natom,iopt)
+        call setnextopt(coordold,natom,iopt,datajob)
 !
         if((iopt == datajob%nopt).and.datacomp%master) then
           write(*,'("Warning! Geometry did not converge.")')
@@ -1737,22 +1737,23 @@ end
 
 
 !---------------------------------------------
-  subroutine setnextopt(coordold,natom,iopt)
+  subroutine setnextopt(coordold,natom,iopt,datajob)
 !---------------------------------------------
 !
 ! Set parameters for next optimization step
 !
       use modguess, only : coord_g, nmo_g
-      use modjob, only : guess
       use modmolecule, only : nmo
+      use modtype, only : typejob
       implicit none
+      type(typejob),intent(inout) :: datajob
       integer,intent(in) :: natom, iopt
       integer :: iatom
       real(8),intent(in) :: coordold(3,natom)
 !
 ! Set MO projection as initial MO calculation
 !
-      guess= 'UPDATE'
+      datajob%guess= 'UPDATE'
 !
 ! Copy coordinate and energy gradient
 !
