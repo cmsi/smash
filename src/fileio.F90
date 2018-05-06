@@ -1300,19 +1300,19 @@ end
 
 
 !--------------------------------------------------
-  subroutine writeeigenvalue(eigena,eigenb,itype,datajob,datacomp)
+  subroutine writeeigenvalue(eigena,eigenb,itype,datajob,datamol,datacomp)
 !--------------------------------------------------
 !
 ! Write eigenvalues
 !
-      use modmolecule, only : nmo, neleca, nelecb
-      use modtype, only : typejob, typecomp
+      use modtype, only : typejob, typemol, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: itype
       integer :: imo
-      real(8),intent(in) :: eigena(nmo), eigenb(nmo)
+      real(8),intent(in) :: eigena(datamol%nmo), eigenb(datamol%nmo)
 !
 ! Closed-shell
 !
@@ -1321,8 +1321,8 @@ end
           write(*,'(1x,80("-"))')
           write(*,'("   Eigenvalues (Hartree)")')
           write(*,'(1x,80("-"))')
-          write(*,'("   Alpha Occupied: ",5f12.5)')(eigena(imo),imo=1,neleca)
-          write(*,'("   Alpha Virtual : ",5f12.5)')(eigena(imo),imo=neleca+1,nmo)
+          write(*,'("   Alpha Occupied: ",5f12.5)')(eigena(imo),imo=1,datamol%neleca)
+          write(*,'("   Alpha Virtual : ",5f12.5)')(eigena(imo),imo=datamol%neleca+1,datamol%nmo)
           write(*,'(1x,80("-"))')
 !
 ! Open-shell
@@ -1331,10 +1331,10 @@ end
           write(*,'(1x,80("-"))')
           write(*,'("   Eigenvalues (Hartree)")')
           write(*,'(1x,80("-"))')
-          write(*,'("   Alpha Occupied: ",5f12.5)')(eigena(imo),imo=1,neleca)
-          write(*,'("   Alpha Virtual : ",5f12.5)')(eigena(imo),imo=neleca+1,nmo)
-          write(*,'("   Beta  Occupied: ",5f12.5)')(eigenb(imo),imo=1,nelecb)
-          write(*,'("   Beta  Virtual : ",5f12.5)')(eigenb(imo),imo=nelecb+1,nmo)
+          write(*,'("   Alpha Occupied: ",5f12.5)')(eigena(imo),imo=1,datamol%neleca)
+          write(*,'("   Alpha Virtual : ",5f12.5)')(eigena(imo),imo=datamol%neleca+1,datamol%nmo)
+          write(*,'("   Beta  Occupied: ",5f12.5)')(eigenb(imo),imo=1,datamol%nelecb)
+          write(*,'("   Beta  Virtual : ",5f12.5)')(eigenb(imo),imo=datamol%nelecb+1,datamol%nmo)
           write(*,'(1x,80("-"))')
         endif
       endif
@@ -1344,19 +1344,19 @@ end
 
 
 !-----------------------------------------
-  subroutine writeeigenvector(cmo,eigen,databasis,datacomp)
+  subroutine writeeigenvector(cmo,eigen,datamol,databasis,datacomp)
 !-----------------------------------------
 !
 ! Write eigenvalues
 !
-      use modmolecule, only : nmo, neleca, numatomic
       use modparam, only : mxao
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typemol, typebasis, typecomp
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
       integer :: minmo, maxmo, imin, imax, ii, jj, kk, iao, iatom
-      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), eigen(nmo)
+      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), eigen(datamol%nmo)
       character(len=8) :: atomlabel(mxao)
       character(len=7) :: bflabel(mxao)
       character(len=3) :: table(-9:112)= &
@@ -1404,14 +1404,14 @@ end
             bflabel(iao)= anglabel(1)
             if(databasis%locatom(ii) /= iatom) then
               iatom= databasis%locatom(ii)
-              write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(databasis%locatom(ii)))
+              write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
             endif
             iao= iao+1
           case(1)
             bflabel(iao:iao+2)= anglabel(2:4)
             if(databasis%locatom(ii) /= iatom) then
               iatom= databasis%locatom(ii)
-              write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(databasis%locatom(ii)))
+              write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
             endif
             iao= iao+3
           case(2)
@@ -1419,14 +1419,14 @@ end
               bflabel(iao:iao+4)= anglabel(11:15)
               if(databasis%locatom(ii) /= iatom) then
                 iatom= databasis%locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(databasis%locatom(ii)))
+                write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
               endif
               iao= iao+5
             else
               bflabel(iao:iao+5)= anglabel(5:10)
               if(databasis%locatom(ii) /= iatom) then
                 iatom= databasis%locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(databasis%locatom(ii)))
+                write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
               endif
               iao= iao+6
             endif
@@ -1435,14 +1435,14 @@ end
               bflabel(iao:iao+6)= anglabel(26:32)
               if(databasis%locatom(ii) /= iatom) then
                 iatom= databasis%locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(databasis%locatom(ii)))
+                write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
               endif
               iao= iao+7
             else
               bflabel(iao:iao+9)= anglabel(16:25)
               if(databasis%locatom(ii) /= iatom) then
                 iatom= databasis%locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(databasis%locatom(ii)))
+                write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
               endif
               iao= iao+10
             endif
@@ -1451,14 +1451,14 @@ end
               bflabel(iao:iao+8)= anglabel(48:56)
               if(databasis%locatom(ii) /= iatom) then
                 iatom= databasis%locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(databasis%locatom(ii)))
+                write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
               endif
               iao= iao+9
             else
               bflabel(iao:iao+14)= anglabel(33:47)
               if(databasis%locatom(ii) /= iatom) then
                 iatom= databasis%locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(databasis%locatom(ii)))
+                write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
               endif
               iao= iao+15
             endif
@@ -1467,14 +1467,14 @@ end
               bflabel(iao:iao+10)= anglabel(78:88)
               if(databasis%locatom(ii) /= iatom) then
                 iatom= databasis%locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(databasis%locatom(ii)))
+                write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
               endif
               iao= iao+11
             else
               bflabel(iao:iao+20)= anglabel(57:77)
               if(databasis%locatom(ii) /= iatom) then
                 iatom= databasis%locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(databasis%locatom(ii)))
+                write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
               endif
               iao= iao+21
             endif
@@ -1483,22 +1483,22 @@ end
               bflabel(iao:iao+12)= anglabel(117:129)
               if(databasis%locatom(ii) /= iatom) then
                 iatom= databasis%locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(databasis%locatom(ii)))
+                write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
               endif
               iao= iao+13
             else
               bflabel(iao:iao+27)= anglabel(89:116)
               if(databasis%locatom(ii) /= iatom) then
                 iatom= databasis%locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(databasis%locatom(ii)))
+                write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
               endif
               iao= iao+28
             endif
         end select
       enddo
 !
-      minmo=max(1,neleca-15)
-      maxmo=min(nmo,neleca+15)
+      minmo=max(1,datamol%neleca-15)
+      maxmo=min(datamol%nmo,datamol%neleca+15)
       imin= minmo
       imax= minmo+4
       if(datacomp%master) then

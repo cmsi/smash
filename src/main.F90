@@ -450,7 +450,7 @@ end
 !
       if(datajob%method == 'HARTREE-FOCK') then
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
-        call writeeigenvalue(energymo,energymo,1,datajob,datacomp)
+        call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
         if(datajob%guess == 'HUCKEL') then
@@ -464,11 +464,11 @@ end
           call tstamp(1,datacomp)
         endif
         call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
-        call writeeigenvalue(energymo,energymo,1,datajob,datacomp)
+        call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif(datajob%method == 'MP2') then
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
-        call writeeigenvalue(energymo,energymo,1,datajob,datacomp)
+        call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
         call calcrmp2(cmo,energymo,xint,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
         call tstamp(1,datacomp)
@@ -485,7 +485,7 @@ end
         write(*,'("  -------------------")')
         write(*,'("    MO coefficients")')
         write(*,'("  -------------------")')
-        call writeeigenvector(cmo,energymo,databasis,datacomp)
+        call writeeigenvector(cmo,energymo,datamol,databasis,datacomp)
       endif
 !
 ! Calculate Mulliken charge
@@ -598,7 +598,7 @@ end
 !
       if(datajob%method == 'HARTREE-FOCK') then
         call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
-        call writeeigenvalue(energymoa,energymob,2,datajob,datacomp)
+        call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
         if(datajob%guess == 'HUCKEL') then
@@ -612,7 +612,7 @@ end
           call tstamp(1,datacomp)
         endif
         call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
-        call writeeigenvalue(energymoa,energymob,2,datajob,datacomp)
+        call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
 !     elseif(method == 'MP2') then
 !       call calcuhf(h1mtrx,cmoa,ortho,smtrx,xint,energymoa)
@@ -632,11 +632,11 @@ end
         write(*,'("  -------------------------")')
         write(*,'("    Alpha MO coefficients")')
         write(*,'("  -------------------------")')
-        call writeeigenvector(cmoa,energymoa,databasis,datacomp)
+        call writeeigenvector(cmoa,energymoa,datamol,databasis,datacomp)
         write(*,'("  ------------------------")')
         write(*,'("    Beta MO coefficients")')
         write(*,'("  ------------------------")')
-        call writeeigenvector(cmob,energymob,databasis,datacomp)
+        call writeeigenvector(cmob,energymob,datamol,databasis,datacomp)
       endif
 !
 ! Calculate Mulliken charge
@@ -750,7 +750,7 @@ end
 !
       if((datajob%method == 'HARTREE-FOCK').or.(datajob%method == 'MP2')) then
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
-        call writeeigenvalue(energymo,energymo,1,datajob,datacomp)
+        call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
         if(datajob%guess == 'HUCKEL') then
@@ -764,7 +764,7 @@ end
           call tstamp(1,datacomp)
         endif
         call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
-        call writeeigenvalue(energymo,energymo,1,datajob,datacomp)
+        call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       else
         if(datacomp%master) then
@@ -813,7 +813,7 @@ end
         write(*,'("  -------------------")')
         write(*,'("    MO coefficients")')
         write(*,'("  -------------------")')
-        call writeeigenvector(cmo,energymo,databasis,datacomp)
+        call writeeigenvector(cmo,energymo,datamol,databasis,datacomp)
       endif
 !
 ! Calculate Mulliken charge
@@ -928,7 +928,7 @@ end
 !
       if(datajob%method == 'HARTREE-FOCK') then
         call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
-        call writeeigenvalue(energymoa,energymob,2,datajob,datacomp)
+        call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
         if(datajob%guess == 'HUCKEL') then
@@ -942,7 +942,7 @@ end
           call tstamp(1,datacomp)
         endif
         call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
-        call writeeigenvalue(energymoa,energymob,2,datajob,datacomp)
+        call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       else
         if(datacomp%master) then
@@ -987,11 +987,11 @@ end
         write(*,'("  -------------------------")')
         write(*,'("    Alpha MO coefficients")')
         write(*,'("  -------------------------")')
-        call writeeigenvector(cmoa,energymoa,databasis,datacomp)
+        call writeeigenvector(cmoa,energymoa,datamol,databasis,datacomp)
         write(*,'("  ------------------------")')
         write(*,'("    Beta MO coefficients")')
         write(*,'("  ------------------------")')
-        call writeeigenvector(cmob,energymob,databasis,datacomp)
+        call writeeigenvector(cmob,energymob,datamol,databasis,datacomp)
       endif
 !
 ! Calculate Mulliken charge
@@ -1158,7 +1158,7 @@ end
 !
         if((datajob%method == 'HARTREE-FOCK').or.(datajob%method == 'MP2')) then
           call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
-          if(iopt == 1) call writeeigenvalue(energymo,energymo,1,datajob,datacomp)
+          if(iopt == 1) call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
           call tstamp(1,datacomp)
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
           if((iopt == 1).and.(datajob%guess == 'HUCKEL')) then
@@ -1172,7 +1172,7 @@ end
             call tstamp(1,datacomp)
           endif
           call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
-          if(iopt == 1) call writeeigenvalue(energymo,energymo,1,datajob,datacomp)
+          if(iopt == 1) call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
           call tstamp(1,datacomp)
         else
           if(datacomp%master) then
@@ -1263,7 +1263,7 @@ end
 !
 ! End of optimization cycle 
 !
-      call writeeigenvalue(energymo,energymo,1,datajob,datacomp)
+      call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
 !
 ! Print MOs
 !
@@ -1271,7 +1271,7 @@ end
         write(*,'("  -------------------")')
         write(*,'("    MO coefficients")')
         write(*,'("  -------------------")')
-        call writeeigenvector(cmo,energymo,databasis,datacomp)
+        call writeeigenvector(cmo,energymo,datamol,databasis,datacomp)
       endif
 !
 ! Calculate Mulliken charge
@@ -1466,7 +1466,7 @@ end
 !
         if(datajob%method == 'HARTREE-FOCK') then
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
-          if(iopt == 1) call writeeigenvalue(energymoa,energymob,2,datajob,datacomp)
+          if(iopt == 1) call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
           call tstamp(1,datacomp)
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
           if((iopt == 1).and.(datajob%guess == 'HUCKEL')) then
@@ -1480,7 +1480,7 @@ end
             call tstamp(1,datacomp)
           endif
           call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
-          if(iopt == 1) call writeeigenvalue(energymoa,energymob,2,datajob,datacomp)
+          if(iopt == 1) call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
           call tstamp(1,datacomp)
         else
           if(datacomp%master) then
@@ -1568,7 +1568,7 @@ end
 !
 ! End of optimization cycle 
 !
-      call writeeigenvalue(energymoa,energymob,2,datajob,datacomp)
+      call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
 !
 ! Print MOs
 !
@@ -1576,11 +1576,11 @@ end
         write(*,'("  -------------------------")')
         write(*,'("    Alpha MO coefficients")')
         write(*,'("  -------------------------")')
-        call writeeigenvector(cmoa,energymoa,databasis,datacomp)
+        call writeeigenvector(cmoa,energymoa,datamol,databasis,datacomp)
         write(*,'("  ------------------------")')
         write(*,'("    Beta MO coefficients")')
         write(*,'("  ------------------------")')
-        call writeeigenvector(cmob,energymob,databasis,datacomp)
+        call writeeigenvector(cmob,energymob,datamol,databasis,datacomp)
       endif
 !
 ! Calculate Mulliken charge
