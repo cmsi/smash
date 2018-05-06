@@ -73,7 +73,7 @@
             enddo
           case('CC-PVTZ')
             do iatom= 1, datamol%natom
-              call bsccpvtz(iatom,ishell,databasis)
+              call bsccpvtz(iatom,ishell,datamol%numatomic,databasis)
             enddo
           case('CC-PVQZ')
             do iatom= 1, datamol%natom
@@ -251,7 +251,7 @@ end
           case('CC-PVDZ')
             call bsccpvdz(iatom,ishell,datamol%numatomic,databasis)
           case('CC-PVTZ')
-            call bsccpvtz(iatom,ishell,databasis)
+            call bsccpvtz(iatom,ishell,datamol%numatomic,databasis)
           case('CC-PVQZ')
             call bsccpvqz(iatom,ishell,databasis)
           case('D95V')
@@ -6059,17 +6059,16 @@ end
 
 
 !------------------------------------
-  subroutine bsccpvtz(iatom,ishell,databasis)
+  subroutine bsccpvtz(iatom,ishell,numatomic,databasis)
 !------------------------------------
 !
 ! Set basis functions of cc-pVTZ
 !
-      use modmolecule, only : numatomic
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(inout) :: databasis
-      integer,intent(in) :: iatom
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       integer :: j, k, num
       integer :: ise(36)=(/0,5, 11,22,33,43,53,63,73,83, 93,109,124,139,154,169,184,199, 214,214,&
