@@ -389,7 +389,7 @@ end
 !
 ! Parallel information
 !
-      use modmolecule, only : nmo, enuc
+      use modmolecule, only : nmo
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -415,9 +415,9 @@ end
 !
 ! Calculate nuclear repulsion energy
 !
-      call nucenergy(datajob%threshatom,datacomp)
+      call nucenergy(datajob%threshatom,datamol,datacomp)
       if(datacomp%master) then
-        write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
+        write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
       endif
 !
 ! Set arrays 2
@@ -432,7 +432,9 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,datajob%threshover,datacomp)
+      call mtrxcanoninv(ortho,overinv,work,nao,datamol%nmo,datajob%threshover,datacomp)
+!ishimura
+      nmo= datamol%nmo
 !
 ! Calculate initial MOs
 !
@@ -535,7 +537,7 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modmolecule, only : nmo, enuc
+      use modmolecule, only : nmo
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -561,9 +563,9 @@ end
 !
 ! Calculate nuclear repulsion energy
 !
-      call nucenergy(datajob%threshatom,datacomp)
+      call nucenergy(datajob%threshatom,datamol,datacomp)
       if(datacomp%master) then
-        write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
+        write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
       endif
 !
 ! Set arrays 2
@@ -578,7 +580,9 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,datajob%threshover,datacomp)
+      call mtrxcanoninv(ortho,overinv,work,nao,datamol%nmo,datajob%threshover,datacomp)
+!ishimura
+      nmo= datamol%nmo
 !
 ! Calculate initial MOs
 !
@@ -683,7 +687,7 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modmolecule, only : nmo, natom, enuc
+      use modmolecule, only : nmo
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -711,9 +715,9 @@ end
 !
 ! Calculate nuclear repulsion energy
 !
-      call nucenergy(datajob%threshatom,datacomp)
+      call nucenergy(datajob%threshatom,datamol,datacomp)
       if(datacomp%master) then
-        write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
+        write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
       endif
 !
 ! Set arrays 2
@@ -728,7 +732,9 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,datajob%threshover,datacomp)
+      call mtrxcanoninv(ortho,overinv,work,nao,datamol%nmo,datajob%threshover,datacomp)
+!ishimura
+      nmo= datamol%nmo
 !
 ! Calculate initial MOs
 !
@@ -769,8 +775,8 @@ end
 !
 ! Set arrays 3
 !
-      call memset(natom*3,datacomp)
-      allocate(egrad(natom*3))
+      call memset(datamol%natom*3,datacomp)
+      allocate(egrad(datamol%natom*3))
 !
 ! Calculate energy gradient
 !
@@ -792,14 +798,14 @@ end
 !
 ! Calculate maximum and root mean square gradient values
 !
-      call calcmaxgrad(egradmax,egradrms,egrad,natom*3)
+      call calcmaxgrad(egradmax,egradrms,egrad,datamol%natom*3)
       if(datacomp%master) write(*,'(" Maximum gradient =",f13.8,"  RMS gradient =",f13.8,/)') &
 &                      egradmax,egradrms
 !
 ! Unset arrays 3
 !
       deallocate(egrad)
-      call memunset(natom*3,datacomp)
+      call memunset(datamol%natom*3,datacomp)
 !
 ! Print MOs
 !
@@ -859,7 +865,7 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modmolecule, only : nmo, natom, enuc
+      use modmolecule, only : nmo
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -887,9 +893,9 @@ end
 !
 ! Calculate nuclear repulsion energy
 !
-      call nucenergy(datajob%threshatom,datacomp)
+      call nucenergy(datajob%threshatom,datamol,datacomp)
       if(datacomp%master) then
-        write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
+        write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
       endif
 !
 ! Set arrays 2
@@ -904,7 +910,9 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
       call fullmtrx(smtrx,work,nao)
-      call mtrxcanoninv(ortho,overinv,work,nao,nmo,datajob%threshover,datacomp)
+      call mtrxcanoninv(ortho,overinv,work,nao,datamol%nmo,datajob%threshover,datacomp)
+!ishimura
+      nmo= datamol%nmo
 !
 ! Calculate initial MOs
 !
@@ -945,8 +953,8 @@ end
 !
 ! Set arrays 3
 !
-      call memset(natom*3,datacomp)
-      allocate(egrad(natom*3))
+      call memset(datamol%natom*3,datacomp)
+      allocate(egrad(datamol%natom*3))
 !
 ! Calculate energy gradient
 !
@@ -964,14 +972,14 @@ end
 !
 ! Calculate maximum and root mean square gradient values
 !
-      call calcmaxgrad(egradmax,egradrms,egrad,natom*3)
+      call calcmaxgrad(egradmax,egradrms,egrad,datamol%natom*3)
       if(datacomp%master) write(*,'(" Maximum gradient =",f13.8,"  RMS gradient =",f13.8,/)') &
 &                      egradmax,egradrms
 !
 ! Unset arrays 3
 !
       deallocate(egrad)
-      call memunset(natom*3,datacomp)
+      call memunset(datamol%natom*3,datacomp)
 !
 ! Print MOs
 !
@@ -1035,7 +1043,7 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modmolecule, only : nmo, natom, coord, coordold, enuc
+      use modmolecule, only : nmo, coord, coordold
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -1060,13 +1068,13 @@ end
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
       nshell3=(databasis%nshell*(databasis%nshell+1))/2
-      natom3= natom*3
+      natom3= datamol%natom*3
       converged=.false.
 !
 ! Calculate redundant coordinate
 !
       if(.not.datajob%cartesian) then
-        isizered= natom*4*10
+        isizered= datamol%natom*4*10
         call memset(isizered,datacomp)
         allocate(iredun(isizered))
         do ii= 1,10
@@ -1113,9 +1121,9 @@ end
 !
 ! Calculate nuclear repulsion energy
 !
-        call nucenergy(datajob%threshatom,datacomp)
+        call nucenergy(datajob%threshatom,datamol,datacomp)
         if(datacomp%master) then
-          write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
+          write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
         endif
 !
 ! Set work arrays 1
@@ -1130,7 +1138,9 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
         call fullmtrx(smtrx,work,nao)
-        call mtrxcanoninv(ortho,overinv,work,nao,nmo,datajob%threshover,datacomp)
+        call mtrxcanoninv(ortho,overinv,work,nao,datamol%nmo,datajob%threshover,datacomp)
+!ishimura
+        nmo= datamol%nmo
 !
 ! Calculate initial MOs
 !
@@ -1241,7 +1251,7 @@ end
 !
 ! Set guess MO calculation flag from Huckel to projection
 !
-        call setnextopt(coordold,natom,iopt,datajob)
+        call setnextopt(coordold,datamol%natom,iopt,datajob)
 !
         if((iopt == datajob%nopt).and.datacomp%master) then
           write(*,'("Warning! Geometry did not converge.")')
@@ -1341,7 +1351,7 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modmolecule, only : nmo, natom, coord, coordold, enuc
+      use modmolecule, only : nmo, coord, coordold
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -1366,13 +1376,13 @@ end
       nao2= nao*nao
       nao3=(nao*(nao+1))/2
       nshell3=(databasis%nshell*(databasis%nshell+1))/2
-      natom3= natom*3
+      natom3= datamol%natom*3
       converged=.false.
 !
 ! Calculate redundant coordinate
 !
       if(.not.datajob%cartesian) then
-        isizered= natom*4*10
+        isizered= datamol%natom*4*10
         call memset(isizered,datacomp)
         allocate(iredun(isizered))
         do ii= 1,10
@@ -1419,9 +1429,9 @@ end
 !
 ! Calculate nuclear repulsion energy
 !
-        call nucenergy(datajob%threshatom,datacomp)
+        call nucenergy(datajob%threshatom,datamol,datacomp)
         if(datacomp%master) then
-          write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') enuc
+          write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
         endif
 !
 ! Set arrays 1
@@ -1436,7 +1446,9 @@ end
 ! Calculate canonicalization and inverse overlap matrices
 !
         call fullmtrx(smtrx,work,nao)
-        call mtrxcanoninv(ortho,overinv,work,nao,nmo,datajob%threshover,datacomp)
+        call mtrxcanoninv(ortho,overinv,work,nao,datamol%nmo,datajob%threshover,datacomp)
+!ishimura
+        nmo= datamol%nmo
 !
 ! Calculate initial MOs
 !
@@ -1544,7 +1556,7 @@ end
 !
 ! Set guess MO calculation flag from Huckel to projection
 !
-        call setnextopt(coordold,natom,iopt,datajob)
+        call setnextopt(coordold,datamol%natom,iopt,datajob)
 !
         if((iopt == datajob%nopt).and.datacomp%master) then
           write(*,'("Warning! Geometry did not converge.")')

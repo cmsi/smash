@@ -13,31 +13,32 @@
 ! limitations under the License.
 !
 !-----------------------
-  subroutine nucenergy(threshatom,datacomp)
+  subroutine nucenergy(threshatom,datamol,datacomp)
 !-----------------------
 !
 ! Calculate nuclear replusion energy
 !
-      use modmolecule, only : natom, coord, znuc, enuc
-      use modtype, only : typecomp
+      use modmolecule, only : enuc
+      use modtype, only : typemol, typecomp
       implicit none
+      type(typemol),intent(inout) :: datamol
       type(typecomp),intent(inout) :: datacomp
       integer :: iatom, jatom
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: threshatom
       real(8) :: xyz(3), rr, chrgij
 !
-      enuc= zero
+      datamol%enuc= zero
 
-      do iatom= 2,natom
+      do iatom= 2,datamol%natom
         do jatom= 1,iatom-1
-          xyz(1)= coord(1,iatom)-coord(1,jatom)
-          xyz(2)= coord(2,iatom)-coord(2,jatom)
-          xyz(3)= coord(3,iatom)-coord(3,jatom)
+          xyz(1)= datamol%coord(1,iatom)-datamol%coord(1,jatom)
+          xyz(2)= datamol%coord(2,iatom)-datamol%coord(2,jatom)
+          xyz(3)= datamol%coord(3,iatom)-datamol%coord(3,jatom)
           rr= sqrt(xyz(1)*xyz(1)+xyz(2)*xyz(2)+xyz(3)*xyz(3))
-          chrgij= znuc(iatom)*znuc(jatom)
+          chrgij= datamol%znuc(iatom)*datamol%znuc(jatom)
           if(rr /= zero) then
-            enuc= enuc+chrgij/rr
+            datamol%enuc= datamol%enuc+chrgij/rr
             if((rr <= threshatom).and.datacomp%master) then
               write(*,'("Warning! Distance of Atoms",i4," and",i4," is short!")') iatom, jatom
               datacomp%nwarn= datacomp%nwarn+1
@@ -50,6 +51,8 @@
           endif
         enddo
       enddo
+!ishimura
+      enuc= datamol%enuc
       return
 end
 
