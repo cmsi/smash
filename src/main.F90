@@ -176,7 +176,7 @@ end
 !
 ! Set number of electrons
 !
-      call setelectron(datajob,databasis,datacomp)
+      call setelectron(datajob,datamol,databasis,datacomp)
 !
 ! Reset defaults after reading input file
 !
@@ -184,7 +184,7 @@ end
 !
 ! Set functional information and adjust the number of DFT grids
 !
-      call setdft(datajob,databasis,datacomp)
+      call setdft(datajob,datamol,databasis,datacomp)
 !
 ! Set functional information and adjust the number of DFT grids
 !
@@ -328,30 +328,31 @@ end
 
 
 !-------------------------
-  subroutine setelectron(datajob,databasis,datacomp)
+  subroutine setelectron(datajob,datamol,databasis,datacomp)
 !-------------------------
 !
 ! Set number of electrons
 !
-      use modmolecule, only : numatomic, neleca, nelecb, natom, multi, charge
-      use modtype, only : typejob, typebasis, typecomp
+      use modmolecule, only : neleca, nelecb
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
+      type(typemol),intent(inout) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nume, ii
 !
 ! Calculate total number of electrons
 !
-      nume= -nint(charge)
-      do ii= 1,natom
-        if(numatomic(ii) > 0) nume= nume+numatomic(ii)
+      nume= -nint(datamol%charge)
+      do ii= 1,datamol%natom
+        if(datamol%numatomic(ii) > 0) nume= nume+datamol%numatomic(ii)
       enddo
 !
 ! Subtract electrons of core potentials
 !
       if(datajob%flagecp) then
-        do ii= 1,natom
+        do ii= 1,datamol%natom
           nume= nume-databasis%izcore(ii)
         enddo
       endif
@@ -359,17 +360,20 @@ end
 !
 ! Calculate numbers of alpha and beta electrons
 !
-      if((datajob%scftype == 'RHF').and.(multi /= 1)) then
+      if((datajob%scftype == 'RHF').and.(datamol%multi /= 1)) then
         if(datacomp%master) write(*,'(" Warning! SCFtype changes from RHF to UHF.")')
         datajob%scftype = 'UHF'
         datacomp%nwarn= datacomp%nwarn+1
       endif
 !
-      neleca=(nume+multi-1)/2
-      nelecb=(nume-multi+1)/2
-      if((neleca+nelecb)/= nume) then
+!ishimura
+      neleca=(nume+datamol%multi-1)/2
+      nelecb=(nume-datamol%multi+1)/2
+      datamol%neleca=(nume+datamol%multi-1)/2
+      datamol%nelecb=(nume-datamol%multi+1)/2
+      if((datamol%neleca+datamol%nelecb)/= nume) then
         if(datacomp%master) write(*,'(" Error! Spin multiplicity is ",i2, &
-&                                     ", but number of elctrons is ",i5,".")')multi, nume
+&                                     ", but number of elctrons is ",i5,".")') datamol%multi, nume
         call iabort
       endif
 !
@@ -1657,22 +1661,25 @@ end
 
 
 !--------------------
-  subroutine setdft(datajob,databasis,datacomp)
+  subroutine setdft(datajob,datamol,databasis,datacomp)
 !--------------------
 !
 ! Set functional information
 ! Adjust the numbe of DFT grids when heavy elements are included
 !
-      use modmolecule, only : natom, numatomic, atomrad
-      use modtype, only : typejob, typebasis, typecomp
+      use modmolecule, only : atomrad
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
+      type(typemol),intent(inout) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: ii, maxelem
 !
       do ii= 1,9
+!ishimura
         atomrad(-ii)= datajob%bqrad(ii)
+        datamol%atomrad(-ii)= datajob%bqrad(ii)
       enddo
 !
       select case(datajob%method)
@@ -1693,7 +1700,7 @@ end
       endselect
 !
       if((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
-        maxelem= maxval(numatomic(1:natom))
+        maxelem= maxval(datamol%numatomic(1:datamol%natom))
         if(((maxelem >= 55).or.(databasis%nao >= 2000)).and.((datajob%nrad == 96).and.(datajob%nleb == 302))) then
           datacomp%nwarn= datacomp%nwarn+1
           if(datacomp%master) write(*,'(" Warning! The number of DFT grids may not be enough.")')
