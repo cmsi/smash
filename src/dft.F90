@@ -15,7 +15,7 @@
 !---------------------------------------------------------------------------------------------
   subroutine formrfockexcor(fockdsum,fockd,energy,totalelec,cmo,atomvec,radpt,angpt, &
 &                           rad,ptweight,vao,vmo,xyzpt,rsqrd,transcmo,work, &
-&                           nproc,myrank,mpi_comm,datajob,databasis)
+&                           nproc,myrank,mpi_comm,datajob,datamol,databasis)
 !---------------------------------------------------------------------------------------------
 !
 ! Driver of DFT Fock matrix formation from exchange-correlation functionals
@@ -32,22 +32,24 @@
 !       totalelec(Number of numerially integrated electrons)
 !       vao,vmo,xyzpt,work (work space)
 !
-      use modmolecule, only : natom, neleca
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nproc, myrank, mpi_comm
-      integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
+      integer :: natom, ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
-      real(8),intent(in) :: cmo(databasis%nao,neleca), atomvec(5,natom,natom), radpt(2,datajob%nrad)
-      real(8),intent(in) :: angpt(4,datajob%nleb), rad(natom), ptweight(datajob%nleb,datajob%nrad,natom)
+      real(8),intent(in) :: cmo(databasis%nao,datamol%neleca), atomvec(5,datamol%natom,datamol%natom), radpt(2,datajob%nrad)
+      real(8),intent(in) :: angpt(4,datajob%nleb), rad(datamol%natom), ptweight(datajob%nleb,datajob%nrad,datamol%natom)
       real(8),intent(out) :: fockdsum(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: fockd(databasis%nao*(databasis%nao+1)/2), energy, totalelec
-      real(8),intent(out) :: vao(databasis%nao,4), vmo(neleca,4), xyzpt(3,natom), rsqrd(natom)
-      real(8),intent(out) :: transcmo(neleca,databasis%nao), work(databasis%nao)
+      real(8),intent(out) :: vao(databasis%nao,4), vmo(datamol%neleca,4), xyzpt(3,datamol%natom), rsqrd(datamol%natom)
+      real(8),intent(out) :: transcmo(datamol%neleca,databasis%nao), work(databasis%nao)
       real(8) :: weight, rhoa, grhoa(3), excora(4)
       real(8) :: radpoint, tmp(2,2), wcutoff, rcutoff, fcutoff, aocutoff
+!
+      natom= datamol%natom
 !
       transcmo=transpose(cmo)
       fockd(:)= zero
@@ -86,7 +88,7 @@
 !
             rhoa= zero
             grhoa(1:3)= zero
-            do imo= 1,neleca
+            do imo= 1,datamol%neleca
               rhoa=     rhoa    +vmo(imo,1)*vmo(imo,1)
               grhoa(1)= grhoa(1)+vmo(imo,2)*vmo(imo,1)
               grhoa(2)= grhoa(2)+vmo(imo,3)*vmo(imo,1)
@@ -204,7 +206,7 @@ end
 !-------------------------------------------------------------------------------------------
   subroutine formufockexcor(fockd1,fockd2,fockd3,energy,totalelec,cmoa,cmob,atomvec, &
 &                           radpt,angpt,rad,ptweight,vao,vmoa,vmob,xyzpt,rsqrd, &
-&                           transcmoa,transcmob,work,nproc,myrank,mpi_comm,datajob,databasis)
+&                           transcmoa,transcmob,work,nproc,myrank,mpi_comm,datajob,datamol,databasis)
 !-------------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted DFT Fock matrix formation from exchange-correlation functionals
@@ -215,26 +217,28 @@ end
 !       fock2 (Beta Fock matrix)
 !       fock3 (Work space)
 !
-      use modmolecule, only : natom, neleca, nelecb
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nproc, myrank, mpi_comm
-      integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
+      integer :: natom, ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
-      real(8),intent(in) :: cmoa(databasis%nao,neleca), cmob(databasis%nao,nelecb)
-      real(8),intent(in) :: atomvec(5,natom,natom), radpt(2,datajob%nrad), angpt(4,datajob%nleb)
-      real(8),intent(in) :: rad(natom), ptweight(datajob%nleb,datajob%nrad,natom)
+      real(8),intent(in) :: cmoa(databasis%nao,datamol%neleca), cmob(databasis%nao,datamol%nelecb)
+      real(8),intent(in) :: atomvec(5,datamol%natom,datamol%natom), radpt(2,datajob%nrad), angpt(4,datajob%nleb)
+      real(8),intent(in) :: rad(datamol%natom), ptweight(datajob%nleb,datajob%nrad,datamol%natom)
       real(8),intent(out) :: fockd1(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: fockd2(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: fockd3(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: energy, totalelec, vao(databasis%nao,4)
-      real(8),intent(out) :: vmoa(neleca,4), vmob(nelecb,4), xyzpt(3,natom), rsqrd(natom)
-      real(8),intent(out) :: transcmoa(neleca,databasis%nao), transcmob(nelecb,databasis%nao)
+      real(8),intent(out) :: vmoa(datamol%neleca,4), vmob(datamol%nelecb,4), xyzpt(3,datamol%natom), rsqrd(datamol%natom)
+      real(8),intent(out) :: transcmoa(datamol%neleca,databasis%nao), transcmob(datamol%nelecb,databasis%nao)
       real(8),intent(out) :: work(databasis%nao*2)
       real(8) :: weight, rhoa, rhob, grhoa(3), grhob(3), excora(4), excorb(4)
       real(8) :: radpoint, tmp(2,2), wcutoff, rcutoff, fcutoff, aocutoff
+!
+      natom= datamol%natom
 !
       transcmoa= transpose(cmoa)
       transcmob= transpose(cmob)
@@ -274,7 +278,7 @@ end
 !
             rhoa= zero
             grhoa(1:3)= zero
-            do imo= 1,neleca
+            do imo= 1,datamol%neleca
               rhoa=     rhoa    +vmoa(imo,1)*vmoa(imo,1)
               grhoa(1)= grhoa(1)+vmoa(imo,2)*vmoa(imo,1)
               grhoa(2)= grhoa(2)+vmoa(imo,3)*vmoa(imo,1)
@@ -282,7 +286,7 @@ end
             enddo
             rhob= zero
             grhob(1:3)= zero
-            do imo= 1,nelecb
+            do imo= 1,datamol%nelecb
               rhob=     rhob    +vmob(imo,1)*vmob(imo,1)
               grhob(1)= grhob(1)+vmob(imo,2)*vmob(imo,1)
               grhob(2)= grhob(2)+vmob(imo,3)*vmob(imo,1)
@@ -358,7 +362,7 @@ end
 
 
 !------------------------------------------
-  subroutine calcatomvec(atomvec,surface)
+  subroutine calcatomvec(atomvec,surface,datamol)
 !------------------------------------------
 !
 ! Calculate atom vectors and surface shifting parameters
@@ -366,25 +370,26 @@ end
 ! Out : atomvec (atom vector and distance)
 !       surface (surface shifting parameters)
 !
-      use modmolecule, only : natom, coord, numatomic, atomrad
+      use modtype, only : typemol
       implicit none
+      type(typemol),intent(in) :: datamol
       integer :: iatom, jatom, inum, jnum
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
-      real(8),intent(out) :: atomvec(5,natom,natom), surface(natom,natom)
+      real(8),intent(out) :: atomvec(5,datamol%natom,datamol%natom), surface(datamol%natom,datamol%natom)
       real(8) :: tmp1, tmp2
 !
 ! Calculate atom vectors
 !
 !$OMP parallel do
-      do iatom= 1,natom
+      do iatom= 1,datamol%natom
         atomvec(1,iatom,iatom)= zero
         atomvec(2,iatom,iatom)= zero
         atomvec(3,iatom,iatom)= zero
         atomvec(4,iatom,iatom)= zero
         do jatom= 1,iatom-1
-          atomvec(1,jatom,iatom)= coord(1,jatom)-coord(1,iatom)
-          atomvec(2,jatom,iatom)= coord(2,jatom)-coord(2,iatom)
-          atomvec(3,jatom,iatom)= coord(3,jatom)-coord(3,iatom)
+          atomvec(1,jatom,iatom)= datamol%coord(1,jatom)-datamol%coord(1,iatom)
+          atomvec(2,jatom,iatom)= datamol%coord(2,jatom)-datamol%coord(2,iatom)
+          atomvec(3,jatom,iatom)= datamol%coord(3,jatom)-datamol%coord(3,iatom)
           atomvec(4,jatom,iatom)= sqrt(atomvec(1,jatom,iatom)*atomvec(1,jatom,iatom) &
                                       +atomvec(2,jatom,iatom)*atomvec(2,jatom,iatom) &
                                       +atomvec(3,jatom,iatom)*atomvec(3,jatom,iatom))
@@ -401,32 +406,32 @@ end
 ! Calculate surface shifting parameters
 !
 !$OMP parallel do private(inum,jnum,tmp1,tmp2)
-      do iatom= 1,natom
+      do iatom= 1,datamol%natom
         surface(iatom,iatom)= zero
-        inum= numatomic(iatom)
+        inum= datamol%numatomic(iatom)
         if(inum == 0) then
           surface(1,iatom)= -one
           cycle
         endif
         do jatom= 1,iatom-1
-          jnum= numatomic(jatom)
+          jnum= datamol%numatomic(jatom)
           if(jnum == 0) then
             surface(jatom,iatom)= one
             cycle
           endif
-          tmp1= atomrad(inum)/atomrad(jnum)
+          tmp1= datamol%atomrad(inum)/datamol%atomrad(jnum)
           tmp2=(tmp1-one)/(tmp1+one)
           surface(jatom,iatom)= tmp2/(tmp2*tmp2-one)
           if(surface(jatom,iatom) > half) surface(jatom,iatom)= half
           if(surface(jatom,iatom) <-half) surface(jatom,iatom)=-half
         enddo
-        do jatom= iatom+1,natom
-          jnum= numatomic(jatom)
+        do jatom= iatom+1,datamol%natom
+          jnum= datamol%numatomic(jatom)
           if(jnum == 0) then
             surface(jatom,iatom)= one
             cycle
           endif
-          tmp1= atomrad(inum)/atomrad(jnum)
+          tmp1= datamol%atomrad(inum)/datamol%atomrad(jnum)
           tmp2=(tmp1-one)/(tmp1+one)
           surface(jatom,iatom)= tmp2/(tmp2*tmp2-one)
           if(surface(jatom,iatom) > half) surface(jatom,iatom)= half

@@ -1017,7 +1017,7 @@ end
 !
 ! Calculate DFT information
 !
-      call calcatomvec(atomvec,surface)
+      call calcatomvec(atomvec,surface,datamol)
       call calcradpt(radpt,nrad)
       call calclebpt(angpt,nleb)
       do iatom= 1,natom
@@ -1099,7 +1099,7 @@ end
 !
         call formrfockexcor(fockd,fock,edft,totalelec,cmo,atomvec,radpt,angpt, &
 &                           rad,ptweight,vao,vmo,xyzpt,rsqrd,work,work2, &
-&                           datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis)
+&                           datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis)
 !
 ! Calculate two-electron integrals
 !
@@ -2141,7 +2141,7 @@ end
 !
 ! Calculate DFT information
 !
-      call calcatomvec(atomvec,surface)
+      call calcatomvec(atomvec,surface,datamol)
       call calcradpt(radpt,nrad)
       call calclebpt(angpt,nleb)
       do iatom= 1,natom
@@ -2225,7 +2225,7 @@ end
 !
         call formufockexcor(fockda,fockdb,focka,edft,totalelec,cmoa,cmob,atomvec,&
 &                           radpt,angpt,rad,ptweight,vao,vmoa,vmob,xyzpt,rsqrd, &
-&                           work,work(datamol%neleca*nao+1),work2,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis)
+&                           work,work(datamol%neleca*nao+1),work2,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis)
 !
 ! Calculate two-electron integrals
 !
