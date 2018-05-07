@@ -414,16 +414,16 @@ end
 
 
 !------------------------------------------------------------------------------------
-  subroutine calcnewcoord(coord,coordold,egrad,egradold,ehess,displc,natom3,iopt,datajob,datacomp)
+  subroutine calcnewcoord(coord,coordold,egrad,egradold,ehess,displc,natom3,iopt,datajob,datamol,datacomp)
 !------------------------------------------------------------------------------------
 !
 ! Calculate new Cartesian coordinate with gradient and hessian
 !
       use modparam, only : toang
-      use modmolecule, only : numatomic
-      use modtype, only : typejob, typecomp
+      use modtype, only : typejob, typemol, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: natom3, iopt
       integer :: i, j, ii
@@ -496,7 +496,7 @@ end
         write(*,'("  Atom            X             Y             Z")')
         write(*,'(" ----------------------------------------------------")')
         do i= 1,natom3/3
-          write(*,'(3x,a3,3x,3f14.7)')table(numatomic(i)), &
+          write(*,'(3x,a3,3x,3f14.7)')table(datamol%numatomic(i)), &
 &              ((coord((i-1)*3+j)-coordold((i-1)*3+j))*toang,j=1,3)
         enddo
         write(*,'(" ----------------------------------------------------")')
@@ -509,7 +509,7 @@ end
 !---------------------------------------------------------------------------------------
   subroutine calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess,work1, &
 &                            work2,work3,work4,workv,iopt,iredun,isizered, &
-&                            maxredun,numbond,numangle,numtorsion,numredun,datajob,datacomp)
+&                            maxredun,numbond,numangle,numtorsion,numredun,datajob,datamol,datacomp)
 !---------------------------------------------------------------------------------------
 !
 ! Calculate new Cartesian coordinate with gradient, hessian and redundant coordinate
@@ -523,10 +523,10 @@ end
 ! Covalent radii (Rb- Cn): P. Pyykko, M. Atsumi, Chem. Eur. J., 186 (2009) 15.
 !
       use modparam, only : toang, tobohr
-      use modmolecule, only : numatomic, natom
-      use modtype, only : typejob, typecomp
+      use modtype, only : typejob, typemol, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typecomp),intent(inout) :: datacomp
       integer,parameter :: maxiterdx=100, maxiterrfo=1000
       integer,intent(in) :: iopt, isizered, maxredun, iredun(4,isizered/4)
@@ -536,8 +536,8 @@ end
       integer :: numdim
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, convl=1.0D-08, convrms=1.0D-06
       real(8),parameter :: rad2deg=5.729577951308232D+01
-      real(8),intent(inout) :: coord(natom*3), coordold(natom*3), coordredun(numredun,2)
-      real(8),intent(inout) :: egrad(natom*3), egradredun(numredun,2)
+      real(8),intent(inout) :: coord(datamol%natom*3), coordold(datamol%natom*3), coordredun(numredun,2)
+      real(8),intent(inout) :: egrad(datamol%natom*3), egradredun(numredun,2)
       real(8),intent(inout) :: ehess(numredun*(numredun+1)/2), work1(maxredun,maxredun)
       real(8),intent(inout) :: work2(maxredun,maxredun), work3(maxredun,maxredun)
       real(8),intent(inout) :: work4(maxredun,maxredun), workv(maxredun,3) 
@@ -578,11 +578,11 @@ end
 &     1.67D+00, 1.73D+00, 1.76D+00, 1.61D+00, 1.57D+00, 1.49D+00, 1.43D+00, 1.41D+00, 1.34D+00, &
 &     1.29D+00, 1.28D+00, 1.21D+00, 1.22D+00/
 !
-      natom3= natom*3
+      natom3= datamol%natom*3
 !
 ! Calculate B-matrix
 !
-      call calcbmatrix(coordredun,coord,work1,iredun,numbond,numangle,numtorsion)
+      call calcbmatrix(coordredun,coord,work1,iredun,numbond,numangle,numtorsion,datamol%natom)
 !
 ! Calculate G=B*Bt
 !
@@ -636,15 +636,15 @@ end
 ! Set initial Hessian
 !
         do ii= 1,numbond
-          iatom= numatomic(iredun(1,ii))
-          jatom= numatomic(iredun(2,ii))
+          iatom= datamol%numatomic(iredun(1,ii))
+          jatom= datamol%numatomic(iredun(2,ii))
           rij= coordredun(ii,1)
           paramb= parambond(irow(iatom),irow(jatom))
           work4(ii,ii)= 1.734D+00/((rij-paramb)*(rij-paramb)*(rij-paramb))
         enddo
         do ii= numbond+1,numbond+numangle
-          iatom= numatomic(iredun(1,ii))
-          katom= numatomic(iredun(3,ii))
+          iatom= datamol%numatomic(iredun(1,ii))
+          katom= datamol%numatomic(iredun(3,ii))
           if((iatom == 1).or.(katom == 1)) then
             work4(ii,ii)= 0.16D+00
           else
@@ -652,8 +652,8 @@ end
           endif
         enddo
         do ii= numbond+numangle+1,numredun
-          jatom= numatomic(iredun(2,ii))
-          katom= numatomic(iredun(3,ii))
+          jatom= datamol%numatomic(iredun(2,ii))
+          katom= datamol%numatomic(iredun(3,ii))
           jj=(iredun(2,ii)-1)*3
           kk=(iredun(3,ii)-1)*3
           rjk=sqrt((coord(jj+1)-coord(kk+1))**2+(coord(jj+2)-coord(kk+2))**2 &
@@ -757,7 +757,7 @@ end
 !
 ! delta-q workv(*,3)
 !
-        call calcbmatrix(workv,coord,work1,iredun,numbond,numangle,numtorsion)
+        call calcbmatrix(workv,coord,work1,iredun,numbond,numangle,numtorsion,datamol%natom)
         do ii= 1,numredun
           workv(ii,3)= workv(ii,1)-coordredun(ii,1)
         enddo
@@ -853,7 +853,7 @@ end
         write(*,'("  Atom            X             Y             Z")')
         write(*,'(" ----------------------------------------------------")')
         do ii= 1,natom3/3
-          write(*,'(3x,a3,3x,3f14.7)')table(numatomic(ii)), &
+          write(*,'(3x,a3,3x,3f14.7)') table(datamol%numatomic(ii)), &
 &              ((coord((ii-1)*3+jj)-coordold((ii-1)*3+jj))*toang,jj=1,3)
         enddo
         write(*,'(" ----------------------------------------------------")')
@@ -864,14 +864,14 @@ end
 
 
 !-----------------------------------------------------------------------------------
-  subroutine calcbmatrix(coordredun,coord,bmat,iredun,numbond,numangle,numtorsion)
+  subroutine calcbmatrix(coordredun,coord,bmat,iredun,numbond,numangle,numtorsion,natom)
 !-----------------------------------------------------------------------------------
 !
 ! Calculate transformation matrix(B-matrix) from Cartesian to internal coordinate
 !
-      use modmolecule, only : natom
       implicit none
-      integer,intent(in) :: numbond, numangle, numtorsion, iredun(4,numbond+numangle+numtorsion)
+      integer,intent(in) :: numbond, numangle, numtorsion
+      integer,intent(in) :: iredun(4,numbond+numangle+numtorsion), natom
       integer :: iatom, jatom, katom, latom, ii, jj, kk, ll, mm, ibond, iangle, itorsion
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, four=4.0D+00
       real(8),intent(in) :: coord(3,natom)

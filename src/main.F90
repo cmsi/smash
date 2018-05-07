@@ -1230,11 +1230,11 @@ end
 ! Calculate new coordinate
 !
         if(datajob%cartesian) then
-          call calcnewcoord(datamol%coord,coordold,egrad,egradold,ehess,workv,natom3,iopt,datajob,datacomp)
+          call calcnewcoord(datamol%coord,coordold,egrad,egradold,ehess,workv,natom3,iopt,datajob,datamol,datacomp)
         else
           call calcnewcoordred(datamol%coord,coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
 &                              work(1,2),work(1,3),work(1,4),workv,iopt,iredun,isizered, &
-&                              maxredun,numbond,numangle,numtorsion,numredun,datajob,datacomp)
+&                              maxredun,numbond,numangle,numtorsion,numredun,datajob,datamol,datacomp)
         endif
 !ishimura
         coord=datamol%coord
@@ -1535,11 +1535,11 @@ end
 ! Calculate new coordinate
 !
         if(datajob%cartesian) then
-          call calcnewcoord(datamol%coord,coordold,egrad,egradold,ehess,workv,natom3,iopt,datajob,datacomp)
+          call calcnewcoord(datamol%coord,coordold,egrad,egradold,ehess,workv,natom3,iopt,datajob,datamol,datacomp)
         else
           call calcnewcoordred(datamol%coord,coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
 &                              work(1,2),work(1,3),work(1,4),workv,iopt,iredun,isizered, &
-&                              maxredun,numbond,numangle,numtorsion,numredun,datajob,datacomp)
+&                              maxredun,numbond,numangle,numtorsion,numredun,datajob,datamol,datacomp)
         endif
 !ishimura
         coord= datamol%coord
