@@ -1589,15 +1589,15 @@ end
 
 
 !-----------------------------------------
-  subroutine gridd2ao(vg2ao,xyzpt,rsqrd,threshex,databasis)
+  subroutine gridd2ao(vg2ao,xyzpt,rsqrd,threshex,natom,databasis)
 !-----------------------------------------
 !
 ! Calculate second derivatives of AO values for a grid point
 !
-      use modmolecule, only : natom
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
+      integer,intent(in) :: natom
       integer :: icount, ish, numprim, iatom, iprim, nang, nbf, iloc, ii, jj
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00, three=3.0D+00
       real(8),parameter :: four=4.0D+00, five=5.0D+00, six=6.0D+00, seven=7.0D+00
@@ -2365,7 +2365,6 @@ end
 !
 ! Driver of derivatives for closed-shell exchange-correlation terms
 !
-      use modmolecule, only : natom, neleca
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
@@ -2373,17 +2372,19 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: idftex, idftcor, nproc, myrank
-      integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
+      integer :: natom, ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
-      real(8),intent(in) :: cmo(databasis%nao,neleca), fulldmtrx(databasis%nao,databasis%nao)
-      real(8),intent(in) :: atomvec(5,natom,natom), surface(natom,natom), radpt(2,datajob%nrad)
-      real(8),intent(in) :: angpt(4,datajob%nleb), rad(natom), ptweight(datajob%nleb,datajob%nrad,natom)
-      real(8),intent(out) :: edftgrad(3*natom), xyzpt(3,natom), rsqrd(natom), rr(natom)
-      real(8),intent(out) :: uvec(3,natom), vao(databasis%nao,10), vmo(neleca,4), dweight(3*natom)
-      real(8),intent(out) :: dpa(3,natom,natom), pa(natom), transcmo(neleca,databasis%nao)
-      real(8),intent(inout) :: egrad(3*natom)
+      real(8),intent(in) :: cmo(databasis%nao,datamol%neleca), fulldmtrx(databasis%nao,databasis%nao)
+      real(8),intent(in) :: atomvec(5,datamol%natom,datamol%natom), surface(datamol%natom,datamol%natom), radpt(2,datajob%nrad)
+      real(8),intent(in) :: angpt(4,datajob%nleb), rad(datamol%natom), ptweight(datajob%nleb,datajob%nrad,datamol%natom)
+      real(8),intent(out) :: edftgrad(3*datamol%natom), xyzpt(3,datamol%natom), rsqrd(datamol%natom), rr(datamol%natom)
+      real(8),intent(out) :: uvec(3,datamol%natom), vao(databasis%nao,10), vmo(datamol%neleca,4), dweight(3*datamol%natom)
+      real(8),intent(out) :: dpa(3,datamol%natom,datamol%natom), pa(datamol%natom), transcmo(datamol%neleca,databasis%nao)
+      real(8),intent(inout) :: egrad(3*datamol%natom)
       real(8) :: radpoint, radweight, weight, xgrid, ygrid, zgrid, tmp, rhoa, grhoa(3)
       real(8) :: sphweight, excora(4), ptenergy, wcutoff, rcutoff, fcutoff, aocutoff
+!
+      natom= datamol%natom
 !
       transcmo= transpose(cmo)
 !
@@ -2429,7 +2430,7 @@ end
 !
             rhoa= zero
             grhoa(1:3)= zero
-            do imo= 1,neleca
+            do imo= 1,datamol%neleca
               rhoa=     rhoa    +vmo(imo,1)*vmo(imo,1)
               grhoa(1)= grhoa(1)+vmo(imo,2)*vmo(imo,1)
               grhoa(2)= grhoa(2)+vmo(imo,3)*vmo(imo,1)
@@ -2439,12 +2440,12 @@ end
             grhoa(1)= grhoa(1)*two
             grhoa(2)= grhoa(2)*two
             grhoa(3)= grhoa(3)*two
-            call gridd2ao(vao(1,5),xyzpt,rsqrd,datajob%threshex,databasis)
+            call gridd2ao(vao(1,5),xyzpt,rsqrd,datajob%threshex,datamol%natom,databasis)
 !
 ! Calculate weight derivative
 !
             sphweight=radweight*angpt(4,ileb)
-            call calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom,datacomp)
+            call calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom,datamol%natom,datacomp)
 !
             ptenergy= zero
             call calcexcor(excora,excora,ptenergy,rhoa,rhoa,grhoa,grhoa,one,idftex,idftcor,1)
@@ -2452,7 +2453,7 @@ end
             if(abs(excora(1))*two*weight < fcutoff)cycle
 !
             call formgradexcor(edftgrad,fulldmtrx,fulldmtrx,vao,vao(1,2),vao(1,5), &
-&                              excora,excora,weight,iatom,1,databasis)
+&                              excora,excora,weight,iatom,datamol%natom,1,databasis)
 !
 ! Add weight derivative contribution
 !
@@ -2482,7 +2483,6 @@ end
 !
 ! Driver of derivatives for open-shell exchange-correlation terms
 !
-      use modmolecule, only : natom, neleca, nelecb
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
@@ -2490,21 +2490,23 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: idftex, idftcor, nproc, myrank
-      integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
+      integer :: natom, ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
-      real(8),intent(in) :: cmoa(databasis%nao,neleca), cmob(databasis%nao,nelecb)
+      real(8),intent(in) :: cmoa(databasis%nao,datamol%neleca), cmob(databasis%nao,datamol%nelecb)
       real(8),intent(in) :: fulldmtrx1(databasis%nao,databasis%nao)
       real(8),intent(in) :: fulldmtrx2(databasis%nao,databasis%nao)
-      real(8),intent(in) :: atomvec(5,natom,natom), surface(natom,natom)
-      real(8),intent(in) :: radpt(2,datajob%nrad), angpt(4,datajob%nleb), rad(natom), ptweight(datajob%nleb,datajob%nrad,natom)
-      real(8),intent(out) :: edftgrad(3*natom), xyzpt(3,natom), rsqrd(natom), rr(natom)
-      real(8),intent(out) :: uvec(3,natom), vao(databasis%nao,10), vmoa(neleca,4)
-      real(8),intent(out) :: vmob(nelecb,4), dweight(3*natom), dpa(3,natom,natom), pa(natom)
-      real(8),intent(out) :: transcmoa(neleca,databasis%nao), transcmob(nelecb,databasis%nao)
-      real(8),intent(inout) :: egrad(3*natom)
+      real(8),intent(in) :: atomvec(5,datamol%natom,datamol%natom), surface(datamol%natom,datamol%natom)
+      real(8),intent(in) :: radpt(2,datajob%nrad), angpt(4,datajob%nleb), rad(datamol%natom), ptweight(datajob%nleb,datajob%nrad,datamol%natom)
+      real(8),intent(out) :: edftgrad(3*datamol%natom), xyzpt(3,datamol%natom), rsqrd(datamol%natom), rr(datamol%natom)
+      real(8),intent(out) :: uvec(3,datamol%natom), vao(databasis%nao,10), vmoa(datamol%neleca,4)
+      real(8),intent(out) :: vmob(datamol%nelecb,4), dweight(3*datamol%natom), dpa(3,datamol%natom,datamol%natom), pa(datamol%natom)
+      real(8),intent(out) :: transcmoa(datamol%neleca,databasis%nao), transcmob(datamol%nelecb,databasis%nao)
+      real(8),intent(inout) :: egrad(3*datamol%natom)
       real(8) :: radpoint, radweight, weight, xgrid, ygrid, zgrid, tmp, rhoa, rhob
       real(8) :: grhoa(3), grhob(3), sphweight, excora(4), excorb(4), ptenergy
       real(8) :: wcutoff, rcutoff, fcutoff, aocutoff
+!
+      natom= datamol%natom
 !
       transcmoa= transpose(cmoa)
       transcmob= transpose(cmob)
@@ -2551,7 +2553,7 @@ end
 !
             rhoa= zero
             grhoa(1:3)= zero
-            do imo= 1,neleca
+            do imo= 1,datamol%neleca
               rhoa=     rhoa    +vmoa(imo,1)*vmoa(imo,1)
               grhoa(1)= grhoa(1)+vmoa(imo,2)*vmoa(imo,1)
               grhoa(2)= grhoa(2)+vmoa(imo,3)*vmoa(imo,1)
@@ -2559,7 +2561,7 @@ end
             enddo
             rhob= zero
             grhob(1:3)= zero
-            do imo= 1,nelecb
+            do imo= 1,datamol%nelecb
               rhob=     rhob    +vmob(imo,1)*vmob(imo,1)
               grhob(1)= grhob(1)+vmob(imo,2)*vmob(imo,1)
               grhob(2)= grhob(2)+vmob(imo,3)*vmob(imo,1)
@@ -2568,12 +2570,12 @@ end
             if((rhoa+rhob) < rcutoff)cycle
             grhoa(1:3)= grhoa(1:3)*two
             grhob(1:3)= grhob(1:3)*two
-            call gridd2ao(vao(1,5),xyzpt,rsqrd,datajob%threshex,databasis)
+            call gridd2ao(vao(1,5),xyzpt,rsqrd,datajob%threshex,datamol%natom,databasis)
 !
 ! Calculate weight derivative
 !
             sphweight=radweight*angpt(4,ileb)
-            call calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom,datacomp)
+            call calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom,datamol%natom,datacomp)
 !
             ptenergy= zero
             call calcexcor(excora,excorb,ptenergy,rhoa,rhob,grhoa,grhob,one,idftex,idftcor,2)
@@ -2581,7 +2583,7 @@ end
             if((abs(excora(1))+abs(excorb(1)))*weight < fcutoff)cycle
 !
             call formgradexcor(edftgrad,fulldmtrx1,fulldmtrx2,vao,vao(1,2),vao(1,5), &
-&                              excora,excorb,weight,iatom,2,databasis)
+&                              excora,excorb,weight,iatom,datamol%natom,2,databasis)
 !
 ! Add weight derivative contribution
 !
@@ -2604,7 +2606,7 @@ end
 
 
 !-------------------------------------------------------------------------------------
-  subroutine calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,katom,datacomp)
+  subroutine calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,katom,natom,datacomp)
 !-------------------------------------------------------------------------------------
 !
 ! Calculate weight derivatives of grid points
@@ -2617,11 +2619,10 @@ end
 !       dpa      (work space (gradP))
 !       pa       (work space (P))
 !
-      use modmolecule, only : natom
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: katom
+      integer,intent(in) :: katom, natom
       integer :: iatom, jatom, ii
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, oneh=1.5D+00, two=2.0D+00
       real(8),parameter :: pdcoeff=-2.53125D+00 !-81/32
@@ -2728,16 +2729,15 @@ end
 
 !-----------------------------------------------------------------------------
   subroutine formgradexcor(edftgrad,fulldmtrxa,fulldmtrxb,vao,vgao,vg2ao, &
-&                          excora,excorb,weight,katom,itype,databasis)
+&                          excora,excorb,weight,katom,natom,itype,databasis)
 !-----------------------------------------------------------------------------
 !
 ! Calculate DFT energy gradient terms
 !
-      use modmolecule, only : natom
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
-      integer,intent(in) :: katom, itype
+      integer,intent(in) :: katom, natom, itype
       integer :: ish, iatom, nbf, ilocbf, iao, jao
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, two=2.0D+00
       real(8),intent(in) :: fulldmtrxa(databasis%nao,databasis%nao)
