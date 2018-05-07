@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !-----------------------------------------------------
-  subroutine calc2eri(twoeri,ish,jsh,ksh,lsh,maxdim,threshex,databasis)
+  subroutine calc2eri(twoeri,ish,jsh,ksh,lsh,maxdim,threshex,datamol,databasis)
 !-----------------------------------------------------
 !
 ! Driver of two-electron repulsion integrals 
@@ -24,10 +24,10 @@
 !       numeri (Number of two-electron repulsion integrals)
 !
       use modparam, only : mxprsh
-      use modmolecule, only : coord
-      use modtype, only : typebasis
+      use modtype, only : typemol, typebasis
       implicit none
-      type(typebasis),intent(inout) :: databasis
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nangijkl(4), nprimijkl(4), nbfijkl(4)
       integer :: iloc, jloc, kloc, lloc, i, j, k, l
@@ -54,10 +54,10 @@
       nprimijkl(4)= databasis%mprim(lsh)
 !
       do i= 1,3
-        xyzijkl(i,1)= coord(i,databasis%locatom(ish))
-        xyzijkl(i,2)= coord(i,databasis%locatom(jsh))
-        xyzijkl(i,3)= coord(i,databasis%locatom(ksh))
-        xyzijkl(i,4)= coord(i,databasis%locatom(lsh))
+        xyzijkl(i,1)= datamol%coord(i,databasis%locatom(ish))
+        xyzijkl(i,2)= datamol%coord(i,databasis%locatom(jsh))
+        xyzijkl(i,3)= datamol%coord(i,databasis%locatom(ksh))
+        xyzijkl(i,4)= datamol%coord(i,databasis%locatom(lsh))
       enddo
 !
       do i= 1,nprimijkl(1)
@@ -84,7 +84,7 @@ end
 
 
 !-----------------------------------------------------------------------
-  subroutine calcschwarzeri(xint,xinttmp,maxdim,nproc,myrank,mpi_comm,datajob,databasis)
+  subroutine calcschwarzeri(xint,xinttmp,maxdim,nproc,myrank,mpi_comm,datajob,datamol,databasis)
 !-----------------------------------------------------------------------
 !
 ! Driver of (ij|ij) integral calculation
@@ -92,9 +92,10 @@ end
 ! Out : xint    ((ij|ij) integrals for Schwarz screening)
 !       xinttmp (Work array)
 !
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ish, jsh, nbfi, nbfj, i, j, ii, ij
@@ -112,7 +113,7 @@ end
 !$OMP do
         do jsh = 1,ish
           nbfj = databasis%mbf(jsh)
-          call calc2eri(twoeri,ish,jsh,ish,jsh,maxdim,datajob%threshex,databasis)
+          call calc2eri(twoeri,ish,jsh,ish,jsh,maxdim,datajob%threshex,datamol,databasis)
           xintmax= zero
           do i= 1,nbfi
             do j= 1,nbfj

@@ -333,7 +333,7 @@ end
         allocate(cmowrk(nao*noac),trint1a(numi*maxdim**3),trint1b(mlsize*nao*numi))
 !
         call mp2gradtrans12(cmo,cmowrk,trint1a,trint1b,trint2,trint2core,xint,istart,mlsize, &
-&                           noac,ncore,maxdim,numitrans,datajob%cutint2,idis,nproc,myrank,datajob,databasis)
+&                           noac,ncore,maxdim,numitrans,datajob%cutint2,idis,nproc,myrank,datajob,datamol,databasis)
 !
         deallocate(cmowrk,trint1a,trint1b)
         call memunset(nao*noac+numi*maxdim**3+mlsize*nao*numi,datacomp)
@@ -372,11 +372,11 @@ end
         if(ipass /= npass) then
           call mp2gradbacktrans1(egrad,egradtmp,xlai,tisml,xlmi,cmo,xint,trint2,work1,work2, &
 &                                nocc,noac,nvir,ncore,numitrans,istart,maxdim,maxgraddim, &
-&                                mlsize2,datamol%natom,idis,nproc,myrank,datajob,databasis)
+&                                mlsize2,datamol%natom,idis,nproc,myrank,datajob,datamol,databasis)
         else
           call mp2gradbacktrans2(egrad,egradtmp,wij,wab,wai,xlai,tisml,xlmi,xlmn,cmo,xint,trint2, &
 &                                pij,pab,pmn,energymo,work1,work2,nocc,noac,nvir,ncore,numitrans, &
-&                                istart,maxdim,maxgraddim,mlsize2,datamol%natom,idis,nproc,myrank,mpi_comm,datajob,databasis)
+&                                istart,maxdim,maxgraddim,mlsize2,datamol%natom,idis,nproc,myrank,mpi_comm,datajob,datamol,databasis)
         endif
 !
         deallocate(tisml,xlmi,xlmn,work1,work2)
@@ -398,14 +398,14 @@ end
 ! Solve CPHF equation and obtain Pai
 !
       call mp2gradcphf(pai,xlai,cmo,xint,energymo,paiprev,pls,pmax,paifock,errdiis,paidiis, &
-&                      diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm,datajob,databasis,datacomp)
+&                      diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
 !ishimura
 !call tstamp(1)
 !
 ! Calculate Wij[III] and Wai[II]
 !
       call mp2gradwij3(wij,wai,pmn,pai,paifock,cmo,energymo,xint,pls,pmax,work1,work2, &
-&                      nocc,nvir,nvac,maxdim,nproc,myrank,mpi_comm,datajob,databasis)
+&                      nocc,nvir,nvac,maxdim,nproc,myrank,mpi_comm,datajob,datamol,databasis)
 !ishimura
 !call tstamp(1)
 !
@@ -432,7 +432,7 @@ end
 
 !-----------------------------------------------------------------------------------------------
   subroutine mp2gradtrans12(cmo,cmowrk,trint1a,trint1b,trint2,trint2core,xint,istart,mlsize, &
-&                           noac,ncore,maxdim,numitrans,cutint2,idis,nproc,myrank,datajob,databasis)
+&                           noac,ncore,maxdim,numitrans,cutint2,idis,nproc,myrank,datajob,datamol,databasis)
 !-----------------------------------------------------------------------------------------------
 !
 ! Driver of AO intengral generation and first and second integral transformations
@@ -453,9 +453,10 @@ end
 !       trint1a  (First transformed integrals)
 !       trint1b  (First transformed integrals)
 !
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: istart, mlsize, noac, ncore, maxdim, numitrans
       integer,intent(in) :: nproc, myrank, idis(0:nproc-1,8)
@@ -494,7 +495,7 @@ end
 ! AO integral generation and first integral transformation
 !
           call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,numitrans,jcount1, &
-&                          mlshell,mlsize,cutint2,nproc,myrank,datajob,databasis)
+&                          mlshell,mlsize,cutint2,nproc,myrank,datajob,datamol,databasis)
 !
 ! Second integral transformation
 !
@@ -518,7 +519,7 @@ end
           endif
           if(mlcount+databasis%mbf(ish)*databasis%mbf(ksh) > mlsize) then
             call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,numitrans,jcount1, &
-&                            mlshell,mlsize,cutint2,nproc,myrank,datajob,databasis)
+&                            mlshell,mlsize,cutint2,nproc,myrank,datajob,datamol,databasis)
             call transmointgrad2(trint2,trint2core,trint1b,cmo,noac,ncore,databasis%nao, &
 &                                numitrans,mlcount,mlstart,mlsize,idis,nproc,myrank)
             mlstart= mlstart+mlcount
@@ -1100,7 +1101,7 @@ end
 !-------------------------------------------------------------------------------------------
   subroutine mp2gradbacktrans1(egrad,egradtmp,xlai,tisml,xlmi,cmo,xint,tijml,work,work2, &
 &                              nocc,noac,nvir,ncore,numitrans,istart,maxdim,maxgraddim, &
-&                              mlsize2,natom,idis,nproc,myrank,datajob,databasis)
+&                              mlsize2,natom,idis,nproc,myrank,datajob,datamol,databasis)
 !-------------------------------------------------------------------------------------------
 !
 ! Driver of second-half back-transformation (tnsml), and Lai4 and tnsml*(mn|ls)' terms
@@ -1117,9 +1118,10 @@ end
 !       tisml     (tisml)
 !       xlmi      (Lmi)
 !
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nocc, noac, nvir, ncore, numitrans, istart, maxdim, maxgraddim
       integer,intent(in) :: mlsize2, natom, nproc, myrank, idis(0:nproc-1,8)
@@ -1171,7 +1173,7 @@ end
           mlend= numshell
           call mp2gradbt1(xlai,egrad,tijml,cmo,xint,tisml,xlmi,egradtmp,work,work2, &
 &                         mlindex,numml,mlstart,mlend,numitrans,nocc,noac,ncore,nvir,maxdim, &
-&                         maxgraddim,natom,istart,idis,nproc,myrank,datajob,databasis)
+&                         maxgraddim,natom,istart,idis,nproc,myrank,datajob,datamol,databasis)
           exit
         endif
 !
@@ -1179,7 +1181,7 @@ end
           mlend= numshell
           call mp2gradbt1(xlai,egrad,tijml,cmo,xint,tisml,xlmi,egradtmp,work,work2, &
 &                         mlindex,numml,mlstart,mlend,numitrans,nocc,noac,ncore,nvir,maxdim, &
-&                         maxgraddim,natom,istart,idis,nproc,myrank,datajob,databasis)
+&                         maxgraddim,natom,istart,idis,nproc,myrank,datajob,datamol,databasis)
           mlstart= numshell+1
           numml= 0
         endif
@@ -1192,7 +1194,7 @@ end
 !-------------------------------------------------------------------------------------------------
   subroutine mp2gradbacktrans2(egrad,egradtmp,wij,wab,wai,xlai,tisml,xlmi,xlmn,cmo,xint,tijml, &
 &                              pij,pab,pmn,energymo,work,work2,nocc,noac,nvir,ncore,numitrans, &
-&                              istart,maxdim,maxgraddim,mlsize2,natom,idis,nproc,myrank,mpi_comm,datajob,databasis)
+&                              istart,maxdim,maxgraddim,mlsize2,natom,idis,nproc,myrank,mpi_comm,datajob,datamol,databasis)
 !-------------------------------------------------------------------------------------------------
 !
 ! Driver of second-half back-transformation (tnsml), and PiJ, Lai1,2,4 and tnsml*(mn|ls)' terms,
@@ -1221,9 +1223,10 @@ end
 !       work      (Work space)
 !       work2     (Work space)
 !
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nocc, noac, nvir, ncore, numitrans, istart, maxdim, maxgraddim
       integer,intent(in) :: mlsize2, natom, nproc, myrank, mpi_comm, idis(0:nproc-1,8)
@@ -1330,7 +1333,7 @@ end
           mlend= numshell
           call mp2gradbt2(xlai,egrad,tijml,cmo,pmn,xint,tisml,xlmi,xlmn,egradtmp,work,work2, &
 &                         mlindex,numml,mlstart,mlend,numitrans,nocc,noac,ncore,nvir,maxdim, &
-&                         maxgraddim,natom,istart,idis,nproc,myrank,datajob,databasis)
+&                         maxgraddim,natom,istart,idis,nproc,myrank,datajob,datamol,databasis)
           exit
         endif
 !
@@ -1338,7 +1341,7 @@ end
           mlend= numshell
           call mp2gradbt2(xlai,egrad,tijml,cmo,pmn,xint,tisml,xlmi,xlmn,egradtmp,work,work2, &
 &                         mlindex,numml,mlstart,mlend,numitrans,nocc,noac,ncore,nvir,maxdim, &
-&                         maxgraddim,natom,istart,idis,nproc,myrank,datajob,databasis)
+&                         maxgraddim,natom,istart,idis,nproc,myrank,datajob,datamol,databasis)
           mlstart= numshell+1
           numml= 0
         endif
@@ -1358,7 +1361,7 @@ end
 
 !------------------------------------------------------------------------------------------------
   subroutine mp2gradcphf(pai,xlai,cmo,xint,energymo,paiprev,pls,pmax,paifock,errdiis,paidiis, &
-&                        diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm,datajob,databasis,datacomp)
+&                        diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
 !------------------------------------------------------------------------------------------------
 !
 ! Solve CPHF equation for MP2 energy gradient
@@ -1376,9 +1379,10 @@ end
 !       paidiis   (Old Pai for DIIS)
 !       diismtrx  (DIIS matrix)
 !
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nocc, nvir, maxdim, nproc, myrank, mpi_comm, idis(0:nproc-1,8)
@@ -1432,7 +1436,7 @@ end
 !
 ! Calculate two-electron integrals and Fock-like matrix
 !
-        call formrfock(paifock,work1,pls,pmax,xint,maxdim,datajob%cutint2,nproc,myrank,mpi_comm,datajob,databasis)
+        call formrfock(paifock,work1,pls,pmax,xint,maxdim,datajob%cutint2,nproc,myrank,mpi_comm,datajob,datamol,databasis)
 !
 ! Transform Fock-like matrix to MO basis
 !
@@ -1565,7 +1569,7 @@ end
 
 !--------------------------------------------------------------------------------------------
   subroutine mp2gradwij3(wij,wai,pmn,pai,pmnfock,cmo,energymo,xint,pmn2,pmax,work1,work2, &
-&                        nocc,nvir,nvac,maxdim,nproc,myrank,mpi_comm,datajob,databasis)
+&                        nocc,nvir,nvac,maxdim,nproc,myrank,mpi_comm,datajob,datamol,databasis)
 !--------------------------------------------------------------------------------------------
 !
 ! Calculate Wij[III] and Wai[II]
@@ -1579,9 +1583,10 @@ end
 !       pmn       (Pmn (AO bais)
 ! Work :pmnfock,pmn2,pmax,work1,work2
 !
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nocc, nvir, nvac, maxdim, nproc, myrank, mpi_comm
       integer :: nao, moa, moi, moj, ii, ij, jj
@@ -1625,7 +1630,7 @@ end
 !
 ! Calculate two-electron integrals and Fock-like matrix
 !
-      call formrfock(pmnfock,work1,pmn2,pmax,xint,maxdim,datajob%cutint2,nproc,myrank,mpi_comm,datajob,databasis)
+      call formrfock(pmnfock,work1,pmn2,pmax,xint,maxdim,datajob%cutint2,nproc,myrank,mpi_comm,datajob,datamol,databasis)
 !
 ! Calculate Wij[III]
 !
@@ -1747,7 +1752,7 @@ end
 !---------------------------------------------------------------------------------------------
   subroutine mp2gradbt1(xlai,egrad,tijml,cmo,xint,tisml,xlmi,egradtmp,cmotrans,work2, &
 &                       mlindex,numml,mlstart,mlend,numitrans,nocc,noac,ncore,nvir,maxdim, &
-&                       maxgraddim,natom,istart,idis,nproc,myrank,datajob,databasis)
+&                       maxgraddim,natom,istart,idis,nproc,myrank,datajob,datamol,databasis)
 !---------------------------------------------------------------------------------------------
 !
 ! Calculate second-half back-transformation (tnsml), Lai4 and tnsml*(mn|ls)' terms
@@ -1766,9 +1771,10 @@ end
 !       cmotrans  (transposed matrix of cmo)
 !       work2     (work space)
 !
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: numml, mlstart, mlend, numitrans, nocc, noac, ncore, nvir, maxdim
       integer,intent(in) :: maxgraddim, natom, istart, nproc, myrank, idis(0:nproc-1,8)
@@ -1838,7 +1844,7 @@ end
 !
             xijkl= xint(ij)*xint(kl)
             if(xijkl < datajob%cutint2) cycle
-            call calc2eri(dtwoeri,ish,jsh,ksh,lsh,maxdim,datajob%threshex,databasis)
+            call calc2eri(dtwoeri,ish,jsh,ksh,lsh,maxdim,datajob%threshex,datamol,databasis)
 !
             tmax= zero
             do ii= 1,nbfi
@@ -1880,7 +1886,7 @@ end
 !-------------------------------------------------------------------------------------------------
   subroutine mp2gradbt2(xlai,egrad,tijml,cmo,pmn,xint,tisml,xlmi,xlmn,egradtmp,cmotrans,work2, &
 &                       mlindex,numml,mlstart,mlend,numitrans,nocc,noac,ncore,nvir,maxdim, &
-&                       maxgraddim,natom,istart,idis,nproc,myrank,datajob,databasis)
+&                       maxgraddim,natom,istart,idis,nproc,myrank,datajob,datamol,databasis)
 !-------------------------------------------------------------------------------------------------
 !
 ! Calculate second-half back-transformation (tnsml), Lai1,2,4 and tnsml*(mn|ls)' terms
@@ -1901,9 +1907,10 @@ end
 !       cmotrans  (transposed matrix of cmo)
 !       work2     (Work space)
 !
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: numml, mlstart, mlend, numitrans, nocc, noac, ncore, nvir, maxdim
       integer,intent(in) :: maxgraddim, natom, istart, nproc, myrank, idis(0:nproc-1,8)
@@ -1976,7 +1983,7 @@ end
 !
             xijkl= xint(ij)*xint(kl)
             if(xijkl < datajob%cutint2) cycle
-            call calc2eri(dtwoeri,ish,jsh,ksh,lsh,maxdim,datajob%threshex,databasis)
+            call calc2eri(dtwoeri,ish,jsh,ksh,lsh,maxdim,datajob%threshex,datamol,databasis)
 !
             tmax= zero
             do ii= 1,nbfi

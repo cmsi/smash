@@ -123,7 +123,7 @@
 !
 ! Calculate (ij|ij) integrals
 !
-      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datajob,databasis)
+      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datajob,datamol,databasis)
 !
       if(datacomp%master) then
         write(*,'(1x,74("-"))')
@@ -180,7 +180,7 @@
 ! Calculate two-electron integrals and Fock matrix
 !
         call cpu_time(time1)
-        call formrfock(fock,work,dmtrx,dmax,xint,maxdim,datajob%cutint2,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis)
+        call formrfock(fock,work,dmtrx,dmax,xint,maxdim,datajob%cutint2,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis)
         call dscal(nao3,half,fock,1)
         call cpu_time(time2)
 !
@@ -252,7 +252,7 @@
             else
               call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
 &                        work,work2,datajob%cutint2,one,nao,nmo,nocc,nvir,nshell,maxdim,datajob%maxqcdiag, &
-&                        maxqcdiagsub,datajob%threshqc,datajob,databasis,datacomp)
+&                        maxqcdiagsub,datajob%threshqc,datajob,datamol,databasis,datacomp)
               itqc= itqc+1
             endif
         end select
@@ -391,14 +391,15 @@ end
 
 
 !------------------------------------------------------------------------------------
-  subroutine formrfock(focktotal,fock,dmtrx,dmax,xint,maxdim,cutint2,nproc,myrank,mpi_comm,datajob,databasis)
+  subroutine formrfock(focktotal,fock,dmtrx,dmax,xint,maxdim,cutint2,nproc,myrank,mpi_comm,datajob,datamol,databasis)
 !------------------------------------------------------------------------------------
 !
 ! Driver of Fock matrix formation from two-electron intgrals
 !
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
@@ -478,7 +479,7 @@ end
             endif
           enddo
           do lsh= 1,lnum
-            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,datajob%threshex,databasis)
+            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,datajob%threshex,datamol,databasis)
             call rfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,cutint2,databasis)
           enddo
         enddo
@@ -645,14 +646,15 @@ end
 
 !------------------------------------------------------------------------------
   subroutine formrdftfock(focktotal,fock,dmtrx,dmax,xint,maxdim,cutint2,hfexchange, &
-&                         nproc,myrank,mpi_comm,datajob,databasis)
+&                         nproc,myrank,mpi_comm,datajob,datamol,databasis)
 !------------------------------------------------------------------------------
 !
 ! Driver of DFT Fock matrix formation from two-electron intgrals
 !
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
@@ -732,7 +734,7 @@ end
             endif
           enddo
           do lsh= 1,lnum
-            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,datajob%threshex,databasis)
+            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,datajob%threshex,datamol,databasis)
             call rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,cutint2,hfexchange,databasis)
           enddo
         enddo
@@ -1036,7 +1038,7 @@ end
 !
 ! Calculate (ij|ij) integrals
 !
-      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datajob,databasis)
+      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datajob,datamol,databasis)
 !
       if(datacomp%master) then
         write(*,'(1x,74("-"))')
@@ -1104,7 +1106,7 @@ end
 ! Calculate two-electron integrals
 !
         call formrdftfock(fock,work,dmtrx,dmax,xint,maxdim,datajob%cutint2,datajob%hfexchange, &
-&                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis)
+&                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis)
         call dscal(nao3,half,fock,1)
         call cpu_time(time2)
 !
@@ -1180,7 +1182,7 @@ end
             else
               call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
 &                        work,work2,datajob%cutint2,datajob%hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,datajob%maxqcdiag, &
-&                        maxqcdiagsub,datajob%threshqc,datajob,databasis,datacomp)
+&                        maxqcdiagsub,datajob%threshqc,datajob,datamol,databasis,datacomp)
               itqc= itqc+1
             endif
         end select
@@ -1425,7 +1427,7 @@ end
 !
 ! Calculate (ij|ij) integrals
 !
-      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datajob,databasis)
+      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datajob,datamol,databasis)
 !
       if(datacomp%master) then
         write(*,'(1x,74("-"))')
@@ -1482,7 +1484,7 @@ end
 ! Calculate two-electron integrals and Fock matrix
 !
         call cpu_time(time1)
-        call formufock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,datajob%cutint2,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis)
+        call formufock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,datajob%cutint2,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis)
         call dscal(nao3,half,focka,1)
         call dscal(nao3,half,fockb,1)
         call cpu_time(time2)
@@ -1586,7 +1588,7 @@ end
 &                        qcmat,qcmatsave,qceigen,overlap,xint, &
 &                        work,work2,work3,datajob%cutint2,one,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
 &                        maxdim,datajob%maxqcdiag,maxqcdiagsub,datajob%threshqc, &
-&                        datajob,databasis,datacomp)
+&                        datajob,datamol,databasis,datacomp)
               itqc= itqc+1
             endif
         end select
@@ -1710,7 +1712,7 @@ end
 
 
 !-----------------------------------------------------------------------------------------------
-  subroutine formufock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,cutint2,nproc,myrank,mpi_comm,datajob,databasis)
+  subroutine formufock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,cutint2,nproc,myrank,mpi_comm,datajob,datamol,databasis)
 !-----------------------------------------------------------------------------------------------
 !
 ! Driver of Fock matrix formation from two-electron intgrals
@@ -1721,9 +1723,10 @@ end
 !       fock2  (Beta Fock matrix)
 !       fock3  (Work space)
 !
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
@@ -1806,7 +1809,7 @@ end
             endif
           enddo
           do lsh= 1,lnum
-            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,datajob%threshex,databasis)
+            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,datajob%threshex,datamol,databasis)
             call ufockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,cutint2,databasis)
           enddo
         enddo
@@ -2162,7 +2165,7 @@ end
 !
 ! Calculate (ij|ij) integrals
 !
-      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datajob,databasis)
+      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datajob,datamol,databasis)
 !
       if(datacomp%master) then
         write(*,'(1x,74("-"))')
@@ -2230,7 +2233,7 @@ end
 ! Calculate two-electron integrals
 !
         call formudftfock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,datajob%cutint2,datajob%hfexchange, &
-&                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis)
+&                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis)
         call dscal(nao3,half,focka,1)
         call dscal(nao3,half,fockb,1)
         call cpu_time(time2)
@@ -2339,7 +2342,7 @@ end
 &                        qcmat,qcmatsave,qceigen,overlap,xint, &
 &                        work,work2,work3,datajob%cutint2,datajob%hfexchange,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
 &                        maxdim,datajob%maxqcdiag,maxqcdiagsub,datajob%threshqc, &
-&                        datajob,databasis,datacomp)
+&                        datajob,datamol,databasis,datacomp)
               itqc= itqc+1
             endif
         end select
@@ -2477,7 +2480,7 @@ end
 
 !-----------------------------------------------------------------------------------------
   subroutine formudftfock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,cutint2,hfexchange, &
-&                         nproc,myrank,mpi_comm,datajob,databasis)
+&                         nproc,myrank,mpi_comm,datajob,datamol,databasis)
 !-----------------------------------------------------------------------------------------
 !
 ! Driver of DFT Fock matrix formation from two-electron intgrals
@@ -2488,9 +2491,10 @@ end
 !       fock2  (Beta Fock matrix)
 !       fock3  (Work space)
 !
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
@@ -2573,7 +2577,7 @@ end
             endif
           enddo
           do lsh= 1,lnum
-            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,datajob%threshex,databasis)
+            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,datajob%threshex,datamol,databasis)
             call udftfockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim, &
 &                            cutint2,hfexchange,databasis)
           enddo
