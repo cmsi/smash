@@ -188,7 +188,7 @@ end
 !
 ! Set functional information and adjust the number of DFT grids
 !
-      call setmp2(datajob,databasis)
+      call setmp2(datajob,datamol,databasis)
 !
 ! Write input data
 !
@@ -1734,18 +1734,19 @@ end
 
 
 !--------------------
-  subroutine setmp2(datajob,databasis)
+  subroutine setmp2(datajob,datamol,databasis)
 !--------------------
 !
 ! Set MP2 information
 !
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(inout) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer :: ncorecalc
 !
-      if(datajob%ncore == -1) datajob%ncore= ncorecalc(databasis)
+      if(datajob%ncore == -1) datajob%ncore= ncorecalc(datamol,databasis)
 !
       return
 end

@@ -22,11 +22,10 @@
 !       energymo(MO energies)
 !       xint    (Exchange integral matrix)
 !       
-      use modmolecule, only : neleca, nmo, emp2, escsmp2
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
-      type(typemol),intent(in) :: datamol
+      type(typemol),intent(inout) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
@@ -34,17 +33,17 @@
       integer :: idis(0:nproc-1,4), maxsize, ish, jsh, msize, memneed
       integer :: numocc3, npass
       real(8),parameter :: zero=0.0D+00, three=3.0D+00, p12=1.2D+00
-      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(nmo)
+      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(datamol%nmo)
       real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
       real(8) :: emp2st(2), emp2stsum(2)
 !
       nao= databasis%nao
       nshell= databasis%nshell
-      emp2= zero
+      datamol%emp2= zero
       emp2st(:)= zero
       maxdim= maxval(databasis%mbf(1:nshell))
-      noac= neleca-datajob%ncore
-      nvac= nmo-neleca-datajob%nvfz
+      noac= datamol%neleca-datajob%ncore
+      nvac= datamol%nmo-datamol%neleca-datajob%nvfz
       noac3= noac*(noac+1)/2
 !
       if(datacomp%master) then
@@ -115,7 +114,7 @@
       elseif(numocc3 >= noac3) then
         if(datacomp%master) write(*,'(" == Single pass calculation ==")')
         call mp2single(emp2st,cmo,energymo,xint,noac,nvac,datajob%ncore,maxsize,maxdim,idis, &
-&                      nproc,myrank,mpi_comm,datajob,databasis,datacomp)
+&                      nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
 !
 ! Multiple pass
 !
@@ -127,20 +126,20 @@
           write(*,'("    Number of passes :",i5)')npass
         endif
         call mp2multi(emp2st,cmo,energymo,xint,noac,nvac,datajob%ncore,maxsize,maxdim,idis, &
-&                     npass,numocc3,nproc,myrank,mpi_comm,datajob,databasis,datacomp)
+&                     npass,numocc3,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
       endif
 !
       call para_allreducer(emp2st,emp2stsum,2,mpi_comm)
-      emp2= emp2stsum(1)+emp2stsum(2)
-      escsmp2= emp2stsum(1)*p12+emp2stsum(2)/three
+      datamol%emp2= emp2stsum(1)+emp2stsum(2)
+      datamol%escsmp2= emp2stsum(1)*p12+emp2stsum(2)/three
 !
       if(datacomp%master) then
         write(*,'(" -------------------------------------------------")')
         write(*,'("   HF Energy                  =",f17.9)') datamol%escf
-        write(*,'("   MP2 Correlation Energy     =",f17.9)') emp2
-        write(*,'("   HF + MP2 Energy            =",f17.9)') datamol%escf+emp2
-        write(*,'("   SCS-MP2 Correlation Energy =",f17.9)') escsmp2
-        write(*,'("   HF + SCS-MP2 Energy        =",f17.9)') datamol%escf+escsmp2
+        write(*,'("   MP2 Correlation Energy     =",f17.9)') datamol%emp2
+        write(*,'("   HF + MP2 Energy            =",f17.9)') datamol%escf+datamol%emp2
+        write(*,'("   SCS-MP2 Correlation Energy =",f17.9)') datamol%escsmp2
+        write(*,'("   HF + SCS-MP2 Energy        =",f17.9)') datamol%escf+datamol%escsmp2
         write(*,'(" -------------------------------------------------")')
       endif
       return
@@ -148,22 +147,22 @@ end
 
 
 !-----------------------
-  function ncorecalc(databasis)
+  function ncorecalc(datamol,databasis)
 !-----------------------
 !
 ! Calculate the number of core MOs
 !
-      use modmolecule, only : natom, numatomic
-      use modtype, only : typebasis
+      use modtype, only : typemol, typebasis
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer :: ncorecalc, ncore, iatom, numcore(-9:137)
       data numcore/12*0, 8*1, 8*5, 18*9, 18*18, 32*27, 32*43, 19*59/
 !
       ncore= 0
-      do iatom= 1,natom
+      do iatom= 1,datamol%natom
         if(databasis%izcore(iatom) == 0) then
-          ncore= ncore+numcore(numatomic(iatom))
+          ncore= ncore+numcore(datamol%numatomic(iatom))
         endif
       enddo
       ncorecalc= ncore
@@ -173,7 +172,7 @@ end
 
 !---------------------------------------------------------------------------------------
   subroutine mp2single(emp2st,cmo,energymo,xint,noac,nvac,ncore,maxsize,maxdim,idis, &
-&                      nproc,myrank,mpi_comm,datajob,databasis,datacomp)
+&                      nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
 !---------------------------------------------------------------------------------------
 !
 ! Driver of single pass MP2 energy calculation
@@ -189,16 +188,16 @@ end
 !       idis    (Information for parallelization)
 ! Out : emp2st  (Partial MP2 energies)
 !
-      use modmolecule, only : neleca, nmo
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: noac, nvac, ncore, maxsize, maxdim, nproc, myrank, mpi_comm
       integer,intent(in) :: idis(0:nproc-1,4)
       integer :: noac3, nao, nao2, msize, mlsize
-      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(nmo)
+      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(datamol%nmo)
       real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
       real(8),intent(inout) :: emp2st(2)
       real(8),allocatable :: trint2(:), cmowrk(:), trint1a(:), trint1b(:)
@@ -235,8 +234,8 @@ end
 ! Third and fourth integral transformations and MP2 energy calculation
 !
       if(datacomp%master) write(*,'("    Start third and fourth integral transformations")')
-      call mp2trans34(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,noac,nvac,ncore, &
-&                     idis,nproc,myrank,mpi_comm,databasis)
+      call mp2trans34(cmo(1,datamol%neleca+1),energymo,trint2,trint3,trint4,emp2st,noac,nvac,ncore, &
+&                     idis,nproc,myrank,mpi_comm,datamol,databasis)
 !
       deallocate(trint3,trint4)
       call memunset(2*nao2,datacomp)
@@ -249,7 +248,7 @@ end
 
 !---------------------------------------------------------------------------------------
   subroutine mp2multi(emp2st,cmo,energymo,xint,noac,nvac,ncore,maxsize,maxdim,idis, &
-&                     npass,numocc3,nproc,myrank,mpi_comm,datajob,databasis,datacomp)
+&                     npass,numocc3,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
 !---------------------------------------------------------------------------------------
 !
 ! Driver of multiple pass MP2 energy calculation
@@ -267,16 +266,16 @@ end
 !       numocc3 (Number of active occupied MO pairs per pass)
 ! Out : emp2st  (Partial MP2 energies)
 !
-      use modmolecule, only : neleca, nmo
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: noac, nvac, ncore, maxsize, maxdim, nproc, myrank, mpi_comm
       integer,intent(in) :: idis(0:nproc-1,4), npass, numocc3
       integer :: noac3, nao, nao2, msize, mlsize, ijindex(4,npass), icount, ipass, moi, moj, numij
-      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(nmo)
+      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(datamol%nmo)
       real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
       real(8),intent(inout) :: emp2st(2)
       real(8),allocatable :: trint2(:), cmowrk(:), trint1a(:), trint1b(:)
@@ -355,8 +354,8 @@ end
 !
         if(datacomp%master) &
 &         write(*,'("    Start third and fourth integral transformations of Pass",i5)')ipass
-        call mp2trans34m(cmo(1,neleca+1),energymo,trint2,trint3,trint4,emp2st,nvac,ncore, &
-&                        idis,numij,ijindex(1,ipass),nproc,myrank,mpi_comm,databasis)
+        call mp2trans34m(cmo(1,datamol%neleca+1),energymo,trint2,trint3,trint4,emp2st,nvac,ncore, &
+&                        idis,numij,ijindex(1,ipass),nproc,myrank,mpi_comm,datamol,databasis)
 !
         deallocate(trint3,trint4)
         call memunset(2*nao2,datacomp)
@@ -464,7 +463,7 @@ end
 
 !---------------------------------------------------------------------------------------
   subroutine mp2trans34(cmovir,energymo,trint2,trint3,trint4,emp2st,noac,nvac,ncore, &
-&                       idis,nproc,myrank,mpi_comm,databasis)
+&                       idis,nproc,myrank,mpi_comm,datamol,databasis)
 !---------------------------------------------------------------------------------------
 !
 ! Driver of third and fourth integral transformations and MP2 energy calculation
@@ -478,14 +477,14 @@ end
 ! Work: trint3  (Third transformed integrals)
 !       trint4  (Fourth transformed integrals)
 !
-      use modmolecule, only : nmo
-      use modtype, only : typebasis
+      use modtype, only : typemol, typebasis
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: noac, nvac, ncore, nproc, myrank, mpi_comm, idis(0:nproc-1,4)
       integer :: nao, numrecv, iproc, irecv(0:nproc-1), noac3, ncycle, icycle, myij
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
-      real(8),intent(in) :: cmovir(databasis%nao*nvac), energymo(nmo)
+      real(8),intent(in) :: cmovir(databasis%nao*nvac), energymo(datamol%nmo)
       real(8),intent(in) :: trint2(idis(myrank,3),noac*(noac+1)/2)
       real(8),intent(out) :: trint3(databasis%nao*databasis%nao)
       real(8),intent(out) :: trint4(databasis%nao*databasis%nao), emp2st(2)
@@ -518,7 +517,7 @@ end
 !
 ! MP2 energy calculation
 !
-        call calcrmp2energy(trint4,energymo,emp2st,noac,nvac,ncore,icycle,nproc,myrank)
+        call calcrmp2energy(trint4,energymo,emp2st,noac,nvac,ncore,datamol%neleca,datamol%nmo,icycle,nproc,myrank)
       enddo
       return
 end
@@ -797,7 +796,7 @@ end
 
 
 !----------------------------------------------------------------------------------------
-  subroutine calcrmp2energy(trint4,energymo,emp2st,noac,nvac,ncore,icycle,nproc,myrank)
+  subroutine calcrmp2energy(trint4,energymo,emp2st,noac,nvac,ncore,neleca,nmo,icycle,nproc,myrank)
 !----------------------------------------------------------------------------------------
 !
 ! Calculate MP2 energy
@@ -808,9 +807,8 @@ end
 !       nvac     (Number of virtual MOs)
 !       icycle   (Mp2trans2 cycle number)
 !
-      use modmolecule, only : neleca, nmo
       implicit none
-      integer,intent(in) :: noac, nvac, ncore, icycle, nproc, myrank
+      integer,intent(in) :: noac, nvac, ncore, neleca, nmo, icycle, nproc, myrank
       integer :: moi, moj, myij, ii, moa, mob
       real(8),parameter:: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: trint4(nvac,nvac), energymo(nmo)
@@ -963,7 +961,7 @@ end
 
 !---------------------------------------------------------------------------------------
   subroutine mp2trans34m(cmovir,energymo,trint2,trint3,trint4,emp2st,nvac,ncore, &
-&                        idis,numij,ijindex,nproc,myrank,mpi_comm,databasis)
+&                        idis,numij,ijindex,nproc,myrank,mpi_comm,datamol,databasis)
 !---------------------------------------------------------------------------------------
 !
 ! Driver of third and fourth integral transformations and MP2 energy calculation
@@ -978,15 +976,15 @@ end
 ! Work: trint3  (Third transformed integrals)
 !       trint4  (Fourth transformed integrals)
 !
-      use modmolecule, only : nmo
-      use modtype, only : typebasis
+      use modtype, only : typemol, typebasis
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nvac, ncore, nproc, myrank, mpi_comm, idis(0:nproc-1,4)
       integer,intent(in) :: numij, ijindex(4)
       integer :: nao, numrecv, iproc, irecv(0:nproc-1), ncycle, icycle, myij
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
-      real(8),intent(in) :: cmovir(databasis%nao*nvac), energymo(nmo)
+      real(8),intent(in) :: cmovir(databasis%nao*nvac), energymo(datamol%nmo)
       real(8),intent(in) :: trint2(idis(myrank,3),numij)
       real(8),intent(out) :: trint3(databasis%nao*databasis%nao)
       real(8),intent(out) :: trint4(databasis%nao*databasis%nao), emp2st(2)
@@ -1018,7 +1016,7 @@ end
 !
 ! MP2 energy calculation
 !
-        call calcrmp2energym(trint4,energymo,emp2st,nvac,ncore,icycle,ijindex,nproc,myrank)
+        call calcrmp2energym(trint4,energymo,emp2st,nvac,ncore,datamol%neleca,datamol%nmo,icycle,ijindex,nproc,myrank)
       enddo
       return
 end
@@ -1073,7 +1071,7 @@ end
 
 
 !--------------------------------------------------------------------------------------------
-  subroutine calcrmp2energym(trint4,energymo,emp2st,nvac,ncore,icycle,ijindex,nproc,myrank)
+  subroutine calcrmp2energym(trint4,energymo,emp2st,nvac,ncore,neleca,nmo,icycle,ijindex,nproc,myrank)
 !--------------------------------------------------------------------------------------------
 !
 ! Calculate MP2 energy
@@ -1085,9 +1083,8 @@ end
 !       ijindex  (First and last indices of active occupied MO pairs)
 ! Out : emp2st   (Partial MP2 energy)
 !
-      use modmolecule, only : neleca, nmo
       implicit none
-      integer,intent(in) :: nvac, ncore, icycle, ijindex(4), nproc, myrank
+      integer,intent(in) :: nvac, ncore, neleca, nmo, icycle, ijindex(4), nproc, myrank
       integer :: moi, moj, ii, moa, mob
       real(8),parameter:: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: trint4(nvac,nvac), energymo(nmo)
