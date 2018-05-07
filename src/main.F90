@@ -463,7 +463,7 @@ end
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
-        call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
+        call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,datamol,databasis,datacomp)
         call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif(datajob%method == 'MP2') then
@@ -611,7 +611,7 @@ end
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
-        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
+        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,datamol,databasis,datacomp)
         call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
 !     elseif(method == 'MP2') then
@@ -763,7 +763,7 @@ end
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
-        call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
+        call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,datamol,databasis,datacomp)
         call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       else
@@ -941,7 +941,7 @@ end
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
-        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
+        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,datamol,databasis,datacomp)
         call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       else
@@ -1171,7 +1171,7 @@ end
             datajob%cutint2= savecutint2
             call tstamp(1,datacomp)
           endif
-          call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
+          call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,datamol,databasis,datacomp)
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
           call tstamp(1,datacomp)
         else
@@ -1479,7 +1479,7 @@ end
             datajob%cutint2= savecutint2
             call tstamp(1,datacomp)
           endif
-          call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
+          call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,datamol,databasis,datacomp)
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
           call tstamp(1,datacomp)
         else

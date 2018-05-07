@@ -899,7 +899,7 @@ end
 
 
 !-------------------------------------------------------------------------
-  subroutine calcrdft(h1mtrx,cmo,ortho,overlap,dmtrx,xint,eigen,datajob,databasis,datacomp)
+  subroutine calcrdft(h1mtrx,cmo,ortho,overlap,dmtrx,xint,eigen,datajob,datamol,databasis,datacomp)
 !-------------------------------------------------------------------------
 !
 ! Driver of restricted DFT calculation
@@ -912,15 +912,15 @@ end
 !       eigen   (MO energy)
 ! Inout : cmo   (MO coefficient matrix)
 !
-      use modmolecule, only : neleca, nmo, natom, numatomic, enuc, escf, escfe, atomrad
       use modparam, only : tobohr
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(inout) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: maxdiis, maxsoscf, maxqcdiagsub, nrad, nleb
-      integer :: nao, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
+      integer :: nao, nmo, natom, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
       integer :: itextra, itsoscf, itqc, nocc, nvir
       integer :: idis(datacomp%nproc2,14), isize1, isize2, isize3, iatom
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
@@ -952,12 +952,14 @@ end
       nleb= datajob%nleb
 !
       nao= databasis%nao
+      nmo= datamol%nmo
+      natom= datamol%natom
       nao2= nao*nao
       nao3= nao*(nao+1)/2
       nshell= databasis%nshell
       nshell3= nshell*(nshell+1)/2
-      nocc= neleca
-      nvir= nmo-neleca
+      nocc= datamol%neleca
+      nvir= nmo-datamol%neleca
       maxdim=maxfunc(maxval(databasis%mtype(1:nshell)))
 !
 ! Distribute fock and error arrays for DIIS
@@ -1019,13 +1021,13 @@ end
       call calcradpt(radpt,nrad)
       call calclebpt(angpt,nleb)
       do iatom= 1,natom
-        rad(iatom)= atomrad(numatomic(iatom))*tobohr
+        rad(iatom)= datamol%atomrad(datamol%numatomic(iatom))*tobohr
       enddo
       call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2,nrad,nleb,datacomp%nproc1,datacomp%myrank1)
 !
 ! Calculate initial density matrix
 !
-      call calcdmtrx(cmo,dmtrx,work,nao,neleca)
+      call calcdmtrx(cmo,dmtrx,work,nao,datamol%neleca)
 !
 ! Set 1-electron Hamiltonian
 !
@@ -1112,10 +1114,10 @@ end
 !
 ! Calculate DFT ENERGY
 !
-        escfe=(tridot(dmtrxprev,fock,nao)+tridot(dmtrxprev,h1mtrx,nao))*half+edft
-        escf = escfe+enuc
-        deltae = escf-escfprev
-        escfprev= escf
+        datamol%escfe=(tridot(dmtrxprev,fock,nao)+tridot(dmtrxprev,h1mtrx,nao))*half+edft
+        datamol%escf = datamol%escfe+datamol%enuc
+        deltae = datamol%escf-escfprev
+        escfprev= datamol%escf
 !
 ! Form full Fock matrix
 !
@@ -1186,7 +1188,7 @@ end
 !
 ! Copy previous density matrix and calculate new density matrix
 !
-        call calcdmtrx(cmo,dmtrx,work,nao,neleca)
+        call calcdmtrx(cmo,dmtrx,work,nao,datamol%neleca)
         call ddiff(dmtrx,dmtrxprev,work,nao3,diffmax)
 !
         select case(scfconv)
@@ -1197,15 +1199,15 @@ end
               itsub= itdiis
             endif
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,errmax
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,datamol%escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,sogradmax
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,datamol%escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,escf,deltae,diffmax
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,datamol%escf,deltae,diffmax
         end select
 !
 ! Check SCF convergence
@@ -1245,9 +1247,9 @@ end
       if(datacomp%master) then
         write(*,'(" -----------------------------------------------------------")')
         write(*,'("    SCF Converged.")')
-        write(*,'("    DFT Energy = ",f17.9," a.u.")')escf
-        write(*,'("    Exchange + Correlation energy = ",f17.9," a.u.")')edft
-        write(*,'("    Number of electrons           = ",f17.9)')totalelec
+        write(*,'("    DFT Energy = ",f17.9," a.u.")') datamol%escf
+        write(*,'("    Exchange + Correlation energy = ",f17.9," a.u.")') edft
+        write(*,'("    Number of electrons           = ",f17.9)') totalelec
         write(*,'(" -----------------------------------------------------------"/)')
       endif
 !
@@ -1993,7 +1995,7 @@ end
 
 
 !-----------------------------------------------------------------------------------------
-  subroutine calcudft(h1mtrx,cmoa,cmob,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb,datajob,databasis,datacomp)
+  subroutine calcudft(h1mtrx,cmoa,cmob,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb,datajob,datamol,databasis,datacomp)
 !-----------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted DFT calculation
@@ -2009,15 +2011,15 @@ end
 ! Inout : cmoa  (Alpha MO coefficient matrix)
 !         cmob  (Beta MO coefficient matrix)
 !
-      use modmolecule, only : neleca, nelecb, nmo, natom, numatomic, enuc, escf, escfe, atomrad
       use modparam, only : tobohr
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(inout) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: maxdiis, maxsoscf, maxqcdiagsub, nrad, nleb
-      integer :: nao, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), numwork, iter, itsub, itdiis
+      integer :: nao, nmo, natom, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), numwork, iter, itsub, itdiis
       integer :: itextra, itsoscf, itqc, nocca, nvira, noccb, nvirb
       integer :: idis(datacomp%nproc2,14), isize1, isize2, isize3, iatom
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
@@ -2058,16 +2060,18 @@ end
       nleb= datajob%nleb
 !
       nao= databasis%nao
+      nmo= datamol%nmo
+      natom= datamol%natom
       nao2= nao*nao
       nao3= nao*(nao+1)/2
       nshell= databasis%nshell
       nshell3= nshell*(nshell+1)/2
-      nocca= neleca
-      nvira= nmo-neleca
-      noccb= nelecb
-      nvirb= nmo-nelecb
+      nocca= datamol%neleca
+      nvira= nmo-datamol%neleca
+      noccb= datamol%nelecb
+      nvirb= nmo-datamol%nelecb
       maxdim=maxfunc(maxval(databasis%mtype(1:nshell)))
-      numwork= max(nao3*2,(neleca+nelecb)*nao)
+      numwork= max(nao3*2,(datamol%neleca+datamol%nelecb)*nao)
 !
 ! Distribute fock and error arrays for DIIS
 !
@@ -2141,13 +2145,13 @@ end
       call calcradpt(radpt,nrad)
       call calclebpt(angpt,nleb)
       do iatom= 1,natom
-        rad(iatom)= atomrad(numatomic(iatom))*tobohr
+        rad(iatom)= datamol%atomrad(datamol%numatomic(iatom))*tobohr
       enddo
       call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2,nrad,nleb,datacomp%nproc1,datacomp%myrank1)
 !
 ! Calculate initial density matrix
 !
-      call calcudmtrx(cmoa,cmob,dmtrxa,dmtrxb,work,nao,neleca,nelecb)
+      call calcudmtrx(cmoa,cmob,dmtrxa,dmtrxb,work,nao,datamol%neleca,datamol%nelecb)
 !
 ! Set 1-electron Hamiltonian
 !
@@ -2221,7 +2225,7 @@ end
 !
         call formufockexcor(fockda,fockdb,focka,edft,totalelec,cmoa,cmob,atomvec,&
 &                           radpt,angpt,rad,ptweight,vao,vmoa,vmob,xyzpt,rsqrd, &
-&                           work,work(neleca*nao+1),work2,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis)
+&                           work,work(datamol%neleca*nao+1),work2,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis)
 !
 ! Calculate two-electron integrals
 !
@@ -2238,11 +2242,11 @@ end
 !
 ! Calculate DFT ENERGY
 !
-        escfe=(tridot(dmtrxpreva,focka,nao)+tridot(dmtrxpreva,h1mtrx,nao))*half &
+        datamol%escfe=(tridot(dmtrxpreva,focka,nao)+tridot(dmtrxpreva,h1mtrx,nao))*half &
 &            +(tridot(dmtrxprevb,fockb,nao)+tridot(dmtrxprevb,h1mtrx,nao))*half+ edft
-        escf = escfe+enuc
-        deltae = escf-escfprev
-        escfprev= escf
+        datamol%escf = datamol%escfe+datamol%enuc
+        deltae = datamol%escf-escfprev
+        escfprev= datamol%escf
 !
 ! Form full Fock matrix
 !
@@ -2343,7 +2347,7 @@ end
 !
 ! Copy previous density matrix and calculate new density matrix
 !
-        call calcudmtrx(cmoa,cmob,dmtrxa,dmtrxb,work,nao,neleca,nelecb)
+        call calcudmtrx(cmoa,cmob,dmtrxa,dmtrxb,work,nao,datamol%neleca,datamol%nelecb)
         call ddiff(dmtrxa,dmtrxpreva,work(1),nao3,diffmaxa)
         call ddiff(dmtrxb,dmtrxprevb,work(nao3+1),nao3,diffmaxb)
         diffmax= diffmaxa+diffmaxb
@@ -2356,15 +2360,15 @@ end
               itsub= itdiis
             endif
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,errmax
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,datamol%escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,sogradmax
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,datamol%escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,escf,deltae,diffmax
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,datamol%escf,deltae,diffmax
         end select
 !
 ! Check SCF convergence
@@ -2406,7 +2410,7 @@ end
       if(datacomp%master) then
         write(*,'(" -----------------------------------------------------------")')
         write(*,'("    SCF Converged.")')
-        write(*,'("    DFT Energy = ",f17.9," a.u.")')escf
+        write(*,'("    DFT Energy = ",f17.9," a.u.")')datamol%escf
         write(*,'("    Exchange + Correlation energy = ",f17.9," a.u.")')edft
         write(*,'("    Number of electrons           = ",f17.9)')totalelec
         write(*,'(" -----------------------------------------------------------")')
@@ -2414,7 +2418,7 @@ end
 !
 ! Calculate spin expectation values
 !
-      call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,neleca,nelecb,nao, &
+      call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,datamol%neleca,datamol%nelecb,nao, &
 &                   idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
 !
       if(datacomp%master) then
