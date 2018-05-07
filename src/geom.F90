@@ -90,22 +90,22 @@ end
 
 
 !-----------------------------------------------------------------------------------
-  subroutine setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed,datacomp)
+  subroutine setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed,datamol,datacomp)
 !-----------------------------------------------------------------------------------
 !
 ! Set redundant internal coordinate
 ! Covalent radii (H - Cn): P. Pyykko, M. Atsumi, Chem. Eur. J., 186 (2009) 15.
 !
-      use modmolecule, only : coord, natom, numatomic
       use modparam, only : tobohr
-      use modtype, only : typecomp
+      use modtype, only : typemol, typecomp
       implicit none
-      type(typecomp),intent(inout) :: datacomp
+      type(typemol),intent(in) :: datamol
+      type(typecomp),intent(in) :: datacomp
       integer,parameter :: maxconnect=13
       integer,intent(in) :: isizered
       integer,intent(out) :: iredun(4,isizered/4), numbond, numangle, numtorsion
-      integer :: numredun, maxsize, ijpair(natom,maxconnect), iatom, jatom, katom, icount
-      integer :: ibond, kpair, iangle, jangle, numb, iblock(natom), ib, jb, ijatom(2) 
+      integer :: numredun, maxsize, ijpair(datamol%natom,maxconnect), iatom, jatom, katom, icount
+      integer :: ibond, kpair, iangle, jangle, numb, iblock(datamol%natom), ib, jb, ijatom(2) 
       real(8),parameter :: zero=0.0D+00
       real(8) :: radii(112), rrij, thresh, rrijmin
       logical,intent(out) :: exceed
@@ -132,23 +132,24 @@ end
 ! Set bond strech
 !
       numbond= 0
-      do iatom= 1,natom
-        if(numatomic(iatom) > 112) then
+      do iatom= 1,datamol%natom
+        if(datamol%numatomic(iatom) > 112) then
           if(datacomp%master) &
 &         write(*,'(" Error! This program supports up to Cn in Subroutine setredundantcoord.")')
           call iabort
-        elseif(numatomic(iatom) < 1) then
+        elseif(datamol%numatomic(iatom) < 1) then
           if(datacomp%master) &
 &         write(*,'(" Error! This program does not support dummy and ghost atoms ", &
 &                   "in Subroutine setredundantcoord currently.")')
           call iabort
         endif
         icount= 0
-        do jatom= 1,natom
+        do jatom= 1,datamol%natom
           if(jatom == iatom) cycle
-          thresh=(1.25D+00*tobohr*(radii(numatomic(iatom))+radii(numatomic(jatom))))**2
-          rrij= (coord(1,jatom)-coord(1,iatom))**2+(coord(2,jatom)-coord(2,iatom))**2 &
-&              +(coord(3,jatom)-coord(3,iatom))**2
+          thresh=(1.25D+00*tobohr*(radii(datamol%numatomic(iatom))+radii(datamol%numatomic(jatom))))**2
+          rrij= (datamol%coord(1,jatom)-datamol%coord(1,iatom))**2 &
+&              +(datamol%coord(2,jatom)-datamol%coord(2,iatom))**2 &
+&              +(datamol%coord(3,jatom)-datamol%coord(3,iatom))**2
           if(rrij <= thresh) then
             icount= icount+1
             if(icount > maxconnect) then
@@ -174,12 +175,12 @@ end
 !
       numb= 0
       iblock(:)= 0
- mblock:do iatom= 1,natom
+ mblock:do iatom= 1,datamol%natom
           if(iblock(iatom) /= 0) cycle
           numb= numb+1
           iblock(iatom)= numb
-          call checkbond(iatom,numb,iblock,ijpair,natom,maxconnect)
-          do jatom= iatom+1,natom
+          call checkbond(iatom,numb,iblock,ijpair,datamol%natom,maxconnect)
+          do jatom= iatom+1,datamol%natom
             if(iblock(jatom) == 0) cycle mblock
           enddo
           exit mblock
@@ -194,12 +195,13 @@ end
       do ib= 1, numb
         do jb= ib+1,numb
           rrijmin= zero
-          do iatom= 1,natom
+          do iatom= 1,datamol%natom
             if(iblock(iatom) /= ib) cycle
-            do jatom= iatom+1,natom
+            do jatom= iatom+1,datamol%natom
               if(iblock(jatom) /= jb) cycle
-                rrij= (coord(1,jatom)-coord(1,iatom))**2+(coord(2,jatom)-coord(2,iatom))**2 &
-&                    +(coord(3,jatom)-coord(3,iatom))**2
+                rrij= (datamol%coord(1,jatom)-datamol%coord(1,iatom))**2 &
+&                    +(datamol%coord(2,jatom)-datamol%coord(2,iatom))**2 &
+&                    +(datamol%coord(3,jatom)-datamol%coord(3,iatom))**2
               if((rrijmin == zero).or.(rrij < rrijmin)) then
                 rrijmin= rrij
                 ijatom(1)= min(iatom,jatom)
@@ -360,7 +362,7 @@ end
         enddo
       enddo
 !
-      if((natom >= 4).and.(numtorsion == 0)) then
+      if((datamol%natom >= 4).and.(numtorsion == 0)) then
         do iangle= numbond+1,numbond+numangle
           iatom= iredun(1,iangle)
           jatom= iredun(2,iangle)
@@ -422,7 +424,7 @@ end
       use modtype, only : typejob, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
-      type(typecomp),intent(inout) :: datacomp
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: natom3, iopt
       integer :: i, j, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, third=0.3333333333333333D+00

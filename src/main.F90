@@ -1078,7 +1078,7 @@ end
         call memset(isizered,datacomp)
         allocate(iredun(isizered))
         do ii= 1,10
-          call setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed,datacomp)
+          call setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed,datamol,datacomp)
           if(.not.exceed) exit
           call memunset(isizered,datacomp)
           deallocate(iredun)
@@ -1386,7 +1386,7 @@ end
         call memset(isizered,datacomp)
         allocate(iredun(isizered))
         do ii= 1,10
-          call setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed,datacomp)
+          call setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed,datamol,datacomp)
           if(.not.exceed) exit
           call memunset(isizered,datacomp)
           deallocate(iredun)
