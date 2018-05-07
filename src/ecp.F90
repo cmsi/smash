@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !--------------------------------------------
-  subroutine oneeiecp(hstmat2,nproc,myrank,databasis)
+  subroutine oneeiecp(hstmat2,nproc,myrank,datamol,databasis)
 !--------------------------------------------
 !
 ! Calculate ECP integrals and add them into Hamiltonian matrix
@@ -21,9 +21,9 @@
 ! Out  : hstmat2 (one electron Hamiltonian matrix)
 !
       use modecp, only : nterm1, nterm2
-      use modmolecule, only : natom
-      use modtype, only : typebasis
+      use modtype, only : typemol, typebasis
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nproc, myrank
       integer :: maxfunc(0:6)=(/1,3,6,10,15,21,28/)
@@ -34,7 +34,7 @@
 !
       maxbasis= maxval(databasis%mtype(1:databasis%nshell))
       maxdim= maxfunc(maxbasis)
-      llmax= maxval(databasis%maxangecp(1:natom))
+      llmax= maxval(databasis%maxangecp(1:datamol%natom))
       if(maxbasis >= 6) then
         write(*,'(" Error! This program supports up to h function in ecp calculation.")')
         call exit
@@ -62,7 +62,7 @@
 !$OMP do
         do jsh= 1,ish
           call calcintecp(hstmat2,term1ecp,term2ecp,term0ecp,xyzintecp,label1ecp,label2ecp, &
-&                         num1ecp,num2ecp,numtbasis,ish,jsh,maxdim,databasis)
+&                         num1ecp,num2ecp,numtbasis,ish,jsh,maxdim,datamol,databasis)
         enddo
 !$OMP enddo
       enddo
@@ -104,17 +104,17 @@ end
 
 !-----------------------------------------------------------------------------------------
   subroutine calcintecp(hmat,term1ecp,term2ecp,term0ecp,xyzintecp,label1ecp,label2ecp, &
-&                       num1ecp,num2ecp,numtbasis,ish,jsh,len1,databasis)
+&                       num1ecp,num2ecp,numtbasis,ish,jsh,len1,datamol,databasis)
 !-----------------------------------------------------------------------------------------
 !
 ! Driver of effective core potential integrals
 !   (j|Uecp|i)
 !
       use modparam, only : mxprsh
-      use modmolecule, only : natom, coord
       use modecp, only : nterm1, nterm2
-      use modtype, only : typebasis
+      use modtype, only : typemol, typebasis
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: label1ecp(nterm1*9), label2ecp(nterm2*6), num1ecp(*), num2ecp(*)
       integer,intent(in) :: numtbasis, ish, jsh, len1
@@ -148,8 +148,8 @@ end
       endif
 !
       do i= 1,3
-        coordijk(i,1)= coord(i,iatom)
-        coordijk(i,2)= coord(i,jatom)
+        coordijk(i,1)= datamol%coord(i,iatom)
+        coordijk(i,2)= datamol%coord(i,jatom)
       enddo
       do iprim= 1,nprimij(1)
         exij(iprim,1)= databasis%ex(iloc+iprim)
@@ -163,10 +163,10 @@ end
       ijkatom(2)= jatom
 !
       ecpintsum(1:nbfij(2),1:nbfij(1))= zero
-      do katom= 1,natom
+      do katom= 1,datamol%natom
         if(databasis%maxangecp(katom) == -1) cycle
         do i= 1,3
-          coordijk(i,3)= coord(i,katom)
+          coordijk(i,3)= datamol%coord(i,katom)
         enddo
         ijkatom(3)= katom
         lmaxecp= databasis%maxangecp(katom)

@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !---------------------------------------------------------
-  subroutine gradoneeiecp(egrad1,fulldmtrx,nproc,myrank,databasis)
+  subroutine gradoneeiecp(egrad1,fulldmtrx,nproc,myrank,datamol,databasis)
 !---------------------------------------------------------
 !
 ! Calculate ECP derivative terms and add them into energy gradient matrix
@@ -21,21 +21,21 @@
 ! Inout  : egrad1 (one electron gradient matrix)
 !
       use modecp, only : nterm1, nterm2
-      use modmolecule, only : natom
-      use modtype, only : typebasis
+      use modtype, only : typemol, typebasis
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nproc, myrank
       integer :: maxfunc(0:6)=(/1,3,6,10,15,21,28/)
       integer :: maxbasis, numtbasis, maxdim, llmax, maxecpdim, nsizecp1, nsizecp2, ish, jsh
       integer :: label1ecp(nterm1*9), num1ecp(1597), label2ecp(nterm2*6), num2ecp(897)
       real(8),intent(in) :: fulldmtrx(databasis%nao*databasis%nao)
-      real(8),intent(inout) :: egrad1(natom*3)
+      real(8),intent(inout) :: egrad1(datamol%natom*3)
       real(8) :: term1ecp(nterm1), term2ecp(nterm2), term0ecp(897), xyzintecp(25*25*25)
 !
       maxbasis= maxval(databasis%mtype(1:databasis%nshell))+1
       maxdim= maxfunc(maxbasis)
-      llmax= maxval(databasis%maxangecp(1:natom))
+      llmax= maxval(databasis%maxangecp(1:datamol%natom))
       if(maxbasis >= 6) then
         write(*,'(" Error! This program supports up to g function in ecp derivative calculation.")')
         call iabort
@@ -63,7 +63,7 @@
 !$OMP do
         do jsh= 1,databasis%nshell
           call calcdintecp(egrad1,fulldmtrx,term1ecp,term2ecp,term0ecp,xyzintecp, &
-&                          label1ecp,label2ecp,num1ecp,num2ecp,numtbasis,ish,jsh,maxdim,databasis)
+&                          label1ecp,label2ecp,num1ecp,num2ecp,numtbasis,ish,jsh,maxdim,datamol,databasis)
         enddo
 !$OMP enddo
       enddo
@@ -79,7 +79,7 @@ end
 
 !-------------------------------------------------------------------------------------
   subroutine calcdintecp(egrad1,fulldmtrx,term1ecp,term2ecp,term0ecp,xyzintecp, &
-&                        label1ecp,label2ecp,num1ecp,num2ecp,numtbasis,ish,jsh,len1,databasis)
+&                        label1ecp,label2ecp,num1ecp,num2ecp,numtbasis,ish,jsh,len1,datamol,databasis)
 !-------------------------------------------------------------------------------------
 !
 ! Driver of ECP derivative terms
@@ -89,10 +89,10 @@ end
 ! Inout : egrad1 (energy gradient value)
 !
       use modparam, only : mxprsh
-      use modmolecule, only : natom, coord
       use modecp, only : nterm1, nterm2
-      use modtype, only : typebasis
+      use modtype, only : typemol, typebasis
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: label1ecp(nterm1*9), label2ecp(nterm2*6), num1ecp(*), num2ecp(*)
       integer,intent(in) :: numtbasis, ish, jsh, len1
@@ -135,7 +135,7 @@ end
       real(8),parameter :: fach5=0.48412291827592711D+00 ! sqrt(15)/8
       real(8),intent(in) :: fulldmtrx(databasis%nao,databasis%nao), term1ecp(nterm1), term2ecp(nterm2)
       real(8),intent(in) :: term0ecp(*), xyzintecp(25*25*25)
-      real(8),intent(inout) :: egrad1(3,natom)
+      real(8),intent(inout) :: egrad1(3,datamol%natom)
       real(8) :: exij(mxprsh,2), coij(mxprsh,2), coordijk(3,3), ecpint1(len1,len1)
       real(8) :: ecpint2(len1,len1), decpint(28,28,3), work(28)
       real(8) :: exkecp(mxprsh,6), cokecp(mxprsh,6)
@@ -160,8 +160,8 @@ end
       endif
 !
       do i= 1,3
-        coordijk(i,1)= coord(i,iatom)
-        coordijk(i,2)= coord(i,jatom)
+        coordijk(i,1)= datamol%coord(i,iatom)
+        coordijk(i,2)= datamol%coord(i,jatom)
       enddo
       do iprim= 1,nprimij(1)
         exij(iprim,1)= databasis%ex(iloc+iprim)
@@ -174,11 +174,11 @@ end
       ijkatom(1)= iatom
       ijkatom(2)= jatom
 !
-      do katom= 1,natom
+      do katom= 1,datamol%natom
         if(databasis%maxangecp(katom) == -1) cycle
         if(katom == jatom) cycle
         do i= 1,3
-          coordijk(i,3)= coord(i,katom)
+          coordijk(i,3)= datamol%coord(i,katom)
         enddo
         nangij(2)= databasis%mtype(jsh)+1
         nbfij(2)= ncart(nangij(2))

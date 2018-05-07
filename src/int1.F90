@@ -57,7 +57,7 @@
 !
 ! Calculate ECP integrals
 !
-      if(datajob%flagecp) call oneeiecp(hstmat2,nproc,myrank,databasis)
+      if(datajob%flagecp) call oneeiecp(hstmat2,nproc,myrank,datamol,databasis)
 !
       call para_allreducer(hstmat2,hstmat1,num,mpi_comm)
       call para_allreducer(hstmat3,hstmat2,num,mpi_comm)
