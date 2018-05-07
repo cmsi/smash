@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !------------------------------------------------------------------------
-  subroutine calcrhf(h1mtrx,cmo,ortho,overlap,dmtrx,xint,eigen,datajob,databasis,datacomp)
+  subroutine calcrhf(h1mtrx,cmo,ortho,overlap,dmtrx,xint,eigen,datajob,datamol,databasis,datacomp)
 !------------------------------------------------------------------------
 !
 ! Driver of restricted Hartree-Fock calculation
@@ -26,14 +26,14 @@
 !       eigen   (MO energy)
 ! Inout : cmo   (MO coefficient matrix)
 !
-      use modmolecule, only : neleca, nmo, enuc, escf, escfe
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(inout) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: maxdiis, maxsoscf, maxqcdiagsub
-      integer :: nao, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
+      integer :: nao, nmo, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
       integer :: itextra, itsoscf, itqc, nocc, nvir
       integer :: idis(datacomp%nproc2,14), isize1, isize2, isize3
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
@@ -60,12 +60,13 @@
       scfconv= datajob%scfconv
 !
       nao= databasis%nao
+      nmo= datamol%nmo
       nao2= nao*nao
       nao3= nao*(nao+1)/2
       nshell= databasis%nshell
       nshell3= nshell*(nshell+1)/2
-      nocc= neleca
-      nvir= nmo-neleca
+      nocc= datamol%neleca
+      nvir= nmo-datamol%neleca
       maxdim=maxfunc(maxval(databasis%mtype(1:nshell)))
 !
 ! Distribute fock and error arrays for DIIS
@@ -113,7 +114,7 @@
 !
 ! Calculate initial density matrix
 !
-      call calcdmtrx(cmo,dmtrx,work,nao,neleca)
+      call calcdmtrx(cmo,dmtrx,work,nao,datamol%neleca)
 !
 ! Set 1-electron Hamiltonian
 !
@@ -189,10 +190,10 @@
 !
 ! Calculate SCF ENERGY
 !
-        escfe=(tridot(dmtrxprev,fock,nao)+tridot(dmtrxprev,h1mtrx,nao))*half
-        escf = escfe+enuc
-        deltae = escf-escfprev
-        escfprev= escf
+        datamol%escfe=(tridot(dmtrxprev,fock,nao)+tridot(dmtrxprev,h1mtrx,nao))*half
+        datamol%escf = datamol%escfe+datamol%enuc
+        deltae = datamol%escf-escfprev
+        escfprev= datamol%escf
 !
         select case(scfconv)
 !
@@ -259,7 +260,7 @@
 !
 ! Copy previous density matrix and calculate new density matrix
 !
-        call calcdmtrx(cmo,dmtrx,work,nao,neleca)
+        call calcdmtrx(cmo,dmtrx,work,nao,datamol%neleca)
         call ddiff(dmtrx,dmtrxprev,work,nao3,diffmax)
 !
         select case(scfconv)
@@ -270,15 +271,15 @@
               itsub= itdiis
             endif
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,errmax
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,datamol%escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,sogradmax
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,datamol%escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,escf,deltae,diffmax
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,datamol%escf,deltae,diffmax
         end select
 !
 ! Check SCF convergence
@@ -318,7 +319,7 @@
       if(datacomp%master) then
         write(*,'(" -----------------------------------------")')
         write(*,'("    SCF Converged.")')
-        write(*,'("    RHF Energy = ",f17.9," a.u.")')escf
+        write(*,'("    RHF Energy = ",f17.9," a.u.")') datamol%escf
         write(*,'(" -----------------------------------------"/)')
       endif
 !
@@ -1287,7 +1288,7 @@ end
 
 
 !----------------------------------------------------------------------------------------
-  subroutine calcuhf(h1mtrx,cmoa,cmob,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb,datajob,databasis,datacomp)
+  subroutine calcuhf(h1mtrx,cmoa,cmob,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb,datajob,datamol,databasis,datacomp)
 !----------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted Hartree-Fock calculation
@@ -1303,14 +1304,14 @@ end
 ! Inout : cmoa  (Alpha MO coefficient matrix)
 !         cmob  (Beta MO coefficient matrix)
 !
-      use modmolecule, only : neleca, nelecb, nmo, enuc, escf, escfe
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(inout) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: maxdiis, maxsoscf, maxqcdiagsub
-      integer :: nao, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
+      integer :: nao, nmo, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
       integer :: itextra, itsoscf, itqc, nocca, nvira, noccb, nvirb
       integer :: idis(datacomp%nproc2,14), isize1, isize2, isize3
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
@@ -1346,14 +1347,15 @@ end
       scfconv= datajob%scfconv
 !
       nao= databasis%nao
+      nmo= datamol%nmo
       nao2= nao*nao
       nao3= nao*(nao+1)/2
       nshell= databasis%nshell
       nshell3= nshell*(nshell+1)/2
-      nocca= neleca
-      nvira= nmo-neleca
-      noccb= nelecb
-      nvirb= nmo-nelecb
+      nocca= datamol%neleca
+      nvira= nmo-datamol%neleca
+      noccb= datamol%nelecb
+      nvirb= nmo-datamol%nelecb
       maxdim=maxfunc(maxval(databasis%mtype(1:nshell)))
 !
 ! Distribute fock and error arrays for DIIS
@@ -1410,7 +1412,7 @@ end
 !
 ! Calculate initial density matrix
 !
-      call calcudmtrx(cmoa,cmob,dmtrxa,dmtrxb,work,nao,neleca,nelecb)
+      call calcudmtrx(cmoa,cmob,dmtrxa,dmtrxb,work,nao,datamol%neleca,datamol%nelecb)
 !
 ! Set 1-electron Hamiltonian
 !
@@ -1490,11 +1492,11 @@ end
 !
 ! Calculate SCF ENERGY
 !
-        escfe=(tridot(dmtrxpreva,focka,nao)+tridot(dmtrxpreva,h1mtrx,nao))*half &
-&            +(tridot(dmtrxprevb,fockb,nao)+tridot(dmtrxprevb,h1mtrx,nao))*half
-        escf = escfe+enuc
-        deltae = escf-escfprev
-        escfprev= escf
+        datamol%escfe=(tridot(dmtrxpreva,focka,nao)+tridot(dmtrxpreva,h1mtrx,nao))*half &
+&                    +(tridot(dmtrxprevb,fockb,nao)+tridot(dmtrxprevb,h1mtrx,nao))*half
+        datamol%escf = datamol%escfe+datamol%enuc
+        deltae  = datamol%escf-escfprev
+        escfprev= datamol%escf
 !
         select case(scfconv)
 !
@@ -1590,7 +1592,7 @@ end
 !
 ! Copy previous density matrix and calculate new density matrix
 !
-        call calcudmtrx(cmoa,cmob,dmtrxa,dmtrxb,work,nao,neleca,nelecb)
+        call calcudmtrx(cmoa,cmob,dmtrxa,dmtrxb,work,nao,datamol%neleca,datamol%nelecb)
         call ddiff(dmtrxa,dmtrxpreva,work(1),nao3,diffmaxa)
         call ddiff(dmtrxb,dmtrxprevb,work(nao3+1),nao3,diffmaxb)
         diffmax= diffmaxa+diffmaxb
@@ -1603,15 +1605,15 @@ end
               itsub= itdiis
             endif
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,errmax
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,datamol%escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,sogradmax
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,datamol%escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,escf,deltae,diffmax
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,datamol%escf,deltae,diffmax
         end select
 !
 ! Check SCF convergence
@@ -1653,13 +1655,13 @@ end
       if(datacomp%master) then
         write(*,'(" -----------------------------------------")')
         write(*,'("    SCF Converged.")')
-        write(*,'("    UHF Energy = ",f17.9," a.u.")')escf
+        write(*,'("    UHF Energy = ",f17.9," a.u.")') datamol%escf
         write(*,'(" -----------------------------------------"/)')
       endif
 !
 ! Calculate spin expectation values
 !
-      call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,neleca,nelecb,nao, &
+      call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,datamol%neleca,datamol%nelecb,nao, &
 &                   idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
 !
       if(datacomp%master) then

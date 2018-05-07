@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !---------------------------------------------------------------
-  subroutine calcrmp2(cmo,energymo,xint,nproc,myrank,mpi_comm,datajob,databasis,datacomp)
+  subroutine calcrmp2(cmo,energymo,xint,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
 !---------------------------------------------------------------
 !
 ! Driver of restricted MP2 calculation
@@ -22,10 +22,11 @@
 !       energymo(MO energies)
 !       xint    (Exchange integral matrix)
 !       
-      use modmolecule, only : neleca, nmo, escf, emp2, escsmp2
-      use modtype, only : typejob, typebasis, typecomp
+      use modmolecule, only : neleca, nmo, emp2, escsmp2
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
@@ -135,11 +136,11 @@
 !
       if(datacomp%master) then
         write(*,'(" -------------------------------------------------")')
-        write(*,'("   HF Energy                  =",f17.9)')escf
-        write(*,'("   MP2 Correlation Energy     =",f17.9)')emp2
-        write(*,'("   HF + MP2 Energy            =",f17.9)')escf+emp2
-        write(*,'("   SCS-MP2 Correlation Energy =",f17.9)')escsmp2
-        write(*,'("   HF + SCS-MP2 Energy        =",f17.9)')escf+escsmp2
+        write(*,'("   HF Energy                  =",f17.9)') datamol%escf
+        write(*,'("   MP2 Correlation Energy     =",f17.9)') emp2
+        write(*,'("   HF + MP2 Energy            =",f17.9)') datamol%escf+emp2
+        write(*,'("   SCS-MP2 Correlation Energy =",f17.9)') escsmp2
+        write(*,'("   HF + SCS-MP2 Energy        =",f17.9)') datamol%escf+escsmp2
         write(*,'(" -------------------------------------------------")')
       endif
       return

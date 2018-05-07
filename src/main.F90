@@ -449,7 +449,7 @@ end
 ! Start SCF
 !
       if(datajob%method == 'HARTREE-FOCK') then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,datamol,databasis,datacomp)
         call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
@@ -458,7 +458,7 @@ end
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
-          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
+          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,datamol,databasis,datacomp)
           datajob%dconv= savedconv
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
@@ -467,10 +467,10 @@ end
         call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif(datajob%method == 'MP2') then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,datamol,databasis,datacomp)
         call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
-        call calcrmp2(cmo,energymo,xint,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
+        call calcrmp2(cmo,energymo,xint,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
         call tstamp(1,datacomp)
       else
         if(datacomp%master) then
@@ -597,7 +597,7 @@ end
 ! Start SCF
 !
       if(datajob%method == 'HARTREE-FOCK') then
-        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
+        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,datamol,databasis,datacomp)
         call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
@@ -606,7 +606,7 @@ end
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
-          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
+          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,datamol,databasis,datacomp)
           datajob%dconv= savedconv
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
@@ -749,7 +749,7 @@ end
 ! Start SCF
 !
       if((datajob%method == 'HARTREE-FOCK').or.(datajob%method == 'MP2')) then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
+        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,datamol,databasis,datacomp)
         call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
@@ -758,7 +758,7 @@ end
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
-          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
+          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,datamol,databasis,datacomp)
           datajob%dconv= savedconv
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
@@ -787,7 +787,7 @@ end
         call calcgradrdft(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
         call tstamp(1,datacomp)
       elseif(datajob%method == 'MP2') then
-        call calcgradrmp2(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
+        call calcgradrmp2(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
         call tstamp(1,datacomp)
       else
         if(datacomp%master) then
@@ -927,7 +927,7 @@ end
 ! Start SCF
 !
       if(datajob%method == 'HARTREE-FOCK') then
-        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
+        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,datamol,databasis,datacomp)
         call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
@@ -936,7 +936,7 @@ end
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
-          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
+          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,datamol,databasis,datacomp)
           datajob%dconv= savedconv
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
@@ -1157,7 +1157,7 @@ end
 ! Calculate energy
 !
         if((datajob%method == 'HARTREE-FOCK').or.(datajob%method == 'MP2')) then
-          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
+          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,datamol,databasis,datacomp)
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
           call tstamp(1,datacomp)
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
@@ -1166,7 +1166,7 @@ end
             savecutint2= datajob%cutint2
             datajob%dconv= max(datajob%dconv,1.0D-2)
             datajob%cutint2= max(datajob%cutint2,1.0D-9)
-            call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,databasis,datacomp)
+            call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo,datajob,datamol,databasis,datacomp)
             datajob%dconv= savedconv
             datajob%cutint2= savecutint2
             call tstamp(1,datacomp)
@@ -1190,7 +1190,7 @@ end
           call calcgradrdft(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
           call tstamp(1,datacomp)
         elseif(datajob%method == 'MP2') then
-          call calcgradrmp2(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,databasis,datacomp)
+          call calcgradrmp2(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
           call tstamp(1,datacomp)
         else
           if(datacomp%master) then
@@ -1465,7 +1465,7 @@ end
 ! Calculate energy
 !
         if(datajob%method == 'HARTREE-FOCK') then
-          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
+          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,datamol,databasis,datacomp)
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
           call tstamp(1,datacomp)
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
@@ -1474,7 +1474,7 @@ end
             savecutint2= datajob%cutint2
             datajob%dconv= max(datajob%dconv,1.0D-2)
             datajob%cutint2= max(datajob%cutint2,1.0D-9)
-            call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,databasis,datacomp)
+            call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob,datajob,datamol,databasis,datacomp)
             datajob%dconv= savedconv
             datajob%cutint2= savecutint2
             call tstamp(1,datacomp)
