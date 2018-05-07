@@ -58,26 +58,27 @@ end
 
 
 !---------------------------------------------
-  subroutine nucgradient(egrad,nproc,myrank)
+  subroutine nucgradient(egrad,nproc,myrank,datamol)
 !---------------------------------------------
 !
 ! Calculate gradinet of nuclear replusion energy
 !
-      use modmolecule, only : natom, coord, znuc
+      use modtype, only : typemol
       implicit none
+      type(typemol),intent(inout) :: datamol
       integer,intent(in) :: nproc, myrank
       integer :: iatom, jatom, i
-      real(8),intent(inout) :: egrad(3,natom)
+      real(8),intent(inout) :: egrad(3,datamol%natom)
       real(8) :: xyz(3), rr, chrgij
 !
-      do iatom= 2+myrank,natom,nproc
+      do iatom= 2+myrank,datamol%natom,nproc
         do jatom= 1,iatom-1
-          xyz(1)= coord(1,iatom)-coord(1,jatom)
-          xyz(2)= coord(2,iatom)-coord(2,jatom)
-          xyz(3)= coord(3,iatom)-coord(3,jatom)
+          xyz(1)= datamol%coord(1,iatom)-datamol%coord(1,jatom)
+          xyz(2)= datamol%coord(2,iatom)-datamol%coord(2,jatom)
+          xyz(3)= datamol%coord(3,iatom)-datamol%coord(3,jatom)
           rr= xyz(1)*xyz(1)+xyz(2)*xyz(2)+xyz(3)*xyz(3)
           rr= rr*sqrt(rr)
-          chrgij= znuc(iatom)*znuc(jatom)
+          chrgij= datamol%znuc(iatom)*datamol%znuc(jatom)
           do i= 1,3
             egrad(i,iatom)= egrad(i,iatom)-xyz(i)*chrgij/rr
             egrad(i,jatom)= egrad(i,jatom)+xyz(i)*chrgij/rr

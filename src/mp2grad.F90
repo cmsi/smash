@@ -202,7 +202,7 @@
         endif
         call mp2gradmulti(emp2st,egradtmp,egrad,cmo,energymo,xint,nocc,noac,nvir,nvac, &
 &                         datajob%ncore,datajob%nvfz,maxsize,maxdim,maxgraddim,idis,npass,numi,numab,numirecv, &
-&                         nproc,myrank,mpi_comm,datajob,databasis,datacomp)
+&                         nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
       endif
 !
       call para_allreducer(emp2st,emp2stsum,2,mpi_comm)
@@ -239,7 +239,7 @@ end
 !-------------------------------------------------------------------------------------------------
   subroutine mp2gradmulti(emp2st,egrad,egradtmp,cmo,energymo,xint,nocc,noac,nvir,nvac, &
 &                         ncore,nvfz,maxsize,maxdim,maxgraddim,idis,npass,numi,numab,numirecv, &
-&                         nproc,myrank,mpi_comm,datajob,databasis,datacomp)
+&                         nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
 !-------------------------------------------------------------------------------------------------
 !
 ! Driver of single pass MP2 energy calculation
@@ -266,9 +266,10 @@ end
 ! Work: egradtmp(Work space for MP2 energy gradients)
 !
       use modmolecule, only : nmo, natom
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nocc, noac, nvir, nvac, ncore, nvfz, maxsize, maxdim, maxgraddim
@@ -413,7 +414,7 @@ end
 ! Calculate integral derivatives and their MP2 energy gradient
 !
       call mp2graddint(egrad,egradtmp,pmn,wij,wab,wai,xint,cmo,energymo,pls,work1,work2, &
-&                      nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm,datajob,databasis,datacomp)
+&                      nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
 !ishimura
 !call tstamp(1)
 !
@@ -1659,7 +1660,7 @@ end
 
 !--------------------------------------------------------------------------------------------
   subroutine mp2graddint(egrad,egradtmp,pmn,wij,wab,wai,xint,cmo,energymo,wmn,pmnhf,work, &
-&                        nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm,datajob,databasis,datacomp)
+&                        nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
 !--------------------------------------------------------------------------------------------
 !
 ! Calculate integral derivatives and MP2 energy gradient
@@ -1673,10 +1674,10 @@ end
 ! Inout:egrad     (MP2 energy gradients)
 !       pmn       (Pmn)
 ! Work :egradtmp,wmn,work
-      use modmolecule, only : natom
-      use modtype, only : typejob, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nocc, nvir, maxdim, maxgraddim, nproc, myrank, mpi_comm
@@ -1686,17 +1687,17 @@ end
       real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
       real(8),intent(in) :: cmo(databasis%nao,databasis%nao)
       real(8),intent(in) :: energymo(databasis%nao)
-      real(8),intent(out) :: egradtmp(3*natom), wmn(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: egradtmp(3*datamol%natom), wmn(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: pmnhf(databasis%nao,databasis%nao), work(databasis%nao,databasis%nao)
-      real(8),intent(inout) :: egrad(3*natom), pmn(databasis%nao,databasis%nao)
-      real(8) :: egradtmp2(3*natom), ewtmp
+      real(8),intent(inout) :: egrad(3*datamol%natom), pmn(databasis%nao,databasis%nao)
+      real(8) :: egradtmp2(3*datamol%natom), ewtmp
 !
       nao= databasis%nao
       egradtmp(:)= zero
 !
 ! Calculate energy gradient of nuclear repulsion
 !
-      call nucgradient(egradtmp,nproc,myrank)
+      call nucgradient(egradtmp,nproc,myrank,datamol)
 !
 ! Calculate HF density matrix
 !
@@ -1740,7 +1741,7 @@ end
 !
       call gradoneei(egradtmp,egradtmp2,pmn,wmn,nproc,myrank,datajob,databasis,datacomp)
 !
-      do ii= 1,3*natom
+      do ii= 1,3*datamol%natom
         egrad(ii)= egrad(ii)+egradtmp(ii)
       enddo
 !
