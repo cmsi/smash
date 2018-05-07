@@ -1739,7 +1739,7 @@ end
 !
 ! Calculate derivatives of one-electron integrals
 !
-      call gradoneei(egradtmp,egradtmp2,pmn,wmn,nproc,myrank,datajob,databasis,datacomp)
+      call gradoneei(egradtmp,egradtmp2,pmn,wmn,nproc,myrank,datajob,datamol,databasis,datacomp)
 !
       do ii= 1,3*datamol%natom
         egrad(ii)= egrad(ii)+egradtmp(ii)
