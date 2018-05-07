@@ -23,11 +23,10 @@
 !       xint    (Exchange integral matrix)
 ! Out : egrad   (MP2 energy gradients)
 !
-      use modmolecule, only : nmo, natom, neleca, numatomic, emp2, escsmp2
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
-      type(typemol),intent(in) :: datamol
+      type(typemol),intent(inout) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
@@ -40,8 +39,8 @@
       real(8),parameter :: zero=0.0D+00, three=3.0D+00, p12=1.2D+00
       real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(databasis%nao)
       real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
-      real(8),intent(out) :: egrad(3,natom)
-      real(8) :: emp2st(2), emp2stsum(2), egradtmp(3*natom)
+      real(8),intent(out) :: egrad(3,datamol%natom)
+      real(8) :: emp2st(2), emp2stsum(2), egradtmp(3*datamol%natom)
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
 &       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
@@ -56,15 +55,15 @@
 !
       nao= databasis%nao
       nshell= databasis%nshell
-      emp2= zero
+      datamol%emp2= zero
       emp2st(:)= zero
       egrad(:,:)= zero
       egradtmp(:)= zero
       maxdim= maxval(databasis%mtype(1:nshell))
       maxgraddim= maxfunc(maxdim+1)
       maxdim= maxfunc(maxdim)
-      nocc= neleca
-      nvir= nmo-neleca
+      nocc= datamol%neleca
+      nvir= datamol%nmo-datamol%neleca
       noac= nocc-datajob%ncore
       nvac= nvir-datajob%nvfz
 !
@@ -206,28 +205,28 @@
       endif
 !
       call para_allreducer(emp2st,emp2stsum,2,mpi_comm)
-      emp2= emp2stsum(1)+emp2stsum(2)
-      escsmp2= emp2stsum(1)*p12+emp2stsum(2)/three
+      datamol%emp2= emp2stsum(1)+emp2stsum(2)
+      datamol%escsmp2= emp2stsum(1)*p12+emp2stsum(2)/three
 !
       if(datacomp%master) then
         write(*,'(" -------------------------------------------------")')
         write(*,'("   HF Energy                  =",f17.9)') datamol%escf
-        write(*,'("   MP2 Correlation Energy     =",f17.9)') emp2
-        write(*,'("   HF + MP2 Energy            =",f17.9)') datamol%escf+emp2
-        write(*,'("   SCS-MP2 Correlation Energy =",f17.9)') escsmp2
-        write(*,'("   HF + SCS-MP2 Energy        =",f17.9)') datamol%escf+escsmp2
+        write(*,'("   MP2 Correlation Energy     =",f17.9)') datamol%emp2
+        write(*,'("   HF + MP2 Energy            =",f17.9)') datamol%escf+datamol%emp2
+        write(*,'("   SCS-MP2 Correlation Energy =",f17.9)') datamol%escsmp2
+        write(*,'("   HF + SCS-MP2 Energy        =",f17.9)') datamol%escf+datamol%escsmp2
         write(*,'(" -------------------------------------------------")')
       endif
 !
-      call para_allreducer(egradtmp,egrad,3*natom,mpi_comm)
+      call para_allreducer(egradtmp,egrad,3*datamol%natom,mpi_comm)
 !
       if(datacomp%master) then
         write(*,'(" ----------------------------------------------------")')
         write(*,'("          Gradient (Hartree/Bohr)")')
         write(*,'("  Atom            X             Y             Z")')
         write(*,'(" ----------------------------------------------------")')
-        do ii= 1,natom
-          write(*,'(3x,a3,3x,3f14.7)')table(numatomic(ii)),(egrad(jj,ii),jj=1,3)
+        do ii= 1,datamol%natom
+          write(*,'(3x,a3,3x,3f14.7)') table(datamol%numatomic(ii)),(egrad(jj,ii),jj=1,3)
         enddo
         write(*,'(" ----------------------------------------------------")')
       endif
@@ -265,7 +264,6 @@ end
 !       egrad   (Partial MP2 energy gradients)
 ! Work: egradtmp(Work space for MP2 energy gradients)
 !
-      use modmolecule, only : nmo, natom
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
@@ -278,9 +276,9 @@ end
       integer :: maxmp2diis, nao, nshell, nao2, nao3, nocc2, nocc3, nvir2, numitrans, ipass
       integer :: msize, mlsize, istart, mlsize2
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(nmo)
+      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(datamol%nmo)
       real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
-      real(8),intent(inout) :: emp2st(2), egrad(3*natom), egradtmp(3*natom)
+      real(8),intent(inout) :: emp2st(2), egrad(3*datamol%natom), egradtmp(3*datamol%natom)
       real(8),allocatable :: wij(:), wab(:), wai(:), xlai(:), pmn(:)
       real(8),allocatable :: trint2(:), trint2core(:), pij(:), pab(:)
       real(8),allocatable :: cmowrk(:), trint1a(:), trint1b(:)
@@ -353,7 +351,7 @@ end
         call mp2gradtrans34(emp2st,cmo,energymo,trint2,trint2core,xaibj,xaikj, &
 &                           tijab,pij,pab,wij,wab,wai,recvint,sendint,recvt,storet, &
 &                           nocc,noac,nvir,nvac,ncore,nvfz,istart,numitrans,numirecv, &
-&                           numab,maxsize,idis,nproc,myrank,mpi_comm,databasis)
+&                           numab,maxsize,idis,nproc,myrank,mpi_comm,datamol,databasis)
 !
         deallocate(xaibj,xaikj,tijab,recvint, &
 &                  sendint,recvt,storet)
@@ -374,11 +372,11 @@ end
         if(ipass /= npass) then
           call mp2gradbacktrans1(egrad,egradtmp,xlai,tisml,xlmi,cmo,xint,trint2,work1,work2, &
 &                                nocc,noac,nvir,ncore,numitrans,istart,maxdim,maxgraddim, &
-&                                mlsize2,idis,nproc,myrank,datajob,databasis)
+&                                mlsize2,datamol%natom,idis,nproc,myrank,datajob,databasis)
         else
           call mp2gradbacktrans2(egrad,egradtmp,wij,wab,wai,xlai,tisml,xlmi,xlmn,cmo,xint,trint2, &
 &                                pij,pab,pmn,energymo,work1,work2,nocc,noac,nvir,ncore,numitrans, &
-&                                istart,maxdim,maxgraddim,mlsize2,idis,nproc,myrank,mpi_comm,datajob,databasis)
+&                                istart,maxdim,maxgraddim,mlsize2,datamol%natom,idis,nproc,myrank,mpi_comm,datajob,databasis)
         endif
 !
         deallocate(tisml,xlmi,xlmn,work1,work2)
@@ -584,7 +582,7 @@ end
   subroutine mp2gradtrans34(emp2st,cmo,energymo,trint2,trint2core,xaibj,xaikj, &
 &                           tijab,pij,pab,wij,wab,wai,recvint,sendint,recvt,storet, &
 &                           nocc,noac,nvir,nvac,ncore,nvfz,istart,numitrans,numirecv, &
-&                           numab,maxsize,idis,nproc,myrank,mpi_comm,databasis)
+&                           numab,maxsize,idis,nproc,myrank,mpi_comm,datamol,databasis)
 !--------------------------------------------------------------------------------------------
 !
 ! Driver of third and fourth integral transformations, and
@@ -621,15 +619,15 @@ end
 !       recvt    (Receiving buffer for tijml)
 !       storet   (Storing buffer for tijml)
 !
-      use modmolecule, only : nmo
-      use modtype, only : typebasis
+      use modtype, only : typemol, typebasis
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nocc, noac, nvir, nvac, ncore, nvfz, istart, numitrans, numirecv
       integer,intent(in) :: numab, maxsize, nproc, myrank, mpi_comm, idis(0:nproc-1,8)
       integer :: nao, numij, numrecv, iproc, irecv(0:nproc-1), ncycle, icycle, myij, moi, moj
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
-      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(nmo)
+      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(datamol%nmo)
       real(8),intent(out) :: xaibj(nproc*maxsize), xaikj(nocc*nvac)
       real(8),intent(out) :: tijab(databasis%nao*databasis%nao)
       real(8),intent(out) :: recvint(2*numab*noac*numirecv), sendint(2*numab)
@@ -672,7 +670,7 @@ end
 ! Calculate MP2 amplitute and energy, Pab[I], Wab[I], and Wai[I](=Lai3) terms
 !
           call mp2gradamp(tijab,pab,wab,wai,xaibj,xaikj,emp2st,energymo, &
-&                         nocc,ncore,nvir,nvac,nvfz,moi,moj,nproc,myrank)
+&                         nocc,ncore,nvir,nvac,nvfz,moi,moj,datamol%nmo,nproc,myrank)
         endif
 !
 ! Send and receive tijab and (ai|bj)/Dijab, and Calculate Pij
@@ -700,7 +698,7 @@ end
 
 !-------------------------------------------------------------------------
   subroutine mp2gradamp(tijab,pab,wab,wai,xaibj,xaikj,emp2st,energymo, &
-&                       nocc,ncore,nvir,nvac,nvfz,moi,moj,nproc,myrank)
+&                       nocc,ncore,nvir,nvac,nvfz,moi,moj,nmo,nproc,myrank)
 !-------------------------------------------------------------------------
 !
 ! Calculate MP2 amplitute and energy, Pab[I], Wab[I], and Wai[I](=Lai3) terms
@@ -713,9 +711,8 @@ end
 !       emp2st   (Partial MP2 energies)
 ! Out:  tijab    (tijab)
 !
-      use modmolecule, only : nmo
       implicit none
-      integer,intent(in) :: nocc, ncore, nvir, nvac, nvfz, moi, moj, nproc, myrank
+      integer,intent(in) :: nocc, ncore, nvir, nvac, nvfz, moi, moj, nmo, nproc, myrank
       integer :: moa, mob, moc
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, four=4.0D+00
       real(8),intent(in) :: xaikj(nvac,nocc), energymo(nmo)
@@ -1103,7 +1100,7 @@ end
 !-------------------------------------------------------------------------------------------
   subroutine mp2gradbacktrans1(egrad,egradtmp,xlai,tisml,xlmi,cmo,xint,tijml,work,work2, &
 &                              nocc,noac,nvir,ncore,numitrans,istart,maxdim,maxgraddim, &
-&                              mlsize2,idis,nproc,myrank,datajob,databasis)
+&                              mlsize2,natom,idis,nproc,myrank,datajob,databasis)
 !-------------------------------------------------------------------------------------------
 !
 ! Driver of second-half back-transformation (tnsml), and Lai4 and tnsml*(mn|ls)' terms
@@ -1120,13 +1117,12 @@ end
 !       tisml     (tisml)
 !       xlmi      (Lmi)
 !
-      use modmolecule, only : natom
       use modtype, only : typejob, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nocc, noac, nvir, ncore, numitrans, istart, maxdim, maxgraddim
-      integer,intent(in) :: mlsize2, nproc, myrank, idis(0:nproc-1,8)
+      integer,intent(in) :: mlsize2, natom, nproc, myrank, idis(0:nproc-1,8)
       integer :: mlcount, ish, ksh, ml, mlindex(4,idis(myrank,4)), jcount, ii, numshell
       integer :: numml, mlstart, mlend
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, four=4.0D+00
@@ -1175,7 +1171,7 @@ end
           mlend= numshell
           call mp2gradbt1(xlai,egrad,tijml,cmo,xint,tisml,xlmi,egradtmp,work,work2, &
 &                         mlindex,numml,mlstart,mlend,numitrans,nocc,noac,ncore,nvir,maxdim, &
-&                         maxgraddim,istart,idis,nproc,myrank,datajob,databasis)
+&                         maxgraddim,natom,istart,idis,nproc,myrank,datajob,databasis)
           exit
         endif
 !
@@ -1183,7 +1179,7 @@ end
           mlend= numshell
           call mp2gradbt1(xlai,egrad,tijml,cmo,xint,tisml,xlmi,egradtmp,work,work2, &
 &                         mlindex,numml,mlstart,mlend,numitrans,nocc,noac,ncore,nvir,maxdim, &
-&                         maxgraddim,istart,idis,nproc,myrank,datajob,databasis)
+&                         maxgraddim,natom,istart,idis,nproc,myrank,datajob,databasis)
           mlstart= numshell+1
           numml= 0
         endif
@@ -1196,7 +1192,7 @@ end
 !-------------------------------------------------------------------------------------------------
   subroutine mp2gradbacktrans2(egrad,egradtmp,wij,wab,wai,xlai,tisml,xlmi,xlmn,cmo,xint,tijml, &
 &                              pij,pab,pmn,energymo,work,work2,nocc,noac,nvir,ncore,numitrans, &
-&                              istart,maxdim,maxgraddim,mlsize2,idis,nproc,myrank,mpi_comm,datajob,databasis)
+&                              istart,maxdim,maxgraddim,mlsize2,natom,idis,nproc,myrank,mpi_comm,datajob,databasis)
 !-------------------------------------------------------------------------------------------------
 !
 ! Driver of second-half back-transformation (tnsml), and PiJ, Lai1,2,4 and tnsml*(mn|ls)' terms,
@@ -1225,13 +1221,12 @@ end
 !       work      (Work space)
 !       work2     (Work space)
 !
-      use modmolecule, only : natom
       use modtype, only : typejob, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nocc, noac, nvir, ncore, numitrans, istart, maxdim, maxgraddim
-      integer,intent(in) :: mlsize2, nproc, myrank, mpi_comm, idis(0:nproc-1,8)
+      integer,intent(in) :: mlsize2, natom, nproc, myrank, mpi_comm, idis(0:nproc-1,8)
       integer :: nao, nshell, mlcount, ish, ksh, ml, mlindex(4,idis(myrank,4)), jcount, ii
       integer :: numshell, numml, moi, moj, moij, ij, jj, mlstart, mlend
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00, four=4.0D+00
@@ -1335,7 +1330,7 @@ end
           mlend= numshell
           call mp2gradbt2(xlai,egrad,tijml,cmo,pmn,xint,tisml,xlmi,xlmn,egradtmp,work,work2, &
 &                         mlindex,numml,mlstart,mlend,numitrans,nocc,noac,ncore,nvir,maxdim, &
-&                         maxgraddim,istart,idis,nproc,myrank,datajob,databasis)
+&                         maxgraddim,natom,istart,idis,nproc,myrank,datajob,databasis)
           exit
         endif
 !
@@ -1343,7 +1338,7 @@ end
           mlend= numshell
           call mp2gradbt2(xlai,egrad,tijml,cmo,pmn,xint,tisml,xlmi,xlmn,egradtmp,work,work2, &
 &                         mlindex,numml,mlstart,mlend,numitrans,nocc,noac,ncore,nvir,maxdim, &
-&                         maxgraddim,istart,idis,nproc,myrank,datajob,databasis)
+&                         maxgraddim,natom,istart,idis,nproc,myrank,datajob,databasis)
           mlstart= numshell+1
           numml= 0
         endif
@@ -1752,7 +1747,7 @@ end
 !---------------------------------------------------------------------------------------------
   subroutine mp2gradbt1(xlai,egrad,tijml,cmo,xint,tisml,xlmi,egradtmp,cmotrans,work2, &
 &                       mlindex,numml,mlstart,mlend,numitrans,nocc,noac,ncore,nvir,maxdim, &
-&                       maxgraddim,istart,idis,nproc,myrank,datajob,databasis)
+&                       maxgraddim,natom,istart,idis,nproc,myrank,datajob,databasis)
 !---------------------------------------------------------------------------------------------
 !
 ! Calculate second-half back-transformation (tnsml), Lai4 and tnsml*(mn|ls)' terms
@@ -1771,13 +1766,12 @@ end
 !       cmotrans  (transposed matrix of cmo)
 !       work2     (work space)
 !
-      use modmolecule, only : natom
       use modtype, only : typejob, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: numml, mlstart, mlend, numitrans, nocc, noac, ncore, nvir, maxdim
-      integer,intent(in) :: maxgraddim, istart, nproc, myrank, idis(0:nproc-1,8)
+      integer,intent(in) :: maxgraddim, natom, istart, nproc, myrank, idis(0:nproc-1,8)
       integer,intent(in) :: mlindex(4,idis(myrank,4))
       integer :: nao, moi, mlcount, numshell, ish, jsh, ksh, lsh, nbfi, nbfj, nbfk, nbfl
       integer :: locbfi, locbfj, locbfk, locbfl, ij, kl, ii, jj, kk, ll, i2, ik, ml
@@ -1886,7 +1880,7 @@ end
 !-------------------------------------------------------------------------------------------------
   subroutine mp2gradbt2(xlai,egrad,tijml,cmo,pmn,xint,tisml,xlmi,xlmn,egradtmp,cmotrans,work2, &
 &                       mlindex,numml,mlstart,mlend,numitrans,nocc,noac,ncore,nvir,maxdim, &
-&                       maxgraddim,istart,idis,nproc,myrank,datajob,databasis)
+&                       maxgraddim,natom,istart,idis,nproc,myrank,datajob,databasis)
 !-------------------------------------------------------------------------------------------------
 !
 ! Calculate second-half back-transformation (tnsml), Lai1,2,4 and tnsml*(mn|ls)' terms
@@ -1907,13 +1901,12 @@ end
 !       cmotrans  (transposed matrix of cmo)
 !       work2     (Work space)
 !
-      use modmolecule, only : natom
       use modtype, only : typejob, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: numml, mlstart, mlend, numitrans, nocc, noac, ncore, nvir, maxdim
-      integer,intent(in) :: maxgraddim, istart, nproc, myrank, idis(0:nproc-1,8)
+      integer,intent(in) :: maxgraddim, natom, istart, nproc, myrank, idis(0:nproc-1,8)
       integer,intent(in) :: mlindex(4,idis(myrank,4))
       integer :: nao, moi, mlcount, numshell, ish, jsh, ksh, lsh, nbfi, nbfj, nbfk, nbfl
       integer :: locbfi, locbfj, locbfk, locbfl, ij, kl, ii, jj, kk, ll, i2, ik, ml
