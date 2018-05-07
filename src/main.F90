@@ -490,7 +490,7 @@ end
 !
 ! Calculate Mulliken charge
 !
-      call calcrmulliken(dmtrx,smtrx,databasis,datacomp)
+      call calcrmulliken(dmtrx,smtrx,datamol,databasis,datacomp)
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
@@ -641,7 +641,7 @@ end
 !
 ! Calculate Mulliken charge
 !
-      call calcumulliken(dmtrxa,dmtrxb,smtrx,databasis,datacomp)
+      call calcumulliken(dmtrxa,dmtrxb,smtrx,datamol,databasis,datacomp)
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
@@ -818,7 +818,7 @@ end
 !
 ! Calculate Mulliken charge
 !
-      call calcrmulliken(dmtrx,smtrx,databasis,datacomp)
+      call calcrmulliken(dmtrx,smtrx,datamol,databasis,datacomp)
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
@@ -996,7 +996,7 @@ end
 !
 ! Calculate Mulliken charge
 !
-      call calcumulliken(dmtrxa,dmtrxb,smtrx,databasis,datacomp)
+      call calcumulliken(dmtrxa,dmtrxb,smtrx,datamol,databasis,datacomp)
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
@@ -1276,7 +1276,7 @@ end
 !
 ! Calculate Mulliken charge
 !
-      call calcrmulliken(dmtrx,smtrx,databasis,datacomp)
+      call calcrmulliken(dmtrx,smtrx,datamol,databasis,datacomp)
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
@@ -1585,7 +1585,7 @@ end
 !
 ! Calculate Mulliken charge
 !
-      call calcumulliken(dmtrxa,dmtrxb,smtrx,databasis,datacomp)
+      call calcumulliken(dmtrxa,dmtrxb,smtrx,datamol,databasis,datacomp)
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !

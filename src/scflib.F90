@@ -1062,21 +1062,21 @@ end
 
 
 !------------------------------------------
-  subroutine calcrmulliken(dmtrx,overlap,databasis,datacomp)
+  subroutine calcrmulliken(dmtrx,overlap,datamol,databasis,datacomp)
 !------------------------------------------
 !
 ! Execute Mulliken population analysis for closed-shell
 !
-      use modmolecule, only : natom, znuc, numatomic
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typemol, typebasis, typecomp
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
       integer :: ii, jj, ij, ish, iatom, locbfi
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
-      real(8) :: grossorb(databasis%nao), grossatom(natom), totalgross
+      real(8) :: grossorb(databasis%nao), grossatom(datamol%natom), totalgross
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
 &       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
@@ -1116,8 +1116,8 @@ end
           grossatom(iatom)= grossatom(iatom)+grossorb(locbfi+ii)
         enddo
       enddo
-      do iatom= 1,natom
-        totalgross= totalgross+znuc(iatom)-grossatom(iatom)
+      do iatom= 1,datamol%natom
+        totalgross= totalgross+datamol%znuc(iatom)-grossatom(iatom)
       enddo
 !
       if(datacomp%master) then
@@ -1125,9 +1125,9 @@ end
         write(*,'("      Mulliken Population Analysis")')
         write(*,'("     Atom     Population     Charge")')
         write(*,'(" -------------------------------------")')
-        do iatom= 1,natom
-          write(*,'(1x,i4,2x,a3,2f13.6)')iatom,table(numatomic(iatom)), &
-&                                        grossatom(iatom),znuc(iatom)-grossatom(iatom)
+        do iatom= 1,datamol%natom
+          write(*,'(1x,i4,2x,a3,2f13.6)')iatom,table(datamol%numatomic(iatom)), &
+&                                        grossatom(iatom),datamol%znuc(iatom)-grossatom(iatom)
         enddo
         write(*,'(" -------------------------------------")')
         write(*,'("     Total",13x,f13.6)')totalgross
@@ -1140,14 +1140,14 @@ end
 
 
 !--------------------------------------------------
-  subroutine calcumulliken(dmtrxa,dmtrxb,overlap,databasis,datacomp)
+  subroutine calcumulliken(dmtrxa,dmtrxb,overlap,datamol,databasis,datacomp)
 !--------------------------------------------------
 !
 ! Execute Mulliken population analysis for open-shell
 !
-      use modmolecule, only : natom, znuc, numatomic
-      use modtype, only : typebasis, typecomp
+      use modtype, only : typemol, typebasis, typecomp
       implicit none
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
       integer :: ii, jj, ij, ish, iatom, locbfi
@@ -1155,7 +1155,7 @@ end
       real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
-      real(8) :: grossorb(databasis%nao), grossatom(natom), totalgross
+      real(8) :: grossorb(databasis%nao), grossatom(datamol%natom), totalgross
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
 &       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
@@ -1195,8 +1195,8 @@ end
           grossatom(iatom)= grossatom(iatom)+grossorb(locbfi+ii)
         enddo
       enddo
-      do iatom= 1,natom
-        totalgross= totalgross+znuc(iatom)-grossatom(iatom)
+      do iatom= 1,datamol%natom
+        totalgross= totalgross+datamol%znuc(iatom)-grossatom(iatom)
       enddo
 !
       if(datacomp%master) then
@@ -1204,9 +1204,9 @@ end
         write(*,'("      Mulliken Population Analysis")')
         write(*,'("     Atom     Population     Charge")')
         write(*,'(" -------------------------------------")')
-        do iatom= 1,natom
-          write(*,'(1x,i4,2x,a3,2f13.6)')iatom,table(numatomic(iatom)), &
-&                                        grossatom(iatom),znuc(iatom)-grossatom(iatom)
+        do iatom= 1,datamol%natom
+          write(*,'(1x,i4,2x,a3,2f13.6)')iatom,table(datamol%numatomic(iatom)), &
+&                                        grossatom(iatom),datamol%znuc(iatom)-grossatom(iatom)
         enddo
         write(*,'(" -------------------------------------")')
         write(*,'("     Total",13x,f13.6)')totalgross
@@ -1225,7 +1225,6 @@ end
 ! Driver of dipole moment calculation for closed-shell
 !
       use modparam, only : todebye
-      use modmolecule, only : natom, coord, znuc
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
@@ -1247,10 +1246,10 @@ end
       ydipplus= zero
       zdipplus= zero
 !
-      do iatom= 1,natom
-        xdipplus= xdipplus+coord(1,iatom)*znuc(iatom)
-        ydipplus= ydipplus+coord(2,iatom)*znuc(iatom)
-        zdipplus= zdipplus+coord(3,iatom)*znuc(iatom)
+      do iatom= 1,datamol%natom
+        xdipplus= xdipplus+datamol%coord(1,iatom)*datamol%znuc(iatom)
+        ydipplus= ydipplus+datamol%coord(2,iatom)*datamol%znuc(iatom)
+        zdipplus= zdipplus+datamol%coord(3,iatom)*datamol%znuc(iatom)
       enddo
 !
 ! Electron part
@@ -1291,7 +1290,6 @@ end
 ! Driver of dipole, quadrupole, and octupole moment calculation for closed-shell
 !
       use modparam, only : todebye, toang
-      use modmolecule, only : natom, coord, znuc
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
@@ -1341,26 +1339,26 @@ end
       yzzoctpplus= zero
       zzzoctpplus= zero
 !
-      do iatom= 1,natom
-        xdipplus= xdipplus+coord(1,iatom)*znuc(iatom)
-        ydipplus= ydipplus+coord(2,iatom)*znuc(iatom)
-        zdipplus= zdipplus+coord(3,iatom)*znuc(iatom)
-        xxquadpplus= xxquadpplus+coord(1,iatom)*coord(1,iatom)*znuc(iatom)
-        xyquadpplus= xyquadpplus+coord(1,iatom)*coord(2,iatom)*znuc(iatom)
-        xzquadpplus= xzquadpplus+coord(1,iatom)*coord(3,iatom)*znuc(iatom)
-        yyquadpplus= yyquadpplus+coord(2,iatom)*coord(2,iatom)*znuc(iatom)
-        yzquadpplus= yzquadpplus+coord(2,iatom)*coord(3,iatom)*znuc(iatom)
-        zzquadpplus= zzquadpplus+coord(3,iatom)*coord(3,iatom)*znuc(iatom)
-        xxxoctpplus= xxxoctpplus+coord(1,iatom)*coord(1,iatom)*coord(1,iatom)*znuc(iatom)
-        xxyoctpplus= xxyoctpplus+coord(1,iatom)*coord(1,iatom)*coord(2,iatom)*znuc(iatom)
-        xxzoctpplus= xxzoctpplus+coord(1,iatom)*coord(1,iatom)*coord(3,iatom)*znuc(iatom)
-        xyyoctpplus= xyyoctpplus+coord(1,iatom)*coord(2,iatom)*coord(2,iatom)*znuc(iatom)
-        xyzoctpplus= xyzoctpplus+coord(1,iatom)*coord(2,iatom)*coord(3,iatom)*znuc(iatom)
-        xzzoctpplus= xzzoctpplus+coord(1,iatom)*coord(3,iatom)*coord(3,iatom)*znuc(iatom)
-        yyyoctpplus= yyyoctpplus+coord(2,iatom)*coord(2,iatom)*coord(2,iatom)*znuc(iatom)
-        yyzoctpplus= yyzoctpplus+coord(2,iatom)*coord(2,iatom)*coord(3,iatom)*znuc(iatom)
-        yzzoctpplus= yzzoctpplus+coord(2,iatom)*coord(3,iatom)*coord(3,iatom)*znuc(iatom)
-        zzzoctpplus= zzzoctpplus+coord(3,iatom)*coord(3,iatom)*coord(3,iatom)*znuc(iatom)
+      do iatom= 1,datamol%natom
+        xdipplus= xdipplus+datamol%coord(1,iatom)*datamol%znuc(iatom)
+        ydipplus= ydipplus+datamol%coord(2,iatom)*datamol%znuc(iatom)
+        zdipplus= zdipplus+datamol%coord(3,iatom)*datamol%znuc(iatom)
+        xxquadpplus= xxquadpplus+datamol%coord(1,iatom)*datamol%coord(1,iatom)*datamol%znuc(iatom)
+        xyquadpplus= xyquadpplus+datamol%coord(1,iatom)*datamol%coord(2,iatom)*datamol%znuc(iatom)
+        xzquadpplus= xzquadpplus+datamol%coord(1,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
+        yyquadpplus= yyquadpplus+datamol%coord(2,iatom)*datamol%coord(2,iatom)*datamol%znuc(iatom)
+        yzquadpplus= yzquadpplus+datamol%coord(2,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
+        zzquadpplus= zzquadpplus+datamol%coord(3,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
+        xxxoctpplus= xxxoctpplus+datamol%coord(1,iatom)*datamol%coord(1,iatom)*datamol%coord(1,iatom)*datamol%znuc(iatom)
+        xxyoctpplus= xxyoctpplus+datamol%coord(1,iatom)*datamol%coord(1,iatom)*datamol%coord(2,iatom)*datamol%znuc(iatom)
+        xxzoctpplus= xxzoctpplus+datamol%coord(1,iatom)*datamol%coord(1,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
+        xyyoctpplus= xyyoctpplus+datamol%coord(1,iatom)*datamol%coord(2,iatom)*datamol%coord(2,iatom)*datamol%znuc(iatom)
+        xyzoctpplus= xyzoctpplus+datamol%coord(1,iatom)*datamol%coord(2,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
+        xzzoctpplus= xzzoctpplus+datamol%coord(1,iatom)*datamol%coord(3,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
+        yyyoctpplus= yyyoctpplus+datamol%coord(2,iatom)*datamol%coord(2,iatom)*datamol%coord(2,iatom)*datamol%znuc(iatom)
+        yyzoctpplus= yyzoctpplus+datamol%coord(2,iatom)*datamol%coord(2,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
+        yzzoctpplus= yzzoctpplus+datamol%coord(2,iatom)*datamol%coord(3,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
+        zzzoctpplus= zzzoctpplus+datamol%coord(3,iatom)*datamol%coord(3,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
       enddo
 !
 ! Electron part
@@ -1467,7 +1465,6 @@ end
 ! Driver of dipole moment calculation for open-shell
 !
       use modparam, only : todebye
-      use modmolecule, only : natom, coord, znuc
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
@@ -1490,10 +1487,10 @@ end
       ydipplus= zero
       zdipplus= zero
 !
-      do iatom= 1,natom
-        xdipplus= xdipplus+coord(1,iatom)*znuc(iatom)
-        ydipplus= ydipplus+coord(2,iatom)*znuc(iatom)
-        zdipplus= zdipplus+coord(3,iatom)*znuc(iatom)
+      do iatom= 1,datamol%natom
+        xdipplus= xdipplus+datamol%coord(1,iatom)*datamol%znuc(iatom)
+        ydipplus= ydipplus+datamol%coord(2,iatom)*datamol%znuc(iatom)
+        zdipplus= zdipplus+datamol%coord(3,iatom)*datamol%znuc(iatom)
       enddo
 !
 ! Electron part
@@ -1534,7 +1531,6 @@ end
 ! Driver of dipole, quadrupole, and octupole moment calculation for open-shell
 !
       use modparam, only : todebye, toang
-      use modmolecule, only : natom, coord, znuc
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
@@ -1585,26 +1581,26 @@ end
       yzzoctpplus= zero
       zzzoctpplus= zero
 !
-      do iatom= 1,natom
-        xdipplus= xdipplus+coord(1,iatom)*znuc(iatom)
-        ydipplus= ydipplus+coord(2,iatom)*znuc(iatom)
-        zdipplus= zdipplus+coord(3,iatom)*znuc(iatom)
-        xxquadpplus= xxquadpplus+coord(1,iatom)*coord(1,iatom)*znuc(iatom)
-        xyquadpplus= xyquadpplus+coord(1,iatom)*coord(2,iatom)*znuc(iatom)
-        xzquadpplus= xzquadpplus+coord(1,iatom)*coord(3,iatom)*znuc(iatom)
-        yyquadpplus= yyquadpplus+coord(2,iatom)*coord(2,iatom)*znuc(iatom)
-        yzquadpplus= yzquadpplus+coord(2,iatom)*coord(3,iatom)*znuc(iatom)
-        zzquadpplus= zzquadpplus+coord(3,iatom)*coord(3,iatom)*znuc(iatom)
-        xxxoctpplus= xxxoctpplus+coord(1,iatom)*coord(1,iatom)*coord(1,iatom)*znuc(iatom)
-        xxyoctpplus= xxyoctpplus+coord(1,iatom)*coord(1,iatom)*coord(2,iatom)*znuc(iatom)
-        xxzoctpplus= xxzoctpplus+coord(1,iatom)*coord(1,iatom)*coord(3,iatom)*znuc(iatom)
-        xyyoctpplus= xyyoctpplus+coord(1,iatom)*coord(2,iatom)*coord(2,iatom)*znuc(iatom)
-        xyzoctpplus= xyzoctpplus+coord(1,iatom)*coord(2,iatom)*coord(3,iatom)*znuc(iatom)
-        xzzoctpplus= xzzoctpplus+coord(1,iatom)*coord(3,iatom)*coord(3,iatom)*znuc(iatom)
-        yyyoctpplus= yyyoctpplus+coord(2,iatom)*coord(2,iatom)*coord(2,iatom)*znuc(iatom)
-        yyzoctpplus= yyzoctpplus+coord(2,iatom)*coord(2,iatom)*coord(3,iatom)*znuc(iatom)
-        yzzoctpplus= yzzoctpplus+coord(2,iatom)*coord(3,iatom)*coord(3,iatom)*znuc(iatom)
-        zzzoctpplus= zzzoctpplus+coord(3,iatom)*coord(3,iatom)*coord(3,iatom)*znuc(iatom)
+      do iatom= 1,datamol%natom
+        xdipplus= xdipplus+datamol%coord(1,iatom)*datamol%znuc(iatom)
+        ydipplus= ydipplus+datamol%coord(2,iatom)*datamol%znuc(iatom)
+        zdipplus= zdipplus+datamol%coord(3,iatom)*datamol%znuc(iatom)
+        xxquadpplus= xxquadpplus+datamol%coord(1,iatom)*datamol%coord(1,iatom)*datamol%znuc(iatom)
+        xyquadpplus= xyquadpplus+datamol%coord(1,iatom)*datamol%coord(2,iatom)*datamol%znuc(iatom)
+        xzquadpplus= xzquadpplus+datamol%coord(1,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
+        yyquadpplus= yyquadpplus+datamol%coord(2,iatom)*datamol%coord(2,iatom)*datamol%znuc(iatom)
+        yzquadpplus= yzquadpplus+datamol%coord(2,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
+        zzquadpplus= zzquadpplus+datamol%coord(3,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
+        xxxoctpplus= xxxoctpplus+datamol%coord(1,iatom)*datamol%coord(1,iatom)*datamol%coord(1,iatom)*datamol%znuc(iatom)
+        xxyoctpplus= xxyoctpplus+datamol%coord(1,iatom)*datamol%coord(1,iatom)*datamol%coord(2,iatom)*datamol%znuc(iatom)
+        xxzoctpplus= xxzoctpplus+datamol%coord(1,iatom)*datamol%coord(1,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
+        xyyoctpplus= xyyoctpplus+datamol%coord(1,iatom)*datamol%coord(2,iatom)*datamol%coord(2,iatom)*datamol%znuc(iatom)
+        xyzoctpplus= xyzoctpplus+datamol%coord(1,iatom)*datamol%coord(2,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
+        xzzoctpplus= xzzoctpplus+datamol%coord(1,iatom)*datamol%coord(3,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
+        yyyoctpplus= yyyoctpplus+datamol%coord(2,iatom)*datamol%coord(2,iatom)*datamol%coord(2,iatom)*datamol%znuc(iatom)
+        yyzoctpplus= yyzoctpplus+datamol%coord(2,iatom)*datamol%coord(2,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
+        yzzoctpplus= yzzoctpplus+datamol%coord(2,iatom)*datamol%coord(3,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
+        zzzoctpplus= zzzoctpplus+datamol%coord(3,iatom)*datamol%coord(3,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
       enddo
 !
 ! Electron part
