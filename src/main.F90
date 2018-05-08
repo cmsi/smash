@@ -514,7 +514,7 @@ end
 !
 ! Write checkpoint file
 !
-      if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,databasis)
+      if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,datamol,databasis)
 !
 ! Unset arrays 1
 !
@@ -665,7 +665,7 @@ end
 !
 ! Write checkpoint file
 !
-      if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,databasis)
+      if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis)
 !
 ! Unset arrays 1
 !
@@ -842,7 +842,7 @@ end
 !
 ! Write checkpoint file
 !
-      if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,databasis)
+      if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,datamol,databasis)
 !
 ! Unset arrays 1
 !
@@ -1020,7 +1020,7 @@ end
 !
 ! Write checkpoint file
 !
-      if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,databasis)
+      if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis)
 !
 ! Unset arrays 1
 !
@@ -1215,7 +1215,7 @@ end
 !
 ! Write checkpoint file
 !
-        if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,databasis)
+        if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,datamol,databasis)
 !
 ! Set work arrays 2
 !
@@ -1309,7 +1309,7 @@ end
 !
 ! Write checkpoint file
 !
-      if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,databasis)
+      if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,datamol,databasis)
 !
 ! Unset arrays for energy gradient and geometry optimization
 !
@@ -1512,7 +1512,7 @@ end
 !
 ! Write checkpoint file
 !
-        if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,databasis)
+        if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis)
 !
 ! Check convergence
 !
@@ -1618,7 +1618,7 @@ end
 !
 ! Write checkpoint file
 !
-      if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,databasis)
+      if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis)
 !
 ! Unset arrays for energy gradient and geometry optimization
 !

@@ -1521,16 +1521,16 @@ end
 
 
 !---------------------------------------------------------------------
-  subroutine writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,databasis)
+  subroutine writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis)
 !---------------------------------------------------------------------
 !
 ! Write checkpoint file
 !
       use modparam, only : icheck
-      use modmolecule, only : numatomic, natom, coord, nmo, neleca, nelecb, charge, multi, znuc
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer :: ii, jj
       real(8),intent(in) :: cmoa(databasis%nao,databasis%nao)
@@ -1541,20 +1541,20 @@ end
 !
       rewind(icheck)
       write(icheck) datajob%version
-      write(icheck) datajob%scftype, natom, databasis%nao, nmo, databasis%nshell, databasis%nprim, neleca, nelecb,  &
-&                   datajob%method, datajob%runtype, charge, multi, datajob%flagecp
+      write(icheck) datajob%scftype, datamol%natom, databasis%nao, datamol%nmo, databasis%nshell, databasis%nprim, datamol%neleca, datamol%nelecb,  &
+&                   datajob%method, datajob%runtype, datamol%charge, datamol%multi, datajob%flagecp
 !
       datatype= 'numatomic'
       write(icheck) datatype
-      write(icheck) (numatomic(ii),ii=1,natom)
+      write(icheck) (datamol%numatomic(ii),ii=1,datamol%natom)
 !
       datatype= 'coord'
       write(icheck) datatype
-      write(icheck)((coord(jj,ii),jj=1,3),ii=1,natom)
+      write(icheck)((datamol%coord(jj,ii),jj=1,3),ii=1,datamol%natom)
 !
       datatype= 'znuc'
       write(icheck) datatype
-      write(icheck)(znuc(ii),ii=1,natom)
+      write(icheck)(datamol%znuc(ii),ii=1,datamol%natom)
 !
       datatype= 'ex'
       write(icheck) datatype
@@ -1591,7 +1591,7 @@ end
       if(datajob%scftype == 'RHF') then
         datatype= 'cmo'
         write(icheck) datatype
-        write(icheck)((cmoa(jj,ii),jj=1,databasis%nao),ii=1,nmo)
+        write(icheck)((cmoa(jj,ii),jj=1,databasis%nao),ii=1,datamol%nmo)
 !
         datatype= 'dmtrx'
         write(icheck) datatype
@@ -1599,15 +1599,15 @@ end
 !
         datatype= 'energymo'
         write(icheck) datatype
-        write(icheck) (energymoa(ii),ii=1,nmo)
+        write(icheck) (energymoa(ii),ii=1,datamol%nmo)
       elseif(datajob%scftype == 'UHF') then
         datatype= 'cmoa'
         write(icheck) datatype
-        write(icheck)((cmoa(jj,ii),jj=1,databasis%nao),ii=1,nmo)
+        write(icheck)((cmoa(jj,ii),jj=1,databasis%nao),ii=1,datamol%nmo)
 !
         datatype= 'cmob'
         write(icheck) datatype
-        write(icheck)((cmob(jj,ii),jj=1,databasis%nao),ii=1,nmo)
+        write(icheck)((cmob(jj,ii),jj=1,databasis%nao),ii=1,datamol%nmo)
 !
         datatype= 'dmtrxa'
         write(icheck) datatype
@@ -1619,11 +1619,11 @@ end
 !
         datatype= 'energymoa'
         write(icheck) datatype
-        write(icheck) (energymoa(ii),ii=1,nmo)
+        write(icheck) (energymoa(ii),ii=1,datamol%nmo)
 !
         datatype= 'energymob'
         write(icheck) datatype
-        write(icheck) (energymob(ii),ii=1,nmo)
+        write(icheck) (energymob(ii),ii=1,datamol%nmo)
       endif
 !
       return
