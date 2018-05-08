@@ -18,7 +18,6 @@
 !
 ! Driver of setting ecp functions
 !
-      use modmolecule, only : znuc
       use modtype, only : typemol, typebasis, typecomp
       implicit none
       type(typemol),intent(inout) :: datamol
@@ -60,8 +59,6 @@
       call para_bcasti(databasis%mtypeecp     ,iprim          ,0,datacomp%mpi_comm1)
 ! 
       do iatom= 1,datamol%natom
-!ishimura
-        znuc(iatom)= znuc(iatom)-databasis%izcore(iatom)
         datamol%znuc(iatom)= datamol%znuc(iatom)-databasis%izcore(iatom)
       enddo
 !

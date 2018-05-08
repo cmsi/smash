@@ -1636,7 +1636,6 @@ end
 !
 ! Set atom charge
 !
-      use modmolecule, only : znuc
       use modparam, only : mxatom, maxline, input
       use modtype, only : typemol, typecomp
       implicit none
@@ -1658,8 +1657,6 @@ end
             do jj= 1,mxatom
               read(input,'(a)',end=100) line
               read(line,*,end=100) iatom, znew
-!ishimura
-              znuc(iatom)= znew
               datamol%znuc(iatom)= znew
               write(*,'("   Charge of Atom ",i5,"     ",f7.3)')iatom, znew
             enddo
@@ -1669,8 +1666,6 @@ end
       endif
  200  continue
 !
-!ishimura
-      call para_bcastr(znuc,datamol%natom,0,datacomp%mpi_comm1)
       call para_bcastr(datamol%znuc,datamol%natom,0,datacomp%mpi_comm1)
 !
       return
