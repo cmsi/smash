@@ -309,7 +309,6 @@ end
 !
 ! Parallel information
 !
-      use modmolecule, only : nmo
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -353,8 +352,6 @@ end
 !
       call fullmtrx(smtrx,work,nao)
       call mtrxcanoninv(ortho,overinv,work,nao,datamol%nmo,datajob%threshover,datacomp)
-!ishimura
-      nmo= datamol%nmo
 !
 ! Calculate initial MOs
 !
@@ -457,7 +454,6 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modmolecule, only : nmo
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -501,8 +497,6 @@ end
 !
       call fullmtrx(smtrx,work,nao)
       call mtrxcanoninv(ortho,overinv,work,nao,datamol%nmo,datajob%threshover,datacomp)
-!ishimura
-      nmo= datamol%nmo
 !
 ! Calculate initial MOs
 !
@@ -607,7 +601,6 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modmolecule, only : nmo
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -653,8 +646,6 @@ end
 !
       call fullmtrx(smtrx,work,nao)
       call mtrxcanoninv(ortho,overinv,work,nao,datamol%nmo,datajob%threshover,datacomp)
-!ishimura
-      nmo= datamol%nmo
 !
 ! Calculate initial MOs
 !
@@ -785,7 +776,6 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modmolecule, only : nmo
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -831,8 +821,6 @@ end
 !
       call fullmtrx(smtrx,work,nao)
       call mtrxcanoninv(ortho,overinv,work,nao,datamol%nmo,datajob%threshover,datacomp)
-!ishimura
-      nmo= datamol%nmo
 !
 ! Calculate initial MOs
 !
@@ -963,7 +951,6 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modmolecule, only : nmo
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -1059,8 +1046,6 @@ end
 !
         call fullmtrx(smtrx,work,nao)
         call mtrxcanoninv(ortho,overinv,work,nao,datamol%nmo,datajob%threshover,datacomp)
-!ishimura
-        nmo= datamol%nmo
 !
 ! Calculate initial MOs
 !
@@ -1269,7 +1254,6 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modmolecule, only : nmo
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -1365,8 +1349,6 @@ end
 !
         call fullmtrx(smtrx,work,nao)
         call mtrxcanoninv(ortho,overinv,work,nao,datamol%nmo,datajob%threshover,datacomp)
-!ishimura
-        nmo= datamol%nmo
 !
 ! Calculate initial MOs
 !
@@ -1565,37 +1547,37 @@ end
 end
 
 
-!---------------------------------------------
-  subroutine setnextopt(coordold,natom,iopt,datajob)
-!---------------------------------------------
-!
-! Set parameters for next optimization step
-!
-      use modguess, only : coord_g, nmo_g
-      use modmolecule, only : nmo
-      use modtype, only : typejob
-      implicit none
-      type(typejob),intent(inout) :: datajob
-      integer,intent(in) :: natom, iopt
-      integer :: iatom
-      real(8),intent(in) :: coordold(3,natom)
-!
-! Set MO projection as initial MO calculation
-!
-      datajob%guess= 'UPDATE'
-!
-! Copy coordinate and energy gradient
-!
-      do iatom= 1,natom
-        coord_g(1,iatom)= coordold(1,iatom)
-        coord_g(2,iatom)= coordold(2,iatom)
-        coord_g(3,iatom)= coordold(3,iatom)
-      enddo
-!
-      nmo_g= nmo
-!
-      return
-end
+!!---------------------------------------------
+!  subroutine setnextopt(coordold,natom,iopt,datajob)
+!!---------------------------------------------
+!!
+!! Set parameters for next optimization step
+!!
+!      use modguess, only : coord_g, nmo_g
+!      use modmolecule, only : nmo
+!      use modtype, only : typejob
+!      implicit none
+!      type(typejob),intent(inout) :: datajob
+!      integer,intent(in) :: natom, iopt
+!      integer :: iatom
+!      real(8),intent(in) :: coordold(3,natom)
+!!
+!! Set MO projection as initial MO calculation
+!!
+!      datajob%guess= 'UPDATE'
+!!
+!! Copy coordinate and energy gradient
+!!
+!      do iatom= 1,natom
+!        coord_g(1,iatom)= coordold(1,iatom)
+!        coord_g(2,iatom)= coordold(2,iatom)
+!        coord_g(3,iatom)= coordold(3,iatom)
+!      enddo
+!!
+!      nmo_g= nmo
+!!
+!      return
+!end
 
 
 !--------------------
