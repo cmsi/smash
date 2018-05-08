@@ -19,7 +19,6 @@
 ! Read input data and open checkpoint file if necessary
 !
       use modparam, only : maxline, input
-      use modmolecule, only : natom
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -116,7 +115,6 @@
         threshover = datajob%threshover
         threshatom = datajob%threshatom
         threshmp2cphf=datajob%threshmp2cphf
-!       natom      = datajob%natom
         multi      = datamol%multi
         iprint     = datajob%iprint
         maxiter    = datajob%maxiter
@@ -194,7 +192,7 @@
 !
 ! Read geometry data
 !
-      call readatom(runtype,bohr,cartesian,natom,datamol,datacomp)
+      call readatom(runtype,bohr,cartesian,datamol%natom,datamol,datacomp)
 !
       if(datacomp%master) then
         chararray(1)= method
@@ -229,7 +227,7 @@
         realarray(21)= threshover
         realarray(22)= threshatom
         realarray(23)= threshmp2cphf
-        intarray( 1)= natom
+        intarray( 1)= datamol%natom
         intarray( 2)= multi
         intarray( 3)= iprint
         intarray( 4)= maxiter
@@ -258,13 +256,11 @@
       call para_bcasti(intarray,16,0,datacomp%mpi_comm1)
       call para_bcastl(logarray,5,0,datacomp%mpi_comm1)
 !
-!ishimura
-      natom= intarray(1)
       datamol%natom= intarray(1)
 !
-      call para_bcasti(datamol%numatomic,natom,0,datacomp%mpi_comm1)
-      call para_bcastr(datamol%coord(1,1),natom*3,0,datacomp%mpi_comm1)
-      call para_bcastr(datamol%znuc,natom,0,datacomp%mpi_comm1)
+      call para_bcasti(datamol%numatomic,datamol%natom,0,datacomp%mpi_comm1)
+      call para_bcastr(datamol%coord(1,1),datamol%natom*3,0,datacomp%mpi_comm1)
+      call para_bcastr(datamol%znuc,datamol%natom,0,datacomp%mpi_comm1)
 !
 !     numatomic(1:natom)= datamol%numatomic(1:natom)
 !     coord(1:3,1:natom)= datamol%coord(1:3,1:natom)

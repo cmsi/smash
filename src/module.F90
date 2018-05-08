@@ -32,51 +32,6 @@
 end
 
 
-!---------------------
-  module modmolecule
-!---------------------
-!
-! natom     : number of atoms
-! numatomic : atomic number
-! coord     : Cartesian coordinate 
-! znuc      : atomic charge
-! neleca    : number of alpha electrons
-! nelecb    : number of beta electrons
-! nmo       : number of molecular orbitals
-! ncore     : number of core orbitals
-! multi     : spin multiplicity
-! charge    : molecular charge
-!
-      use modparam, only : mxatom
-      implicit none
-      integer :: numatomic(mxatom), natom, neleca, nelecb, nmo, ncore, multi
-      real(8) :: coord(3,mxatom), znuc(mxatom), coordold(3,mxatom), charge
-      real(8) :: enuc, eelec, escf, escfe, emp2, escsmp2
-!
-!
-! Covalent radii  H       : Bohr radius
-!                 He - Cn : P. Pyykko, M. Atsumi, Chem. Eur. J., 186 (2009) 15.
-!                 
-      real(8) :: atomrad(-9:112)
-      data atomrad/ &
-&     1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, &
-&     0.00D+00, &
-&     0.53D+00, 0.46D+00, 1.33D+00, 1.02D+00, 0.85D+00, 0.75D+00, 0.71D+00, 0.63D+00, 0.64D+00, &
-&     0.67D+00, 1.55D+00, 1.39D+00, 1.26D+00, 1.16D+00, 1.11D+00, 1.03D+00, 0.99D+00, 0.96D+00, &
-&     1.96D+00, 1.71D+00, 1.48D+00, 1.36D+00, 1.34D+00, 1.22D+00, 1.19D+00, 1.16D+00, 1.11D+00, &
-&     1.10D+00, 1.12D+00, 1.18D+00, 1.24D+00, 1.21D+00, 1.21D+00, 1.16D+00, 1.14D+00, 1.17D+00, &
-&     2.10D+00, 1.85D+00, 1.63D+00, 1.54D+00, 1.47D+00, 1.38D+00, 1.28D+00, 1.25D+00, 1.25D+00, &
-&     1.20D+00, 1.28D+00, 1.36D+00, 1.42D+00, 1.40D+00, 1.40D+00, 1.36D+00, 1.33D+00, 1.31D+00, &
-&     2.32D+00, 1.96D+00, 1.80D+00, 1.63D+00, 1.76D+00, 1.74D+00, 1.73D+00, 1.72D+00, 1.68D+00, &
-&     1.69D+00, 1.68D+00, 1.67D+00, 1.66D+00, 1.65D+00, 1.64D+00, 1.70D+00, 1.62D+00, 1.52D+00, &
-&     1.46D+00, 1.37D+00, 1.31D+00, 1.29D+00, 1.22D+00, 1.23D+00, 1.24D+00, 1.33D+00, 1.44D+00, &
-&     1.44D+00, 1.51D+00, 1.45D+00, 1.47D+00, 1.42D+00, 2.23D+00, 2.01D+00, 1.86D+00, 1.75D+00, &
-&     1.69D+00, 1.70D+00, 1.71D+00, 1.72D+00, 1.66D+00, 1.66D+00, 1.68D+00, 1.68D+00, 1.65D+00, &
-&     1.67D+00, 1.73D+00, 1.76D+00, 1.61D+00, 1.57D+00, 1.49D+00, 1.43D+00, 1.41D+00, 1.34D+00, &
-&     1.29D+00, 1.28D+00, 1.21D+00, 1.22D+00/
-end
-
-
 !------------------
   module modguess
 !------------------
@@ -290,6 +245,20 @@ end
         logical :: cartesian=.false.
       end type
 !
+! natom     : number of atoms
+! numatomic : atomic number
+! coord     : Cartesian coordinate 
+! znuc      : atomic charge
+! neleca    : number of alpha electrons
+! nelecb    : number of beta electrons
+! nmo       : number of molecular orbitals
+! ncore     : number of core orbitals
+! multi     : spin multiplicity
+! charge    : molecular charge
+!
+! Covalent radii  H       : Bohr radius
+!                 He - Cn : P. Pyykko, M. Atsumi, Chem. Eur. J., 186 (2009) 15.
+!                 
       type typemol
         integer :: numatomic(mxatom), natom, neleca, nelecb, nmo, multi=1
         real(8) :: coord(3,mxatom), znuc(mxatom), coordold(3,mxatom), charge=0.0D+00
