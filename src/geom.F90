@@ -18,7 +18,6 @@
 !
 ! Calculate nuclear replusion energy
 !
-      use modmolecule, only : enuc
       use modtype, only : typemol, typecomp
       implicit none
       type(typemol),intent(inout) :: datamol
@@ -51,8 +50,6 @@
           endif
         enddo
       enddo
-!ishimura
-      enuc= datamol%enuc
       return
 end
 
