@@ -1706,7 +1706,7 @@ end
 ! Calculate derivatives for two-electron integrals
 !
       call grad2eri(egradtmp,egradtmp2,pmnhf,pmn,xint,one, &
-&                   maxdim,maxgraddim,nproc,myrank,3,datajob,databasis)
+&                   maxdim,maxgraddim,nproc,myrank,3,datajob,datamol,databasis)
 !
 ! Calculate HF+MP2 density matrix
 !
@@ -1869,7 +1869,7 @@ end
             enddo
 !
             if(xijkl*tmax < datajob%cutint2) cycle
-            call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,datajob,databasis)
+            call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,datajob,datamol,databasis)
           enddo
         enddo
       enddo
@@ -2021,7 +2021,7 @@ end
             enddo
 !
             if(xijkl*tmax < datajob%cutint2) cycle
-            call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,datajob,databasis)
+            call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,datajob,datamol,databasis)
           enddo
         enddo
       enddo

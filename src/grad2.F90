@@ -14,7 +14,7 @@
 !
 !----------------------------------------------------------------------------
   subroutine grad2eri(egrad,egrad2,fulldmtrx1,fulldmtrx2,xint,hfexchange, &
-&                     maxdim,maxgraddim,nproc,myrank,itype,datajob,databasis)
+&                     maxdim,maxgraddim,nproc,myrank,itype,datajob,datamol,databasis)
 !----------------------------------------------------------------------------
 !
 ! Main driver of derivatives for two-electron integrals
@@ -31,10 +31,10 @@
 !         itype     (1:RHF, 2:UHF)
 ! Inout : egrad2    (Energy gradient values)
 !
-      use modmolecule, only : natom
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, maxgraddim, nproc, myrank, itype
       integer :: nao, nshell, ijsh, ish, jsh, ksh, lsh, ij, kl
@@ -44,8 +44,8 @@
       real(8),intent(in) :: fulldmtrx1(databasis%nao,databasis%nao)
       real(8),intent(in) :: fulldmtrx2(databasis%nao,databasis%nao)
       real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2), hfexchange
-      real(8),intent(out) :: egrad2(3*natom)
-      real(8),intent(inout) :: egrad(3*natom)
+      real(8),intent(out) :: egrad2(3*datamol%natom)
+      real(8),intent(inout) :: egrad(3*datamol%natom)
       real(8) :: xijkl, twoeri(maxgraddim**4), dtwoeri(maxdim**4,3), pdmtrx(maxdim**4)
       real(8) :: pdmax
 !
@@ -88,13 +88,13 @@
             call calcpdmtrx(fulldmtrx1,fulldmtrx2,pdmtrx,pdmax,hfexchange, &
 &                           ish,jsh,ksh,lsh,maxdim,itype,databasis)
             if((xijkl*pdmax).lt.datajob%cutint2) cycle
-            call calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,datajob,databasis)
+            call calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,datajob,datamol,databasis)
           enddo
         enddo kloop
       enddo
 !$OMP end parallel do
 !
-      do ii= 1,3*natom
+      do ii= 1,3*datamol%natom
         egrad(ii)= egrad(ii)+egrad2(ii)*four
       enddo
       return
@@ -102,7 +102,7 @@ end
 
 
 !---------------------------------------------------------------------------------------
-  subroutine calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,datajob,databasis)
+  subroutine calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,datajob,datamol,databasis)
 !---------------------------------------------------------------------------------------
 !
 ! Driver of derivatives for two-electron integrals
@@ -116,10 +116,10 @@ end
 ! Inout : egrad2    (Energy gradient values)
 !
       use modparam, only : mxprsh
-      use modmolecule, only : coord, natom
-      use modtype, only : typejob, typebasis
+      use modtype, only : typejob, typemol, typebasis
       implicit none
       type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       integer,parameter :: ncart(0:6)=(/1,3,6,10,15,21,28/)
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim, maxgraddim
@@ -162,7 +162,7 @@ end
       real(8),intent(in) :: pdmtrx(maxdim,maxdim,maxdim,maxdim)
       real(8),intent(out) :: twoeri(maxgraddim,maxgraddim,maxgraddim,maxgraddim)
       real(8),intent(out) :: dtwoeri(maxdim,maxdim,maxdim,maxdim,3)
-      real(8),intent(inout) :: egrad2(3,natom)
+      real(8),intent(inout) :: egrad2(3,datamol%natom)
       real(8) :: gradtwo(3,4), xyzijkl(3,4), exijkl(mxprsh,4), coijkl(mxprsh,4), work(21)
 !
       iatom= databasis%locatom(ish)
@@ -192,10 +192,10 @@ end
       nprimijkl(4)= databasis%mprim(lsh)
 !
       do i= 1,3
-        xyzijkl(i,1)= coord(i,iatom)
-        xyzijkl(i,2)= coord(i,jatom)
-        xyzijkl(i,3)= coord(i,katom)
-        xyzijkl(i,4)= coord(i,latom)
+        xyzijkl(i,1)= datamol%coord(i,iatom)
+        xyzijkl(i,2)= datamol%coord(i,jatom)
+        xyzijkl(i,3)= datamol%coord(i,katom)
+        xyzijkl(i,4)= datamol%coord(i,latom)
       enddo
 !
       do i= 1,nprimijkl(1)
