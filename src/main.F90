@@ -963,7 +963,7 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modmolecule, only : nmo, coord, coordold
+      use modmolecule, only : nmo
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -1150,14 +1150,12 @@ end
 ! Calculate new coordinate
 !
         if(datajob%cartesian) then
-          call calcnewcoord(datamol%coord,coordold,egrad,egradold,ehess,workv,natom3,iopt,datajob,datamol,datacomp)
+          call calcnewcoord(datamol%coord,datamol%coordold,egrad,egradold,ehess,workv,natom3,iopt,datajob,datamol,datacomp)
         else
-          call calcnewcoordred(datamol%coord,coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
+          call calcnewcoordred(datamol%coord,datamol%coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
 &                              work(1,2),work(1,3),work(1,4),workv,iopt,iredun,isizered, &
 &                              maxredun,numbond,numangle,numtorsion,numredun,datajob,datamol,datacomp)
         endif
-!ishimura
-        coord=datamol%coord
 !
 ! Unset work arrays 2
 !
@@ -1171,7 +1169,7 @@ end
 !
 ! Set guess MO calculation flag from Huckel to projection
 !
-        call setnextopt(coordold,datamol%natom,iopt,datajob)
+!       call setnextopt(coordold,datamol%natom,iopt,datajob)
 !
         if((iopt == datajob%nopt).and.datacomp%master) then
           write(*,'("Warning! Geometry did not converge.")')
@@ -1271,7 +1269,7 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
-      use modmolecule, only : nmo, coord, coordold
+      use modmolecule, only : nmo
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -1455,14 +1453,12 @@ end
 ! Calculate new coordinate
 !
         if(datajob%cartesian) then
-          call calcnewcoord(datamol%coord,coordold,egrad,egradold,ehess,workv,natom3,iopt,datajob,datamol,datacomp)
+          call calcnewcoord(datamol%coord,datamol%coordold,egrad,egradold,ehess,workv,natom3,iopt,datajob,datamol,datacomp)
         else
-          call calcnewcoordred(datamol%coord,coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
+          call calcnewcoordred(datamol%coord,datamol%coordold,coordredun,egrad,egradredun,ehess,work(1,1), &
 &                              work(1,2),work(1,3),work(1,4),workv,iopt,iredun,isizered, &
 &                              maxredun,numbond,numangle,numtorsion,numredun,datajob,datamol,datacomp)
         endif
-!ishimura
-        coord= datamol%coord
 !
 ! Unset work arrays 2
 !
@@ -1476,7 +1472,7 @@ end
 !
 ! Set guess MO calculation flag from Huckel to projection
 !
-        call setnextopt(coordold,datamol%natom,iopt,datajob)
+!       call setnextopt(coordold,datamol%natom,iopt,datajob)
 !
         if((iopt == datajob%nopt).and.datacomp%master) then
           write(*,'("Warning! Geometry did not converge.")')
