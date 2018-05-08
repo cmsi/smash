@@ -257,7 +257,6 @@ end
 !
 ! Set number of electrons
 !
-      use modmolecule, only : neleca, nelecb
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -290,9 +289,6 @@ end
         datacomp%nwarn= datacomp%nwarn+1
       endif
 !
-!ishimura
-      neleca=(nume+datamol%multi-1)/2
-      nelecb=(nume-datamol%multi+1)/2
       datamol%neleca=(nume+datamol%multi-1)/2
       datamol%nelecb=(nume-datamol%multi+1)/2
       if((datamol%neleca+datamol%nelecb)/= nume) then
@@ -1613,7 +1609,6 @@ end
 ! Set functional information
 ! Adjust the numbe of DFT grids when heavy elements are included
 !
-      use modmolecule, only : atomrad
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -1623,8 +1618,6 @@ end
       integer :: ii, maxelem
 !
       do ii= 1,9
-!ishimura
-        atomrad(-ii)= datajob%bqrad(ii)
         datamol%atomrad(-ii)= datajob%bqrad(ii)
       enddo
 !
