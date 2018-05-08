@@ -19,7 +19,7 @@
 ! Read input data and open checkpoint file if necessary
 !
       use modparam, only : maxline, input
-      use modmolecule, only : numatomic, natom, coord, znuc, charge, multi
+      use modmolecule, only : natom
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -29,10 +29,12 @@
       integer :: ii, llen, intarray(16), info
       integer :: iprint, maxiter, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
       integer :: idftex, idftcor, nrad, nleb, ncore, nvfz, maxmp2diis, maxmp2iter, nopt
+      integer :: multi
       real(8) :: realarray(23)
       real(8) :: threshover, threshatom, threshdiis, cutint2, threshsoscf
       real(8) :: threshqc, threshweight,threshrho, threshdfock, threshdftao, threshmp2cphf
       real(8) :: dconv, hfexchange, bqrad(9), optconv
+      real(8) :: charge
       character(len=254) :: line
       character(len=16) :: chararray(9)
       character(len=64) :: check
@@ -264,9 +266,9 @@
       call para_bcastr(datamol%coord(1,1),natom*3,0,datacomp%mpi_comm1)
       call para_bcastr(datamol%znuc,natom,0,datacomp%mpi_comm1)
 !
-      numatomic(1:natom)= datamol%numatomic(1:natom)
-      coord(1:3,1:natom)= datamol%coord(1:3,1:natom)
-      znuc(1:natom)     = datamol%znuc(1:natom)
+!     numatomic(1:natom)= datamol%numatomic(1:natom)
+!     coord(1:3,1:natom)= datamol%coord(1:3,1:natom)
+!     znuc(1:natom)     = datamol%znuc(1:natom)
 !     method  = chararray(1)
 !     runtype = chararray(2)
 !     basis   = chararray(3)
@@ -276,7 +278,7 @@
 !     ecp     = chararray(7)
 !     scfconv = chararray(8)
 !     precision=chararray(9)
-      charge  = realarray( 1)
+!     charge  = realarray( 1)
 !     cutint2 = realarray( 2)
 !     dconv   = realarray( 3)
 !     optconv = realarray( 4)
@@ -299,7 +301,7 @@
 !     threshover  = realarray(21)
 !     threshatom  = realarray(22)
 !     threshmp2cphf=realarray(23)
-      multi   = intarray( 2)
+!     multi   = intarray( 2)
 !     iprint  = intarray( 3)
 !     maxiter = intarray( 4)
 !     maxdiis = intarray( 5)
