@@ -95,7 +95,7 @@ end
 ! In  : overinv (overlap integral inverse matrix)
 ! Out : cmo     (initial guess orbitals)
 !
-      use modguess, only : coord_g
+      use modparam, only : mxatom
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
@@ -107,6 +107,7 @@ end
       real(8),intent(in):: overinv(databasis%nao**2)
       real(8),intent(out):: cmo(databasis%nao**2)
       real(8),allocatable :: hmo(:), overlap(:), work1(:), work2(:), eigen(:)
+      real(8) :: coord_g(3,mxatom)
 !
 ! Set basis functions
 !
@@ -131,11 +132,11 @@ end
 !
 ! Calculate Extended Huckel method
 !
-      call calchuckelg(hmo,eigen,nao_v,datajob,datamol,databasis,dataguessbs,datacomp)
+      call calchuckelg(hmo,eigen,coord_g,nao_v,datajob,datamol,databasis,dataguessbs,datacomp)
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
-      call calcover2(overlap,work1,datajob%threshex,datamol,databasis,dataguessbs,datacomp)
+      call calcover2(overlap,work1,coord_g,datajob%threshex,datamol,databasis,dataguessbs,datacomp)
 !
 ! Project orbitals from Huckel to SCF
 !
@@ -148,13 +149,14 @@ end
 
 
 !----------------------------------------------------------
-  subroutine calchuckelg(hmo,eigen,nao_v,datajob,datamol,databasis,dataguessbs,datacomp)
+  subroutine calchuckelg(hmo,eigen,coord_g,nao_v,datajob,datamol,databasis,dataguessbs,datacomp)
 !----------------------------------------------------------
 !
 ! Driver of extended Huckel calculation for guess generation
 !
 ! Out : hmo (extended Huckel orbitals)
 !
+      use modparam, only : mxatom
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
@@ -164,11 +166,12 @@ end
       integer,intent(in) :: nao_v
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(out) :: hmo(dataguessbs%nao*2), eigen(dataguessbs%nao)
+      real(8),intent(in) :: coord_g(3,mxatom)
 !
 ! Calculate overlap integrals
 ! (guess basis)x(guess basis)
 !
-      call calcover1(hmo,datajob%threshex,dataguessbs)
+      call calcover1(hmo,coord_g,datajob%threshex,dataguessbs)
 !
 ! Set ionization potentials
 !
@@ -192,13 +195,14 @@ end
 
 
 !--------------------------------------------------------------
-  subroutine calchuckelgcore(hmo,eigen,datajob,datamol,databasis,datacorebs,datacomp)
+  subroutine calchuckelgcore(hmo,eigen,coord_g,datajob,datamol,databasis,datacorebs,datacomp)
 !--------------------------------------------------------------
 !
 ! Driver of extended Huckel calculation for only core orbitals
 !
 ! Out : hmo (extended Huckel orbitals)
 !
+      use modparam, only : mxatom
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
@@ -206,12 +210,13 @@ end
       type(typebasis),intent(in) :: databasis, datacorebs
       type(typecomp),intent(inout) :: datacomp
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(in) :: coord_g(3,mxatom)
       real(8),intent(out) :: hmo(datacorebs%nao**2), eigen(datacorebs%nao)
 !
 ! Calculate overlap integrals
 ! (guess basis)x(guess basis)
 !
-      call calcover1(hmo,datajob%threshex,datacorebs)
+      call calcover1(hmo,coord_g,datajob%threshex,datacorebs)
 !
 ! Set ionization potentials
 !
@@ -1064,7 +1069,7 @@ end
 
 
 !--------------------------------
-  subroutine calcover1(overlap,threshex,dataguessbs)
+  subroutine calcover1(overlap,coord_g,threshex,dataguessbs)
 !--------------------------------
 !
 ! Driver of overlap integral calculation
@@ -1072,17 +1077,18 @@ end
 !
 ! Out : overlap (overlap integral of guess basis set)
 !
+      use modparam, only : mxatom
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: dataguessbs
       integer :: ish, jsh
-      real(8),intent(in) :: threshex
+      real(8),intent(in) :: coord_g(3,mxatom), threshex
       real(8),intent(out) :: overlap(dataguessbs%nao**2)
 !
 !$OMP parallel do private(jsh)
       do ish= dataguessbs%nshell,1,-1
         do jsh= 1,ish
-          call intover1(overlap,ish,jsh,threshex,dataguessbs)
+          call intover1(overlap,coord_g,ish,jsh,threshex,dataguessbs)
         enddo
       enddo
 !$OMP end parallel do
@@ -1091,7 +1097,7 @@ end
 
 
 !-----------------------------------------------------------
-  subroutine calcover2(overlap,work,threshex,datamol,databasis,dataguessbs,datacomp)
+  subroutine calcover2(overlap,work,coord_g,threshex,datamol,databasis,dataguessbs,datacomp)
 !-----------------------------------------------------------
 !
 ! Driver of overlap integral calculation
@@ -1100,6 +1106,7 @@ end
 ! Out : overlap (overlap integral of guess and SCF basis sets)
 !       work    (work array)
 !
+      use modparam, only : mxatom
       use modtype, only : typemol, typebasis, typecomp
       implicit none
       type(typemol),intent(in) :: datamol
@@ -1107,7 +1114,7 @@ end
       type(typecomp),intent(inout) :: datacomp
       integer :: ish, jsh
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: threshex
+      real(8),intent(in) :: coord_g(3,mxatom), threshex
       real(8),intent(out) :: overlap(databasis%nao*dataguessbs%nao)
       real(8),intent(out) :: work(databasis%nao*dataguessbs%nao)
 !
@@ -1116,7 +1123,7 @@ end
       do ish= dataguessbs%nshell-datacomp%myrank2,1,-datacomp%nproc2
 !$OMP do
         do jsh= 1,databasis%nshell
-          call intover2(work,ish,jsh,threshex,datamol,databasis,dataguessbs)
+          call intover2(work,coord_g,ish,jsh,threshex,datamol,databasis,dataguessbs)
         enddo
 !$OMP enddo
       enddo
@@ -1128,7 +1135,7 @@ end
 
 
 !---------------------------------------------------------------
-  subroutine calcover2core(overlap,work,threshex,dataguessbs,datacorebs,datacomp)
+  subroutine calcover2core(overlap,work,coord_g,threshex,dataguessbs,datacorebs,datacomp)
 !---------------------------------------------------------------
 !
 ! Driver of overlap integral calculation for only core orbitals
@@ -1137,13 +1144,14 @@ end
 ! Out : overlap (overlap integral of guess and SCF basis sets)
 !       work    (work array)
 !
+      use modparam, only : mxatom
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(in) :: dataguessbs, datacorebs
       type(typecomp),intent(in) :: datacomp
       integer :: ish, jsh
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: threshex
+      real(8),intent(in) :: coord_g(3,mxatom), threshex
       real(8),intent(out) :: overlap(datacorebs%nao*dataguessbs%nao)
       real(8),intent(out) :: work(datacorebs%nao*dataguessbs%nao)
 !
@@ -1152,7 +1160,7 @@ end
       do ish= dataguessbs%nshell-datacomp%myrank2,1,-datacomp%nproc2
 !$OMP do
         do jsh= 1,datacorebs%nshell
-          call intover2core(work,ish,jsh,threshex,dataguessbs,datacorebs)
+          call intover2core(work,coord_g,ish,jsh,threshex,dataguessbs,datacorebs)
         enddo
 !$OMP enddo
       enddo
@@ -1164,7 +1172,7 @@ end
 
 
 !---------------------------------------
-  subroutine intover1(overlap,ish,jsh,threshex,dataguessbs)
+  subroutine intover1(overlap,coord_g,ish,jsh,threshex,dataguessbs)
 !---------------------------------------
 !
 ! Overlap integral calculation
@@ -1173,15 +1181,14 @@ end
 ! In  : ish, jsh (shell index)
 ! Out : overlap (overlap integral of guess basis set)
 !
-      use modparam, only : mxprsh
-      use modguess, only : coord_g
+      use modparam, only : mxatom, mxprsh
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: dataguessbs
       integer,intent(in) :: ish, jsh
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, iprim, jprim
       integer :: nbfij(2), nprimij(2), nangij(2), ii, jj, maxj
-      real(8),intent(in) :: threshex
+      real(8),intent(in) :: coord_g(3,mxatom), threshex
       real(8),intent(out) :: overlap(dataguessbs%nao,dataguessbs%nao)
       real(8) :: sint(28,28), exij(mxprsh,2), coij(mxprsh,2), coordij(3,2)
       logical :: iandj
@@ -1230,7 +1237,7 @@ end
 
 
 !---------------------------------------
-  subroutine intover2(overlap,ish,jsh,threshex,datamol,databasis,dataguessbs)
+  subroutine intover2(overlap,coord_g,ish,jsh,threshex,datamol,databasis,dataguessbs)
 !---------------------------------------
 !
 ! Overlap integral calculation
@@ -1239,8 +1246,7 @@ end
 ! In  : ish, jsh (shell index)
 ! Out : overlap (overlap integral of guess and SCF basis sets)
 !
-      use modparam, only : mxprsh
-      use modguess, only : coord_g
+      use modparam, only : mxatom, mxprsh
       use modtype, only : typemol, typebasis
       implicit none
       type(typemol),intent(in) :: datamol
@@ -1249,7 +1255,7 @@ end
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, iprim, jprim
       integer :: nbfij(2), nprimij(2), nangij(2), ii, jj
       real(8),parameter :: zero=0.0D+0, one=1.0D+0
-      real(8),intent(in) :: threshex
+      real(8),intent(in) :: coord_g(3,mxatom),threshex
       real(8),intent(out) :: overlap(databasis%nao,dataguessbs%nao)
       real(8) :: sint(28,28), exij(mxprsh,2), coij(mxprsh,2), coordij(3,2)
 !
@@ -1294,7 +1300,7 @@ end
 
 
 !-------------------------------------------
-  subroutine intover2core(overlap,ish,jsh,threshex,dataguessbs,datacorebs)
+  subroutine intover2core(overlap,coord_g,ish,jsh,threshex,dataguessbs,datacorebs)
 !-------------------------------------------
 !
 ! Overlap integral calculation for only core orbitals
@@ -1303,8 +1309,7 @@ end
 ! In  : ish, jsh (shell index)
 ! Out : overlap (overlap integral of core-guess and guess basis sets)
 !
-      use modparam, only : mxprsh
-      use modguess, only : coord_g
+      use modparam, only : mxatom, mxprsh
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: dataguessbs, datacorebs
@@ -1312,7 +1317,7 @@ end
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, iprim, jprim
       integer :: nbfij(2), nprimij(2), nangij(2), ii, jj
       real(8),parameter :: zero=0.0D+0, one=1.0D+0
-      real(8),intent(in) :: threshex
+      real(8),intent(in) :: coord_g(3,mxatom),threshex
       real(8),intent(out) :: overlap(datacorebs%nao,dataguessbs%nao)
       real(8) :: sint(28,28), exij(mxprsh,2), coij(mxprsh,2), coordij(3,2)
 !
@@ -1365,18 +1370,28 @@ end
 ! Inout : overinv (overlap integral inverse matrix)
 !         cmo     (initial guess orbitals)
 !
+      use modparam, only : mxatom
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
-      integer :: ndim
+      integer :: ndim, i, j
       real(8),intent(inout) :: cmo(databasis%nao**2), overinv(databasis%nao**2)
       real(8),allocatable :: overlap(:,:), work1(:), work2(:), eigen(:)
+      real(8) :: coord_g(3,mxatom)
 !
 !     ndim= min(nmo,neleca+5)
       ndim= datamol%nmo
+!
+! Set coordinate
+!
+      do i= 1,datamol%natom
+        do j= 1,3
+          coord_g(j,i)= datamol%coord(j,i)
+        enddo
+      enddo
 !
 ! Set arrays
 !
@@ -1385,7 +1400,7 @@ end
 !
 ! Calculate overlap integrals between previous and present bases
 !
-      call calcover2(overlap(1,1),overlap(1,2),datajob%threshex,datamol,databasis,databasis,datacomp)
+      call calcover2(overlap(1,1),overlap(1,2),coord_g,datajob%threshex,datamol,databasis,databasis,datacomp)
 !
 ! Project orbitals from previous basis to current basis
 !
@@ -1470,6 +1485,7 @@ end
 ! Out   : cmoa    (Alpha initial guess orbitals)
 !         cmob    (Beta initial guess orbitals)
 !
+      use modparam, only : mxatom
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
@@ -1484,7 +1500,7 @@ end
       real(8),allocatable :: cmoa_g(:,:), cmob_g(:,:)
       real(8),allocatable :: overlap(:), work1(:), work2(:), work3(:), eigen(:)
       real(8),allocatable :: coremo(:,:)
-      real(8) :: charge_g
+      real(8) :: coord_g(3,mxatom), charge_g
       character(len=16) :: scftype_g
       logical :: flagecp_g
 !
@@ -1504,7 +1520,7 @@ end
 !
 ! Read guess basis functions and MOs from checkpoint file
 !
-      call readcheckguess(datajob%scftype,cmoa_g,cmob_g,scftype_g,nmo_g,datamol%natom,dataguessbs,datacomp)
+      call readcheckguess(datajob%scftype,cmoa_g,cmob_g,coord_g,scftype_g,nmo_g,datamol%natom,dataguessbs,datacomp)
 !
 ! Orthonormalize guess basis functions
 !
@@ -1534,7 +1550,7 @@ end
         call memset(nao_gcore*(nao_gcore+nao_g*3+1),datacomp)
         allocate(coremo(nao_gcore,nao_gcore),work1(nao_g*nao_gcore),work2(nao_g*nao_gcore), &
 &                work3(nao_g*nao_gcore),eigen(nao_gcore))
-        call calccoremo(cmoa_g,cmob_g,coremo,work1,work2,work3,eigen,scftype_g,nmo_g, &
+        call calccoremo(cmoa_g,cmob_g,coremo,work1,work2,work3,eigen,coord_g,scftype_g,nmo_g, &
 &                       datajob,datamol,databasis,dataguessbs,datacorebs,datacomp)
         call memunset(nao_gcore*(nao_gcore+nao_g*3+1),datacomp)
         deallocate(coremo,work1,work2,work3,eigen)
@@ -1550,7 +1566,7 @@ end
 !
 ! Calculate overlap integrals between previous and present bases
 !
-      call calcover2(overlap,work2,datajob%threshex,datamol,databasis,dataguessbs,datacomp)
+      call calcover2(overlap,work2,coord_g,datajob%threshex,datamol,databasis,dataguessbs,datacomp)
 !
 ! Project orbitals from previous basis to current basis
 !
@@ -1649,12 +1665,13 @@ end
 end
 
 !------------------------------------------------------------------------------------
-  subroutine calccoremo(cmoa_g,cmob_g,coremo,overlap,work2,work3,eigen,scftype_g,nmo_g, &
+  subroutine calccoremo(cmoa_g,cmob_g,coremo,overlap,work2,work3,eigen,coord_g,scftype_g,nmo_g, &
 &                       datajob,datamol,databasis,dataguessbs,datacorebs,datacomp)
 !------------------------------------------------------------------------------------
 !
 ! Calculate and remove core orbitals corresponding ECP
 !
+      use modparam, only : mxatom
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
@@ -1664,6 +1681,7 @@ end
       integer,intent(in) :: nmo_g
       integer :: nao_g, nao_gcore, ii, jj, kk, idamax, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, small=1.0D-04
+      real(8),intent(in) :: coord_g(3,mxatom)
       real(8),intent(inout) :: cmoa_g(dataguessbs%nao,dataguessbs%nao)
       real(8),intent(inout) :: cmob_g(dataguessbs%nao,dataguessbs%nao)
       real(8),intent(out) :: coremo(datacorebs%nao,datacorebs%nao)
@@ -1678,11 +1696,11 @@ end
 !
 ! Calculate Extended Huckel method
 !
-      call calchuckelgcore(coremo,eigen,datajob,datamol,databasis,datacorebs,datacomp)
+      call calchuckelgcore(coremo,eigen,coord_g,datajob,datamol,databasis,datacorebs,datacomp)
 !
 ! Calculate overlap integrals between core-guess basis and guess bases
 !
-      call calcover2core(overlap,work2,datajob%threshex,dataguessbs,datacorebs,datacomp)
+      call calcover2core(overlap,work2,coord_g,datajob%threshex,dataguessbs,datacorebs,datacomp)
 !
 ! Calculate Cguess-t*Overlap*Ccore
 !
@@ -1925,7 +1943,7 @@ end
 ! In  : overinv (overlap integral inverse matrix)
 ! Out : cmo     (initial guess orbitals)
 !
-      use modguess, only : coord_g
+      use modparam, only : mxatom
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
@@ -1937,6 +1955,7 @@ end
       real(8),intent(in):: overinv(databasis%nao**2)
       real(8),intent(out):: cmo(databasis%nao**2)
       real(8),allocatable :: hmo(:), overlap(:), work1(:), work2(:), eigen(:)
+      real(8) :: coord_g(3,mxatom)
 !
 ! Set basis functions
 !
@@ -1961,11 +1980,11 @@ end
 !
 ! Calculate DFTB orbitals
 !
-      call calcdftb(hmo,overlap,work1,work2,eigen,nao_v,nshell_v,nmo_g,datajob,datamol,databasis,dataguessbs,datacomp)
+      call calcdftb(hmo,overlap,work1,work2,eigen,coord_g,nao_v,nshell_v,nmo_g,datajob,datamol,databasis,dataguessbs,datacomp)
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
-      call calcover2(overlap,work1,datajob%threshex,datamol,databasis,dataguessbs,datacomp)
+      call calcover2(overlap,work1,coord_g,datajob%threshex,datamol,databasis,dataguessbs,datacomp)
 !
 ! Project orbitals from Huckel to SCF
 !
@@ -1977,7 +1996,7 @@ end
 
 
 !-----------------------------------------------------------------------------
-  subroutine calcdftb(dftbmo,overlap,ortho,work,eigen,nao_v,nshell_v,nmo_g,datajob,datamol,databasis,dataguessbs,datacomp)
+  subroutine calcdftb(dftbmo,overlap,ortho,work,eigen,coord_g,nao_v,nshell_v,nmo_g,datajob,datamol,databasis,dataguessbs,datacomp)
 !-----------------------------------------------------------------------------
 !
 ! Driver of DFTB calculation
@@ -1986,6 +2005,7 @@ end
 ! Out : dftbmo (DFTB MOs)
 !       overlap,ortho,work,eigen (work space)
 !
+      use modparam, only : mxatom
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
@@ -1997,6 +2017,7 @@ end
       integer,intent(out) :: nmo_g
       integer :: nao_g, ii, jj, nelecdftb(2), iter
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(in) :: coord_g(3,mxatom)
       real(8),intent(out) :: dftbmo(dataguessbs%nao,dataguessbs%nao)
       real(8),intent(out) :: overlap(dataguessbs%nao,dataguessbs%nao)
       real(8),intent(out) :: ortho(dataguessbs%nao,dataguessbs%nao)
@@ -2013,7 +2034,7 @@ end
 ! Calculate overlap integrals
 ! (guess basis)x(guess basis)
 !
-      call calcover1(overlap,datajob%threshex,dataguessbs)
+      call calcover1(overlap,coord_g,datajob%threshex,dataguessbs)
       do ii= 1,nao_g
         do jj= 1,ii
           work(jj,ii)= overlap(jj,ii)
@@ -2034,11 +2055,11 @@ end
 ! Calculate core Hamiltonian matrix for DFTB
 !
       dftb0=zero
-      call formdftb0(dftb0,overlap,eigen,nao_v,nshell_v,datajob%threshex,datamol,dataguessbs)
+      call formdftb0(dftb0,overlap,eigen,coord_g,nao_v,nshell_v,datajob%threshex,datamol,dataguessbs)
 !
 ! Calculate gamma12 calculation for DFTB
 !
-      call calcgamma12(gamma12,uhub,nshell_v,datamol,dataguessbs)
+      call calcgamma12(gamma12,uhub,coord_g,nshell_v,datamol,dataguessbs)
 !
 ! Set initial Mulliken charge
 !
@@ -2078,13 +2099,12 @@ end
 
 
 !---------------------------------------------
-  subroutine formdftb0(dftb0,overlap,energy,nao_v,nshell_v,threshex,datamol,dataguessbs)
+  subroutine formdftb0(dftb0,overlap,energy,coord_g,nao_v,nshell_v,threshex,datamol,dataguessbs)
 !---------------------------------------------
 !
 ! Form charge independent DFTB matrix elements
 !
-      use modparam, only : mxprsh
-      use modguess, only : coord_g
+      use modparam, only : mxatom, mxprsh
       use modtype, only : typemol, typebasis
       implicit none
       type(typemol),intent(in) :: datamol
@@ -2095,7 +2115,7 @@ end
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf
       real(8),parameter :: zero=0.0D+00, factor=0.875D+00, fdown=0.05D+00
       real(8),intent(in) :: overlap(dataguessbs%nao,dataguessbs%nao), energy(dataguessbs%nao)
-      real(8),intent(in) :: threshex
+      real(8),intent(in) :: coord_g(3,mxatom),threshex
       real(8),intent(out) :: dftb0(dataguessbs%nao,dataguessbs%nao)
       real(8) :: coordij(3,2), exij(mxprsh,2), coij(mxprsh,2), znucdftb(2)
       real(8) :: sint(len1,len1), tint(len1,len1), cint(len1,len1)
@@ -2248,19 +2268,19 @@ end
 
 
 !---------------------------------------
-  subroutine calcgamma12(gamma12,uhub,nshell_v,datamol,dataguessbs)
+  subroutine calcgamma12(gamma12,uhub,coord_g,nshell_v,datamol,dataguessbs)
 !---------------------------------------
 !
 ! Driver of gamma12 calculation for DFTB
 !
-      use modguess, only : coord_g
+      use modparam, only : mxatom
       use modtype, only : typemol, typebasis
       implicit none
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: dataguessbs
       integer,intent(in) :: nshell_v
       integer :: iatom, jatom, ish, jsh
-      real(8),intent(in) :: uhub(nshell_v)
+      real(8),intent(in) :: uhub(nshell_v), coord_g(3,mxatom)
       real(8),intent(out) :: gamma12(nshell_v,nshell_v)
       real(8) :: rr
       logical :: hbondi, hbondij

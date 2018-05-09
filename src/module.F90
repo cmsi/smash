@@ -32,50 +32,6 @@
 end
 
 
-!------------------
-  module modguess
-!------------------
-!
-! These variables are for guess calculations.
-! (Extended Huckel)
-!
-! nshell_v : the number of valence shells
-! nao_v    : the number of valence AOs (=contracted basis functions)
-! nprim_v  : the number of valence primitive basis functions
-! nmo_v    : the number of valence MOs
-! nshell_g : the number of shells
-! nao_g    : the number of AOs (=contracted basis functions)
-! nprim_g  : the number of primitive basis functions
-! nmo_g    : the number of MOs
-! nao_c    : the number of core MOs
-!
-! ex_g    : exponents
-! coeff_g : coefficients 
-! coord_g : coordinate
-!
-! locprim_g :(starting address of primitive basis functions for a shell) - 1
-! locbf_g   :(starting address of basis functions for a shell) - 1
-! locatom_g : atom center for a shell
-! mprim_g   : the number of basis primitive functions for a shell
-! mbf_g     : the number of basis funcions for a shell
-! mtype_g   : the type of a basis shell (s=0, p=1, d=2, f=3,...)
-! func_g    : the name of basis functions
-! guess     : type of initail guess
-!
-      use modparam, only : mxprim, mxshell, mxatom
-      implicit none
-      integer :: nshell_g, nao_g, nprim_g, nmo_g
-      integer :: locprim_g(mxshell+1), locbf_g(mxshell+1), locatom_g(mxshell)
-      integer :: mprim_g(mxshell), mbf_g(mxshell), mtype_g(mxshell)
-      integer :: nshell_gcore, nao_gcore
-      integer :: locprim_gcore(mxshell+1), locbf_gcore(mxshell+1), locatom_gcore(mxshell)
-      integer :: mprim_gcore(mxshell), mbf_gcore(mxshell), mtype_gcore(mxshell)
-      real(8) :: ex_g(mxprim), coeff_g(mxprim), coord_g(3,mxatom)
-      real(8) :: ex_gcore(mxprim), coeff_gcore(mxprim)
-      logical :: spher_g
-end
-
-
 !----------------
   module modecp
 !----------------
