@@ -27,20 +27,20 @@
       type(typecomp),intent(inout) :: datacomp
       integer :: ii, llen, intarray(16), info
       integer :: iprint, maxiter, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
-      integer :: idftex, idftcor, nrad, nleb, ncore, nvfz, maxmp2diis, maxmp2iter, nopt
+      integer :: nrad, nleb, ncore, nvfz, maxmp2diis, maxmp2iter, nopt
       integer :: multi
       real(8) :: realarray(23)
       real(8) :: threshover, threshatom, threshdiis, cutint2, threshsoscf
       real(8) :: threshqc, threshweight,threshrho, threshdfock, threshdftao, threshmp2cphf
-      real(8) :: dconv, hfexchange, bqrad(9), optconv
+      real(8) :: dconv, bqrad(9), optconv
       real(8) :: charge
       character(len=254) :: line
       character(len=16) :: chararray(9)
       character(len=64) :: check
-      character(len=16) :: method, runtype, scftype, memory, version, guess, precision, scfconv
+      character(len=16) :: method, runtype, scftype, memory, guess, precision, scfconv
       character(len=16) :: basis, ecp, mem=''
       logical :: logarray(5)
-      logical :: bohr, octupole, flagecp, fdiff, extrap, cartesian
+      logical :: bohr, octupole, flagecp, cartesian
       logical :: spher
       namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp
       namelist /control/ precision, cutint2, spher, guess, iprint, bohr, check, threshover, &
