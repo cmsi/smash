@@ -942,7 +942,7 @@ end
           endif
           if(mlcount+databasis%mbf(ish)*databasis%mbf(ksh) > mlsize) then
             call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,numi,jcount1, &
-&                            mlshell,mlsize,cutint2,nproc,myrank,datamol,databasis)
+&                            mlshell,mlsize,cutint2,nproc,myrank,datajob,datamol,databasis)
             call transmoint2m(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,databasis%nao,idis, &
 &                             numij,ijindex,nproc,myrank)
             mlstart= mlstart+mlcount
@@ -1204,7 +1204,7 @@ end
 
 
 !--------------------------------------------------------------------------------------
-  subroutine mp2int_sort(recvint,trint4,icycle,numij,idis,ireq,nproc,myrank,mpi_comm,databasis)
+  subroutine mp2int_sort(recvint,trint4,icycle,numij,idis,ireq,nproc,myrank,databasis)
 !--------------------------------------------------------------------------------------
 !
 ! MPI_Waitall and sorting of receieved second-transformed integrals
@@ -1212,7 +1212,7 @@ end
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
-      integer,intent(in) :: icycle, nproc, myrank, mpi_comm, numij
+      integer,intent(in) :: icycle, nproc, myrank, numij
       integer,intent(in) :: idis(0:nproc-1,4), ireq(2*nproc)
       integer :: iproc, ijstart, myij, ish, ksh, nbfi, nbfk
       integer :: locbfi, locbfk, ii, kk, ik, num, jcount
