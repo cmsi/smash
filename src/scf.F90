@@ -1024,7 +1024,8 @@ end
       do iatom= 1,natom
         rad(iatom)= datamol%atomrad(datamol%numatomic(iatom))*tobohr
       enddo
-      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2,nrad,nleb,datamol%natom,datacomp%nproc1,datacomp%myrank1)
+      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2,nrad,nleb, &
+&                         datamol%natom,datacomp%nproc1,datacomp%myrank1)
 !
 ! Calculate initial density matrix
 !
@@ -2149,7 +2150,8 @@ end
       do iatom= 1,natom
         rad(iatom)= datamol%atomrad(datamol%numatomic(iatom))*tobohr
       enddo
-      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2,nrad,nleb,datamol%natom,datacomp%nproc1,datacomp%myrank1)
+      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2,nrad,nleb, &
+&                         datamol%natom,datacomp%nproc1,datacomp%myrank1)
 !
 ! Calculate initial density matrix
 !
@@ -2227,7 +2229,9 @@ end
 !
         call formufockexcor(fockda,fockdb,focka,edft,totalelec,cmoa,cmob,atomvec,&
 &                           radpt,angpt,rad,ptweight,vao,vmoa,vmob,xyzpt,rsqrd, &
-&                           work,work(datamol%neleca*nao+1),work2,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis)
+&                           work,work(datamol%neleca*nao+1),work2, &
+&                           datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                           datajob,datamol,databasis)
 !
 ! Calculate two-electron integrals
 !

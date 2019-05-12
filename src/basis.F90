@@ -12,9 +12,9 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!--------------------------------
+!----------------------------------------------------------
   subroutine setbasis(datajob,datamol,databasis,datacomp)
-!--------------------------------
+!----------------------------------------------------------
 !
 ! Driver of setting basis functions
 !
@@ -97,7 +97,8 @@
             enddo
           case('GEN')
             call readbasis(atombasis,locgenshell,ngenshell,datagenbasis,datacomp)
-            call setgenbasis(atombasis,locgenshell,ngenshell,ishell,datajob%flagecp,datamol,databasis,datagenbasis)
+            call setgenbasis(atombasis,locgenshell,ngenshell,ishell,datajob%flagecp, &
+&                            datamol,databasis,datagenbasis)
           case('CHECK')
             call setcheckbasis(databasis)
             ishell= databasis%nshell
@@ -131,9 +132,9 @@
 end
 
 
-!---------------------
+!--------------------------------
   subroutine bsnrmlz(databasis)
-!---------------------
+!--------------------------------
 !
 ! Normalize basis functions
 !
@@ -201,9 +202,10 @@ end
 end
 
 
-!---------------------------------
-  subroutine setgenbasis(atombasis,locgenshell,ngenshell,ishell,flagecp,datamol,databasis,datagenbasis)
-!---------------------------------
+!---------------------------------------------------------------------------
+  subroutine setgenbasis(atombasis,locgenshell,ngenshell,ishell,flagecp, &
+&                        datamol,databasis,datagenbasis)
+!---------------------------------------------------------------------------
 !
 ! Driver of setting basis functions from input file
 ! This routine must be called only from master node.
@@ -348,9 +350,9 @@ end
 end
 
 
-!-----------------------------------
+!-------------------------------------------------------
   subroutine bssto3g(iatom,ishell,numatomic,databasis)
-!-----------------------------------
+!-------------------------------------------------------
 !
 ! Set basis functions of STO-3G
 !
@@ -968,9 +970,9 @@ end
 end
 
 
-!-------------------------------
+!------------------------------------------------------------------------------------
   subroutine setbasis_g(nao_v,nshell_v,itype,datajob,datamol,databasis,dataguessbs)
-!-------------------------------
+!------------------------------------------------------------------------------------
 !
 ! Driver of setting basis functions for guess calculations
 !
@@ -1044,9 +1046,9 @@ end
 end
 
 
-!-------------------------------------------
+!-----------------------------------------------------------------------------------
   subroutine bssto3g_g(iatom,ishell,itype,flagecp,numatomic,databasis,dataguessbs)
-!-------------------------------------------
+!-----------------------------------------------------------------------------------
 !
 ! Set basis functions of STO-3G for guess calculation
 ! itype = 1 : valence functions
@@ -1956,9 +1958,9 @@ end
 end
 
 
-!-----------------------------------
+!------------------------------------------------------
   subroutine bs321g(iatom,ishell,numatomic,databasis)
-!-----------------------------------
+!------------------------------------------------------
 !
 ! Set basis functions of 3-21G
 !
@@ -2960,9 +2962,9 @@ end
 end
 
 
-!-----------------------------------
+!------------------------------------------------------
   subroutine bs631g(iatom,ishell,numatomic,databasis)
-!-----------------------------------
+!------------------------------------------------------
 !
 ! Set basis functions of 6-31G
 !
@@ -3588,9 +3590,9 @@ end
 end
 
 
-!-----------------------------------
+!-------------------------------------------------------
   subroutine bs631gd(iatom,ishell,numatomic,databasis)
-!-----------------------------------
+!-------------------------------------------------------
 !
 ! Set basis functions of 6-31G(d)
 !
@@ -3609,9 +3611,9 @@ end
 end
 
 
-!------------------------------------
+!--------------------------------------------------------
   subroutine bs631gdp(iatom,ishell,numatomic,databasis)
-!------------------------------------
+!--------------------------------------------------------
 !
 ! Set basis functions of 6-31G(d,p)
 !
@@ -3635,9 +3637,9 @@ end
 end
 
 
-!-----------------------------------
+!-------------------------------------------------------
   subroutine bs631gs(iatom,ishell,numatomic,databasis)
-!-----------------------------------
+!-------------------------------------------------------
 !
 ! Set basis polarization function of 6-31G(d)
 !
@@ -3708,9 +3710,9 @@ end
 end
 
 
-!------------------------------------
+!--------------------------------------------------------
   subroutine bs631gss(iatom,ishell,numatomic,databasis)
-!------------------------------------
+!--------------------------------------------------------
 !
 ! Set basis polarization function of Hydrogen 6-31G(d,p)
 !
@@ -3752,9 +3754,9 @@ end
 end
 
 
-!-----------------------------------
+!-------------------------------------------------------
   subroutine bs6311g(iatom,ishell,numatomic,databasis)
-!-----------------------------------
+!-------------------------------------------------------
 !
 ! Set basis functions of 6-311G
 !
@@ -4485,9 +4487,9 @@ end
 end
 
 
-!-----------------------------------
+!--------------------------------------------------------
   subroutine bs6311gd(iatom,ishell,numatomic,databasis)
-!-----------------------------------
+!--------------------------------------------------------
 !
 ! Set basis functions of 6-311G(d)
 !
@@ -4506,9 +4508,9 @@ end
 end
 
 
-!------------------------------------
+!---------------------------------------------------------
   subroutine bs6311gdp(iatom,ishell,numatomic,databasis)
-!------------------------------------
+!---------------------------------------------------------
 !
 ! Set basis functions of 6-311G(d,p)
 !
@@ -4532,9 +4534,9 @@ end
 end
 
 
-!-----------------------------------
+!--------------------------------------------------------
   subroutine bs6311gs(iatom,ishell,numatomic,databasis)
-!-----------------------------------
+!--------------------------------------------------------
 !
 ! Set basis polarization function of 6-311G(d)
 !
@@ -4592,9 +4594,9 @@ end
 end
 
 
-!------------------------------------
+!---------------------------------------------------------
   subroutine bs6311gss(iatom,ishell,numatomic,databasis)
-!------------------------------------
+!---------------------------------------------------------
 !
 ! Set basis polarization function of Hydrogen 6-311G(d,p)
 !
@@ -4636,9 +4638,9 @@ end
 end
 
 
-!-----------------------------------
+!--------------------------------------------------------
   subroutine bsccpvdz(iatom,ishell,numatomic,databasis)
-!-----------------------------------
+!--------------------------------------------------------
 !
 ! Set basis functions of cc-pVDZ
 !
@@ -6057,9 +6059,9 @@ end
 end
 
 
-!------------------------------------
+!--------------------------------------------------------
   subroutine bsccpvtz(iatom,ishell,numatomic,databasis)
-!------------------------------------
+!--------------------------------------------------------
 !
 ! Set basis functions of cc-pVTZ
 !
@@ -7762,9 +7764,9 @@ end
 end
 
 
-!------------------------------------
+!--------------------------------------------------------
   subroutine bsccpvqz(iatom,ishell,numatomic,databasis)
-!------------------------------------
+!--------------------------------------------------------
 !
 ! Set basis functions of cc-pVQZ
 !
@@ -8350,9 +8352,9 @@ end
 end
 
 
-!----------------------------------
+!------------------------------------------------------
   subroutine bsd95v(iatom,ishell,numatomic,databasis)
-!----------------------------------
+!------------------------------------------------------
 !
 ! Set basis functions of D95V
 !
@@ -8538,9 +8540,9 @@ end
 end
 
 
-!-------------------------------------
+!---------------------------------------------------------
   subroutine bslanl2dz(iatom,ishell,numatomic,databasis)
-!-------------------------------------
+!---------------------------------------------------------
 !
 ! Set basis functions of LanL2DZ
 !
@@ -9600,9 +9602,9 @@ end
 end
 
 
-!----------------------------------------------
+!--------------------------------------------------------------------------------------
   subroutine bshuzmini6_g(iatom,ishell,itype,flagecp,numatomic,databasis,dataguessbs)
-!----------------------------------------------
+!--------------------------------------------------------------------------------------
 !
 ! Set 6th row basis functions of minimal Huzinaga set for guess calculation
 ! itype = 1 : valence functions

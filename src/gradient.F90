@@ -273,7 +273,8 @@ end
       do iatom= 1,natom
         rad(iatom)= datamol%atomrad(datamol%numatomic(iatom))*tobohr
       enddo
-      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,dweight,nrad,nleb,datamol%natom,nproc1,myrank1)
+      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,dweight,nrad,nleb, &
+&                         datamol%natom,nproc1,myrank1)
 !
 ! Calculate derivatives of two-electron integrals
 !
@@ -398,7 +399,8 @@ end
       do iatom= 1,natom
         rad(iatom)= datamol%atomrad(datamol%numatomic(iatom))*tobohr
       enddo
-      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,dweight,nrad,nleb,datamol%natom,nproc1,myrank1)
+      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,dweight,nrad,nleb, &
+&                         datamol%natom,nproc1,myrank1)
 !
 ! Calculate derivatives of two-electron integrals
 !
@@ -412,7 +414,8 @@ end
 !
       call graduexcor(egradtmp,egrad,cmoa,cmob,fulldmtrx1,fulldmtrx2,atomvec,surface,radpt, &
 &                     angpt,rad,ptweight,xyzpt,rsqrd,rr,uvec,vao,vmoa,vmob,dweight, &
-&                     dpa,pa,work,work(datamol%neleca*nao+1),datajob%idftex,datajob%idftcor,nproc1,myrank1,datajob,datamol,databasis,datacomp)
+&                     dpa,pa,work,work(datamol%neleca*nao+1),datajob%idftex,datajob%idftcor, &
+&                     nproc1,myrank1,datajob,datamol,databasis,datacomp)
 !
       call para_allreducer(egradtmp(1,1),egrad(1,1),3*natom,mpi_comm1)
 !
