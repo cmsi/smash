@@ -62,7 +62,7 @@ end
 !
       use modtype, only : typemol
       implicit none
-      type(typemol),intent(inout) :: datamol
+      type(typemol),intent(in) :: datamol
       integer,intent(in) :: nproc, myrank
       integer :: iatom, jatom, i
       real(8),intent(inout) :: egrad(3,datamol%natom)
