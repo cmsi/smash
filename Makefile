@@ -1,6 +1,6 @@
 F90 = mpif90
 LIB = -mkl=parallel
-OPT = -openmp -i8 -xHOST
+OPT = -qopenmp -i8 -xHOST
 SRC =   basis.F90 geom.F90 guess.F90 fileio.F90 int1.F90 machine.F90 main.F90 math.F90 \
 	memory.F90 scf.F90 scflib.F90 int2.F90 int2elec.F90 int2sp.F90 int2spd1.F90 \
 	int2spd2.F90 int2spd3.F90 int2spd4.F90 gradient.F90 rysquad.F90 \

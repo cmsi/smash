@@ -1,6 +1,6 @@
 F90 = ifort -DnoMPI
 LIB = -mkl=parallel
-OPT = -openmp -i8 -xHOST
+OPT = -qopenmp -i8 -xHOST
 #gfortran  F90 = gfortran -DnoMPI
 #gfortran  LIB = -llapack -lblas    # high performance libraries are recommended
 #gfortran  OPT = -O3 -fopenmp -fdefault-integer-8
