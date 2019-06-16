@@ -1,4 +1,4 @@
-! Copyright 2014-2017  Kazuya Ishimura
+! Copyright 2014-2019  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ end
   module modecp
 !----------------
 !
-! izcore    : number of core electrons per atom for ECP calculation
 !
       implicit none
       integer,parameter :: nterm1=625291, nterm2=26841
@@ -116,9 +115,9 @@ end
 end
 
 
-!----------------------
+!-----------------
   module modtype
-!----------------------
+!-----------------
 !
       use modparam, only : mxprim, mxshell, mxatom
       implicit none
@@ -146,6 +145,7 @@ end
 ! mtype   : Type of a basis shell (s=0, p=1, d=2, f=3,...)
 ! basis   : Name of basis functions
 ! atombasis : Type of basis set for each atom
+! izcore    : number of core electrons per atom for ECP calculation
       type typebasis
         integer :: nshell, nao, nprim
         integer :: locprim(mxshell+1), locbf(mxshell+1), locatom(mxshell)
@@ -162,7 +162,7 @@ end
 !
 ! iprint : print option
 !    = 0 : minimal output
-!    = 1 : standard output
+!    = 1 : normal output
 !    = 2 : verbose output
 ! threshex    : threshold for overlap of two basis functions
 ! threshover  : threshold for linear depencency of basis functions

@@ -1,4 +1,4 @@
-! Copyright 2014-2017  Kazuya Ishimura
+! Copyright 2014-2019  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,9 +12,9 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!---------------------------
+!-------------------------------------
   subroutine tstamp(indext,datacomp)
-!---------------------------
+!-------------------------------------
 !
 ! Print CPU and elapsed times
 ! indext = 0 : at the beginning of the program
@@ -77,9 +77,9 @@
 end
 
 
-!--------------------------
+!------------------------------------
   subroutine parallelinfo(datacomp)
-!--------------------------
+!------------------------------------
 !
 ! Write hostname of master node and numbers of processes and threads
 !
@@ -109,9 +109,9 @@ end
 end
  
 
-!-------------------------
+!-----------------------------------
   subroutine opendatfile(datacomp)
-!-------------------------
+!-----------------------------------
 !
 ! Open temporary file
 !
@@ -133,9 +133,9 @@ end
 end
 
 
-!---------------------------
+!-------------------------------------------
   subroutine opencheckfile(check,datacomp)
-!---------------------------
+!-------------------------------------------
 !
 ! Open checkpoint file
 !

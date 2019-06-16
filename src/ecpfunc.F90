@@ -1,4 +1,4 @@
-! Copyright 2014-2017  Kazuya Ishimura
+! Copyright 2014-2019  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,9 +12,9 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!------------------------------
+!------------------------------------------------
   subroutine setecp(datamol,databasis,datacomp)
-!------------------------------
+!------------------------------------------------
 !
 ! Driver of setting ecp functions
 !
@@ -42,7 +42,8 @@
           enddo
         elseif(databasis%ecp == 'GEN') then
           call readecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,datagenbasis,datacomp)
-          call setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim,datamol,databasis,datagenbasis)
+          call setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim, &
+&                        datamol,databasis,datagenbasis)
         else
           write(*,'(" Error! This program does not support ECP function,",a10,".")')databasis%ecp
           call iabort
@@ -66,9 +67,10 @@
 end
 
 
-!------------------------------
-  subroutine setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim,datamol,databasis,datagenbasis)
-!------------------------------
+!-------------------------------------------------------------------------------------
+  subroutine setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim, &
+&                      datamol,databasis,datagenbasis)
+!-------------------------------------------------------------------------------------
 !
 ! Driver of setting ECP functions from input file
 ! This routine should be called only from master node.
@@ -120,9 +122,9 @@ end
 end
 
 
-!-----------------------------------
+!-------------------------------------------------------
   subroutine ecplanl2(iatom,iprim,numatomic,databasis)
-!-----------------------------------
+!-------------------------------------------------------
 !
 ! Set Hay-Wadt ECP functions
 !

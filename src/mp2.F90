@@ -1,4 +1,4 @@
-! Copyright 2014-2017  Kazuya Ishimura
+! Copyright 2014-2019  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,9 +12,10 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!---------------------------------------------------------------
-  subroutine calcrmp2(cmo,energymo,xint,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
-!---------------------------------------------------------------
+!-----------------------------------------------------------------
+  subroutine calcrmp2(cmo,energymo,xint,nproc,myrank,mpi_comm, &
+&                     datajob,datamol,databasis,datacomp)
+!-----------------------------------------------------------------
 !
 ! Driver of restricted MP2 calculation
 !
@@ -146,9 +147,9 @@
 end
 
 
-!-----------------------
+!----------------------------------------
   function ncorecalc(datamol,databasis)
-!-----------------------
+!----------------------------------------
 !
 ! Calculate the number of core MOs
 !
@@ -223,7 +224,8 @@ end
 !
       if(datacomp%master) write(*,'("    Start first and second integral transformations")')
       call mp2trans12(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
-&                     mlsize,noac,maxdim,datajob%cutint2,idis,nproc,myrank,datajob,datamol,databasis)
+&                     mlsize,noac,maxdim,datajob%cutint2,idis,nproc,myrank, &
+&                     datajob,datamol,databasis)
 !
       deallocate(cmowrk,trint1a,trint1b)
       call memunset(nao*noac+noac*maxdim**3+mlsize*noac*nao,datacomp)
@@ -234,8 +236,8 @@ end
 ! Third and fourth integral transformations and MP2 energy calculation
 !
       if(datacomp%master) write(*,'("    Start third and fourth integral transformations")')
-      call mp2trans34(cmo(1,datamol%neleca+1),energymo,trint2,trint3,trint4,emp2st,noac,nvac,ncore, &
-&                     idis,nproc,myrank,mpi_comm,datamol,databasis)
+      call mp2trans34(cmo(1,datamol%neleca+1),energymo,trint2,trint3,trint4,emp2st,noac,nvac, &
+&                     ncore,idis,nproc,myrank,mpi_comm,datamol,databasis)
 !
       deallocate(trint3,trint4)
       call memunset(2*nao2,datacomp)
@@ -246,10 +248,10 @@ end
 end
 
 
-!---------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------------
   subroutine mp2multi(emp2st,cmo,energymo,xint,noac,nvac,ncore,maxsize,maxdim,idis, &
 &                     npass,numocc3,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
-!---------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------------
 !
 ! Driver of multiple pass MP2 energy calculation
 !
@@ -342,7 +344,8 @@ end
         if(datacomp%master) &
 &         write(*,'("    Start first and second integral transformations of Pass",i5)')ipass
         call mp2trans12m(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
-&                        mlsize,noac,maxdim,datajob%cutint2,idis,numij,ijindex(1,ipass),nproc,myrank,datajob,datamol,databasis)
+&                        mlsize,noac,maxdim,datajob%cutint2,idis,numij,ijindex(1,ipass), &
+&                        nproc,myrank,datajob,datamol,databasis)
 !
         deallocate(cmowrk,trint1a,trint1b)
         call memunset(nao*noac+noac*maxdim**3+mlsize*noac*nao,datacomp)
@@ -354,8 +357,8 @@ end
 !
         if(datacomp%master) &
 &         write(*,'("    Start third and fourth integral transformations of Pass",i5)')ipass
-        call mp2trans34m(cmo(1,datamol%neleca+1),energymo,trint2,trint3,trint4,emp2st,nvac,ncore, &
-&                        idis,numij,ijindex(1,ipass),nproc,myrank,mpi_comm,datamol,databasis)
+        call mp2trans34m(cmo(1,datamol%neleca+1),energymo,trint2,trint3,trint4,emp2st,nvac, &
+&                        ncore,idis,numij,ijindex(1,ipass),nproc,myrank,mpi_comm,datamol,databasis)
 !
         deallocate(trint3,trint4)
         call memunset(2*nao2,datacomp)
@@ -367,10 +370,11 @@ end
 end
 
 
-!---------------------------------------------------------------------
+!------------------------------------------------------------------------
   subroutine mp2trans12(cmoocc,cmowrk,trint1a,trint1b,trint2,xint, &
-&                       mlsize,noac,maxdim,cutint2,idis,nproc,myrank,datajob,datamol,databasis)
-!---------------------------------------------------------------------
+&                       mlsize,noac,maxdim,cutint2,idis,nproc,myrank, &
+&                       datajob,datamol,databasis)
+!------------------------------------------------------------------------
 !
 ! Driver of AO intengral generation and first and second integral transformations
 ! for single pass
@@ -424,7 +428,8 @@ end
 !
 ! Second integral transformation
 !
-          call transmoint2(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,databasis%nao,idis,nproc,myrank)
+          call transmoint2(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,databasis%nao, &
+&                          idis,nproc,myrank)
         else
           if(jcount == myrank) then
             ksh= ksh+2*nproc-1
@@ -444,7 +449,8 @@ end
           if(mlcount+databasis%mbf(ish)*databasis%mbf(ksh) > mlsize) then
             call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,noac,jcount1, &
 &                            mlshell,mlsize,cutint2,nproc,myrank,datajob,datamol,databasis)
-            call transmoint2(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,databasis%nao,idis,nproc,myrank)
+            call transmoint2(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,databasis%nao, &
+&                            idis,nproc,myrank)
             mlstart= mlstart+mlcount
             mlshell= 0
             mlcount= 0
@@ -462,10 +468,10 @@ end
 end
 
 
-!---------------------------------------------------------------------------------------
-  subroutine mp2trans34(cmovir,energymo,trint2,trint3,trint4,emp2st,noac,nvac,ncore, &
-&                       idis,nproc,myrank,mpi_comm,datamol,databasis)
-!---------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------
+  subroutine mp2trans34(cmovir,energymo,trint2,trint3,trint4,emp2st,noac,nvac, &
+&                       ncore,idis,nproc,myrank,mpi_comm,datamol,databasis)
+!---------------------------------------------------------------------------------
 !
 ! Driver of third and fourth integral transformations and MP2 energy calculation
 !
@@ -518,16 +524,17 @@ end
 !
 ! MP2 energy calculation
 !
-        call calcrmp2energy(trint4,energymo,emp2st,noac,nvac,ncore,datamol%neleca,datamol%nmo,icycle,nproc,myrank)
+        call calcrmp2energy(trint4,energymo,emp2st,noac,nvac,ncore,datamol%neleca,datamol%nmo, &
+&                           icycle,nproc,myrank)
       enddo
       return
 end
 
 
-!-----------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
   subroutine transmoint1(trint1a,trint1b,cmowrk,xint,ish,ksh,maxdim,numi,jcount, &
 &                        mlshell,mlsize,cutint2,nproc,myrank,datajob,datamol,databasis)
-!-----------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
 !
 ! AO intengral generation and first-quarter integral transformation
 !    (mn|ls) -> (mi|ls)
@@ -659,9 +666,10 @@ end
 !
 
 
-!----------------------------------------------------------------------------------------------
-  subroutine transmoint2(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,nao,idis,nproc,myrank)
-!----------------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------
+  subroutine transmoint2(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,nao, &
+&                        idis,nproc,myrank)
+!----------------------------------------------------------------------------------
 !
 ! Second-quarter integral transformation
 !    (mi|ls) -> (mi|lj)
@@ -797,9 +805,10 @@ end
 end
 
 
-!----------------------------------------------------------------------------------------
-  subroutine calcrmp2energy(trint4,energymo,emp2st,noac,nvac,ncore,neleca,nmo,icycle,nproc,myrank)
-!----------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------
+  subroutine calcrmp2energy(trint4,energymo,emp2st,noac,nvac,ncore,neleca,nmo, &
+&                           icycle,nproc,myrank)
+!---------------------------------------------------------------------------------
 !
 ! Calculate MP2 energy
 !
@@ -854,10 +863,11 @@ end
 end
 
 
-!-----------------------------------------------------------------------------
+!--------------------------------------------------------------------------
   subroutine mp2trans12m(cmoocc,cmowrk,trint1a,trint1b,trint2,xint, &
-&                        mlsize,noac,maxdim,cutint2,idis,numij,ijindex,nproc,myrank,datajob,datamol,databasis)
-!-----------------------------------------------------------------------------
+&                        mlsize,noac,maxdim,cutint2,idis,numij,ijindex, &
+&                        nproc,myrank,datajob,datamol,databasis)
+!--------------------------------------------------------------------------
 !
 ! Driver of AO intengral generation and first and second integral transformations
 ! for multiple pass
@@ -922,8 +932,8 @@ end
 !
 ! Second integral transformation
 !
-          call transmoint2m(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,databasis%nao,idis, &
-&                           numij,ijindex,nproc,myrank)
+          call transmoint2m(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,databasis%nao, &
+&                           idis,numij,ijindex,nproc,myrank)
         else
           if(jcount == myrank) then
             ksh= ksh+2*nproc-1
@@ -943,8 +953,8 @@ end
           if(mlcount+databasis%mbf(ish)*databasis%mbf(ksh) > mlsize) then
             call transmoint1(trint1a,trint1b,cmowrk,xint,ish1,ksh1,maxdim,numi,jcount1, &
 &                            mlshell,mlsize,cutint2,nproc,myrank,datajob,datamol,databasis)
-            call transmoint2m(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,databasis%nao,idis, &
-&                             numij,ijindex,nproc,myrank)
+            call transmoint2m(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,databasis%nao, &
+&                             idis,numij,ijindex,nproc,myrank)
             mlstart= mlstart+mlcount
             mlshell= 0
             mlcount= 0
@@ -962,10 +972,10 @@ end
 end
 
 
-!---------------------------------------------------------------------------------------
-  subroutine mp2trans34m(cmovir,energymo,trint2,trint3,trint4,emp2st,nvac,ncore, &
-&                        idis,numij,ijindex,nproc,myrank,mpi_comm,datamol,databasis)
-!---------------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------------------
+  subroutine mp2trans34m(cmovir,energymo,trint2,trint3,trint4,emp2st,nvac, &
+&                        ncore,idis,numij,ijindex,nproc,myrank,mpi_comm,datamol,databasis)
+!-------------------------------------------------------------------------------------------
 !
 ! Driver of third and fourth integral transformations and MP2 energy calculation
 !
@@ -1019,16 +1029,17 @@ end
 !
 ! MP2 energy calculation
 !
-        call calcrmp2energym(trint4,energymo,emp2st,nvac,ncore,datamol%neleca,datamol%nmo,icycle,ijindex,nproc,myrank)
+        call calcrmp2energym(trint4,energymo,emp2st,nvac,ncore,datamol%neleca,datamol%nmo, &
+&                            icycle,ijindex,nproc,myrank)
       enddo
       return
 end
 
 
-!------------------------------------------------------------------------------------
-  subroutine transmoint2m(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,nao,idis, &
-&                         numij,ijindex,nproc,myrank)
-!------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------
+  subroutine transmoint2m(trint2,trint1b,cmoocc,noac,mlcount,mlstart,mlsize,nao, &
+&                         idis,numij,ijindex,nproc,myrank)
+!-----------------------------------------------------------------------------------
 !
 ! Second-quarter integral transformation for multiple pass
 !    (mi|ls) -> (mi|lj)
@@ -1073,9 +1084,10 @@ end
 end
 
 
-!--------------------------------------------------------------------------------------------
-  subroutine calcrmp2energym(trint4,energymo,emp2st,nvac,ncore,neleca,nmo,icycle,ijindex,nproc,myrank)
-!--------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------
+  subroutine calcrmp2energym(trint4,energymo,emp2st,nvac,ncore,neleca,nmo, &
+&                            icycle,ijindex,nproc,myrank)
+!-----------------------------------------------------------------------------
 !
 ! Calculate MP2 energy
 !
@@ -1131,10 +1143,10 @@ end
 end
 
 
-!------------------------------------------------------------------
+!-----------------------------------------------------------------------
   subroutine mp2int_isendrecv(trint2,recvint,icycle,irecv,numij,nao, &
 &                             idis,ireq,nproc,myrank,mpi_comm)
-!------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
 ! Non-blocking communications of second transformed integrals (mi|lj)
 !
@@ -1203,9 +1215,9 @@ end
 end
 
 
-!--------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------
   subroutine mp2int_sort(recvint,trint4,icycle,numij,idis,ireq,nproc,myrank,databasis)
-!--------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------
 !
 ! MPI_Waitall and sorting of receieved second-transformed integrals
 !

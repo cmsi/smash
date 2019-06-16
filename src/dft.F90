@@ -1,4 +1,4 @@
-! Copyright 2014-2017  Kazuya Ishimura
+! Copyright 2014-2019  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -15,7 +15,8 @@
 !---------------------------------------------------------------------------------------
   subroutine formrfockexcor(fockdsum,fockd,energy,totalelec,cmo,atomvec,radpt,angpt, &
 &                           rad,ptweight,vao,vmo,xyzpt,rsqrd,transcmo,work, &
-&                           nproc,myrank,mpi_comm,datajob,datamol,databasis)
+&                           nproc,myrank,mpi_comm, &
+&                           datajob,datamol,databasis)
 !---------------------------------------------------------------------------------------
 !
 ! Driver of DFT Fock matrix formation from exchange-correlation functionals
@@ -2377,8 +2378,8 @@ end
 
 !-------------------------------------------------------------------------------------------------
   subroutine gradrexcor(egrad,edftgrad,cmo,fulldmtrx,atomvec,surface,radpt,angpt,rad,ptweight, &
-&                       xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,transcmo,idftex,idftcor, &
-&                       nproc,myrank,datajob,datamol,databasis,datacomp)
+&                       xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,transcmo,idftex, &
+&                       idftcor,nproc,myrank,datajob,datamol,databasis,datacomp)
 !-------------------------------------------------------------------------------------------------
 !
 ! Driver of derivatives for closed-shell exchange-correlation terms

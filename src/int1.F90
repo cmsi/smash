@@ -1,4 +1,4 @@
-! Copyright 2014-2017  Kazuya Ishimura
+! Copyright 2014-2019  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,9 +12,10 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!--------------------------------------------------------------------------
-  subroutine oneei(hstmat1,hstmat2,hstmat3,hstmat4,nproc,myrank,mpi_comm,datajob,datamol,databasis)
-!--------------------------------------------------------------------------
+!----------------------------------------------------------------------------
+  subroutine oneei(hstmat1,hstmat2,hstmat3,hstmat4,nproc,myrank,mpi_comm, &
+&                  datajob,datamol,databasis)
+!----------------------------------------------------------------------------
 !
 ! Driver of one-electron and overlap integrals
 !
@@ -49,7 +50,8 @@
       do ish= databasis%nshell-myrank,1,-nproc
 !$OMP do
         do jsh= 1,ish
-          call calcintst1c(hstmat2,hstmat3,hstmat4,ish,jsh,maxdim,datajob%threshex,datamol,databasis)
+          call calcintst1c(hstmat2,hstmat3,hstmat4,ish,jsh,maxdim,datajob%threshex, &
+&                          datamol,databasis)
         enddo
 !$OMP enddo
       enddo
@@ -67,9 +69,10 @@
 end
 
 
-!------------------------------------------------------
-  subroutine calcintst1c(hmat,smat,tmat,ish,jsh,len1,threshex,datamol,databasis)
-!------------------------------------------------------
+!-----------------------------------------------------------------
+  subroutine calcintst1c(hmat,smat,tmat,ish,jsh,len1,threshex, &
+&                        datamol,databasis)
+!-----------------------------------------------------------------
 !
 ! Driver of overlap, kinetic, and 1-electron Coulomb integrals (j|Z/r|i)
 !
@@ -804,9 +807,9 @@ end
 end
 
 
-!-----------------------------------------------------------------------
+!---------------------------------------------------------------------
   subroutine int1css(cint1,exfac,pijxyz,nij,coord,znuc,natom,mxprsh)
-!-----------------------------------------------------------------------
+!---------------------------------------------------------------------
 !
 ! Calculate 1-electron Coulomb integrals of (s|Z/r|s)
 !
@@ -865,9 +868,9 @@ end
 end
 
 
-!---------------------------------------------------------------------------
+!-------------------------------------------------------------------------
   subroutine int1cps(cint1,exfac,pijxyz,xyz,nij,coord,znuc,natom,mxprsh)
-!---------------------------------------------------------------------------
+!-------------------------------------------------------------------------
 !
 ! Calculate 1-electron Coulomb integrals of (p|Z/r|s)
 !
@@ -950,9 +953,9 @@ end
 end
 
 
-!----------------------------------------------------------------------------
+!-------------------------------------------------------------------------
   subroutine int1cpp(cint1,exfac,pijxyz,xyz,nij,coord,znuc,natom,mxprsh)
-!----------------------------------------------------------------------------
+!-------------------------------------------------------------------------
 !
 ! Calculate 1-electron Coulomb integrals of (p|Z/r|p)
 !
@@ -1065,9 +1068,9 @@ end
 end
 
 
-!---------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
   subroutine int1cds(cint1,exfac,pijxyz,xyz,nij,coord,znuc,natom,mxprsh,nbfij)
-!---------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 !
 ! Calculate 1-electron Coulomb integrals of (d|Z/r|s)
 !
@@ -1191,9 +1194,9 @@ end
 end
 
 
-!---------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
   subroutine int1cdp(cint1,exfac,pijxyz,xyz,nij,coord,znuc,natom,mxprsh,nbfij)
-!---------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 !
 ! Calculate 1-electron Coulomb integrals of (d|Z/r|p)
 !
@@ -1401,9 +1404,9 @@ end
 end
 
 
-!---------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
   subroutine int1cdd(cint1,exfac,pijxyz,xyz,nij,coord,znuc,natom,mxprsh,nbfij)
-!---------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 !
 ! Calculate 1-electron Coulomb integrals of (d|Z/r|d)
 !
@@ -1917,9 +1920,9 @@ end
 end
 
 
-!------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------------------
   subroutine calcmatdipole(dipmat,work,dipcenter,nproc,myrank,mpi_comm,datajob,datamol,databasis)
-!------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------------------
 !
 ! Driver of dipole moment matrix calculation
 !
@@ -1962,9 +1965,9 @@ end
 end
 
 
-!----------------------------------------------------------
+!-------------------------------------------------------------------------------------
   subroutine calcintdipole(dipmat,dipcenter,ish,jsh,len1,threshex,datamol,databasis)
-!----------------------------------------------------------
+!-------------------------------------------------------------------------------------
 !
 ! Driver of dipole moment integrals (j|r|i)
 !
@@ -2185,7 +2188,8 @@ end
       do ish= databasis%nshell-myrank,1,-nproc
 !$OMP do
         do jsh= 1,ish
-          call calcintoctupole(quadpmat,octpmat,work,dipcenter,ish,jsh,maxdim,datajob%threshex,datamol,databasis)
+          call calcintoctupole(quadpmat,octpmat,work,dipcenter,ish,jsh,maxdim,datajob%threshex, &
+&                              datamol,databasis)
         enddo
 !$OMP enddo
       enddo
@@ -2199,9 +2203,10 @@ end
 end
 
 
-!-----------------------------------------------------------------------------
-  subroutine calcintoctupole(dipmat,quadpmat,octpmat,dipcenter,ish,jsh,len1,threshex,datamol,databasis)
-!-----------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
+  subroutine calcintoctupole(dipmat,quadpmat,octpmat,dipcenter,ish,jsh,len1,threshex, &
+&                            datamol,databasis)
+!----------------------------------------------------------------------------------------
 !
 ! Driver of dipole (j|r|i), quadrupole (j|r^2|i), and octupole (j|r^3|i) 
 ! moment integrals

@@ -1,4 +1,4 @@
-! Copyright 2014-2017  Kazuya Ishimura
+! Copyright 2014-2019  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,9 +12,9 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!---------------------------------------------------------
+!---------------------------------------------------------------------------
   subroutine gradoneeiecp(egrad1,fulldmtrx,nproc,myrank,datamol,databasis)
-!---------------------------------------------------------
+!---------------------------------------------------------------------------
 !
 ! Calculate ECP derivative terms and add them into energy gradient matrix
 !
@@ -63,7 +63,8 @@
 !$OMP do
         do jsh= 1,databasis%nshell
           call calcdintecp(egrad1,fulldmtrx,term1ecp,term2ecp,term0ecp,xyzintecp, &
-&                          label1ecp,label2ecp,num1ecp,num2ecp,numtbasis,ish,jsh,maxdim,datamol,databasis)
+&                          label1ecp,label2ecp,num1ecp,num2ecp,numtbasis,ish,jsh,maxdim, &
+&                          datamol,databasis)
         enddo
 !$OMP enddo
       enddo
@@ -77,10 +78,11 @@
 end
 
 
-!-------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------
   subroutine calcdintecp(egrad1,fulldmtrx,term1ecp,term2ecp,term0ecp,xyzintecp, &
-&                        label1ecp,label2ecp,num1ecp,num2ecp,numtbasis,ish,jsh,len1,datamol,databasis)
-!-------------------------------------------------------------------------------------
+&                        label1ecp,label2ecp,num1ecp,num2ecp,numtbasis,ish,jsh,len1, &
+&                        datamol,databasis)
+!---------------------------------------------------------------------------------------
 !
 ! Driver of ECP derivative terms
 !
@@ -133,7 +135,8 @@ end
       real(8),parameter :: fach3=0.52291251658379721D+00 ! sqrt(35/2)/8
       real(8),parameter :: fach4=2.56173769148989959D+00 ! sqrt(105)/4
       real(8),parameter :: fach5=0.48412291827592711D+00 ! sqrt(15)/8
-      real(8),intent(in) :: fulldmtrx(databasis%nao,databasis%nao), term1ecp(nterm1), term2ecp(nterm2)
+      real(8),intent(in) :: fulldmtrx(databasis%nao,databasis%nao)
+      real(8),intent(in) :: term1ecp(nterm1), term2ecp(nterm2)
       real(8),intent(in) :: term0ecp(*), xyzintecp(25*25*25)
       real(8),intent(inout) :: egrad1(3,datamol%natom)
       real(8) :: exij(mxprsh,2), coij(mxprsh,2), coordijk(3,3), ecpint1(len1,len1)

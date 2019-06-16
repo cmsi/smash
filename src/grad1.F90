@@ -1,4 +1,4 @@
-! Copyright 2014-2017  Kazuya Ishimura
+! Copyright 2014-2019  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,9 +12,10 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!--------------------------------------------------------------------
-  subroutine gradoneei(egrad,egrad1,fulldmtrx,ewdmtrx,nproc,myrank,datajob,datamol,databasis,datacomp)
-!--------------------------------------------------------------------
+!----------------------------------------------------------------------
+  subroutine gradoneei(egrad,egrad1,fulldmtrx,ewdmtrx,nproc,myrank, &
+&                      datajob,datamol,databasis,datacomp)
+!----------------------------------------------------------------------
 !
 ! Driver of derivatives for one-electron and overlap integrals
 !
@@ -181,9 +182,9 @@ end
 end
 
 
-!-------------------------------------------------
+!----------------------------------------------------------------------------
   subroutine calcdoverlap(egrad,ewdmtrx,ish,jsh,threshex,datamol,databasis)
-!-------------------------------------------------
+!----------------------------------------------------------------------------
 !
 ! Driver of overlap derivative term
 !
@@ -328,9 +329,9 @@ end
 end
 
 
-!---------------------------------------------------
+!------------------------------------------------------------------------------
   subroutine calcdkinetic(egrad,fulldmtrx,ish,jsh,threshex,datamol,databasis)
-!---------------------------------------------------
+!------------------------------------------------------------------------------
 !
 ! Driver of kinetic derivative term
 !
@@ -512,9 +513,9 @@ end
 end
 
 
-!--------------------------------------------------------
+!-----------------------------------------------------------------------------------
   subroutine calcdcoulomb(egrad,fulldmtrx,ish,jsh,len1,threshex,datamol,databasis)
-!--------------------------------------------------------
+!-----------------------------------------------------------------------------------
 !
 ! Driver of Coulomb derivative term
 !
@@ -961,9 +962,9 @@ end
 end
 
 
-!-------------------------------------------------
+!----------------------------------------------------------------------------
   subroutine calchelfey(egrad,fulldmtrx,ish,jsh,threshex,datamol,databasis)
-!-------------------------------------------------
+!----------------------------------------------------------------------------
 !
 ! Driver of Helmann-Feynman gradient term
 !
@@ -1011,11 +1012,11 @@ end
       enddo
 !
       if((nangij(1) <= 2).and.(nangij(2) <= 2)) then
-        call int1cgmd(egrad,fulldmtrx,exij,cij,coordij,datamol%coord,datamol%znuc,datamol%natom,databasis%nao, &
-&                     nprimij,nangij,nbfij,locbfij,mxprsh,threshex,iandj)
+        call int1cgmd(egrad,fulldmtrx,exij,cij,coordij,datamol%coord,datamol%znuc,datamol%natom, &
+&                     databasis%nao,nprimij,nangij,nbfij,locbfij,mxprsh,threshex,iandj)
       elseif((nangij(1) <= 5).and.(nangij(2) <= 5)) then
-        call int1grys(egrad,fulldmtrx,exij,cij,coordij,datamol%coord,datamol%znuc,datamol%natom,databasis%nao, &
-&                     nprimij,nangij,nbfij,locbfij,mxprsh,threshex,iandj)
+        call int1grys(egrad,fulldmtrx,exij,cij,coordij,datamol%coord,datamol%znuc,datamol%natom, &
+&                     databasis%nao,nprimij,nangij,nbfij,locbfij,mxprsh,threshex,iandj)
       else
         write(*,'(" Error! This program supports up to h function in helfey")')
         call iabort
@@ -1025,10 +1026,10 @@ end
 end
 
 
-!-------------------------------------------------------------------------------
-  subroutine int1cgmd(egrad,fulldmtrx,exij,cij,coordij,coord,znuc,natom,nao, &
-&                     nprimij,nangij,nbfij,locbfij,mxprsh,threshex,iandj)
-!-------------------------------------------------------------------------------
+!------------------------------------------------------------------------------
+  subroutine int1cgmd(egrad,fulldmtrx,exij,cij,coordij,coord,znuc,natom, &
+&                     nao,nprimij,nangij,nbfij,locbfij,mxprsh,threshex,iandj)
+!------------------------------------------------------------------------------
 !
 ! Driver of first derivative of 1-electron Coulomb integrals (j|(Z/r)'|i) 
 ! using McMurchie-Davidson method
@@ -1139,10 +1140,10 @@ end
 end
 
 
-!-----------------------------------------------------------------------
+!---------------------------------------------------------------------
   subroutine int1gcss(egrad,fulldmtrx,exfac,pijxyz,nij,coord,znuc, &
 &                     natom,nao,mxprsh,locbfij,iandj)
-!-----------------------------------------------------------------------
+!---------------------------------------------------------------------
 !
 ! Calculate Helmann-Feynman gradient term <s|V'|s>
 !
@@ -1216,10 +1217,10 @@ end
 end
 
 
-!---------------------------------------------------------------------------
+!-------------------------------------------------------------------------
   subroutine int1gcps(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,znuc, &
 &                     natom,nao,mxprsh,locbfij)
-!---------------------------------------------------------------------------
+!-------------------------------------------------------------------------
 !
 ! Calculate Helmann-Feynman gradient term <p|V'|s>
 !
@@ -1312,10 +1313,10 @@ end
 end
 
 
-!---------------------------------------------------------------------------
+!-------------------------------------------------------------------------
   subroutine int1gcpp(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,znuc, &
 &                     natom,nao,mxprsh,locbfij,iandj)
-!---------------------------------------------------------------------------
+!-------------------------------------------------------------------------
 !
 ! Calculate Helmann-Feynman gradient term <p|V'|p>
 !
@@ -1476,10 +1477,10 @@ end
 end
 
 
-!---------------------------------------------------------------------------
+!-------------------------------------------------------------------------
   subroutine int1gcds(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,znuc, &
 &                     natom,nao,mxprsh,locbfij,nbfij)
-!---------------------------------------------------------------------------
+!-------------------------------------------------------------------------
 !
 ! Calculate Helmann-Feynman gradient term <d|V'|s>
 !
@@ -1633,10 +1634,10 @@ end
 end
 
 
-!---------------------------------------------------------------------------
+!-------------------------------------------------------------------------
   subroutine int1gcdp(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,znuc, &
 &                     natom,nao,mxprsh,locbfij,nbfij)
-!---------------------------------------------------------------------------
+!-------------------------------------------------------------------------
 !
 ! Calculate Helmann-Feynman gradient term <d|V'|p>
 !
@@ -1920,10 +1921,10 @@ end
 end
 
 
-!---------------------------------------------------------------------------
+!-------------------------------------------------------------------------
   subroutine int1gcdd(egrad,fulldmtrx,exfac,pijxyz,xyz,nij,coord,znuc, &
 &                     natom,nao,mxprsh,locbfij,nbfij,iandj)
-!---------------------------------------------------------------------------
+!-------------------------------------------------------------------------
 !
 ! Calculate Helmann-Feynman gradient term <d|V'|d>
 !
@@ -2601,10 +2602,10 @@ end
 end
 
 
-!--------------------------------------------------------------------------------
-  subroutine int1grys(egrad,fulldmtrx,exij,coij,coordij,coord,znuc,natom,nao, &
-&                     nprimij,nangij,nbfij,locbfij,mxprsh,threshex,iandj)
-!--------------------------------------------------------------------------------
+!------------------------------------------------------------------------------
+  subroutine int1grys(egrad,fulldmtrx,exij,coij,coordij,coord,znuc,natom, &
+&                     nao,nprimij,nangij,nbfij,locbfij,mxprsh,threshex,iandj)
+!------------------------------------------------------------------------------
 !
 ! Calculate derivative of 1-electron Coulomb integrals (j|Z/r|i) using Rys quadratures
 !

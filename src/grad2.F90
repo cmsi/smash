@@ -1,4 +1,4 @@
-! Copyright 2014-2017  Kazuya Ishimura
+! Copyright 2014-2019  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,10 +12,10 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!----------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------
   subroutine grad2eri(egrad,egrad2,fulldmtrx1,fulldmtrx2,xint,hfexchange, &
 &                     maxdim,maxgraddim,nproc,myrank,itype,datajob,datamol,databasis)
-!----------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------
 !
 ! Main driver of derivatives for two-electron integrals
 !
@@ -88,7 +88,8 @@
             call calcpdmtrx(fulldmtrx1,fulldmtrx2,pdmtrx,pdmax,hfexchange, &
 &                           ish,jsh,ksh,lsh,maxdim,itype,databasis)
             if((xijkl*pdmax).lt.datajob%cutint2) cycle
-            call calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,datajob,datamol,databasis)
+            call calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim, &
+&                          datajob,datamol,databasis)
           enddo
         enddo kloop
       enddo
@@ -101,9 +102,10 @@
 end
 
 
-!---------------------------------------------------------------------------------------
-  subroutine calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,datajob,datamol,databasis)
-!---------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+  subroutine calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim, &
+&                      datajob,datamol,databasis)
+!-----------------------------------------------------------------------------------------
 !
 ! Driver of derivatives for two-electron integrals
 !

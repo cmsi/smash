@@ -1,4 +1,4 @@
-! Copyright 2014-2017  Kazuya Ishimura
+! Copyright 2014-2019  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,9 +12,9 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
   subroutine guessmo(cmoa,cmob,overinv,h1mtrx,ortho,datajob,datamol,databasis,datacomp)
-!------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
 !
 ! In   : h1mtrx  (one-electron Hamiltonian matrx)
 !        ortho   (Orthogonalization matrix)
@@ -86,9 +86,9 @@
 end
 
 
-!------------------------------------------------------------
+!-------------------------------------------------------------------------
   subroutine huckelguess(cmo,overinv,datajob,datamol,databasis,datacomp)
-!------------------------------------------------------------
+!-------------------------------------------------------------------------
 !
 ! Calculate initial guess MOs by extended Huckel
 !
@@ -136,7 +136,8 @@ end
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
-      call calcover2(overlap,work1,coord_g,datajob%threshex,datamol,databasis,dataguessbs,datacomp)
+      call calcover2(overlap,work1,coord_g,datajob%threshex, &
+&                    datamol,databasis,dataguessbs,datacomp)
 !
 ! Project orbitals from Huckel to SCF
 !
@@ -148,9 +149,9 @@ end
 end
 
 
-!----------------------------------------------------------
+!-------------------------------------------------------------------------------------------------
   subroutine calchuckelg(hmo,eigen,coord_g,nao_v,datajob,datamol,databasis,dataguessbs,datacomp)
-!----------------------------------------------------------
+!-------------------------------------------------------------------------------------------------
 !
 ! Driver of extended Huckel calculation for guess generation
 !
@@ -175,7 +176,8 @@ end
 !
 ! Set ionization potentials
 !
-      call huckelip(eigen,1,datajob%flagecp,datamol%natom,databasis%izcore,datamol%numatomic,datacomp)
+      call huckelip(eigen,1,datajob%flagecp,datamol%natom,databasis%izcore,datamol%numatomic, &
+&                   datacomp)
 !
 ! Form extended Huckel matrix
 !
@@ -194,9 +196,9 @@ end
 end
 
 
-!--------------------------------------------------------------
+!----------------------------------------------------------------------------------------------
   subroutine calchuckelgcore(hmo,eigen,coord_g,datajob,datamol,databasis,datacorebs,datacomp)
-!--------------------------------------------------------------
+!----------------------------------------------------------------------------------------------
 !
 ! Driver of extended Huckel calculation for only core orbitals
 !
@@ -220,7 +222,8 @@ end
 !
 ! Set ionization potentials
 !
-      call huckelip(eigen,2,datajob%flagecp,datamol%natom,databasis%izcore,datamol%numatomic,datacomp)
+      call huckelip(eigen,2,datajob%flagecp,datamol%natom,databasis%izcore,datamol%numatomic, &
+&                   datacomp)
 !
 ! Form extended Huckel matrix
 !
@@ -235,9 +238,9 @@ end
 end
 
 
-!----------------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------------------
   subroutine projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,nao,nao_g,nmo_g,datacomp)
-!----------------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------------------
 !
 ! Project orbitals from Huckel to SCF
 !    C1= S11^-1 * S12 * C2 [C2t * S12t * S11^-1 * S12 * C2]^-1/2
@@ -303,9 +306,10 @@ end
 end
 
 
-!------------------------------------
-  subroutine huckelip(energy,itype,flagecp,natom,izcore,numatomic,datacomp)
-!------------------------------------
+!---------------------------------------------------------------------
+  subroutine huckelip(energy,itype,flagecp,natom,izcore,numatomic, &
+&                     datacomp)
+!---------------------------------------------------------------------
 !
 ! Set ionization potentials
 !
@@ -1026,9 +1030,9 @@ end
 end
 
 
-!---------------------------------------
+!---------------------------------------------------
   subroutine formhuckel(huckel,energy,nao_g,nao_v)
-!---------------------------------------
+!---------------------------------------------------
 !
 ! Form extended Huckel matrix
 !
@@ -1068,9 +1072,9 @@ end
 end
 
 
-!--------------------------------
+!-------------------------------------------------------------
   subroutine calcover1(overlap,coord_g,threshex,dataguessbs)
-!--------------------------------
+!-------------------------------------------------------------
 !
 ! Driver of overlap integral calculation
 ! (guess basis)x(guess basis)
@@ -1096,9 +1100,10 @@ end
 end
 
 
-!-----------------------------------------------------------
-  subroutine calcover2(overlap,work,coord_g,threshex,datamol,databasis,dataguessbs,datacomp)
-!-----------------------------------------------------------
+!---------------------------------------------------------------
+  subroutine calcover2(overlap,work,coord_g,threshex, &
+&                      datamol,databasis,dataguessbs,datacomp)
+!---------------------------------------------------------------
 !
 ! Driver of overlap integral calculation
 ! (input basis)x(guess basis)
@@ -1134,9 +1139,9 @@ end
 end
 
 
-!---------------------------------------------------------------
+!------------------------------------------------------------------------------------------
   subroutine calcover2core(overlap,work,coord_g,threshex,dataguessbs,datacorebs,datacomp)
-!---------------------------------------------------------------
+!------------------------------------------------------------------------------------------
 !
 ! Driver of overlap integral calculation for only core orbitals
 ! (input basis)x(guess basis)
@@ -1171,9 +1176,9 @@ end
 end
 
 
-!---------------------------------------
+!--------------------------------------------------------------------
   subroutine intover1(overlap,coord_g,ish,jsh,threshex,dataguessbs)
-!---------------------------------------
+!--------------------------------------------------------------------
 !
 ! Overlap integral calculation
 ! (guess basis)x(guess basis)
@@ -1236,9 +1241,9 @@ end
 end
 
 
-!---------------------------------------
+!--------------------------------------------------------------------------------------
   subroutine intover2(overlap,coord_g,ish,jsh,threshex,datamol,databasis,dataguessbs)
-!---------------------------------------
+!--------------------------------------------------------------------------------------
 !
 ! Overlap integral calculation
 ! (input basis)x(guess basis)
@@ -1299,9 +1304,9 @@ end
 end
 
 
-!-------------------------------------------
+!-----------------------------------------------------------------------------------
   subroutine intover2core(overlap,coord_g,ish,jsh,threshex,dataguessbs,datacorebs)
-!-------------------------------------------
+!-----------------------------------------------------------------------------------
 !
 ! Overlap integral calculation for only core orbitals
 ! (core-guess basis)x(guess basis)
@@ -1361,9 +1366,9 @@ end
 end
 
 
-!---------------------------------------------------------
+!----------------------------------------------------------------------
   subroutine updatemo(cmo,overinv,datajob,datamol,databasis,datacomp)
-!---------------------------------------------------------
+!----------------------------------------------------------------------
 !
 ! Read and project MOs
 !
@@ -1400,11 +1405,13 @@ end
 !
 ! Calculate overlap integrals between previous and present bases
 !
-      call calcover2(overlap(1,1),overlap(1,2),coord_g,datajob%threshex,datamol,databasis,databasis,datacomp)
+      call calcover2(overlap(1,1),overlap(1,2),coord_g,datajob%threshex, &
+&                    datamol,databasis,databasis,datacomp)
 !
 ! Project orbitals from previous basis to current basis
 !
-      call projectmo2(cmo,overinv,overlap,work1,work2,eigen,ndim,databasis%nao,databasis%nao,datacomp)
+      call projectmo2(cmo,overinv,overlap,work1,work2,eigen,ndim,databasis%nao,databasis%nao, &
+&                     datacomp)
 !
 ! Unset arrays
 !
@@ -1415,9 +1422,10 @@ end
 end
 
 
-!------------------------------------------------------------------------------------------
-  subroutine projectmo2(cmo,overinv,overlap,work1,work2,eigen,ndim,nao,nao_g,datacomp)
-!------------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------
+  subroutine projectmo2(cmo,overinv,overlap,work1,work2,eigen,ndim,nao,nao_g, &
+&                       datacomp)
+!--------------------------------------------------------------------------------
 !
 ! Project orbitals from previous basis to current basis
 !    C1= S11^-1 * S12 * C2 [C2t * S12t * S11^-1 * S12 * C2]^-1/2
@@ -1506,7 +1514,8 @@ end
 !
 ! Read checkpoint information
 !
-      call readcheckinfo(scftype_g,charge_g,flagecp_g,neleca_g,nelecb_g,nmo_g,datamol%natom,dataguessbs,datacomp)
+      call readcheckinfo(scftype_g,charge_g,flagecp_g,neleca_g,nelecb_g,nmo_g,datamol%natom, &
+&                        dataguessbs,datacomp)
 !
       nao= databasis%nao
       nao_g= dataguessbs%nao
@@ -1520,7 +1529,8 @@ end
 !
 ! Read guess basis functions and MOs from checkpoint file
 !
-      call readcheckguess(datajob%scftype,cmoa_g,cmob_g,coord_g,scftype_g,nmo_g,datamol%natom,dataguessbs,datacomp)
+      call readcheckguess(datajob%scftype,cmoa_g,cmob_g,coord_g,scftype_g,nmo_g,datamol%natom, &
+&                         dataguessbs,datacomp)
 !
 ! Orthonormalize guess basis functions
 !
@@ -1664,10 +1674,10 @@ end
       return
 end
 
-!------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------------------
   subroutine calccoremo(cmoa_g,cmob_g,coremo,overlap,work2,work3,eigen,coord_g,scftype_g,nmo_g, &
 &                       datajob,datamol,databasis,dataguessbs,datacorebs,datacomp)
-!------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------------------
 !
 ! Calculate and remove core orbitals corresponding ECP
 !
@@ -1780,9 +1790,9 @@ end
       return
 end
 
-!---------------------------------------------------------------------
+!----------------------------------------------------------------
   subroutine hcoreguess(cmo,h1mtrx,ortho,work,nao,nmo,datacomp)
-!---------------------------------------------------------------------
+!----------------------------------------------------------------
 !
 ! Calculate initial guess MOs by diagonalizing core Hamiltonian matrix
 !
@@ -1807,7 +1817,8 @@ end
       call memset(isize+nao,datacomp)
       allocate(work2(isize),eigen(nao))
 !
-      call diagfock(h1mtrx,work,ortho,cmo,work2,eigen,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+      call diagfock(h1mtrx,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                   datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
 !
       deallocate(work2,eigen)
       call memunset(isize+nao,datacomp)
@@ -1816,9 +1827,9 @@ end
 end
 
 
-!--------------------------------
+!--------------------------------------------------
   subroutine gcheckreorder(cmo,nmo_g,dataguessbs)
-!--------------------------------
+!--------------------------------------------------
 !
 ! Reorder guess molecular orbitals
 !
@@ -1934,9 +1945,9 @@ end
 end
 
 
-!----------------------------------------------------------
+!-----------------------------------------------------------------------
   subroutine dftbguess(cmo,overinv,datajob,datamol,databasis,datacomp)
-!----------------------------------------------------------
+!-----------------------------------------------------------------------
 !
 ! Calculate initial guess MOs by extended Huckel
 !
@@ -1980,11 +1991,13 @@ end
 !
 ! Calculate DFTB orbitals
 !
-      call calcdftb(hmo,overlap,work1,work2,eigen,coord_g,nao_v,nshell_v,nmo_g,datajob,datamol,databasis,dataguessbs,datacomp)
+      call calcdftb(hmo,overlap,work1,work2,eigen,coord_g,nao_v,nshell_v,nmo_g, &
+&                   datajob,datamol,databasis,dataguessbs,datacomp)
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
-      call calcover2(overlap,work1,coord_g,datajob%threshex,datamol,databasis,dataguessbs,datacomp)
+      call calcover2(overlap,work1,coord_g,datajob%threshex, &
+&                    datamol,databasis,dataguessbs,datacomp)
 !
 ! Project orbitals from Huckel to SCF
 !
@@ -1995,9 +2008,10 @@ end
 end
 
 
-!-----------------------------------------------------------------------------
-  subroutine calcdftb(dftbmo,overlap,ortho,work,eigen,coord_g,nao_v,nshell_v,nmo_g,datajob,datamol,databasis,dataguessbs,datacomp)
-!-----------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------
+  subroutine calcdftb(dftbmo,overlap,ortho,work,eigen,coord_g,nao_v,nshell_v,nmo_g, &
+&                     datajob,datamol,databasis,dataguessbs,datacomp)
+!--------------------------------------------------------------------------------------
 !
 ! Driver of DFTB calculation
 !
@@ -2047,7 +2061,8 @@ end
 !
 ! Set parameters
 !
-      call huckelip(eigen,1,datajob%flagecp,datamol%natom,databasis%izcore,datamol%numatomic,datacomp)
+      call huckelip(eigen,1,datajob%flagecp,datamol%natom,databasis%izcore,datamol%numatomic, &
+&                   datacomp)
       call dftbip(eigen,uhub,nshell_v,dataguessbs%nao,datamol,datacomp)
       nelecdftb(1)= datamol%neleca
       nelecdftb(2)= datamol%nelecb
@@ -2226,9 +2241,9 @@ end
 end
 
 
-!--------------------------------------------------------
+!-----------------------------------------------------------------------------
   subroutine formdftb1(dftb1,overlap,qmulliken,gamma12,nshell_v,dataguessbs)
-!--------------------------------------------------------
+!-----------------------------------------------------------------------------
 !
 ! Form charge dependent DFTB matrix elements
 !
@@ -2267,9 +2282,9 @@ end
 end
 
 
-!---------------------------------------
+!----------------------------------------------------------------------------
   subroutine calcgamma12(gamma12,uhub,coord_g,nshell_v,datamol,dataguessbs)
-!---------------------------------------
+!----------------------------------------------------------------------------
 !
 ! Driver of gamma12 calculation for DFTB
 !
@@ -2303,9 +2318,9 @@ end
 end
 
 
-!--------------------------------------------------------------------
+!-------------------------------------------------------------------------------------------------
   subroutine calcdftbmulliken(overlap,cmo,work,qmulliken,nelecdftb,nshell_v,datamol,dataguessbs)
-!--------------------------------------------------------------------
+!-------------------------------------------------------------------------------------------------
 !
 ! Calculate Mulliken population for DFTB
 !
@@ -2379,7 +2394,7 @@ end
         enddo
         do ish= 1,nshell_v
           qmulliken(ish)= qmulliken(ish) &
-&                        -znucshell(dataguessbs%mtype(ish),datamol%numatomic(dataguessbs%locatom(ish)))
+&            -znucshell(dataguessbs%mtype(ish),datamol%numatomic(dataguessbs%locatom(ish)))
         enddo
       else
         write(*,'(" Error! DFTB for open-shell has not been implemented yet!")')
@@ -2390,9 +2405,9 @@ end
 end
 
 
-!-------------------------------------------
+!----------------------------------------------------
   subroutine diffqmulliken(qmulliken,qmax,nshell_v)
-!-------------------------------------------
+!----------------------------------------------------
 !
 ! Calculate maximum absolute change of Mulliken charge
 !
@@ -2466,9 +2481,9 @@ end
 end
 
 
-!---------------------------------
+!-----------------------------------------------------------------
   subroutine dftbip(energy,uhub,nshell_v,nao_g,datamol,datacomp)
-!---------------------------------
+!-----------------------------------------------------------------
 !
 ! Set valence ionization potentials for DFTB
 !

@@ -1,4 +1,4 @@
-! Copyright 2014-2017  Kazuya Ishimura
+! Copyright 2014-2019  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -100,9 +100,10 @@ end
 end
 
 
-!-----------------------------------------------------------------
-  subroutine calcrdmax(dmtrx,dmax,dmaxtmp,nproc,myrank,mpi_comm,databasis)
-!-----------------------------------------------------------------
+!-------------------------------------------------------------------
+  subroutine calcrdmax(dmtrx,dmax,dmaxtmp,nproc,myrank,mpi_comm, &
+&                      databasis)
+!-------------------------------------------------------------------
 !
 ! Calculate maximum density matrix element for each shell
 !
@@ -154,9 +155,10 @@ end
 end
 
 
-!-------------------------------------------------------------------------
-  subroutine calcudmax(dmtrxa,dmtrxb,dmax,dmaxtmp,nproc,myrank,mpi_comm,databasis)
-!-------------------------------------------------------------------------
+!------------------------------------------------------------------
+  subroutine calcudmax(dmtrxa,dmtrxb,dmax,dmaxtmp,nproc,myrank, &
+&                      mpi_comm,databasis)
+!------------------------------------------------------------------
 !
 ! Calculate maximum unrestricted density matrix element for each shell
 !
@@ -951,7 +953,8 @@ end
 
 !-----------------------------------------------------------------------------
   subroutine soscfupdate(cmo,sodisp,work,work2,nocc,nvir,itsoscf,maxsoscf, &
-&                        nao,nmo,sodispmax,idis,nproc,myrank,mpi_comm)
+&                        nao,nmo,sodispmax,idis, &
+&                        nproc,myrank,mpi_comm)
 !-----------------------------------------------------------------------------
 !
 ! Update molecular orbitals using approximated SOSCF method
@@ -1011,10 +1014,10 @@ end
 end
 
 
-!----------------------------------------------------------------------------------------
-  subroutine calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,neleca,nelecb,nao, &
-&                     idis,nproc,myrank,mpi_comm)
-!----------------------------------------------------------------------------------------
+!------------------------------------------------------------------------------------
+  subroutine calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,neleca,nelecb, &
+&                     nao,idis,nproc,myrank,mpi_comm)
+!------------------------------------------------------------------------------------
 !
 ! Calculate spin expectation values, sz and S^2
 !
@@ -1061,9 +1064,9 @@ end
 end
 
 
-!------------------------------------------
+!---------------------------------------------------------------------
   subroutine calcrmulliken(dmtrx,overlap,datamol,databasis,datacomp)
-!------------------------------------------
+!---------------------------------------------------------------------
 !
 ! Execute Mulliken population analysis for closed-shell
 !
@@ -1139,9 +1142,9 @@ end
 end
 
 
-!--------------------------------------------------
+!-----------------------------------------------------------------------------
   subroutine calcumulliken(dmtrxa,dmtrxb,overlap,datamol,databasis,datacomp)
-!--------------------------------------------------
+!-----------------------------------------------------------------------------
 !
 ! Execute Mulliken population analysis for open-shell
 !
@@ -1218,9 +1221,10 @@ end
 end
 
 
-!------------------------------------------------------------------
-  subroutine calcrdipole(dipmat,work,dmtrx,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
-!------------------------------------------------------------------
+!----------------------------------------------------------------------
+  subroutine calcrdipole(dipmat,work,dmtrx,nproc,myrank, &
+&                        mpi_comm,datajob,datamol,databasis,datacomp)
+!----------------------------------------------------------------------
 !
 ! Driver of dipole moment calculation for closed-shell
 !
@@ -1284,7 +1288,8 @@ end
 
 !-----------------------------------------------------------------
   subroutine calcroctupole(dipmat,quadpmat,octpmat,work,dmtrx, &
-&                          nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
+&                          nproc,myrank,mpi_comm, &
+&                          datajob,datamol,databasis,datacomp)
 !-----------------------------------------------------------------
 !
 ! Driver of dipole, quadrupole, and octupole moment calculation for closed-shell
@@ -1365,7 +1370,8 @@ end
 !
       dipcenter(:)= zero
 !
-      call calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm,datajob,datamol,databasis)
+      call calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm, &
+&                          datajob,datamol,databasis)
 !
       xdipminus=-tridot(dmtrx,dipmat(1,1),databasis%nao)
       ydipminus=-tridot(dmtrx,dipmat(1,2),databasis%nao)
@@ -1458,9 +1464,10 @@ end
 end
 
 
-!--------------------------------------------------------------------------
-  subroutine calcudipole(dipmat,work,dmtrxa,dmtrxb,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
-!--------------------------------------------------------------------------
+!----------------------------------------------------------------------
+  subroutine calcudipole(dipmat,work,dmtrxa,dmtrxb,nproc,myrank, &
+&                        mpi_comm,datajob,datamol,databasis,datacomp)
+!----------------------------------------------------------------------
 !
 ! Driver of dipole moment calculation for open-shell
 !
@@ -1525,7 +1532,8 @@ end
 
 !-------------------------------------------------------------------------
   subroutine calcuoctupole(dipmat,quadpmat,octpmat,work,dmtrxa,dmtrxb, &
-&                          nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
+&                          nproc,myrank,mpi_comm, &
+&                          datajob,datamol,databasis,datacomp)
 !-------------------------------------------------------------------------
 !
 ! Driver of dipole, quadrupole, and octupole moment calculation for open-shell
@@ -1607,7 +1615,8 @@ end
 !
       dipcenter(:)= zero
 !
-      call calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm,datajob,datamol,databasis)
+      call calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm, &
+&                          datajob,datamol,databasis)
 !
       do ii= 1,databasis%nao*(databasis%nao+1)/2
         work(ii)= dmtrxa(ii)+dmtrxb(ii)
@@ -1781,11 +1790,12 @@ end
 end
 
 
-!--------------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------
   subroutine rhfqc(fock,cmo,qcrmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
-&                  qcwork,work,cutint2,hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,maxqcdiag, &
-&                  maxqcdiagsub,threshqc,datajob,datamol,databasis,datacomp)
-!--------------------------------------------------------------------------------------------
+&                  qcwork,work,cutint2,hfexchange,nao,nmo,nocc,nvir,nshell, &
+&                  maxdim,maxqcdiag,maxqcdiagsub,threshqc, &
+&                  datajob,datamol,databasis,datacomp)
+!---------------------------------------------------------------------------------------
 !
 ! Driver of Davidson diagonalization for quadratically convergent of RHF
 !
@@ -1849,9 +1859,11 @@ end
 ! Calculate Gmn
 !
         call calcqcrmn(qcwork,qcvec,cmo,work,nao,nocc,nvir,itdav,maxqcdiagsub)
-        call calcrdmax(qcwork,qcrmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
+        call calcrdmax(qcwork,qcrmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
+&                      databasis)
         call formrdftfock(qcgmn,work,qcwork,qcrmax,xint,maxdim,cutint2,hfexchange, &
-&                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis)
+&                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                         datajob,datamol,databasis)
 !
 ! Add two-electron integral contribution
 !
@@ -2088,12 +2100,13 @@ end
 end
 
 
-!---------------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------
   subroutine uhfqc(focka,fockb,cmoa,cmob,qcrmax,qcgmna,qcgmnb,qcvec, &
 &                  qcmat,qcmatsave,qceigen,overlap,xint, &
-&                  qcworka,qcworkb,work,cutint2,hfexchange,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
-&                  maxdim,maxqcdiag,maxqcdiagsub,threshqc,datajob,datamol,databasis,datacomp)
-!---------------------------------------------------------------------------------------------
+&                  qcworka,qcworkb,work,cutint2,hfexchange,nao,nmo,nocca,noccb, &
+&                  nvira,nvirb,nshell,maxdim,maxqcdiag,maxqcdiagsub, &
+&                  threshqc,datajob,datamol,databasis,datacomp)
+!----------------------------------------------------------------------------------
 !
 ! Driver of Davidson diagonalization for quadratically convergent of UHF
 !
@@ -2177,9 +2190,11 @@ end
 !
         call calcqcurmn(qcworka,qcworkb,qcvec,cmoa,cmob,work,nao,nocca,noccb,nvira,nvirb, &
 &                       itdav,maxqcdiagsub)
-        call calcudmax(qcworka,qcworkb,qcrmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
+        call calcudmax(qcworka,qcworkb,qcrmax,work,datacomp%nproc2,datacomp%myrank2, &
+&                      datacomp%mpi_comm2,databasis)
         call calcqcugmn(qcgmna,qcgmnb,work,qcworka,qcworkb,qcrmax,xint,cutint2,hfexchange,maxdim, &
-&                       nao,nshell,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis)
+&                       nao,nshell,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                       datajob,datamol,databasis)
 !
 ! Add two-electron integral contribution
 !
@@ -2470,10 +2485,11 @@ end
 end
 
 
-!---------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
   subroutine calcqcugmn(gmn1,gmn2,gmn3,rmna,rmnb,rmtrx,xint,cutint2,hfexchange,maxdim, &
-&                       nao,nshell,nproc,myrank,mpi_comm,datajob,datamol,databasis)
-!---------------------------------------------------------------------------------
+&                       nao,nshell,nproc,myrank,mpi_comm, &
+&                       datajob,datamol,databasis)
+!-----------------------------------------------------------------------------------------
 !
 ! Driver of Gmn matrix formation from two-electron intgrals
 !
@@ -2558,7 +2574,8 @@ end
           enddo
           do lsh= 1,lnum
             call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,datajob%threshex,datamol,databasis)
-            call ugmneri(gmn2,gmn3,rmna,rmnb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,cutint2,hfexchange,databasis)
+            call ugmneri(gmn2,gmn3,rmna,rmnb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,cutint2, &
+&                        hfexchange,databasis)
           enddo
         enddo
       enddo
@@ -2575,9 +2592,10 @@ end
 end
 
 
-!-----------------------------------------------------------------------------------
-  subroutine ugmneri(gmna,gmnb,rmna,rmnb,twoeri,ish,jsh,ksh,lsh,maxdim,cutint2,hfexchange,databasis)
-!-----------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------
+  subroutine ugmneri(gmna,gmnb,rmna,rmnb,twoeri,ish,jsh,ksh,lsh,maxdim,cutint2, &
+&                    hfexchange,databasis)
+!----------------------------------------------------------------------------------
 !
 ! Form Gmn matrix from two-electron intgrals
 !

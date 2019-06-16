@@ -1,4 +1,4 @@
-! Copyright 2014-2017  Kazuya Ishimura
+! Copyright 2014-2019  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,9 +12,9 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!---------------------------------
+!-----------------------------------------------------------
   subroutine readinput(datajob,datamol,databasis,datacomp)
-!---------------------------------
+!-----------------------------------------------------------
 !
 ! Read input data and open checkpoint file if necessary
 !
@@ -376,9 +376,9 @@
 end
 
 
-!-----------------------
+!-----------------------------------------
   subroutine writegeom(datamol,datacomp)
-!-----------------------
+!-----------------------------------------
 !
 ! Write molecular geometry
 !
@@ -413,9 +413,9 @@ end
 end
 
 
-!------------------------
+!------------------------------------------------------------
   subroutine writebasis(datajob,datamol,databasis,datacomp)
-!------------------------
+!------------------------------------------------------------
 !
 ! Write basis functions
 !
@@ -481,9 +481,9 @@ end
 end
 
 
-!----------------------
+!----------------------------------------------------------
   subroutine writeecp(datajob,datamol,databasis,datacomp)
-!----------------------
+!----------------------------------------------------------
 !
 ! Write ECP functions
 !
@@ -561,9 +561,9 @@ end
 end
 
 
-!----------------------------
+!----------------------------------------------------------------
   subroutine writecondition(datajob,datamol,databasis,datacomp)
-!----------------------------
+!----------------------------------------------------------------
 !
 ! Write computational conditions
 !
@@ -644,9 +644,9 @@ end
 end
 
 
-!----------------------
+!---------------------------------------------------------------------
   subroutine readatom(runtype,bohr,cartesian,natom,datamol,datacomp)
-!----------------------
+!---------------------------------------------------------------------
 !
 ! Read atomic data
 !
@@ -811,9 +811,9 @@ end
 end
 
 
-!-----------------------
+!------------------------------------------------------------------------------
   subroutine readbasis(atombasis,locgenshell,ngenshell,datagenbasis,datacomp)
-!-----------------------
+!------------------------------------------------------------------------------
 !
 ! Read basis set
 !
@@ -967,9 +967,9 @@ end
 end
 
 
-!---------------------------
+!--------------------------------------
   subroutine setcheckbasis(databasis)
-!---------------------------
+!--------------------------------------
 !
 ! Read basis set from checkpoint file
 !
@@ -1033,9 +1033,10 @@ end
 end
 
 
-!------------------------------------------------------------------------------------
-  subroutine readcheckinfo(scftype_g,charge_g,flagecp_g,neleca_g,nelecb_g,nmo_g,natom,dataguessbs,datacomp)
-!------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+  subroutine readcheckinfo(scftype_g,charge_g,flagecp_g,neleca_g,nelecb_g,nmo_g,natom, &
+&                          dataguessbs,datacomp)
+!-----------------------------------------------------------------------------------------
 !
 ! Read checkpoint information
 !
@@ -1055,8 +1056,9 @@ end
       if(datacomp%master) then
         rewind(icheck)
         read(icheck,end=9999)
-        read(icheck,err=9998) scftype_g, natom_g, dataguessbs%nao, nmo_g, dataguessbs%nshell, dataguessbs%nprim, neleca_g, &
-&                             nelecb_g, cdummy, cdummy, charge_g, idummy, flagecp_g
+        read(icheck,err=9998) scftype_g, natom_g, dataguessbs%nao, nmo_g, dataguessbs%nshell, &
+&                             dataguessbs%nprim, neleca_g, nelecb_g, cdummy, &
+&                             cdummy, charge_g, idummy, flagecp_g
         if(natom_g /= natom) then
           write(*,'(" Error! The numbers of atoms in checkpoint and input files are different.")')
           call iabort
@@ -1089,9 +1091,10 @@ end
 end
 
 
-!--------------------------------------------------------------
-  subroutine readcheckguess(scftype,cmoa_g,cmob_g,coord_g,scftype_g,nmo_g,natom,dataguessbs,datacomp)
-!--------------------------------------------------------------
+!-----------------------------------------------------------------------------------
+  subroutine readcheckguess(scftype,cmoa_g,cmob_g,coord_g,scftype_g,nmo_g,natom, &
+&                           dataguessbs,datacomp)
+!-----------------------------------------------------------------------------------
 !
 ! Read guess basis functions and MOs from checkpoint file
 !
@@ -1171,9 +1174,9 @@ end
 end
 
 
-!---------------------
+!-------------------------------------------------------------------------------------------------
   subroutine readecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,datagenbasis,datacomp)
-!---------------------
+!-------------------------------------------------------------------------------------------------
 !
 ! Read basis set
 !
@@ -1297,9 +1300,9 @@ end
 end
 
 
-!--------------------------------------------------
+!---------------------------------------------------------------------------
   subroutine writeeigenvalue(eigena,eigenb,itype,datajob,datamol,datacomp)
-!--------------------------------------------------
+!---------------------------------------------------------------------------
 !
 ! Write eigenvalues
 !
@@ -1341,9 +1344,9 @@ end
 end
 
 
-!-----------------------------------------
+!--------------------------------------------------------------------
   subroutine writeeigenvector(cmo,eigen,datamol,databasis,datacomp)
-!-----------------------------------------
+!--------------------------------------------------------------------
 !
 ! Write eigenvalues
 !
@@ -1518,9 +1521,9 @@ end
 end
 
 
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------
   subroutine writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis)
-!---------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------
 !
 ! Write checkpoint file
 !
@@ -1539,8 +1542,9 @@ end
 !
       rewind(icheck)
       write(icheck) datajob%version
-      write(icheck) datajob%scftype, datamol%natom, databasis%nao, datamol%nmo, databasis%nshell, databasis%nprim, datamol%neleca, datamol%nelecb,  &
-&                   datajob%method, datajob%runtype, datamol%charge, datamol%multi, datajob%flagecp
+      write(icheck) datajob%scftype, datamol%natom, databasis%nao, datamol%nmo, databasis%nshell, &
+&                   databasis%nprim, datamol%neleca, datamol%nelecb, datajob%method, &
+&                   datajob%runtype, datamol%charge, datamol%multi, datajob%flagecp
 !
       datatype= 'numatomic'
       write(icheck) datatype
@@ -1628,9 +1632,9 @@ end
 end
 
 
-!---------------------------------
+!-----------------------------------------
   subroutine setcharge(datamol,datacomp)
-!---------------------------------
+!-----------------------------------------
 !
 ! Set atom charge
 !

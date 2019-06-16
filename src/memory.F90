@@ -1,4 +1,4 @@
-! Copyright 2014-2017  Kazuya Ishimura
+! Copyright 2014-2019  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,9 +12,9 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!-----------------------
+!-----------------------------------------
   subroutine maxmemset(datajob,datacomp)
-!-----------------------
+!-----------------------------------------
 !
 ! Set maximum memory size
 !
@@ -54,9 +54,9 @@
 end
 
 
-!---------------------------
+!------------------------------------
   subroutine memset(msize,datacomp)
-!---------------------------
+!------------------------------------
 !
 ! Allocate requested memory size, "msize".
 !
@@ -83,9 +83,9 @@ end
 end
 
 
-!-----------------------------
+!--------------------------------------
   subroutine memunset(msize,datacomp)
-!-----------------------------
+!--------------------------------------
 !
 ! Deallocate requested memory size, "msize".
 !
@@ -103,9 +103,9 @@ end
 end
 
 
-!----------------------
+!--------------------------------
   subroutine memcheck(datacomp)
-!----------------------
+!--------------------------------
 !
 ! Check memory deallocation
 !
@@ -121,9 +121,9 @@ end
 end
 
 
-!----------------------------
+!-------------------------------------
   subroutine memrest(msize,datacomp)
-!----------------------------
+!-------------------------------------
 !
 ! Check available memory size
 !

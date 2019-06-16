@@ -1,4 +1,4 @@
-! Copyright 2014-2017  Kazuya Ishimura
+! Copyright 2014-2019  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,9 +12,10 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!------------------------------------------------------------------------
-  subroutine calcrhf(h1mtrx,cmo,ortho,overlap,dmtrx,xint,eigen,datajob,datamol,databasis,datacomp)
-!------------------------------------------------------------------------
+!------------------------------------------------------------------
+  subroutine calcrhf(h1mtrx,cmo,ortho,overlap,dmtrx,xint,eigen, &
+&                    datajob,datamol,databasis,datacomp)
+!------------------------------------------------------------------
 !
 ! Driver of restricted Hartree-Fock calculation
 !
@@ -123,7 +124,8 @@
 !
 ! Calculate (ij|ij) integrals
 !
-      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datajob,datamol,databasis)
+      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
+&                         datajob,datamol,databasis)
 !
       if(datacomp%master) then
         write(*,'(1x,74("-"))')
@@ -175,12 +177,14 @@
 !
 ! Calculate maximum density matrix elements
 !
-        call calcrdmax(dmtrx,dmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
+        call calcrdmax(dmtrx,dmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
+&                      databasis)
 !
 ! Calculate two-electron integrals and Fock matrix
 !
         call cpu_time(time1)
-        call formrfock(fock,work,dmtrx,dmax,xint,maxdim,datajob%cutint2,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis)
+        call formrfock(fock,work,dmtrx,dmax,xint,maxdim,datajob%cutint2,datacomp%nproc1, &
+&                      datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis)
         call dscal(nao3,half,fock,1)
         call cpu_time(time2)
 !
@@ -216,13 +220,15 @@
 !
 ! Diagonalize Fock matrix
 !
-            call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+            call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                         datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
 !
 ! Approximated Second-order SCF method
 !
           case('SOSCF')
             if((itsoscf == 0).or.(convsoscf)) then
-              call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               sogradmax= zero
               itsoscf= itsoscf+1
             else
@@ -233,10 +239,12 @@
                 if(itsoscf == 1) call soscfinith(hstart,eigen,nocc,nvir,nao)
                 call soscfnewh(hstart,sograd,sodisp,sovecy,nocc,nvir,itsoscf,maxsoscf,sodispmax)
                 call soscfupdate(cmo,sodisp,work,work2,nocc,nvir,itsoscf,maxsoscf, &
-&                                nao,nmo,sodispmax,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+&                                nao,nmo,sodispmax,idis, &
+&                                datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
                 itsoscf= itsoscf+1
               else
-                call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+                call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                             datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               endif
             endif
 !
@@ -244,15 +252,18 @@
 !
           case('QC')
             if((itqc == 0).or.(convqc)) then
-              call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= itqc+1
             elseif(itqc == datajob%maxqc) then
-              call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= 1
             else
               call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
-&                        work,work2,datajob%cutint2,one,nao,nmo,nocc,nvir,nshell,maxdim,datajob%maxqcdiag, &
-&                        maxqcdiagsub,datajob%threshqc,datajob,datamol,databasis,datacomp)
+&                        work,work2,datajob%cutint2,one,nao,nmo,nocc,nvir,nshell, &
+&                        maxdim,datajob%maxqcdiag,maxqcdiagsub,datajob%threshqc, &
+&                        datajob,datamol,databasis,datacomp)
               itqc= itqc+1
             endif
         end select
@@ -271,11 +282,13 @@
               itsub= itdiis
             endif
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,datamol%escf,deltae,diffmax,errmax
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             iter,itsub,datamol%escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,datamol%escf,deltae,diffmax,sogradmax
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             iter,itsub,datamol%escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
             if(datacomp%master) &
@@ -350,9 +363,10 @@
 end
 
 
-!----------------------------------------------------------------------------------
-  subroutine diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis,nproc,myrank,mpi_comm,datacomp)
-!----------------------------------------------------------------------------------
+!----------------------------------------------------------------------
+  subroutine diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                     nproc,myrank,mpi_comm,datacomp)
+!----------------------------------------------------------------------
 !
 ! Driver of Fock matrix diagonalization
 !
@@ -389,9 +403,10 @@ end
 end
 
 
-!------------------------------------------------------------------------------------
-  subroutine formrfock(focktotal,fock,dmtrx,dmax,xint,maxdim,cutint2,nproc,myrank,mpi_comm,datajob,datamol,databasis)
-!------------------------------------------------------------------------------------
+!------------------------------------------------------------------------------
+  subroutine formrfock(focktotal,fock,dmtrx,dmax,xint,maxdim,cutint2,nproc, &
+&                      myrank,mpi_comm,datajob,datamol,databasis)
+!------------------------------------------------------------------------------
 !
 ! Driver of Fock matrix formation from two-electron intgrals
 !
@@ -494,9 +509,9 @@ end
 end
 
 
-!----------------------------------------------------------------
+!----------------------------------------------------------------------------------
   subroutine rfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,lsh,maxdim,cutint2,databasis)
-!----------------------------------------------------------------
+!----------------------------------------------------------------------------------
 !
 ! Form Fock matrix from two-electron intgrals
 !
@@ -643,10 +658,11 @@ end
 end
 
 
-!------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------
   subroutine formrdftfock(focktotal,fock,dmtrx,dmax,xint,maxdim,cutint2,hfexchange, &
-&                         nproc,myrank,mpi_comm,datajob,datamol,databasis)
-!------------------------------------------------------------------------------
+&                         nproc,myrank,mpi_comm, &
+&                         datajob,datamol,databasis)
+!--------------------------------------------------------------------------------------
 !
 ! Driver of DFT Fock matrix formation from two-electron intgrals
 !
@@ -734,7 +750,8 @@ end
           enddo
           do lsh= 1,lnum
             call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,datajob%threshex,datamol,databasis)
-            call rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,cutint2,hfexchange,databasis)
+            call rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,cutint2,hfexchange, &
+&                            databasis)
           enddo
         enddo
       enddo
@@ -749,9 +766,10 @@ end
 end
 
 
-!------------------------------------------------------------------------------
-  subroutine rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,lsh,maxdim,cutint2,hfexchange,databasis)
-!------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
+  subroutine rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,lsh,maxdim,cutint2,hfexchange, &
+&                        databasis)
+!----------------------------------------------------------------------------------------
 !
 ! Form DFT Fock matrix from two-electron intgrals
 !
@@ -899,9 +917,10 @@ end
 end
 
 
-!-------------------------------------------------------------------------
-  subroutine calcrdft(h1mtrx,cmo,ortho,overlap,dmtrx,xint,eigen,datajob,datamol,databasis,datacomp)
-!-------------------------------------------------------------------------
+!-------------------------------------------------------------------
+  subroutine calcrdft(h1mtrx,cmo,ortho,overlap,dmtrx,xint,eigen, &
+&                     datajob,datamol,databasis,datacomp)
+!-------------------------------------------------------------------
 !
 ! Driver of restricted DFT calculation
 !
@@ -921,8 +940,8 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: maxdiis, maxsoscf, maxqcdiagsub, nrad, nleb
-      integer :: nao, nmo, natom, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
-      integer :: itextra, itsoscf, itqc, nocc, nvir
+      integer :: nao, nmo, natom, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), iter, itsub
+      integer :: itdiis, itextra, itsoscf, itqc, nocc, nvir
       integer :: idis(datacomp%nproc2,14), isize1, isize2, isize3, iatom
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
       real(8),parameter :: small=1.0D-10
@@ -975,7 +994,8 @@ end
       select case(scfconv)
         case('DIIS')
           call memset(nao2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
-&                    +nao*4+nocc*4+isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2,datacomp)
+&                    +nao*4+nocc*4+isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2, &
+&                     datacomp)
           allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
 &                  fockd(nao3),rad(natom),atomvec(5*natom*natom),surface(natom*natom), &
 &                  radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb),xyzpt(3*natom), &
@@ -1038,7 +1058,8 @@ end
 !
 ! Calculate (ij|ij) integrals
 !
-      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datajob,datamol,databasis)
+      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
+&                         datajob,datamol,databasis)
 !
       if(datacomp%master) then
         write(*,'(1x,74("-"))')
@@ -1094,19 +1115,22 @@ end
 !
 ! Calculate maximum density matrix elements
 !
-        call calcrdmax(dmtrx,dmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
+        call calcrdmax(dmtrx,dmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
+&                      databasis)
         call cpu_time(time1)
 !
 ! Calculate exchange-correlation terms
 !
         call formrfockexcor(fockd,fock,edft,totalelec,cmo,atomvec,radpt,angpt, &
 &                           rad,ptweight,vao,vmo,xyzpt,rsqrd,work,work2, &
-&                           datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis)
+&                           datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                           datajob,datamol,databasis)
 !
 ! Calculate two-electron integrals
 !
         call formrdftfock(fock,work,dmtrx,dmax,xint,maxdim,datajob%cutint2,datajob%hfexchange, &
-&                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis)
+&                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                         datajob,datamol,databasis)
         call dscal(nao3,half,fock,1)
         call cpu_time(time2)
 !
@@ -1146,13 +1170,15 @@ end
 !
 ! Diagonalize Fock matrix
 !
-            call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+            call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                         datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
 !
 ! Approximated Second-order SCF method
 !
           case('SOSCF')
             if((itsoscf == 0).or.(convsoscf)) then
-              call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               sogradmax= zero
               itsoscf= itsoscf+1
             else
@@ -1163,10 +1189,12 @@ end
                 if(itsoscf == 1) call soscfinith(hstart,eigen,nocc,nvir,nao)
                 call soscfnewh(hstart,sograd,sodisp,sovecy,nocc,nvir,itsoscf,maxsoscf,sodispmax)
                 call soscfupdate(cmo,sodisp,work,work2,nocc,nvir,itsoscf,maxsoscf, &
-&                                nao,nmo,sodispmax,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+&                                nao,nmo,sodispmax,idis, &
+&                                datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
                 itsoscf= itsoscf+1
               else
-                call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+                call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                             datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               endif
             endif
 !
@@ -1174,15 +1202,18 @@ end
 !
           case('QC')
             if((itqc == 0).or.(convqc)) then
-              call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= itqc+1
             elseif(itqc == datajob%maxqc) then
-              call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= 1
             else
               call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
-&                        work,work2,datajob%cutint2,datajob%hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,datajob%maxqcdiag, &
-&                        maxqcdiagsub,datajob%threshqc,datajob,datamol,databasis,datacomp)
+&                        work,work2,datajob%cutint2,datajob%hfexchange,nao,nmo,nocc,nvir,nshell, &
+&                        maxdim,datajob%maxqcdiag,maxqcdiagsub,datajob%threshqc, &
+&                        datajob,datamol,databasis,datacomp)
               itqc= itqc+1
             endif
         end select
@@ -1201,11 +1232,13 @@ end
               itsub= itdiis
             endif
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,datamol%escf,deltae,diffmax,errmax
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             iter,itsub,datamol%escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,datamol%escf,deltae,diffmax,sogradmax
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             iter,itsub,datamol%escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
             if(datacomp%master) &
@@ -1265,7 +1298,8 @@ end
 &                    rsqrd,vao,vmo,fockdiis, &
 &                    errdiis,diismtrx,work2)
           call memunset(nao2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
-&                      +nao*4+nocc*4+isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2,datacomp)
+&                      +nao*4+nocc*4+isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2, &
+&                       datacomp)
         case('SOSCF')
           deallocate(fock,fockprev,dmtrxprev,dmax,work, &
 &                    fockd,rad,atomvec,surface, &
@@ -1292,7 +1326,8 @@ end
 
 
 !----------------------------------------------------------------------------------------
-  subroutine calcuhf(h1mtrx,cmoa,cmob,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb,datajob,datamol,databasis,datacomp)
+  subroutine calcuhf(h1mtrx,cmoa,cmob,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb, &
+&                    datajob,datamol,databasis,datacomp)
 !----------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted Hartree-Fock calculation
@@ -1427,7 +1462,8 @@ end
 !
 ! Calculate (ij|ij) integrals
 !
-      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datajob,datamol,databasis)
+      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
+&                         datajob,datamol,databasis)
 !
       if(datacomp%master) then
         write(*,'(1x,74("-"))')
@@ -1479,12 +1515,15 @@ end
 !
 ! Calculate maximum density matrix elements
 !
-        call calcudmax(dmtrxa,dmtrxb,dmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
+        call calcudmax(dmtrxa,dmtrxb,dmax,work,datacomp%nproc2,datacomp%myrank2, &
+&                      datacomp%mpi_comm2,databasis)
 !
 ! Calculate two-electron integrals and Fock matrix
 !
         call cpu_time(time1)
-        call formufock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,datajob%cutint2,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis)
+        call formufock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,datajob%cutint2, &
+&                      datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                      datajob,datamol,databasis)
         call dscal(nao3,half,focka,1)
         call dscal(nao3,half,fockb,1)
         call cpu_time(time2)
@@ -1530,15 +1569,19 @@ end
 !
 ! Diagonalize Fock matrix
 !
-            call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
-            call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+            call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis, &
+&                         datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+            call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
+&                         datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
 !
 ! Approximated Second-order SCF method
 !
           case('SOSCF')
             if((itsoscf == 0).or.(convsoscf)) then
-              call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
-              call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               sogradmax= zero
               itsoscf= itsoscf+1
             else
@@ -1561,14 +1604,18 @@ end
                 call soscfunewh(hstarta,hstartb,sograda,sogradb,sodispa,sodispb,sovecya,sovecyb, &
 &                               nocca,noccb,nvira,nvirb,itsoscf,maxsoscf,sodispmax)
                 call soscfupdate(cmoa,sodispa,work,work2,nocca,nvira,itsoscf,maxsoscf, &
-&                                nao,nmo,sodispmax,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+&                                nao,nmo,sodispmax,idis, &
+&                                datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
                 if(noccb /= 0 ) &
 &                 call soscfupdate(cmob,sodispb,work,work2,noccb,nvirb,itsoscf,maxsoscf, &
-&                                  nao,nmo,sodispmax,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+&                                  nao,nmo,sodispmax,idis, &
+&                                  datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
                 itsoscf= itsoscf+1
               else
-                call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
-                call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+                call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis, &
+&                             datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+                call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
+&                             datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               endif
             endif
 !
@@ -1576,19 +1623,23 @@ end
 !
           case('QC')
             if((itqc == 0).or.(convqc)) then
-              call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
-              call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= itqc+1
             elseif((itqc == datajob%maxqc)) then
-              call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
-              call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= 1
             else
               call uhfqc(focka,fockb,cmoa,cmob,dmax,qcgmna,qcgmnb,qcvec, &
 &                        qcmat,qcmatsave,qceigen,overlap,xint, &
-&                        work,work2,work3,datajob%cutint2,one,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
-&                        maxdim,datajob%maxqcdiag,maxqcdiagsub,datajob%threshqc, &
-&                        datajob,datamol,databasis,datacomp)
+&                        work,work2,work3,datajob%cutint2,one,nao,nmo,nocca,noccb, &
+&                        nvira,nvirb,nshell,maxdim,datajob%maxqcdiag,maxqcdiagsub, &
+&                        datajob%threshqc,datajob,datamol,databasis,datacomp)
               itqc= itqc+1
             endif
         end select
@@ -1609,11 +1660,13 @@ end
               itsub= itdiis
             endif
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,datamol%escf,deltae,diffmax,errmax
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             iter,itsub,datamol%escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,datamol%escf,deltae,diffmax,sogradmax
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             iter,itsub,datamol%escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
             if(datacomp%master) &
@@ -1665,8 +1718,8 @@ end
 !
 ! Calculate spin expectation values
 !
-      call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,datamol%neleca,datamol%nelecb,nao, &
-&                   idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+      call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,datamol%neleca,datamol%nelecb, &
+&                   nao,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
 !
       if(datacomp%master) then
         write(*,'(" -------------------------------")')
@@ -1711,9 +1764,11 @@ end
 end
 
 
-!-----------------------------------------------------------------------------------------------
-  subroutine formufock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,cutint2,nproc,myrank,mpi_comm,datajob,datamol,databasis)
-!-----------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------
+  subroutine formufock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,cutint2, &
+&                      nproc,myrank,mpi_comm, &
+&                      datajob,datamol,databasis)
+!-----------------------------------------------------------------------------------
 !
 ! Driver of Fock matrix formation from two-electron intgrals
 !
@@ -1810,7 +1865,8 @@ end
           enddo
           do lsh= 1,lnum
             call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,datajob%threshex,datamol,databasis)
-            call ufockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,cutint2,databasis)
+            call ufockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,cutint2, &
+&                         databasis)
           enddo
         enddo
       enddo
@@ -1827,9 +1883,10 @@ end
 end
 
 
-!-------------------------------------------------------------------------------
-  subroutine ufockeri(focka,fockb,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,lsh,maxdim,cutint2,databasis)
-!-------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+  subroutine ufockeri(focka,fockb,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,lsh,maxdim,cutint2, &
+&                     databasis)
+!-----------------------------------------------------------------------------------------
 !
 ! Form unrestricted Fock matrix from two-electron intgrals
 !
@@ -1998,7 +2055,8 @@ end
 
 
 !-----------------------------------------------------------------------------------------
-  subroutine calcudft(h1mtrx,cmoa,cmob,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb,datajob,datamol,databasis,datacomp)
+  subroutine calcudft(h1mtrx,cmoa,cmob,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb, &
+&                     datajob,datamol,databasis,datacomp)
 !-----------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted DFT calculation
@@ -2022,8 +2080,8 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: maxdiis, maxsoscf, maxqcdiagsub, nrad, nleb
-      integer :: nao, nmo, natom, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), numwork, iter, itsub, itdiis
-      integer :: itextra, itsoscf, itqc, nocca, nvira, noccb, nvirb
+      integer :: nao, nmo, natom, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), numwork
+      integer :: iter, itsub, itdiis, itextra, itsoscf, itqc, nocca, nvira, noccb, nvirb
       integer :: idis(datacomp%nproc2,14), isize1, isize2, isize3, iatom
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
       real(8),parameter :: small=1.0D-10
@@ -2082,8 +2140,8 @@ end
 !
 ! Set arrays
 !
-      isize1= max(nao2,idis(datacomp%myrank2+1,3),idis(datacomp%myrank2+1,7)*nao,idis(datacomp%myrank2+1,11)*nao, &
-&                 natom*3,nao*2,maxdiis)
+      isize1= max(nao2,idis(datacomp%myrank2+1,3),idis(datacomp%myrank2+1,7)*nao, &
+&                 idis(datacomp%myrank2+1,11)*nao,natom*3,nao*2,maxdiis)
       isize2=idis(datacomp%myrank2+1,3)
       isize3=idis(datacomp%myrank2+1,5)
       select case(scfconv)
@@ -2166,7 +2224,8 @@ end
 !
 ! Calculate (ij|ij) integrals
 !
-      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datajob,datamol,databasis)
+      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
+&                         datajob,datamol,databasis)
 !
       if(datacomp%master) then
         write(*,'(1x,74("-"))')
@@ -2222,7 +2281,8 @@ end
 !
 ! Calculate maximum density matrix elements
 !
-        call calcudmax(dmtrxa,dmtrxb,dmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,databasis)
+        call calcudmax(dmtrxa,dmtrxb,dmax,work,datacomp%nproc2,datacomp%myrank2, &
+&                      datacomp%mpi_comm2,databasis)
         call cpu_time(time1)
 !
 ! Calculate exchange-correlation terms
@@ -2235,8 +2295,9 @@ end
 !
 ! Calculate two-electron integrals
 !
-        call formudftfock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,datajob%cutint2,datajob%hfexchange, &
-&                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis)
+        call formudftfock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,datajob%cutint2, &
+&                         datajob%hfexchange,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                         datajob,datamol,databasis)
         call dscal(nao3,half,focka,1)
         call dscal(nao3,half,fockb,1)
         call cpu_time(time2)
@@ -2287,15 +2348,19 @@ end
 !
 ! Diagonalize Fock matrix
 !
-            call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
-            call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+            call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis, &
+&                         datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+            call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
+&                         datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
 !
 ! Approximated Second-order SCF method
 !
           case('SOSCF')
             if((itsoscf == 0).or.(convsoscf)) then
-              call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
-              call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               sogradmax= zero
               itsoscf= itsoscf+1
             else
@@ -2318,14 +2383,18 @@ end
                 call soscfunewh(hstarta,hstartb,sograda,sogradb,sodispa,sodispb,sovecya,sovecyb, &
 &                               nocca,noccb,nvira,nvirb,itsoscf,maxsoscf,sodispmax)
                 call soscfupdate(cmoa,sodispa,work,work2,nocca,nvira,itsoscf,maxsoscf, &
-&                                nao,nmo,sodispmax,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+&                                nao,nmo,sodispmax,idis, &
+&                                datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
                 if(noccb /= 0 ) &
 &                 call soscfupdate(cmob,sodispb,work,work2,noccb,nvirb,itsoscf,maxsoscf, &
-&                                  nao,nmo,sodispmax,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+&                                  nao,nmo,sodispmax,idis, &
+&                                  datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
                 itsoscf= itsoscf+1
               else
-                call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
-                call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+                call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis, &
+&                             datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+                call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
+&                             datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               endif
             endif
 !
@@ -2333,19 +2402,23 @@ end
 !
           case('QC')
             if((itqc == 0).or.(convqc)) then
-              call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
-              call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= itqc+1
             elseif((itqc == datajob%maxqc)) then
-              call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
-              call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= 1
             else
               call uhfqc(focka,fockb,cmoa,cmob,dmax,qcgmna,qcgmnb,qcvec, &
 &                        qcmat,qcmatsave,qceigen,overlap,xint, &
-&                        work,work2,work3,datajob%cutint2,datajob%hfexchange,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
-&                        maxdim,datajob%maxqcdiag,maxqcdiagsub,datajob%threshqc, &
-&                        datajob,datamol,databasis,datacomp)
+&                        work,work2,work3,datajob%cutint2,datajob%hfexchange,nao,nmo,nocca,noccb, &
+&                        nvira,nvirb,nshell,maxdim,datajob%maxqcdiag,maxqcdiagsub, &
+&                        datajob%threshqc,datajob,datamol,databasis,datacomp)
               itqc= itqc+1
             endif
         end select
@@ -2366,11 +2439,13 @@ end
               itsub= itdiis
             endif
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,datamol%escf,deltae,diffmax,errmax
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             iter,itsub,datamol%escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,datamol%escf,deltae,diffmax,sogradmax
+&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             iter,itsub,datamol%escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
             if(datacomp%master) &
@@ -2424,8 +2499,8 @@ end
 !
 ! Calculate spin expectation values
 !
-      call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,datamol%neleca,datamol%nelecb,nao, &
-&                   idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+      call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,datamol%neleca,datamol%nelecb, &
+&                   nao,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
 !
       if(datacomp%master) then
         write(*,'(" -------------------------------")')
@@ -2481,10 +2556,11 @@ end
 end
 
 
-!-----------------------------------------------------------------------------------------
-  subroutine formudftfock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,cutint2,hfexchange, &
-&                         nproc,myrank,mpi_comm,datajob,datamol,databasis)
-!-----------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------
+  subroutine formudftfock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,cutint2, &
+&                         hfexchange,nproc,myrank,mpi_comm, &
+&                         datajob,datamol,databasis)
+!--------------------------------------------------------------------------------------
 !
 ! Driver of DFT Fock matrix formation from two-electron intgrals
 !

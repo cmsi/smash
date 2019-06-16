@@ -1,4 +1,4 @@
-! Copyright 2014-2017  Kazuya Ishimura
+! Copyright 2014-2019  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,9 +12,9 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!-----------------------
+!----------------------------------------------------
   subroutine nucenergy(threshatom,datamol,datacomp)
-!-----------------------
+!----------------------------------------------------
 !
 ! Calculate nuclear replusion energy
 !
@@ -54,9 +54,9 @@
 end
 
 
-!---------------------------------------------
+!-----------------------------------------------------
   subroutine nucgradient(egrad,nproc,myrank,datamol)
-!---------------------------------------------
+!-----------------------------------------------------
 !
 ! Calculate gradinet of nuclear replusion energy
 !
@@ -86,9 +86,10 @@ end
 end
 
 
-!-----------------------------------------------------------------------------------
-  subroutine setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed,datamol,datacomp)
-!-----------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------------
+  subroutine setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed, &
+&                              datamol,datacomp)
+!-------------------------------------------------------------------------------------
 !
 ! Set redundant internal coordinate
 ! Covalent radii (H - Cn): P. Pyykko, M. Atsumi, Chem. Eur. J., 186 (2009) 15.
@@ -143,14 +144,16 @@ end
         icount= 0
         do jatom= 1,datamol%natom
           if(jatom == iatom) cycle
-          thresh=(1.25D+00*tobohr*(radii(datamol%numatomic(iatom))+radii(datamol%numatomic(jatom))))**2
+          thresh=(1.25D+00*tobohr &
+&               *(radii(datamol%numatomic(iatom))+radii(datamol%numatomic(jatom))))**2
           rrij= (datamol%coord(1,jatom)-datamol%coord(1,iatom))**2 &
 &              +(datamol%coord(2,jatom)-datamol%coord(2,iatom))**2 &
 &              +(datamol%coord(3,jatom)-datamol%coord(3,iatom))**2
           if(rrij <= thresh) then
             icount= icount+1
             if(icount > maxconnect) then
-              if(datacomp%master) write(*,'(" Error! There are too many atoms near Atom",i4,".")')iatom
+              if(datacomp%master) &
+&               write(*,'(" Error! There are too many atoms near Atom",i4,".")')iatom
               call iabort
             endif
             ijpair(iatom,icount)= jatom
@@ -212,7 +215,8 @@ end
               exit
             endif
             if(icount == maxconnect) then
-              if(datacomp%master) write(*,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(1)
+              if(datacomp%master) &
+&               write(*,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(1)
               call iabort
             endif
           enddo
@@ -222,7 +226,8 @@ end
               exit
             endif
             if(icount == maxconnect) then
-              if(datacomp%master) write(*,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(2)
+              if(datacomp%master) &
+&               write(*,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(2)
               call iabort
             endif
           enddo
@@ -411,7 +416,8 @@ end
 
 
 !------------------------------------------------------------------------------------
-  subroutine calcnewcoord(coord,coordold,egrad,egradold,ehess,displc,natom3,iopt,datajob,datamol,datacomp)
+  subroutine calcnewcoord(coord,coordold,egrad,egradold,ehess,displc,natom3,iopt, &
+&                         datajob,datamol,datacomp)
 !------------------------------------------------------------------------------------
 !
 ! Calculate new Cartesian coordinate with gradient and hessian
@@ -503,11 +509,12 @@ end
 end
 
 
-!---------------------------------------------------------------------------------------
-  subroutine calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess,work1, &
-&                            work2,work3,work4,workv,iopt,iredun,isizered, &
-&                            maxredun,numbond,numangle,numtorsion,numredun,datajob,datamol,datacomp)
-!---------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------
+  subroutine calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess, &
+&                            work1,work2,work3,work4,workv,iopt,iredun,isizered, &
+&                            maxredun,numbond,numangle,numtorsion,numredun, &
+&                            datajob,datamol,datacomp)
+!-----------------------------------------------------------------------------------
 !
 ! Calculate new Cartesian coordinate with gradient, hessian and redundant coordinate
 ! using Rational Function Optimization (RFO) method
@@ -860,9 +867,9 @@ end
 end
 
 
-!-----------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
   subroutine calcbmatrix(coordredun,coord,bmat,iredun,numbond,numangle,numtorsion,natom)
-!-----------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !
 ! Calculate transformation matrix(B-matrix) from Cartesian to internal coordinate
 !

@@ -1,4 +1,4 @@
-! Copyright 2016-2017  Kazuya Ishimura
+! Copyright 2016-2019  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,9 +12,10 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!-------------------------------------------------------------------------
-  subroutine calcgradrmp2(cmo,energymo,xint,egrad,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
-!-------------------------------------------------------------------------
+!-----------------------------------------------------------------------
+  subroutine calcgradrmp2(cmo,energymo,xint,egrad,nproc,myrank, &
+&                         mpi_comm,datajob,datamol,databasis,datacomp)
+!-----------------------------------------------------------------------
 !
 ! Main driver of closed-shell MP2 energy gradient calculation
 !
@@ -200,8 +201,8 @@
           endif
         endif
         call mp2gradmulti(emp2st,egradtmp,egrad,cmo,energymo,xint,nocc,noac,nvir,nvac, &
-&                         datajob%ncore,datajob%nvfz,maxsize,maxdim,maxgraddim,idis,npass,numi,numab,numirecv, &
-&                         nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
+&                         datajob%ncore,datajob%nvfz,maxsize,maxdim,maxgraddim,idis,npass,numi, &
+&                         numab,numirecv,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
       endif
 !
       call para_allreducer(emp2st,emp2stsum,2,mpi_comm)
@@ -235,11 +236,11 @@
 end
 
 
-!-------------------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------------------
   subroutine mp2gradmulti(emp2st,egrad,egradtmp,cmo,energymo,xint,nocc,noac,nvir,nvac, &
-&                         ncore,nvfz,maxsize,maxdim,maxgraddim,idis,npass,numi,numab,numirecv, &
-&                         nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
-!-------------------------------------------------------------------------------------------------
+&                         ncore,nvfz,maxsize,maxdim,maxgraddim,idis,npass,numi, &
+&                         numab,numirecv,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
+!---------------------------------------------------------------------------------------------------
 !
 ! Driver of single pass MP2 energy calculation
 !
@@ -333,7 +334,8 @@ end
         allocate(cmowrk(nao*noac),trint1a(numi*maxdim**3),trint1b(mlsize*nao*numi))
 !
         call mp2gradtrans12(cmo,cmowrk,trint1a,trint1b,trint2,trint2core,xint,istart,mlsize, &
-&                           noac,ncore,maxdim,numitrans,datajob%cutint2,idis,nproc,myrank,datajob,datamol,databasis)
+&                           noac,ncore,maxdim,numitrans,datajob%cutint2,idis,nproc,myrank, &
+&                           datajob,datamol,databasis)
 !
         deallocate(cmowrk,trint1a,trint1b)
         call memunset(nao*noac+numi*maxdim**3+mlsize*nao*numi,datacomp)
@@ -376,7 +378,8 @@ end
         else
           call mp2gradbacktrans2(egrad,egradtmp,wij,wab,wai,xlai,tisml,xlmi,xlmn,cmo,xint,trint2, &
 &                                pij,pab,pmn,energymo,work1,work2,nocc,noac,nvir,ncore,numitrans, &
-&                                istart,maxdim,maxgraddim,mlsize2,datamol%natom,idis,nproc,myrank,mpi_comm,datajob,datamol,databasis)
+&                                istart,maxdim,maxgraddim,mlsize2,datamol%natom,idis, &
+&                                nproc,myrank,mpi_comm,datajob,datamol,databasis)
         endif
 !
         deallocate(tisml,xlmi,xlmn,work1,work2)
@@ -398,7 +401,8 @@ end
 ! Solve CPHF equation and obtain Pai
 !
       call mp2gradcphf(pai,xlai,cmo,xint,energymo,paiprev,pls,pmax,paifock,errdiis,paidiis, &
-&                      diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
+&                      diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm, &
+&                      datajob,datamol,databasis,datacomp)
 !ishimura
 !call tstamp(1)
 !
@@ -412,7 +416,8 @@ end
 ! Calculate integral derivatives and their MP2 energy gradient
 !
       call mp2graddint(egrad,egradtmp,pmn,wij,wab,wai,xint,cmo,energymo,pls,work1,work2, &
-&                      nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
+&                      nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm, &
+&                      datajob,datamol,databasis,datacomp)
 !ishimura
 !call tstamp(1)
 !
@@ -432,7 +437,8 @@ end
 
 !-----------------------------------------------------------------------------------------------
   subroutine mp2gradtrans12(cmo,cmowrk,trint1a,trint1b,trint2,trint2core,xint,istart,mlsize, &
-&                           noac,ncore,maxdim,numitrans,cutint2,idis,nproc,myrank,datajob,datamol,databasis)
+&                           noac,ncore,maxdim,numitrans,cutint2,idis,nproc,myrank, &
+&                           datajob,datamol,databasis)
 !-----------------------------------------------------------------------------------------------
 !
 ! Driver of AO intengral generation and first and second integral transformations
@@ -536,10 +542,10 @@ end
 end
 
 
-!-------------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------
   subroutine transmointgrad2(trint2,trint2core,trint1b,cmo,noac,ncore,nao, &
 &                            numitrans,mlcount,mlstart,mlsize,idis,nproc,myrank)
-!-------------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------
 !
 ! Second-quarter integral transformation for MP2 energy gradient calculation
 !    (mi|ls) -> (mi|lj)
@@ -579,12 +585,12 @@ end
       return
 end
 
-!--------------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
   subroutine mp2gradtrans34(emp2st,cmo,energymo,trint2,trint2core,xaibj,xaikj, &
 &                           tijab,pij,pab,wij,wab,wai,recvint,sendint,recvt,storet, &
 &                           nocc,noac,nvir,nvac,ncore,nvfz,istart,numitrans,numirecv, &
 &                           numab,maxsize,idis,nproc,myrank,mpi_comm,datamol,databasis)
-!--------------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
 !
 ! Driver of third and fourth integral transformations, and
 ! MP2 energy, Pij, Pab, Wij[I], Wab[I], Wai[I](=Lai3), and Tijab back-transformation calculations
@@ -690,17 +696,18 @@ end
 ! Send and receive tijml, and calculate Wij[I]
 !
         call mp2gradwij1(wij,tijab,trint2,trint2core,xaibj,recvt,storet,nocc, &
-&                        noac,ncore,numitrans,maxsize,icycle,numij,idis,nproc,myrank,mpi_comm,databasis)
+&                        noac,ncore,numitrans,maxsize,icycle,numij,idis, &
+&                        nproc,myrank,mpi_comm,databasis)
       enddo
 !
       return
 end
 
 
-!-------------------------------------------------------------------------
+!----------------------------------------------------------------------------
   subroutine mp2gradamp(tijab,pab,wab,wai,xaibj,xaikj,emp2st,energymo, &
 &                       nocc,ncore,nvir,nvac,nvfz,moi,moj,nmo,nproc,myrank)
-!-------------------------------------------------------------------------
+!----------------------------------------------------------------------------
 !
 ! Calculate MP2 amplitute and energy, Pab[I], Wab[I], and Wai[I](=Lai3) terms
 !
@@ -924,10 +931,11 @@ end
 end
 
 
-!-----------------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------
   subroutine mp2gradwij1(wij,tijml,trint2,trint2core,sendt,recvt,storet,nocc, &
-&                        noac,ncore,numitrans,maxsize,icycle,numij,idis,nproc,myrank,mpi_comm,databasis)
-!-----------------------------------------------------------------------------------------------
+&                        noac,ncore,numitrans,maxsize,icycle,numij,idis, &
+&                        nproc,myrank,mpi_comm,databasis)
+!--------------------------------------------------------------------------------
 !
 ! Send and receive tijml, and calculate Wij[I]
 !
@@ -1194,7 +1202,8 @@ end
 !-------------------------------------------------------------------------------------------------
   subroutine mp2gradbacktrans2(egrad,egradtmp,wij,wab,wai,xlai,tisml,xlmi,xlmn,cmo,xint,tijml, &
 &                              pij,pab,pmn,energymo,work,work2,nocc,noac,nvir,ncore,numitrans, &
-&                              istart,maxdim,maxgraddim,mlsize2,natom,idis,nproc,myrank,mpi_comm,datajob,datamol,databasis)
+&                              istart,maxdim,maxgraddim,mlsize2,natom,idis, &
+&                              nproc,myrank,mpi_comm,datajob,datamol,databasis)
 !-------------------------------------------------------------------------------------------------
 !
 ! Driver of second-half back-transformation (tnsml), and PiJ, Lai1,2,4 and tnsml*(mn|ls)' terms,
@@ -1361,7 +1370,8 @@ end
 
 !------------------------------------------------------------------------------------------------
   subroutine mp2gradcphf(pai,xlai,cmo,xint,energymo,paiprev,pls,pmax,paifock,errdiis,paidiis, &
-&                        diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
+&                        diismtrx,work1,work2,nocc,nvir,maxdim,idis,nproc,myrank,mpi_comm, &
+&                        datajob,datamol,databasis,datacomp)
 !------------------------------------------------------------------------------------------------
 !
 ! Solve CPHF equation for MP2 energy gradient
@@ -1432,11 +1442,13 @@ end
 !
 ! Calculate maximum Pls of each shell
 !
-        call calcrdmax(pls,pmax,work1,nproc,myrank,mpi_comm,databasis)
+        call calcrdmax(pls,pmax,work1,nproc,myrank,mpi_comm, &
+&                      databasis)
 !
 ! Calculate two-electron integrals and Fock-like matrix
 !
-        call formrfock(paifock,work1,pls,pmax,xint,maxdim,datajob%cutint2,nproc,myrank,mpi_comm,datajob,datamol,databasis)
+        call formrfock(paifock,work1,pls,pmax,xint,maxdim,datajob%cutint2,nproc, &
+&                      myrank,mpi_comm,datajob,datamol,databasis)
 !
 ! Transform Fock-like matrix to MO basis
 !
@@ -1464,8 +1476,8 @@ end
 !
         if(iter >= 2) then
           itdiis= itdiis+1
-          call mp2graddiis(pai,work2,errdiis,paidiis,diismtrx,work1,nocc,nvir,nao,datajob%maxmp2diis, &
-&                          itdiis,idis,nproc,myrank,mpi_comm)
+          call mp2graddiis(pai,work2,errdiis,paidiis,diismtrx,work1,nocc,nvir,nao, &
+&                          datajob%maxmp2diis,itdiis,idis,nproc,myrank,mpi_comm)
         endif
 !
 ! Check convergence
@@ -1500,10 +1512,10 @@ end
       return
 end
 
-!---------------------------------------------------------------------------------------
-  subroutine mp2graddiis(pai,err,errdiis,paidiis,diismtrx,work,nocc,nvir,nao,maxmp2diis, &
-&                        itdiis,idis,nproc,myrank,mpi_comm)
-!---------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------
+  subroutine mp2graddiis(pai,err,errdiis,paidiis,diismtrx,work,nocc,nvir,nao, &
+&                        maxmp2diis,itdiis,idis,nproc,myrank,mpi_comm)
+!--------------------------------------------------------------------------------
 !
 ! DIIS interpolation to solve MP2 CPHF equation
 !
@@ -1567,10 +1579,10 @@ end
 end
 
 
-!--------------------------------------------------------------------------------------------
+!------------------------------------------------------------------------------------------------
   subroutine mp2gradwij3(wij,wai,pmn,pai,pmnfock,cmo,energymo,xint,pmn2,pmax,work1,work2, &
 &                        nocc,nvir,nvac,maxdim,nproc,myrank,mpi_comm,datajob,datamol,databasis)
-!--------------------------------------------------------------------------------------------
+!------------------------------------------------------------------------------------------------
 !
 ! Calculate Wij[III] and Wai[II]
 !
@@ -1626,11 +1638,13 @@ end
       enddo
 !$OMP end parallel do
 !
-      call calcrdmax(pmn2,pmax,work1,nproc,myrank,mpi_comm,databasis)
+      call calcrdmax(pmn2,pmax,work1,nproc,myrank,mpi_comm, &
+&                    databasis)
 !
 ! Calculate two-electron integrals and Fock-like matrix
 !
-      call formrfock(pmnfock,work1,pmn2,pmax,xint,maxdim,datajob%cutint2,nproc,myrank,mpi_comm,datajob,datamol,databasis)
+      call formrfock(pmnfock,work1,pmn2,pmax,xint,maxdim,datajob%cutint2,nproc, &
+&                    myrank,mpi_comm,datajob,datamol,databasis)
 !
 ! Calculate Wij[III]
 !
@@ -1660,7 +1674,8 @@ end
 
 !--------------------------------------------------------------------------------------------
   subroutine mp2graddint(egrad,egradtmp,pmn,wij,wab,wai,xint,cmo,energymo,wmn,pmnhf,work, &
-&                        nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
+&                        nocc,nvir,maxdim,maxgraddim,nproc,myrank,mpi_comm, &
+&                        datajob,datamol,databasis,datacomp)
 !--------------------------------------------------------------------------------------------
 !
 ! Calculate integral derivatives and MP2 energy gradient
@@ -1739,7 +1754,8 @@ end
 !
 ! Calculate derivatives of one-electron integrals
 !
-      call gradoneei(egradtmp,egradtmp2,pmn,wmn,nproc,myrank,datajob,datamol,databasis,datacomp)
+      call gradoneei(egradtmp,egradtmp2,pmn,wmn,nproc,myrank, &
+&                    datajob,datamol,databasis,datacomp)
 !
       do ii= 1,3*datamol%natom
         egrad(ii)= egrad(ii)+egradtmp(ii)
@@ -1869,7 +1885,8 @@ end
             enddo
 !
             if(xijkl*tmax < datajob%cutint2) cycle
-            call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,datajob,datamol,databasis)
+            call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim, &
+&                          datajob,datamol,databasis)
           enddo
         enddo
       enddo
@@ -2021,7 +2038,8 @@ end
             enddo
 !
             if(xijkl*tmax < datajob%cutint2) cycle
-            call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim,datajob,datamol,databasis)
+            call calcd2eri(egradtmp,twork,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim, &
+&                          datajob,datamol,databasis)
           enddo
         enddo
       enddo

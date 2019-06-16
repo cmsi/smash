@@ -1,4 +1,4 @@
-! Copyright 2014-2017  Kazuya Ishimura
+! Copyright 2014-2019  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,9 +12,10 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!---------------------------------------------------------------------------
-  subroutine calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datajob,datamol,databasis,datacomp)
-!---------------------------------------------------------------------------
+!-----------------------------------------------------------------------
+  subroutine calcgradrhf(cmo,energymo,xint,egrad,nproc1,myrank1, &
+&                        mpi_comm1,datajob,datamol,databasis,datacomp)
+!-----------------------------------------------------------------------
 !
 ! Driver of RHF energy gradient calculation
 !
@@ -70,7 +71,8 @@
 !
 ! Calculate derivatives of one-electron integrals
 !
-      call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx,nproc1,myrank1,datajob,datamol,databasis,datacomp)
+      call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx,nproc1,myrank1, &
+&                    datajob,datamol,databasis,datacomp)
 !
 ! Calculate derivatives for two-electron integrals
 !
@@ -102,9 +104,10 @@
 end
 
 
-!--------------------------------------------------------------------------------------------
-  subroutine calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,datajob,datamol,databasis,datacomp)
-!--------------------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
+  subroutine calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1, &
+&                        myrank1,mpi_comm1,datajob,datamol,databasis,datacomp)
+!-------------------------------------------------------------------------------
 !
 ! Driver of UHF energy gradient calculation
 !
@@ -162,7 +165,8 @@ end
 !
 ! Calculate derivatives for one-electron integrals
 !
-      call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx,nproc1,myrank1,datajob,datamol,databasis,datacomp)
+      call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx,nproc1,myrank1, &
+&                    datajob,datamol,databasis,datacomp)
 !
 ! Calculate derivatives for two-electron integrals
 !
@@ -194,9 +198,10 @@ end
 end
 
 
-!----------------------------------------------------------------------------
-  subroutine calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1,mpi_comm1,datajob,datamol,databasis,datacomp)
-!----------------------------------------------------------------------------
+!------------------------------------------------------------------------
+  subroutine calcgradrdft(cmo,energymo,xint,egrad,nproc1,myrank1, &
+&                         mpi_comm1,datajob,datamol,databasis,datacomp)
+!------------------------------------------------------------------------
 !
 ! Driver of closed-shell DFT energy gradient calculation
 !
@@ -245,7 +250,8 @@ end
       nao3=(nao*(nao+1))/2
       call memset(nao2+nao3+natom*3,datacomp)
       allocate(fulldmtrx(nao2),ewdmtrx(nao3),egradtmp(3,natom))
-      call memset(natom*natom*9+natom*13+nrad*2+nleb*4+nleb*nrad*natom+nao*10+datamol%neleca*(nao+4),datacomp)
+      call memset(natom*natom*9+natom*13+nrad*2+nleb*4+nleb*nrad*natom+nao*10 &
+&                +datamol%neleca*(nao+4),datacomp)
       allocate(atomvec(5*natom*natom),surface(natom*natom),radpt(2*nrad),angpt(4*nleb), &
 &              rad(natom),ptweight(nleb*nrad*natom),xyzpt(3*natom),rsqrd(natom),rr(natom), &
 &              uvec(3*natom),vao(10*nao),vmo(4*datamol%neleca),dweight(3*natom), &
@@ -263,7 +269,8 @@ end
 !
 ! Calculate derivatives of one-electron integrals
 !
-      call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx,nproc1,myrank1,datajob,datamol,databasis,datacomp)
+      call gradoneei(egradtmp,egrad,fulldmtrx,ewdmtrx,nproc1,myrank1, &
+&                    datajob,datamol,databasis,datacomp)
 !
 ! Calculate DFT information
 !
@@ -287,8 +294,8 @@ end
 ! Calculate derivatives of exchange-correlation terms 
 !
       call gradrexcor(egradtmp,egrad,cmo,fulldmtrx,atomvec,surface,radpt,angpt,rad,ptweight, &
-&                     xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,work,datajob%idftex,datajob%idftcor, &
-&                     nproc1,myrank1,datajob,datamol,databasis,datacomp)
+&                     xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,work,datajob%idftex, &
+&                     datajob%idftcor,nproc1,myrank1,datajob,datamol,databasis,datacomp)
 !
       call para_allreducer(egradtmp(1,1),egrad(1,1),3*natom,mpi_comm1)
 !
@@ -309,7 +316,8 @@ end
 &                rad,ptweight,xyzpt,rsqrd,rr, &
 &                uvec,vao,vmo,dweight, &
 &                dpa,pa,work)
-      call memunset(natom*natom*9+natom*13+nrad*2+nleb*4+nleb*nrad*natom+nao*10+datamol%neleca*(nao+4),datacomp)
+      call memunset(natom*natom*9+natom*13+nrad*2+nleb*4+nleb*nrad*natom+nao*10 &
+&                  +datamol%neleca*(nao+4),datacomp)
       deallocate(fulldmtrx,ewdmtrx,egradtmp)
       call memunset(nao2+nao3+natom*3,datacomp)
 !
@@ -317,9 +325,10 @@ end
 end
 
 
-!---------------------------------------------------------------------------------------------
-  subroutine calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1,myrank1,mpi_comm1,datajob,datamol,databasis,datacomp)
-!---------------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------
+  subroutine calcgradudft(cmoa,cmob,energymoa,energymob,xint,egrad,nproc1, &
+&                         myrank1,mpi_comm1,datajob,datamol,databasis,datacomp)
+!--------------------------------------------------------------------------------
 !
 ! Driver of open-shell DFT energy gradient calculation
 !
@@ -374,7 +383,8 @@ end
       allocate(atomvec(5*natom*natom),surface(natom*natom),radpt(2*nrad),angpt(4*nleb), &
 &              rad(natom),ptweight(nleb*nrad*natom),xyzpt(3*natom),rsqrd(natom),rr(natom), &
 &              uvec(3*natom),vao(10*nao),vmoa(4*datamol%neleca),vmob(4*datamol%nelecb), &
-&              dweight(3*natom),dpa(3*natom*natom),pa(natom),work((datamol%neleca+datamol%nelecb)*nao))
+&              dweight(3*natom),dpa(3*natom*natom),pa(natom), &
+&              work((datamol%neleca+datamol%nelecb)*nao))
 !
       egradtmp(:,:)= zero
 !
@@ -389,7 +399,8 @@ end
 !
 ! Calculate derivatives of one-electron integrals
 !
-      call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx,nproc1,myrank1,datajob,datamol,databasis,datacomp)
+      call gradoneei(egradtmp,egrad,fulldmtrx1,ewdmtrx,nproc1,myrank1, &
+&                    datajob,datamol,databasis,datacomp)
 !
 ! Calculate DFT information
 !
@@ -435,7 +446,8 @@ end
       deallocate(atomvec,surface,radpt,angpt, &
 &                rad,ptweight,xyzpt,rsqrd,rr, &
 &                uvec,vao,vmoa,vmob, &
-&                dweight,dpa,pa,work)
+&                dweight,dpa,pa, &
+&                work)
       call memunset(natom*natom*9+natom*13+nrad*2+nleb*4+nleb*nrad*natom+nao*10 &
 &                  +datamol%neleca*4+datamol%nelecb*4+(datamol%neleca+datamol%nelecb)*nao,datacomp)
       deallocate(fulldmtrx1,fulldmtrx2,ewdmtrx,egradtmp)
