@@ -714,15 +714,12 @@ end
       if(datajob%method == 'HARTREE-FOCK') then
         call calcgradrhf(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1, &
 &                        datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
-        call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
         call calcgradrdft(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1, &
 &                         datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
-        call tstamp(1,datacomp)
       elseif(datajob%method == 'MP2') then
         call calcgradrmp2(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1, &
 &                         datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
-        call tstamp(1,datacomp)
       else
         if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
@@ -733,8 +730,10 @@ end
 ! Calculate maximum and root mean square gradient values
 !
       call calcmaxgrad(egradmax,egradrms,egrad,datamol%natom*3)
-      if(datacomp%master) write(*,'(" Maximum gradient =",f13.8,"  RMS gradient =",f13.8,/)') &
-&                      egradmax,egradrms
+      if(datacomp%master) &
+&       write(*,'("   Maximum gradient =",f13.8,/,"   RMS gradient     =",f13.8,/, &
+&                 " ----------------------------------------------------",/)') egradmax,egradrms
+      call tstamp(1,datacomp)
 !
 ! Unset arrays 3
 !
@@ -913,8 +912,10 @@ end
 ! Calculate maximum and root mean square gradient values
 !
       call calcmaxgrad(egradmax,egradrms,egrad,datamol%natom*3)
-      if(datacomp%master) write(*,'(" Maximum gradient =",f13.8,"  RMS gradient =",f13.8,/)') &
-&                      egradmax,egradrms
+      if(datacomp%master) &
+&       write(*,'("   Maximum gradient =",f13.8,/,"   RMS gradient     =",f13.8,/, &
+&                 " ----------------------------------------------------",/)') egradmax,egradrms
+      call tstamp(1,datacomp)
 !
 ! Unset arrays 3
 !
