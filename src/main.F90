@@ -1132,15 +1132,12 @@ end
         if(datajob%method == 'HARTREE-FOCK') then
           call calcgradrhf(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1, &
 &                          datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
-          call tstamp(1,datacomp)
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
           call calcgradrdft(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1, &
 &                           datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
-          call tstamp(1,datacomp)
         elseif(datajob%method == 'MP2') then
           call calcgradrmp2(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1, &
 &                           datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
-          call tstamp(1,datacomp)
         else
           if(datacomp%master) then
             write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
@@ -1151,20 +1148,31 @@ end
 ! Calculate maximum and root mean square gradient values
 !
         call calcmaxgrad(egradmax,egradrms,egrad,natom3)
-        if(datacomp%master) write(*,'(" Optimization Cycle",i4,4x,"Maximum gradient =",f11.6,4x, &
-&                            "RMS gradient =",f11.6,/)') iopt,egradmax,egradrms
+        if(datacomp%master) &
+&         write(*,'(" -----------------------------------",/, &
+&                   "   Geometry convergence check",/, &
+&                   "     Optimization cycle:",i4," /",i4,/, &
+&                   "     Optconv           =",f10.6,/, &
+&                   " -----------------------------------",/, &
+&                   "     Maximum gradient  =",f10.6,/, &
+&                   "     RMS gradient      =",f10.6,/, &
+&                   " -----------------------------------")') &
+&                   iopt,datajob%nopt,datajob%optconv,egradmax,egradrms
 !
 ! Check convergence
 !
         if((egradmax <= datajob%optconv).and.(egradrms <= datajob%optconv*third)) then
-          if(datacomp%master) write(*,'(" Geometry converged.",/)')
+          if(datacomp%master) write(*,'("   ==== Geometry converged ====",/)')
           converged=.true.
+          call tstamp(1,datacomp)
           exit
         endif
+        call tstamp(1,datacomp)
 !
 ! Write checkpoint file
 !
-        if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,datamol,databasis)
+        if(datacomp%master.and.(datajob%check /= '')) &
+&         call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,datamol,databasis)
 !
 ! Set work arrays 2
 !
@@ -1260,7 +1268,8 @@ end
 !
 ! Write checkpoint file
 !
-      if(datacomp%master.and.(datajob%check /= '')) call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,datamol,databasis)
+      if(datacomp%master.and.(datajob%check /= '')) &
+&       call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,datamol,databasis)
 !
 ! Unset arrays for energy gradient and geometry optimization
 !
@@ -1457,18 +1466,20 @@ end
             call iabort
           endif
         endif
-        call tstamp(1,datacomp)
 !
 ! Calculate maximum and root mean square gradient values
 !
         call calcmaxgrad(egradmax,egradrms,egrad,natom3)
-        if(datacomp%master) write(*,'(" Optimization Cycle",i4,4x,"Maximum gradient =",f11.6,4x, &
-&                            "RMS gradient =",f11.6,/)') iopt,egradmax,egradrms
-!
-! Write checkpoint file
-!
-        if(datacomp%master.and.(datajob%check /= '')) &
-&          call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis)
+        if(datacomp%master) &
+&         write(*,'(" -----------------------------------",/, &
+&                   "   Geometry convergence check",/, &
+&                   "     Optimization cycle:",i4," /",i4,/, &
+&                   "     Optconv           =",f10.6,/, &
+&                   " -----------------------------------",/, &
+&                   "     Maximum gradient  =",f10.6,/, &
+&                   "     RMS gradient      =",f10.6,/, &
+&                   " -----------------------------------")') &
+&                   iopt,datajob%nopt,datajob%optconv,egradmax,egradrms
 !
 ! Check convergence
 !
@@ -1476,7 +1487,14 @@ end
           if(datacomp%master) write(*,'(" Geometry converged.",/)')
           converged=.true.
           exit
+          call tstamp(1,datacomp)
         endif
+        call tstamp(1,datacomp)
+!
+! Write checkpoint file
+!
+        if(datacomp%master.and.(datajob%check /= '')) &
+&          call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis)
 !
 ! Set work arrays 2
 !
