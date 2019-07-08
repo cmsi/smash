@@ -131,9 +131,9 @@
         write(*,'(1x,74("-"))')
         write(*,'("   Restricted Hartree-Fock calculation")')
         write(*,'(1x,74("-"))')
-        write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter    =",i9)') &
+        write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter     =",i9)') &
 &                    scfconv, datajob%dconv, datajob%maxiter
-        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver =",d9.2)') &
+        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver  =",d9.2)') &
 &                    datajob%cutint2, datajob%threshex, datajob%threshover
         select case(scfconv)
           case('DIIS')
@@ -1065,13 +1065,13 @@ end
         write(*,'(1x,74("-"))')
         write(*,'("   Restricted DFT calculation")')
         write(*,'(1x,74("-"))')
-        write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter    =",i9)') &
+        write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter     =",i9)') &
 &                    scfconv, datajob%dconv, datajob%maxiter
-        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver =",d9.2)') &
+        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver  =",d9.2)') &
 &                    datajob%cutint2, datajob%threshex, datajob%threshover
-        write(*,'("   Nrad       =",i9  ,",  Nleb       =",i9  ,",  ThreshRho  =",1p,d9.2)') &
+        write(*,'("   Nrad       =",i9  ,",  Nleb       =",i9  ,",  ThreshRho   =",1p,d9.2)') &
 &                    nrad, nleb, datajob%threshrho
-        write(*,'("   ThreshDfock=",1p,d9.2,",  Threshdftao=",d9.2,",  ThreshWeight=",d8.2)') &
+        write(*,'("   ThreshDfock=",1p,d9.2,",  Threshdftao=",d9.2,",  ThreshWeight=",d9.2)') &
 &                    datajob%threshdfock, datajob%threshdftao, datajob%threshweight
         select case(scfconv)
           case('DIIS')
@@ -1469,9 +1469,9 @@ end
         write(*,'(1x,74("-"))')
         write(*,'("   Unrestricted Hartree-Fock calculation")')
         write(*,'(1x,74("-"))')
-        write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter    =",i9)') &
+        write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter     =",i9)') &
 &                    scfconv, datajob%dconv, datajob%maxiter
-        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver =",d9.2)') &
+        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver  =",d9.2)') &
 &                    datajob%cutint2, datajob%threshex, datajob%threshover
         select case(scfconv)
           case('DIIS')
@@ -2231,13 +2231,13 @@ end
         write(*,'(1x,74("-"))')
         write(*,'("   Unrestricted DFT calculation")')
         write(*,'(1x,74("-"))')
-        write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter    =",i9)') &
+        write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter     =",i9)') &
 &                    scfconv, datajob%dconv, datajob%maxiter
-        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver =",d9.2)') &
+        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver  =",d9.2)') &
 &                    datajob%cutint2, datajob%threshex, datajob%threshover
-        write(*,'("   Nrad       =",i9  ,",  Nleb       =",i9  ,",  ThreshRho  =",1p,d9.2)') &
+        write(*,'("   Nrad       =",i9  ,",  Nleb       =",i9  ,",  ThreshRho   =",1p,d9.2)') &
 &                    nrad, nleb, datajob%threshrho
-        write(*,'("   ThreshDfock=",1p,d9.2,",  Threshdftao=",d9.2,",  ThreshWeight=",d8.2)') &
+        write(*,'("   ThreshDfock=",1p,d9.2,",  Threshdftao=",d9.2,",  ThreshWeight=",d9.2)') &
 &                    datajob%threshdfock, datajob%threshdftao, datajob%threshweight
         select case(scfconv)
           case('DIIS')
