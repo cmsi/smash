@@ -133,6 +133,25 @@ end
 end
 
 
+!------------------------------------
+  subroutine closedatfile(datacomp)
+!------------------------------------
+!
+! Open temporary file
+!
+      use modparam, only : input
+      use modtype, only : typecomp
+      implicit none
+      type(typecomp),intent(inout) :: datacomp
+!
+      if(datacomp%master) then
+        close(input)
+      endif
+!
+      return
+end
+
+
 !-------------------------------------------
   subroutine opencheckfile(check,datacomp)
 !-------------------------------------------
@@ -147,6 +166,25 @@ end
 !
       if(datacomp%master) then
         open(unit=icheck,file=check,form='unformatted',status='unknown')
+      endif
+!
+      return
+end
+
+
+!--------------------------------------------
+  subroutine closecheckfile(datacomp)
+!--------------------------------------------
+!
+! Open checkpoint file
+!
+      use modparam, only : icheck
+      use modtype, only : typecomp
+      implicit none
+      type(typecomp),intent(inout) :: datacomp
+!
+      if(datacomp%master) then
+        close(icheck)
       endif
 !
       return

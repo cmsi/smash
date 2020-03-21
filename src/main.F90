@@ -87,8 +87,8 @@
 !
 ! Close input.dat and checkpoint files
 !
-      if(datacomp%master) close(unit=input,status='DELETE')
-      if(datacomp%master.and.(datajob%check /= '')) close(unit=icheck)
+      if(datacomp%master) call closedatfile(datacomp)
+      if(datacomp%master.and.(datajob%check /= '')) call closecheckfile(datacomp)
 !
       call para_finalize
       call memcheck(datacomp)
