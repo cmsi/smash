@@ -53,7 +53,7 @@
 !
       if(datacomp%master) then
         do ii= 1,maxline
-          read(*,'(a)',end=100) line
+          read(datacomp%inpstd,'(a)',end=100) line
           line=adjustl(line)
           llen=len_trim(line)
           call low2up(line,llen)
