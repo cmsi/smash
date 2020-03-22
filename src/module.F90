@@ -26,7 +26,7 @@
       integer,parameter :: mxprim=20000
       integer,parameter :: mxprsh=30
       integer,parameter :: mxang=7
-      integer,parameter :: maxline=100000, input=10, icheck=20
+      integer,parameter :: maxline=100000
       real(8),parameter :: toang= 0.5291772108D+00, tobohr= 1.889726125D+00
       real(8),parameter :: todebye= 2.541746D+00
 end
@@ -123,6 +123,7 @@ end
       implicit none
       type typecomp
         integer :: memmax=1000000000, memused=0, memusedmax=0
+        integer :: inpcopy=10, icheck=20
         integer :: iwall0, iwall1
         integer :: nwarn=0
         integer :: nproc1, myrank1, nproc2, myrank2, mpi_comm1, mpi_comm2

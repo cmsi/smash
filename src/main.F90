@@ -19,7 +19,6 @@
 ! This is the main driver of Scalable Molecular Analysis Solver 
 ! for High performance computing systems (SMASH).
 !
-      use modparam, only : input, icheck
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob) :: datajob
@@ -440,7 +439,7 @@ end
 ! Write checkpoint file
 !
       if(datacomp%master.and.(datajob%check /= '')) &
-&       call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,datamol,databasis)
+&       call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,datamol,databasis,datacomp)
 !
 ! Unset arrays 1
 !
@@ -595,7 +594,7 @@ end
 ! Write checkpoint file
 !
       if(datacomp%master.and.(datajob%check /= '')) &
-&        call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis)
+&        call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis,datacomp)
 !
 ! Unset arrays 1
 !
@@ -778,7 +777,7 @@ end
 ! Write checkpoint file
 !
       if(datacomp%master.and.(datajob%check /= '')) &
-&        call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,datamol,databasis)
+&        call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,datamol,databasis,datacomp)
 !
 ! Unset arrays 1
 !
@@ -964,7 +963,7 @@ end
 ! Write checkpoint file
 !
       if(datacomp%master.and.(datajob%check /= '')) &
-&        call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis)
+&        call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis,datacomp)
 !
 ! Unset arrays 1
 !
@@ -1172,7 +1171,7 @@ end
 ! Write checkpoint file
 !
         if(datacomp%master.and.(datajob%check /= '')) &
-&         call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,datamol,databasis)
+&         call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,datamol,databasis,datacomp)
 !
 ! Set work arrays 2
 !
@@ -1269,7 +1268,7 @@ end
 ! Write checkpoint file
 !
       if(datacomp%master.and.(datajob%check /= '')) &
-&       call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,datamol,databasis)
+&       call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,datamol,databasis,datacomp)
 !
 ! Unset arrays for energy gradient and geometry optimization
 !
@@ -1494,7 +1493,7 @@ end
 ! Write checkpoint file
 !
         if(datacomp%master.and.(datajob%check /= '')) &
-&          call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis)
+&          call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis,datacomp)
 !
 ! Set work arrays 2
 !
@@ -1595,7 +1594,7 @@ end
 ! Write checkpoint file
 !
       if(datacomp%master.and.(datajob%check /= '')) &
-&        call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis)
+&        call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis,datacomp)
 !
 ! Unset arrays for energy gradient and geometry optimization
 !

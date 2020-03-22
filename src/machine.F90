@@ -115,7 +115,6 @@ end
 !
 ! Open temporary file
 !
-      use modparam, only : input
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
@@ -126,7 +125,7 @@ end
         iprocess= getpid()
         write(filename,*) iprocess
         filename= "input.dat"//adjustl(filename)
-        open(unit=input,file=filename,status='replace')
+        open(unit=datacomp%inpcopy,file=filename,status='replace')
       endif
 !
       return
@@ -139,13 +138,12 @@ end
 !
 ! Open temporary file
 !
-      use modparam, only : input
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
 !
       if(datacomp%master) then
-        close(input)
+        close(datacomp%inpcopy)
       endif
 !
       return
@@ -158,14 +156,13 @@ end
 !
 ! Open checkpoint file
 !
-      use modparam, only : icheck
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
       character(len=64),intent(in) :: check
 !
       if(datacomp%master) then
-        open(unit=icheck,file=check,form='unformatted',status='unknown')
+        open(unit=datacomp%icheck,file=check,form='unformatted',status='unknown')
       endif
 !
       return
@@ -178,13 +175,12 @@ end
 !
 ! Open checkpoint file
 !
-      use modparam, only : icheck
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
 !
       if(datacomp%master) then
-        close(icheck)
+        close(datacomp%icheck)
       endif
 !
       return

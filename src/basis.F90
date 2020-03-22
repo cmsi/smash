@@ -100,7 +100,7 @@
             call setgenbasis(atombasis,locgenshell,ngenshell,ishell,datajob%flagecp, &
 &                            datamol,databasis,datagenbasis)
           case('CHECK')
-            call setcheckbasis(databasis)
+            call setcheckbasis(databasis,datacomp)
             ishell= databasis%nshell
           case default
             write(*,'(" Error! Basis set ",a16,"is not supported.")') databasis%basis

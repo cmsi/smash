@@ -18,7 +18,7 @@
 !
 ! Read input data and open checkpoint file if necessary
 !
-      use modparam, only : maxline, input
+      use modparam, only : maxline
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -80,16 +80,16 @@
           end select
           llen=len_trim(line)
           if(llen > 0) then
-            write(input,'(a)')line(1:llen)
+            write(datacomp%inpcopy,'(a)')line(1:llen)
           else
-            write(input,*)
+            write(datacomp%inpcopy,*)
           endif
           if(ii == maxline) then
             write(*,'(" Input file is too long in Subroutine readinput!")')
             call iabort
           endif
         enddo
-100     rewind(input)
+100     rewind(datacomp%inpcopy)
 !
         method     = datajob%method
         runtype    = datajob%runtype
@@ -137,43 +137,43 @@
         octupole   = datajob%octupole
         check      = datajob%check
 !
-        read(input,nml=job,end=110,iostat=info)
+        read(datacomp%inpcopy,nml=job,end=110,iostat=info)
 110     if(info > 0) then
           write(*,'(" Error was found in job line of input file!")')
           call iabort
         endif
         if(len_trim(mem) /= 0) memory= mem
 !
-        rewind(input)
-        read(input,nml=control,end=120,iostat=info)
+        rewind(datacomp%inpcopy)
+        read(datacomp%inpcopy,nml=control,end=120,iostat=info)
 120     if(info > 0) then
           write(*,'(" Error was found in control line of input file!")')
           call iabort
         endif
 !
-        rewind(input)
-        read(input,nml=scf,end=130,iostat=info)
+        rewind(datacomp%inpcopy)
+        read(datacomp%inpcopy,nml=scf,end=130,iostat=info)
 130     if(info > 0) then
           write(*,'(" Error was found in scf line of input file!")')
           call iabort
         endif
 !
-        rewind(input)
-        read(input,nml=opt,end=140,iostat=info)
+        rewind(datacomp%inpcopy)
+        read(datacomp%inpcopy,nml=opt,end=140,iostat=info)
 140     if(info > 0) then
           write(*,'(" Error was found in opt line of input file!")')
           call iabort
         endif
 !
-        rewind(input)
-        read(input,nml=dft,end=150,iostat=info)
+        rewind(datacomp%inpcopy)
+        read(datacomp%inpcopy,nml=dft,end=150,iostat=info)
 150     if(info > 0) then
           write(*,'(" Error was found in dft line of input file!")')
           call iabort
         endif
 !
-        rewind(input)
-        read(input,nml=mp2,end=160,iostat=info)
+        rewind(datacomp%inpcopy)
+        read(datacomp%inpcopy,nml=mp2,end=160,iostat=info)
 160     if(info > 0) then
           write(*,'(" Error was found in mp2 line of input file!")')
           call iabort
@@ -650,7 +650,7 @@ end
 !
 ! Read atomic data
 !
-      use modparam, only : mxatom, tobohr, maxline, input, icheck
+      use modparam, only : mxatom, tobohr, maxline
       use modtype, only : typemol, typecomp
       implicit none
       type(typemol),intent(inout) :: datamol
@@ -686,9 +686,9 @@ end
       logical,intent(inout) :: cartesian
 !
       if(datacomp%master) then
-        rewind(input)
+        rewind(datacomp%inpcopy)
         do ii= 1,maxline
-          read(input,'(a)',end=9999)line
+          read(datacomp%inpcopy,'(a)',end=9999)line
           if(line(1:4) == 'GEOM') exit
           if(ii == maxline) then
             write(*,'(" Error! Molecular geometry is not found.")')
@@ -701,7 +701,7 @@ end
         if(index(line,'CHECK') == 0) then
           natom= 0
           do ii= 1,mxatom
-            read(input,'(a)',end=100) line
+            read(datacomp%inpcopy,'(a)',end=100) line
             if(len_trim(line) == 0) exit
             read(line,*,err=9997,end=9997) atomin(ii),(datamol%coord(jj,ii),jj=1,3)
             natom= natom+1
@@ -744,13 +744,13 @@ end
 ! Read data from checkpoint file
 !
         else
-          rewind(icheck)
-          read(icheck,err=9998)
-          read(icheck) cdummy, natom
-          read(icheck)
-          read(icheck)(datamol%numatomic(ii),ii=1,natom)
-          read(icheck)
-          read(icheck)((datamol%coord(jj,ii),jj=1,3),ii=1,natom)
+          rewind(datacomp%icheck)
+          read(datacomp%icheck,err=9998)
+          read(datacomp%icheck) cdummy, natom
+          read(datacomp%icheck)
+          read(datacomp%icheck)(datamol%numatomic(ii),ii=1,natom)
+          read(datacomp%icheck)
+          read(datacomp%icheck)((datamol%coord(jj,ii),jj=1,3),ii=1,natom)
           do ii= 1,natom
             if(datamol%numatomic(ii) > 0) then
               datamol%znuc(ii)= dble(datamol%numatomic(ii))
@@ -817,7 +817,7 @@ end
 !
 ! Read basis set
 !
-      use modparam, only : mxprim, mxshell, maxline, input
+      use modparam, only : mxprim, mxshell, maxline
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(out) :: datagenbasis
@@ -845,9 +845,9 @@ end
       ishell= 0
 !
       if(datacomp%master) then
-        rewind(input)
+        rewind(datacomp%inpcopy)
         do ii= 1,maxline
-          read(input,'(a)',end=9999)line
+          read(datacomp%inpcopy,'(a)',end=9999)line
           if(line(1:5) == "BASIS") exit
           if(ii == maxline) then
             write(*,'(" Error! Keyword BASIS is not found.")')
@@ -857,7 +857,7 @@ end
 !
         do ll= -9,112
           line=''
-          read(input,'(a)',end=300)line
+          read(datacomp%inpcopy,'(a)',end=300)line
           if(len_trim(line) == 0) exit
           element(:)=''
 !
@@ -893,7 +893,7 @@ end
           enddo
           do jj= 1,maxline
             symbol= ''
-            read(input,'(a)',err=200,end=200) line
+            read(datacomp%inpcopy,'(a)',err=200,end=200) line
             read(line,*,end=200,err=9998) symbol, numprim
             ishell= ishell+1
             natomshell= natomshell+1
@@ -924,12 +924,12 @@ end
             if(symbol /= 'SP') then
               do kprim= 1,numprim 
                 iprim= iprim+1
-                read(input,*,end=9998,err=9998) datagenbasis%ex(iprim), datagenbasis%coeff(iprim)
+                read(datacomp%inpcopy,*,end=9998,err=9998) datagenbasis%ex(iprim), datagenbasis%coeff(iprim)
               enddo
             else
               do kprim= 1,numprim 
                 iprim= iprim+1
-                read(input,*,end=9998,err=9998) datagenbasis%ex(iprim), datagenbasis%coeff(iprim), &
+                read(datacomp%inpcopy,*,end=9998,err=9998) datagenbasis%ex(iprim), datagenbasis%coeff(iprim), &
 &                                               datagenbasis%coeff(iprim+numprim)
                 datagenbasis%ex(iprim+numprim)= datagenbasis%ex(iprim)
               enddo
@@ -967,22 +967,23 @@ end
 end
 
 
-!--------------------------------------
-  subroutine setcheckbasis(databasis)
-!--------------------------------------
+!-----------------------------------------------
+  subroutine setcheckbasis(databasis,datacomp)
+!-----------------------------------------------
 !
 ! Read basis set from checkpoint file
 !
-      use modparam, only : mxao, mxshell, mxprim, icheck
-      use modtype, only : typebasis
+      use modparam, only : mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer :: idummy, ii
       character(len=16) :: checkversion, cdummy
 !
-      rewind(icheck)
-      read(icheck,err=9999) checkversion
-      read(icheck) cdummy, idummy, databasis%nao, idummy, databasis%nshell, databasis%nprim
+      rewind(datacomp%icheck)
+      read(datacomp%icheck,err=9999) checkversion
+      read(datacomp%icheck) cdummy, idummy, databasis%nao, idummy, databasis%nshell, databasis%nprim
 !
       write(*,'(" Basis set is read from checkpoint file.")')
       if(databasis%nshell+1 > mxshell) then
@@ -998,30 +999,30 @@ end
         call iabort
       endif
 !
-      read(icheck)
-      read(icheck)
-      read(icheck)
-      read(icheck)
+      read(datacomp%icheck)
+      read(datacomp%icheck)
+      read(datacomp%icheck)
+      read(datacomp%icheck)
       if(checkversion(1:2) /= "1.") then
-        read(icheck)
-        read(icheck)
+        read(datacomp%icheck)
+        read(datacomp%icheck)
       endif
-      read(icheck)
-      read(icheck) (databasis%ex(ii),ii=1,databasis%nprim)
-      read(icheck)
-      read(icheck) (databasis%coeff(ii),ii=1,databasis%nprim)
-      read(icheck)
-      read(icheck) (databasis%locprim(ii),ii=1,databasis%nshell)
-      read(icheck)
-      read(icheck) (databasis%locbf(ii),ii=1,databasis%nshell)
-      read(icheck)
-      read(icheck) (databasis%locatom(ii),ii=1,databasis%nshell)
-      read(icheck)
-      read(icheck) (databasis%mprim(ii),ii=1,databasis%nshell)
-      read(icheck)
-      read(icheck) (databasis%mbf(ii),ii=1,databasis%nshell)
-      read(icheck)
-      read(icheck) (databasis%mtype(ii),ii=1,databasis%nshell)
+      read(datacomp%icheck)
+      read(datacomp%icheck) (databasis%ex(ii),ii=1,databasis%nprim)
+      read(datacomp%icheck)
+      read(datacomp%icheck) (databasis%coeff(ii),ii=1,databasis%nprim)
+      read(datacomp%icheck)
+      read(datacomp%icheck) (databasis%locprim(ii),ii=1,databasis%nshell)
+      read(datacomp%icheck)
+      read(datacomp%icheck) (databasis%locbf(ii),ii=1,databasis%nshell)
+      read(datacomp%icheck)
+      read(datacomp%icheck) (databasis%locatom(ii),ii=1,databasis%nshell)
+      read(datacomp%icheck)
+      read(datacomp%icheck) (databasis%mprim(ii),ii=1,databasis%nshell)
+      read(datacomp%icheck)
+      read(datacomp%icheck) (databasis%mbf(ii),ii=1,databasis%nshell)
+      read(datacomp%icheck)
+      read(datacomp%icheck) (databasis%mtype(ii),ii=1,databasis%nshell)
 !
       databasis%locbf(databasis%nshell+1)= databasis%nao
       databasis%locprim(databasis%nshell+1)= databasis%nprim
@@ -1040,7 +1041,6 @@ end
 !
 ! Read checkpoint information
 !
-      use modparam, only : icheck
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(out) :: dataguessbs
@@ -1054,9 +1054,9 @@ end
       logical,intent(out) :: flagecp_g
 !
       if(datacomp%master) then
-        rewind(icheck)
-        read(icheck,end=9999)
-        read(icheck,err=9998) scftype_g, natom_g, dataguessbs%nao, nmo_g, dataguessbs%nshell, &
+        rewind(datacomp%icheck)
+        read(datacomp%icheck,end=9999)
+        read(datacomp%icheck,err=9998) scftype_g, natom_g, dataguessbs%nao, nmo_g, dataguessbs%nshell, &
 &                             dataguessbs%nprim, neleca_g, nelecb_g, cdummy, &
 &                             cdummy, charge_g, idummy, flagecp_g
         if(natom_g /= natom) then
@@ -1098,7 +1098,7 @@ end
 !
 ! Read guess basis functions and MOs from checkpoint file
 !
-      use modparam, only : mxatom, icheck
+      use modparam, only : mxatom
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(inout) :: dataguessbs
@@ -1112,39 +1112,39 @@ end
       character(len=16) :: checkversion
 !
       if(datacomp%master) then
-        rewind(icheck)
-        read(icheck) checkversion
-        read(icheck)
-        read(icheck)
-        read(icheck)
-        read(icheck)
-        read(icheck) ((coord_g(jj,ii),jj=1,3),ii=1,natom)
+        rewind(datacomp%icheck)
+        read(datacomp%icheck) checkversion
+        read(datacomp%icheck)
+        read(datacomp%icheck)
+        read(datacomp%icheck)
+        read(datacomp%icheck)
+        read(datacomp%icheck) ((coord_g(jj,ii),jj=1,3),ii=1,natom)
         if(checkversion(1:2) /= "1.") then
-          read(icheck)
-          read(icheck)
+          read(datacomp%icheck)
+          read(datacomp%icheck)
         endif
-        read(icheck)
-        read(icheck) (dataguessbs%ex(ii),ii=1,dataguessbs%nprim)
-        read(icheck)
-        read(icheck) (dataguessbs%coeff(ii),ii=1,dataguessbs%nprim)
-        read(icheck)
-        read(icheck) (dataguessbs%locprim(ii),ii=1,dataguessbs%nshell)
-        read(icheck)
-        read(icheck) (dataguessbs%locbf(ii),ii=1,dataguessbs%nshell)
-        read(icheck)
-        read(icheck) (dataguessbs%locatom(ii),ii=1,dataguessbs%nshell)
-        read(icheck)
-        read(icheck) (dataguessbs%mprim(ii),ii=1,dataguessbs%nshell)
-        read(icheck)
-        read(icheck) (dataguessbs%mbf(ii),ii=1,dataguessbs%nshell)
-        read(icheck)
-        read(icheck) (dataguessbs%mtype(ii),ii=1,dataguessbs%nshell)
+        read(datacomp%icheck)
+        read(datacomp%icheck) (dataguessbs%ex(ii),ii=1,dataguessbs%nprim)
+        read(datacomp%icheck)
+        read(datacomp%icheck) (dataguessbs%coeff(ii),ii=1,dataguessbs%nprim)
+        read(datacomp%icheck)
+        read(datacomp%icheck) (dataguessbs%locprim(ii),ii=1,dataguessbs%nshell)
+        read(datacomp%icheck)
+        read(datacomp%icheck) (dataguessbs%locbf(ii),ii=1,dataguessbs%nshell)
+        read(datacomp%icheck)
+        read(datacomp%icheck) (dataguessbs%locatom(ii),ii=1,dataguessbs%nshell)
+        read(datacomp%icheck)
+        read(datacomp%icheck) (dataguessbs%mprim(ii),ii=1,dataguessbs%nshell)
+        read(datacomp%icheck)
+        read(datacomp%icheck) (dataguessbs%mbf(ii),ii=1,dataguessbs%nshell)
+        read(datacomp%icheck)
+        read(datacomp%icheck) (dataguessbs%mtype(ii),ii=1,dataguessbs%nshell)
 !
-        read(icheck)
-        read(icheck)((cmoa_g(jj,ii),jj=1,dataguessbs%nao),ii=1,nmo_g)
+        read(datacomp%icheck)
+        read(datacomp%icheck)((cmoa_g(jj,ii),jj=1,dataguessbs%nao),ii=1,nmo_g)
         if((scftype == 'UHF').and.(scftype_g == 'UHF')) then
-          read(icheck)
-          read(icheck)((cmob_g(jj,ii),jj=1,dataguessbs%nao),ii=1,nmo_g)
+          read(datacomp%icheck)
+          read(datacomp%icheck)((cmob_g(jj,ii),jj=1,dataguessbs%nao),ii=1,nmo_g)
         endif
 ! Interchange the order of basis functions in cmoa_g and cmob_g
         if(checkversion(1:2) == "1.") then
@@ -1180,7 +1180,7 @@ end
 !
 ! Read basis set
 !
-      use modparam, only : mxprim, mxshell, maxline, input
+      use modparam, only : mxprim, mxshell, maxline
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(out) :: datagenbasis
@@ -1208,9 +1208,9 @@ end
       iprim= 0
 !
       if(datacomp%master) then
-        rewind(input)
+        rewind(datacomp%inpcopy)
         do ii= 1,maxline
-          read(input,*,end=9999)line
+          read(datacomp%inpcopy,*,end=9999)line
           if(line(1:3) == "ECP") exit
           if(ii == maxline) then
             write(*,'(" Error! Keyword ECP is not found.")')
@@ -1220,7 +1220,7 @@ end
 !
         do ll= -9,112
           line=''
-          read(input,'(a)',end=300)line
+          read(datacomp%inpcopy,'(a)',end=300)line
           if(len_trim(line) == 0) exit
           element(:)=''
 !
@@ -1254,22 +1254,22 @@ end
 ! Read ECP functions
 !
           symbol= ''
-          read(input,'(a)',err=200,end=200) line
+          read(datacomp%inpcopy,'(a)',err=200,end=200) line
           read(line,*,end=200) symbol,lmax,ielec
           do ii= -9,nelem-10
             maxgenangecp(ielem(ii))= lmax
             izgencore(ielem(ii))= ielec
           enddo
           do iang= 0,lmax
-            read(input,*)line
-            read(input,*,err=9998,end=9998)numprim
+            read(datacomp%inpcopy,*)line
+            read(datacomp%inpcopy,*,err=9998,end=9998)numprim
             do ii= -9,nelem-10
               locgenecp(iang,ielem(ii))= iprim
               mgenprimecp(iang,ielem(ii))= numprim
             enddo
             do jprim=1,numprim
               iprim= iprim+1
-              read(input,*,err=9998,end=9998)datagenbasis%mtypeecp(iprim), &
+              read(datacomp%inpcopy,*,err=9998,end=9998)datagenbasis%mtypeecp(iprim), &
 &                  datagenbasis%execp(iprim),datagenbasis%coeffecp(iprim)
             enddo
           enddo
@@ -1522,17 +1522,17 @@ end
 
 
 !-----------------------------------------------------------------------------------------------
-  subroutine writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis)
+  subroutine writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis,datacomp)
 !-----------------------------------------------------------------------------------------------
 !
 ! Write checkpoint file
 !
-      use modparam, only : icheck
-      use modtype, only : typejob, typemol, typebasis
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer :: ii, jj
       real(8),intent(in) :: cmoa(databasis%nao,databasis%nao)
       real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2), energymoa(databasis%nao)
@@ -1540,92 +1540,92 @@ end
       real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2), energymob(databasis%nao)
       character(len=16) :: datatype
 !
-      rewind(icheck)
-      write(icheck) datajob%version
-      write(icheck) datajob%scftype, datamol%natom, databasis%nao, datamol%nmo, databasis%nshell, &
+      rewind(datacomp%icheck)
+      write(datacomp%icheck) datajob%version
+      write(datacomp%icheck) datajob%scftype, datamol%natom, databasis%nao, datamol%nmo, databasis%nshell, &
 &                   databasis%nprim, datamol%neleca, datamol%nelecb, datajob%method, &
 &                   datajob%runtype, datamol%charge, datamol%multi, datajob%flagecp
 !
       datatype= 'numatomic'
-      write(icheck) datatype
-      write(icheck) (datamol%numatomic(ii),ii=1,datamol%natom)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (datamol%numatomic(ii),ii=1,datamol%natom)
 !
       datatype= 'coord'
-      write(icheck) datatype
-      write(icheck)((datamol%coord(jj,ii),jj=1,3),ii=1,datamol%natom)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck)((datamol%coord(jj,ii),jj=1,3),ii=1,datamol%natom)
 !
       datatype= 'znuc'
-      write(icheck) datatype
-      write(icheck)(datamol%znuc(ii),ii=1,datamol%natom)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck)(datamol%znuc(ii),ii=1,datamol%natom)
 !
       datatype= 'ex'
-      write(icheck) datatype
-      write(icheck) (databasis%ex(ii),ii=1,databasis%nprim)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (databasis%ex(ii),ii=1,databasis%nprim)
 !
       datatype= 'coeffinp'
-      write(icheck) datatype
-      write(icheck) (databasis%coeffinp(ii),ii=1,databasis%nprim)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (databasis%coeffinp(ii),ii=1,databasis%nprim)
 !
       datatype= 'locprim'
-      write(icheck) datatype
-      write(icheck) (databasis%locprim(ii),ii=1,databasis%nshell)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (databasis%locprim(ii),ii=1,databasis%nshell)
 !
       datatype= 'locbf'
-      write(icheck) datatype
-      write(icheck) (databasis%locbf(ii),ii=1,databasis%nshell)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (databasis%locbf(ii),ii=1,databasis%nshell)
 !
       datatype= 'locatom'
-      write(icheck) datatype
-      write(icheck) (databasis%locatom(ii),ii=1,databasis%nshell)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (databasis%locatom(ii),ii=1,databasis%nshell)
 !
       datatype= 'mprim'
-      write(icheck) datatype
-      write(icheck) (databasis%mprim(ii),ii=1,databasis%nshell)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (databasis%mprim(ii),ii=1,databasis%nshell)
 !
       datatype= 'mbf'
-      write(icheck) datatype
-      write(icheck) (databasis%mbf(ii),ii=1,databasis%nshell)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (databasis%mbf(ii),ii=1,databasis%nshell)
 !
       datatype= 'mtype'
-      write(icheck) datatype
-      write(icheck) (databasis%mtype(ii),ii=1,databasis%nshell)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (databasis%mtype(ii),ii=1,databasis%nshell)
 !
       if(datajob%scftype == 'RHF') then
         datatype= 'cmo'
-        write(icheck) datatype
-        write(icheck)((cmoa(jj,ii),jj=1,databasis%nao),ii=1,datamol%nmo)
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck)((cmoa(jj,ii),jj=1,databasis%nao),ii=1,datamol%nmo)
 !
         datatype= 'dmtrx'
-        write(icheck) datatype
-        write(icheck) (dmtrxa(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck) (dmtrxa(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
 !
         datatype= 'energymo'
-        write(icheck) datatype
-        write(icheck) (energymoa(ii),ii=1,datamol%nmo)
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck) (energymoa(ii),ii=1,datamol%nmo)
       elseif(datajob%scftype == 'UHF') then
         datatype= 'cmoa'
-        write(icheck) datatype
-        write(icheck)((cmoa(jj,ii),jj=1,databasis%nao),ii=1,datamol%nmo)
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck)((cmoa(jj,ii),jj=1,databasis%nao),ii=1,datamol%nmo)
 !
         datatype= 'cmob'
-        write(icheck) datatype
-        write(icheck)((cmob(jj,ii),jj=1,databasis%nao),ii=1,datamol%nmo)
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck)((cmob(jj,ii),jj=1,databasis%nao),ii=1,datamol%nmo)
 !
         datatype= 'dmtrxa'
-        write(icheck) datatype
-        write(icheck) (dmtrxa(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck) (dmtrxa(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
 !
         datatype= 'dmtrxb'
-        write(icheck) datatype
-        write(icheck) (dmtrxb(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck) (dmtrxb(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
 !
         datatype= 'energymoa'
-        write(icheck) datatype
-        write(icheck) (energymoa(ii),ii=1,datamol%nmo)
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck) (energymoa(ii),ii=1,datamol%nmo)
 !
         datatype= 'energymob'
-        write(icheck) datatype
-        write(icheck) (energymob(ii),ii=1,datamol%nmo)
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck) (energymob(ii),ii=1,datamol%nmo)
       endif
 !
       return
@@ -1638,7 +1638,7 @@ end
 !
 ! Set atom charge
 !
-      use modparam, only : mxatom, maxline, input
+      use modparam, only : mxatom, maxline
       use modtype, only : typemol, typecomp
       implicit none
       type(typemol),intent(inout) :: datamol
@@ -1648,16 +1648,16 @@ end
       character(len=254) :: line
 !
       if(datacomp%master) then
-        rewind(input)
+        rewind(datacomp%inpcopy)
         do ii= 1,maxline
-          read(input,'(a)',end=200)line
+          read(datacomp%inpcopy,'(a)',end=200)line
           if(line(1:6) == 'CHARGE') then
             write(*,'(/," -----------------")')
             write(*,'(  "   Atomic charge")')
             write(*,'(  " -----------------")')
             write(*,'(  "   Atomic charges are set manually.")')
             do jj= 1,mxatom
-              read(input,'(a)',end=100) line
+              read(datacomp%inpcopy,'(a)',end=100) line
               read(line,*,end=100) iatom, znew
               datamol%znuc(iatom)= znew
               write(*,'("   Charge of Atom ",i5,"     ",f7.3)')iatom, znew
