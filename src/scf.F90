@@ -100,7 +100,7 @@
 &                  qcgmn(nao3),work2(nao2))
         case default
           if(datacomp%master) then
-            write(*,'(" SCFConv=",a12,"is not supported.")') 
+            write(*,'(" Error! SCFConv=",a12,"is not supported.")') 
             call iabort
           endif
       end select
@@ -128,45 +128,45 @@
 &                         datajob,datamol,databasis)
 !
       if(datacomp%master) then
-        write(*,'(1x,74("-"))')
-        write(*,'("   Restricted Hartree-Fock calculation")')
-        write(*,'(1x,74("-"))')
-        write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter     =",i9)') &
+        write(datacomp%iout,'(1x,74("-"))')
+        write(datacomp%iout,'("   Restricted Hartree-Fock calculation")')
+        write(datacomp%iout,'(1x,74("-"))')
+        write(datacomp%iout,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter     =",i9)') &
 &                    scfconv, datajob%dconv, datajob%maxiter
-        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver  =",d9.2)') &
+        write(datacomp%iout,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver  =",d9.2)') &
 &                    datajob%cutint2, datajob%threshex, datajob%threshover
         select case(scfconv)
           case('DIIS')
-            write(*,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
+            write(datacomp%iout,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
 &                    maxdiis, datajob%threshdiis
           case('SOSCF')
-            write(*,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
+            write(datacomp%iout,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
 &                    maxsoscf, datajob%threshsoscf
           case('QC')
-            write(*,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
+            write(datacomp%iout,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
 &                    datajob%maxqc, datajob%threshqc, datajob%maxqcdiag
-            write(*,'("   MaxQCDiagSub=",i8)') &
+            write(datacomp%iout,'("   MaxQCDiagSub=",i8)') &
 &                    maxqcdiagsub
         end select
-        write(*,'(1x,74("-"))')
+        write(datacomp%iout,'(1x,74("-"))')
 !
         if((nao /= nmo).and.datacomp%master) then
-          write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
+          write(datacomp%iout,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
           datacomp%nwarn= datacomp%nwarn+1
         endif
 !
-        write(*,'(" ====================")')
-        write(*,'("    SCF Iteration")')
-        write(*,'(" ====================")')
+        write(datacomp%iout,'(" ====================")')
+        write(datacomp%iout,'("    SCF Iteration")')
+        write(datacomp%iout,'(" ====================")')
         select case(scfconv)
           case('DIIS')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
 &                     "Delta Density     DIIS Error")')
           case('SOSCF')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
 &                     "Delta Density    Orbital Grad")')
           case('QC')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
 &                     "Delta Density")')
         end select
       endif
@@ -282,17 +282,17 @@
               itsub= itdiis
             endif
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
 &             iter,itsub,datamol%escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
 &             iter,itsub,datamol%escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,datamol%escf,deltae,diffmax
+&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,datamol%escf,deltae,diffmax
         end select
 !
 ! Check SCF convergence
@@ -318,7 +318,7 @@
 !
         if(iter == datajob%maxiter) then
           if(datacomp%master) then
-            write(*,'(" SCF did not converge.")')
+            write(datacomp%iout,'(" SCF did not converge.")')
             call iabort
           endif
         endif
@@ -326,14 +326,14 @@
         call dcopy(nao3,work,1,dmtrx,1)
         call cpu_time(time4)
         if(datacomp%master.and.(datajob%iprint >= 3)) &
-&         write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
+&         write(datacomp%iout,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
       if(datacomp%master) then
-        write(*,'(" -----------------------------------------")')
-        write(*,'("    SCF Converged.")')
-        write(*,'("    RHF Energy = ",f17.9," a.u.")') datamol%escf
-        write(*,'(" -----------------------------------------"/)')
+        write(datacomp%iout,'(" -----------------------------------------")')
+        write(datacomp%iout,'("    SCF Converged.")')
+        write(datacomp%iout,'("    RHF Energy = ",f17.9," a.u.")') datamol%escf
+        write(datacomp%iout,'(" -----------------------------------------"/)')
       endif
 !
 ! Unset arrays
@@ -1023,7 +1023,7 @@ end
 &                  qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2),qceigen(maxqcdiagsub),qcgmn(nao3))
         case default
           if(datacomp%master) then
-            write(*,'(" SCFConv=",a12,"is not supported.")')
+            write(*,'(" Error! SCFConv=",a12,"is not supported.")')
             call iabort
           endif
       end select
@@ -1062,49 +1062,49 @@ end
 &                         datajob,datamol,databasis)
 !
       if(datacomp%master) then
-        write(*,'(1x,74("-"))')
-        write(*,'("   Restricted DFT calculation")')
-        write(*,'(1x,74("-"))')
-        write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter     =",i9)') &
+        write(datacomp%iout,'(1x,74("-"))')
+        write(datacomp%iout,'("   Restricted DFT calculation")')
+        write(datacomp%iout,'(1x,74("-"))')
+        write(datacomp%iout,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter     =",i9)') &
 &                    scfconv, datajob%dconv, datajob%maxiter
-        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver  =",d9.2)') &
+        write(datacomp%iout,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver  =",d9.2)') &
 &                    datajob%cutint2, datajob%threshex, datajob%threshover
-        write(*,'("   Nrad       =",i9  ,",  Nleb       =",i9  ,",  ThreshRho   =",1p,d9.2)') &
+        write(datacomp%iout,'("   Nrad       =",i9  ,",  Nleb       =",i9  ,",  ThreshRho   =",1p,d9.2)') &
 &                    nrad, nleb, datajob%threshrho
-        write(*,'("   ThreshDfock=",1p,d9.2,",  Threshdftao=",d9.2,",  ThreshWeight=",d9.2)') &
+        write(datacomp%iout,'("   ThreshDfock=",1p,d9.2,",  Threshdftao=",d9.2,",  ThreshWeight=",d9.2)') &
 &                    datajob%threshdfock, datajob%threshdftao, datajob%threshweight
         select case(scfconv)
           case('DIIS')
-            write(*,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
+            write(datacomp%iout,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
 &                    maxdiis, datajob%threshdiis
           case('SOSCF')
-            write(*,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
+            write(datacomp%iout,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
 &                    maxsoscf, datajob%threshsoscf
           case('QC')
-            write(*,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
+            write(datacomp%iout,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
 &                    datajob%maxqc, datajob%threshqc, datajob%maxqcdiag
-            write(*,'("   MaxQCDiagSub=",i8)') &
+            write(datacomp%iout,'("   MaxQCDiagSub=",i8)') &
 &                    maxqcdiagsub
         end select
-        write(*,'(1x,74("-"))')
+        write(datacomp%iout,'(1x,74("-"))')
 !
         if((nao /= nmo).and.datacomp%master) then
-          write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
+          write(datacomp%iout,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
           datacomp%nwarn= datacomp%nwarn+1
         endif
 !
-        write(*,'(" ====================")')
-        write(*,'("    SCF Iteration")')
-        write(*,'(" ====================")')
+        write(datacomp%iout,'(" ====================")')
+        write(datacomp%iout,'("    SCF Iteration")')
+        write(datacomp%iout,'(" ====================")')
         select case(scfconv)
           case('DIIS')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
 &                     "Delta Density     DIIS Error")')
           case('SOSCF')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
 &                     "Delta Density    Orbital Grad")')
           case('QC')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
 &                     "Delta Density")')
         end select
       endif
@@ -1232,17 +1232,17 @@ end
               itsub= itdiis
             endif
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
 &             iter,itsub,datamol%escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
 &             iter,itsub,datamol%escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,datamol%escf,deltae,diffmax
+&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,datamol%escf,deltae,diffmax
         end select
 !
 ! Check SCF convergence
@@ -1268,7 +1268,7 @@ end
 !
         if(iter == datajob%maxiter) then
           if(datacomp%master) then
-            write(*,'(" SCF did not converge.")')
+            write(datacomp%iout,'(" SCF did not converge.")')
             call iabort
           endif
         endif
@@ -1276,16 +1276,16 @@ end
         call dcopy(nao3,work,1,dmtrx,1)
         call cpu_time(time4)
         if(datacomp%master.and.(datajob%iprint >= 3)) &
-&         write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
+&         write(datacomp%iout,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
       if(datacomp%master) then
-        write(*,'(" -----------------------------------------------------------")')
-        write(*,'("    SCF Converged.")')
-        write(*,'("    DFT Energy = ",f17.9," a.u.")') datamol%escf
-        write(*,'("    Exchange + Correlation energy = ",f17.9," a.u.")') edft
-        write(*,'("    Number of electrons           = ",f17.9)') totalelec
-        write(*,'(" -----------------------------------------------------------"/)')
+        write(datacomp%iout,'(" -----------------------------------------------------------")')
+        write(datacomp%iout,'("    SCF Converged.")')
+        write(datacomp%iout,'("    DFT Energy = ",f17.9," a.u.")') datamol%escf
+        write(datacomp%iout,'("    Exchange + Correlation energy = ",f17.9," a.u.")') edft
+        write(datacomp%iout,'("    Number of electrons           = ",f17.9)') totalelec
+        write(datacomp%iout,'(" -----------------------------------------------------------"/)')
       endif
 !
 ! Unset arrays
@@ -1436,7 +1436,7 @@ end
 &                  work(nao3*2),work2(nao2),work3(nao2))
         case default
           if(datacomp%master) then
-            write(*,'(" SCFConv=",a12,"is not supported.")')
+            write(*,'(" Error! SCFConv=",a12,"is not supported.")')
             call iabort
           endif
       end select
@@ -1466,45 +1466,45 @@ end
 &                         datajob,datamol,databasis)
 !
       if(datacomp%master) then
-        write(*,'(1x,74("-"))')
-        write(*,'("   Unrestricted Hartree-Fock calculation")')
-        write(*,'(1x,74("-"))')
-        write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter     =",i9)') &
+        write(datacomp%iout,'(1x,74("-"))')
+        write(datacomp%iout,'("   Unrestricted Hartree-Fock calculation")')
+        write(datacomp%iout,'(1x,74("-"))')
+        write(datacomp%iout,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter     =",i9)') &
 &                    scfconv, datajob%dconv, datajob%maxiter
-        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver  =",d9.2)') &
+        write(datacomp%iout,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver  =",d9.2)') &
 &                    datajob%cutint2, datajob%threshex, datajob%threshover
         select case(scfconv)
           case('DIIS')
-            write(*,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
+            write(datacomp%iout,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
 &                    maxdiis, datajob%threshdiis
           case('SOSCF')
-            write(*,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
+            write(datacomp%iout,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
 &                    maxsoscf, datajob%threshsoscf
           case('QC')
-            write(*,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
+            write(datacomp%iout,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
 &                    datajob%maxqc, datajob%threshqc, datajob%maxqcdiag
-            write(*,'("   MaxQCDiagSub=",i8)') &
+            write(datacomp%iout,'("   MaxQCDiagSub=",i8)') &
 &                    maxqcdiagsub
         end select
-        write(*,'(1x,74("-"))')
+        write(datacomp%iout,'(1x,74("-"))')
 !
         if((nao /= nmo).and.datacomp%master) then
-          write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
+          write(datacomp%iout,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
           datacomp%nwarn= datacomp%nwarn+1
         endif
 !
-        write(*,'(" ====================")')
-        write(*,'("    SCF Iteration")')
-        write(*,'(" ====================")')
+        write(datacomp%iout,'(" ====================")')
+        write(datacomp%iout,'("    SCF Iteration")')
+        write(datacomp%iout,'(" ====================")')
         select case(scfconv)
           case('DIIS')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
 &                     "Delta Density     DIIS Error")')
           case('SOSCF')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
 &                     "Delta Density    Orbital Grad")')
           case('QC')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
 &                     "Delta Density")')
         end select
       endif
@@ -1660,17 +1660,17 @@ end
               itsub= itdiis
             endif
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
 &             iter,itsub,datamol%escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
 &             iter,itsub,datamol%escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,datamol%escf,deltae,diffmax
+&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,datamol%escf,deltae,diffmax
         end select
 !
 ! Check SCF convergence
@@ -1696,7 +1696,7 @@ end
 !
         if(iter == datajob%maxiter) then
           if(datacomp%master) then
-            write(*,'(" SCF did not converge.")')
+            write(datacomp%iout,'(" SCF did not converge.")')
             call iabort
           endif
         endif
@@ -1706,14 +1706,14 @@ end
         call dcopy(nao3,work(nao3+1),1,dmtrxb,1)
         call cpu_time(time4)
         if(datacomp%master.and.(datajob%iprint >= 3)) &
-&         write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
+&         write(datacomp%iout,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
       if(datacomp%master) then
-        write(*,'(" -----------------------------------------")')
-        write(*,'("    SCF Converged.")')
-        write(*,'("    UHF Energy = ",f17.9," a.u.")') datamol%escf
-        write(*,'(" -----------------------------------------"/)')
+        write(datacomp%iout,'(" -----------------------------------------")')
+        write(datacomp%iout,'("    SCF Converged.")')
+        write(datacomp%iout,'("    UHF Energy = ",f17.9," a.u.")') datamol%escf
+        write(datacomp%iout,'(" -----------------------------------------"/)')
       endif
 !
 ! Calculate spin expectation values
@@ -1722,10 +1722,10 @@ end
 &                   nao,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
 !
       if(datacomp%master) then
-        write(*,'(" -------------------------------")')
-        write(*,'("    Sz =",f7.3)')sz
-        write(*,'("    S-squared =",f7.3)')s2
-        write(*,'(" -------------------------------"/)')
+        write(datacomp%iout,'(" -------------------------------")')
+        write(datacomp%iout,'("    Sz =",f7.3)')sz
+        write(datacomp%iout,'("    S-squared =",f7.3)')s2
+        write(datacomp%iout,'(" -------------------------------"/)')
       endif
 !
 ! Unset arrays
@@ -2187,7 +2187,7 @@ end
 &                  qceigen(maxqcdiagsub),qcgmna(nao3),qcgmnb(nao3),work2(isize1),work3(nao2))
         case default
           if(datacomp%master) then
-            write(*,'(" SCFConv=",a12,"is not supported.")')
+            write(*,'(" Error! SCFConv=",a12,"is not supported.")')
             call iabort
           endif
       end select
@@ -2228,49 +2228,49 @@ end
 &                         datajob,datamol,databasis)
 !
       if(datacomp%master) then
-        write(*,'(1x,74("-"))')
-        write(*,'("   Unrestricted DFT calculation")')
-        write(*,'(1x,74("-"))')
-        write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter     =",i9)') &
+        write(datacomp%iout,'(1x,74("-"))')
+        write(datacomp%iout,'("   Unrestricted DFT calculation")')
+        write(datacomp%iout,'(1x,74("-"))')
+        write(datacomp%iout,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter     =",i9)') &
 &                    scfconv, datajob%dconv, datajob%maxiter
-        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver  =",d9.2)') &
+        write(datacomp%iout,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver  =",d9.2)') &
 &                    datajob%cutint2, datajob%threshex, datajob%threshover
-        write(*,'("   Nrad       =",i9  ,",  Nleb       =",i9  ,",  ThreshRho   =",1p,d9.2)') &
+        write(datacomp%iout,'("   Nrad       =",i9  ,",  Nleb       =",i9  ,",  ThreshRho   =",1p,d9.2)') &
 &                    nrad, nleb, datajob%threshrho
-        write(*,'("   ThreshDfock=",1p,d9.2,",  Threshdftao=",d9.2,",  ThreshWeight=",d9.2)') &
+        write(datacomp%iout,'("   ThreshDfock=",1p,d9.2,",  Threshdftao=",d9.2,",  ThreshWeight=",d9.2)') &
 &                    datajob%threshdfock, datajob%threshdftao, datajob%threshweight
         select case(scfconv)
           case('DIIS')
-            write(*,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
+            write(datacomp%iout,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
 &                    maxdiis, datajob%threshdiis
           case('SOSCF')
-            write(*,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
+            write(datacomp%iout,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
 &                    maxsoscf, datajob%threshsoscf
           case('QC')
-            write(*,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
+            write(datacomp%iout,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
 &                    datajob%maxqc, datajob%threshqc, datajob%maxqcdiag
-            write(*,'("   MaxQCDiagSub=",i8)') &
+            write(datacomp%iout,'("   MaxQCDiagSub=",i8)') &
 &                    maxqcdiagsub
         end select
-        write(*,'(1x,74("-"))')
+        write(datacomp%iout,'(1x,74("-"))')
 !
         if((nao /= nmo).and.datacomp%master) then
-          write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
+          write(datacomp%iout,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
           datacomp%nwarn= datacomp%nwarn+1
         endif
 !
-        write(*,'(" ====================")')
-        write(*,'("    SCF Iteration")')
-        write(*,'(" ====================")')
+        write(datacomp%iout,'(" ====================")')
+        write(datacomp%iout,'("    SCF Iteration")')
+        write(datacomp%iout,'(" ====================")')
         select case(scfconv)
           case('DIIS')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
 &                     "Delta Density     DIIS Error")')
           case('SOSCF')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
 &                     "Delta Density    Orbital Grad")')
           case('QC')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
 &                     "Delta Density")')
         end select
       endif
@@ -2439,17 +2439,17 @@ end
               itsub= itdiis
             endif
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
 &             iter,itsub,datamol%escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
 &             iter,itsub,datamol%escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
             if(datacomp%master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,datamol%escf,deltae,diffmax
+&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,datamol%escf,deltae,diffmax
         end select
 !
 ! Check SCF convergence
@@ -2475,7 +2475,7 @@ end
 !
         if(iter == datajob%maxiter) then
           if(datacomp%master) then
-            write(*,'(" SCF did not converge.")')
+            write(datacomp%iout,'(" SCF did not converge.")')
             call iabort
           endif
         endif
@@ -2485,16 +2485,16 @@ end
         call dcopy(nao3,work(nao3+1),1,dmtrxb,1)
         call cpu_time(time4)
         if(datacomp%master.and.(datajob%iprint >= 3)) &
-&         write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
+&         write(datacomp%iout,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
       if(datacomp%master) then
-        write(*,'(" -----------------------------------------------------------")')
-        write(*,'("    SCF Converged.")')
-        write(*,'("    DFT Energy = ",f17.9," a.u.")')datamol%escf
-        write(*,'("    Exchange + Correlation energy = ",f17.9," a.u.")')edft
-        write(*,'("    Number of electrons           = ",f17.9)')totalelec
-        write(*,'(" -----------------------------------------------------------")')
+        write(datacomp%iout,'(" -----------------------------------------------------------")')
+        write(datacomp%iout,'("    SCF Converged.")')
+        write(datacomp%iout,'("    DFT Energy = ",f17.9," a.u.")')datamol%escf
+        write(datacomp%iout,'("    Exchange + Correlation energy = ",f17.9," a.u.")')edft
+        write(datacomp%iout,'("    Number of electrons           = ",f17.9)')totalelec
+        write(datacomp%iout,'(" -----------------------------------------------------------")')
       endif
 !
 ! Calculate spin expectation values
@@ -2503,10 +2503,10 @@ end
 &                   nao,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
 !
       if(datacomp%master) then
-        write(*,'(" -------------------------------")')
-        write(*,'("    Sz =",f7.3)')sz
-        write(*,'("    S-squared =",f7.3)')s2
-        write(*,'(" -------------------------------"/)')
+        write(datacomp%iout,'(" -------------------------------")')
+        write(datacomp%iout,'("    Sz =",f7.3)')sz
+        write(datacomp%iout,'("    S-squared =",f7.3)')s2
+        write(datacomp%iout,'(" -------------------------------"/)')
       endif
 !
 ! Unset arrays

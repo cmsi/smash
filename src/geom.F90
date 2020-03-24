@@ -39,7 +39,7 @@
           if(rr /= zero) then
             datamol%enuc= datamol%enuc+chrgij/rr
             if((rr <= threshatom).and.datacomp%master) then
-              write(*,'("Warning! Distance of Atoms",i4," and",i4," is short!")') iatom, jatom
+              write(datacomp%iout,'("Warning! Distance of Atoms",i4," and",i4," is short!")') iatom, jatom
               datacomp%nwarn= datacomp%nwarn+1
             endif       
           else
@@ -187,7 +187,7 @@ end
         enddo mblock
 !
      if(datacomp%master.and.(numb /= 1)) then
-       write(*,'(" There are",i3," moleclar blocks in redundant coordinate.")') numb
+       write(datacomp%iout,'(" There are",i3," moleclar blocks in redundant coordinate.")') numb
      endif
 !
 ! Calculate length between molecular fragments
@@ -494,15 +494,15 @@ end
 ! Print delta xyz
 !
       if(datacomp%master.and.(datajob%iprint >= 2)) then
-        write(*,'(" ----------------------------------------------------")')
-        write(*,'("          Delta xyz (Angstrom)")')
-        write(*,'("  Atom            X             Y             Z")')
-        write(*,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'("          Delta xyz (Angstrom)")')
+        write(datacomp%iout,'("  Atom            X             Y             Z")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
         do i= 1,natom3/3
-          write(*,'(3x,a3,3x,3f14.7)')table(datamol%numatomic(i)), &
+          write(datacomp%iout,'(3x,a3,3x,3f14.7)')table(datamol%numatomic(i)), &
 &              ((coord((i-1)*3+j)-coordold((i-1)*3+j))*toang,j=1,3)
         enddo
-        write(*,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
       endif
 !
       return
@@ -712,7 +712,7 @@ end
           suml= suml+workv(ii,1)*workv(ii,1)/(rlambda-workv(ii,3))
         enddo
         if(datacomp%master.and.(datajob%iprint >= 3)) then
-          write(*,'(" Lambda iteration of RFO",i3,3x,"Lambda=",1p,d15.8,4x,"Sum=",1p,d15.8)') &
+          write(datacomp%iout,'(" Lambda iteration of RFO",i3,3x,"Lambda=",1p,d15.8,4x,"Sum=",1p,d15.8)') &
 &               iterrfo,rlambda,suml
         endif
         if(abs(rlambda-suml) <= convl) exit
@@ -752,7 +752,7 @@ end
         rmsdx= sqrt(ddot(natom3,workv,1,workv,1)/natom3)
         rmsqx= sqrt(ddot(numredun,workv(1,2),1,workv(1,2),1)/numredun)
         if(datacomp%master.and.(datajob%iprint >= 3)) then
-          write(*,'(" Displacement Iteration",i3,2x,"RMS(Cart)=",1p,d10.3,4x, &
+          write(datacomp%iout,'(" Displacement Iteration",i3,2x,"RMS(Cart)=",1p,d10.3,4x, &
 &                   "RMS(Red)=",1p,d10.3)') iterdx, rmsdx, rmsqx
         endif
         if(rmsdx < convrms) exit
@@ -818,23 +818,23 @@ end
         endif
       enddo
       if(datacomp%master) then
-        if(datajob%iprint >= 3) write(*,*)
-        write(*,'(" ---------------------------------------------------------------")')
-        write(*,'("   Redundant coordinate parameters (Angstrom and Degree)")')
-        write(*,'("                                        New           Old")')
-        write(*,'(" ---------------------------------------------------------------")')
+        if(datajob%iprint >= 3) write(datacomp%iout,*)
+        write(datacomp%iout,'(" ---------------------------------------------------------------")')
+        write(datacomp%iout,'("   Redundant coordinate parameters (Angstrom and Degree)")')
+        write(datacomp%iout,'("                                        New           Old")')
+        write(datacomp%iout,'(" ---------------------------------------------------------------")')
         do ii= 1,numbond
           write(chartmp(1:3),'(i5)')ii,iredun(1:2,ii)
           paramred= trim(trim("Bond"//adjustl(chartmp(1)) //"   ("//adjustl(chartmp(2)))//"," &
 &                                  //adjustl(chartmp(3)))//")"
-          write(*,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*toang, &
+          write(datacomp%iout,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*toang, &
 &                                                  coordredun(ii,2)*toang
         enddo
         do ii= numbond+1,numbond+numangle
           write(chartmp(1:4),'(i5)')ii-numbond,iredun(1:3,ii)
           paramred= trim(trim(trim("Angle"//adjustl(chartmp(1)) //"  ("//adjustl(chartmp(2))) &
 &                                    //","//adjustl(chartmp(3)))//","//adjustl(chartmp(4)))//")"
-          write(*,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*rad2deg, &
+          write(datacomp%iout,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*rad2deg, &
 &                                                  coordredun(ii,2)*rad2deg
         enddo
         do ii= numbond+numangle+1,numbond+numangle+numtorsion
@@ -842,25 +842,25 @@ end
           paramred= trim(trim(trim(trim("Torsion"//adjustl(chartmp(1)) //"("// &
 &                   adjustl(chartmp(2)))//","//adjustl(chartmp(3)))//","// &
 &                   adjustl(chartmp(4)))//","//adjustl(chartmp(5)))//")"
-          write(*,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*rad2deg, &
+          write(datacomp%iout,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*rad2deg, &
 &                                                  coordredun(ii,2)*rad2deg
         enddo
-        write(*,'(" ---------------------------------------------------------------")')
+        write(datacomp%iout,'(" ---------------------------------------------------------------")')
       endif
 
 !
 ! Print delta xyz
 !
       if(datacomp%master.and.(datajob%iprint >= 2)) then
-        write(*,'(" ----------------------------------------------------")')
-        write(*,'("          Delta xyz (Angstrom)")')
-        write(*,'("  Atom            X             Y             Z")')
-        write(*,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'("          Delta xyz (Angstrom)")')
+        write(datacomp%iout,'("  Atom            X             Y             Z")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
         do ii= 1,natom3/3
-          write(*,'(3x,a3,3x,3f14.7)') table(datamol%numatomic(ii)), &
+          write(datacomp%iout,'(3x,a3,3x,3f14.7)') table(datamol%numatomic(ii)), &
 &              ((coord((ii-1)*3+jj)-coordold((ii-1)*3+jj))*toang,jj=1,3)
         enddo
-        write(*,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
       endif
 !
       return

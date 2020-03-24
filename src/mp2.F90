@@ -48,16 +48,16 @@
       noac3= noac*(noac+1)/2
 !
       if(datacomp%master) then
-        write(*,'(" ----------------------------------------------")')
-        write(*,'("   MP2 calculation ")')
-        write(*,'(" ----------------------------------------------")')
-        write(*,'("     Ncore=",i4,",   Nvfz=",i4)') datajob%ncore, datajob%nvfz
-        write(*,'(" ----------------------------------------------")')
-        write(*,'("     Number of basis functions         =",i5)')nao
-        write(*,'("     Number of basis shells            =",i5)')nshell
-        write(*,'("     Number of correlated occupied MOs =",i5)')noac
-        write(*,'("     Number of active virtual MOs      =",i5)')nvac
-        write(*,'(" ----------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------")')
+        write(datacomp%iout,'("   MP2 calculation ")')
+        write(datacomp%iout,'(" ----------------------------------------------")')
+        write(datacomp%iout,'("     Ncore=",i4,",   Nvfz=",i4)') datajob%ncore, datajob%nvfz
+        write(datacomp%iout,'(" ----------------------------------------------")')
+        write(datacomp%iout,'("     Number of basis functions         =",i5)')nao
+        write(datacomp%iout,'("     Number of basis shells            =",i5)')nshell
+        write(datacomp%iout,'("     Number of correlated occupied MOs =",i5)')noac
+        write(datacomp%iout,'("     Number of active virtual MOs      =",i5)')nvac
+        write(datacomp%iout,'(" ----------------------------------------------")')
       endif
 !
       icount= 0
@@ -113,7 +113,7 @@
 ! Single pass
 !
       elseif(numocc3 >= noac3) then
-        if(datacomp%master) write(*,'(" == Single pass calculation ==")')
+        if(datacomp%master) write(datacomp%iout,'(" == Single pass calculation ==")')
         call mp2single(emp2st,cmo,energymo,xint,noac,nvac,datajob%ncore,maxsize,maxdim,idis, &
 &                      nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
 !
@@ -123,8 +123,8 @@
         npass=(noac3-1)/numocc3+1
         numocc3=(noac3-1)/npass+1
         if(datacomp%master) then
-          write(*,'(" == Multiple pass calculation ==")')
-          write(*,'("    Number of passes :",i5)')npass
+          write(datacomp%iout,'(" == Multiple pass calculation ==")')
+          write(datacomp%iout,'("    Number of passes :",i5)')npass
         endif
         call mp2multi(emp2st,cmo,energymo,xint,noac,nvac,datajob%ncore,maxsize,maxdim,idis, &
 &                     npass,numocc3,nproc,myrank,mpi_comm,datajob,datamol,databasis,datacomp)
@@ -135,13 +135,13 @@
       datamol%escsmp2= emp2stsum(1)*p12+emp2stsum(2)/three
 !
       if(datacomp%master) then
-        write(*,'(" -------------------------------------------------")')
-        write(*,'("   HF Energy                  =",f17.9)') datamol%escf
-        write(*,'("   MP2 Correlation Energy     =",f17.9)') datamol%emp2
-        write(*,'("   HF + MP2 Energy            =",f17.9)') datamol%escf+datamol%emp2
-        write(*,'("   SCS-MP2 Correlation Energy =",f17.9)') datamol%escsmp2
-        write(*,'("   HF + SCS-MP2 Energy        =",f17.9)') datamol%escf+datamol%escsmp2
-        write(*,'(" -------------------------------------------------")')
+        write(datacomp%iout,'(" -------------------------------------------------")')
+        write(datacomp%iout,'("   HF Energy                  =",f17.9)') datamol%escf
+        write(datacomp%iout,'("   MP2 Correlation Energy     =",f17.9)') datamol%emp2
+        write(datacomp%iout,'("   HF + MP2 Energy            =",f17.9)') datamol%escf+datamol%emp2
+        write(datacomp%iout,'("   SCS-MP2 Correlation Energy =",f17.9)') datamol%escsmp2
+        write(datacomp%iout,'("   HF + SCS-MP2 Energy        =",f17.9)') datamol%escf+datamol%escsmp2
+        write(datacomp%iout,'(" -------------------------------------------------")')
       endif
       return
 end
@@ -222,7 +222,7 @@ end
 !
 ! AO intengral generation and first and second integral transformations
 !
-      if(datacomp%master) write(*,'("    Start first and second integral transformations")')
+      if(datacomp%master) write(datacomp%iout,'("    Start first and second integral transformations")')
       call mp2trans12(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
 &                     mlsize,noac,maxdim,datajob%cutint2,idis,nproc,myrank, &
 &                     datajob,datamol,databasis)
@@ -235,7 +235,7 @@ end
 !
 ! Third and fourth integral transformations and MP2 energy calculation
 !
-      if(datacomp%master) write(*,'("    Start third and fourth integral transformations")')
+      if(datacomp%master) write(datacomp%iout,'("    Start third and fourth integral transformations")')
       call mp2trans34(cmo(1,datamol%neleca+1),energymo,trint2,trint3,trint4,emp2st,noac,nvac, &
 &                     ncore,idis,nproc,myrank,mpi_comm,datamol,databasis)
 !
@@ -342,7 +342,7 @@ end
 ! AO intengral generation and first and second integral transformations
 !
         if(datacomp%master) &
-&         write(*,'("    Start first and second integral transformations of Pass",i5)')ipass
+&         write(datacomp%iout,'("    Start first and second integral transformations of Pass",i5)')ipass
         call mp2trans12m(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
 &                        mlsize,noac,maxdim,datajob%cutint2,idis,numij,ijindex(1,ipass), &
 &                        nproc,myrank,datajob,datamol,databasis)
@@ -356,7 +356,7 @@ end
 ! Third and fourth integral transformations and MP2 energy calculation
 !
         if(datacomp%master) &
-&         write(*,'("    Start third and fourth integral transformations of Pass",i5)')ipass
+&         write(datacomp%iout,'("    Start third and fourth integral transformations of Pass",i5)')ipass
         call mp2trans34m(cmo(1,datamol%neleca+1),energymo,trint2,trint3,trint4,emp2st,nvac, &
 &                        ncore,idis,numij,ijindex(1,ipass),nproc,myrank,mpi_comm,datamol,databasis)
 !
@@ -462,7 +462,7 @@ end
       enddo
 !
 !     if(iprint >= 3) then
-!       write(*,'("Time for Tr1=",f9.3,"  Time for Tr2=",f9.3,i3)')tr1,tr2,myrank
+!       write(datacomp%iout,'("Time for Tr1=",f9.3,"  Time for Tr2=",f9.3,i3)')tr1,tr2,myrank
 !     endif
       return
 end
@@ -966,7 +966,7 @@ end
       enddo
 !
 !     if(iprint >= 3) then
-!       write(*,'("Time for Tr1=",f9.3,"  Time for Tr2=",f9.3,i3)')tr1,tr2,myrank
+!       write(datacomp%iout,'("Time for Tr1=",f9.3,"  Time for Tr2=",f9.3,i3)')tr1,tr2,myrank
 !     endif
       return
 end

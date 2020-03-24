@@ -69,16 +69,16 @@
       nvac= nvir-datajob%nvfz
 !
       if(datacomp%master) then
-        write(*,'(" ----------------------------------------------")')
-        write(*,'("   MP2 energy gradient calculation ")')
-        write(*,'(" ----------------------------------------------")')
-        write(*,'("     Ncore=",i4,",   Nvfz=",i4)') datajob%ncore, datajob%nvfz
-        write(*,'(" ----------------------------------------------")')
-        write(*,'("     Number of basis functions         =",i5)')nao
-        write(*,'("     Number of basis shells            =",i5)')nshell
-        write(*,'("     Number of correlated occupied MOs =",i5)')noac
-        write(*,'("     Number of active virtual MOs      =",i5)')nvac
-        write(*,'(" ----------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------")')
+        write(datacomp%iout,'("   MP2 energy gradient calculation ")')
+        write(datacomp%iout,'(" ----------------------------------------------")')
+        write(datacomp%iout,'("     Ncore=",i4,",   Nvfz=",i4)') datajob%ncore, datajob%nvfz
+        write(datacomp%iout,'(" ----------------------------------------------")')
+        write(datacomp%iout,'("     Number of basis functions         =",i5)')nao
+        write(datacomp%iout,'("     Number of basis shells            =",i5)')nshell
+        write(datacomp%iout,'("     Number of correlated occupied MOs =",i5)')noac
+        write(datacomp%iout,'("     Number of active virtual MOs      =",i5)')nvac
+        write(datacomp%iout,'(" ----------------------------------------------")')
       endif
 !
       icount= 0
@@ -194,10 +194,10 @@
         npass=(noac-1)/numi+1
         if(datacomp%master) then
           if(npass == 1) then
-            write(*,'(" == Single pass calculation ==")')
+            write(datacomp%iout,'(" == Single pass calculation ==")')
           else
-            write(*,'(" == Multiple pass calculation ==")')
-            write(*,'("    Number of passes :",i5)')npass
+            write(datacomp%iout,'(" == Multiple pass calculation ==")')
+            write(datacomp%iout,'("    Number of passes :",i5)')npass
           endif
         endif
         call mp2gradmulti(emp2st,egradtmp,egrad,cmo,energymo,xint,nocc,noac,nvir,nvac, &
@@ -210,26 +210,26 @@
       datamol%escsmp2= emp2stsum(1)*p12+emp2stsum(2)/three
 !
       if(datacomp%master) then
-        write(*,'(" -------------------------------------------------")')
-        write(*,'("   HF Energy                  =",f17.9)') datamol%escf
-        write(*,'("   MP2 Correlation Energy     =",f17.9)') datamol%emp2
-        write(*,'("   HF + MP2 Energy            =",f17.9)') datamol%escf+datamol%emp2
-        write(*,'("   SCS-MP2 Correlation Energy =",f17.9)') datamol%escsmp2
-        write(*,'("   HF + SCS-MP2 Energy        =",f17.9)') datamol%escf+datamol%escsmp2
-        write(*,'(" -------------------------------------------------")')
+        write(datacomp%iout,'(" -------------------------------------------------")')
+        write(datacomp%iout,'("   HF Energy                  =",f17.9)') datamol%escf
+        write(datacomp%iout,'("   MP2 Correlation Energy     =",f17.9)') datamol%emp2
+        write(datacomp%iout,'("   HF + MP2 Energy            =",f17.9)') datamol%escf+datamol%emp2
+        write(datacomp%iout,'("   SCS-MP2 Correlation Energy =",f17.9)') datamol%escsmp2
+        write(datacomp%iout,'("   HF + SCS-MP2 Energy        =",f17.9)') datamol%escf+datamol%escsmp2
+        write(datacomp%iout,'(" -------------------------------------------------")')
       endif
 !
       call para_allreducer(egradtmp,egrad,3*datamol%natom,mpi_comm)
 !
       if(datacomp%master) then
-        write(*,'(" ----------------------------------------------------")')
-        write(*,'("          Gradient (Hartree/Bohr)")')
-        write(*,'("  Atom            X             Y             Z")')
-        write(*,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'("          Gradient (Hartree/Bohr)")')
+        write(datacomp%iout,'("  Atom            X             Y             Z")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
         do ii= 1,datamol%natom
-          write(*,'(3x,a3,3x,3f14.7)') table(datamol%numatomic(ii)),(egrad(jj,ii),jj=1,3)
+          write(datacomp%iout,'(3x,a3,3x,3f14.7)') table(datamol%numatomic(ii)),(egrad(jj,ii),jj=1,3)
         enddo
-        write(*,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
       endif
 !
       return
@@ -323,7 +323,7 @@ end
 ! Start multiple pass
 !
       do ipass= 1,npass
-        if(datacomp%master) write(*,'("    Start Pass",i5)')ipass
+        if(datacomp%master) write(datacomp%iout,'("    Start Pass",i5)')ipass
         if(ipass == npass) numitrans= noac-(npass-1)*numi
         istart=(ipass-1)*numi
 !
@@ -1493,7 +1493,7 @@ end
 !
         deltapai= sqrt(deltapai/(nocc*nvir))
 !ishimura
-        if(datacomp%master) write(*,'(6x,"Cycle",i3,3x,"Z-Vector error=",1p,d11.3)')iter,deltapai
+        if(datacomp%master) write(datacomp%iout,'(6x,"Cycle",i3,3x,"Z-Vector error=",1p,d11.3)')iter,deltapai
         if(deltapai < datajob%threshmp2cphf) exit
 !
         if(itdiis == datajob%maxmp2diis) itdiis= 0

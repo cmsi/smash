@@ -45,9 +45,9 @@
       data maxfunc/1,3,6,10,15,21,28,36/
 !
       if(datacomp%master) then
-        write(*,'(" --------------------------------------------")')
-        write(*,'("   Hartree-Fock energy gradient calculation")')
-        write(*,'(" --------------------------------------------")')
+        write(datacomp%iout,'(" --------------------------------------------")')
+        write(datacomp%iout,'("   Hartree-Fock energy gradient calculation")')
+        write(datacomp%iout,'(" --------------------------------------------")')
       endif
 !
 ! Set arrays
@@ -85,14 +85,14 @@
       call para_allreducer(egradtmp(1),egrad(1,1),3*natom,mpi_comm1)
 !
       if(datacomp%master) then
-        write(*,'(" ----------------------------------------------------")')
-        write(*,'("          Gradient (Hartree/Bohr)")')
-        write(*,'("  Atom            X             Y             Z")')
-        write(*,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'("          Gradient (Hartree/Bohr)")')
+        write(datacomp%iout,'("  Atom            X             Y             Z")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
         do i= 1,natom
-          write(*,'(3x,a3,3x,3f14.7)') table(datamol%numatomic(i)),(egrad(j,i),j=1,3)
+          write(datacomp%iout,'(3x,a3,3x,3f14.7)') table(datamol%numatomic(i)),(egrad(j,i),j=1,3)
         enddo
-        write(*,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
       endif
 !
 ! Unset arrays
@@ -138,9 +138,9 @@ end
       data maxfunc/1,3,6,10,15,21,28,36/
 !
       if(datacomp%master) then
-        write(*,'(" ---------------------------------------------------------")')
-        write(*,'("   Unrestricted Hartree-Fock energy gradient calculation")')
-        write(*,'(" ---------------------------------------------------------")')
+        write(datacomp%iout,'(" ---------------------------------------------------------")')
+        write(datacomp%iout,'("   Unrestricted Hartree-Fock energy gradient calculation")')
+        write(datacomp%iout,'(" ---------------------------------------------------------")')
       endif
 !
 ! Set arrays
@@ -179,14 +179,14 @@ end
       call para_allreducer(egradtmp(1),egrad(1,1),3*natom,mpi_comm1)
 !
       if(datacomp%master) then
-        write(*,'(" ----------------------------------------------------")')
-        write(*,'("          Gradient (Hartree/Bohr)")')
-        write(*,'("  Atom            X             Y             Z")')
-        write(*,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'("          Gradient (Hartree/Bohr)")')
+        write(datacomp%iout,'("  Atom            X             Y             Z")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
         do i= 1,natom
-          write(*,'(3x,a3,3x,3f14.7)') table(datamol%numatomic(i)),(egrad(j,i),j=1,3)
+          write(datacomp%iout,'(3x,a3,3x,3f14.7)') table(datamol%numatomic(i)),(egrad(j,i),j=1,3)
         enddo
-        write(*,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
       endif
 !
 ! Unset arrays
@@ -235,9 +235,9 @@ end
       data maxfunc/1,3,6,10,15,21,28,36/
 !
       if(datacomp%master) then
-        write(*,'(" -----------------------------------")')
-        write(*,'("   DFT energy gradient calculation")')
-        write(*,'(" -----------------------------------")')
+        write(datacomp%iout,'(" -----------------------------------")')
+        write(datacomp%iout,'("   DFT energy gradient calculation")')
+        write(datacomp%iout,'(" -----------------------------------")')
       endif
 !
 ! Set arrays
@@ -300,14 +300,14 @@ end
       call para_allreducer(egradtmp(1,1),egrad(1,1),3*natom,mpi_comm1)
 !
       if(datacomp%master) then
-        write(*,'(" ----------------------------------------------------")')
-        write(*,'("          Gradient (Hartree/Bohr)")')
-        write(*,'("  Atom            X             Y             Z")')
-        write(*,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'("          Gradient (Hartree/Bohr)")')
+        write(datacomp%iout,'("  Atom            X             Y             Z")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
         do i= 1,natom
-          write(*,'(3x,a3,3x,3f14.7)') table(datamol%numatomic(i)),(egrad(j,i),j=1,3)
+          write(datacomp%iout,'(3x,a3,3x,3f14.7)') table(datamol%numatomic(i)),(egrad(j,i),j=1,3)
         enddo
-        write(*,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
       endif
 !
 ! Unset arrays
@@ -363,9 +363,9 @@ end
       data maxfunc/1,3,6,10,15,21,28,36/
 !
       if(datacomp%master) then
-        write(*,'(" ------------------------------------------------")')
-        write(*,'("   Unrestricted DFT energy gradient calculation")')
-        write(*,'(" ------------------------------------------------")')
+        write(datacomp%iout,'(" ------------------------------------------------")')
+        write(datacomp%iout,'("   Unrestricted DFT energy gradient calculation")')
+        write(datacomp%iout,'(" ------------------------------------------------")')
       endif
 !
 ! Set arrays
@@ -431,14 +431,14 @@ end
       call para_allreducer(egradtmp(1,1),egrad(1,1),3*natom,mpi_comm1)
 !
       if(datacomp%master) then
-        write(*,'(" ----------------------------------------------------")')
-        write(*,'("          Gradient (Hartree/Bohr)")')
-        write(*,'("  Atom            X             Y             Z")')
-        write(*,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'("          Gradient (Hartree/Bohr)")')
+        write(datacomp%iout,'("  Atom            X             Y             Z")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
         do i= 1,natom
-          write(*,'(3x,a3,3x,3f14.7)') table(datamol%numatomic(i)),(egrad(j,i),j=1,3)
+          write(datacomp%iout,'(3x,a3,3x,3f14.7)') table(datamol%numatomic(i)),(egrad(j,i),j=1,3)
         enddo
-        write(*,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
       endif
 !
 ! Unset arrays

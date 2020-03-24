@@ -123,7 +123,7 @@ end
       implicit none
       type typecomp
         integer :: memmax=1000000000, memused=0, memusedmax=0
-        integer :: inpstd=5, inpcopy=10, icheck=20
+        integer :: inpstd=5, iout=6, inpcopy=10, icheck=11
         integer :: iwall0, iwall1
         integer :: nwarn=0
         integer :: nproc1, myrank1, nproc2, myrank2, mpi_comm1, mpi_comm2

@@ -85,7 +85,7 @@
             write(datacomp%inpcopy,*)
           endif
           if(ii == maxline) then
-            write(*,'(" Input file is too long in Subroutine readinput!")')
+            write(*,'(" Error! Input file is too long in Subroutine readinput!")')
             call iabort
           endif
         enddo
@@ -400,14 +400,14 @@ end
 &       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
 !
       if(datacomp%master) then
-        write(*,'(" ----------------------------------------------------")')
-        write(*,'("          Molecular Geometry (Angstrom)")')
-        write(*,'("  Atom            X             Y             Z")')
-        write(*,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'("          Molecular Geometry (Angstrom)")')
+        write(datacomp%iout,'("  Atom            X             Y             Z")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
         do i= 1,datamol%natom
-          write(*,'(3x,a3,3x,3f14.7)')table(datamol%numatomic(i)),(datamol%coord(j,i)*toang,j=1,3)
+          write(datacomp%iout,'(3x,a3,3x,3f14.7)')table(datamol%numatomic(i)),(datamol%coord(j,i)*toang,j=1,3)
         enddo
-        write(*,'(" ----------------------------------------------------",/)')
+        write(datacomp%iout,'(" ----------------------------------------------------",/)')
       endif
       return
 end
@@ -445,25 +445,25 @@ end
       second=.false.
       if(datacomp%master.and.(datajob%iprint >= 1)) then
         iatom= 0
-        write(*,'(" -------------")')
-        write(*,'("   Basis set")')
-        write(*,'(" -------------")')
+        write(datacomp%iout,'(" -------------")')
+        write(datacomp%iout,'("   Basis set")')
+        write(datacomp%iout,'(" -------------")')
         do ishell= 1, databasis%nshell
           if(iatom /= databasis%locatom(ishell)) then
             if(jatomcheck(datamol%numatomic(databasis%locatom(ishell))) /= 0)cycle
             jatomcheck(datamol%numatomic(databasis%locatom(ishell)))= 1
-            if(second) write(*,'("  ****")')
+            if(second) write(datacomp%iout,'("  ****")')
             second=.true.
-            write(*,'(2x,a3)')table(datamol%numatomic(databasis%locatom(ishell)))
+            write(datacomp%iout,'(2x,a3)')table(datamol%numatomic(databasis%locatom(ishell)))
             iatom= databasis%locatom(ishell)
           endif
-          if(databasis%mtype(ishell) == 0) write(*,'(4x,"S",i3)') databasis%mprim(ishell)
-          if(databasis%mtype(ishell) == 1) write(*,'(4x,"P",i3)') databasis%mprim(ishell)
-          if(databasis%mtype(ishell) == 2) write(*,'(4x,"D",i3)') databasis%mprim(ishell)
-          if(databasis%mtype(ishell) == 3) write(*,'(4x,"F",i3)') databasis%mprim(ishell)
-          if(databasis%mtype(ishell) == 4) write(*,'(4x,"G",i3)') databasis%mprim(ishell)
-          if(databasis%mtype(ishell) == 5) write(*,'(4x,"H",i3)') databasis%mprim(ishell)
-          if(databasis%mtype(ishell) == 6) write(*,'(4x,"I",i3)') databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 0) write(datacomp%iout,'(4x,"S",i3)') databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 1) write(datacomp%iout,'(4x,"P",i3)') databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 2) write(datacomp%iout,'(4x,"D",i3)') databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 3) write(datacomp%iout,'(4x,"F",i3)') databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 4) write(datacomp%iout,'(4x,"G",i3)') databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 5) write(datacomp%iout,'(4x,"H",i3)') databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 6) write(datacomp%iout,'(4x,"I",i3)') databasis%mprim(ishell)
 !
           if(databasis%mtype(ishell) >  6) then
             write(*,'(" Error! The subroutine writebasis supports up to i functions.")')
@@ -472,10 +472,10 @@ end
 !
           iloc= databasis%locprim(ishell)
           do iprim= 1,databasis%mprim(ishell)
-             write(*,'(3x,f16.7,1x,f15.8)') databasis%ex(iloc+iprim), databasis%coeffinp(iloc+iprim)
+             write(datacomp%iout,'(3x,f16.7,1x,f15.8)') databasis%ex(iloc+iprim), databasis%coeffinp(iloc+iprim)
           enddo
         enddo
-        write(*,'("  ****")')
+        write(datacomp%iout,'("  ****")')
       endif
       return
 end
@@ -511,42 +511,42 @@ end
 ! Write ECP functions
 !
       if(datacomp%master.and.(datajob%iprint >= 1)) then
-        write(*,'(" ----------------")')
-        write(*,'("   ECP function")')
-        write(*,'(" ----------------")')
+        write(datacomp%iout,'(" ----------------")')
+        write(datacomp%iout,'("   ECP function")')
+        write(datacomp%iout,'(" ----------------")')
 !
         do iatom= 1,datamol%natom
           if(databasis%maxangecp(iatom) /= -1)then
             if(jatomcheck(datamol%numatomic(iatom)) == 0) then
               jatomcheck(datamol%numatomic(iatom))= iatom
-              write(*,'(2x,a3)')table(datamol%numatomic(iatom))
+              write(datacomp%iout,'(2x,a3)')table(datamol%numatomic(iatom))
               tblecp=table(datamol%numatomic(iatom))
               ll= len_trim(tblecp)
               tblecp= tblecp(1:ll)//'-ECP'
-              write(*,'(2x,a7,2x,i3,2x,i3)') &
+              write(datacomp%iout,'(2x,a7,2x,i3,2x,i3)') &
 &               tblecp, databasis%maxangecp(iatom), databasis%izcore(iatom)
               nprim= databasis%mprimecp(0,iatom)
-              if(databasis%maxangecp(iatom) == 0) write(*,'(2x,"s-ul potential")')
-              if(databasis%maxangecp(iatom) == 1) write(*,'(2x,"p-ul potential")')
-              if(databasis%maxangecp(iatom) == 2) write(*,'(2x,"d-ul potential")')
-              if(databasis%maxangecp(iatom) == 3) write(*,'(2x,"f-ul potential")')
-              if(databasis%maxangecp(iatom) == 4) write(*,'(2x,"g-ul potential")')
-              write(*,'(3x,i2)')nprim
+              if(databasis%maxangecp(iatom) == 0) write(datacomp%iout,'(2x,"s-ul potential")')
+              if(databasis%maxangecp(iatom) == 1) write(datacomp%iout,'(2x,"p-ul potential")')
+              if(databasis%maxangecp(iatom) == 2) write(datacomp%iout,'(2x,"d-ul potential")')
+              if(databasis%maxangecp(iatom) == 3) write(datacomp%iout,'(2x,"f-ul potential")')
+              if(databasis%maxangecp(iatom) == 4) write(datacomp%iout,'(2x,"g-ul potential")')
+              write(datacomp%iout,'(3x,i2)')nprim
               do jprim= 1,nprim
                 jloc= jprim+databasis%locecp(0,iatom)
-                write(*,'(2x,i1,2f16.7)') &
+                write(datacomp%iout,'(2x,i1,2f16.7)') &
 &                 databasis%mtypeecp(jloc), databasis%execp(jloc), databasis%coeffecp(jloc)
               enddo
               do k= 1,databasis%maxangecp(iatom)
                 nprim= databasis%mprimecp(k,iatom)
-                if(k == 1) write(*,'(2x,"s-ul potential")')
-                if(k == 2) write(*,'(2x,"p-ul potential")')
-                if(k == 3) write(*,'(2x,"d-ul potential")')
-                if(k == 4) write(*,'(2x,"f-ul potential")')
-                write(*,'(3x,i2)')nprim
+                if(k == 1) write(datacomp%iout,'(2x,"s-ul potential")')
+                if(k == 2) write(datacomp%iout,'(2x,"p-ul potential")')
+                if(k == 3) write(datacomp%iout,'(2x,"d-ul potential")')
+                if(k == 4) write(datacomp%iout,'(2x,"f-ul potential")')
+                write(datacomp%iout,'(3x,i2)')nprim
                 do jprim= 1,nprim
                   jloc= jprim+databasis%locecp(k,iatom)
-                  write(*,'(2x,i1,2f16.7)') &
+                  write(datacomp%iout,'(2x,i1,2f16.7)') &
 &                  databasis%mtypeecp(jloc), databasis%execp(jloc), databasis%coeffecp(jloc)
                 enddo
               enddo
@@ -554,7 +554,7 @@ end
           endif
         enddo
 !
-        write(*,*)
+        write(datacomp%iout,*)
       endif
 !
       return
@@ -583,34 +583,34 @@ end
           call iabort
         endif
 !
-        write(*,'(" -------------------------------------------------------------------------")')
-        write(*,'("   Job infomation")')
-        write(*,'(" -------------------------------------------------------------------------")')
-        write(*,'("   Runtype = ",a12,  ",  Method  = ",a12,     " ,  Basis    = ",a12)') &
+        write(datacomp%iout,'(" -------------------------------------------------------------------------")')
+        write(datacomp%iout,'("   Job infomation")')
+        write(datacomp%iout,'(" -------------------------------------------------------------------------")')
+        write(datacomp%iout,'("   Runtype = ",a12,  ",  Method  = ",a12,     " ,  Basis    = ",a12)') &
 &                  datajob%runtype, datajob%method, databasis%basis
-        write(*,'("   Memory  =",i10, "MB ,  SCFtype = ",a12,     " ,  Precision= ",a12)') &
+        write(datacomp%iout,'("   Memory  =",i10, "MB ,  SCFtype = ",a12,     " ,  Precision= ",a12)') &
 &                  datacomp%memmax/125000, datajob%scftype, datajob%precision
-        write(*,'("   Charge  = ",F11.1," ,  Multi   = ",i12,     " ,  Spher    = ",l1)') &
+        write(datacomp%iout,'("   Charge  = ",F11.1," ,  Multi   = ",i12,     " ,  Spher    = ",l1)') &
 &                  datamol%charge, datamol%multi, databasis%spher
-        write(*,'("   Bohr    = ",l1,11x,",  Guess   = ",a12,     " ,  Octupole = ",l1)') &
+        write(datacomp%iout,'("   Bohr    = ",l1,11x,",  Guess   = ",a12,     " ,  Octupole = ",l1)') &
 &                  datajob%bohr, datajob%guess, datajob%octupole
         if(datajob%runtype == 'OPTIMIZE') &
-&       write(*,'("   Nopt    =  ",i10," ,  Optconv = ",1p,D12.1," ,  Cartesian= ",l1)') &
+&       write(datacomp%iout,'("   Nopt    =  ",i10," ,  Optconv = ",1p,D12.1," ,  Cartesian= ",l1)') &
 &                  datajob%nopt, datajob%optconv, datajob%cartesian
         if(datajob%check /= '') &
-        write(*,'("   Check   = ",a64)') datajob%check
-        write(*,'(" -------------------------------------------------------------------------")')
+        write(datacomp%iout,'("   Check   = ",a64)') datajob%check
+        write(datacomp%iout,'(" -------------------------------------------------------------------------")')
 
-        write(*,'(/," ------------------------------------------------")')
-        write(*,'("   Computational condition")')
-        write(*,'(" ------------------------------------------------")')
-        write(*,'("   Number of atoms                      =",i5)') datamol%natom
-        write(*,'("   Number of alpha electrons            =",i5)') datamol%neleca
-        write(*,'("   Number of beta electrons             =",i5)') datamol%nelecb
-        write(*,'("   Number of basis shells               =",i5)') databasis%nshell
-        write(*,'("   Number of basis contracted functions =",i5)') databasis%nao
-        write(*,'("   Number of basis primitive functions  =",i5)') databasis%nprim
-        write(*,'(" ------------------------------------------------",/)')
+        write(datacomp%iout,'(/," ------------------------------------------------")')
+        write(datacomp%iout,'("   Computational condition")')
+        write(datacomp%iout,'(" ------------------------------------------------")')
+        write(datacomp%iout,'("   Number of atoms                      =",i5)') datamol%natom
+        write(datacomp%iout,'("   Number of alpha electrons            =",i5)') datamol%neleca
+        write(datacomp%iout,'("   Number of beta electrons             =",i5)') datamol%nelecb
+        write(datacomp%iout,'("   Number of basis shells               =",i5)') databasis%nshell
+        write(datacomp%iout,'("   Number of basis contracted functions =",i5)') databasis%nao
+        write(datacomp%iout,'("   Number of basis primitive functions  =",i5)') databasis%nprim
+        write(datacomp%iout,'(" ------------------------------------------------",/)')
       endif
       return
 end
@@ -758,7 +758,7 @@ end
               datamol%znuc(ii)= zero
             endif
           enddo
-          write(*,'(" Geometry is read from checkpoint file.")')
+          write(datacomp%iout,'(" Geometry is read from checkpoint file.")')
         endif
 !
 ! Check dummy and ghost atoms
@@ -767,7 +767,7 @@ end
           minatomic= minval(datamol%numatomic(1:natom))
           if((minatomic <= 0).and.(.not.cartesian)) then
             cartesian=.true.
-            write(*,'(" Warning! Cartesian coordinate is used during geometry optimization.")')
+            write(datacomp%iout,'(" Warning! Cartesian coordinate is used during geometry optimization.")')
             datacomp%nwarn= datacomp%nwarn+1
           endif
         endif
@@ -985,7 +985,7 @@ end
       read(datacomp%icheck,err=9999) checkversion
       read(datacomp%icheck) cdummy, idummy, databasis%nao, idummy, databasis%nshell, databasis%nprim
 !
-      write(*,'(" Basis set is read from checkpoint file.")')
+      write(datacomp%iout,'(" Basis set is read from checkpoint file.")')
       if(databasis%nshell+1 > mxshell) then
         write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
         call iabort
@@ -1319,24 +1319,24 @@ end
 !
       if(datacomp%master.and.(datajob%iprint >= 1)) then
         if(itype == 1) then
-          write(*,'(1x,80("-"))')
-          write(*,'("   Eigenvalues (Hartree)")')
-          write(*,'(1x,80("-"))')
-          write(*,'("   Alpha Occupied: ",5f12.5)')(eigena(imo),imo=1,datamol%neleca)
-          write(*,'("   Alpha Virtual : ",5f12.5)')(eigena(imo),imo=datamol%neleca+1,datamol%nmo)
-          write(*,'(1x,80("-"))')
+          write(datacomp%iout,'(1x,80("-"))')
+          write(datacomp%iout,'("   Eigenvalues (Hartree)")')
+          write(datacomp%iout,'(1x,80("-"))')
+          write(datacomp%iout,'("   Alpha Occupied: ",5f12.5)')(eigena(imo),imo=1,datamol%neleca)
+          write(datacomp%iout,'("   Alpha Virtual : ",5f12.5)')(eigena(imo),imo=datamol%neleca+1,datamol%nmo)
+          write(datacomp%iout,'(1x,80("-"))')
 !
 ! Open-shell
 !
         elseif(itype == 2) then
-          write(*,'(1x,80("-"))')
-          write(*,'("   Eigenvalues (Hartree)")')
-          write(*,'(1x,80("-"))')
-          write(*,'("   Alpha Occupied: ",5f12.5)')(eigena(imo),imo=1,datamol%neleca)
-          write(*,'("   Alpha Virtual : ",5f12.5)')(eigena(imo),imo=datamol%neleca+1,datamol%nmo)
-          write(*,'("   Beta  Occupied: ",5f12.5)')(eigenb(imo),imo=1,datamol%nelecb)
-          write(*,'("   Beta  Virtual : ",5f12.5)')(eigenb(imo),imo=datamol%nelecb+1,datamol%nmo)
-          write(*,'(1x,80("-"))')
+          write(datacomp%iout,'(1x,80("-"))')
+          write(datacomp%iout,'("   Eigenvalues (Hartree)")')
+          write(datacomp%iout,'(1x,80("-"))')
+          write(datacomp%iout,'("   Alpha Occupied: ",5f12.5)')(eigena(imo),imo=1,datamol%neleca)
+          write(datacomp%iout,'("   Alpha Virtual : ",5f12.5)')(eigena(imo),imo=datamol%neleca+1,datamol%nmo)
+          write(datacomp%iout,'("   Beta  Occupied: ",5f12.5)')(eigenb(imo),imo=1,datamol%nelecb)
+          write(datacomp%iout,'("   Beta  Virtual : ",5f12.5)')(eigenb(imo),imo=datamol%nelecb+1,datamol%nmo)
+          write(datacomp%iout,'(1x,80("-"))')
         endif
       endif
 !
@@ -1505,16 +1505,16 @@ end
       if(datacomp%master) then
         do ii= 1,(maxmo-minmo-1)/5+1
           if(imax > maxmo) imax= maxmo
-          write(*,*)
-          write(*,'(20x,5(5x,i4,2x))')(jj,jj=imin,imax)
-          write(*,'(20x,5f11.4)')(eigen(jj),jj=imin,imax)
+          write(datacomp%iout,*)
+          write(datacomp%iout,'(20x,5(5x,i4,2x))')(jj,jj=imin,imax)
+          write(datacomp%iout,'(20x,5f11.4)')(eigen(jj),jj=imin,imax)
           do kk= 1,databasis%nao
-            write(*,'(i5,a8,a7,5f11.4)')kk,atomlabel(kk),bflabel(kk),(cmo(kk,jj),jj=imin,imax)
+            write(datacomp%iout,'(i5,a8,a7,5f11.4)')kk,atomlabel(kk),bflabel(kk),(cmo(kk,jj),jj=imin,imax)
           enddo
           imin= imin+5
           imax= imax+5
         enddo
-        write(*,*)
+        write(datacomp%iout,*)
       endif
 !
       return
@@ -1652,19 +1652,19 @@ end
         do ii= 1,maxline
           read(datacomp%inpcopy,'(a)',end=200)line
           if(line(1:6) == 'CHARGE') then
-            write(*,'(/," -----------------")')
-            write(*,'(  "   Atomic charge")')
-            write(*,'(  " -----------------")')
-            write(*,'(  "   Atomic charges are set manually.")')
+            write(datacomp%iout,'(/," -----------------")')
+            write(datacomp%iout,'(  "   Atomic charge")')
+            write(datacomp%iout,'(  " -----------------")')
+            write(datacomp%iout,'(  "   Atomic charges are set manually.")')
             do jj= 1,mxatom
               read(datacomp%inpcopy,'(a)',end=100) line
               read(line,*,end=100) iatom, znew
               datamol%znuc(iatom)= znew
-              write(*,'("   Charge of Atom ",i5,"     ",f7.3)')iatom, znew
+              write(datacomp%iout,'("   Charge of Atom ",i5,"     ",f7.3)')iatom, znew
             enddo
           endif
         enddo
- 100    write(*,*)
+ 100    write(datacomp%iout,*)
       endif
  200  continue
 !

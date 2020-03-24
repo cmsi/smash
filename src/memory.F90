@@ -97,7 +97,7 @@ end
       datacomp%memused= datacomp%memused-msize
       if(datacomp%memused < 0) then
         datacomp%nwarn= datacomp%nwarn+1
-        if(datacomp%master) write(*,'(" Warning! Msize in memunset is less than 0.")')
+        if(datacomp%master) write(datacomp%iout,'(" Warning! Msize in memunset is less than 0.")')
       endif
       return
 end
@@ -115,7 +115,7 @@ end
 !
       if(datacomp%memused /= 0) then
         datacomp%nwarn= datacomp%nwarn+1
-        if(datacomp%master) write(*,'(" Warning! Memory deallocation is not completed.")')
+        if(datacomp%master) write(datacomp%iout,'(" Warning! Memory deallocation is not completed.")')
       endif
       return
 end

@@ -33,7 +33,7 @@
         call cpu_time(datacomp%cpu0)
         call system_clock(datacomp%iwall0,iwrate,iwmax)
         call fdate(tdate)
-        write(*,'(" The job started at ",a)')tdate
+        write(datacomp%iout,'(" The job started at ",a)')tdate
         datacomp%cpu1= datacomp%cpu0
         datacomp%iwall1= datacomp%iwall0
 !
@@ -47,9 +47,9 @@
         wall0= dble(iwall2-datacomp%iwall0)/dble(iwrate)
         wall1= dble(iwall2-datacomp%iwall1)/dble(iwrate)
         call fdate(tdate)
-        write(*,'(1x,"Step CPU :",f10.1,", Total CPU :",f10.1,&
+        write(datacomp%iout,'(1x,"Step CPU :",f10.1,", Total CPU :",f10.1,&
 &             " of Master node")') cpu2-datacomp%cpu1, cpu2-datacomp%cpu0
-        write(*,'(1x,"Step Wall :",f9.1", Total Wall :",f9.1,&
+        write(datacomp%iout,'(1x,"Step Wall :",f9.1", Total Wall :",f9.1,&
 &             " at ",a24,/)') wall1,wall0,tdate
         datacomp%cpu1 = cpu2
         datacomp%iwall1= iwall2
@@ -67,11 +67,11 @@
         ihour= mod((iwall2-datacomp%iwall0)/iwrate,86400)/3600
         imin = mod((iwall2-datacomp%iwall0)/iwrate,3600)/60
         sec  = dble(iwall2-datacomp%iwall0)/dble(iwrate)-dble(86400*iday+3600*ihour+60*imin)
-        write(*,'(1x,"Total CPU time :",f11.1," seconds")') cpu2
-        write(*,'(1x,"Total Wall time:",f11.1," seconds")') wall0
-        write(*,'(17x,"(",i2," days",i3," hours",i3," minutes",f5.1," seconds)")')&
+        write(datacomp%iout,'(1x,"Total CPU time :",f11.1," seconds")') cpu2
+        write(datacomp%iout,'(1x,"Total Wall time:",f11.1," seconds")') wall0
+        write(datacomp%iout,'(17x,"(",i2," days",i3," hours",i3," minutes",f5.1," seconds)")')&
 &                   iday, ihour, imin, sec
-        write(*,'(" The job finished at ",a)')tdate
+        write(datacomp%iout,'(" The job finished at ",a)')tdate
       endif
       return
 end
@@ -100,10 +100,10 @@ end
       if(datacomp%master) then
         istat= hostnm(hostname)
         llen= len_trim(hostname)
-        write(*,'(" Master node is ",a)')hostname(1:llen)
+        write(datacomp%iout,'(" Master node is ",a)')hostname(1:llen)
 !
-        write(*,'(" Number of processes =",i6  )')datacomp%nproc1
-        write(*,'(" Number of threads   =",i6,/)')nthread
+        write(datacomp%iout,'(" Number of processes =",i6  )')datacomp%nproc1
+        write(datacomp%iout,'(" Number of threads   =",i6,/)')nthread
       endif
       return
 end

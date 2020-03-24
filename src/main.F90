@@ -30,7 +30,7 @@
       call setparallel(datacomp)
 !
       if(datacomp%master) then
-        write(*,&
+        write(datacomp%iout,&
 &           '(" *******************************************",/,&
 &             "    Scalable Molecular Analysis Solver for",/,&
 &             "      High performance computing systems",/,&
@@ -94,14 +94,14 @@
       call tstamp(2,datacomp)
 !
       if(datacomp%master) then
-        write(*,'(" Used memory :",1x,i6," MB")') datacomp%memusedmax/125000
+        write(datacomp%iout,'(" Used memory :",1x,i6," MB")') datacomp%memusedmax/125000
         if((datajob%runtype =='OPTIMIZE').and.(.not.converged)) then
-          write(*,'(/," ============================================================")')
-          write(*,'("  Geometry optimization did not finish with",i3," warning(s)!")') &
+          write(datacomp%iout,'(/," ============================================================")')
+          write(datacomp%iout,'("  Geometry optimization did not finish with",i3," warning(s)!")') &
 &                 datacomp%nwarn
-          write(*,'(" ============================================================")')
+          write(datacomp%iout,'(" ============================================================")')
         else
-          write(*,'(" Your calculation finished with",i3," warning(s).")') datacomp%nwarn
+          write(datacomp%iout,'(" Your calculation finished with",i3," warning(s).")') datacomp%nwarn
         endif
       endif
 end program main
@@ -283,7 +283,7 @@ end
 ! Calculate numbers of alpha and beta electrons
 !
       if((datajob%scftype == 'RHF').and.(datamol%multi /= 1)) then
-        if(datacomp%master) write(*,'(" Warning! SCFtype changes from RHF to UHF.")')
+        if(datacomp%master) write(datacomp%iout,'(" Warning! SCFtype changes from RHF to UHF.")')
         datajob%scftype = 'UHF'
         datacomp%nwarn= datacomp%nwarn+1
       endif
@@ -335,7 +335,7 @@ end
 !
       call nucenergy(datajob%threshatom,datamol,datacomp)
       if(datacomp%master) then
-        write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
+        write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
       endif
 !
 ! Set arrays 2
@@ -404,9 +404,9 @@ end
 ! Print MOs
 !
       if(datacomp%master.and.(datajob%iprint >= 2)) then
-        write(*,'("  -------------------")')
-        write(*,'("    MO coefficients")')
-        write(*,'("  -------------------")')
+        write(datacomp%iout,'("  -------------------")')
+        write(datacomp%iout,'("    MO coefficients")')
+        write(datacomp%iout,'("  -------------------")')
         call writeeigenvector(cmo,energymo,datamol,databasis,datacomp)
       endif
 !
@@ -489,7 +489,7 @@ end
 !
       call nucenergy(datajob%threshatom,datamol,datacomp)
       if(datacomp%master) then
-        write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
+        write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
       endif
 !
 ! Set arrays 2
@@ -555,13 +555,13 @@ end
 ! Print MOs
 !
       if(datacomp%master.and.(datajob%iprint >= 2)) then
-        write(*,'("  -------------------------")')
-        write(*,'("    Alpha MO coefficients")')
-        write(*,'("  -------------------------")')
+        write(datacomp%iout,'("  -------------------------")')
+        write(datacomp%iout,'("    Alpha MO coefficients")')
+        write(datacomp%iout,'("  -------------------------")')
         call writeeigenvector(cmoa,energymoa,datamol,databasis,datacomp)
-        write(*,'("  ------------------------")')
-        write(*,'("    Beta MO coefficients")')
-        write(*,'("  ------------------------")')
+        write(datacomp%iout,'("  ------------------------")')
+        write(datacomp%iout,'("    Beta MO coefficients")')
+        write(datacomp%iout,'("  ------------------------")')
         call writeeigenvector(cmob,energymob,datamol,databasis,datacomp)
       endif
 !
@@ -645,7 +645,7 @@ end
 !
       call nucenergy(datajob%threshatom,datamol,datacomp)
       if(datacomp%master) then
-        write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
+        write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
       endif
 !
 ! Set arrays 2
@@ -730,7 +730,7 @@ end
 !
       call calcmaxgrad(egradmax,egradrms,egrad,datamol%natom*3)
       if(datacomp%master) &
-&       write(*,'("   Maximum gradient =",f13.8,/,"   RMS gradient     =",f13.8,/, &
+&       write(datacomp%iout,'("   Maximum gradient =",f13.8,/,"   RMS gradient     =",f13.8,/, &
 &                 " ----------------------------------------------------",/)') egradmax,egradrms
       call tstamp(1,datacomp)
 !
@@ -742,9 +742,9 @@ end
 ! Print MOs
 !
       if(datacomp%master.and.(datajob%iprint >= 2)) then
-        write(*,'("  -------------------")')
-        write(*,'("    MO coefficients")')
-        write(*,'("  -------------------")')
+        write(datacomp%iout,'("  -------------------")')
+        write(datacomp%iout,'("    MO coefficients")')
+        write(datacomp%iout,'("  -------------------")')
         call writeeigenvector(cmo,energymo,datamol,databasis,datacomp)
       endif
 !
@@ -829,7 +829,7 @@ end
 !
       call nucenergy(datajob%threshatom,datamol,datacomp)
       if(datacomp%master) then
-        write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
+        write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
       endif
 !
 ! Set arrays 2
@@ -912,7 +912,7 @@ end
 !
       call calcmaxgrad(egradmax,egradrms,egrad,datamol%natom*3)
       if(datacomp%master) &
-&       write(*,'("   Maximum gradient =",f13.8,/,"   RMS gradient     =",f13.8,/, &
+&       write(datacomp%iout,'("   Maximum gradient =",f13.8,/,"   RMS gradient     =",f13.8,/, &
 &                 " ----------------------------------------------------",/)') egradmax,egradrms
       call tstamp(1,datacomp)
 !
@@ -924,13 +924,13 @@ end
 ! Print MOs
 !
       if(datacomp%master.and.(datajob%iprint >= 2)) then
-        write(*,'("  -------------------------")')
-        write(*,'("    Alpha MO coefficients")')
-        write(*,'("  -------------------------")')
+        write(datacomp%iout,'("  -------------------------")')
+        write(datacomp%iout,'("    Alpha MO coefficients")')
+        write(datacomp%iout,'("  -------------------------")')
         call writeeigenvector(cmoa,energymoa,datamol,databasis,datacomp)
-        write(*,'("  ------------------------")')
-        write(*,'("    Beta MO coefficients")')
-        write(*,'("  ------------------------")')
+        write(datacomp%iout,'("  ------------------------")')
+        write(datacomp%iout,'("    Beta MO coefficients")')
+        write(datacomp%iout,'("  ------------------------")')
         call writeeigenvector(cmob,energymob,datamol,databasis,datacomp)
       endif
 !
@@ -1066,7 +1066,7 @@ end
 !
         call nucenergy(datajob%threshatom,datamol,datacomp)
         if(datacomp%master) then
-          write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
+          write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
         endif
 !
 ! Set work arrays 1
@@ -1148,7 +1148,7 @@ end
 !
         call calcmaxgrad(egradmax,egradrms,egrad,natom3)
         if(datacomp%master) &
-&         write(*,'(" -----------------------------------",/, &
+&         write(datacomp%iout,'(" -----------------------------------",/, &
 &                   "   Geometry convergence check",/, &
 &                   "     Optimization cycle:",i4," /",i4,/, &
 &                   "     Optconv           =",f10.6,/, &
@@ -1161,7 +1161,7 @@ end
 ! Check convergence
 !
         if((egradmax <= datajob%optconv).and.(egradrms <= datajob%optconv*third)) then
-          if(datacomp%master) write(*,'("   ==== Geometry converged ====",/)')
+          if(datacomp%master) write(datacomp%iout,'("   ==== Geometry converged ====",/)')
           converged=.true.
           call tstamp(1,datacomp)
           exit
@@ -1210,7 +1210,7 @@ end
 !       call setnextopt(coordold,datamol%natom,iopt,datajob)
 !
         if((iopt == datajob%nopt).and.datacomp%master) then
-          write(*,'("Warning! Geometry did not converge.")')
+          write(datacomp%iout,'("Warning! Geometry did not converge.")')
           datacomp%nwarn= datacomp%nwarn+1
           exit
         endif
@@ -1224,9 +1224,9 @@ end
 ! Print MOs
 !
       if(datacomp%master.and.(datajob%iprint >= 2)) then
-        write(*,'("  -------------------")')
-        write(*,'("    MO coefficients")')
-        write(*,'("  -------------------")')
+        write(datacomp%iout,'("  -------------------")')
+        write(datacomp%iout,'("    MO coefficients")')
+        write(datacomp%iout,'("  -------------------")')
         call writeeigenvector(cmo,energymo,datamol,databasis,datacomp)
       endif
 !
@@ -1259,9 +1259,9 @@ end
 ! Write optimized geometry
 !
       if(datacomp%master.and.converged) then
-        write(*,'(" ==========================")')
-        write(*,'("     Optimized Geometry")')
-        write(*,'(" ==========================")')
+        write(datacomp%iout,'(" ==========================")')
+        write(datacomp%iout,'("     Optimized Geometry")')
+        write(datacomp%iout,'(" ==========================")')
         call writegeom(datamol,datacomp)
       endif
 !
@@ -1390,7 +1390,7 @@ end
 !
         call nucenergy(datajob%threshatom,datamol,datacomp)
         if(datacomp%master) then
-          write(*,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
+          write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
         endif
 !
 ! Set arrays 1
@@ -1470,7 +1470,7 @@ end
 !
         call calcmaxgrad(egradmax,egradrms,egrad,natom3)
         if(datacomp%master) &
-&         write(*,'(" -----------------------------------",/, &
+&         write(datacomp%iout,'(" -----------------------------------",/, &
 &                   "   Geometry convergence check",/, &
 &                   "     Optimization cycle:",i4," /",i4,/, &
 &                   "     Optconv           =",f10.6,/, &
@@ -1483,7 +1483,7 @@ end
 ! Check convergence
 !
         if((egradmax <= datajob%optconv).and.(egradrms <= datajob%optconv*third)) then
-          if(datacomp%master) write(*,'(" Geometry converged.",/)')
+          if(datacomp%master) write(datacomp%iout,'(" Geometry converged.",/)')
           converged=.true.
           exit
           call tstamp(1,datacomp)
@@ -1532,7 +1532,7 @@ end
 !       call setnextopt(coordold,datamol%natom,iopt,datajob)
 !
         if((iopt == datajob%nopt).and.datacomp%master) then
-          write(*,'("Warning! Geometry did not converge.")')
+          write(datacomp%iout,'("Warning! Geometry did not converge.")')
           datacomp%nwarn= datacomp%nwarn+1
           exit
         endif
@@ -1546,13 +1546,13 @@ end
 ! Print MOs
 !
       if(datacomp%master.and.(datajob%iprint >= 2)) then
-        write(*,'("  -------------------------")')
-        write(*,'("    Alpha MO coefficients")')
-        write(*,'("  -------------------------")')
+        write(datacomp%iout,'("  -------------------------")')
+        write(datacomp%iout,'("    Alpha MO coefficients")')
+        write(datacomp%iout,'("  -------------------------")')
         call writeeigenvector(cmoa,energymoa,datamol,databasis,datacomp)
-        write(*,'("  ------------------------")')
-        write(*,'("    Beta MO coefficients")')
-        write(*,'("  ------------------------")')
+        write(datacomp%iout,'("  ------------------------")')
+        write(datacomp%iout,'("    Beta MO coefficients")')
+        write(datacomp%iout,'("  ------------------------")')
         call writeeigenvector(cmob,energymob,datamol,databasis,datacomp)
       endif
 !
@@ -1585,9 +1585,9 @@ end
 ! Write optimized geometry
 !
       if(datacomp%master.and.converged) then
-        write(*,'(" ==========================")')
-        write(*,'("     Optimized Geometry")')
-        write(*,'(" ==========================")')
+        write(datacomp%iout,'(" ==========================")')
+        write(datacomp%iout,'("     Optimized Geometry")')
+        write(datacomp%iout,'(" ==========================")')
         call writegeom(datamol,datacomp)
       endif
 !
@@ -1699,7 +1699,7 @@ end
         if(((maxelem >= 55).or.(databasis%nao >= 2000)).and. &
 &          ((datajob%nrad == 96).and.(datajob%nleb == 302))) then
           datacomp%nwarn= datacomp%nwarn+1
-          if(datacomp%master) write(*,'(" Warning! The number of DFT grids may not be enough.")')
+          if(datacomp%master) write(datacomp%iout,'(" Warning! The number of DFT grids may not be enough.")')
         endif
       endif
 !

@@ -297,7 +297,7 @@ end
 !
       if(maxdiis < 6) then
         if(datacomp%master) then
-          write(*,'(" Set Maxdiis for more than 6.")')
+          write(*,'(" Error! Set Maxdiis for more than 6.")')
           call iabort
         endif
       endif
@@ -1124,18 +1124,18 @@ end
       enddo
 !
       if(datacomp%master) then
-        write(*,'(" -------------------------------------")')
-        write(*,'("      Mulliken Population Analysis")')
-        write(*,'("     Atom     Population     Charge")')
-        write(*,'(" -------------------------------------")')
+        write(datacomp%iout,'(" -------------------------------------")')
+        write(datacomp%iout,'("      Mulliken Population Analysis")')
+        write(datacomp%iout,'("     Atom     Population     Charge")')
+        write(datacomp%iout,'(" -------------------------------------")')
         do iatom= 1,datamol%natom
-          write(*,'(1x,i4,2x,a3,2f13.6)')iatom,table(datamol%numatomic(iatom)), &
+          write(datacomp%iout,'(1x,i4,2x,a3,2f13.6)')iatom,table(datamol%numatomic(iatom)), &
 &                                        grossatom(iatom),datamol%znuc(iatom)-grossatom(iatom)
         enddo
-        write(*,'(" -------------------------------------")')
-        write(*,'("     Total",13x,f13.6)')totalgross
-        write(*,'(" -------------------------------------")')
-        write(*,*)
+        write(datacomp%iout,'(" -------------------------------------")')
+        write(datacomp%iout,'("     Total",13x,f13.6)')totalgross
+        write(datacomp%iout,'(" -------------------------------------")')
+        write(datacomp%iout,*)
       endif
 !
       return
@@ -1203,18 +1203,18 @@ end
       enddo
 !
       if(datacomp%master) then
-        write(*,'(" -------------------------------------")')
-        write(*,'("      Mulliken Population Analysis")')
-        write(*,'("     Atom     Population     Charge")')
-        write(*,'(" -------------------------------------")')
+        write(datacomp%iout,'(" -------------------------------------")')
+        write(datacomp%iout,'("      Mulliken Population Analysis")')
+        write(datacomp%iout,'("     Atom     Population     Charge")')
+        write(datacomp%iout,'(" -------------------------------------")')
         do iatom= 1,datamol%natom
-          write(*,'(1x,i4,2x,a3,2f13.6)')iatom,table(datamol%numatomic(iatom)), &
+          write(datacomp%iout,'(1x,i4,2x,a3,2f13.6)')iatom,table(datamol%numatomic(iatom)), &
 &                                        grossatom(iatom),datamol%znuc(iatom)-grossatom(iatom)
         enddo
-        write(*,'(" -------------------------------------")')
-        write(*,'("     Total",13x,f13.6)')totalgross
-        write(*,'(" -------------------------------------")')
-        write(*,*)
+        write(datacomp%iout,'(" -------------------------------------")')
+        write(datacomp%iout,'("     Total",13x,f13.6)')totalgross
+        write(datacomp%iout,'(" -------------------------------------")')
+        write(datacomp%iout,*)
       endif
 !
       return
@@ -1274,12 +1274,12 @@ end
       totaldip= sqrt(xdip*xdip+ydip*ydip+zdip*zdip)
 !
       if(datacomp%master) then
-        write(*,'("  ----------------------------------------------")')
-        write(*,'("                Dipole Momemt (Debye)")')
-        write(*,'("         X          Y          Z       Total")')
-        write(*,'("  ----------------------------------------------")')
-        write(*,'(2x,4f11.4)')xdip, ydip, zdip, totaldip
-        write(*,'("  ----------------------------------------------",/)')
+        write(datacomp%iout,'("  ----------------------------------------------")')
+        write(datacomp%iout,'("                Dipole Momemt (Debye)")')
+        write(datacomp%iout,'("         X          Y          Z       Total")')
+        write(datacomp%iout,'("  ----------------------------------------------")')
+        write(datacomp%iout,'(2x,4f11.4)')xdip, ydip, zdip, totaldip
+        write(datacomp%iout,'("  ----------------------------------------------",/)')
       endif
 !
       return
@@ -1436,28 +1436,28 @@ end
       octp(10)=-xxzoctp*three-yyzoctp*three+zzzoctp*two
 !
       if(datacomp%master) then
-        write(*,'("  ----------------------------------------------")')
-        write(*,'("                Dipole Momemt (Debye)")')
-        write(*,'("         X          Y          Z       Total")')
-        write(*,'("  ----------------------------------------------")')
-        write(*,'(2x,4f11.4)')xdip, ydip, zdip, totaldip
-        write(*,'("  ----------------------------------------------",/)')
-        write(*,'("  --------------------------------------------------------------------")')
-        write(*,'("                Quadrupole Momemt (Debye*Angstrom)")')
-        write(*,'("         XX         XY         XZ         YY         YZ         ZZ")')
-        write(*,'("  --------------------------------------------------------------------")')
-        write(*,'(2x,6f11.4)')(quadp(ii),ii=1,6)
-        write(*,'("  --------------------------------------------------------------------",/)')
-        write(*,'("  ---------------------------------------------------------")')
-        write(*,'("                Octupole Momemt (Debye*Angstrom^2)")')
-        write(*,'("        XXX        XXY        XXZ       XYY        XYZ")')
-        write(*,'("  ---------------------------------------------------------")')
-        write(*,'(2x,5f11.4)')(octp(ii),ii=1,5)
-        write(*,'("  ---------------------------------------------------------")')
-        write(*,'("        XZZ        YYY        YYZ       YZZ        ZZZ")')
-        write(*,'("  ---------------------------------------------------------")')
-        write(*,'(2x,5f11.4)')(octp(ii),ii=6,10)
-        write(*,'("  ---------------------------------------------------------",/)')
+        write(datacomp%iout,'("  ----------------------------------------------")')
+        write(datacomp%iout,'("                Dipole Momemt (Debye)")')
+        write(datacomp%iout,'("         X          Y          Z       Total")')
+        write(datacomp%iout,'("  ----------------------------------------------")')
+        write(datacomp%iout,'(2x,4f11.4)')xdip, ydip, zdip, totaldip
+        write(datacomp%iout,'("  ----------------------------------------------",/)')
+        write(datacomp%iout,'("  --------------------------------------------------------------------")')
+        write(datacomp%iout,'("                Quadrupole Momemt (Debye*Angstrom)")')
+        write(datacomp%iout,'("         XX         XY         XZ         YY         YZ         ZZ")')
+        write(datacomp%iout,'("  --------------------------------------------------------------------")')
+        write(datacomp%iout,'(2x,6f11.4)')(quadp(ii),ii=1,6)
+        write(datacomp%iout,'("  --------------------------------------------------------------------",/)')
+        write(datacomp%iout,'("  ---------------------------------------------------------")')
+        write(datacomp%iout,'("                Octupole Momemt (Debye*Angstrom^2)")')
+        write(datacomp%iout,'("        XXX        XXY        XXZ       XYY        XYZ")')
+        write(datacomp%iout,'("  ---------------------------------------------------------")')
+        write(datacomp%iout,'(2x,5f11.4)')(octp(ii),ii=1,5)
+        write(datacomp%iout,'("  ---------------------------------------------------------")')
+        write(datacomp%iout,'("        XZZ        YYY        YYZ       YZZ        ZZZ")')
+        write(datacomp%iout,'("  ---------------------------------------------------------")')
+        write(datacomp%iout,'(2x,5f11.4)')(octp(ii),ii=6,10)
+        write(datacomp%iout,'("  ---------------------------------------------------------",/)')
       endif
 !
       return
@@ -1518,12 +1518,12 @@ end
       totaldip= sqrt(xdip*xdip+ydip*ydip+zdip*zdip)
 !
       if(datacomp%master) then
-        write(*,'("  ----------------------------------------------")')
-        write(*,'("                Dipole Momemt (Debye)")')
-        write(*,'("         X          Y          Z       Total")')
-        write(*,'("  ----------------------------------------------")')
-        write(*,'(2x,4f11.4)')xdip, ydip, zdip, totaldip
-        write(*,'("  ----------------------------------------------",/)')
+        write(datacomp%iout,'("  ----------------------------------------------")')
+        write(datacomp%iout,'("                Dipole Momemt (Debye)")')
+        write(datacomp%iout,'("         X          Y          Z       Total")')
+        write(datacomp%iout,'("  ----------------------------------------------")')
+        write(datacomp%iout,'(2x,4f11.4)')xdip, ydip, zdip, totaldip
+        write(datacomp%iout,'("  ----------------------------------------------",/)')
       endif
 !
       return
@@ -1685,28 +1685,28 @@ end
       octp(10)=-xxzoctp*three-yyzoctp*three+zzzoctp*two
 !
       if(datacomp%master) then
-        write(*,'("  ----------------------------------------------")')
-        write(*,'("                Dipole Momemt (Debye)")')
-        write(*,'("         X          Y          Z       Total")')
-        write(*,'("  ----------------------------------------------")')
-        write(*,'(2x,4f11.4)')xdip, ydip, zdip, totaldip
-        write(*,'("  ----------------------------------------------",/)')
-        write(*,'("  --------------------------------------------------------------------")')
-        write(*,'("                Quadrupole Momemt (Debye*Angstrom)")')
-        write(*,'("         XX         XY         XZ         YY         YZ         ZZ")')
-        write(*,'("  --------------------------------------------------------------------")')
-        write(*,'(2x,6f11.4)')(quadp(ii),ii=1,6)
-        write(*,'("  --------------------------------------------------------------------",/)')
-        write(*,'("  ---------------------------------------------------------")')
-        write(*,'("                Octupole Momemt (Debye*Angstrom^2)")')
-        write(*,'("        XXX        XXY        XXZ       XYY        XYZ")')
-        write(*,'("  ---------------------------------------------------------")')
-        write(*,'(2x,5f11.4)')(octp(ii),ii=1,5)
-        write(*,'("  ---------------------------------------------------------")')
-        write(*,'("        XZZ        YYY        YYZ       YZZ        ZZZ")')
-        write(*,'("  ---------------------------------------------------------")')
-        write(*,'(2x,5f11.4)')(octp(ii),ii=6,10)
-        write(*,'("  ---------------------------------------------------------",/)')
+        write(datacomp%iout,'("  ----------------------------------------------")')
+        write(datacomp%iout,'("                Dipole Momemt (Debye)")')
+        write(datacomp%iout,'("         X          Y          Z       Total")')
+        write(datacomp%iout,'("  ----------------------------------------------")')
+        write(datacomp%iout,'(2x,4f11.4)')xdip, ydip, zdip, totaldip
+        write(datacomp%iout,'("  ----------------------------------------------",/)')
+        write(datacomp%iout,'("  --------------------------------------------------------------------")')
+        write(datacomp%iout,'("                Quadrupole Momemt (Debye*Angstrom)")')
+        write(datacomp%iout,'("         XX         XY         XZ         YY         YZ         ZZ")')
+        write(datacomp%iout,'("  --------------------------------------------------------------------")')
+        write(datacomp%iout,'(2x,6f11.4)')(quadp(ii),ii=1,6)
+        write(datacomp%iout,'("  --------------------------------------------------------------------",/)')
+        write(datacomp%iout,'("  ---------------------------------------------------------")')
+        write(datacomp%iout,'("                Octupole Momemt (Debye*Angstrom^2)")')
+        write(datacomp%iout,'("        XXX        XXY        XXZ       XYY        XYZ")')
+        write(datacomp%iout,'("  ---------------------------------------------------------")')
+        write(datacomp%iout,'(2x,5f11.4)')(octp(ii),ii=1,5)
+        write(datacomp%iout,'("  ---------------------------------------------------------")')
+        write(datacomp%iout,'("        XZZ        YYY        YYZ       YZZ        ZZZ")')
+        write(datacomp%iout,'("  ---------------------------------------------------------")')
+        write(datacomp%iout,'(2x,5f11.4)')(octp(ii),ii=6,10)
+        write(datacomp%iout,'("  ---------------------------------------------------------",/)')
       endif
 !
       return
@@ -1936,7 +1936,7 @@ end
 !$OMP end parallel do
         qcnorm= sqrt(qcnorm)
 !
-        if(datacomp%master) write(*,'(5x,"QC Cycle ",i2," : Norm = ",1p,d10.3)') itdav-1, qcnorm
+        if(datacomp%master) write(datacomp%iout,'(5x,"QC Cycle ",i2," : Norm = ",1p,d10.3)') itdav-1, qcnorm
 !
 ! Check convergence
 !
@@ -1991,9 +1991,9 @@ end
 !
         if(itqcdiag ==(maxqcdiag)) then
           if(datacomp%master) then
-            write(*,'(" Error! Number of iteration for Quadratically convergent ",&
+            write(datacomp%iout,'(" Error! Number of iteration for Quadratically convergent ",&
 &                     "method exceeds maxqcdiag=",i3,".")') maxqcdiag
-            write(*,'(" Set larger value for maxqcdiag in scf section.")')
+            write(datacomp%iout,'(" Set larger value for maxqcdiag in scf section.")')
           endif
           call iabort
         endif
@@ -2290,7 +2290,7 @@ end
 !$OMP end parallel do
         qcnorm= sqrt(qcnorm)
 !
-        if(datacomp%master) write(*,'(5x,"QC Cycle ",i2," : Norm = ",1p,d10.3)') itdav-1, qcnorm
+        if(datacomp%master) write(datacomp%iout,'(5x,"QC Cycle ",i2," : Norm = ",1p,d10.3)') itdav-1, qcnorm
 !
 ! Check convergence
 !
@@ -2340,9 +2340,9 @@ end
 !
         if(itqcdiag ==(maxqcdiag)) then
           if(datacomp%master) then
-            write(*,'(" Error! Number of iteration for Quadratically convergent ",&
+            write(datacomp%iout,'(" Error! Number of iteration for Quadratically convergent ",&
 &                     "method exceeds maxqcdiag=",i3,".")') maxqcdiag
-            write(*,'(" Set larger value for maxqcdiag in scf section.")')
+            write(datacomp%iout,'(" Set larger value for maxqcdiag in scf section.")')
           endif
           call iabort
         endif
