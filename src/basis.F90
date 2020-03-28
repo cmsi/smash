@@ -27,7 +27,7 @@
       type(typebasis) :: datagenbasis
       integer :: locgenshell(-9:112), ngenshell(-9:112)
       integer :: ishell, iatom, i
-      character(len=16) :: atombasis(-9:112)
+      character(len=32) :: atombasis(-9:112)
 !
       if(datacomp%master) then
         databasis%locprim(1)=0
@@ -218,7 +218,7 @@ end
       integer,intent(in) :: locgenshell(-9:112), ngenshell(-9:112)
       integer,intent(out) :: ishell
       integer :: iatom, nn, ii, jj, ll, lprim
-      character(len=16),intent(in) :: atombasis(-9:112)
+      character(len=32),intent(in) :: atombasis(-9:112)
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
 &       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&

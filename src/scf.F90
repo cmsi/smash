@@ -52,7 +52,7 @@
       real(8) :: escfprev, diffmax, tridot, deltae, errmax, sogradmax, sodispmax
       real(8) :: time1, time2, time3, time4
       logical :: convsoscf, convqc
-      character(len=16) :: scfconv
+      character(len=32) :: scfconv
       data maxfunc/1,3,6,10,15,21,28/
 !
       maxdiis= datajob%maxdiis
@@ -961,7 +961,7 @@ end
       real(8) :: edft, totalelec
       real(8) :: time1, time2, time3, time4
       logical :: convsoscf, convqc
-      character(len=16) :: scfconv
+      character(len=32) :: scfconv
       data maxfunc/1,3,6,10,15,21,28/
 !
       maxdiis= datajob%maxdiis
@@ -1377,7 +1377,7 @@ end
       real(8) :: s2, sz
       real(8) :: time1, time2, time3, time4
       logical :: convsoscf, convqc
-      character(len=16) :: scfconv
+      character(len=32) :: scfconv
       data maxfunc/1,3,6,10,15,21,28/
 !
       maxdiis= datajob%maxdiis
@@ -2110,7 +2110,7 @@ end
       real(8) :: s2, sz, edft, totalelec
       real(8) :: time1, time2, time3, time4
       logical :: convsoscf, convqc
-      character(len=16) :: scfconv
+      character(len=32) :: scfconv
       data maxfunc/1,3,6,10,15,21,28/
 !
       maxdiis= datajob%maxdiis

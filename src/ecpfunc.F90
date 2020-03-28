@@ -27,7 +27,7 @@
       integer :: iatom, iprim
       integer :: locgenecp(0:5,-9:112), mgenprimecp(0:5,-9:112)
       integer :: maxgenangecp(-9:112), izgencore(-9:112)
-      character(len=16) :: atomecp(-9:112)
+      character(len=32) :: atomecp(-9:112)
 !
       databasis%maxangecp(1:datamol%natom)= -1
       databasis%izcore(1:datamol%natom)= 0
@@ -84,7 +84,7 @@ end
       integer,intent(in) :: maxgenangecp(-9:112), izgencore(-9:112)
       integer,intent(inout) :: iprim
       integer :: iatom, nn, lmax, iang, numprim, locgen, ii
-      character(len=16),intent(in) :: atomecp(-9:112)
+      character(len=32),intent(in) :: atomecp(-9:112)
 !
       iprim= 0
 !

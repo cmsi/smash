@@ -152,13 +152,13 @@ end
         integer :: locprim(mxshell+1), locbf(mxshell+1), locatom(mxshell)
         integer :: mprim(mxshell),  mbf(mxshell), mtype(mxshell)
         real(8) :: ex(mxprim), coeff(mxprim), coeffinp(mxprim)
-        character(len=16) :: basis='STO-3G'
+        character(len=32) :: basis='STO-3G'
         logical :: spher=.true.
 !
         integer :: maxangecp(mxatom), izcore(mxatom)=0, mtypeecp(mxprim)
         integer :: locecp(0:5,mxatom), mprimecp(0:5,mxatom)
         real(8) :: execp(mxprim), coeffecp(mxprim)
-        character(len=16) :: ecp='', atomecp(-9:112)
+        character(len=32) :: ecp='', atomecp(-9:112)
       end type
 !
 ! iprint : print option
@@ -182,15 +182,15 @@ end
         real(8) :: cutint2=-1.0D+00, threshsoscf=0.25D+00, threshqc=1.0D-05
         real(8) :: threshweight=-1.0D+00, threshrho=-1.0D+00, threshdfock=-1.0D+00
         real(8) :: threshdftao=-1.0D+00, threshmp2cphf=1.0D-10
-        character(len=16) :: method='HARTREE-FOCK', runtype='ENERGY', scftype='RHF', memory=''
-        character(len=16) :: version='3.0.0', guess='HUCKEL', precision='MEDIUM'
-        character(len=64) :: check=''
+        character(len=32) :: method='HARTREE-FOCK', runtype='ENERGY', scftype='RHF', memory=''
+        character(len=32) :: version='3.0.0', guess='HUCKEL', precision='MEDIUM'
+        character(len=256) :: check=''
         logical :: bohr=.false., octupole=.false., flagecp=.false.
 !
         integer :: maxiter=150, maxdiis=20, maxsoscf=20, maxqc=15, maxqcdiag=100, maxqcdiagsub=10
         real(8) :: dconv=-1.0d00
         logical :: fdiff=.true., extrap=.false.
-        character(len=16) :: scfconv='DIIS'
+        character(len=32) :: scfconv='DIIS'
 !
         integer :: idftex=0, idftcor=0, nrad=0, nleb=0
         real(8) :: hfexchange=1.0D+00, bqrad(9)=1.0D+00

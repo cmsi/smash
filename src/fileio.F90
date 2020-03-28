@@ -34,11 +34,11 @@
       real(8) :: threshqc, threshweight,threshrho, threshdfock, threshdftao, threshmp2cphf
       real(8) :: dconv, bqrad(9), optconv
       real(8) :: charge
-      character(len=254) :: line
-      character(len=16) :: chararray(9)
-      character(len=64) :: check
-      character(len=16) :: method, runtype, scftype, memory, guess, precision, scfconv
-      character(len=16) :: basis, ecp, mem=''
+      character(len=256) :: line
+      character(len=32) :: chararray(9)
+      character(len=256) :: check
+      character(len=32) :: method, runtype, scftype, memory, guess, precision, scfconv
+      character(len=32) :: basis, ecp, mem=''
       logical :: logarray(5)
       logical :: bohr, octupole, flagecp, cartesian
       logical :: spher
@@ -245,8 +245,8 @@
         logarray(5)= octupole
       endif
 !
-      call para_bcastc(chararray,16*9,0,datacomp%mpi_comm1)
-      call para_bcastc(check,64,0,datacomp%mpi_comm1)
+      call para_bcastc(chararray,32*9,0,datacomp%mpi_comm1)
+      call para_bcastc(check,256,0,datacomp%mpi_comm1)
       call para_bcastr(realarray,23,0,datacomp%mpi_comm1)
       call para_bcasti(intarray,15,0,datacomp%mpi_comm1)
       call para_bcastl(logarray,5,0,datacomp%mpi_comm1)
@@ -613,8 +613,8 @@ end
 !
       implicit none
       integer :: llen, ii, inum, ispace
-      character(len=254),intent(inout) :: line
-      character(len=254) :: linecopy
+      character(len=256),intent(inout) :: line
+      character(len=256) :: linecopy
       character(len=26) :: upper='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
       character(len=26) :: lower='abcdefghijklmnopqrstuvwxyz'
 !
@@ -647,8 +647,8 @@ end
       type(typecomp),intent(inout) :: datacomp
       integer :: ii, jj, minatomic
       real(8),parameter :: zero=0.0D+00
-      character(len=16) :: cdummy
-      character(len=254) :: line
+      character(len=32) :: cdummy
+      character(len=256) :: line
       character(len=3) :: atomin(mxatom)
       character(len=3) :: table1(-9:112)= &
 &     (/'BQ9','BQ8','BQ7','BQ6','BQ5','BQ4','BQ3','BQ2','BQ ','X  ',&
@@ -787,8 +787,8 @@ end
       integer,intent(in) :: num
       integer :: ii, next, ispace
       character(len=num),intent(in) :: word
-      character(len=254),intent(inout) :: line
-      character(len=254) :: line2
+      character(len=256),intent(inout) :: line
+      character(len=256) :: line2
 !
       ii= index(line,word(1:num))
       if(ii /= 0) then
@@ -817,10 +817,10 @@ end
       type(typecomp),intent(inout) :: datacomp
       integer,intent(out) :: locgenshell(-9:112), ngenshell(-9:112)
       integer :: ii, jj, iprim, ishell, ll, ielem(-9:112), nelem, kprim, numprim, natomshell
-      character(len=16),intent(out) :: atombasis(-9:112)
+      character(len=32),intent(out) :: atombasis(-9:112)
       character(len=3) :: element(-9:112)
-      character(len=100) :: line
-      character(len=16) :: symbol
+      character(len=256) :: line
+      character(len=32) :: symbol
       character(len=3) :: table(-9:112)= &
 &     (/'BQ9','BQ8','BQ7','BQ6','BQ5','BQ4','BQ3','BQ2','BQ ','X  ',&
 &       'H  ','HE ','LI ','BE ','B  ','C  ','N  ','O  ','F  ','NE ','NA ','MG ','AL ','SI ','P  ',&
@@ -972,7 +972,7 @@ end
       type(typebasis),intent(inout) :: databasis
       type(typecomp),intent(in) :: datacomp
       integer :: idummy, ii
-      character(len=16) :: checkversion, cdummy
+      character(len=32) :: checkversion, cdummy
 !
       rewind(datacomp%icheck)
       read(datacomp%icheck,err=9999) checkversion
@@ -1042,8 +1042,8 @@ end
       integer,intent(out) :: neleca_g, nelecb_g, nmo_g
       integer :: intarray(6), natom_g, idummy
       real(8),intent(out) :: charge_g
-      character(len=16),intent(out) :: scftype_g
-      character(len=16) :: cdummy
+      character(len=32),intent(out) :: scftype_g
+      character(len=32) :: cdummy
       logical,intent(out) :: flagecp_g
 !
       if(datacomp%master) then
@@ -1064,7 +1064,7 @@ end
         intarray(6)= dataguessbs%nprim
       endif
       call para_bcasti(intarray,6,0,datacomp%mpi_comm1)
-      call para_bcastc(scftype_g,16,0,datacomp%mpi_comm1)
+      call para_bcastc(scftype_g,32,0,datacomp%mpi_comm1)
       call para_bcastl(flagecp_g,1,0,datacomp%mpi_comm1)
       call para_bcastr(charge_g,1,0,datacomp%mpi_comm1)
       dataguessbs%nshell= intarray(1)
@@ -1101,8 +1101,8 @@ end
       real(8),intent(out) :: cmoa_g(dataguessbs%nao,dataguessbs%nao)
       real(8),intent(out) :: cmob_g(dataguessbs%nao,dataguessbs%nao)
       real(8),intent(out) :: coord_g(3,mxatom)
-      character(len=16),intent(in) :: scftype, scftype_g
-      character(len=16) :: checkversion
+      character(len=32),intent(in) :: scftype, scftype_g
+      character(len=32) :: checkversion
 !
       if(datacomp%master) then
         rewind(datacomp%icheck)
@@ -1181,10 +1181,10 @@ end
       integer,intent(out) :: locgenecp(0:5,-9:112), mgenprimecp(0:5,-9:112)
       integer,intent(out) :: maxgenangecp(-9:112), izgencore(-9:112)
       integer :: ii, jj, iprim, ll, ielem(-9:112), nelem, jprim, numprim, lmax, ielec, iang
-      character(len=16),intent(out) :: atomecp(-9:112)
+      character(len=32),intent(out) :: atomecp(-9:112)
       character(len=3) :: element(-9:112)
-      character(len=100) :: line
-      character(len=16) :: symbol
+      character(len=256) :: line
+      character(len=32) :: symbol
       character(len=3) :: table(-9:112)= &
 &     (/'BQ9','BQ8','BQ7','BQ6','BQ5','BQ4','BQ3','BQ2','BQ ','X  ',&
 &       'H  ','HE ','LI ','BE ','B  ','C  ','N  ','O  ','F  ','NE ','NA ','MG ','AL ','SI ','P  ',&
@@ -1531,7 +1531,7 @@ end
       real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2), energymoa(databasis%nao)
       real(8),intent(in) :: cmob(databasis%nao,databasis%nao)
       real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2), energymob(databasis%nao)
-      character(len=16) :: datatype
+      character(len=32) :: datatype
 !
       rewind(datacomp%icheck)
       write(datacomp%icheck) datajob%version
@@ -1638,7 +1638,7 @@ end
       type(typecomp),intent(inout) :: datacomp
       integer :: ii, jj, iatom
       real(8) :: znew
-      character(len=254) :: line
+      character(len=256) :: line
 !
       if(datacomp%master) then
         rewind(datacomp%inpcopy)

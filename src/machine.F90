@@ -88,7 +88,7 @@ end
       implicit none
       type(typecomp),intent(inout) :: datacomp
       integer :: nthread, istat, hostnm, llen, len_trim
-      character(len=64) :: hostname
+      character(len=128) :: hostname
 !
       nthread=1
 !$OMP parallel
@@ -119,7 +119,7 @@ end
       implicit none
       type(typecomp),intent(inout) :: datacomp
       integer(selected_int_kind(9)) :: getpid, iprocess
-      character(len=30) :: filename
+      character(len=128) :: filename
 !
       if(datacomp%master) then
         iprocess= getpid()
@@ -143,7 +143,7 @@ end
       type(typecomp),intent(inout) :: datacomp
 !
       if(datacomp%master) then
-        close(datacomp%inpcopy)
+        close(datacomp%inpcopy,status='delete')
       endif
 !
       return
@@ -159,10 +159,12 @@ end
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      character(len=64),intent(in) :: check
+      integer :: llen
+      character(len=256),intent(in) :: check
 !
       if(datacomp%master) then
-        open(unit=datacomp%icheck,file=check,form='unformatted',status='unknown')
+        llen= len_trim(check)
+        open(unit=datacomp%icheck,file=check(1:llen),form='unformatted',status='unknown')
       endif
 !
       return

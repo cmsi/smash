@@ -1509,7 +1509,7 @@ end
       real(8),allocatable :: overlap(:), work1(:), work2(:), work3(:), eigen(:)
       real(8),allocatable :: coremo(:,:)
       real(8) :: coord_g(3,mxatom), charge_g
-      character(len=16) :: scftype_g
+      character(len=32) :: scftype_g
       logical :: flagecp_g
 !
 ! Read checkpoint information
@@ -1698,7 +1698,7 @@ end
       real(8),intent(out) :: overlap(datacorebs%nao,dataguessbs%nao)
       real(8),intent(out) :: work2(datacorebs%nao,dataguessbs%nao)
       real(8),intent(out) :: work3(dataguessbs%nao,datacorebs%nao), eigen(datacorebs%nao)
-      character(len=16),intent(in) :: scftype_g
+      character(len=32),intent(in) :: scftype_g
       logical :: skipmo(dataguessbs%nao)
 !
       nao_g= dataguessbs%nao
