@@ -12,19 +12,19 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!---------------
-  program main
-!---------------
+!-----------------------------------------------------------
+  subroutine smashmain(datajob,datamol,databasis,datacomp)
+!-----------------------------------------------------------
 !
 ! This is the main driver of Scalable Molecular Analysis Solver 
 ! for High performance computing systems (SMASH).
 !
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
-      type(typejob) :: datajob
-      type(typemol) :: datamol
-      type(typebasis) :: databasis
-      type(typecomp) :: datacomp
+      type(typejob),intent(inout) :: datajob
+      type(typemol),intent(inout) :: datamol
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(inout) :: datacomp
       logical :: converged
 !
       call setparallel(datacomp)
@@ -104,7 +104,8 @@
           write(datacomp%iout,'(" Your calculation finished with",i3," warning(s).")') datacomp%nwarn
         endif
       endif
-end program main
+      return
+end
 
 
 !-----------------------------------
