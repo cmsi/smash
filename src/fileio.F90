@@ -192,7 +192,7 @@
 !
 ! Read geometry data
 !
-      call readatom(runtype,bohr,cartesian,datamol%natom,datamol,datacomp)
+      call readatom(runtype,bohr,cartesian,datamol,datacomp)
 !
       if(datacomp%master) then
         chararray(1)= method
@@ -645,7 +645,7 @@ end
 
 
 !---------------------------------------------------------------------
-  subroutine readatom(runtype,bohr,cartesian,natom,datamol,datacomp)
+  subroutine readatom(runtype,bohr,cartesian,datamol,datacomp)
 !---------------------------------------------------------------------
 !
 ! Read atomic data
@@ -655,7 +655,6 @@ end
       implicit none
       type(typemol),intent(inout) :: datamol
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(out) :: natom
       integer :: ii, jj, minatomic
       real(8),parameter :: zero=0.0D+00
       character(len=16),intent(in) :: runtype
@@ -699,12 +698,12 @@ end
 ! Read data from input file
 !
         if(index(line,'CHECK') == 0) then
-          natom= 0
+          datamol%natom= 0
           do ii= 1,mxatom
             read(datacomp%inpcopy,'(a)',end=100) line
             if(len_trim(line) == 0) exit
             read(line,*,err=9997,end=9997) atomin(ii),(datamol%coord(jj,ii),jj=1,3)
-            natom= natom+1
+            datamol%natom= datamol%natom+1
             if(ii == mxatom) then
               write(*,'(" Error! Number of atoms exceeds mxatom=",i6,".")')mxatom
               write(*,'(" Increase mxatom in src/module.F90 and make again.",/)')
@@ -712,7 +711,7 @@ end
             endif
           enddo
 100       continue
-          do ii= 1,natom
+          do ii= 1,datamol%natom
             if(atomin(ii) == 'BQ1') atomin(ii)= 'BQ'
             do jj= -9,112
               if((atomin(ii) == table1(jj)).or.(atomin(ii) == table2(jj))) then
@@ -734,7 +733,7 @@ end
 ! Change to atomic unit
 !
           if(.not.bohr) then
-            do ii= 1,natom
+            do ii= 1,datamol%natom
               do jj= 1,3
                 datamol%coord(jj,ii)= datamol%coord(jj,ii)*tobohr
               enddo
@@ -746,12 +745,12 @@ end
         else
           rewind(datacomp%icheck)
           read(datacomp%icheck,err=9998)
-          read(datacomp%icheck) cdummy, natom
+          read(datacomp%icheck) cdummy, datamol%natom
           read(datacomp%icheck)
-          read(datacomp%icheck)(datamol%numatomic(ii),ii=1,natom)
+          read(datacomp%icheck)(datamol%numatomic(ii),ii=1,datamol%natom)
           read(datacomp%icheck)
-          read(datacomp%icheck)((datamol%coord(jj,ii),jj=1,3),ii=1,natom)
-          do ii= 1,natom
+          read(datacomp%icheck)((datamol%coord(jj,ii),jj=1,3),ii=1,datamol%natom)
+          do ii= 1,datamol%natom
             if(datamol%numatomic(ii) > 0) then
               datamol%znuc(ii)= dble(datamol%numatomic(ii))
             else
@@ -764,7 +763,7 @@ end
 ! Check dummy and ghost atoms
 !
         if(runtype=='OPTIMIZE') then
-          minatomic= minval(datamol%numatomic(1:natom))
+          minatomic= minval(datamol%numatomic(1:datamol%natom))
           if((minatomic <= 0).and.(.not.cartesian)) then
             cartesian=.true.
             write(datacomp%iout,'(" Warning! Cartesian coordinate is used during geometry optimization.")')
