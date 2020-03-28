@@ -157,6 +157,10 @@ end
       if(datacomp%master) call opendatfile(datacomp)
       call readinput(datajob,datamol,databasis,datacomp)
 !
+! Read atomic data
+!
+      call readatom(datajob,datamol,datacomp)
+!
 ! Set basis functions
 !
       call setbasis(datajob,datamol,databasis,datacomp)

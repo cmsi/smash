@@ -25,7 +25,7 @@
       type(typemol),intent(inout) :: datamol
       type(typebasis),intent(inout) :: databasis
       type(typecomp),intent(inout) :: datacomp
-      integer :: ii, llen, intarray(16), info
+      integer :: ii, llen, intarray(15), info
       integer :: iprint, maxiter, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
       integer :: nrad, nleb, ncore, nvfz, maxmp2diis, maxmp2iter, nopt
       integer :: multi
@@ -190,10 +190,6 @@
       if(ecp =='NONE') ecp = ''
       if(ecp /= '') flagecp=.true.
 !
-! Read geometry data
-!
-      call readatom(runtype,bohr,cartesian,datamol,datacomp)
-!
       if(datacomp%master) then
         chararray(1)= method
         chararray(2)= runtype
@@ -227,22 +223,21 @@
         realarray(21)= threshover
         realarray(22)= threshatom
         realarray(23)= threshmp2cphf
-        intarray( 1)= datamol%natom
-        intarray( 2)= multi
-        intarray( 3)= iprint
-        intarray( 4)= maxiter
-        intarray( 5)= maxdiis
-        intarray( 6)= maxsoscf
-        intarray( 7)= maxqc
-        intarray( 8)= maxqcdiag
-        intarray( 9)= maxqcdiagsub
-        intarray(10)= nopt
-        intarray(11)= nrad
-        intarray(12)= nleb
-        intarray(13)= ncore
-        intarray(14)= nvfz
-        intarray(15)= maxmp2diis
-        intarray(16)= maxmp2iter
+        intarray( 1)= multi
+        intarray( 2)= iprint
+        intarray( 3)= maxiter
+        intarray( 4)= maxdiis
+        intarray( 5)= maxsoscf
+        intarray( 6)= maxqc
+        intarray( 7)= maxqcdiag
+        intarray( 8)= maxqcdiagsub
+        intarray( 9)= nopt
+        intarray(10)= nrad
+        intarray(11)= nleb
+        intarray(12)= ncore
+        intarray(13)= nvfz
+        intarray(14)= maxmp2diis
+        intarray(15)= maxmp2iter
         logarray(1)= spher
         logarray(2)= bohr
         logarray(3)= flagecp
@@ -253,14 +248,8 @@
       call para_bcastc(chararray,16*9,0,datacomp%mpi_comm1)
       call para_bcastc(check,64,0,datacomp%mpi_comm1)
       call para_bcastr(realarray,23,0,datacomp%mpi_comm1)
-      call para_bcasti(intarray,16,0,datacomp%mpi_comm1)
+      call para_bcasti(intarray,15,0,datacomp%mpi_comm1)
       call para_bcastl(logarray,5,0,datacomp%mpi_comm1)
-!
-      datamol%natom= intarray(1)
-!
-      call para_bcasti(datamol%numatomic,datamol%natom,0,datacomp%mpi_comm1)
-      call para_bcastr(datamol%coord(1,1),datamol%natom*3,0,datacomp%mpi_comm1)
-      call para_bcastr(datamol%znuc,datamol%natom,0,datacomp%mpi_comm1)
 !
 !     numatomic(1:natom)= datamol%numatomic(1:natom)
 !     coord(1:3,1:natom)= datamol%coord(1:3,1:natom)
@@ -321,11 +310,11 @@
       datajob%check   = check
       datajob%method  = chararray(1)
       datajob%runtype = chararray(2)
-      databasis%basis   = chararray(3)
+      databasis%basis = chararray(3)
       datajob%scftype = chararray(4)
       datajob%memory  = chararray(5)
       datajob%guess   = chararray(6)
-      databasis%ecp     = chararray(7)
+      databasis%ecp   = chararray(7)
       datajob%scfconv = chararray(8)
       datajob%precision=chararray(9)
       datamol%charge  = realarray( 1)
@@ -351,22 +340,22 @@
       datajob%threshover  = realarray(21)
       datajob%threshatom  = realarray(22)
       datajob%threshmp2cphf=realarray(23)
-      datamol%multi   = intarray( 2)
-      datajob%iprint  = intarray( 3)
-      datajob%maxiter = intarray( 4)
-      datajob%maxdiis = intarray( 5)
-      datajob%maxsoscf= intarray( 6)
-      datajob%maxqc   = intarray( 7)
-      datajob%maxqcdiag=intarray( 8)
-      datajob%maxqcdiagsub=intarray( 9)
-      datajob%nopt    = intarray(10)
-      datajob%nrad    = intarray(11)
-      datajob%nleb    = intarray(12)
-      datajob%ncore   = intarray(13)
-      datajob%nvfz    = intarray(14)
-      datajob%maxmp2diis= intarray(15)
-      datajob%maxmp2iter= intarray(16)
-      databasis%spher   = logarray(1)
+      datamol%multi   = intarray( 1)
+      datajob%iprint  = intarray( 2)
+      datajob%maxiter = intarray( 3)
+      datajob%maxdiis = intarray( 4)
+      datajob%maxsoscf= intarray( 5)
+      datajob%maxqc   = intarray( 6)
+      datajob%maxqcdiag=intarray( 7)
+      datajob%maxqcdiagsub=intarray( 8)
+      datajob%nopt    = intarray( 9)
+      datajob%nrad    = intarray(10)
+      datajob%nleb    = intarray(11)
+      datajob%ncore   = intarray(12)
+      datajob%nvfz    = intarray(13)
+      datajob%maxmp2diis= intarray(14)
+      datajob%maxmp2iter= intarray(15)
+      databasis%spher = logarray(1)
       datajob%bohr    = logarray(2)
       datajob%flagecp = logarray(3)
       datajob%cartesian=logarray(4)
@@ -644,20 +633,20 @@ end
 end
 
 
-!---------------------------------------------------------------------
-  subroutine readatom(runtype,bohr,cartesian,datamol,datacomp)
-!---------------------------------------------------------------------
+!------------------------------------------------
+  subroutine readatom(datajob,datamol,datacomp)
+!------------------------------------------------
 !
 ! Read atomic data
 !
       use modparam, only : mxatom, tobohr, maxline
-      use modtype, only : typemol, typecomp
+      use modtype, only : typejob, typemol, typecomp
       implicit none
+      type(typejob),intent(inout) :: datajob
       type(typemol),intent(inout) :: datamol
       type(typecomp),intent(inout) :: datacomp
       integer :: ii, jj, minatomic
       real(8),parameter :: zero=0.0D+00
-      character(len=16),intent(in) :: runtype
       character(len=16) :: cdummy
       character(len=254) :: line
       character(len=3) :: atomin(mxatom)
@@ -681,8 +670,6 @@ end
 &       '76 ','77 ','78 ','79 ','80 ','81 ','82 ','83 ','84 ','85 ','86 ','87 ','88 ','89 ','90 ',&
 &       '91 ','92 ','93 ','94 ','95 ','96 ','97 ','98 ','99 ','100','101','102','103','104','105',&
 &       '106','107','108','109','110','111','112'/)
-      logical,intent(in) :: bohr
-      logical,intent(inout) :: cartesian
 !
       if(datacomp%master) then
         rewind(datacomp%inpcopy)
@@ -732,7 +719,7 @@ end
 !
 ! Change to atomic unit
 !
-          if(.not.bohr) then
+          if(.not.datajob%bohr) then
             do ii= 1,datamol%natom
               do jj= 1,3
                 datamol%coord(jj,ii)= datamol%coord(jj,ii)*tobohr
@@ -759,16 +746,23 @@ end
           enddo
           write(datacomp%iout,'(" Geometry is read from checkpoint file.")')
         endif
+      endif
+!
+! Broadcast atomic data
+!
+      call para_bcasti(datamol%natom,1,0,datacomp%mpi_comm1)
+      call para_bcasti(datamol%numatomic,datamol%natom,0,datacomp%mpi_comm1)
+      call para_bcastr(datamol%coord(1,1),datamol%natom*3,0,datacomp%mpi_comm1)
+      call para_bcastr(datamol%znuc,datamol%natom,0,datacomp%mpi_comm1)
 !
 ! Check dummy and ghost atoms
 !
-        if(runtype=='OPTIMIZE') then
-          minatomic= minval(datamol%numatomic(1:datamol%natom))
-          if((minatomic <= 0).and.(.not.cartesian)) then
-            cartesian=.true.
-            write(datacomp%iout,'(" Warning! Cartesian coordinate is used during geometry optimization.")')
-            datacomp%nwarn= datacomp%nwarn+1
-          endif
+      if(datajob%runtype=='OPTIMIZE') then
+        minatomic= minval(datamol%numatomic(1:datamol%natom))
+        if((minatomic <= 0).and.(.not.datajob%cartesian)) then
+          datajob%cartesian=.true.
+          write(datacomp%iout,'(" Warning! Cartesian coordinate is used during geometry optimization.")')
+          datacomp%nwarn= datacomp%nwarn+1
         endif
       endif
       return
