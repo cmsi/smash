@@ -1,4 +1,4 @@
-! Copyright 2014-2019  Kazuya Ishimura
+! Copyright 2014-2012  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -37,6 +37,16 @@
 &             " *******************************************",/)') datajob%version
       endif
       call tstamp(0,datacomp)
+!
+! Read input data and open checkpoint file if necessary
+!
+      if(datacomp%master) call opendatfile(datacomp)
+      call readinput(datajob,datamol,databasis,datacomp)
+!
+! Open checkpoint file
+!
+      if((datacomp%master).and.(datajob%check /= '')) call opencheckfile(datajob,datacomp)
+!
       call parallelinfo(datacomp)
 !
 ! Read input file and set details
@@ -150,15 +160,6 @@ end
       type(typemol),intent(inout) :: datamol
       type(typebasis),intent(inout) :: databasis
       type(typecomp),intent(inout) :: datacomp
-!
-! Read input data and open checkpoint file if necessary
-!
-      if(datacomp%master) call opendatfile(datacomp)
-      call readinput(datajob,datamol,databasis,datacomp)
-!
-! Open checkpoint file
-!
-      if(datajob%check /= '') call opencheckfile(datajob,datacomp)
 !
 ! Read atomic data
 !
