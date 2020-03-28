@@ -27,6 +27,12 @@
       type(typebasis) :: databasis
       type(typecomp) :: datacomp
 !
+! Initialize and get MPI execution environment
+!
+      call setparallel(datacomp)
+!
+! Main driver of SMASH
+!
       call smashmain(datajob,datamol,databasis,datacomp)
 !
 end program smash

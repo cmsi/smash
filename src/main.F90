@@ -27,8 +27,6 @@
       type(typecomp),intent(inout) :: datacomp
       logical :: converged
 !
-      call setparallel(datacomp)
-!
       if(datacomp%master) then
         write(datacomp%iout,&
 &           '(" *******************************************",/,&
@@ -118,7 +116,7 @@ end
       implicit none
       type(typecomp),intent(inout) :: datacomp
 !
-! Initialize variables for parallelization
+! Initialize variable for parallelization
 !
       datacomp%master = .true.
 !
