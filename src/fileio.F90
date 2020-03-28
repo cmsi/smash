@@ -178,12 +178,7 @@
           write(*,'(" Error was found in mp2 line of input file!")')
           call iabort
         endif
-!
       endif
-!
-! Open checkpoint file
-!
-      if(check /= '') call opencheckfile(check,datacomp)
 !
       if(runtype == 'OPT') runtype='OPTIMIZE'
       if(method == 'HF') method='HARTREE-FOCK'

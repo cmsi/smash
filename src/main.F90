@@ -157,6 +157,10 @@ end
       if(datacomp%master) call opendatfile(datacomp)
       call readinput(datajob,datamol,databasis,datacomp)
 !
+! Open checkpoint file
+!
+      if(datajob%check /= '') call opencheckfile(datajob,datacomp)
+!
 ! Read atomic data
 !
       call readatom(datajob,datamol,datacomp)

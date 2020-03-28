@@ -150,21 +150,21 @@ end
 end
 
 
-!-------------------------------------------
-  subroutine opencheckfile(check,datacomp)
-!-------------------------------------------
+!---------------------------------------------
+  subroutine opencheckfile(datajob,datacomp)
+!---------------------------------------------
 !
 ! Open checkpoint file
 !
-      use modtype, only : typecomp
+      use modtype, only : typejob, typecomp
       implicit none
-      type(typecomp),intent(inout) :: datacomp
+      type(typejob),intent(in) :: datajob
+      type(typecomp),intent(in) :: datacomp
       integer :: llen
-      character(len=256),intent(in) :: check
 !
       if(datacomp%master) then
-        llen= len_trim(check)
-        open(unit=datacomp%icheck,file=check(1:llen),form='unformatted',status='unknown')
+        llen= len_trim(datajob%check)
+        open(unit=datacomp%icheck,file=datajob%check(1:llen),form='unformatted',status='unknown')
       endif
 !
       return
