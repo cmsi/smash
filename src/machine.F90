@@ -136,7 +136,7 @@ end
   subroutine closedatfile(datacomp)
 !------------------------------------
 !
-! Open temporary file
+! Close temporary file
 !
       use modtype, only : typecomp
       implicit none
@@ -175,7 +175,7 @@ end
   subroutine closecheckfile(datacomp)
 !--------------------------------------------
 !
-! Open checkpoint file
+! Close checkpoint file
 !
       use modtype, only : typecomp
       implicit none
@@ -183,6 +183,48 @@ end
 !
       if(datacomp%master) then
         close(datacomp%icheck)
+      endif
+!
+      return
+end
+
+!-------------------------------------
+  subroutine openinputfile(datacomp)
+!-------------------------------------
+!
+! Open argument input file
+!
+      use modtype, only : typecomp
+      implicit none
+      type(typecomp),intent(inout) :: datacomp
+      integer :: llen
+      character(len=256) :: filename
+!
+      if(datacomp%master) then
+        call get_command_argument(1,filename)
+        llen= len_trim(filename)
+        datacomp%inpstd= 9
+        open(unit=datacomp%inpstd,file=filename(1:llen),status='old',err=9999)
+      endif
+!
+      return
+9999 write(*,'(" Error! File ",a," is not found.")') filename(1:llen)
+     call iabort
+end
+
+
+!--------------------------------------
+  subroutine closeinputfile(datacomp)
+!--------------------------------------
+!
+! Close argument input file
+!
+      use modtype, only : typecomp
+      implicit none
+      type(typecomp),intent(inout) :: datacomp
+!
+      if(datacomp%master) then
+        close(datacomp%inpstd)
       endif
 !
       return

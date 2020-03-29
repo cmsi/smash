@@ -38,14 +38,20 @@
       endif
       call tstamp(0,datacomp)
 !
-! Read input data and open checkpoint file if necessary
+! Read input data and open checkpoint file
 !
-      if(datacomp%master) call opendatfile(datacomp)
+      if(datacomp%master) then
+        call opendatfile(datacomp)
+        if(command_argument_count() >= 1) call openinputfile(datacomp)
+      endif
       call readinput(datajob,datamol,databasis,datacomp)
 !
-! Open checkpoint file
+! Open checkpoint file and close argument input file if necessary
 !
-      if((datacomp%master).and.(datajob%check /= '')) call opencheckfile(datajob,datacomp)
+      if(datacomp%master) then
+        if(datajob%check /= '') call opencheckfile(datajob,datacomp)
+        if(command_argument_count() >= 1) call closeinputfile(datacomp)
+      endif
 !
       call parallelinfo(datacomp)
 !
