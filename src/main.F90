@@ -1,4 +1,4 @@
-! Copyright 2014-2012  Kazuya Ishimura
+! Copyright 2014-2020  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@
       type(typecomp),intent(inout) :: datacomp
       logical :: converged
 !
+! Write SMASH version, starting time, and parallel information
+!
       if(datacomp%master) then
         write(datacomp%iout,&
 &           '(" *******************************************",/,&
@@ -37,8 +39,9 @@
 &             " *******************************************",/)') datajob%version
       endif
       call tstamp(0,datacomp)
+      call parallelinfo(datacomp)
 !
-! Read input data and open checkpoint file
+! Read input data and open argument input file if necessary
 !
       if(datacomp%master) then
         call opendatfile(datacomp)
@@ -53,9 +56,7 @@
         if(command_argument_count() >= 1) call closeinputfile(datacomp)
       endif
 !
-      call parallelinfo(datacomp)
-!
-! Read input file and set details
+! Set parameters and write computaional conditions
 !
       call setdetails(datajob,datamol,databasis,datacomp)
 !

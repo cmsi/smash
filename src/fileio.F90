@@ -459,7 +459,7 @@ end
              write(datacomp%iout,'(3x,f16.7,1x,f15.8)') databasis%ex(iloc+iprim), databasis%coeffinp(iloc+iprim)
           enddo
         enddo
-        write(datacomp%iout,'("  ****")')
+        write(datacomp%iout,'("  ****",/)')
       endif
       return
 end
