@@ -128,7 +128,7 @@ end
         integer :: nwarn=0
         integer :: nproc1, myrank1, nproc2, myrank2, mpi_comm1, mpi_comm2
         real(8) :: cpu0, cpu1
-        logical :: master
+        logical :: master, convergedscf=.true., convergedgeom=.true.
       end type
 !
 ! nshell : Number of shells

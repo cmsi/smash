@@ -25,7 +25,6 @@
       type(typemol),intent(inout) :: datamol
       type(typebasis),intent(inout) :: databasis
       type(typecomp),intent(inout) :: datacomp
-      logical :: converged
 !
 ! Write SMASH version, starting time, and parallel information
 !
@@ -70,7 +69,7 @@
             case('GRADIENT')
               call calcrgradient(datajob,datamol,databasis,datacomp)
             case('OPTIMIZE')
-              call calcrgeometry(converged,datajob,datamol,databasis,datacomp)
+              call calcrgeometry(datajob,datamol,databasis,datacomp)
             case default
               if(datacomp%master) then
                 write(*,'(" Error! This program does not support runtype= ",a16,".")') &
@@ -85,7 +84,7 @@
             case('GRADIENT')
               call calcugradient(datajob,datamol,databasis,datacomp)
             case('OPTIMIZE')
-              call calcugeometry(converged,datajob,datamol,databasis,datacomp)
+              call calcugeometry(datajob,datamol,databasis,datacomp)
             case default
               if(datacomp%master) then
                 write(*,'(" Error! This program does not support runtype= ",a16,".")') &
@@ -118,7 +117,7 @@
 !
       if(datacomp%master) then
         write(datacomp%iout,'(" Used memory :",1x,i6," MB")') datacomp%memusedmax/125000
-        if((datajob%runtype =='OPTIMIZE').and.(.not.converged)) then
+        if((datajob%runtype =='OPTIMIZE').and.(.not.datacomp%convergedgeom)) then
           write(datacomp%iout,'(/," ============================================================")')
           write(datacomp%iout,'("  Geometry optimization did not finish with",i3," warning(s)!")') &
 &                 datacomp%nwarn
@@ -999,7 +998,7 @@ end
 
 
 !-------------------------------------------------------------------------
-  subroutine calcrgeometry(converged,datajob,datamol,databasis,datacomp)
+  subroutine calcrgeometry(datajob,datamol,databasis,datacomp)
 !-------------------------------------------------------------------------
 !
 ! Driver of geometry optimization calculation
@@ -1026,7 +1025,6 @@ end
       real(8), allocatable :: workv(:), coordredun(:), egradredun(:)
       real(8) :: egradmax, egradrms
       real(8) :: savedconv, savecutint2
-      logical,intent(out) :: converged
       logical :: exceed
 !
       nao= databasis%nao
@@ -1034,7 +1032,7 @@ end
       nao3=(nao*(nao+1))/2
       nshell3=(databasis%nshell*(databasis%nshell+1))/2
       natom3= datamol%natom*3
-      converged=.false.
+      datacomp%convergedgeom=.false.
 !
 ! Calculate redundant coordinate
 !
@@ -1185,7 +1183,7 @@ end
 !
         if((egradmax <= datajob%optconv).and.(egradrms <= datajob%optconv*third)) then
           if(datacomp%master) write(datacomp%iout,'("   ==== Geometry converged ====",/)')
-          converged=.true.
+          datacomp%convergedgeom=.true.
           call tstamp(1,datacomp)
           exit
         endif
@@ -1281,7 +1279,7 @@ end
 !
 ! Write optimized geometry
 !
-      if(datacomp%master.and.converged) then
+      if(datacomp%master.and.datacomp%convergedgeom) then
         write(datacomp%iout,'(" ==========================")')
         write(datacomp%iout,'("     Optimized Geometry")')
         write(datacomp%iout,'(" ==========================")')
@@ -1323,7 +1321,7 @@ end
 
 
 !----------------------------------------------------------------------------------------
-  subroutine calcugeometry(converged,datajob,datamol,databasis,datacomp)
+  subroutine calcugeometry(datajob,datamol,databasis,datacomp)
 !----------------------------------------------------------------------------------------
 !
 ! Driver of open-shell geometry optimization calculation
@@ -1350,7 +1348,6 @@ end
       real(8), allocatable :: workv(:), coordredun(:), egradredun(:)
       real(8) :: egradmax, egradrms
       real(8) :: savedconv, savecutint2
-      logical,intent(out) :: converged
       logical :: exceed
 !
       nao= databasis%nao
@@ -1358,7 +1355,7 @@ end
       nao3=(nao*(nao+1))/2
       nshell3=(databasis%nshell*(databasis%nshell+1))/2
       natom3= datamol%natom*3
-      converged=.false.
+      datacomp%convergedgeom=.false.
 !
 ! Calculate redundant coordinate
 !
@@ -1507,7 +1504,7 @@ end
 !
         if((egradmax <= datajob%optconv).and.(egradrms <= datajob%optconv*third)) then
           if(datacomp%master) write(datacomp%iout,'(" Geometry converged.",/)')
-          converged=.true.
+          datacomp%convergedgeom=.true.
           exit
           call tstamp(1,datacomp)
         endif
@@ -1607,7 +1604,7 @@ end
 !
 ! Write optimized geometry
 !
-      if(datacomp%master.and.converged) then
+      if(datacomp%master.and.datacomp%convergedgeom) then
         write(datacomp%iout,'(" ==========================")')
         write(datacomp%iout,'("     Optimized Geometry")')
         write(datacomp%iout,'(" ==========================")')
