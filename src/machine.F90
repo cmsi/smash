@@ -188,6 +188,46 @@ end
       return
 end
 
+
+!-------------------------------------------
+  subroutine openxyzfile(datajob,datacomp)
+!-------------------------------------------
+!
+! Open xyz file
+!
+      use modtype, only : typejob, typecomp
+      implicit none
+      type(typejob),intent(in) :: datajob
+      type(typecomp),intent(in) :: datacomp
+      integer :: llen
+!
+      if(datacomp%master) then
+        llen= len_trim(datajob%xyz)
+        open(unit=datacomp%ixyz,file=datajob%xyz(1:llen),status='replace')
+      endif
+!
+      return
+end
+
+
+!------------------------------------
+  subroutine closexyzfile(datacomp)
+!------------------------------------
+!
+! Close xyz file
+!
+      use modtype, only : typecomp
+      implicit none
+      type(typecomp),intent(inout) :: datacomp
+!
+      if(datacomp%master) then
+        close(datacomp%ixyz)
+      endif
+!
+      return
+end
+
+
 !-------------------------------------
   subroutine openinputfile(datacomp)
 !-------------------------------------

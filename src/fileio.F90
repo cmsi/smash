@@ -36,14 +36,14 @@
       real(8) :: charge
       character(len=256) :: line
       character(len=32) :: chararray(9)
-      character(len=256) :: check
+      character(len=256) :: check, xyz, char256array(2)
       character(len=32) :: method, runtype, scftype, memory, guess, precision, scfconv
       character(len=32) :: basis, ecp, mem=''
       logical :: logarray(5)
       logical :: bohr, octupole, flagecp, cartesian
       logical :: spher
       namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp
-      namelist /control/ precision, cutint2, spher, guess, iprint, bohr, check, threshover, &
+      namelist /control/ precision, cutint2, spher, guess, iprint, bohr, check, xyz, threshover, &
 &                        threshatom, octupole
       namelist /scf/ scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub, &
 &                    threshdiis, threshsoscf, threshqc
@@ -71,6 +71,7 @@
               line="&"//trim(line)//" /"
               call addapos(line,'GUESS=',6)
               call addapos(line,'CHECK=',6)
+              call addapos(line,'XYZ=',4)
               call addapos(line,'PRECISION=',10)
             case('SCF')
               line="&"//trim(line)//" /"
@@ -136,6 +137,7 @@
         cartesian  = datajob%cartesian
         octupole   = datajob%octupole
         check      = datajob%check
+        xyz        = datajob%xyz
 !
         read(datacomp%inpcopy,nml=job,end=110,iostat=info)
 110     if(info > 0) then
@@ -195,6 +197,8 @@
         chararray(7)= ecp
         chararray(8)= scfconv
         chararray(9)= precision
+        char256array(1)= check
+        char256array(2)= xyz
         realarray( 1)= charge
         realarray( 2)= cutint2
         realarray( 3)= dconv
@@ -241,7 +245,7 @@
       endif
 !
       call para_bcastc(chararray,32*9,0,datacomp%mpi_comm1)
-      call para_bcastc(check,256,0,datacomp%mpi_comm1)
+      call para_bcastc(char256array,256*2,0,datacomp%mpi_comm1)
       call para_bcastr(realarray,23,0,datacomp%mpi_comm1)
       call para_bcasti(intarray,15,0,datacomp%mpi_comm1)
       call para_bcastl(logarray,5,0,datacomp%mpi_comm1)
@@ -303,6 +307,7 @@
 !     octupole =logarray(5)
 !
       datajob%check   = check
+      datajob%xyz     = xyz
       datajob%method  = chararray(1)
       datajob%runtype = chararray(2)
       databasis%basis = chararray(3)
@@ -623,6 +628,11 @@ end
       if(inum > 0) then
         ispace= index(line(inum:),' ')
         line(inum+6:inum+ispace-2)= linecopy(inum+6:inum+ispace-2)
+      endif
+      inum= index(line(1:llen),'XYZ=')
+      if(inum > 0) then
+        ispace= index(line(inum:),' ')
+        line(inum+4:inum+ispace-2)= linecopy(inum+4:inum+ispace-2)
       endif
       return
 end
@@ -1674,6 +1684,38 @@ end
 end
 
 
-
+!--------------------------------------------
+  subroutine writexyzfile(datamol,datacomp)
+!--------------------------------------------
+!
+! Write xyz data
+!
+      use modparam, only : toang
+      use modtype, only : typemol, typecomp
+      implicit none
+      type(typemol),intent(in) :: datamol
+      type(typecomp),intent(in) :: datacomp
+      integer :: iatom, j
+      character(len=3) :: table(-9:112)= &
+&     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+&       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
+&       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
+&       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
+&       'Pm ','Sm ','Eu ','Gd ','Tb ','Dy ','Ho ','Er ','Tm ','Yb ','Lu ','Hf ','Ta ','W  ','Re ',&
+&       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
+&       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
+&       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
+!
+      if(datacomp%master) then
+        write(datacomp%ixyz,'(i0)') datamol%natom
+        write(datacomp%ixyz,'("SMASH data in Angstrom")')
+        do iatom= 1,datamol%natom
+          write(datacomp%ixyz,'(a3,x,3f14.7)') table(datamol%numatomic(iatom)),(datamol%coord(j,iatom)*toang,j=1,3)
+        enddo
+      endif
+!
+      return
+end
 
 

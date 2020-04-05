@@ -123,7 +123,7 @@ end
       implicit none
       type typecomp
         integer :: memmax=1000000000, memused=0, memusedmax=0
-        integer :: inpstd=5, iout=6, inpcopy=10, icheck=11
+        integer :: inpstd=5, iout=6, inpcopy=10, icheck=11, ixyz=12
         integer :: iwall0, iwall1
         integer :: nwarn=0
         integer :: nproc1, myrank1, nproc2, myrank2, mpi_comm1, mpi_comm2
@@ -184,7 +184,7 @@ end
         real(8) :: threshdftao=-1.0D+00, threshmp2cphf=1.0D-10
         character(len=32) :: method='HARTREE-FOCK', runtype='ENERGY', scftype='RHF', memory=''
         character(len=32) :: version='3.0.0', guess='HUCKEL', precision='MEDIUM'
-        character(len=256) :: check=''
+        character(len=256) :: check='', xyz=''
         logical :: bohr=.false., octupole=.false., flagecp=.false.
 !
         integer :: maxiter=150, maxdiis=20, maxsoscf=20, maxqc=15, maxqcdiag=100, maxqcdiagsub=10

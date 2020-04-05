@@ -99,10 +99,18 @@
           call iabort
       end select
 !
-! Close input.dat and checkpoint files
+! Open and write xyz file if set
+!
+      if(datacomp%master.and.(datajob%xyz /= '')) then
+        call openxyzfile(datajob,datacomp)
+        call writexyzfile(datamol,datacomp)
+      endif
+!
+! Close input.dat, checkpoint, and xyz files
 !
       if(datacomp%master) call closedatfile(datacomp)
       if(datacomp%master.and.(datajob%check /= '')) call closecheckfile(datacomp)
+      if(datacomp%master.and.(datajob%xyz /= '')) call closexyzfile(datacomp)
 !
       call para_finalize
       call memcheck(datacomp)
