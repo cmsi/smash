@@ -15,10 +15,10 @@ OBJDIR= obj
 .SUFFIXES: .F .F90 .o
 
 smash : $(OBJS)
-	$(F90) -o bin/smash -I $(OBJDIR) $(OPT) $(OBJS) $(LIB)
+	$(F90) -o bin/smash $(OPT) $(OBJS) $(LIB)
 
 smash.a : $(OBJS)
-	ar rv obj/smash.a $(OBJS)
+	ar rv obj/smash.a $(subst obj/start.o,,$(OBJS))
 
 $(OBJDIR)/%.o : src/%.F90
 	$(F90) $(OPT) -module $(OBJDIR) -o $@ -c $<
@@ -26,4 +26,4 @@ $(OBJDIR)/%.o : src/%.F90
 $(OBJ): $(addprefix src/,$(MOD))
 
 clean :
-	rm -f $(OBJDIR)/*.mod $(OBJDIR)/*.o bin/smash
+	rm -f $(OBJDIR)/* bin/smash
