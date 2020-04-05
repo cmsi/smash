@@ -350,7 +350,7 @@ end
 !
       call nucenergy(datajob%threshatom,datamol,datacomp)
       if(datacomp%master) then
-        write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
+        write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," Hartree",/)') datamol%enuc
       endif
 !
 ! Set arrays 2
@@ -504,7 +504,7 @@ end
 !
       call nucenergy(datajob%threshatom,datamol,datacomp)
       if(datacomp%master) then
-        write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
+        write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," Hartree",/)') datamol%enuc
       endif
 !
 ! Set arrays 2
@@ -660,7 +660,7 @@ end
 !
       call nucenergy(datajob%threshatom,datamol,datacomp)
       if(datacomp%master) then
-        write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
+        write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," Hartree",/)') datamol%enuc
       endif
 !
 ! Set arrays 2
@@ -844,7 +844,7 @@ end
 !
       call nucenergy(datajob%threshatom,datamol,datacomp)
       if(datacomp%master) then
-        write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
+        write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," Hartree",/)') datamol%enuc
       endif
 !
 ! Set arrays 2
@@ -1081,7 +1081,7 @@ end
 !
         call nucenergy(datajob%threshatom,datamol,datacomp)
         if(datacomp%master) then
-          write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
+          write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," Hartree",/)') datamol%enuc
         endif
 !
 ! Set work arrays 1
@@ -1405,7 +1405,7 @@ end
 !
         call nucenergy(datajob%threshatom,datamol,datacomp)
         if(datacomp%master) then
-          write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," a.u.",/)') datamol%enuc
+          write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," Hartree",/)') datamol%enuc
         endif
 !
 ! Set arrays 1

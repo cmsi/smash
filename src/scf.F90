@@ -330,10 +330,10 @@
       enddo
 !
       if(datacomp%master) then
-        write(datacomp%iout,'(" -----------------------------------------")')
+        write(datacomp%iout,'(" --------------------------------------------")')
         write(datacomp%iout,'("    SCF Converged.")')
-        write(datacomp%iout,'("    RHF Energy = ",f17.9," a.u.")') datamol%escf
-        write(datacomp%iout,'(" -----------------------------------------"/)')
+        write(datacomp%iout,'("    RHF Energy = ",f17.9," Hartree")') datamol%escf
+        write(datacomp%iout,'(" --------------------------------------------"/)')
       endif
 !
 ! Unset arrays
@@ -1280,12 +1280,12 @@ end
       enddo
 !
       if(datacomp%master) then
-        write(datacomp%iout,'(" -----------------------------------------------------------")')
+        write(datacomp%iout,'(" ---------------------------------------------------------------")')
         write(datacomp%iout,'("    SCF Converged.")')
-        write(datacomp%iout,'("    DFT Energy = ",f17.9," a.u.")') datamol%escf
-        write(datacomp%iout,'("    Exchange + Correlation energy = ",f17.9," a.u.")') edft
+        write(datacomp%iout,'("    DFT Energy = ",f17.9," Hartree")') datamol%escf
+        write(datacomp%iout,'("    Exchange + Correlation energy = ",f17.9," Hartree")') edft
         write(datacomp%iout,'("    Number of electrons           = ",f17.9)') totalelec
-        write(datacomp%iout,'(" -----------------------------------------------------------"/)')
+        write(datacomp%iout,'(" ---------------------------------------------------------------"/)')
       endif
 !
 ! Unset arrays
@@ -1710,10 +1710,10 @@ end
       enddo
 !
       if(datacomp%master) then
-        write(datacomp%iout,'(" -----------------------------------------")')
+        write(datacomp%iout,'(" --------------------------------------------")')
         write(datacomp%iout,'("    SCF Converged.")')
-        write(datacomp%iout,'("    UHF Energy = ",f17.9," a.u.")') datamol%escf
-        write(datacomp%iout,'(" -----------------------------------------"/)')
+        write(datacomp%iout,'("    UHF Energy = ",f17.9," Hartree")') datamol%escf
+        write(datacomp%iout,'(" --------------------------------------------"/)')
       endif
 !
 ! Calculate spin expectation values
@@ -2489,12 +2489,12 @@ end
       enddo
 !
       if(datacomp%master) then
-        write(datacomp%iout,'(" -----------------------------------------------------------")')
+        write(datacomp%iout,'(" ---------------------------------------------------------------")')
         write(datacomp%iout,'("    SCF Converged.")')
-        write(datacomp%iout,'("    DFT Energy = ",f17.9," a.u.")')datamol%escf
-        write(datacomp%iout,'("    Exchange + Correlation energy = ",f17.9," a.u.")')edft
+        write(datacomp%iout,'("    DFT Energy = ",f17.9," Hartree")')datamol%escf
+        write(datacomp%iout,'("    Exchange + Correlation energy = ",f17.9," Hartree")')edft
         write(datacomp%iout,'("    Number of electrons           = ",f17.9)')totalelec
-        write(datacomp%iout,'(" -----------------------------------------------------------")')
+        write(datacomp%iout,'(" ---------------------------------------------------------------")')
       endif
 !
 ! Calculate spin expectation values
