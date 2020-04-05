@@ -14,7 +14,7 @@
 !
 !---------------------------------------------------------------------------------------
   subroutine formrfockexcor(fockdsum,fockd,energy,totalelec,cmo,atomvec,radpt,angpt, &
-&                           rad,ptweight,vao,vmo,xyzpt,rsqrd,transcmo,work, &
+&                           rad,ptweight,vao,vmo,xyzpt,rsqrd,transcmo,work,ndftatom, &
 &                           nproc,myrank,mpi_comm, &
 &                           datajob,datamol,databasis)
 !---------------------------------------------------------------------------------------
@@ -38,22 +38,21 @@
       type(typejob),intent(in) :: datajob
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
-      integer,intent(in) :: nproc, myrank, mpi_comm
-      integer :: natom, ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
+      integer,intent(in) :: ndftatom, nproc, myrank, mpi_comm
+      integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: cmo(databasis%nao,datamol%neleca)
-      real(8),intent(in) :: atomvec(5,datamol%natom,datamol%natom), radpt(2,datajob%nrad)
-      real(8),intent(in) :: angpt(4,datajob%nleb), rad(datamol%natom)
-      real(8),intent(in) :: ptweight(datajob%nleb,datajob%nrad,datamol%natom)
+      real(8),intent(in) :: atomvec(5,ndftatom,ndftatom), radpt(2,datajob%nrad)
+      real(8),intent(in) :: angpt(4,datajob%nleb), rad(ndftatom)
+      real(8),intent(in) :: ptweight(datajob%nleb,datajob%nrad,ndftatom)
       real(8),intent(out) :: fockdsum(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: fockd(databasis%nao*(databasis%nao+1)/2), energy, totalelec
-      real(8),intent(out) :: vao(databasis%nao,4), vmo(datamol%neleca,4), xyzpt(3,datamol%natom)
-      real(8),intent(out) :: rsqrd(datamol%natom)
+      real(8),intent(out) :: vao(databasis%nao,4), vmo(datamol%neleca,4), xyzpt(3,ndftatom)
+      real(8),intent(out) :: rsqrd(ndftatom)
       real(8),intent(out) :: transcmo(datamol%neleca,databasis%nao), work(databasis%nao)
       real(8) :: weight, rhoa, grhoa(3), excora(4)
       real(8) :: radpoint, tmp(2,2), wcutoff, rcutoff, fcutoff, aocutoff
 !
-      natom= datamol%natom
 !
       transcmo=transpose(cmo)
       fockd(:)= zero
@@ -62,15 +61,15 @@
       totalelec= zero
       ngridatom= datajob%nrad*datajob%nleb
 !
-      wcutoff= datajob%threshweight/(natom*ngridatom)
-      rcutoff= datajob%threshrho/(natom*ngridatom)
-      fcutoff= datajob%threshdfock/(natom*ngridatom)
-      aocutoff=datajob%threshdftao/(natom*ngridatom)
+      wcutoff= datajob%threshweight/(ndftatom*ngridatom)
+      rcutoff= datajob%threshrho/(ndftatom*ngridatom)
+      fcutoff= datajob%threshdfock/(ndftatom*ngridatom)
+      aocutoff=datajob%threshdftao/(ndftatom*ngridatom)
 !
 !$OMP parallel do collapse(2) schedule(dynamic,1) private(icount,ilebstart,xyzpt, &
 !$OMP rsqrd,weight,rhoa,grhoa,excora,radpoint,vao,vmo,work) &
 !$OMP reduction(+:energy,fockd,totalelec)
-      do iatom= 1,natom
+      do iatom= 1,ndftatom
         do irad= 1,datajob%nrad
           icount=(iatom-1)*ngridatom+(irad-1)*datajob%nleb+1+myrank
           ilebstart=mod(icount,nproc)+1
@@ -80,7 +79,7 @@
             weight=ptweight(ileb,irad,iatom)
             if(weight < wcutoff) cycle
 !
-            do jatom= 1,natom
+            do jatom= 1,ndftatom
               xyzpt(1,jatom)= atomvec(1,iatom,jatom)+radpoint*angpt(1,ileb)
               xyzpt(2,jatom)= atomvec(2,iatom,jatom)+radpoint*angpt(2,ileb)
               xyzpt(3,jatom)= atomvec(3,iatom,jatom)+radpoint*angpt(3,ileb)
@@ -88,7 +87,7 @@
 &                          +xyzpt(3,jatom)*xyzpt(3,jatom)
             enddo
 !
-            call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,datajob%threshex,datamol,databasis)
+            call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,datajob%threshex,ndftatom,datamol,databasis)
 !
             rhoa= zero
             grhoa(1:3)= zero
@@ -212,7 +211,7 @@ end
 !---------------------------------------------------------------------------------------
   subroutine formufockexcor(fockd1,fockd2,fockd3,energy,totalelec,cmoa,cmob,atomvec, &
 &                           radpt,angpt,rad,ptweight,vao,vmoa,vmob,xyzpt,rsqrd, &
-&                           transcmoa,transcmob,work, &
+&                           transcmoa,transcmob,work,ndftatom, &
 &                           nproc,myrank,mpi_comm, &
 &                           datajob,datamol,databasis)
 !---------------------------------------------------------------------------------------
@@ -230,26 +229,24 @@ end
       type(typejob),intent(in) :: datajob
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
-      integer,intent(in) :: nproc, myrank, mpi_comm
-      integer :: natom, ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
+      integer,intent(in) :: ndftatom, nproc, myrank, mpi_comm
+      integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: cmoa(databasis%nao,datamol%neleca), cmob(databasis%nao,datamol%nelecb)
-      real(8),intent(in) :: atomvec(5,datamol%natom,datamol%natom), radpt(2,datajob%nrad)
-      real(8),intent(in) :: angpt(4,datajob%nleb), rad(datamol%natom) 
-      real(8),intent(in) :: ptweight(datajob%nleb,datajob%nrad,datamol%natom)
+      real(8),intent(in) :: atomvec(5,ndftatom,ndftatom), radpt(2,datajob%nrad)
+      real(8),intent(in) :: angpt(4,datajob%nleb), rad(ndftatom) 
+      real(8),intent(in) :: ptweight(datajob%nleb,datajob%nrad,ndftatom)
       real(8),intent(out) :: fockd1(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: fockd2(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: fockd3(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: energy, totalelec, vao(databasis%nao,4)
       real(8),intent(out) :: vmoa(datamol%neleca,4), vmob(datamol%nelecb,4)
-      real(8),intent(out) :: xyzpt(3,datamol%natom), rsqrd(datamol%natom)
+      real(8),intent(out) :: xyzpt(3,ndftatom), rsqrd(ndftatom)
       real(8),intent(out) :: transcmoa(datamol%neleca,databasis%nao)
       real(8),intent(out) :: transcmob(datamol%nelecb,databasis%nao)
       real(8),intent(out) :: work(databasis%nao*2)
       real(8) :: weight, rhoa, rhob, grhoa(3), grhob(3), excora(4), excorb(4)
       real(8) :: radpoint, tmp(2,2), wcutoff, rcutoff, fcutoff, aocutoff
-!
-      natom= datamol%natom
 !
       transcmoa= transpose(cmoa)
       transcmob= transpose(cmob)
@@ -260,15 +257,15 @@ end
       totalelec= zero
       ngridatom= datajob%nrad*datajob%nleb
 !
-      wcutoff= datajob%threshweight/(natom*ngridatom)
-      rcutoff= datajob%threshrho/(natom*ngridatom)
-      fcutoff= datajob%threshdfock/(natom*ngridatom)
-      aocutoff=datajob%threshdftao/(natom*ngridatom)
+      wcutoff= datajob%threshweight/(ndftatom*ngridatom)
+      rcutoff= datajob%threshrho/(ndftatom*ngridatom)
+      fcutoff= datajob%threshdfock/(ndftatom*ngridatom)
+      aocutoff=datajob%threshdftao/(ndftatom*ngridatom)
 !
 !$OMP parallel do collapse(2) schedule(dynamic,1) private(icount,ilebstart,xyzpt, &
 !$OMP rsqrd,weight,rhoa,rhob,grhoa,grhob,excora,excorb,radpoint,vao,vmoa,vmob,work) &
 !$OMP reduction(+:energy,fockd2,fockd3,totalelec)
-      do iatom= 1,natom
+      do iatom= 1,ndftatom
         do irad= 1,datajob%nrad
           icount=(iatom-1)*ngridatom+(irad-1)*datajob%nleb+1+myrank
           ilebstart=mod(icount,nproc)+1
@@ -277,7 +274,7 @@ end
 !
             weight=ptweight(ileb,irad,iatom)
             if(weight < wcutoff) cycle
-            do jatom= 1,natom
+            do jatom= 1,ndftatom
               xyzpt(1,jatom)= atomvec(1,iatom,jatom)+radpoint*angpt(1,ileb)
               xyzpt(2,jatom)= atomvec(2,iatom,jatom)+radpoint*angpt(2,ileb)
               xyzpt(3,jatom)= atomvec(3,iatom,jatom)+radpoint*angpt(3,ileb)
@@ -286,7 +283,7 @@ end
             enddo
 !
             call griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff, &
-&                          datajob%threshex,datamol,databasis)
+&                          datajob%threshex,ndftatom,datamol,databasis)
 !
             rhoa= zero
             grhoa(1:3)= zero
@@ -376,9 +373,9 @@ end
 end
 
 
-!--------------------------------------------------
-  subroutine calcatomvec(atomvec,surface,datamol)
-!--------------------------------------------------
+!-----------------------------------------------------------
+  subroutine calcatomvec(atomvec,surface,ndftatom,datamol)
+!-----------------------------------------------------------
 !
 ! Calculate atom vectors and surface shifting parameters
 !
@@ -388,16 +385,17 @@ end
       use modtype, only : typemol
       implicit none
       type(typemol),intent(in) :: datamol
+      integer,intent(in) :: ndftatom
       integer :: iatom, jatom, inum, jnum
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
-      real(8),intent(out) :: atomvec(5,datamol%natom,datamol%natom)
-      real(8),intent(out) :: surface(datamol%natom,datamol%natom)
+      real(8),intent(out) :: atomvec(5,ndftatom,ndftatom)
+      real(8),intent(out) :: surface(ndftatom,ndftatom)
       real(8) :: tmp1, tmp2
 !
 ! Calculate atom vectors
 !
 !$OMP parallel do
-      do iatom= 1,datamol%natom
+      do iatom= 1,ndftatom
         atomvec(1,iatom,iatom)= zero
         atomvec(2,iatom,iatom)= zero
         atomvec(3,iatom,iatom)= zero
@@ -422,7 +420,7 @@ end
 ! Calculate surface shifting parameters
 !
 !$OMP parallel do private(inum,jnum,tmp1,tmp2)
-      do iatom= 1,datamol%natom
+      do iatom= 1,ndftatom
         surface(iatom,iatom)= zero
         inum= datamol%numatomic(iatom)
         if(inum == 0) then
@@ -441,7 +439,7 @@ end
           if(surface(jatom,iatom) > half) surface(jatom,iatom)= half
           if(surface(jatom,iatom) <-half) surface(jatom,iatom)=-half
         enddo
-        do jatom= iatom+1,datamol%natom
+        do jatom= iatom+1,ndftatom
           jnum= datamol%numatomic(jatom)
           if(jnum == 0) then
             surface(jatom,iatom)= one
@@ -568,7 +566,7 @@ end
 
 !---------------------------------------------------------------------------------------------
   subroutine calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work,nrad,nleb, &
-&                           natom,nproc,myrank)
+&                           ndftatom,nproc,myrank)
 !---------------------------------------------------------------------------------------------
 !
 ! Calculate weights of grid points
@@ -582,19 +580,19 @@ end
 !       xyzpt, work (work space)
 !
       implicit none
-      integer,intent(in) :: nrad, nleb, natom, nproc, myrank
+      integer,intent(in) :: nrad, nleb, ndftatom, nproc, myrank
       integer :: katom, irad, ileb, iatom, jatom, i, icount, ilebstart, ngridatom
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, oneh=1.5D+00
-      real(8),intent(in) :: rad(natom), radpt(2,nrad), angpt(4,nleb), atomvec(5,natom,natom)
-      real(8),intent(in) :: surface(natom,natom)
-      real(8),intent(out) :: ptweight(nleb,nrad,natom), xyzpt(3,natom), work(natom,2)
+      real(8),intent(in) :: rad(ndftatom), radpt(2,nrad), angpt(4,nleb), atomvec(5,ndftatom,ndftatom)
+      real(8),intent(in) :: surface(ndftatom,ndftatom)
+      real(8),intent(out) :: ptweight(nleb,nrad,ndftatom), xyzpt(3,ndftatom), work(ndftatom,2)
       real(8) :: xyzgrid(3), radpoint, radweight, wttot, cutij, cutji, xmuij, zmuij, f4, f2
 !
       ngridatom= nrad*nleb
 !
 !$OMP parallel do collapse(2) private(icount,ilebstart,radpoint,radweight,wttot,xyzpt,&
 !$OMP work,xyzgrid,cutij,cutji,zmuij,xmuij,f4,f2)
-      do katom= 1,natom
+      do katom= 1,ndftatom
         do irad= 1,nrad
           icount=(katom-1)*ngridatom+(irad-1)*nleb+1+myrank
           ilebstart=mod(icount,nproc)+1
@@ -606,7 +604,7 @@ end
             xyzgrid(1)= radpoint*angpt(1,ileb)
             xyzgrid(2)= radpoint*angpt(2,ileb)
             xyzgrid(3)= radpoint*angpt(3,ileb)
-            do iatom= 1,natom
+            do iatom= 1,ndftatom
               xyzpt(1,iatom)= atomvec(1,katom,iatom)+xyzgrid(1)
               xyzpt(2,iatom)= atomvec(2,katom,iatom)+xyzgrid(2)
               xyzpt(3,iatom)= atomvec(3,katom,iatom)+xyzgrid(3)
@@ -615,7 +613,7 @@ end
 &                                +xyzpt(3,iatom)*xyzpt(3,iatom))
             enddo
 !
-            do iatom= 1,natom
+            do iatom= 1,ndftatom
               if(surface(1,iatom) == -one) then
                 work(iatom,1)= zero
                 cycle
@@ -635,7 +633,7 @@ end
                 work(jatom,1)=work(jatom,1)*cutji
               enddo
             enddo
-            do iatom= 1,natom
+            do iatom= 1,ndftatom
               wttot= wttot+work(iatom,1)
             enddo
             ptweight(ileb,irad,katom)= work(katom,1)*radweight*angpt(4,ileb)/wttot
@@ -648,7 +646,7 @@ end
 
 
 !-----------------------------------------------------------------------------------------
-  subroutine gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,threshex,datamol,databasis)
+  subroutine gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,threshex,ndftatom,datamol,databasis)
 !-----------------------------------------------------------------------------------------
 !
 ! Calculate closed-shell AO and MO values for a grid point
@@ -657,16 +655,17 @@ end
       implicit none
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
+      integer,intent(in) :: ndftatom
       integer :: ii, jj
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: xyzpt(3,datamol%natom), rsqrd(datamol%natom)
+      real(8),intent(in) :: xyzpt(3,ndftatom), rsqrd(ndftatom)
       real(8),intent(in) :: transcmo(datamol%neleca,databasis%nao), aocutoff, threshex
       real(8),intent(out) :: vao(databasis%nao,4), vmo(datamol%neleca,4)
 !
 ! Calculate AO values for a grid point
 !
       vao(:,:)= zero
-      call gridao(vao,xyzpt,rsqrd,threshex,datamol%natom,databasis)
+      call gridao(vao,xyzpt,rsqrd,threshex,ndftatom,databasis)
 !
 ! Calculate MO values for a grid point
 !
@@ -689,7 +688,7 @@ end
 
 !---------------------------------------------------------------------------------
   subroutine griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff, &
-&                      threshex,datamol,databasis)
+&                      threshex,ndftatom,datamol,databasis)
 !---------------------------------------------------------------------------------
 !
 ! Calculate open-shell AO and MO values for a grid point
@@ -698,16 +697,17 @@ end
       implicit none
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
+      integer,intent(in) :: ndftatom
       integer :: ii, jj
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: xyzpt(3,datamol%natom), rsqrd(datamol%natom)
+      real(8),intent(in) :: xyzpt(3,ndftatom), rsqrd(ndftatom)
       real(8),intent(in) :: transcmoa(datamol%neleca,databasis%nao)
       real(8),intent(in) :: transcmob(datamol%nelecb,databasis%nao), aocutoff, threshex
       real(8),intent(out) :: vao(databasis%nao,4), vmoa(datamol%neleca,4), vmob(datamol%nelecb,4)
 !
       vao(:,:)= zero
 !
-      call gridao(vao,xyzpt,rsqrd,threshex,datamol%natom,databasis)
+      call gridao(vao,xyzpt,rsqrd,threshex,ndftatom,databasis)
 !
       vmoa(:,:)= zero
       vmob(:,:)= zero
@@ -734,7 +734,7 @@ end
 
 
 !--------------------------------------------------------------
-  subroutine gridao(vao,xyzpt,rsqrd,threshex,natom,databasis)
+  subroutine gridao(vao,xyzpt,rsqrd,threshex,ndftatom,databasis)
 !--------------------------------------------------------------
 !
 ! Calculate AO values for a grid point
@@ -742,7 +742,7 @@ end
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
-      integer,intent(in) :: natom
+      integer,intent(in) :: ndftatom
       integer :: icount, ish, numprim, iatom, iprim, nang, nbf, ilocbf, ii, jj
       real(8),parameter :: half=0.5D+00, one=1.0D+00, two=2.0D+00
       real(8),parameter :: three=3.0D+00, four=4.0D+00, five=5.0D+00, six=6.0D+00
@@ -781,7 +781,7 @@ end
       real(8),parameter :: faci4=0.90571104663683991D+00 ! sqrt(105/2)/8
       real(8),parameter :: faci5=0.45285552331841995D+00 ! sqrt(105/2)/16
       real(8),parameter :: faci6=0.57282196186948000D+00 ! sqrt(21)/8
-      real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom), threshex
+      real(8),intent(in) :: xyzpt(3,ndftatom), rsqrd(ndftatom), threshex
       real(8),intent(inout) :: vao(databasis%nao,4)
       real(8) :: expval, fac, tmp(28,4), xx, yy, zz, xy, xz, yz
       real(8) :: xyz3(10), xyz4(15), xyz5(21), xyz6(28), xyz7(36)
@@ -1608,7 +1608,7 @@ end
 
 
 !------------------------------------------------------------------
-  subroutine gridd2ao(vg2ao,xyzpt,rsqrd,threshex,natom,databasis)
+  subroutine gridd2ao(vg2ao,xyzpt,rsqrd,threshex,ndftatom,databasis)
 !------------------------------------------------------------------
 !
 ! Calculate second derivatives of AO values for a grid point
@@ -1616,7 +1616,7 @@ end
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
-      integer,intent(in) :: natom
+      integer,intent(in) :: ndftatom
       integer :: icount, ish, numprim, iatom, iprim, nang, nbf, iloc, ii, jj
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00, three=3.0D+00
       real(8),parameter :: four=4.0D+00, five=5.0D+00, six=6.0D+00, seven=7.0D+00
@@ -1645,7 +1645,7 @@ end
       real(8),parameter :: fach3=0.52291251658379721D+00 ! sqrt(35/2)/8
       real(8),parameter :: fach4=2.56173769148989959D+00 ! sqrt(105)/4
       real(8),parameter :: fach5=0.48412291827592711D+00 ! sqrt(15)/8
-      real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom), threshex
+      real(8),intent(in) :: xyzpt(3,ndftatom), rsqrd(ndftatom), threshex
       real(8),intent(out) :: vg2ao(databasis%nao,6)
       real(8) :: fac, fac2, expval, tmp(21,6), xx, xy, xz, yy, yz, zz
       real(8) :: xyz3(10), xyz4(15), xyz5(21), xyz6(28), xyz7(36)
@@ -2378,7 +2378,7 @@ end
 
 !-------------------------------------------------------------------------------------------------
   subroutine gradrexcor(egrad,edftgrad,cmo,fulldmtrx,atomvec,surface,radpt,angpt,rad,ptweight, &
-&                       xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,transcmo,idftex, &
+&                       xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,transcmo,ndftatom,idftex, &
 &                       idftcor,nproc,myrank,datajob,datamol,databasis,datacomp)
 !-------------------------------------------------------------------------------------------------
 !
@@ -2390,40 +2390,38 @@ end
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: idftex, idftcor, nproc, myrank
-      integer :: natom, ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
+      integer,intent(in) :: ndftatom, idftex, idftcor, nproc, myrank
+      integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: cmo(databasis%nao,datamol%neleca)
       real(8),intent(in) :: fulldmtrx(databasis%nao,databasis%nao)
-      real(8),intent(in) :: atomvec(5,datamol%natom,datamol%natom)
-      real(8),intent(in) :: surface(datamol%natom,datamol%natom), radpt(2,datajob%nrad)
-      real(8),intent(in) :: angpt(4,datajob%nleb), rad(datamol%natom)
-      real(8),intent(in) :: ptweight(datajob%nleb,datajob%nrad,datamol%natom)
-      real(8),intent(out) :: edftgrad(3*datamol%natom), xyzpt(3,datamol%natom)
-      real(8),intent(out) :: rsqrd(datamol%natom), rr(datamol%natom), uvec(3,datamol%natom)
-      real(8),intent(out) :: vao(databasis%nao,10), vmo(datamol%neleca,4), dweight(3*datamol%natom)
-      real(8),intent(out) :: dpa(3,datamol%natom,datamol%natom), pa(datamol%natom)
+      real(8),intent(in) :: atomvec(5,ndftatom,ndftatom)
+      real(8),intent(in) :: surface(ndftatom,ndftatom), radpt(2,datajob%nrad)
+      real(8),intent(in) :: angpt(4,datajob%nleb), rad(ndftatom)
+      real(8),intent(in) :: ptweight(datajob%nleb,datajob%nrad,ndftatom)
+      real(8),intent(out) :: edftgrad(3*ndftatom), xyzpt(3,ndftatom)
+      real(8),intent(out) :: rsqrd(ndftatom), rr(ndftatom), uvec(3,ndftatom)
+      real(8),intent(out) :: vao(databasis%nao,10), vmo(datamol%neleca,4), dweight(3*ndftatom)
+      real(8),intent(out) :: dpa(3,ndftatom,ndftatom), pa(ndftatom)
       real(8),intent(out) :: transcmo(datamol%neleca,databasis%nao)
       real(8),intent(inout) :: egrad(3*datamol%natom)
       real(8) :: radpoint, radweight, weight, xgrid, ygrid, zgrid, tmp, rhoa, grhoa(3)
       real(8) :: sphweight, excora(4), ptenergy, wcutoff, rcutoff, fcutoff, aocutoff
-!
-      natom= datamol%natom
 !
       transcmo= transpose(cmo)
 !
       edftgrad(:)= zero
       ngridatom= datajob%nrad*datajob%nleb
 !
-      wcutoff= datajob%threshweight/(natom*ngridatom)
-      rcutoff= datajob%threshrho/(natom*ngridatom)
-      fcutoff= datajob%threshdfock/(natom*ngridatom)
-      aocutoff=datajob%threshdftao/(natom*ngridatom)
+      wcutoff= datajob%threshweight/(ndftatom*ngridatom)
+      rcutoff= datajob%threshrho/(ndftatom*ngridatom)
+      fcutoff= datajob%threshdfock/(ndftatom*ngridatom)
+      aocutoff=datajob%threshdftao/(ndftatom*ngridatom)
 !
 !$OMP parallel do collapse(2) schedule(dynamic,1) private(icount,ilebstart,radpoint,radweight, &
 !$OMP weight,xgrid,ygrid,zgrid,xyzpt,rsqrd,rr,tmp,uvec,vao,vmo,rhoa,grhoa,sphweight, &
 !$OMP dweight,dpa,pa,excora,ptenergy) reduction(+:edftgrad)
-      do iatom= 1,natom
+      do iatom= 1,ndftatom
         do irad= 1,datajob%nrad
           icount=(iatom-1)*ngridatom+(irad-1)*datajob%nleb+1+myrank
           ilebstart=mod(icount,nproc)+1
@@ -2437,7 +2435,7 @@ end
             xgrid= radpoint*angpt(1,ileb)
             ygrid= radpoint*angpt(2,ileb)
             zgrid= radpoint*angpt(3,ileb)
-            do jatom= 1,natom
+            do jatom= 1,ndftatom
               xyzpt(1,jatom)= atomvec(1,iatom,jatom)+xgrid
               xyzpt(2,jatom)= atomvec(2,iatom,jatom)+ygrid
               xyzpt(3,jatom)= atomvec(3,iatom,jatom)+zgrid
@@ -2450,7 +2448,7 @@ end
               uvec(3,jatom)= xyzpt(3,jatom)*tmp
             enddo
 !
-            call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,datajob%threshex,datamol,databasis)
+            call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,datajob%threshex,ndftatom,datamol,databasis)
 !
             rhoa= zero
             grhoa(1:3)= zero
@@ -2464,13 +2462,13 @@ end
             grhoa(1)= grhoa(1)*two
             grhoa(2)= grhoa(2)*two
             grhoa(3)= grhoa(3)*two
-            call gridd2ao(vao(1,5),xyzpt,rsqrd,datajob%threshex,datamol%natom,databasis)
+            call gridd2ao(vao(1,5),xyzpt,rsqrd,datajob%threshex,ndftatom,databasis)
 !
 ! Calculate weight derivative
 !
             sphweight=radweight*angpt(4,ileb)
             call calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom, &
-&                                datamol%natom,datacomp)
+&                                ndftatom,datacomp)
 !
             ptenergy= zero
             call calcexcor(excora,excora,ptenergy,rhoa,rhoa,grhoa,grhoa,one, &
@@ -2479,11 +2477,11 @@ end
             if(abs(excora(1))*two*weight < fcutoff)cycle
 !
             call formgradexcor(edftgrad,fulldmtrx,fulldmtrx,vao,vao(1,2),vao(1,5), &
-&                              excora,excora,weight,iatom,datamol%natom,1,databasis)
+&                              excora,excora,weight,iatom,ndftatom,1,databasis)
 !
 ! Add weight derivative contribution
 !
-            do ii= 1,3*natom
+            do ii= 1,3*ndftatom
               edftgrad(ii)= edftgrad(ii)+ptenergy*dweight(ii)
             enddo
           enddo
@@ -2493,7 +2491,7 @@ end
 !
 ! Add derivatives of exchange-correlation terms
 !
-      do ii= 1,3*natom
+      do ii= 1,3*ndftatom
         egrad(ii)= egrad(ii)+edftgrad(ii)
       enddo
 !
@@ -2504,7 +2502,7 @@ end
 !------------------------------------------------------------------------------------------------
   subroutine graduexcor(egrad,edftgrad,cmoa,cmob,fulldmtrx1,fulldmtrx2,atomvec,surface,radpt, &
 &                       angpt,rad,ptweight,xyzpt,rsqrd,rr,uvec,vao,vmoa,vmob,dweight, &
-&                       dpa,pa,transcmoa,transcmob,idftex,idftcor, &
+&                       dpa,pa,transcmoa,transcmob,ndftatom,idftex,idftcor, &
 &                       nproc,myrank,datajob,datamol,databasis,datacomp)
 !------------------------------------------------------------------------------------------------
 !
@@ -2516,21 +2514,21 @@ end
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: idftex, idftcor, nproc, myrank
-      integer :: natom, ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
+      integer,intent(in) :: ndftatom, idftex, idftcor, nproc, myrank
+      integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
       real(8),intent(in) :: cmoa(databasis%nao,datamol%neleca), cmob(databasis%nao,datamol%nelecb)
       real(8),intent(in) :: fulldmtrx1(databasis%nao,databasis%nao)
       real(8),intent(in) :: fulldmtrx2(databasis%nao,databasis%nao)
-      real(8),intent(in) :: atomvec(5,datamol%natom,datamol%natom)
-      real(8),intent(in) :: surface(datamol%natom,datamol%natom)
-      real(8),intent(in) :: radpt(2,datajob%nrad), angpt(4,datajob%nleb), rad(datamol%natom)
-      real(8),intent(in) :: ptweight(datajob%nleb,datajob%nrad,datamol%natom)
-      real(8),intent(out) :: edftgrad(3*datamol%natom), xyzpt(3,datamol%natom)
-      real(8),intent(out) :: rsqrd(datamol%natom), rr(datamol%natom)
-      real(8),intent(out) :: uvec(3,datamol%natom), vao(databasis%nao,10), vmoa(datamol%neleca,4)
-      real(8),intent(out) :: vmob(datamol%nelecb,4), dweight(3*datamol%natom)
-      real(8),intent(out) :: dpa(3,datamol%natom,datamol%natom), pa(datamol%natom)
+      real(8),intent(in) :: atomvec(5,ndftatom,ndftatom)
+      real(8),intent(in) :: surface(ndftatom,ndftatom)
+      real(8),intent(in) :: radpt(2,datajob%nrad), angpt(4,datajob%nleb), rad(ndftatom)
+      real(8),intent(in) :: ptweight(datajob%nleb,datajob%nrad,ndftatom)
+      real(8),intent(out) :: edftgrad(3*ndftatom), xyzpt(3,ndftatom)
+      real(8),intent(out) :: rsqrd(ndftatom), rr(ndftatom)
+      real(8),intent(out) :: uvec(3,ndftatom), vao(databasis%nao,10), vmoa(datamol%neleca,4)
+      real(8),intent(out) :: vmob(datamol%nelecb,4), dweight(3*ndftatom)
+      real(8),intent(out) :: dpa(3,ndftatom,ndftatom), pa(ndftatom)
       real(8),intent(out) :: transcmoa(datamol%neleca,databasis%nao)
       real(8),intent(out) :: transcmob(datamol%nelecb,databasis%nao)
       real(8),intent(inout) :: egrad(3*datamol%natom)
@@ -2538,23 +2536,21 @@ end
       real(8) :: grhoa(3), grhob(3), sphweight, excora(4), excorb(4), ptenergy
       real(8) :: wcutoff, rcutoff, fcutoff, aocutoff
 !
-      natom= datamol%natom
-!
       transcmoa= transpose(cmoa)
       transcmob= transpose(cmob)
 !
       edftgrad(:)= zero
       ngridatom= datajob%nrad*datajob%nleb
 !
-      wcutoff= datajob%threshweight/(natom*ngridatom)
-      rcutoff= datajob%threshrho/(natom*ngridatom)
-      fcutoff= datajob%threshdfock/(natom*ngridatom)
-      aocutoff=datajob%threshdftao/(natom*ngridatom)
+      wcutoff= datajob%threshweight/(ndftatom*ngridatom)
+      rcutoff= datajob%threshrho/(ndftatom*ngridatom)
+      fcutoff= datajob%threshdfock/(ndftatom*ngridatom)
+      aocutoff=datajob%threshdftao/(ndftatom*ngridatom)
 !
 !$OMP parallel do collapse(2) schedule(dynamic,1) private(icount,ilebstart,radpoint,radweight, &
 !$OMP weight,xgrid,ygrid,zgrid,xyzpt,rsqrd,rr,tmp,uvec,vao,vmoa,vmob,rhoa,rhob,grhoa, &
 !$OMP grhob,sphweight,dweight,dpa,pa,excora,excorb,ptenergy) reduction(+:edftgrad)
-      do iatom= 1,natom
+      do iatom= 1,ndftatom
         do irad= 1,datajob%nrad
           icount=(iatom-1)*ngridatom+(irad-1)*datajob%nleb+1+myrank
           ilebstart=mod(icount,nproc)+1
@@ -2568,7 +2564,7 @@ end
             xgrid= radpoint*angpt(1,ileb)
             ygrid= radpoint*angpt(2,ileb)
             zgrid= radpoint*angpt(3,ileb)
-            do jatom= 1,natom
+            do jatom= 1,ndftatom
               xyzpt(1,jatom)= atomvec(1,iatom,jatom)+xgrid
               xyzpt(2,jatom)= atomvec(2,iatom,jatom)+ygrid
               xyzpt(3,jatom)= atomvec(3,iatom,jatom)+zgrid
@@ -2582,7 +2578,7 @@ end
             enddo
 !
             call griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff, &
-&                          datajob%threshex,datamol,databasis)
+&                          datajob%threshex,ndftatom,datamol,databasis)
 !
             rhoa= zero
             grhoa(1:3)= zero
@@ -2603,13 +2599,13 @@ end
             if((rhoa+rhob) < rcutoff)cycle
             grhoa(1:3)= grhoa(1:3)*two
             grhob(1:3)= grhob(1:3)*two
-            call gridd2ao(vao(1,5),xyzpt,rsqrd,datajob%threshex,datamol%natom,databasis)
+            call gridd2ao(vao(1,5),xyzpt,rsqrd,datajob%threshex,ndftatom,databasis)
 !
 ! Calculate weight derivative
 !
             sphweight=radweight*angpt(4,ileb)
             call calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom, &
-&                                datamol%natom,datacomp)
+&                                ndftatom,datacomp)
 !
             ptenergy= zero
             call calcexcor(excora,excorb,ptenergy,rhoa,rhob,grhoa,grhob,one, &
@@ -2618,11 +2614,11 @@ end
             if((abs(excora(1))+abs(excorb(1)))*weight < fcutoff)cycle
 !
             call formgradexcor(edftgrad,fulldmtrx1,fulldmtrx2,vao,vao(1,2),vao(1,5), &
-&                              excora,excorb,weight,iatom,datamol%natom,2,databasis)
+&                              excora,excorb,weight,iatom,ndftatom,2,databasis)
 !
 ! Add weight derivative contribution
 !
-            do ii= 1,3*natom
+            do ii= 1,3*ndftatom
               edftgrad(ii)= edftgrad(ii)+ptenergy*dweight(ii)
             enddo
           enddo
@@ -2632,7 +2628,7 @@ end
 !
 ! Add derivatives of exchange-correlation terms
 !
-      do ii= 1,3*natom
+      do ii= 1,3*ndftatom
         egrad(ii)= egrad(ii)+edftgrad(ii)
       enddo
 !
@@ -2642,7 +2638,7 @@ end
 
 !---------------------------------------------------------------------------------------
   subroutine calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,katom, &
-&                            natom,datacomp)
+&                            ndftatom,datacomp)
 !---------------------------------------------------------------------------------------
 !
 ! Calculate weight derivatives of grid points
@@ -2658,14 +2654,14 @@ end
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
-      integer,intent(in) :: katom, natom
+      integer,intent(in) :: katom, ndftatom
       integer :: iatom, jatom, ii
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, oneh=1.5D+00, two=2.0D+00
       real(8),parameter :: pdcoeff=-2.53125D+00 !-81/32
       real(8),parameter :: threshcut=1.0D-12, threshg4=1.0D-08
-      real(8),intent(in) :: uvec(3,natom), atomvec(5,natom,natom), surface(natom,natom)
-      real(8),intent(in) :: rr(natom), sphweight
-      real(8),intent(out) :: dweight(3,natom), dpa(3,natom,natom), pa(natom)
+      real(8),intent(in) :: uvec(3,ndftatom), atomvec(5,ndftatom,ndftatom), surface(ndftatom,ndftatom)
+      real(8),intent(in) :: rr(ndftatom), sphweight
+      real(8),intent(out) :: dweight(3,ndftatom), dpa(3,ndftatom,ndftatom), pa(ndftatom)
       real(8) :: cutij, cutji, xmuij, zmuij, f4, g4, f2, tmp1, tmp2, dmuji(3), dcoeff
       real(8) :: dcutij, dcutji, weighta, zz, dzz(3)
 !
@@ -2673,12 +2669,12 @@ end
       dweight(:,:)= zero
       pa(:)= one
 !
-      do iatom= 1,natom
+      do iatom= 1,ndftatom
         if(surface(1,iatom) == -one) then
           pa(iatom)= zero
           cycle
         endif
-        do jatom= 1,natom
+        do jatom= 1,ndftatom
           if(iatom == jatom) cycle
           if(surface(jatom,iatom) == one) cycle
           zmuij=(rr(iatom)-rr(jatom))*atomvec(5,iatom,jatom)
@@ -2731,7 +2727,7 @@ end
 ! Calculate Z(r)
 !
       zz= zero
-      do iatom= 1,natom
+      do iatom= 1,ndftatom
         zz= zz+pa(iatom)           
       enddo
 !
@@ -2742,10 +2738,10 @@ end
 !
 ! Calculate grad_B(omega_A)
 !
-      do iatom= 1,natom
+      do iatom= 1,ndftatom
         if(iatom == katom) cycle
         dzz(1:3)=zero
-        do jatom= 1,natom
+        do jatom= 1,ndftatom
           dzz(1)= dzz(1)+dpa(1,jatom,iatom)*pa(jatom)
           dzz(2)= dzz(2)+dpa(2,jatom,iatom)*pa(jatom)
           dzz(3)= dzz(3)+dpa(3,jatom,iatom)*pa(jatom)
@@ -2765,7 +2761,7 @@ end
 
 !-----------------------------------------------------------------------------
   subroutine formgradexcor(edftgrad,fulldmtrxa,fulldmtrxb,vao,vgao,vg2ao, &
-&                          excora,excorb,weight,katom,natom,itype,databasis)
+&                          excora,excorb,weight,katom,ndftatom,itype,databasis)
 !-----------------------------------------------------------------------------
 !
 ! Calculate DFT energy gradient terms
@@ -2773,14 +2769,14 @@ end
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasis
-      integer,intent(in) :: katom, natom, itype
+      integer,intent(in) :: katom, ndftatom, itype
       integer :: ish, iatom, nbf, ilocbf, iao, jao
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, two=2.0D+00
       real(8),intent(in) :: fulldmtrxa(databasis%nao,databasis%nao)
       real(8),intent(in) :: fulldmtrxb(databasis%nao,databasis%nao), vao(databasis%nao)
       real(8),intent(in) :: vgao(databasis%nao,3), vg2ao(databasis%nao,6)
       real(8),intent(in) :: excora(4), excorb(4), weight
-      real(8),intent(inout) :: edftgrad(3,natom)
+      real(8),intent(inout) :: edftgrad(3,ndftatom)
       real(8) :: dra, drxa, drya, drza, gradx, grady, gradz, gwx, gwy, gwz
       real(8) :: drb, drxb, dryb, drzb, dmtrxa, dmtrxb
 !

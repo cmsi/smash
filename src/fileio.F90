@@ -665,6 +665,7 @@ end
 &       '76 ','77 ','78 ','79 ','80 ','81 ','82 ','83 ','84 ','85 ','86 ','87 ','88 ','89 ','90 ',&
 &       '91 ','92 ','93 ','94 ','95 ','96 ','97 ','98 ','99 ','100','101','102','103','104','105',&
 &       '106','107','108','109','110','111','112'/)
+      logical :: checkdummy
 !
       if(datacomp%master) then
         rewind(datacomp%inpcopy)
@@ -681,6 +682,8 @@ end
 !
         if(index(line,'CHECK') == 0) then
           datamol%natom= 0
+          datamol%ndummyatom= 0
+          checkdummy=.false.
           do ii= 1,mxatom
             read(datacomp%inpcopy,'(a)',end=100) line
             if(len_trim(line) == 0) exit
@@ -700,6 +703,15 @@ end
                 datamol%numatomic(ii)= jj
                 if(jj > 0) then
                   datamol%znuc(ii)= dble(jj)
+                  if(checkdummy) then
+                    write(*,'(" Error! Real atom is wriiten after dummy atoms.")')
+                    write(*,'(" Dummy atoms should be wriiten at the bottom of GEOM section.")')
+                    call iabort
+                  endif
+                elseif(jj == 0) then
+                  checkdummy=.true.
+                  datamol%znuc(ii)= zero
+                  datamol%ndummyatom= datamol%ndummyatom+1
                 else
                   datamol%znuc(ii)= zero
                 endif

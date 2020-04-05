@@ -940,7 +940,7 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: maxdiis, maxsoscf, maxqcdiagsub, nrad, nleb
-      integer :: nao, nmo, natom, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), iter, itsub
+      integer :: nao, nmo, ndftatom, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), iter, itsub
       integer :: itdiis, itextra, itsoscf, itqc, nocc, nvir
       integer :: idis(datacomp%nproc2,14), isize1, isize2, isize3, iatom
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
@@ -973,7 +973,7 @@ end
 !
       nao= databasis%nao
       nmo= datamol%nmo
-      natom= datamol%natom
+      ndftatom= datamol%natom-datamol%ndummyatom
       nao2= nao*nao
       nao3= nao*(nao+1)/2
       nshell= databasis%nshell
@@ -988,37 +988,37 @@ end
 !
 ! Set arrays
 !
-      isize1= max(idis(datacomp%myrank2+1,3),idis(datacomp%myrank2+1,7)*nao,3*natom,nao,maxdiis)
+      isize1= max(idis(datacomp%myrank2+1,3),idis(datacomp%myrank2+1,7)*nao,3*ndftatom,nao,maxdiis)
       isize2= idis(datacomp%myrank2+1,3)
       isize3=idis(datacomp%myrank2+1,5)
       select case(scfconv)
         case('DIIS')
-          call memset(nao2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
+          call memset(nao2+nao3*4+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
 &                    +nao*4+nocc*4+isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2, &
 &                     datacomp)
           allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
-&                  fockd(nao3),rad(natom),atomvec(5*natom*natom),surface(natom*natom), &
-&                  radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb),xyzpt(3*natom), &
-&                  rsqrd(natom),vao(4*nao),vmo(4*nocc),fockdiis(isize3*maxdiis), &
+&                  fockd(nao3),rad(ndftatom),atomvec(5*ndftatom*ndftatom),surface(ndftatom*ndftatom), &
+&                  radpt(2*nrad),angpt(4*nleb),ptweight(ndftatom*nrad*nleb),xyzpt(3*ndftatom), &
+&                  rsqrd(ndftatom),vao(4*nao),vmo(4*nocc),fockdiis(isize3*maxdiis), &
 &                  errdiis(isize2*maxdiis),diismtrx(maxdiis*(maxdiis+1)/2),work2(isize1))
         case('SOSCF')
-          call memset(nao2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
+          call memset(nao2+nao3*4+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
 &                    +nao*4+nocc*4+isize1+nocc*nvir*3*maxsoscf,datacomp)
           allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
-&                  fockd(nao3),rad(natom),atomvec(5*natom*natom),surface(natom*natom), &
-&                  radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb),xyzpt(3*natom), &
-&                  rsqrd(natom),vao(4*nao),vmo(4*nocc),work2(isize1), &
+&                  fockd(nao3),rad(ndftatom),atomvec(5*ndftatom*ndftatom),surface(ndftatom*ndftatom), &
+&                  radpt(2*nrad),angpt(4*nleb),ptweight(ndftatom*nrad*nleb),xyzpt(3*ndftatom), &
+&                  rsqrd(ndftatom),vao(4*nao),vmo(4*nocc),work2(isize1), &
 &                  hstart(nocc*nvir),sograd(nocc*nvir,maxsoscf),sodisp(nocc*nvir*maxsoscf), &
 &                  sovecy(nocc*nvir*(maxsoscf-1)))
         case ('QC')
           isize1= max(isize1,nao2)
-          call memset(nao2*2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
+          call memset(nao2*2+nao3*4+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
 &                    +nao*4+nocc*4+isize1+(nocc*nvir+1)*(maxqcdiagsub+1)*2 &
 &                    +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub,datacomp)
           allocate(fock(nao2),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
-&                  fockd(nao3),rad(natom),atomvec(5*natom*natom),surface(natom*natom), &
-&                  radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb),xyzpt(3*natom), &
-&                  rsqrd(natom),vao(4*nao),vmo(4*nocc),work2(isize1), &
+&                  fockd(nao3),rad(ndftatom),atomvec(5*ndftatom*ndftatom),surface(ndftatom*ndftatom), &
+&                  radpt(2*nrad),angpt(4*nleb),ptweight(ndftatom*nrad*nleb),xyzpt(3*ndftatom), &
+&                  rsqrd(ndftatom),vao(4*nao),vmo(4*nocc),work2(isize1), &
 &                  qcvec((nocc*nvir+1)*(maxqcdiagsub+1)*2),qcmat(maxqcdiagsub*maxqcdiagsub), &
 &                  qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2),qceigen(maxqcdiagsub),qcgmn(nao3))
         case default
@@ -1038,14 +1038,14 @@ end
 !
 ! Calculate DFT information
 !
-      call calcatomvec(atomvec,surface,datamol)
+      call calcatomvec(atomvec,surface,ndftatom,datamol)
       call calcradpt(radpt,nrad)
       call calclebpt(angpt,nleb)
-      do iatom= 1,natom
+      do iatom= 1,ndftatom
         rad(iatom)= datamol%atomrad(datamol%numatomic(iatom))*tobohr
       enddo
       call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2,nrad,nleb, &
-&                         datamol%natom,datacomp%nproc1,datacomp%myrank1)
+&                         ndftatom,datacomp%nproc1,datacomp%myrank1)
 !
 ! Calculate initial density matrix
 !
@@ -1122,7 +1122,7 @@ end
 ! Calculate exchange-correlation terms
 !
         call formrfockexcor(fockd,fock,edft,totalelec,cmo,atomvec,radpt,angpt, &
-&                           rad,ptweight,vao,vmo,xyzpt,rsqrd,work,work2, &
+&                           rad,ptweight,vao,vmo,xyzpt,rsqrd,work,work2,ndftatom, &
 &                           datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
 &                           datajob,datamol,databasis)
 !
@@ -1297,7 +1297,7 @@ end
 &                    radpt,angpt,ptweight,xyzpt, &
 &                    rsqrd,vao,vmo,fockdiis, &
 &                    errdiis,diismtrx,work2)
-          call memunset(nao2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
+          call memunset(nao2+nao3*4+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
 &                      +nao*4+nocc*4+isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2, &
 &                       datacomp)
         case('SOSCF')
@@ -1307,7 +1307,7 @@ end
 &                    rsqrd,vao,vmo,work2, &
 &                    hstart,sograd,sodisp, &
 &                    sovecy)
-          call memunset(nao2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
+          call memunset(nao2+nao3*4+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
 &                      +nao*4+nocc*4+isize1+nocc*nvir*3*maxsoscf,datacomp)
         case('QC')
           deallocate(fock,fockprev,dmtrxprev,dmax,work, &
@@ -1316,7 +1316,7 @@ end
 &                    rsqrd,vao,vmo,work2, &
 &                    qcvec,qcmat, &
 &                    qcmatsave,qceigen,qcgmn)
-          call memunset(nao2*2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
+          call memunset(nao2*2+nao3*4+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
 &                      +nao*4+nocc*4+isize1+(nocc*nvir+1)*(maxqcdiagsub+1)*2 &
 &                      +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub,datacomp)
       end select
@@ -2080,7 +2080,7 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: maxdiis, maxsoscf, maxqcdiagsub, nrad, nleb
-      integer :: nao, nmo, natom, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), numwork
+      integer :: nao, nmo, ndftatom, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), numwork
       integer :: iter, itsub, itdiis, itextra, itsoscf, itqc, nocca, nvira, noccb, nvirb
       integer :: idis(datacomp%nproc2,14), isize1, isize2, isize3, iatom
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
@@ -2122,7 +2122,7 @@ end
 !
       nao= databasis%nao
       nmo= datamol%nmo
-      natom= datamol%natom
+      ndftatom= datamol%natom-datamol%ndummyatom
       nao2= nao*nao
       nao3= nao*(nao+1)/2
       nshell= databasis%nshell
@@ -2141,31 +2141,31 @@ end
 ! Set arrays
 !
       isize1= max(nao2,idis(datacomp%myrank2+1,3),idis(datacomp%myrank2+1,7)*nao, &
-&                 idis(datacomp%myrank2+1,11)*nao,natom*3,nao*2,maxdiis)
+&                 idis(datacomp%myrank2+1,11)*nao,ndftatom*3,nao*2,maxdiis)
       isize2=idis(datacomp%myrank2+1,3)
       isize3=idis(datacomp%myrank2+1,5)
       select case(scfconv)
         case('DIIS')
-          call memset(nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
-&                    +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize3*maxdiis*2+isize1 &
+          call memset(nao3*8+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+&                    +ndftatom*nrad*nleb+nao*4+nocca*4+noccb*4+isize3*maxdiis*2+isize1 &
 &                    +isize2*maxdiis*2+maxdiis*(maxdiis+1)/2+idis(datacomp%myrank2+1,3),datacomp)
           allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(numwork), &
-&                  fockda(nao3),fockdb(nao3),rad(natom),atomvec(5*natom*natom), &
-&                  surface(natom*natom),radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb), &
-&                  xyzpt(3*natom),rsqrd(natom),vao(4*nao),vmoa(4*nocca),vmob(4*noccb), &
+&                  fockda(nao3),fockdb(nao3),rad(ndftatom),atomvec(5*ndftatom*ndftatom), &
+&                  surface(ndftatom*ndftatom),radpt(2*nrad),angpt(4*nleb),ptweight(ndftatom*nrad*nleb), &
+&                  xyzpt(3*ndftatom),rsqrd(ndftatom),vao(4*nao),vmoa(4*nocca),vmob(4*noccb), &
 &                  fockdiisa(isize3*maxdiis),fockdiisb(isize3*maxdiis),errdiisa(isize2*maxdiis), &
 &                  errdiisb(isize2*maxdiis),diismtrx(maxdiis*(maxdiis+1)/2),work2(isize1), &
 &                  work3(idis(datacomp%myrank2+1,3)))
         case('SOSCF')
-          call memset(nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
-&                    +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1+idis(datacomp%myrank2+1,3) &
+          call memset(nao3*8+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+&                    +ndftatom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1+idis(datacomp%myrank2+1,3) &
 &                    +nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf,datacomp)
           allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(numwork), &
-&                  fockda(nao3),fockdb(nao3),rad(natom),atomvec(5*natom*natom), &
-&                  surface(natom*natom),radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb), &
-&                  xyzpt(3*natom),rsqrd(natom),vao(4*nao),vmoa(4*nocca),vmob(4*noccb), &
+&                  fockda(nao3),fockdb(nao3),rad(ndftatom),atomvec(5*ndftatom*ndftatom), &
+&                  surface(ndftatom*ndftatom),radpt(2*nrad),angpt(4*nleb),ptweight(ndftatom*nrad*nleb), &
+&                  xyzpt(3*ndftatom),rsqrd(ndftatom),vao(4*nao),vmoa(4*nocca),vmob(4*noccb), &
 &                  work2(isize1),work3(idis(datacomp%myrank2+1,3)), &
 &                  hstarta(nocca*nvira),hstartb(noccb*nvirb), &
 &                  sograda(nocca*nvira,maxsoscf),sogradb(noccb*nvirb,maxsoscf), &
@@ -2173,15 +2173,15 @@ end
 &                  sovecya(nocca*nvira*(maxsoscf-1)),sovecyb(noccb*nvirb*(maxsoscf-1)))
         case('QC')
           isize1= max(isize1,nao2)
-          call memset(nao2*3+nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
-&                    +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1 &
+          call memset(nao2*3+nao3*8+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+&                    +ndftatom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1 &
 &                    +(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
 &                    +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub,datacomp)
           allocate(focka(nao2),fockb(nao2),fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(numwork), &
-&                  fockda(nao3),fockdb(nao3),rad(natom),atomvec(5*natom*natom), &
-&                  surface(natom*natom),radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb), &
-&                  xyzpt(3*natom),rsqrd(natom),vao(4*nao),vmoa(4*nocca),vmob(4*noccb), &
+&                  fockda(nao3),fockdb(nao3),rad(ndftatom),atomvec(5*ndftatom*ndftatom), &
+&                  surface(ndftatom*ndftatom),radpt(2*nrad),angpt(4*nleb),ptweight(ndftatom*nrad*nleb), &
+&                  xyzpt(3*ndftatom),rsqrd(ndftatom),vao(4*nao),vmoa(4*nocca),vmob(4*noccb), &
 &                  qcvec((nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2), &
 &                  qcmat(maxqcdiagsub**2),qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2), &
 &                  qceigen(maxqcdiagsub),qcgmna(nao3),qcgmnb(nao3),work2(isize1),work3(nao2))
@@ -2202,14 +2202,14 @@ end
 !
 ! Calculate DFT information
 !
-      call calcatomvec(atomvec,surface,datamol)
+      call calcatomvec(atomvec,surface,ndftatom,datamol)
       call calcradpt(radpt,nrad)
       call calclebpt(angpt,nleb)
-      do iatom= 1,natom
+      do iatom= 1,ndftatom
         rad(iatom)= datamol%atomrad(datamol%numatomic(iatom))*tobohr
       enddo
       call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2,nrad,nleb, &
-&                         datamol%natom,datacomp%nproc1,datacomp%myrank1)
+&                         ndftatom,datacomp%nproc1,datacomp%myrank1)
 !
 ! Calculate initial density matrix
 !
@@ -2289,7 +2289,7 @@ end
 !
         call formufockexcor(fockda,fockdb,focka,edft,totalelec,cmoa,cmob,atomvec,&
 &                           radpt,angpt,rad,ptweight,vao,vmoa,vmob,xyzpt,rsqrd, &
-&                           work,work(datamol%neleca*nao+1),work2, &
+&                           work,work(datamol%neleca*nao+1),work2,ndftatom, &
 &                           datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
 &                           datajob,datamol,databasis)
 !
@@ -2521,8 +2521,8 @@ end
 &                    fockdiisa,fockdiisb,errdiisa, &
 &                    errdiisb,diismtrx,work2, &
 &                    work3)
-          call memunset(nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
-&                      +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize3*maxdiis*2+isize1 &
+          call memunset(nao3*8+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+&                      +ndftatom*nrad*nleb+nao*4+nocca*4+noccb*4+isize3*maxdiis*2+isize1 &
 &                      +isize2*maxdiis*2+maxdiis*(maxdiis+1)/2+idis(datacomp%myrank2+1,3),datacomp)
         case('SOSCF')
           deallocate(focka,fockb,fockpreva,fockprevb, &
@@ -2535,8 +2535,8 @@ end
 &                    sograda,sogradb, &
 &                    sodispa,sodispb, &
 &                    sovecya,sovecyb)
-          call memunset(nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
-&                      +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1+idis(datacomp%myrank2+1,3) &
+          call memunset(nao3*8+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+&                      +ndftatom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1+idis(datacomp%myrank2+1,3) &
 &                      +nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf,datacomp)
         case('QC')
           deallocate(focka,fockb,fockpreva,fockprevb, &
@@ -2547,8 +2547,8 @@ end
 &                    qcvec, &
 &                    qcmat,qcmatsave, &
 &                    qceigen,qcgmna,qcgmnb,work2,work3)
-          call memunset(nao2*3+nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
-&                      +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1 &
+          call memunset(nao2*3+nao3*8+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+&                      +ndftatom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1 &
 &                      +(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
 &                      +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub,datacomp)
       end select

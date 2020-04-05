@@ -217,7 +217,7 @@ end
 !                 He - Cn : P. Pyykko, M. Atsumi, Chem. Eur. J., 186 (2009) 15.
 !                 
       type typemol
-        integer :: numatomic(mxatom), natom, neleca, nelecb, nmo, multi=1
+        integer :: numatomic(mxatom), natom, neleca, nelecb, nmo, multi=1, ndummyatom
         real(8) :: coord(3,mxatom), znuc(mxatom), coordold(3,mxatom), charge=0.0D+00
         real(8) :: enuc, eelec, escf, escfe, emp2, escsmp2
         real(8) :: atomrad(-9:112)=(/ &
