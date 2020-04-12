@@ -35,4 +35,8 @@
 !
       call smashmain(datajob,datamol,databasis,datacomp)
 !
+! Finalize MPI
+!
+      call para_finalize
+!
 end program smash

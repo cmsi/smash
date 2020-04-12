@@ -98,6 +98,28 @@
           call iabort
       end select
 !
+! Check convergence of SCF and geometry optimization
+!
+        if(.not.datacomp%convergedscf) then
+          call tstamp(2,datacomp)
+          if(datacomp%master) then
+            write(datacomp%iout,'(" Used memory :",1x,i6," MB")') datacomp%memusedmax/125000
+            write(datacomp%iout,'(" ======================================")')
+            write(datacomp%iout,'("    SCF calculation did not converge!")')
+            write(datacomp%iout,'(" ======================================")')
+          endif
+          return
+        elseif(.not.datacomp%convergedgeom) then
+          if(datacomp%master) then
+            call tstamp(2,datacomp)
+            write(datacomp%iout,'(" Used memory :",1x,i6," MB",/)') datacomp%memusedmax/125000
+            write(datacomp%iout,'(" =========================================================")')
+            write(datacomp%iout,'("    Geometry optimization calculation did not converge!")')
+            write(datacomp%iout,'(" =========================================================")')
+          endif
+          return
+        endif
+!
 ! Open and write xyz file if set
 !
       if(datacomp%master.and.(datajob%xyz /= '')) then
@@ -111,20 +133,12 @@
       if(datacomp%master.and.(datajob%check /= '')) call closecheckfile(datacomp)
       if(datacomp%master.and.(datajob%xyz /= '')) call closexyzfile(datacomp)
 !
-      call para_finalize
       call memcheck(datacomp)
       call tstamp(2,datacomp)
 !
       if(datacomp%master) then
         write(datacomp%iout,'(" Used memory :",1x,i6," MB")') datacomp%memusedmax/125000
-        if((datajob%runtype =='OPTIMIZE').and.(.not.datacomp%convergedgeom)) then
-          write(datacomp%iout,'(/," ============================================================")')
-          write(datacomp%iout,'("  Geometry optimization did not finish with",i3," warning(s)!")') &
-&                 datacomp%nwarn
-          write(datacomp%iout,'(" ============================================================")')
-        else
-          write(datacomp%iout,'(" Your calculation finished with",i3," warning(s).")') datacomp%nwarn
-        endif
+        write(datacomp%iout,'(" Your calculation finished with",i3," warning(s).")') datacomp%nwarn
       endif
       return
 end
@@ -390,6 +404,10 @@ end
       if(datajob%method == 'HARTREE-FOCK') then
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                    datajob,datamol,databasis,datacomp)
+        if(.not.datacomp%convergedscf) then
+          call tstamp(1,datacomp)
+          return
+        endif
         call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
@@ -400,17 +418,29 @@ end
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
           call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                      datajob,datamol,databasis,datacomp)
+          if(.not.datacomp%convergedscf) then
+            call tstamp(1,datacomp)
+            return
+          endif
           datajob%dconv= savedconv
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
         call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                     datajob,datamol,databasis,datacomp)
+        if(.not.datacomp%convergedscf) then
+          call tstamp(1,datacomp)
+          return
+        endif
         call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif(datajob%method == 'MP2') then
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                    datajob,datamol,databasis,datacomp)
+        if(.not.datacomp%convergedscf) then
+          call tstamp(1,datacomp)
+          return
+        endif
         call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
         call calcrmp2(cmo,energymo,xint,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
@@ -544,6 +574,10 @@ end
       if(datajob%method == 'HARTREE-FOCK') then
         call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                    datajob,datamol,databasis,datacomp)
+        if(.not.datacomp%convergedscf) then
+          call tstamp(1,datacomp)
+          return
+        endif
         call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
@@ -554,12 +588,20 @@ end
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                      datajob,datamol,databasis,datacomp)
+          if(.not.datacomp%convergedscf) then
+            call tstamp(1,datacomp)
+            return
+          endif
           datajob%dconv= savedconv
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
         call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                     datajob,datamol,databasis,datacomp)
+        if(.not.datacomp%convergedscf) then
+          call tstamp(1,datacomp)
+          return
+        endif
         call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
 !     elseif(method == 'MP2') then
@@ -700,6 +742,10 @@ end
       if((datajob%method == 'HARTREE-FOCK').or.(datajob%method == 'MP2')) then
         call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                    datajob,datamol,databasis,datacomp)
+        if(.not.datacomp%convergedscf) then
+          call tstamp(1,datacomp)
+          return
+        endif
         call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
@@ -710,12 +756,20 @@ end
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
           call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                      datajob,datamol,databasis,datacomp)
+          if(.not.datacomp%convergedscf) then
+            call tstamp(1,datacomp)
+            return
+          endif
           datajob%dconv= savedconv
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
         call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                     datajob,datamol,databasis,datacomp)
+        if(.not.datacomp%convergedscf) then
+          call tstamp(1,datacomp)
+          return
+        endif
         call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       else
@@ -884,6 +938,10 @@ end
       if(datajob%method == 'HARTREE-FOCK') then
         call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                    datajob,datamol,databasis,datacomp)
+        if(.not.datacomp%convergedscf) then
+          call tstamp(1,datacomp)
+          return
+        endif
         call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
@@ -894,12 +952,20 @@ end
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                      datajob,datamol,databasis,datacomp)
+          if(.not.datacomp%convergedscf) then
+            call tstamp(1,datacomp)
+            return
+          endif
           datajob%dconv= savedconv
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
         call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                     datajob,datamol,databasis,datacomp)
+        if(.not.datacomp%convergedscf) then
+          call tstamp(1,datacomp)
+          return
+        endif
         call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       else
@@ -1122,6 +1188,10 @@ end
         if((datajob%method == 'HARTREE-FOCK').or.(datajob%method == 'MP2')) then
           call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                      datajob,datamol,databasis,datacomp)
+          if(.not.datacomp%convergedscf) then
+            call tstamp(1,datacomp)
+            return
+          endif
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
           call tstamp(1,datacomp)
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
@@ -1132,12 +1202,20 @@ end
             datajob%cutint2= max(datajob%cutint2,1.0D-9)
             call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                        datajob,datamol,databasis,datacomp)
+            if(.not.datacomp%convergedscf) then
+              call tstamp(1,datacomp)
+              return
+            endif
             datajob%dconv= savedconv
             datajob%cutint2= savecutint2
             call tstamp(1,datacomp)
           endif
           call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
 &                       datajob,datamol,databasis,datacomp)
+          if(.not.datacomp%convergedscf) then
+            call tstamp(1,datacomp)
+            return
+          endif
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
           call tstamp(1,datacomp)
         else
@@ -1230,10 +1308,12 @@ end
 !
 !       call setnextopt(coordold,datamol%natom,iopt,datajob)
 !
-        if((iopt == datajob%nopt).and.datacomp%master) then
-          write(datacomp%iout,'("Warning! Geometry did not converge.")')
-          datacomp%nwarn= datacomp%nwarn+1
-          exit
+        if(iopt == datajob%nopt) then
+          if(datacomp%master) then
+            write(datacomp%iout,'(" Geometry did not converge.")')
+            call tstamp(1,datacomp)
+          endif
+          return
         endif
         call tstamp(1,datacomp)
       enddo
@@ -1279,7 +1359,7 @@ end
 !
 ! Write optimized geometry
 !
-      if(datacomp%master.and.datacomp%convergedgeom) then
+      if(datacomp%master) then
         write(datacomp%iout,'(" ==========================")')
         write(datacomp%iout,'("     Optimized Geometry")')
         write(datacomp%iout,'(" ==========================")')
@@ -1445,6 +1525,10 @@ end
         if(datajob%method == 'HARTREE-FOCK') then
           call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                      datajob,datamol,databasis,datacomp)
+          if(.not.datacomp%convergedscf) then
+            call tstamp(1,datacomp)
+            return
+          endif
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
           call tstamp(1,datacomp)
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
@@ -1455,12 +1539,20 @@ end
             datajob%cutint2= max(datajob%cutint2,1.0D-9)
             call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                        datajob,datamol,databasis,datacomp)
+            if(.not.datacomp%convergedscf) then
+              call tstamp(1,datacomp)
+              return
+            endif
             datajob%dconv= savedconv
             datajob%cutint2= savecutint2
             call tstamp(1,datacomp)
           endif
           call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                       datajob,datamol,databasis,datacomp)
+          if(.not.datacomp%convergedscf) then
+            call tstamp(1,datacomp)
+            return
+          endif
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
           call tstamp(1,datacomp)
         else
@@ -1551,10 +1643,12 @@ end
 !
 !       call setnextopt(coordold,datamol%natom,iopt,datajob)
 !
-        if((iopt == datajob%nopt).and.datacomp%master) then
-          write(datacomp%iout,'("Warning! Geometry did not converge.")')
-          datacomp%nwarn= datacomp%nwarn+1
-          exit
+        if(iopt == datajob%nopt) then
+          if(datacomp%master) then
+            write(datacomp%iout,'(" Geometry did not converge.")')
+            call tstamp(1,datacomp)
+          endif
+          return
         endif
         call tstamp(1,datacomp)
       enddo
@@ -1604,7 +1698,7 @@ end
 !
 ! Write optimized geometry
 !
-      if(datacomp%master.and.datacomp%convergedgeom) then
+      if(datacomp%master) then
         write(datacomp%iout,'(" ==========================")')
         write(datacomp%iout,'("     Optimized Geometry")')
         write(datacomp%iout,'(" ==========================")')

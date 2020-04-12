@@ -55,6 +55,8 @@
       character(len=32) :: scfconv
       data maxfunc/1,3,6,10,15,21,28/
 !
+      datacomp%convergedscf=.false.
+!
       maxdiis= datajob%maxdiis
       maxsoscf= datajob%maxsoscf
       maxqcdiagsub= datajob%maxqcdiagsub
@@ -299,16 +301,23 @@
 !
         select case(scfconv)
           case('DIIS')
-            if(diffmax < datajob%dconv) exit
+            if(diffmax < datajob%dconv) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
             if(itdiis >= maxdiis) itdiis= 0
           case('SOSCF')
-            if((diffmax < datajob%dconv).and.(convsoscf)) exit
-            if((diffmax < datajob%dconv).and.(itsoscf == 1)) exit
+            if((diffmax < datajob%dconv).and.((convsoscf).or.(itsoscf == 1))) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
             if((diffmax < datajob%dconv).and.(.not.convsoscf)) convsoscf=.true.
             if(itsoscf >= maxsoscf) itsoscf= 0
           case('QC')
-            if((diffmax < datajob%dconv).and.(convqc)) exit
-            if((diffmax < datajob%dconv).and.(itqc == 1)) exit
+            if((diffmax < datajob%dconv).and.((convqc).or.(itqc == 1))) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
             if((diffmax < datajob%dconv).and.(.not.convqc)) convqc=.true.
             if((diffmax >= datajob%dconv).and.(convqc)) then
               itqc= 0
@@ -319,8 +328,8 @@
         if(iter == datajob%maxiter) then
           if(datacomp%master) then
             write(datacomp%iout,'(" SCF did not converge.")')
-            call iabort
           endif
+          return
         endif
         call dcopy(nao3,dmtrx,1,dmtrxprev,1)
         call dcopy(nao3,work,1,dmtrx,1)
@@ -964,6 +973,8 @@ end
       character(len=32) :: scfconv
       data maxfunc/1,3,6,10,15,21,28/
 !
+      datacomp%convergedscf=.false.
+!
       maxdiis= datajob%maxdiis
       maxsoscf= datajob%maxsoscf
       maxqcdiagsub= datajob%maxqcdiagsub
@@ -1249,16 +1260,23 @@ end
 !
         select case(scfconv)
           case('DIIS')
-            if(diffmax < datajob%dconv) exit
+            if(diffmax < datajob%dconv) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
             if(itdiis >= maxdiis) itdiis= 0
           case('SOSCF')
-            if((diffmax < datajob%dconv).and.(convsoscf)) exit
-            if((diffmax < datajob%dconv).and.(itsoscf == 1)) exit
+            if((diffmax < datajob%dconv).and.((convsoscf).or.(itsoscf == 1))) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
             if((diffmax < datajob%dconv).and.(.not.convsoscf)) convsoscf=.true.
             if(itsoscf >= maxsoscf) itsoscf= 0
           case('QC')
-            if((diffmax < datajob%dconv).and.(convqc)) exit
-            if((diffmax < datajob%dconv).and.(itqc == 1)) exit
+            if((diffmax < datajob%dconv).and.((convqc).or.(itqc == 1))) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
             if((diffmax < datajob%dconv).and.(.not.convqc)) convqc=.true.
             if((diffmax >= datajob%dconv).and.(convqc)) then
               itqc= 0
@@ -1269,8 +1287,8 @@ end
         if(iter == datajob%maxiter) then
           if(datacomp%master) then
             write(datacomp%iout,'(" SCF did not converge.")')
-            call iabort
           endif
+          return
         endif
         call dcopy(nao3,dmtrx,1,dmtrxprev,1)
         call dcopy(nao3,work,1,dmtrx,1)
@@ -1379,6 +1397,8 @@ end
       logical :: convsoscf, convqc
       character(len=32) :: scfconv
       data maxfunc/1,3,6,10,15,21,28/
+!
+      datacomp%convergedscf=.false.
 !
       maxdiis= datajob%maxdiis
       maxsoscf= datajob%maxsoscf
@@ -1677,16 +1697,23 @@ end
 !
         select case(scfconv)
           case('DIIS')
-            if(diffmax.lt.datajob%dconv) exit
+            if(diffmax < datajob%dconv) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
             if(itdiis >= maxdiis) itdiis= 0
           case('SOSCF')
-            if((diffmax.lt.datajob%dconv).and.(convsoscf)) exit
-            if((diffmax.lt.datajob%dconv).and.(itsoscf==1)) exit
-            if((diffmax.lt.datajob%dconv).and.(.not.convsoscf)) convsoscf=.true.
+            if((diffmax < datajob%dconv).and.((convsoscf).or.(itsoscf == 1))) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
+            if((diffmax < datajob%dconv).and.(.not.convsoscf)) convsoscf=.true.
             if(itsoscf >= maxsoscf) itsoscf= 0
           case('QC')
-            if((diffmax < datajob%dconv).and.(convqc)) exit
-            if((diffmax < datajob%dconv).and.(itqc == 1)) exit
+            if((diffmax < datajob%dconv).and.((convqc).or.(itqc == 1))) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
             if((diffmax < datajob%dconv).and.(.not.convqc)) convqc=.true.
             if((diffmax >= datajob%dconv).and.(convqc)) then
               itqc= 0
@@ -1697,8 +1724,8 @@ end
         if(iter == datajob%maxiter) then
           if(datacomp%master) then
             write(datacomp%iout,'(" SCF did not converge.")')
-            call iabort
           endif
+          return
         endif
         call dcopy(nao3,dmtrxa,1,dmtrxpreva,1)
         call dcopy(nao3,dmtrxb,1,dmtrxprevb,1)
@@ -2113,6 +2140,8 @@ end
       character(len=32) :: scfconv
       data maxfunc/1,3,6,10,15,21,28/
 !
+      datacomp%convergedscf=.false.
+!
       maxdiis= datajob%maxdiis
       maxsoscf= datajob%maxsoscf
       maxqcdiagsub= datajob%maxqcdiagsub
@@ -2456,16 +2485,23 @@ end
 !
         select case(scfconv)
           case('DIIS')
-            if(diffmax < datajob%dconv) exit
+            if(diffmax < datajob%dconv) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
             if(itdiis >= maxdiis) itdiis= 0
           case('SOSCF')
-            if((diffmax < datajob%dconv).and.(convsoscf)) exit
-            if((diffmax < datajob%dconv).and.(itsoscf == 1)) exit
+            if((diffmax < datajob%dconv).and.((convsoscf).or.(itsoscf == 1))) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
             if((diffmax < datajob%dconv).and.(.not.convsoscf)) convsoscf=.true.
             if(itsoscf >= maxsoscf) itsoscf= 0
           case('QC')
-            if((diffmax < datajob%dconv).and.(convqc)) exit
-            if((diffmax < datajob%dconv).and.(itqc == 1)) exit
+            if((diffmax < datajob%dconv).and.((convqc).or.(itqc == 1))) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
             if((diffmax < datajob%dconv).and.(.not.convqc)) convqc=.true.
             if((diffmax >= datajob%dconv).and.(convqc)) then
               itqc= 0
@@ -2476,8 +2512,8 @@ end
         if(iter == datajob%maxiter) then
           if(datacomp%master) then
             write(datacomp%iout,'(" SCF did not converge.")')
-            call iabort
           endif
+          return
         endif
         call dcopy(nao3,dmtrxa,1,dmtrxpreva,1)
         call dcopy(nao3,dmtrxb,1,dmtrxprevb,1)
