@@ -294,44 +294,20 @@
             r1(j,i)= r1(j,i)+f1w(j,1)*work(i+5)
           enddo
         enddo
-        do i= 5,8
+        do i= 1,4
           do j= 1,3
-            r1(j,i)= r1(j,i)+f1w(j,2)*work(i+1)
+            r1(j,i+ 4)= r1(j,i+ 4)+f1w(j,2)*work(i+5)
+            r1(j,i+ 8)= r1(j,i+ 8)+f1w(j,3)*work(i+5)
+            r1(j,i+12)= r1(j,i+12)+f1w(j,4)*work(i+5)
+            r1(j,i+16)= r1(j,i+16)+f1w(j,5)*work(i+5)
           enddo
         enddo
-        do i= 9,12
+        do i= 1,5
           do j= 1,3
-            r1(j,i)= r1(j,i)+f1w(j,3)*work(i-3)
-          enddo
-        enddo
-        do i= 13,16
-          do j= 1,3
-            r1(j,i)= r1(j,i)+f1w(j,4)*work(i-7)
-          enddo
-        enddo
-        do i= 17,20
-          do j= 1,3
-            r1(j,i)= r1(j,i)+f1w(j,5)*work(i-11)
-          enddo
-        enddo
-        do i= 21,25
-          do j= 1,3
-            r1(j,i)= r1(j,i)+f1w(j,6)*work(i-20)
-          enddo
-        enddo
-        do i= 26,30
-          do j= 1,3
-            r1(j,i)= r1(j,i)+f1w(j,7)*work(i-25)
-          enddo
-        enddo
-        do i= 31,35
-          do j= 1,3
-            r1(j,i)= r1(j,i)+f1w(j,8)*work(i-30)
-          enddo
-        enddo
-        do i= 36,40
-          do j= 1,3
-            r1(j,i)= r1(j,i)+f1w(j,9)*work(i-35)
+            r1(j,i+20)= r1(j,i+20)+f1w(j,6)*work(i)
+            r1(j,i+25)= r1(j,i+25)+f1w(j,7)*work(i)
+            r1(j,i+30)= r1(j,i+30)+f1w(j,8)*work(i)
+            r1(j,i+35)= r1(j,i+35)+f1w(j,9)*work(i)
           enddo
         enddo
 !
@@ -345,67 +321,27 @@
         enddo
         do i= 1,4
           do j= 1,6
-            r2(j,i)= r2(j,i)+f2w(j,1)*work(i+9)
+            r2(j,i   )= r2(j,i   )+f2w(j,1)*work(i+9)
+            r2(j,i+ 4)= r2(j,i+ 4)+f2w(j,2)*work(i+9)
+            r2(j,i+ 8)= r2(j,i+ 8)+f2w(j,3)*work(i+9)
+            r2(j,i+12)= r2(j,i+12)+f2w(j,4)*work(i+9)
+            r2(j,i+16)= r2(j,i+16)+f2w(j,5)*work(i+9)
           enddo
         enddo
-        do i= 5,8
+        do i= 1,4
           do j= 1,6
-            r2(j,i)= r2(j,i)+f2w(j,2)*work(i+5)
+            r2(j,i+20)= r2(j,i+20)+f2w(j,6)*work(i+5)
+            r2(j,i+24)= r2(j,i+24)+f2w(j,7)*work(i+5)
+            r2(j,i+28)= r2(j,i+28)+f2w(j,8)*work(i+5)
+            r2(j,i+32)= r2(j,i+32)+f2w(j,9)*work(i+5)
           enddo
         enddo
-        do i= 9,12
+        do i= 1,5
           do j= 1,6
-            r2(j,i)= r2(j,i)+f2w(j,3)*work(i+1)
-          enddo
-        enddo
-        do i= 13,16
-          do j= 1,6
-            r2(j,i)= r2(j,i)+f2w(j,4)*work(i-3)
-          enddo
-        enddo
-        do i= 17,20
-          do j= 1,6
-            r2(j,i)= r2(j,i)+f2w(j,5)*work(i-7)
-          enddo
-        enddo
-        do i= 21,24
-          do j= 1,6
-            r2(j,i)= r2(j,i)+f2w(j,6)*work(i-15)
-          enddo
-        enddo
-        do i= 25,28
-          do j= 1,6
-            r2(j,i)= r2(j,i)+f2w(j,7)*work(i-19)
-          enddo
-        enddo
-        do i= 29,32
-          do j= 1,6
-            r2(j,i)= r2(j,i)+f2w(j,8)*work(i-23)
-          enddo
-        enddo
-        do i= 33,36
-          do j= 1,6
-            r2(j,i)= r2(j,i)+f2w(j,9)*work(i-27)
-          enddo
-        enddo
-        do i= 37,41
-          do j= 1,6
-            r2(j,i)= r2(j,i)+f2w(j,10)*work(i-36)
-          enddo
-        enddo
-        do i= 42,46
-          do j= 1,6
-            r2(j,i)= r2(j,i)+f2w(j,11)*work(i-41)
-          enddo
-        enddo
-        do i= 47,51
-          do j= 1,6
-            r2(j,i)= r2(j,i)+f2w(j,12)*work(i-46)
-          enddo
-        enddo
-        do i= 52,56
-          do j= 1,6
-            r2(j,i)= r2(j,i)+f2w(j,13)*work(i-51)
+            r2(j,i+36)= r2(j,i+36)+f2w(j,10)*work(i)
+            r2(j,i+41)= r2(j,i+41)+f2w(j,11)*work(i)
+            r2(j,i+46)= r2(j,i+46)+f2w(j,12)*work(i)
+            r2(j,i+51)= r2(j,i+51)+f2w(j,13)*work(i)
           enddo
         enddo
 ! 
@@ -423,77 +359,33 @@
         enddo
         do i= 1,2
           do j= 1,10
-            r3(j,i)= r3(j,i)+f3w(j,1)*work(i+13)
+            r3(j,i  )= r3(j,i  )+f3w(j,1)*work(i+13)
+            r3(j,i+2)= r3(j,i+2)+f3w(j,2)*work(i+13)
+            r3(j,i+4)= r3(j,i+4)+f3w(j,3)*work(i+13)
+            r3(j,i+6)= r3(j,i+6)+f3w(j,4)*work(i+13)
+            r3(j,i+8)= r3(j,i+8)+f3w(j,5)*work(i+13)
           enddo
         enddo
-        do i= 3,4
+        do i= 1,4
           do j= 1,10
-            r3(j,i)= r3(j,i)+f3w(j,2)*work(i+11)
+            r3(j,i+10)= r3(j,i+10)+f3w(j,6)*work(i+9)
+            r3(j,i+14)= r3(j,i+14)+f3w(j,7)*work(i+9)
+            r3(j,i+18)= r3(j,i+18)+f3w(j,8)*work(i+9)
+            r3(j,i+22)= r3(j,i+22)+f3w(j,9)*work(i+9)
           enddo
         enddo
-        do i= 5,6
+        do i= 1,4
           do j= 1,10
-            r3(j,i)= r3(j,i)+f3w(j,3)*work(i+9)
+            r3(j,i+26)= r3(j,i+26)+f3w(j,10)*work(i+5)
+            r3(j,i+30)= r3(j,i+30)+f3w(j,11)*work(i+5)
+            r3(j,i+34)= r3(j,i+34)+f3w(j,12)*work(i+5)
+            r3(j,i+38)= r3(j,i+38)+f3w(j,13)*work(i+5)
           enddo
         enddo
-        do i= 7,8
+        do i= 1,5
           do j= 1,10
-            r3(j,i)= r3(j,i)+f3w(j,4)*work(i+7)
-          enddo
-        enddo
-        do i= 9,10
-          do j= 1,10
-            r3(j,i)= r3(j,i)+f3w(j,5)*work(i+5)
-          enddo
-        enddo
-        do i= 11,14
-          do j= 1,10
-            r3(j,i)= r3(j,i)+f3w(j,6)*work(i-1)
-          enddo
-        enddo
-        do i= 15,18
-          do j= 1,10
-            r3(j,i)= r3(j,i)+f3w(j,7)*work(i-5)
-          enddo
-        enddo
-        do i= 19,22
-          do j= 1,10
-            r3(j,i)= r3(j,i)+f3w(j,8)*work(i-9)
-          enddo
-        enddo
-        do i= 23,26
-          do j= 1,10
-            r3(j,i)= r3(j,i)+f3w(j,9)*work(i-13)
-          enddo
-        enddo
-        do i= 27,30
-          do j= 1,10
-            r3(j,i)= r3(j,i)+f3w(j,10)*work(i-21)
-          enddo
-        enddo
-        do i= 31,34
-          do j= 1,10
-            r3(j,i)= r3(j,i)+f3w(j,11)*work(i-25)
-          enddo
-        enddo
-        do i= 35,38
-          do j= 1,10
-            r3(j,i)= r3(j,i)+f3w(j,12)*work(i-29)
-          enddo
-        enddo
-        do i= 39,42
-          do j= 1,10
-            r3(j,i)= r3(j,i)+f3w(j,13)*work(i-33)
-          enddo
-        enddo
-        do i= 43,47
-          do j= 1,10
-            r3(j,i)= r3(j,i)+f3w(j,14)*work(i-42)
-          enddo
-        enddo
-        do i= 48,52
-          do j= 1,10
-            r3(j,i)= r3(j,i)+f3w(j,15)*work(i-47)
+            r3(j,i+42)= r3(j,i+42)+f3w(j,14)*work(i)
+            r3(j,i+47)= r3(j,i+47)+f3w(j,15)*work(i)
           enddo
         enddo
 !
@@ -519,54 +411,26 @@
             r4(j,i)= r4(j,i)+f4w(j,i)*qmd4
           enddo
         enddo
-        do i= 6,7
+        do i= 1,2
           do j= 1,15
-            r4(j,i)= r4(j,i)+f4w(j,6)*work(i+8)
+            r4(j,i+ 5)= r4(j,i+ 5)+f4w(j,6)*work(i+13)
+            r4(j,i+ 7)= r4(j,i+ 7)+f4w(j,7)*work(i+13)
+            r4(j,i+ 9)= r4(j,i+ 9)+f4w(j,8)*work(i+13)
+            r4(j,i+11)= r4(j,i+11)+f4w(j,9)*work(i+13)
           enddo
         enddo
-        do i= 8,9
+        do i= 1,4
           do j= 1,15
-            r4(j,i)= r4(j,i)+f4w(j,7)*work(i+6)
+            r4(j,i+13)= r4(j,i+13)+f4w(j,10)*work(i+9)
+            r4(j,i+17)= r4(j,i+17)+f4w(j,11)*work(i+9)
+            r4(j,i+21)= r4(j,i+21)+f4w(j,12)*work(i+9)
+            r4(j,i+25)= r4(j,i+25)+f4w(j,13)*work(i+9)
           enddo
         enddo
-        do i= 10,11
+        do i= 1,4
           do j= 1,15
-            r4(j,i)= r4(j,i)+f4w(j,8)*work(i+4)
-          enddo
-        enddo
-        do i= 12,13
-          do j= 1,15
-            r4(j,i)= r4(j,i)+f4w(j,9)*work(i+2)
-          enddo
-        enddo
-        do i= 14,17
-          do j= 1,15
-            r4(j,i)= r4(j,i)+f4w(j,10)*work(i-4)
-          enddo
-        enddo
-        do i= 18,21
-          do j= 1,15
-            r4(j,i)= r4(j,i)+f4w(j,11)*work(i-8)
-          enddo
-        enddo
-        do i= 22,25
-          do j= 1,15
-            r4(j,i)= r4(j,i)+f4w(j,12)*work(i-12)
-          enddo
-        enddo
-        do i= 26,29
-          do j= 1,15
-            r4(j,i)= r4(j,i)+f4w(j,13)*work(i-16)
-          enddo
-        enddo
-        do i= 30,33
-          do j= 1,15
-            r4(j,i)= r4(j,i)+f4w(j,14)*work(i-24)
-          enddo
-        enddo
-        do i= 34,37
-          do j= 1,15
-            r4(j,i)= r4(j,i)+f4w(j,15)*work(i-28)
+            r4(j,i+29)= r4(j,i+29)+f4w(j,14)*work(i+5)
+            r4(j,i+33)= r4(j,i+33)+f4w(j,15)*work(i+5)
           enddo
         enddo
         do i= 38,42
@@ -603,39 +467,19 @@
             r5(j,i)= r5(j,i)+f5w(j,i)*qmd4
           enddo
         enddo
-        do i= 5,6
+        do i= 1,2
           do j= 1,21
-            r5(j,i)= r5(j,i)+f5w(j,5)*work(i+9)
+            r5(j,i+ 4)= r5(j,i+ 4)+f5w(j,5)*work(i+13)
+            r5(j,i+ 6)= r5(j,i+ 6)+f5w(j,6)*work(i+13)
+            r5(j,i+ 8)= r5(j,i+ 8)+f5w(j,7)*work(i+13)
+            r5(j,i+10)= r5(j,i+10)+f5w(j,8)*work(i+13)
           enddo
         enddo
-        do i= 7,8
+        do i= 1,4
           do j= 1,21
-            r5(j,i)= r5(j,i)+f5w(j,6)*work(i+7)
-          enddo
-        enddo
-        do i= 9,10
-          do j= 1,21
-            r5(j,i)= r5(j,i)+f5w(j,7)*work(i+5)
-          enddo
-        enddo
-        do i= 11,12
-          do j= 1,21
-            r5(j,i)= r5(j,i)+f5w(j,8)*work(i+3)
-          enddo
-        enddo
-        do i= 13,16
-          do j= 1,21
-            r5(j,i)= r5(j,i)+f5w(j,9)*work(i-3)
-          enddo
-        enddo
-        do i= 17,20
-          do j= 1,21
-            r5(j,i)= r5(j,i)+f5w(j,10)*work(i-7)
-          enddo
-        enddo
-        do i= 21,24
-          do j= 1,21
-            r5(j,i)= r5(j,i)+f5w(j,11)*work(i-15)
+            r5(j,i+12)= r5(j,i+12)+f5w(j, 9)*work(i+ 9)
+            r5(j,i+16)= r5(j,i+16)+f5w(j,10)*work(i+ 9)
+            r5(j,i+20)= r5(j,i+20)+f5w(j,11)*work(i+ 5)
           enddo
         enddo
 !
@@ -692,14 +536,10 @@
             r6(j,i)= r6(j,i)+f6w(j,i)*qmd4
           enddo
         enddo
-        do i= 5,6
+        do i= 1,2
           do j= 1,28
-            r6(j,i)= r6(j,i)+f6w(j,5)*work(i+9)
-          enddo
-        enddo
-        do i= 7,8
-          do j= 1,28
-            r6(j,i)= r6(j,i)+f6w(j,6)*work(i+7)
+            r6(j,i+4)= r6(j,i+4)+f6w(j,5)*work(i+13)
+            r6(j,i+6)= r6(j,i+6)+f6w(j,6)*work(i+13)
           enddo
         enddo
         do i= 9,12
