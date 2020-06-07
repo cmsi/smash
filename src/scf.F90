@@ -48,7 +48,7 @@
       real(8),allocatable :: fock(:), fockprev(:), dmtrxprev(:), dmax(:), work(:)
       real(8),allocatable :: fockdiis(:), errdiis(:), diismtrx(:), work2(:)
       real(8),allocatable :: hstart(:), sograd(:,:), sodisp(:), sovecy(:)
-      real(8),allocatable :: qcvec(:), qcmat(:), qcmatsave(:), qceigen(:), qcgmn(:)
+      real(8),allocatable :: qcvec(:), qcmat(:), qcmatsave(:), qceigen(:)
       real(8) :: escfprev, diffmax, tridot, deltae, errmax, sogradmax, sodispmax
       real(8) :: time1, time2, time3, time4
       logical :: convsoscf, convqc
@@ -94,12 +94,12 @@
                    hstart(nocc*nvir),sograd(nocc*nvir,maxsoscf),sodisp(nocc*nvir*maxsoscf), &
 &                  sovecy(nocc*nvir*(maxsoscf-1)),work2(isize1))
         case('QC')
-          call memset(nao2*2+nao3*2+nshell3+(nocc*nvir+1)*(maxqcdiagsub+1)*2+maxqcdiagsub**2 &
+          call memset(nao2*3+nao3*3+nshell3+(nocc*nvir+1)*(maxqcdiagsub+1)*2+maxqcdiagsub**2 &
 &                    +maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub,datacomp)
-          allocate(fock(nao2),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
+          allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
                    qcvec((nocc*nvir+1)*(maxqcdiagsub+1)*2),qcmat(maxqcdiagsub**2), &
 &                  qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2),qceigen(maxqcdiagsub), &
-&                  qcgmn(nao3),work2(nao2))
+&                  work2(nao2*2))
         case default
           if(datacomp%master) then
             write(*,'(" Error! SCFConv=",a12,"is not supported.")') 
@@ -262,8 +262,8 @@
 &                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= 1
             else
-              call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
-&                        work,work2,datajob%cutint2,one,nao,nmo,nocc,nvir,nshell, &
+              call rhfqc(fock,cmo,dmax,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
+&                        work,work2(1),work2(nao2+1),datajob%cutint2,one,nao,nmo,nocc,nvir,nshell, &
 &                        maxdim,datajob%maxqcdiag,maxqcdiagsub,datajob%threshqc, &
 &                        datajob,datamol,databasis,datacomp)
               itqc= itqc+1
@@ -360,12 +360,12 @@
                      hstart,sograd,sodisp, &
 &                    sovecy,work2)
         case('QC')
-          call memunset(nao2*2+nao3*2+nshell3+(nocc*nvir+1)*(maxqcdiagsub+1)*2+maxqcdiagsub**2 &
+          call memunset(nao2*3+nao3*3+nshell3+(nocc*nvir+1)*(maxqcdiagsub+1)*2+maxqcdiagsub**2 &
 &                      +maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub,datacomp)
           deallocate(fock,fockprev,dmtrxprev,dmax,work, &
 &                    qcvec,qcmat, &
 &                    qcmatsave,qceigen, &
-&                    qcgmn,work2)
+&                    work2)
       end select
 !
       return
@@ -965,7 +965,7 @@ end
       real(8),allocatable :: hstart(:), sograd(:,:), sodisp(:), sovecy(:)
       real(8),allocatable :: fockd(:), rad(:), atomvec(:), surface(:),  radpt(:), angpt(:)
       real(8),allocatable :: ptweight(:), xyzpt(:), rsqrd(:), vao(:), vmo(:)
-      real(8),allocatable :: qcvec(:), qcmat(:), qcmatsave(:), qceigen(:), qcgmn(:)
+      real(8),allocatable :: qcvec(:), qcmat(:), qcmatsave(:), qceigen(:)
       real(8) :: escfprev, diffmax, tridot, deltae, errmax, sogradmax, sodispmax
       real(8) :: edft, totalelec
       real(8) :: time1, time2, time3, time4
@@ -1022,16 +1022,16 @@ end
 &                  hstart(nocc*nvir),sograd(nocc*nvir,maxsoscf),sodisp(nocc*nvir*maxsoscf), &
 &                  sovecy(nocc*nvir*(maxsoscf-1)))
         case ('QC')
-          isize1= max(isize1,nao2)
-          call memset(nao2*2+nao3*4+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
+          isize1= max(isize1,nao2*2)
+          call memset(nao2+nao3*4+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
 &                    +nao*4+nocc*4+isize1+(nocc*nvir+1)*(maxqcdiagsub+1)*2 &
 &                    +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub,datacomp)
-          allocate(fock(nao2),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
+          allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
 &                  fockd(nao3),rad(ndftatom),atomvec(5*ndftatom*ndftatom),surface(ndftatom*ndftatom), &
 &                  radpt(2*nrad),angpt(4*nleb),ptweight(ndftatom*nrad*nleb),xyzpt(3*ndftatom), &
 &                  rsqrd(ndftatom),vao(4*nao),vmo(4*nocc),work2(isize1), &
 &                  qcvec((nocc*nvir+1)*(maxqcdiagsub+1)*2),qcmat(maxqcdiagsub*maxqcdiagsub), &
-&                  qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2),qceigen(maxqcdiagsub),qcgmn(nao3))
+&                  qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2),qceigen(maxqcdiagsub))
         case default
           if(datacomp%master) then
             write(*,'(" Error! SCFConv=",a12,"is not supported.")')
@@ -1221,8 +1221,8 @@ end
 &                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= 1
             else
-              call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
-&                        work,work2,datajob%cutint2,datajob%hfexchange,nao,nmo,nocc,nvir,nshell, &
+              call rhfqc(fock,cmo,dmax,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
+&                        work,work2(1),work2(nao2+1),datajob%cutint2,datajob%hfexchange,nao,nmo,nocc,nvir,nshell, &
 &                        maxdim,datajob%maxqcdiag,maxqcdiagsub,datajob%threshqc, &
 &                        datajob,datamol,databasis,datacomp)
               itqc= itqc+1
@@ -1333,8 +1333,8 @@ end
 &                    radpt,angpt,ptweight,xyzpt, &
 &                    rsqrd,vao,vmo,work2, &
 &                    qcvec,qcmat, &
-&                    qcmatsave,qceigen,qcgmn)
-          call memunset(nao2*2+nao3*4+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
+&                    qcmatsave,qceigen)
+          call memunset(nao2+nao3*4+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
 &                      +nao*4+nocc*4+isize1+(nocc*nvir+1)*(maxqcdiagsub+1)*2 &
 &                      +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub,datacomp)
       end select
@@ -1389,7 +1389,6 @@ end
       real(8),allocatable :: hstarta(:), hstartb(:), sograda(:,:), sogradb(:,:)
       real(8),allocatable :: sodispa(:), sodispb(:), sovecya(:), sovecyb(:)
       real(8),allocatable :: qcvec(:), qcmat(:), qcmatsave(:), qceigen(:)
-      real(8),allocatable :: qcgmna(:), qcgmnb(:)
       real(8) :: escfprev, diffmax, diffmaxa, diffmaxb, tridot, deltae
       real(8) :: errmax, errmaxa, errmaxb, sogradmax, sogradmaxa, sogradmaxb, sodispmax
       real(8) :: s2, sz
@@ -1448,12 +1447,12 @@ end
         case('QC')
           call memset(nao2*4+nao3*8+(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
 &                    +maxqcdiagsub**2+maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub,datacomp)
-          allocate(focka(nao2),fockb(nao2),fockpreva(nao3),fockprevb(nao3), &
+          allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3), &
 &                  qcvec((nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2), &
 &                  qcmat(maxqcdiagsub**2),qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2), &
-&                  qceigen(maxqcdiagsub),qcgmna(nao3),qcgmnb(nao3), &
-&                  work(nao3*2),work2(nao2),work3(nao2))
+&                  qceigen(maxqcdiagsub), &
+&                  work(nao3*2),work2(nao2),work3(nao2*3))
         case default
           if(datacomp%master) then
             write(*,'(" Error! SCFConv=",a12,"is not supported.")')
@@ -1655,9 +1654,9 @@ end
 &                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= 1
             else
-              call uhfqc(focka,fockb,cmoa,cmob,dmax,qcgmna,qcgmnb,qcvec, &
+              call uhfqc(focka,fockb,cmoa,cmob,dmax,qcvec, &
 &                        qcmat,qcmatsave,qceigen,overlap,xint, &
-&                        work,work2,work3,datajob%cutint2,one,nao,nmo,nocca,noccb, &
+&                        work,work2,work3(1),work3(nao2+1),work3(nao2*2+1),datajob%cutint2,one,nao,nmo,nocca,noccb, &
 &                        nvira,nvirb,nshell,maxdim,datajob%maxqcdiag,maxqcdiagsub, &
 &                        datajob%threshqc,datajob,datamol,databasis,datacomp)
               itqc= itqc+1
@@ -1781,7 +1780,7 @@ end
 &                    dmtrxpreva,dmtrxprevb,dmax, &
 &                    qcvec, &
 &                    qcmat,qcmatsave, &
-&                    qceigen,qcgmna,qcgmnb, &
+&                    qceigen, &
 &                    work,work2,work3)
           call memunset(nao2*4+nao3*8+(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
 &                      +maxqcdiagsub**2+maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub,datacomp)
@@ -2131,7 +2130,6 @@ end
       real(8),allocatable :: radpt(:), angpt(:), ptweight(:), xyzpt(:), rsqrd(:)
       real(8),allocatable :: vao(:), vmoa(:), vmob(:)
       real(8),allocatable :: qcvec(:), qcmat(:), qcmatsave(:), qceigen(:)
-      real(8),allocatable :: qcgmna(:), qcgmnb(:)
       real(8) :: escfprev, diffmax, diffmaxa, diffmaxb, tridot, deltae
       real(8) :: errmax, errmaxa, errmaxb, sogradmax, sogradmaxa, sogradmaxb, sodispmax
       real(8) :: s2, sz, edft, totalelec
@@ -2206,14 +2204,14 @@ end
 &                    +ndftatom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1 &
 &                    +(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
 &                    +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub,datacomp)
-          allocate(focka(nao2),fockb(nao2),fockpreva(nao3),fockprevb(nao3), &
+          allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(numwork), &
 &                  fockda(nao3),fockdb(nao3),rad(ndftatom),atomvec(5*ndftatom*ndftatom), &
 &                  surface(ndftatom*ndftatom),radpt(2*nrad),angpt(4*nleb),ptweight(ndftatom*nrad*nleb), &
 &                  xyzpt(3*ndftatom),rsqrd(ndftatom),vao(4*nao),vmoa(4*nocca),vmob(4*noccb), &
 &                  qcvec((nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2), &
 &                  qcmat(maxqcdiagsub**2),qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2), &
-&                  qceigen(maxqcdiagsub),qcgmna(nao3),qcgmnb(nao3),work2(isize1),work3(nao2))
+&                  qceigen(maxqcdiagsub),work2(isize1),work3(nao2*3))
         case default
           if(datacomp%master) then
             write(*,'(" Error! SCFConv=",a12,"is not supported.")')
@@ -2443,9 +2441,9 @@ end
 &                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= 1
             else
-              call uhfqc(focka,fockb,cmoa,cmob,dmax,qcgmna,qcgmnb,qcvec, &
+              call uhfqc(focka,fockb,cmoa,cmob,dmax,qcvec, &
 &                        qcmat,qcmatsave,qceigen,overlap,xint, &
-&                        work,work2,work3,datajob%cutint2,datajob%hfexchange,nao,nmo,nocca,noccb, &
+&                        work,work2,work3(1),work3(nao2+1),work3(nao2*2+1),datajob%cutint2,datajob%hfexchange,nao,nmo,nocca,noccb, &
 &                        nvira,nvirb,nshell,maxdim,datajob%maxqcdiag,maxqcdiagsub, &
 &                        datajob%threshqc,datajob,datamol,databasis,datacomp)
               itqc= itqc+1
@@ -2582,7 +2580,7 @@ end
 &                    xyzpt,rsqrd,vao,vmoa,vmob, &
 &                    qcvec, &
 &                    qcmat,qcmatsave, &
-&                    qceigen,qcgmna,qcgmnb,work2,work3)
+&                    qceigen,work2,work3)
           call memunset(nao2*3+nao3*8+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
 &                      +ndftatom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1 &
 &                      +(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &

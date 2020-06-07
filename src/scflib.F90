@@ -1791,8 +1791,8 @@ end
 
 
 !---------------------------------------------------------------------------------------
-  subroutine rhfqc(fock,cmo,qcrmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
-&                  qcwork,work,cutint2,hfexchange,nao,nmo,nocc,nvir,nshell, &
+  subroutine rhfqc(fock,cmo,qcrmax,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
+&                  qcwork,work1,work2,cutint2,hfexchange,nao,nmo,nocc,nvir,nshell, &
 &                  maxdim,maxqcdiag,maxqcdiagsub,threshqc, &
 &                  datajob,datamol,databasis,datacomp)
 !---------------------------------------------------------------------------------------
@@ -1813,9 +1813,8 @@ end
       real(8),intent(out) :: qcvec(nocc*nvir+1,maxqcdiagsub+1,2), qcrmax(nshell*(nshell+1)/2)
       real(8),intent(out) :: qcwork(nao,nao), qcmat(maxqcdiagsub,maxqcdiagsub)
       real(8),intent(out) :: qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2), qceigen(maxqcdiagsub)
-      real(8),intent(out) :: work(nao,nao)
-      real(8),intent(inout) :: fock(nao,nao), cmo(nao,nao)
-      real(8),intent(inout) :: qcgmn(nao*(nao+1)/2)
+      real(8),intent(out) :: work1(nao,nao), work2(nao,nao)
+      real(8),intent(inout) :: fock(nao*(nao+1)/2), cmo(nao,nao)
       real(8) :: tmp, qcnorm, ddot, rotqc
 !
       qcmatsave(:)= zero
@@ -1823,8 +1822,8 @@ end
 ! Calculate Fock matrix in MO basis
 !
       call expand(fock,qcwork,nao)
-      call dsymm('L','U',nao,nocc+nvir,one,qcwork,nao,cmo,nao,zero,work,nao)
-      call dgemm('T','N',nocc+nvir,nocc+nvir,nao,one,cmo,nao,work,nao,zero,fock,nao)
+      call dsymm('L','U',nao,nocc+nvir,one,qcwork,nao,cmo,nao,zero,work1,nao)
+      call dgemm('T','N',nocc+nvir,nocc+nvir,nao,one,cmo,nao,work1,nao,zero,work2,nao)
 !
 ! Calculate initial (first and second) qc vector
 !
@@ -1838,9 +1837,9 @@ end
       do ii= 1,nvir
         ij=(ii-1)*nocc+1
         do jj= 1,nocc
-          qcvec(ij+jj,1,2)= fock(jj,ii+nocc)
-          qcvec(ij+jj,2,1)= fock(jj,ii+nocc)
-          qcnorm= qcnorm+fock(jj,ii+nocc)*fock(jj,ii+nocc)
+          qcvec(ij+jj,1,2)= work2(jj,ii+nocc)
+          qcvec(ij+jj,2,1)= work2(jj,ii+nocc)
+          qcnorm= qcnorm+work2(jj,ii+nocc)*work2(jj,ii+nocc)
         enddo
       enddo
 !$OMP end parallel do
@@ -1858,18 +1857,18 @@ end
 !
 ! Calculate Gmn
 !
-        call calcqcrmn(qcwork,qcvec,cmo,work,nao,nocc,nvir,itdav,maxqcdiagsub)
-        call calcrdmax(qcwork,qcrmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
+        call calcqcrmn(qcwork,qcvec,cmo,work1,nao,nocc,nvir,itdav,maxqcdiagsub)
+        call calcrdmax(qcwork,qcrmax,work1,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
 &                      databasis)
-        call formrdftfock(qcgmn,work,qcwork,qcrmax,xint,maxdim,cutint2,hfexchange, &
+        call formrdftfock(fock,work1,qcwork,qcrmax,xint,maxdim,cutint2,hfexchange, &
 &                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
 &                         datajob,datamol,databasis)
 !
 ! Add two-electron integral contribution
 !
-        call expand(qcgmn,qcwork,nao)
-        call dsymm('L','U',nao,nvir,one,qcwork,nao,cmo(1,nocc+1),nao,zero,work,nao)
-        call dgemm('T','N',nocc,nvir,nao,one,cmo,nao,work,nao,zero,qcvec(2,itdav,2),nocc)
+        call expand(fock,qcwork,nao)
+        call dsymm('L','U',nao,nvir,one,qcwork,nao,cmo(1,nocc+1),nao,zero,work1,nao)
+        call dgemm('T','N',nocc,nvir,nao,one,cmo,nao,work1,nao,zero,qcvec(2,itdav,2),nocc)
 !
 ! Add Fock matrix element contribution
 !
@@ -1878,14 +1877,14 @@ end
         do ia= 1,nvir
           do ii= 1,nocc
             kk= (ia-1)*nocc+ii+1
-            tmp= tmp+fock(ii,ia+nocc)*qcvec(kk,itdav,1)
-            qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+fock(ii,ia+nocc)*qcvec(1,itdav,1)
+            tmp= tmp+work2(ii,ia+nocc)*qcvec(kk,itdav,1)
+            qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+work2(ii,ia+nocc)*qcvec(1,itdav,1)
             do ib= 1,nvir
-              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+fock(ib+nocc,ia+nocc) &
+              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+work2(ib+nocc,ia+nocc) &
 &                                                 *qcvec((ib-1)*nocc+ii+1,itdav,1)
             enddo
             do ij= 1,nocc
-              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)-fock(ij,ii)*qcvec((ia-1)*nocc+ij+1,itdav,1)
+              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)-work2(ij,ii)*qcvec((ia-1)*nocc+ij+1,itdav,1)
             enddo
           enddo
         enddo
@@ -1948,7 +1947,7 @@ end
           ij=(ii-1)*nocc+1
           do jj= 1,nocc
             qcvec(ij+jj,itdav+1,1)= qcvec(ij+jj,itdav+1,1)/ &
-&                                  (fock(ii+nocc,ii+nocc)-fock(jj,jj)-qceigen(1))
+&                                  (work2(ii+nocc,ii+nocc)-work2(jj,jj)-qceigen(1))
           enddo
         enddo
 !$OMP end parallel do
@@ -2053,8 +2052,8 @@ end
       do ii= 1,nao
         ij= ii*(ii-1)/2
         do jj= 1,ii
-          work(jj,ii)= overlap(ij+jj)
-          work(ii,jj)= overlap(ij+jj)
+          work1(jj,ii)= overlap(ij+jj)
+          work1(ii,jj)= overlap(ij+jj)
         enddo
       enddo
 !$OMP end do
@@ -2064,7 +2063,7 @@ end
         do jj= 1,nao
           qcwork(jj,1)= zero
           do kk= 1,nao
-            qcwork(jj,1)= qcwork(jj,1)+work(kk,jj)*cmo(kk,ii)
+            qcwork(jj,1)= qcwork(jj,1)+work1(kk,jj)*cmo(kk,ii)
           enddo
         enddo
 !$OMP end do
@@ -2101,9 +2100,9 @@ end
 
 
 !----------------------------------------------------------------------------------
-  subroutine uhfqc(focka,fockb,cmoa,cmob,qcrmax,qcgmna,qcgmnb,qcvec, &
+  subroutine uhfqc(focka,fockb,cmoa,cmob,qcrmax,qcvec, &
 &                  qcmat,qcmatsave,qceigen,overlap,xint, &
-&                  qcworka,qcworkb,work,cutint2,hfexchange,nao,nmo,nocca,noccb, &
+&                  qcworka,qcworkb,work,worka,workb,cutint2,hfexchange,nao,nmo,nocca,noccb, &
 &                  nvira,nvirb,nshell,maxdim,maxqcdiag,maxqcdiagsub, &
 &                  threshqc,datajob,datamol,databasis,datacomp)
 !----------------------------------------------------------------------------------
@@ -2123,13 +2122,13 @@ end
       real(8),intent(in) :: overlap(nao*(nao+1)/2), xint(nshell*(nshell+1)/2)
       real(8),intent(in) :: cutint2, hfexchange, threshqc
       real(8),intent(inout) :: qcrmax(nshell*(nshell+1)/2)
-      real(8),intent(inout) :: qcgmna(nao*(nao+1)/2), qcgmnb(nao*(nao+1)/2)
       real(8),intent(inout) :: qcvec(nocca*nvira+noccb*nvirb+1,maxqcdiagsub+1,2)
       real(8),intent(inout) :: qcmat(maxqcdiagsub,maxqcdiagsub)
       real(8),intent(inout) :: qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2)
       real(8),intent(inout) :: qceigen(maxqcdiagsub)
       real(8),intent(inout) :: qcworka(nao,nao), qcworkb(nao,nao), work(nao,nao)
-      real(8),intent(inout) :: focka(nao,nao),fockb(nao,nao), cmoa(nao,nao), cmob(nao,nao)
+      real(8),intent(inout) :: worka(nao,nao), workb(nao,nao)
+      real(8),intent(inout) :: focka(nao*(nao+1)/2),fockb(nao*(nao+1)/2), cmoa(nao,nao), cmob(nao,nao)
       real(8) :: tmp, tmpa, tmpb, qcnorm, ddot, rotqc
 !
       qcmatsave(:)= zero
@@ -2138,10 +2137,10 @@ end
 !
       call expand(focka,qcworka,nao)
       call dsymm('L','U',nao,nmo,one,qcworka,nao,cmoa,nao,zero,work,nao)
-      call dgemm('T','N',nmo,nmo,nao,one,cmoa,nao,work,nao,zero,focka,nao)
+      call dgemm('T','N',nmo,nmo,nao,one,cmoa,nao,work,nao,zero,worka,nao)
       call expand(fockb,qcworka,nao)
       call dsymm('L','U',nao,nmo,one,qcworka,nao,cmob,nao,zero,work,nao)
-      call dgemm('T','N',nmo,nmo,nao,one,cmob,nao,work,nao,zero,fockb,nao)
+      call dgemm('T','N',nmo,nmo,nao,one,cmob,nao,work,nao,zero,workb,nao)
 !
 ! Calculate initial (first and second) qc vector
 !
@@ -2156,9 +2155,9 @@ end
       do ii= 1,nvira
         ij=(ii-1)*nocca+1
         do jj= 1,nocca
-          qcvec(ij+jj,1,2)= focka(jj,ii+nocca)
-          qcvec(ij+jj,2,1)= focka(jj,ii+nocca)
-          qcnorm= qcnorm+focka(jj,ii+nocca)*focka(jj,ii+nocca)
+          qcvec(ij+jj,1,2)= worka(jj,ii+nocca)
+          qcvec(ij+jj,2,1)= worka(jj,ii+nocca)
+          qcnorm= qcnorm+worka(jj,ii+nocca)*worka(jj,ii+nocca)
         enddo
       enddo
 !$OMP end do
@@ -2166,9 +2165,9 @@ end
       do ii= 1,nvirb
         ij=(ii-1)*noccb+nocca*nvira+1
         do jj= 1,noccb
-          qcvec(ij+jj,1,2)= fockb(jj,ii+noccb)
-          qcvec(ij+jj,2,1)= fockb(jj,ii+noccb)
-          qcnorm= qcnorm+fockb(jj,ii+noccb)*fockb(jj,ii+noccb)
+          qcvec(ij+jj,1,2)= workb(jj,ii+noccb)
+          qcvec(ij+jj,2,1)= workb(jj,ii+noccb)
+          qcnorm= qcnorm+workb(jj,ii+noccb)*workb(jj,ii+noccb)
         enddo
       enddo
 !$OMP end do
@@ -2192,16 +2191,16 @@ end
 &                       itdav,maxqcdiagsub)
         call calcudmax(qcworka,qcworkb,qcrmax,work,datacomp%nproc2,datacomp%myrank2, &
 &                      datacomp%mpi_comm2,databasis)
-        call calcqcugmn(qcgmna,qcgmnb,work,qcworka,qcworkb,qcrmax,xint,cutint2,hfexchange,maxdim, &
+        call calcqcugmn(focka,fockb,work,qcworka,qcworkb,qcrmax,xint,cutint2,hfexchange,maxdim, &
 &                       nao,nshell,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
 &                       datajob,datamol,databasis)
 !
 ! Add two-electron integral contribution
 !
-        call expand(qcgmna,qcworka,nao)
+        call expand(focka,qcworka,nao)
         call dsymm('L','U',nao,nvira,one,qcworka,nao,cmoa(1,nocca+1),nao,zero,work,nao)
         call dgemm('T','N',nocca,nvira,nao,one,cmoa,nao,work,nao,zero,qcvec(2,itdav,2),nocca)
-        call expand(qcgmnb,qcworka,nao)
+        call expand(fockb,qcworka,nao)
         call dsymm('L','U',nao,nvirb,one,qcworka,nao,cmob(1,noccb+1),nao,zero,work,nao)
         call dgemm('T','N',noccb,nvirb,nao,one,cmob,nao,work,nao,zero, &
 &                  qcvec(nocca*nvira+2,itdav,2),noccb)
@@ -2214,14 +2213,14 @@ end
         do ia= 1,nvira
           do ii= 1,nocca
             kk= (ia-1)*nocca+ii+1
-            tmp= tmp+focka(ii,ia+nocca)*qcvec(kk,itdav,1)
-            qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+focka(ii,ia+nocca)*qcvec(1,itdav,1)
+            tmp= tmp+worka(ii,ia+nocca)*qcvec(kk,itdav,1)
+            qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+worka(ii,ia+nocca)*qcvec(1,itdav,1)
             do ib= 1,nvira
-              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+focka(ib+nocca,ia+nocca) &
+              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+worka(ib+nocca,ia+nocca) &
 &                                                 *qcvec((ib-1)*nocca+ii+1,itdav,1)
             enddo
             do ij= 1,nocca
-              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)-focka(ij,ii)*qcvec((ia-1)*nocca+ij+1,itdav,1)
+              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)-worka(ij,ii)*qcvec((ia-1)*nocca+ij+1,itdav,1)
             enddo
           enddo
         enddo
@@ -2230,14 +2229,14 @@ end
         do ia= 1,nvirb
           do ii= 1,noccb
             kk= (ia-1)*noccb+ii+nocca*nvira+1
-            tmp= tmp+fockb(ii,ia+noccb)*qcvec(kk,itdav,1)
-            qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+fockb(ii,ia+noccb)*qcvec(1,itdav,1)
+            tmp= tmp+workb(ii,ia+noccb)*qcvec(kk,itdav,1)
+            qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+workb(ii,ia+noccb)*qcvec(1,itdav,1)
             do ib= 1,nvirb
-              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+fockb(ib+noccb,ia+noccb) &
+              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+workb(ib+noccb,ia+noccb) &
 &                                                 *qcvec((ib-1)*noccb+ii+nocca*nvira+1,itdav,1)
             enddo
             do ij= 1,noccb
-              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)-fockb(ij,ii) &
+              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)-workb(ij,ii) &
 &                                                 *qcvec((ia-1)*noccb+ij+nocca*nvira+1,itdav,1)
             enddo
           enddo
@@ -2303,7 +2302,7 @@ end
           ij=(ii-1)*nocca+1
           do jj= 1,nocca
             qcvec(ij+jj,itdav+1,1)= qcvec(ij+jj,itdav+1,1)/ &
-&                                  (focka(ii+nocca,ii+nocca)-focka(jj,jj)-qceigen(1))
+&                                  (worka(ii+nocca,ii+nocca)-worka(jj,jj)-qceigen(1))
           enddo
         enddo
 !$OMP end do
@@ -2312,7 +2311,7 @@ end
           ij=(ii-1)*noccb+nocca*nvira+1
           do jj= 1,noccb
             qcvec(ij+jj,itdav+1,1)= qcvec(ij+jj,itdav+1,1)/ &
-&                                  (fockb(ii+noccb,ii+noccb)-fockb(jj,jj)-qceigen(1))
+&                                  (workb(ii+noccb,ii+noccb)-workb(jj,jj)-qceigen(1))
           enddo
         enddo
 !$OMP end do
