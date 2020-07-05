@@ -328,9 +328,11 @@
 !
         if(iter == datajob%maxiter) then
           if(datacomp%master) then
-            write(datacomp%iout,'(" SCF did not converge.")')
+            write(datacomp%iout,'(" -------------------------")')
+            write(datacomp%iout,'("   SCF did not converge.")')
+            write(datacomp%iout,'(" -------------------------"/)')
           endif
-          return
+          exit
         endif
         call dcopy(nao3,dmtrx,1,dmtrxprev,1)
         call dcopy(nao3,work,1,dmtrx,1)
@@ -339,7 +341,7 @@
 &         write(datacomp%iout,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
-      if(datacomp%master) then
+      if(datacomp%master.and.datacomp%convergedscf) then
         write(datacomp%iout,'(" --------------------------------------------")')
         write(datacomp%iout,'("    SCF Converged.")')
         write(datacomp%iout,'("    RHF Energy = ",f17.9," Hartree")') datamol%escf
@@ -1288,9 +1290,11 @@ end
 !
         if(iter == datajob%maxiter) then
           if(datacomp%master) then
-            write(datacomp%iout,'(" SCF did not converge.")')
+            write(datacomp%iout,'(" -------------------------")')
+            write(datacomp%iout,'("   SCF did not converge.")')
+            write(datacomp%iout,'(" -------------------------"/)')
           endif
-          return
+          exit
         endif
         call dcopy(nao3,dmtrx,1,dmtrxprev,1)
         call dcopy(nao3,work,1,dmtrx,1)
@@ -1299,7 +1303,7 @@ end
 &         write(datacomp%iout,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
-      if(datacomp%master) then
+      if(datacomp%master.and.datacomp%convergedscf) then
         write(datacomp%iout,'(" ---------------------------------------------------------------")')
         write(datacomp%iout,'("    SCF Converged.")')
         write(datacomp%iout,'("    DFT Energy = ",f17.9," Hartree")') datamol%escf
@@ -1726,9 +1730,11 @@ end
 !
         if(iter == datajob%maxiter) then
           if(datacomp%master) then
-            write(datacomp%iout,'(" SCF did not converge.")')
+            write(datacomp%iout,'(" -------------------------")')
+            write(datacomp%iout,'("   SCF did not converge.")')
+            write(datacomp%iout,'(" -------------------------"/)')
           endif
-          return
+          exit
         endif
         call dcopy(nao3,dmtrxa,1,dmtrxpreva,1)
         call dcopy(nao3,dmtrxb,1,dmtrxprevb,1)
@@ -1739,23 +1745,25 @@ end
 &         write(datacomp%iout,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
-      if(datacomp%master) then
-        write(datacomp%iout,'(" --------------------------------------------")')
-        write(datacomp%iout,'("    SCF Converged.")')
-        write(datacomp%iout,'("    UHF Energy = ",f17.9," Hartree")') datamol%escf
-        write(datacomp%iout,'(" --------------------------------------------"/)')
-      endif
+      if(datacomp%convergedscf) then
+        if(datacomp%master) then
+          write(datacomp%iout,'(" --------------------------------------------")')
+          write(datacomp%iout,'("    SCF Converged.")')
+          write(datacomp%iout,'("    UHF Energy = ",f17.9," Hartree")') datamol%escf
+          write(datacomp%iout,'(" --------------------------------------------"/)')
+        endif
 !
 ! Calculate spin expectation values
 !
-      call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,datamol%neleca,datamol%nelecb, &
-&                   nao,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+        call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,datamol%neleca,datamol%nelecb, &
+  &                   nao,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
 !
-      if(datacomp%master) then
-        write(datacomp%iout,'(" -------------------------------")')
-        write(datacomp%iout,'("    Sz =",f7.3)')sz
-        write(datacomp%iout,'("    S-squared =",f7.3)')s2
-        write(datacomp%iout,'(" -------------------------------"/)')
+        if(datacomp%master) then
+          write(datacomp%iout,'(" -------------------------------")')
+          write(datacomp%iout,'("    Sz =",f7.3)')sz
+          write(datacomp%iout,'("    S-squared =",f7.3)')s2
+          write(datacomp%iout,'(" -------------------------------"/)')
+        endif
       endif
 !
 ! Unset arrays
@@ -2515,9 +2523,11 @@ end
 !
         if(iter == datajob%maxiter) then
           if(datacomp%master) then
-            write(datacomp%iout,'(" SCF did not converge.")')
+            write(datacomp%iout,'(" -------------------------")')
+            write(datacomp%iout,'("   SCF did not converge.")')
+            write(datacomp%iout,'(" -------------------------"/)')
           endif
-          return
+          exit
         endif
         call dcopy(nao3,dmtrxa,1,dmtrxpreva,1)
         call dcopy(nao3,dmtrxb,1,dmtrxprevb,1)
@@ -2528,25 +2538,27 @@ end
 &         write(datacomp%iout,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
-      if(datacomp%master) then
-        write(datacomp%iout,'(" ---------------------------------------------------------------")')
-        write(datacomp%iout,'("    SCF Converged.")')
-        write(datacomp%iout,'("    DFT Energy = ",f17.9," Hartree")')datamol%escf
-        write(datacomp%iout,'("    Exchange + Correlation energy = ",f17.9," Hartree")')edft
-        write(datacomp%iout,'("    Number of electrons           = ",f17.9)')totalelec
-        write(datacomp%iout,'(" ---------------------------------------------------------------")')
-      endif
+      if(datacomp%convergedscf) then
+        if(datacomp%master) then
+          write(datacomp%iout,'(" ---------------------------------------------------------------")')
+          write(datacomp%iout,'("    SCF Converged.")')
+          write(datacomp%iout,'("    DFT Energy = ",f17.9," Hartree")')datamol%escf
+          write(datacomp%iout,'("    Exchange + Correlation energy = ",f17.9," Hartree")')edft
+          write(datacomp%iout,'("    Number of electrons           = ",f17.9)')totalelec
+          write(datacomp%iout,'(" ---------------------------------------------------------------")')
+        endif
 !
 ! Calculate spin expectation values
 !
-      call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,datamol%neleca,datamol%nelecb, &
-&                   nao,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+        call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,datamol%neleca,datamol%nelecb, &
+&                     nao,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
 !
-      if(datacomp%master) then
-        write(datacomp%iout,'(" -------------------------------")')
-        write(datacomp%iout,'("    Sz =",f7.3)')sz
-        write(datacomp%iout,'("    S-squared =",f7.3)')s2
-        write(datacomp%iout,'(" -------------------------------"/)')
+        if(datacomp%master) then
+          write(datacomp%iout,'(" -------------------------------")')
+          write(datacomp%iout,'("    Sz =",f7.3)')sz
+          write(datacomp%iout,'("    S-squared =",f7.3)')s2
+          write(datacomp%iout,'(" -------------------------------"/)')
+        endif
       endif
 !
 ! Unset arrays

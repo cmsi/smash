@@ -104,18 +104,18 @@
           call tstamp(2,datacomp)
           if(datacomp%master) then
             write(datacomp%iout,'(" Used memory :",1x,i6," MB")') datacomp%memusedmax/125000
-            write(datacomp%iout,'(" ======================================")')
-            write(datacomp%iout,'("    SCF calculation did not converge!")')
-            write(datacomp%iout,'(" ======================================")')
+            write(datacomp%iout,'(" =============================================")')
+            write(datacomp%iout,'("    Error! SCF calculation did not converge!")')
+            write(datacomp%iout,'(" =============================================")')
           endif
           return
         elseif(.not.datacomp%convergedgeom) then
           if(datacomp%master) then
             call tstamp(2,datacomp)
             write(datacomp%iout,'(" Used memory :",1x,i6," MB",/)') datacomp%memusedmax/125000
-            write(datacomp%iout,'(" =========================================================")')
-            write(datacomp%iout,'("    Geometry optimization calculation did not converge!")')
-            write(datacomp%iout,'(" =========================================================")')
+            write(datacomp%iout,'(" ================================================================")')
+            write(datacomp%iout,'("    Error! Geometry optimization calculation did not converge!")')
+            write(datacomp%iout,'(" ================================================================")')
           endif
           return
         endif
@@ -138,7 +138,7 @@
 !
       if(datacomp%master) then
         write(datacomp%iout,'(" Used memory :",1x,i6," MB")') datacomp%memusedmax/125000
-        write(datacomp%iout,'(" Your calculation finished with",i3," warning(s).")') datacomp%nwarn
+        write(datacomp%iout,'(" Your calculation finished successfully with",i3," warning(s).")') datacomp%nwarn
       endif
       return
 end
@@ -1310,7 +1310,9 @@ end
 !
         if(iopt == datajob%nopt) then
           if(datacomp%master) then
-            write(datacomp%iout,'(" Geometry did not converge.")')
+            write(datacomp%iout,'(" ------------------------------")')
+            write(datacomp%iout,'("   Geometry did not converge.")')
+            write(datacomp%iout,'(" ------------------------------"/)')
             call tstamp(1,datacomp)
           endif
           return
@@ -1645,7 +1647,9 @@ end
 !
         if(iopt == datajob%nopt) then
           if(datacomp%master) then
-            write(datacomp%iout,'(" Geometry did not converge.")')
+            write(datacomp%iout,'(" ------------------------------")')
+            write(datacomp%iout,'("   Geometry did not converge.")')
+            write(datacomp%iout,'(" ------------------------------"/)')
             call tstamp(1,datacomp)
           endif
           return
