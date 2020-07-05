@@ -351,7 +351,7 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao, nao2, nao3, nshell3
-      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
+      real(8), allocatable :: h1mtrx(:), fock(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
       real(8), allocatable :: xint(:), energymo(:)
       real(8), allocatable :: overinv(:), work(:)
       real(8) :: savedconv, savecutint2
@@ -363,8 +363,8 @@ end
 !
 ! Set arrays 1
 !
-      call memset(nao3*4+nao2*2+nshell3+nao,datacomp)
-      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2),dmtrx(nao3),&
+      call memset(nao3*5+nao2*2+nshell3+nao,datacomp)
+      allocate(h1mtrx(nao3),fock(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2),dmtrx(nao3),&
 &              xint(nshell3),energymo(nao))
 !
 ! Calculate nuclear repulsion energy
@@ -402,7 +402,7 @@ end
 ! Start SCF
 !
       if(datajob%method == 'HARTREE-FOCK') then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
+        call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                    datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) then
           call tstamp(1,datacomp)
@@ -416,7 +416,7 @@ end
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
-          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
+          call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                      datajob,datamol,databasis,datacomp)
           if(.not.datacomp%convergedscf) then
             call tstamp(1,datacomp)
@@ -426,7 +426,7 @@ end
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
-        call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
+        call calcrdft(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                     datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) then
           call tstamp(1,datacomp)
@@ -435,7 +435,7 @@ end
         call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif(datajob%method == 'MP2') then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
+        call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                    datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) then
           call tstamp(1,datacomp)
@@ -495,9 +495,9 @@ end
 !
 ! Unset arrays 1
 !
-      deallocate(h1mtrx,smtrx,tmtrx,cmo,ortho,dmtrx, &
+      deallocate(h1mtrx,fock,smtrx,tmtrx,cmo,ortho,dmtrx, &
 &                xint,energymo)
-      call memunset(nao3*4+nao2*2+nshell3+nao,datacomp)
+      call memunset(nao3*5+nao2*2+nshell3+nao,datacomp)
       call tstamp(1,datacomp)
       return
 end
@@ -521,7 +521,7 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao, nao2, nao3, nshell3
-      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
+      real(8), allocatable :: h1mtrx(:), focka(:), fockb(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
       real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), energymoa(:), energymob(:)
       real(8), allocatable :: overinv(:), work(:)
       real(8) :: savedconv, savecutint2
@@ -533,8 +533,8 @@ end
 !
 ! Set arrays 1
 !
-      call memset(nao3*5+nao2*3+nshell3+nao*2,datacomp)
-      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),cmob(nao2),ortho(nao2),&
+      call memset(nao3*7+nao2*3+nshell3+nao*2,datacomp)
+      allocate(h1mtrx(nao3),focka(nao3),fockb(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),cmob(nao2),ortho(nao2),&
 &              dmtrxa(nao3),dmtrxb(nao3),xint(nshell3),energymoa(nao),energymob(nao))
 !
 ! Calculate nuclear repulsion energy
@@ -572,7 +572,7 @@ end
 ! Start SCF
 !
       if(datajob%method == 'HARTREE-FOCK') then
-        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
+        call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                    datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) then
           call tstamp(1,datacomp)
@@ -586,7 +586,7 @@ end
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
-          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
+          call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                      datajob,datamol,databasis,datacomp)
           if(.not.datacomp%convergedscf) then
             call tstamp(1,datacomp)
@@ -596,7 +596,7 @@ end
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
-        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
+        call calcudft(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                     datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) then
           call tstamp(1,datacomp)
@@ -662,9 +662,9 @@ end
 !
 ! Unset arrays 1
 !
-      deallocate(h1mtrx,smtrx,tmtrx,cmoa,cmob,ortho, &
+      deallocate(h1mtrx,focka,fockb,smtrx,tmtrx,cmoa,cmob,ortho, &
 &                dmtrxa,dmtrxb,xint,energymoa,energymob)
-      call memunset(nao3*5+nao2*3+nshell3+nao*2,datacomp)
+      call memunset(nao3*7+nao2*3+nshell3+nao*2,datacomp)
       return
 end
 
@@ -687,7 +687,7 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao, nao2, nao3, nshell3
-      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
+      real(8), allocatable :: h1mtrx(:), fock(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
       real(8), allocatable :: xint(:), energymo(:)
       real(8), allocatable :: overinv(:), work(:)
       real(8), allocatable :: egrad(:)
@@ -701,8 +701,8 @@ end
 !
 ! Set arrays 1
 !
-      call memset(nao3*4+nao2*2+nshell3+nao,datacomp)
-      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2),dmtrx(nao3),&
+      call memset(nao3*5+nao2*2+nshell3+nao,datacomp)
+      allocate(h1mtrx(nao3),fock(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2),dmtrx(nao3),&
 &              xint(nshell3),energymo(nao))
 !
 ! Calculate nuclear repulsion energy
@@ -740,7 +740,7 @@ end
 ! Start SCF
 !
       if((datajob%method == 'HARTREE-FOCK').or.(datajob%method == 'MP2')) then
-        call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
+        call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                    datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) then
           call tstamp(1,datacomp)
@@ -754,7 +754,7 @@ end
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
-          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
+          call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                      datajob,datamol,databasis,datacomp)
           if(.not.datacomp%convergedscf) then
             call tstamp(1,datacomp)
@@ -764,7 +764,7 @@ end
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
-        call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
+        call calcrdft(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                     datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) then
           call tstamp(1,datacomp)
@@ -857,9 +857,9 @@ end
 !
 ! Unset arrays 1
 !
-      deallocate(h1mtrx,smtrx,tmtrx,cmo,ortho,dmtrx, &
+      deallocate(h1mtrx,fock,smtrx,tmtrx,cmo,ortho,dmtrx, &
 &                xint,energymo)
-      call memunset(nao3*4+nao2*2+nshell3+nao,datacomp)
+      call memunset(nao3*5+nao2*2+nshell3+nao,datacomp)
       call tstamp(1,datacomp)
       return
 end
@@ -883,7 +883,7 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao, nao2, nao3, nshell3
-      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
+      real(8), allocatable :: h1mtrx(:), focka(:), fockb(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
       real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), energymoa(:), energymob(:)
       real(8), allocatable :: overinv(:), work(:)
       real(8), allocatable :: egrad(:)
@@ -897,8 +897,8 @@ end
 !
 ! Set arrays 1
 !
-      call memset(nao3*5+nao2*3+nshell3+nao*2,datacomp)
-      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),cmob(nao2),ortho(nao2),&
+      call memset(nao3*7+nao2*3+nshell3+nao*2,datacomp)
+      allocate(h1mtrx(nao3),focka(nao3),fockb(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),cmob(nao2),ortho(nao2),&
 &              dmtrxa(nao3),dmtrxb(nao3),xint(nshell3),energymoa(nao),energymob(nao))
 !
 ! Calculate nuclear repulsion energy
@@ -936,7 +936,7 @@ end
 ! Start SCF
 !
       if(datajob%method == 'HARTREE-FOCK') then
-        call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
+        call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                    datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) then
           call tstamp(1,datacomp)
@@ -950,7 +950,7 @@ end
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
-          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
+          call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                      datajob,datamol,databasis,datacomp)
           if(.not.datacomp%convergedscf) then
             call tstamp(1,datacomp)
@@ -960,7 +960,7 @@ end
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
-        call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
+        call calcudft(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                     datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) then
           call tstamp(1,datacomp)
@@ -1055,9 +1055,9 @@ end
 !
 ! Unset arrays 1
 !
-      deallocate(h1mtrx,smtrx,tmtrx,cmoa,cmob,ortho, &
+      deallocate(h1mtrx,focka,fockb,smtrx,tmtrx,cmoa,cmob,ortho, &
 &                dmtrxa,dmtrxb,xint,energymoa,energymob)
-      call memunset(nao3*5+nao2*3+nshell3+nao*2,datacomp)
+      call memunset(nao3*7+nao2*3+nshell3+nao*2,datacomp)
       call tstamp(1,datacomp)
       return
 end
@@ -1084,7 +1084,7 @@ end
       integer :: nao, nao2, nao3, nshell3, natom3, ii, iopt
       integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
       real(8), parameter :: third=0.3333333333333333D+00
-      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
+      real(8), allocatable :: h1mtrx(:), fock(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
       real(8), allocatable :: xint(:), energymo(:)
       real(8), allocatable :: egrad(:), egradold(:), ehess(:)
       real(8), allocatable :: overinv(:), work(:,:)
@@ -1126,8 +1126,8 @@ end
 !
 ! Set arrays for energy
 !
-      call memset(nao3*4+nao2*2+nshell3+nao,datacomp)
-      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2),dmtrx(nao3), &
+      call memset(nao3*5+nao2*2+nshell3+nao,datacomp)
+      allocate(h1mtrx(nao3),fock(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2),dmtrx(nao3), &
 &              xint(nshell3),energymo(nao))
 !
 ! Set arrays for energy gradient and geometry optimization
@@ -1186,7 +1186,7 @@ end
 ! Calculate energy
 !
         if((datajob%method == 'HARTREE-FOCK').or.(datajob%method == 'MP2')) then
-          call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
+          call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                      datajob,datamol,databasis,datacomp)
           if(.not.datacomp%convergedscf) then
             call tstamp(1,datacomp)
@@ -1200,7 +1200,7 @@ end
             savecutint2= datajob%cutint2
             datajob%dconv= max(datajob%dconv,1.0D-2)
             datajob%cutint2= max(datajob%cutint2,1.0D-9)
-            call calcrhf(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
+            call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                        datajob,datamol,databasis,datacomp)
             if(.not.datacomp%convergedscf) then
               call tstamp(1,datacomp)
@@ -1210,7 +1210,7 @@ end
             datajob%cutint2= savecutint2
             call tstamp(1,datacomp)
           endif
-          call calcrdft(h1mtrx,cmo,ortho,smtrx,dmtrx,xint,energymo, &
+          call calcrdft(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                       datajob,datamol,databasis,datacomp)
           if(.not.datacomp%convergedscf) then
             call tstamp(1,datacomp)
@@ -1384,9 +1384,9 @@ end
 !
 ! Unset arrays for energy
 !
-      deallocate(h1mtrx,smtrx,tmtrx,cmo,ortho,dmtrx, &
+      deallocate(h1mtrx,fock,smtrx,tmtrx,cmo,ortho,dmtrx, &
 &                xint,energymo)
-      call memunset(nao3*4+nao2*2+nshell3+nao,datacomp)
+      call memunset(nao3*5+nao2*2+nshell3+nao,datacomp)
 !
 ! Unset array for redundant coordinate
 !
@@ -1421,7 +1421,7 @@ end
       integer :: nao, nao2, nao3, nshell3, natom3, ii, iopt
       integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
       real(8), parameter :: third=0.3333333333333333D+00
-      real(8), allocatable :: h1mtrx(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
+      real(8), allocatable :: h1mtrx(:), focka(:), fockb(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
       real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), energymoa(:), energymob(:)
       real(8), allocatable :: egrad(:), egradold(:), ehess(:)
       real(8), allocatable :: overinv(:,:), work(:,:)
@@ -1463,8 +1463,8 @@ end
 !
 ! Set arrays for energy
 !
-      call memset(nao3*5+nao2*3+nshell3+nao*2,datacomp)
-      allocate(h1mtrx(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),cmob(nao2),ortho(nao2), &
+      call memset(nao3*7+nao2*3+nshell3+nao*2,datacomp)
+      allocate(h1mtrx(nao3),focka(nao3),fockb(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),cmob(nao2),ortho(nao2), &
 &              dmtrxa(nao3),dmtrxb(nao3),xint(nshell3),energymoa(nao),energymob(nao))
 !
 ! Set arrays for energy gradient and geometry optimization
@@ -1523,7 +1523,7 @@ end
 ! Calculate energy
 !
         if(datajob%method == 'HARTREE-FOCK') then
-          call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
+          call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                      datajob,datamol,databasis,datacomp)
           if(.not.datacomp%convergedscf) then
             call tstamp(1,datacomp)
@@ -1537,7 +1537,7 @@ end
             savecutint2= datajob%cutint2
             datajob%dconv= max(datajob%dconv,1.0D-2)
             datajob%cutint2= max(datajob%cutint2,1.0D-9)
-            call calcuhf(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
+            call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                        datajob,datamol,databasis,datacomp)
             if(.not.datacomp%convergedscf) then
               call tstamp(1,datacomp)
@@ -1547,7 +1547,7 @@ end
             datajob%cutint2= savecutint2
             call tstamp(1,datacomp)
           endif
-          call calcudft(h1mtrx,cmoa,cmob,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
+          call calcudft(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                       datajob,datamol,databasis,datacomp)
           if(.not.datacomp%convergedscf) then
             call tstamp(1,datacomp)
@@ -1723,9 +1723,9 @@ end
 !
 ! Unset arrays for energy
 !
-      deallocate(h1mtrx,smtrx,tmtrx,cmoa,cmob,ortho, &
+      deallocate(h1mtrx,focka,fockb,smtrx,tmtrx,cmoa,cmob,ortho, &
 &                dmtrxa,dmtrxb,xint,energymoa,energymob)
-      call memunset(nao3*5+nao2*3+nshell3+nao*2,datacomp)
+      call memunset(nao3*7+nao2*3+nshell3+nao*2,datacomp)
       call tstamp(1,datacomp)
 !
 ! Unset array for redundant coordinate

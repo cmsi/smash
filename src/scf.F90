@@ -13,7 +13,7 @@
 ! limitations under the License.
 !
 !------------------------------------------------------------------
-  subroutine calcrhf(h1mtrx,cmo,ortho,overlap,dmtrx,xint,eigen, &
+  subroutine calcrhf(h1mtrx,cmo,fock,ortho,overlap,dmtrx,xint,eigen, &
 &                    datajob,datamol,databasis,datacomp)
 !------------------------------------------------------------------
 !
@@ -42,10 +42,11 @@
       real(8),intent(in) :: h1mtrx(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: ortho(databasis%nao*databasis%nao)
       real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: xint(databasis%nshell*(databasis%nshell+1)/2), eigen(databasis%nao)
       real(8),intent(inout) :: cmo(databasis%nao*databasis%nao)
-      real(8),allocatable :: fock(:), fockprev(:), dmtrxprev(:), dmax(:), work(:)
+      real(8),allocatable :: fockprev(:), dmtrxprev(:), dmax(:), work(:)
       real(8),allocatable :: fockdiis(:), errdiis(:), diismtrx(:), work2(:)
       real(8),allocatable :: hstart(:), sograd(:,:), sodisp(:), sovecy(:)
       real(8),allocatable :: qcvec(:), qcmat(:), qcmatsave(:), qceigen(:)
@@ -83,20 +84,20 @@
       isize3= idis(datacomp%myrank2+1,5)
       select case(scfconv)
         case('DIIS')
-          call memset(nao2+nao3*3+nshell3+isize3*maxdiis+isize1+isize2*maxdiis &
+          call memset(nao2+nao3*2+nshell3+isize3*maxdiis+isize1+isize2*maxdiis &
 &                    +maxdiis*(maxdiis+1)/2,datacomp)
-          allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
+          allocate(fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
 &                  fockdiis(isize3*maxdiis), errdiis(isize2*maxdiis), &
 &                  diismtrx(maxdiis*(maxdiis+1)/2),work2(isize1))
         case('SOSCF')
-          call memset(nao2+nao3*3+nshell3+nocc*nvir*3*maxsoscf+isize1,datacomp)
-          allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
+          call memset(nao2+nao3*2+nshell3+nocc*nvir*3*maxsoscf+isize1,datacomp)
+          allocate(fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
                    hstart(nocc*nvir),sograd(nocc*nvir,maxsoscf),sodisp(nocc*nvir*maxsoscf), &
 &                  sovecy(nocc*nvir*(maxsoscf-1)),work2(isize1))
         case('QC')
-          call memset(nao2*3+nao3*3+nshell3+(nocc*nvir+1)*(maxqcdiagsub+1)*2+maxqcdiagsub**2 &
+          call memset(nao2*3+nao3*2+nshell3+(nocc*nvir+1)*(maxqcdiagsub+1)*2+maxqcdiagsub**2 &
 &                    +maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub,datacomp)
-          allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
+          allocate(fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
                    qcvec((nocc*nvir+1)*(maxqcdiagsub+1)*2),qcmat(maxqcdiagsub**2), &
 &                  qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2),qceigen(maxqcdiagsub), &
 &                  work2(nao2*2))
@@ -349,20 +350,20 @@
 !
       select case(scfconv)
         case('DIIS')
-          call memunset(nao2+nao3*3+nshell3+isize3*maxdiis+isize1+isize2*maxdiis+ &
+          call memunset(nao2+nao3*2+nshell3+isize3*maxdiis+isize1+isize2*maxdiis+ &
 &                       maxdiis*(maxdiis+1)/2,datacomp)
-          deallocate(fock,fockprev,dmtrxprev,dmax,work, &
+          deallocate(fockprev,dmtrxprev,dmax,work, &
 &                    fockdiis,errdiis, &
 &                    diismtrx,work2)
         case('SOSCF')
-          call memunset(nao2+nao3*3+nshell3+nocc*nvir*3*maxsoscf+isize1,datacomp)
-          deallocate(fock,fockprev,dmtrxprev,dmax,work, &
+          call memunset(nao2+nao3*2+nshell3+nocc*nvir*3*maxsoscf+isize1,datacomp)
+          deallocate(fockprev,dmtrxprev,dmax,work, &
                      hstart,sograd,sodisp, &
 &                    sovecy,work2)
         case('QC')
-          call memunset(nao2*3+nao3*3+nshell3+(nocc*nvir+1)*(maxqcdiagsub+1)*2+maxqcdiagsub**2 &
+          call memunset(nao2*3+nao3*2+nshell3+(nocc*nvir+1)*(maxqcdiagsub+1)*2+maxqcdiagsub**2 &
 &                      +maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub,datacomp)
-          deallocate(fock,fockprev,dmtrxprev,dmax,work, &
+          deallocate(fockprev,dmtrxprev,dmax,work, &
 &                    qcvec,qcmat, &
 &                    qcmatsave,qceigen, &
 &                    work2)
@@ -927,7 +928,7 @@ end
 
 
 !-------------------------------------------------------------------
-  subroutine calcrdft(h1mtrx,cmo,ortho,overlap,dmtrx,xint,eigen, &
+  subroutine calcrdft(h1mtrx,cmo,fock,ortho,overlap,dmtrx,xint,eigen, &
 &                     datajob,datamol,databasis,datacomp)
 !-------------------------------------------------------------------
 !
@@ -957,10 +958,11 @@ end
       real(8),intent(in) :: h1mtrx(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: ortho(databasis%nao*databasis%nao)
       real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: xint(databasis%nshell*(databasis%nshell+1)/2), eigen(databasis%nao)
       real(8),intent(inout) :: cmo(databasis%nao*databasis%nao)
-      real(8),allocatable :: fock(:), fockprev(:), dmtrxprev(:), dmax(:), work(:)
+      real(8),allocatable :: fockprev(:), dmtrxprev(:), dmax(:), work(:)
       real(8),allocatable :: fockdiis(:), errdiis(:), diismtrx(:), work2(:)
       real(8),allocatable :: hstart(:), sograd(:,:), sodisp(:), sovecy(:)
       real(8),allocatable :: fockd(:), rad(:), atomvec(:), surface(:),  radpt(:), angpt(:)
@@ -1004,18 +1006,18 @@ end
       isize3=idis(datacomp%myrank2+1,5)
       select case(scfconv)
         case('DIIS')
-          call memset(nao2+nao3*4+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
+          call memset(nao2+nao3*3+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
 &                    +nao*4+nocc*4+isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2, &
 &                     datacomp)
-          allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
+          allocate(fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
 &                  fockd(nao3),rad(ndftatom),atomvec(5*ndftatom*ndftatom),surface(ndftatom*ndftatom), &
 &                  radpt(2*nrad),angpt(4*nleb),ptweight(ndftatom*nrad*nleb),xyzpt(3*ndftatom), &
 &                  rsqrd(ndftatom),vao(4*nao),vmo(4*nocc),fockdiis(isize3*maxdiis), &
 &                  errdiis(isize2*maxdiis),diismtrx(maxdiis*(maxdiis+1)/2),work2(isize1))
         case('SOSCF')
-          call memset(nao2+nao3*4+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
+          call memset(nao2+nao3*3+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
 &                    +nao*4+nocc*4+isize1+nocc*nvir*3*maxsoscf,datacomp)
-          allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
+          allocate(fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
 &                  fockd(nao3),rad(ndftatom),atomvec(5*ndftatom*ndftatom),surface(ndftatom*ndftatom), &
 &                  radpt(2*nrad),angpt(4*nleb),ptweight(ndftatom*nrad*nleb),xyzpt(3*ndftatom), &
 &                  rsqrd(ndftatom),vao(4*nao),vmo(4*nocc),work2(isize1), &
@@ -1023,10 +1025,10 @@ end
 &                  sovecy(nocc*nvir*(maxsoscf-1)))
         case ('QC')
           isize1= max(isize1,nao2*2)
-          call memset(nao2+nao3*4+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
+          call memset(nao2+nao3*3+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
 &                    +nao*4+nocc*4+isize1+(nocc*nvir+1)*(maxqcdiagsub+1)*2 &
 &                    +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub,datacomp)
-          allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
+          allocate(fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
 &                  fockd(nao3),rad(ndftatom),atomvec(5*ndftatom*ndftatom),surface(ndftatom*ndftatom), &
 &                  radpt(2*nrad),angpt(4*nleb),ptweight(ndftatom*nrad*nleb),xyzpt(3*ndftatom), &
 &                  rsqrd(ndftatom),vao(4*nao),vmo(4*nocc),work2(isize1), &
@@ -1310,31 +1312,31 @@ end
 !
       select case(scfconv)
         case('DIIS')
-          deallocate(fock,fockprev,dmtrxprev,dmax,work, &
+          deallocate(fockprev,dmtrxprev,dmax,work, &
 &                    fockd,rad,atomvec,surface, &
 &                    radpt,angpt,ptweight,xyzpt, &
 &                    rsqrd,vao,vmo,fockdiis, &
 &                    errdiis,diismtrx,work2)
-          call memunset(nao2+nao3*4+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
+          call memunset(nao2+nao3*3+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
 &                      +nao*4+nocc*4+isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2, &
 &                       datacomp)
         case('SOSCF')
-          deallocate(fock,fockprev,dmtrxprev,dmax,work, &
+          deallocate(fockprev,dmtrxprev,dmax,work, &
 &                    fockd,rad,atomvec,surface, &
 &                    radpt,angpt,ptweight,xyzpt, &
 &                    rsqrd,vao,vmo,work2, &
 &                    hstart,sograd,sodisp, &
 &                    sovecy)
-          call memunset(nao2+nao3*4+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
+          call memunset(nao2+nao3*3+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
 &                      +nao*4+nocc*4+isize1+nocc*nvir*3*maxsoscf,datacomp)
         case('QC')
-          deallocate(fock,fockprev,dmtrxprev,dmax,work, &
+          deallocate(fockprev,dmtrxprev,dmax,work, &
 &                    fockd,rad,atomvec,surface, &
 &                    radpt,angpt,ptweight,xyzpt, &
 &                    rsqrd,vao,vmo,work2, &
 &                    qcvec,qcmat, &
 &                    qcmatsave,qceigen)
-          call memunset(nao2+nao3*4+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
+          call memunset(nao2+nao3*3+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4+ndftatom*nrad*nleb &
 &                      +nao*4+nocc*4+isize1+(nocc*nvir+1)*(maxqcdiagsub+1)*2 &
 &                      +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub,datacomp)
       end select
@@ -1344,7 +1346,7 @@ end
 
 
 !----------------------------------------------------------------------------------------
-  subroutine calcuhf(h1mtrx,cmoa,cmob,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb, &
+  subroutine calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb, &
 &                    datajob,datamol,databasis,datacomp)
 !----------------------------------------------------------------------------------------
 !
@@ -1376,13 +1378,15 @@ end
       real(8),intent(in) :: h1mtrx(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: ortho(databasis%nao*databasis%nao)
       real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: focka(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fockb(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: xint(databasis%nshell*(databasis%nshell+1)/2), eigena(databasis%nao)
       real(8),intent(out) :: eigenb(databasis%nao)
       real(8),intent(inout) :: cmoa(databasis%nao*databasis%nao)
       real(8),intent(inout) ::cmob(databasis%nao*databasis%nao)
-      real(8),allocatable :: focka(:), fockb(:), fockpreva(:), fockprevb(:) 
+      real(8),allocatable :: fockpreva(:), fockprevb(:) 
       real(8),allocatable :: dmtrxpreva(:), dmtrxprevb(:), dmax(:), work(:)
       real(8),allocatable :: fockdiisa(:), fockdiisb(:), errdiisa(:), errdiisb(:)
       real(8),allocatable :: diismtrx(:), work2(:), work3(:)
@@ -1427,17 +1431,17 @@ end
       isize3=idis(datacomp%myrank2+1,5)
       select case(scfconv)
         case('DIIS')
-          call memset(nao3*8+nshell3+isize3*maxdiis*2+isize1+isize2*maxdiis*2 &
+          call memset(nao3*6+nshell3+isize3*maxdiis*2+isize1+isize2*maxdiis*2 &
 &                    +maxdiis*(maxdiis+1)/2+isize2,datacomp)
-          allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
+          allocate(fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3), &
 &                  fockdiisa(isize3*maxdiis),fockdiisb(isize3*maxdiis),errdiisa(isize2*maxdiis),&
 &                  errdiisb(isize2*maxdiis),diismtrx(maxdiis*(maxdiis+1)/2), &
 &                  work(nao3*2),work2(isize1),work3(isize2))
         case('SOSCF')
-          call memset(nao3*8+nshell3+nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf &
+          call memset(nao3*6+nshell3+nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf &
 &                    +isize1+isize2,datacomp)
-          allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
+          allocate(fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3), &
 &                  hstarta(nocca*nvira),hstartb(noccb*nvirb), &
 &                  sograda(nocca*nvira,maxsoscf),sogradb(noccb*nvirb,maxsoscf), &
@@ -1445,9 +1449,9 @@ end
 &                  sovecya(nocca*nvira*(maxsoscf-1)),sovecyb(noccb*nvirb*(maxsoscf-1)), &
 &                  work(nao3*2),work2(isize1),work3(isize2))
         case('QC')
-          call memset(nao2*4+nao3*8+(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
+          call memset(nao2*4+nao3*6+(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
 &                    +maxqcdiagsub**2+maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub,datacomp)
-          allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
+          allocate(fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3), &
 &                  qcvec((nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2), &
 &                  qcmat(maxqcdiagsub**2),qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2), &
@@ -1758,31 +1762,31 @@ end
 !
       select case(scfconv)
         case('DIIS')
-          deallocate(focka,fockb,fockpreva,fockprevb, &
+          deallocate(fockpreva,fockprevb, &
 &                    dmtrxpreva,dmtrxprevb,dmax, &
 &                    fockdiisa,fockdiisb,errdiisa,&
 &                    errdiisb,diismtrx, &
 &                    work,work2,work3)
-          call memunset(nao3*8+nshell3+isize3*maxdiis*2+isize1+isize2*maxdiis*2 &
+          call memunset(nao3*6+nshell3+isize3*maxdiis*2+isize1+isize2*maxdiis*2 &
 &                      +maxdiis*(maxdiis+1)/2+isize2,datacomp)
         case('SOSCF')
-          deallocate(focka,fockb,fockpreva,fockprevb, &
+          deallocate(fockpreva,fockprevb, &
 &                    dmtrxpreva,dmtrxprevb,dmax, &
 &                    hstarta,hstartb, &
 &                    sograda,sogradb, &
 &                    sodispa,sodispb, &
 &                    sovecya,sovecyb, &
 &                    work,work2,work3)
-          call memunset(nao3*8+nshell3+nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf &
+          call memunset(nao3*6+nshell3+nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf &
 &                      +isize1+isize2,datacomp)
         case('QC')
-          deallocate(focka,fockb,fockpreva,fockprevb, &
+          deallocate(fockpreva,fockprevb, &
 &                    dmtrxpreva,dmtrxprevb,dmax, &
 &                    qcvec, &
 &                    qcmat,qcmatsave, &
 &                    qceigen, &
 &                    work,work2,work3)
-          call memunset(nao2*4+nao3*8+(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
+          call memunset(nao2*4+nao3*6+(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
 &                      +maxqcdiagsub**2+maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub,datacomp)
       end select
 !
@@ -2081,7 +2085,7 @@ end
 
 
 !-----------------------------------------------------------------------------------------
-  subroutine calcudft(h1mtrx,cmoa,cmob,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb, &
+  subroutine calcudft(h1mtrx,cmoa,cmob,focka,fockb,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb, &
 &                     datajob,datamol,databasis,datacomp)
 !-----------------------------------------------------------------------------------------
 !
@@ -2114,13 +2118,15 @@ end
       real(8),intent(in) :: h1mtrx(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: ortho(databasis%nao*databasis%nao)
       real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: focka(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fockb(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: xint(databasis%nshell*(databasis%nshell+1)/2)
       real(8),intent(out) :: eigena(databasis%nao), eigenb(databasis%nao)
       real(8),intent(inout) :: cmoa(databasis%nao*databasis%nao)
       real(8),intent(inout) :: cmob(databasis%nao*databasis%nao)
-      real(8),allocatable :: focka(:), fockb(:), fockpreva(:), fockprevb(:)
+      real(8),allocatable :: fockpreva(:), fockprevb(:)
       real(8),allocatable :: dmtrxpreva(:), dmtrxprevb(:), dmax(:), work(:)
       real(8),allocatable :: fockdiisa(:), fockdiisb(:), errdiisa(:), errdiisb(:)
       real(8),allocatable :: diismtrx(:), work2(:), work3(:)
@@ -2173,10 +2179,10 @@ end
       isize3=idis(datacomp%myrank2+1,5)
       select case(scfconv)
         case('DIIS')
-          call memset(nao3*8+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+          call memset(nao3*6+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
 &                    +ndftatom*nrad*nleb+nao*4+nocca*4+noccb*4+isize3*maxdiis*2+isize1 &
 &                    +isize2*maxdiis*2+maxdiis*(maxdiis+1)/2+idis(datacomp%myrank2+1,3),datacomp)
-          allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
+          allocate(fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(numwork), &
 &                  fockda(nao3),fockdb(nao3),rad(ndftatom),atomvec(5*ndftatom*ndftatom), &
 &                  surface(ndftatom*ndftatom),radpt(2*nrad),angpt(4*nleb),ptweight(ndftatom*nrad*nleb), &
@@ -2185,10 +2191,10 @@ end
 &                  errdiisb(isize2*maxdiis),diismtrx(maxdiis*(maxdiis+1)/2),work2(isize1), &
 &                  work3(idis(datacomp%myrank2+1,3)))
         case('SOSCF')
-          call memset(nao3*8+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+          call memset(nao3*6+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
 &                    +ndftatom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1+idis(datacomp%myrank2+1,3) &
 &                    +nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf,datacomp)
-          allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
+          allocate(fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(numwork), &
 &                  fockda(nao3),fockdb(nao3),rad(ndftatom),atomvec(5*ndftatom*ndftatom), &
 &                  surface(ndftatom*ndftatom),radpt(2*nrad),angpt(4*nleb),ptweight(ndftatom*nrad*nleb), &
@@ -2200,11 +2206,11 @@ end
 &                  sovecya(nocca*nvira*(maxsoscf-1)),sovecyb(noccb*nvirb*(maxsoscf-1)))
         case('QC')
           isize1= max(isize1,nao2)
-          call memset(nao2*3+nao3*8+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+          call memset(nao2*3+nao3*6+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
 &                    +ndftatom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1 &
 &                    +(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
 &                    +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub,datacomp)
-          allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
+          allocate(fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(numwork), &
 &                  fockda(nao3),fockdb(nao3),rad(ndftatom),atomvec(5*ndftatom*ndftatom), &
 &                  surface(ndftatom*ndftatom),radpt(2*nrad),angpt(4*nleb),ptweight(ndftatom*nrad*nleb), &
@@ -2547,7 +2553,7 @@ end
 !
       select case(scfconv)
         case('DIIS')
-          deallocate(focka,fockb,fockpreva,fockprevb, &
+          deallocate(fockpreva,fockprevb, &
 &                    dmtrxpreva,dmtrxprevb,dmax,work, &
 &                    fockda,fockdb,rad,atomvec, &
 &                    surface,radpt,angpt,ptweight, &
@@ -2555,11 +2561,11 @@ end
 &                    fockdiisa,fockdiisb,errdiisa, &
 &                    errdiisb,diismtrx,work2, &
 &                    work3)
-          call memunset(nao3*8+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+          call memunset(nao3*6+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
 &                      +ndftatom*nrad*nleb+nao*4+nocca*4+noccb*4+isize3*maxdiis*2+isize1 &
 &                      +isize2*maxdiis*2+maxdiis*(maxdiis+1)/2+idis(datacomp%myrank2+1,3),datacomp)
         case('SOSCF')
-          deallocate(focka,fockb,fockpreva,fockprevb, &
+          deallocate(fockpreva,fockprevb, &
 &                    dmtrxpreva,dmtrxprevb,dmax,work, &
 &                    fockda,fockdb,rad,atomvec, &
 &                    surface,radpt,angpt,ptweight, &
@@ -2569,11 +2575,11 @@ end
 &                    sograda,sogradb, &
 &                    sodispa,sodispb, &
 &                    sovecya,sovecyb)
-          call memunset(nao3*8+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+          call memunset(nao3*6+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
 &                      +ndftatom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1+idis(datacomp%myrank2+1,3) &
 &                      +nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf,datacomp)
         case('QC')
-          deallocate(focka,fockb,fockpreva,fockprevb, &
+          deallocate(fockpreva,fockprevb, &
 &                    dmtrxpreva,dmtrxprevb,dmax,work, &
 &                    fockda,fockdb,rad,atomvec, &
 &                    surface,radpt,angpt,ptweight, &
@@ -2581,7 +2587,7 @@ end
 &                    qcvec, &
 &                    qcmat,qcmatsave, &
 &                    qceigen,work2,work3)
-          call memunset(nao2*3+nao3*8+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+          call memunset(nao2*3+nao3*6+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
 &                      +ndftatom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1 &
 &                      +(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
 &                      +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub,datacomp)
