@@ -100,38 +100,42 @@
 !
 ! Check convergence of SCF and geometry optimization
 !
-        if(.not.datacomp%convergedscf) then
-          call tstamp(2,datacomp)
-          if(datacomp%master) then
-            write(datacomp%iout,'(" Used memory :",1x,i6," MB")') datacomp%memusedmax/125000
-            write(datacomp%iout,'(" =============================================")')
-            write(datacomp%iout,'("    Error! SCF calculation did not converge!")')
-            write(datacomp%iout,'(" =============================================")')
-          endif
-          return
-        elseif(.not.datacomp%convergedgeom) then
-          if(datacomp%master) then
-            call tstamp(2,datacomp)
-            write(datacomp%iout,'(" Used memory :",1x,i6," MB",/)') datacomp%memusedmax/125000
-            write(datacomp%iout,'(" ================================================================")')
-            write(datacomp%iout,'("    Error! Geometry optimization calculation did not converge!")')
-            write(datacomp%iout,'(" ================================================================")')
-          endif
-          return
+      if(.not.datacomp%convergedscf) then
+        call tstamp(2,datacomp)
+        if(datacomp%master) then
+          write(datacomp%iout,'(" Used memory :",1x,i6," MB")') datacomp%memusedmax/125000
+          write(datacomp%iout,'(" =============================================")')
+          write(datacomp%iout,'("    Error! SCF calculation did not converge!")')
+          write(datacomp%iout,'(" =============================================")')
+          call closedatfile(datacomp)
+          if(datajob%check /= '') call closecheckfile(datacomp)
         endif
+        return
+      elseif(.not.datacomp%convergedgeom) then
+        if(datacomp%master) then
+          call tstamp(2,datacomp)
+          write(datacomp%iout,'(" Used memory :",1x,i6," MB",/)') datacomp%memusedmax/125000
+          write(datacomp%iout,'(" ================================================================")')
+          write(datacomp%iout,'("    Error! Geometry optimization calculation did not converge!")')
+          write(datacomp%iout,'(" ================================================================")')
+          call closedatfile(datacomp)
+          if(datajob%check /= '') call closecheckfile(datacomp)
+        endif
+        return
+      endif
 !
-! Open and write xyz file if set
+! Open, write, and close xyz file if set
 !
       if(datacomp%master.and.(datajob%xyz /= '')) then
         call openxyzfile(datajob,datacomp)
         call writexyzfile(datamol,datacomp)
+        call closexyzfile(datacomp)
       endif
 !
-! Close input.dat, checkpoint, and xyz files
+! Close input.dat and checkpoint files
 !
       if(datacomp%master) call closedatfile(datacomp)
       if(datacomp%master.and.(datajob%check /= '')) call closecheckfile(datacomp)
-      if(datacomp%master.and.(datajob%xyz /= '')) call closexyzfile(datacomp)
 !
       call memcheck(datacomp)
       call tstamp(2,datacomp)
