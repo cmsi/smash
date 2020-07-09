@@ -98,32 +98,6 @@
           call iabort
       end select
 !
-! Check convergence of SCF and geometry optimization
-!
-      if(.not.datacomp%convergedscf) then
-        call tstamp(2,datacomp)
-        if(datacomp%master) then
-          write(datacomp%iout,'(" Used memory :",1x,i6," MB")') datacomp%memusedmax/125000
-          write(datacomp%iout,'(" =============================================")')
-          write(datacomp%iout,'("    Error! SCF calculation did not converge!")')
-          write(datacomp%iout,'(" =============================================")')
-          call closedatfile(datacomp)
-          if(datajob%check /= '') call closecheckfile(datacomp)
-        endif
-        return
-      elseif(.not.datacomp%convergedgeom) then
-        if(datacomp%master) then
-          call tstamp(2,datacomp)
-          write(datacomp%iout,'(" Used memory :",1x,i6," MB",/)') datacomp%memusedmax/125000
-          write(datacomp%iout,'(" ================================================================")')
-          write(datacomp%iout,'("    Error! Geometry optimization calculation did not converge!")')
-          write(datacomp%iout,'(" ================================================================")')
-          call closedatfile(datacomp)
-          if(datajob%check /= '') call closecheckfile(datacomp)
-        endif
-        return
-      endif
-!
 ! Open, write, and close xyz file if set
 !
       if(datacomp%master.and.(datajob%xyz /= '')) then
@@ -139,6 +113,26 @@
 !
       call memcheck(datacomp)
       call tstamp(2,datacomp)
+!
+! Check convergence of SCF and geometry optimization
+!
+      if(.not.datacomp%convergedscf) then
+        if(datacomp%master) then
+          write(datacomp%iout,'(" Used memory :",1x,i6," MB")') datacomp%memusedmax/125000
+          write(datacomp%iout,'(" =============================================")')
+          write(datacomp%iout,'("    Error! SCF calculation did not converge!")')
+          write(datacomp%iout,'(" =============================================")')
+        endif
+        return
+      elseif(.not.datacomp%convergedgeom) then
+        if(datacomp%master) then
+          write(datacomp%iout,'(" Used memory :",1x,i6," MB")') datacomp%memusedmax/125000
+          write(datacomp%iout,'(" ================================================================")')
+          write(datacomp%iout,'("    Error! Geometry optimization calculation did not converge!")')
+          write(datacomp%iout,'(" ================================================================")')
+        endif
+        return
+      endif
 !
       if(datacomp%master) then
         write(datacomp%iout,'(" Used memory :",1x,i6," MB")') datacomp%memusedmax/125000
