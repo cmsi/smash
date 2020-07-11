@@ -89,7 +89,8 @@
       runtype              specifies the type of computation.
               = energy     Molecular energy (default)
               = gradient   Molecular energy and gradient
-              = optimize   Molecular geometry optimization
+              = opt        Molecular geometry optimization
+                           (optimize is a synonym for opt.)
 
       method               specifies the method of computation.
               = HF         Hartree-Fock (default)

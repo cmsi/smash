@@ -1,4 +1,4 @@
-! Copyright 2014-2019  Kazuya Ishimura
+! Copyright 2014-2020  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -182,8 +182,8 @@
         endif
       endif
 !
-      if(runtype == 'OPT') runtype='OPTIMIZE'
-      if(method == 'HF') method='HARTREE-FOCK'
+      if(runtype == 'OPTIMIZE') runtype='OPT'
+      if(method == 'HARTREE-FOCK') method='HF'
       if(ecp =='NONE') ecp = ''
       if(ecp /= '') flagecp=.true.
 !
@@ -583,7 +583,7 @@ end
 &                  datamol%charge, datamol%multi, databasis%spher
         write(datacomp%iout,'("   Bohr    = ",l1,11x,",  Guess   = ",a12,     " ,  Octupole = ",l1)') &
 &                  datajob%bohr, datajob%guess, datajob%octupole
-        if(datajob%runtype == 'OPTIMIZE') &
+        if(datajob%runtype == 'OPT') &
 &       write(datacomp%iout,'("   Nopt    =  ",i10," ,  Optconv = ",1p,D12.1," ,  Cartesian= ",l1)') &
 &                  datajob%nopt, datajob%optconv, datajob%cartesian
         if(datajob%check /= '') &
@@ -774,7 +774,7 @@ end
 !
 ! Check dummy and ghost atoms
 !
-      if(datajob%runtype=='OPTIMIZE') then
+      if(datajob%runtype=='OPT') then
         minatomic= minval(datamol%numatomic(1:datamol%natom))
         if((minatomic <= 0).and.(.not.datajob%cartesian)) then
           datajob%cartesian=.true.

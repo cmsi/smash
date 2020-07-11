@@ -182,7 +182,7 @@ end
         real(8) :: cutint2=-1.0D+00, threshsoscf=0.25D+00, threshqc=1.0D-05
         real(8) :: threshweight=-1.0D+00, threshrho=-1.0D+00, threshdfock=-1.0D+00
         real(8) :: threshdftao=-1.0D+00, threshmp2cphf=1.0D-10
-        character(len=32) :: method='HARTREE-FOCK', runtype='ENERGY', scftype='RHF', memory=''
+        character(len=32) :: method='HF', runtype='ENERGY', scftype='RHF', memory=''
         character(len=32) :: version='3.0.0', guess='HUCKEL', precision='MEDIUM'
         character(len=256) :: check='', xyz=''
         logical :: bohr=.false., octupole=.false., flagecp=.false.

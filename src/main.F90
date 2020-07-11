@@ -68,7 +68,7 @@
               call calcrenergy(datajob,datamol,databasis,datacomp)
             case('GRADIENT')
               call calcrgradient(datajob,datamol,databasis,datacomp)
-            case('OPTIMIZE')
+            case('OPT')
               call calcrgeometry(datajob,datamol,databasis,datacomp)
             case default
               if(datacomp%master) then
@@ -83,7 +83,7 @@
               call calcuenergy(datajob,datamol,databasis,datacomp)
             case('GRADIENT')
               call calcugradient(datajob,datamol,databasis,datacomp)
-            case('OPTIMIZE')
+            case('OPT')
               call calcugeometry(datajob,datamol,databasis,datacomp)
             case default
               if(datacomp%master) then
@@ -399,7 +399,7 @@ end
 !
 ! Start SCF
 !
-      if(datajob%method == 'HARTREE-FOCK') then
+      if(datajob%method == 'HF') then
         call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                    datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) then
@@ -569,7 +569,7 @@ end
 !
 ! Start SCF
 !
-      if(datajob%method == 'HARTREE-FOCK') then
+      if(datajob%method == 'HF') then
         call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                    datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) then
@@ -737,7 +737,7 @@ end
 !
 ! Start SCF
 !
-      if((datajob%method == 'HARTREE-FOCK').or.(datajob%method == 'MP2')) then
+      if((datajob%method == 'HF').or.(datajob%method == 'MP2')) then
         call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                    datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) then
@@ -784,7 +784,7 @@ end
 !
 ! Calculate energy gradient
 !
-      if(datajob%method == 'HARTREE-FOCK') then
+      if(datajob%method == 'HF') then
         call calcgradrhf(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1, &
 &                        datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
@@ -933,7 +933,7 @@ end
 !
 ! Start SCF
 !
-      if(datajob%method == 'HARTREE-FOCK') then
+      if(datajob%method == 'HF') then
         call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                    datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) then
@@ -980,7 +980,7 @@ end
 !
 ! Calculate energy gradient
 !
-      if(datajob%method == 'HARTREE-FOCK') then
+      if(datajob%method == 'HF') then
         call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,datacomp%nproc1, &
 &                        datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
@@ -1183,7 +1183,7 @@ end
 !
 ! Calculate energy
 !
-        if((datajob%method == 'HARTREE-FOCK').or.(datajob%method == 'MP2')) then
+        if((datajob%method == 'HF').or.(datajob%method == 'MP2')) then
           call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                      datajob,datamol,databasis,datacomp)
           if(.not.datacomp%convergedscf) then
@@ -1225,7 +1225,7 @@ end
 !
 ! Calculate energy gradient
 !
-        if(datajob%method == 'HARTREE-FOCK') then
+        if(datajob%method == 'HF') then
           call calcgradrhf(cmo,energymo,xint,egrad,datacomp%nproc1,datacomp%myrank1, &
 &                          datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
@@ -1522,7 +1522,7 @@ end
 !
 ! Calculate energy
 !
-        if(datajob%method == 'HARTREE-FOCK') then
+        if(datajob%method == 'HF') then
           call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
 &                      datajob,datamol,databasis,datacomp)
           if(.not.datacomp%convergedscf) then
@@ -1564,7 +1564,7 @@ end
 !
 ! Calculate energy gradient
 !
-        if(datajob%method == 'HARTREE-FOCK') then
+        if(datajob%method == 'HF') then
           call calcgraduhf(cmoa,cmob,energymoa,energymob,xint,egrad,datacomp%nproc1, &
 &                          datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
@@ -1802,7 +1802,7 @@ end
           datajob%idftex = 1
           datajob%idftcor= 2
           datajob%hfexchange= 0.2D+00
-        case('HARTREE-FOCK','MP2')
+        case('HF','MP2')
         case default
           if(datacomp%master) then
             write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
