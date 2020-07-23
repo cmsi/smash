@@ -562,6 +562,7 @@ end
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
+      character(len=12) :: cmemory, ccharge, cmulti
 !
       if(datacomp%master) then
 !
@@ -572,22 +573,28 @@ end
           call iabort
         endif
 !
+        write(cmemory,'(i0)') datacomp%memmax/125000
+        write(ccharge,'(f11.1)') datamol%charge
+        ccharge= adjustl(ccharge)
+        write(cmulti,'(i0)') datamol%multi
+        cmemory= trim(cmemory) // 'MB' 
+!
         write(datacomp%iout,'(" -------------------------------------------------------------------------")')
         write(datacomp%iout,'("   Job infomation")')
         write(datacomp%iout,'(" -------------------------------------------------------------------------")')
         write(datacomp%iout,'("   Runtype = ",a12,  ",  Method  = ",a12,     " ,  Basis    = ",a12)') &
 &                  datajob%runtype, datajob%method, databasis%basis
-        write(datacomp%iout,'("   Memory  =",i10, "MB ,  SCFtype = ",a12,     " ,  Precision= ",a12)') &
-&                  datacomp%memmax/125000, datajob%scftype, datajob%precision
-        write(datacomp%iout,'("   Charge  = ",F11.1," ,  Multi   = ",i12,     " ,  Spher    = ",l1)') &
-&                  datamol%charge, datamol%multi, databasis%spher
+        write(datacomp%iout,'("   Memory  = ",a12,  ",  SCFtype = ",a12,     " ,  Precision= ",a12)') &
+&                  cmemory, datajob%scftype, datajob%precision
+        write(datacomp%iout,'("   Charge  = ",a12,",  Multi   = ",a12,     " ,  Spher    = ",l1)') &
+&                  ccharge, cmulti, databasis%spher
         write(datacomp%iout,'("   Bohr    = ",l1,11x,",  Guess   = ",a12,     " ,  Octupole = ",l1)') &
 &                  datajob%bohr, datajob%guess, datajob%octupole
         if(datajob%runtype == 'OPT') &
-&       write(datacomp%iout,'("   Nopt    =  ",i10," ,  Optconv = ",1p,D12.1," ,  Cartesian= ",l1)') &
+&       write(datacomp%iout,'("   Nopt    =  ",i10," ,  Optconv = ",1p,e12.1," ,  Cartesian= ",l1)') &
 &                  datajob%nopt, datajob%optconv, datajob%cartesian
         if(datajob%check /= '') &
-        write(datacomp%iout,'("   Check   = ",a64)') datajob%check
+        write(datacomp%iout,'("   Check   = ",a)') trim(datajob%check)
         write(datacomp%iout,'(" -------------------------------------------------------------------------")')
 
         write(datacomp%iout,'(/," ------------------------------------------------")')

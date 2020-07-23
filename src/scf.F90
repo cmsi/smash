@@ -54,6 +54,7 @@
       real(8) :: time1, time2, time3, time4
       logical :: convsoscf, convqc
       character(len=32) :: scfconv
+      character(len=8) :: cmaxiter, cmaxdiis, cmaxsoscf, cmaxqc, cmaxqcdiag, cmaxqcdiagsub
       data maxfunc/1,3,6,10,15,21,28/
 !
       datacomp%convergedscf=.false.
@@ -131,25 +132,31 @@
 &                         datajob,datamol,databasis)
 !
       if(datacomp%master) then
+        write(cmaxiter,'(i0)') datajob%maxiter
         write(datacomp%iout,'(1x,74("-"))')
         write(datacomp%iout,'("   Restricted Hartree-Fock calculation")')
         write(datacomp%iout,'(1x,74("-"))')
-        write(datacomp%iout,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter     =",i9)') &
-&                    scfconv, datajob%dconv, datajob%maxiter
-        write(datacomp%iout,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver  =",d9.2)') &
+        write(datacomp%iout,'("   SCFConv    = ",a8,",  Dconv      =",1p,e9.2,",  MaxIter     = ",a8)') &
+&                    scfconv, datajob%dconv, cmaxiter
+        write(datacomp%iout,'("   Cutint2    =",1p,e9.2,",  ThreshEx   =",e9.2,",  ThreshOver  =",e9.2)') &
 &                    datajob%cutint2, datajob%threshex, datajob%threshover
         select case(scfconv)
           case('DIIS')
-            write(datacomp%iout,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
-&                    maxdiis, datajob%threshdiis
+            write(cmaxdiis,'(i0)') maxdiis
+            write(datacomp%iout,'("   MaxDIIS    = ",a8,",  ThreshDIIS =",1p,e9.2)') &
+&                    cmaxdiis, datajob%threshdiis
           case('SOSCF')
-            write(datacomp%iout,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
-&                    maxsoscf, datajob%threshsoscf
+            write(cmaxsoscf,'(i0)') maxsoscf
+            write(datacomp%iout,'("   MaxSOSCF   = ",a8,",  ThreshSOSCF=",1p,e9.2)') &
+&                    cmaxsoscf, datajob%threshsoscf
           case('QC')
-            write(datacomp%iout,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
-&                    datajob%maxqc, datajob%threshqc, datajob%maxqcdiag
-            write(datacomp%iout,'("   MaxQCDiagSub=",i8)') &
-&                    maxqcdiagsub
+            write(cmaxqc,'(i0)') datajob%maxqc
+            write(cmaxqcdiag,'(i0)') datajob%maxqcdiag
+            write(cmaxqcdiagsub,'(i0)') datajob%maxqcdiagsub
+            write(datacomp%iout,'("   MaxQC      = ",a8,",  ThreshQC   =",1p,e9.2,",  MaxQCDiag   = ",a8)') &
+&                    cmaxqc, datajob%threshqc, cmaxqcdiag
+            write(datacomp%iout,'("   MaxQCDiagSub=",a8)') &
+&                    cmaxqcdiagsub
         end select
         write(datacomp%iout,'(1x,74("-"))')
 !
@@ -975,6 +982,8 @@ end
       real(8) :: time1, time2, time3, time4
       logical :: convsoscf, convqc
       character(len=32) :: scfconv
+      character(len=8) :: cmaxiter, cnrad, cnleb, cmaxdiis, cmaxsoscf
+      character(len=8) :: cmaxqc, cmaxqcdiag, cmaxqcdiagsub
       data maxfunc/1,3,6,10,15,21,28/
 !
       datacomp%convergedscf=.false.
@@ -1077,29 +1086,37 @@ end
 &                         datajob,datamol,databasis)
 !
       if(datacomp%master) then
+        write(cmaxiter,'(i0)') datajob%maxiter
+        write(cnrad,'(i0)') nrad
+        write(cnleb,'(i0)') nleb
         write(datacomp%iout,'(1x,74("-"))')
         write(datacomp%iout,'("   Restricted DFT calculation")')
         write(datacomp%iout,'(1x,74("-"))')
-        write(datacomp%iout,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter     =",i9)') &
-&                    scfconv, datajob%dconv, datajob%maxiter
-        write(datacomp%iout,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver  =",d9.2)') &
+        write(datacomp%iout,'("   SCFConv    = ",a8,",  Dconv      =",1p,e9.2,",  MaxIter     = ",a8)') &
+&                    scfconv, datajob%dconv, cmaxiter
+        write(datacomp%iout,'("   Cutint2    =",1p,e9.2,",  ThreshEx   =",e9.2,",  ThreshOver  =",e9.2)') &
 &                    datajob%cutint2, datajob%threshex, datajob%threshover
-        write(datacomp%iout,'("   Nrad       =",i9  ,",  Nleb       =",i9  ,",  ThreshRho   =",1p,d9.2)') &
-&                    nrad, nleb, datajob%threshrho
-        write(datacomp%iout,'("   ThreshDfock=",1p,d9.2,",  Threshdftao=",d9.2,",  ThreshWeight=",d9.2)') &
+        write(datacomp%iout,'("   Nrad       = ",a8  ,",  Nleb       = ",a8  ,",  ThreshRho   =",1p,e9.2)') &
+&                    cnrad, cnleb, datajob%threshrho
+        write(datacomp%iout,'("   ThreshDfock=",1p,e9.2,",  Threshdftao=",e9.2,",  ThreshWeight=",e9.2)') &
 &                    datajob%threshdfock, datajob%threshdftao, datajob%threshweight
         select case(scfconv)
           case('DIIS')
-            write(datacomp%iout,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
-&                    maxdiis, datajob%threshdiis
+            write(cmaxdiis,'(i0)') maxdiis
+            write(datacomp%iout,'("   MaxDIIS    = ",a8,",  ThreshDIIS =",1p,e9.2)') &
+&                    cmaxdiis, datajob%threshdiis
           case('SOSCF')
-            write(datacomp%iout,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
-&                    maxsoscf, datajob%threshsoscf
+            write(cmaxsoscf,'(i0)') maxsoscf
+            write(datacomp%iout,'("   MaxSOSCF   = ",a8,",  ThreshSOSCF=",1p,e9.2)') &
+&                    cmaxsoscf, datajob%threshsoscf
           case('QC')
-            write(datacomp%iout,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
-&                    datajob%maxqc, datajob%threshqc, datajob%maxqcdiag
-            write(datacomp%iout,'("   MaxQCDiagSub=",i8)') &
-&                    maxqcdiagsub
+            write(cmaxqc,'(i0)') datajob%maxqc
+            write(cmaxqcdiag,'(i0)') datajob%maxqcdiag
+            write(cmaxqcdiagsub,'(i0)') datajob%maxqcdiagsub
+            write(datacomp%iout,'("   MaxQC      = ",a8,",  ThreshQC   =",1p,e9.2,",  MaxQCDiag   = ",a8)') &
+&                    cmaxqc, datajob%threshqc, cmaxqcdiag
+            write(datacomp%iout,'("   MaxQCDiagSub=",a8)') &
+&                    cmaxqcdiagsub
         end select
         write(datacomp%iout,'(1x,74("-"))')
 !
@@ -1403,6 +1420,7 @@ end
       real(8) :: time1, time2, time3, time4
       logical :: convsoscf, convqc
       character(len=32) :: scfconv
+      character(len=8) :: cmaxiter, cmaxdiis, cmaxsoscf, cmaxqc, cmaxqcdiag, cmaxqcdiagsub
       data maxfunc/1,3,6,10,15,21,28/
 !
       datacomp%convergedscf=.false.
@@ -1493,25 +1511,31 @@ end
 &                         datajob,datamol,databasis)
 !
       if(datacomp%master) then
+        write(cmaxiter,'(i0)') datajob%maxiter
         write(datacomp%iout,'(1x,74("-"))')
         write(datacomp%iout,'("   Unrestricted Hartree-Fock calculation")')
         write(datacomp%iout,'(1x,74("-"))')
-        write(datacomp%iout,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter     =",i9)') &
-&                    scfconv, datajob%dconv, datajob%maxiter
-        write(datacomp%iout,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver  =",d9.2)') &
+        write(datacomp%iout,'("   SCFConv    = ",a8,",  Dconv      =",1p,e9.2,",  MaxIter     = ",a8)') &
+&                    scfconv, datajob%dconv, cmaxiter
+        write(datacomp%iout,'("   Cutint2    =",1p,e9.2,",  ThreshEx   =",e9.2,",  ThreshOver  =",e9.2)') &
 &                    datajob%cutint2, datajob%threshex, datajob%threshover
         select case(scfconv)
           case('DIIS')
-            write(datacomp%iout,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
-&                    maxdiis, datajob%threshdiis
+            write(cmaxdiis,'(i0)') maxdiis
+            write(datacomp%iout,'("   MaxDIIS    = ",a8,",  ThreshDIIS =",1p,e9.2)') &
+&                    cmaxdiis, datajob%threshdiis
           case('SOSCF')
-            write(datacomp%iout,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
-&                    maxsoscf, datajob%threshsoscf
+            write(cmaxsoscf,'(i0)') maxsoscf
+            write(datacomp%iout,'("   MaxSOSCF   = ",a8,",  ThreshSOSCF=",1p,e9.2)') &
+&                    cmaxsoscf, datajob%threshsoscf
           case('QC')
-            write(datacomp%iout,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
-&                    datajob%maxqc, datajob%threshqc, datajob%maxqcdiag
-            write(datacomp%iout,'("   MaxQCDiagSub=",i8)') &
-&                    maxqcdiagsub
+            write(cmaxqc,'(i0)') datajob%maxqc
+            write(cmaxqcdiag,'(i0)') datajob%maxqcdiag
+            write(cmaxqcdiagsub,'(i0)') datajob%maxqcdiagsub
+            write(datacomp%iout,'("   MaxQC      = ",a8,",  ThreshQC   =",1p,e9.2,",  MaxQCDiag   = ",a8)') &
+&                    cmaxqc, datajob%threshqc, cmaxqcdiag
+            write(datacomp%iout,'("   MaxQCDiagSub=",a8)') &
+&                    cmaxqcdiagsub
         end select
         write(datacomp%iout,'(1x,74("-"))')
 !
@@ -2150,6 +2174,8 @@ end
       real(8) :: time1, time2, time3, time4
       logical :: convsoscf, convqc
       character(len=32) :: scfconv
+      character(len=8) :: cmaxiter, cnrad, cnleb, cmaxdiis, cmaxsoscf
+      character(len=8) :: cmaxqc, cmaxqcdiag, cmaxqcdiagsub
       data maxfunc/1,3,6,10,15,21,28/
 !
       datacomp%convergedscf=.false.
@@ -2269,29 +2295,37 @@ end
 &                         datajob,datamol,databasis)
 !
       if(datacomp%master) then
+        write(cmaxiter,'(i0)') datajob%maxiter
+        write(cnrad,'(i0)') nrad
+        write(cnleb,'(i0)') nleb
         write(datacomp%iout,'(1x,74("-"))')
         write(datacomp%iout,'("   Unrestricted DFT calculation")')
         write(datacomp%iout,'(1x,74("-"))')
-        write(datacomp%iout,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter     =",i9)') &
-&                    scfconv, datajob%dconv, datajob%maxiter
-        write(datacomp%iout,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver  =",d9.2)') &
+        write(datacomp%iout,'("   SCFConv    = ",a8,",  Dconv      =",1p,e9.2,",  MaxIter     = ",a8)') &
+&                    scfconv, datajob%dconv, cmaxiter
+        write(datacomp%iout,'("   Cutint2    =",1p,e9.2,",  ThreshEx   =",e9.2,",  ThreshOver  =",e9.2)') &
 &                    datajob%cutint2, datajob%threshex, datajob%threshover
-        write(datacomp%iout,'("   Nrad       =",i9  ,",  Nleb       =",i9  ,",  ThreshRho   =",1p,d9.2)') &
-&                    nrad, nleb, datajob%threshrho
-        write(datacomp%iout,'("   ThreshDfock=",1p,d9.2,",  Threshdftao=",d9.2,",  ThreshWeight=",d9.2)') &
+        write(datacomp%iout,'("   Nrad       = ",a8  ,",  Nleb       = ",a8  ,",  ThreshRho   =",1p,e9.2)') &
+&                    cnrad, cnleb, datajob%threshrho
+        write(datacomp%iout,'("   ThreshDfock=",1p,e9.2,",  Threshdftao=",e9.2,",  ThreshWeight=",e9.2)') &
 &                    datajob%threshdfock, datajob%threshdftao, datajob%threshweight
         select case(scfconv)
           case('DIIS')
-            write(datacomp%iout,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
-&                    maxdiis, datajob%threshdiis
+            write(cmaxdiis,'(i0)') maxdiis
+            write(datacomp%iout,'("   MaxDIIS    = ",a8,",  ThreshDIIS =",1p,e9.2)') &
+&                    cmaxdiis, datajob%threshdiis
           case('SOSCF')
-            write(datacomp%iout,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
-&                    maxsoscf, datajob%threshsoscf
+            write(cmaxsoscf,'(i0)') maxsoscf
+            write(datacomp%iout,'("   MaxSOSCF   = ",a8,",  ThreshSOSCF=",1p,e9.2)') &
+&                    cmaxsoscf, datajob%threshsoscf
           case('QC')
-            write(datacomp%iout,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
-&                    datajob%maxqc, datajob%threshqc, datajob%maxqcdiag
-            write(datacomp%iout,'("   MaxQCDiagSub=",i8)') &
-&                    maxqcdiagsub
+            write(cmaxqc,'(i0)') datajob%maxqc
+            write(cmaxqcdiag,'(i0)') datajob%maxqcdiag
+            write(cmaxqcdiagsub,'(i0)') datajob%maxqcdiagsub
+            write(datacomp%iout,'("   MaxQC      = ",a8,",  ThreshQC   =",1p,e9.2,",  MaxQCDiag   = ",a8)') &
+&                    cmaxqc, datajob%threshqc, cmaxqcdiag
+            write(datacomp%iout,'("   MaxQCDiagSub=",a8)') &
+&                    cmaxqcdiagsub
         end select
         write(datacomp%iout,'(1x,74("-"))')
 !
