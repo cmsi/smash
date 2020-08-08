@@ -215,7 +215,7 @@ end
 !
       call setdft(datajob,datamol,databasis,datacomp)
 !
-! Set functional information and adjust the number of DFT grids
+! Set MP2 calculation condition
 !
       call setmp2(datajob,datamol,databasis)
 !
