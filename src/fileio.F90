@@ -36,7 +36,7 @@
       real(8) :: charge
       character(len=256) :: line
       character(len=32) :: chararray(9)
-      character(len=256) :: check, xyz, char256array(2)
+      character(len=256) :: check, xyz, comment, char256array(3)
       character(len=32) :: method, runtype, scftype, memory, guess, precision, scfconv
       character(len=32) :: basis, ecp, mem=''
       logical :: logarray(5)
@@ -78,6 +78,11 @@
               call addapos(line,'SCFCONV=',8)
             case('OPT','DFT','MP2')
               line="&"//trim(line)//" /"
+            case('COM')
+              line= adjustl(line(8:llen))
+              llen= len_trim(line)
+              datajob%comment=line(1:llen)
+              line= 'COMMENT '//line
           end select
           llen=len_trim(line)
           if(llen > 0) then
@@ -139,6 +144,7 @@
         check      = datajob%check
         xyz        = datajob%xyz
         fbond      = datajob%fbond
+        comment    = datajob%comment
 !
         read(datacomp%inpcopy,nml=job,end=110,iostat=info)
 110     if(info > 0) then
@@ -200,6 +206,7 @@
         chararray(9)= precision
         char256array(1)= check
         char256array(2)= xyz
+        char256array(3)= comment
         realarray( 1)= charge
         realarray( 2)= cutint2
         realarray( 3)= dconv
@@ -247,69 +254,14 @@
       endif
 !
       call para_bcastc(chararray,32*9,0,datacomp%mpi_comm1)
-      call para_bcastc(char256array,256*2,0,datacomp%mpi_comm1)
+      call para_bcastc(char256array,256*3,0,datacomp%mpi_comm1)
       call para_bcastr(realarray,24,0,datacomp%mpi_comm1)
       call para_bcasti(intarray,15,0,datacomp%mpi_comm1)
       call para_bcastl(logarray,5,0,datacomp%mpi_comm1)
 !
-!     numatomic(1:natom)= datamol%numatomic(1:natom)
-!     coord(1:3,1:natom)= datamol%coord(1:3,1:natom)
-!     znuc(1:natom)     = datamol%znuc(1:natom)
-!     method  = chararray(1)
-!     runtype = chararray(2)
-!     basis   = chararray(3)
-!     scftype = chararray(4)
-!     memory  = chararray(5)
-!     guess   = chararray(6)
-!     ecp     = chararray(7)
-!     scfconv = chararray(8)
-!     precision=chararray(9)
-!     charge  = realarray( 1)
-!     cutint2 = realarray( 2)
-!     dconv   = realarray( 3)
-!     optconv = realarray( 4)
-!     threshdiis = realarray( 5)
-!     threshsoscf= realarray( 6)
-!     threshqc= realarray( 7)
-!     bqrad(1)= realarray( 8)
-!     bqrad(2)= realarray( 9)
-!     bqrad(3)= realarray(10)
-!     bqrad(4)= realarray(11)
-!     bqrad(5)= realarray(12)
-!     bqrad(6)= realarray(13)
-!     bqrad(7)= realarray(14)
-!     bqrad(8)= realarray(15)
-!     bqrad(9)= realarray(16)
-!     threshweight= realarray(17)
-!     threshrho   = realarray(18)
-!     threshdfock = realarray(19)
-!     threshdftao = realarray(20)
-!     threshover  = realarray(21)
-!     threshatom  = realarray(22)
-!     threshmp2cphf=realarray(23)
-!     multi   = intarray( 2)
-!     iprint  = intarray( 3)
-!     maxiter = intarray( 4)
-!     maxdiis = intarray( 5)
-!     maxsoscf= intarray( 6)
-!     maxqc   = intarray( 7)
-!     maxqcdiag=intarray( 8)
-!     maxqcdiagsub=intarray( 9)
-!     nopt    = intarray(10)
-!     nrad    = intarray(11)
-!     nleb    = intarray(12)
-!     ncore   = intarray(13)
-!     nvfz    = intarray(14)
-!     maxmp2diis= intarray(15)
-!     maxmp2iter= intarray(16)
-!     spher   = logarray(1)
-!     bohr    = logarray(2)
-!     flagecp = logarray(3)
-!     cartesian=logarray(4)
-!     octupole =logarray(5)
-!
-      datajob%check   = check
-      datajob%xyz     = xyz
+      datajob%check   = char256array(1)
+      datajob%xyz     = char256array(2)
+      datajob%comment = char256array(3)
       datajob%method  = chararray(1)
       datajob%runtype = chararray(2)
       databasis%basis = chararray(3)
@@ -594,13 +546,18 @@ end
 &                  ccharge, cmulti, databasis%spher
         write(datacomp%iout,'("   Bohr    = ",l1,11x,",  Guess   = ",a12," ,  Octupole = ",l1)') &
 &                  datajob%bohr, datajob%guess, datajob%octupole
-        if(datajob%runtype == 'OPT') &
-&       write(datacomp%iout,'("   Nopt    = ",a12,",  Optconv = ",1p,e8.2,5x,",  Cartesian= ",l1)') &
+        if(datajob%runtype == 'OPT') then
+          write(datacomp%iout,'("   Nopt    = ",a12,",  Optconv = ",1p,e8.2,5x,",  Cartesian= ",l1)') &
 &                  cnopt, datajob%optconv, datajob%cartesian
-        write(datacomp%iout,'("   Fbond   = ",1p,e8.2)') &
+          write(datacomp%iout,'("   Fbond   = ",1p,e8.2)') &
 &                  datajob%fbond
+        endif
         if(datajob%check /= '') &
-        write(datacomp%iout,'("   Check   = ",a)') trim(datajob%check)
+&         write(datacomp%iout,'("   Check   = ",a)') trim(datajob%check)
+        if(datajob%xyz /= '') &
+&         write(datacomp%iout,'("   Xyz     = ",a)') trim(datajob%xyz)
+        if(datajob%comment /= '') &
+&         write(datacomp%iout,'("   Comment = ",a)') trim(datajob%comment)
         write(datacomp%iout,'(" -------------------------------------------------------------------------")')
 
         write(datacomp%iout,'(/," ------------------------------------------------")')
@@ -646,6 +603,10 @@ end
       if(inum > 0) then
         ispace= index(line(inum:),' ')
         line(inum+4:inum+ispace-2)= linecopy(inum+4:inum+ispace-2)
+      endif
+      inum= index(line(1:llen),'COMMENT ')
+      if((inum > 0).and.(llen > 7)) then
+        line(8:llen)= linecopy(8:llen)
       endif
       return
 end

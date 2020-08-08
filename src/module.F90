@@ -224,7 +224,7 @@ end
         character(len=32) :: method='HF', runtype='ENERGY', scftype='RHF', memory=''
         character(len=32) :: version='3.0.0', guess='HUCKEL', precision='MEDIUM'
         character(len=32) :: scfconv='DIIS'
-        character(len=256) :: check='', xyz=''
+        character(len=256) :: check='', xyz='', comment=''
         logical :: bohr=.false., octupole=.false., flagecp=.false., extrap=.false.
         logical :: cartesian=.false.
 !       logical :: fdiff=.true.
