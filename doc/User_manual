@@ -134,12 +134,12 @@
     2.2 control keywords
       precision            controls computational precision.
                            The following variables are overridden when these are specified.
-              = high       cutint2=1.0D-12, dconv=5.0D-6, threshrho=1.0D-6, threshdfock=1.0D-5,
-                           threshdftao=1.0D-4, nrad=150, nleb=590
-              = medium     cutint2=1.0D-11, dconv=5.0D-6, threshrho=1.0D-5, threshdfock=1.0D-4,
-                           threshdftao=1.0D-3, nrad=96, nleb=302 (default)
-              = low        cutint2=1.0D-10, dconv=1.0D-5, threshrho=1.0D-4, threshdfock=1.0D-4,
-                           threshdftao=1.0D-2, nrad=72, nleb=302
+              = high       cutint2=1.0E-12, dconv=5.0E-6, threshrho=1.0E-6, threshdfock=1.0E-5,
+                           threshdftao=1.0E-4, nrad=150, nleb=590
+              = medium     cutint2=1.0E-11, dconv=5.0E-6, threshrho=1.0E-5, threshdfock=1.0E-4,
+                           threshdftao=1.0E-3, nrad=96, nleb=302 (default)
+              = low        cutint2=1.0E-10, dconv=1.0E-5, threshrho=1.0E-4, threshdfock=1.0E-4,
+                           threshdftao=1.0E-2, nrad=72, nleb=302
 
       spher                specifies spherical harmonics or Cartesian basis functions.
               = .true.     Speherical harmonics (5d, 7f, 9g, default)
@@ -152,7 +152,7 @@
       check                specifies the checkpoint file. (defalut: <empty>)
 
       cutint2              specifies the threshold for the two-electron integral calculation.
-                           (defalut: 1.0D-11)
+                           (defalut: 1.0E-11)
 
       bohr                 specifies the unit of the input geometry.
               = .false.    Angstrom (default)
@@ -164,10 +164,10 @@
               = 3          detailed information
 
       threshover           specifies the linear dependence threshold of basis functions.
-                           (default : 1.0D-6)
+                           (default : 1.0E-6)
 
       threshatom           specifies the atom distance threshold.
-                           (default : 2.0D-1)
+                           (default : 2.0E-1)
 
       octupole             controls dipole, quadrupole, and octupole calculations.
               = .false.    Dipole only (default)
@@ -183,15 +183,15 @@
                            (default: 150)
 
       dconv                specifies the SCF density convergence tolerance.
-                           (default: 5.0D-6)
+                           (default: 5.0E-6)
 
       maxdiis              specifies the maximum number of DIIS steps. (default: 20)
 
-      threshdiis           specifies the threshold of DIIS start. (default: 6.0D-1)
+      threshdiis           specifies the threshold of DIIS start. (default: 6.0E-1)
 
       maxsocf              specifies the maximum number of SOSCF steps. (default: 20)
 
-      threshsoscf          specifies the threshold of SOSCF start. (default: 2.5D-1)
+      threshsoscf          specifies the threshold of SOSCF start. (default: 2.5E-1)
 
       maxqc                specifies the maximum number of QC steps. (default: 15)
 
@@ -201,21 +201,21 @@
       maxqcdiagsub         specifies the maximum number of trial verctors of QC Davidson
                            diagonalization. (default: 10)
 
-      threshqc             specifies the threshold of QC convergence. (default: 1.0D-5)
+      threshqc             specifies the threshold of QC convergence. (default: 1.0E-5)
 
     2.4 opt keywords
       nopt                 specifies the maximum number of geometry optimization steps.
                            (default: 100)
 
       optconv              specifies the gradient convergence tolerance of geometry
-                           optimization. (default: 1.0D-4)
+                           optimization. (default: 1.0E-4)
 
       cartesian            specifies the type of the coordinate system.
               = .false.    Redundant coordinate (default)
               = .true.     Cartesian coordinate
 
       fbond                specifies the scaling factor of van der Waals radii for 
-                           bond detection.
+                           bond detection. (default: 1.20E+0)
 
     2.5 dft keywords
       nrad                 specifies the number of radial points. (default: 96) 
@@ -226,18 +226,18 @@
                            1202, and 1454. (default: 302)
 
       threshweight         specifies the threshold of the weight of a grid point.
-                           (default: 1.0D-8)
+                           (default: 1.0E-8)
 
       threshrho            specifies the threshold of the density of a grid point.
-                           (default: 1.0D-5)
+                           (default: 1.0E-5)
 
       threshdfock          specifies the threshold of the Fock matrix element of a grid point.
-                           (default: 1.0D-4)
+                           (default: 1.0E-4)
 
       threshdftao          specifies the threshold of the atomic orbital value of a grid point.
-                           (default: 1.0D-3)
+                           (default: 1.0E-3)
 
-      bqrad(9)             specifies the radii of ghost atoms. (default: 1.06D+0)
+      bqrad(9)             specifies the radii of ghost atoms. (default: 1.06E+0)
 
     2.6 mp2 keywords
       ncore                specifies the number of frozen core orbitals.
@@ -253,7 +253,7 @@
                            MP2 energy gradient calculation. (default: 100)
 
       threshmp2cphf        specifies the CPHF convergence tolerance of
-                           MP2 energy gradient calculation. (default: 1.0D-10)
+                           MP2 energy gradient calculation. (default: 1.0E-10)
 
     2.7 geom
       Write "geom" to specify the starting point for the molecular geometry.
