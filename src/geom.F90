@@ -88,15 +88,16 @@ end
 
 !-------------------------------------------------------------------------------------
   subroutine setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed, &
-&                              datamol,datacomp)
+&                              datajob,datamol,datacomp)
 !-------------------------------------------------------------------------------------
 !
 ! Set redundant internal coordinate
 ! Covalent radii (H - Cn): P. Pyykko, M. Atsumi, Chem. Eur. J., 186 (2009) 15.
 !
       use modparam, only : tobohr
-      use modtype, only : typemol, typecomp
+      use modtype, only : typejob, typemol, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typemol),intent(in) :: datamol
       type(typecomp),intent(in) :: datacomp
       integer,parameter :: maxconnect=13
@@ -144,7 +145,7 @@ end
         icount= 0
         do jatom= 1,datamol%natom
           if(jatom == iatom) cycle
-          thresh=(1.25D+00*tobohr &
+          thresh=(datajob%fbond*tobohr &
 &               *(radii(datamol%numatomic(iatom))+radii(datamol%numatomic(jatom))))**2
           rrij= (datamol%coord(1,jatom)-datamol%coord(1,iatom))**2 &
 &              +(datamol%coord(2,jatom)-datamol%coord(2,iatom))**2 &

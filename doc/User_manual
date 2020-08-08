@@ -214,6 +214,9 @@
               = .false.    Redundant coordinate (default)
               = .true.     Cartesian coordinate
 
+      fbond                specifies the scaling factor of van der Waals radii for 
+                           bond detection.
+
     2.5 dft keywords
       nrad                 specifies the number of radial points. (default: 96) 
 

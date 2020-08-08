@@ -198,7 +198,7 @@ end
         integer :: ncore=-1, nvfz=0, maxmp2diis=20, maxmp2iter=100
 !
         integer :: nopt=100
-        real(8) :: optconv=1.0D-04
+        real(8) :: optconv=1.0D-04, fbond=1.20D+00
         logical :: cartesian=.false.
       end type
 !

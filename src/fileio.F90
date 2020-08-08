@@ -29,10 +29,10 @@
       integer :: iprint, maxiter, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
       integer :: nrad, nleb, ncore, nvfz, maxmp2diis, maxmp2iter, nopt
       integer :: multi
-      real(8) :: realarray(23)
+      real(8) :: realarray(24)
       real(8) :: threshover, threshatom, threshdiis, cutint2, threshsoscf
       real(8) :: threshqc, threshweight,threshrho, threshdfock, threshdftao, threshmp2cphf
-      real(8) :: dconv, bqrad(9), optconv
+      real(8) :: dconv, bqrad(9), optconv, fbond
       real(8) :: charge
       character(len=256) :: line
       character(len=32) :: chararray(9)
@@ -47,7 +47,7 @@
 &                        threshatom, octupole
       namelist /scf/ scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub, &
 &                    threshdiis, threshsoscf, threshqc
-      namelist /opt/ nopt, optconv, cartesian
+      namelist /opt/ nopt, optconv, cartesian, fbond
       namelist /dft/ nrad, nleb, threshweight, threshrho, threshdfock, threshdftao, bqrad
       namelist /mp2/ ncore, nvfz, maxmp2diis, maxmp2iter, threshmp2cphf
 !
@@ -138,6 +138,7 @@
         octupole   = datajob%octupole
         check      = datajob%check
         xyz        = datajob%xyz
+        fbond      = datajob%fbond
 !
         read(datacomp%inpcopy,nml=job,end=110,iostat=info)
 110     if(info > 0) then
@@ -222,6 +223,7 @@
         realarray(21)= threshover
         realarray(22)= threshatom
         realarray(23)= threshmp2cphf
+        realarray(24)= fbond
         intarray( 1)= multi
         intarray( 2)= iprint
         intarray( 3)= maxiter
@@ -246,7 +248,7 @@
 !
       call para_bcastc(chararray,32*9,0,datacomp%mpi_comm1)
       call para_bcastc(char256array,256*2,0,datacomp%mpi_comm1)
-      call para_bcastr(realarray,23,0,datacomp%mpi_comm1)
+      call para_bcastr(realarray,24,0,datacomp%mpi_comm1)
       call para_bcasti(intarray,15,0,datacomp%mpi_comm1)
       call para_bcastl(logarray,5,0,datacomp%mpi_comm1)
 !
@@ -340,6 +342,7 @@
       datajob%threshover  = realarray(21)
       datajob%threshatom  = realarray(22)
       datajob%threshmp2cphf=realarray(23)
+      datajob%fbond   = realarray(24)
       datamol%multi   = intarray( 1)
       datajob%iprint  = intarray( 2)
       datajob%maxiter = intarray( 3)
@@ -562,7 +565,7 @@ end
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
-      character(len=12) :: cmemory, ccharge, cmulti
+      character(len=12) :: cmemory, ccharge, cmulti, cnopt
 !
       if(datacomp%master) then
 !
@@ -574,25 +577,28 @@ end
         endif
 !
         write(cmemory,'(i0)') datacomp%memmax/125000
+        cmemory= trim(cmemory) // 'MB' 
         write(ccharge,'(f11.1)') datamol%charge
         ccharge= adjustl(ccharge)
         write(cmulti,'(i0)') datamol%multi
-        cmemory= trim(cmemory) // 'MB' 
+        write(cnopt,'(i0)') datajob%nopt
 !
         write(datacomp%iout,'(" -------------------------------------------------------------------------")')
         write(datacomp%iout,'("   Job infomation")')
         write(datacomp%iout,'(" -------------------------------------------------------------------------")')
-        write(datacomp%iout,'("   Runtype = ",a12,  ",  Method  = ",a12,     " ,  Basis    = ",a12)') &
+        write(datacomp%iout,'("   Runtype = ",a12,",  Method  = ",a12," ,  Basis    = ",a12)') &
 &                  datajob%runtype, datajob%method, databasis%basis
-        write(datacomp%iout,'("   Memory  = ",a12,  ",  SCFtype = ",a12,     " ,  Precision= ",a12)') &
+        write(datacomp%iout,'("   Memory  = ",a12,",  SCFtype = ",a12," ,  Precision= ",a12)') &
 &                  cmemory, datajob%scftype, datajob%precision
-        write(datacomp%iout,'("   Charge  = ",a12,",  Multi   = ",a12,     " ,  Spher    = ",l1)') &
+        write(datacomp%iout,'("   Charge  = ",a12,",  Multi   = ",a12," ,  Spher    = ",l1)') &
 &                  ccharge, cmulti, databasis%spher
-        write(datacomp%iout,'("   Bohr    = ",l1,11x,",  Guess   = ",a12,     " ,  Octupole = ",l1)') &
+        write(datacomp%iout,'("   Bohr    = ",l1,11x,",  Guess   = ",a12," ,  Octupole = ",l1)') &
 &                  datajob%bohr, datajob%guess, datajob%octupole
         if(datajob%runtype == 'OPT') &
-&       write(datacomp%iout,'("   Nopt    =  ",i10," ,  Optconv = ",1p,e12.1," ,  Cartesian= ",l1)') &
-&                  datajob%nopt, datajob%optconv, datajob%cartesian
+&       write(datacomp%iout,'("   Nopt    = ",a12,",  Optconv = ",1p,e8.2,5x,",  Cartesian= ",l1)') &
+&                  cnopt, datajob%optconv, datajob%cartesian
+        write(datacomp%iout,'("   Fbond   = ",1p,e8.2)') &
+&                  datajob%fbond
         if(datajob%check /= '') &
         write(datacomp%iout,'("   Check   = ",a)') trim(datajob%check)
         write(datacomp%iout,'(" -------------------------------------------------------------------------")')
