@@ -132,6 +132,14 @@
               = gen        ECP functions for each element are set in
                            "ecp" section. See Section 2.8.
 
+      ncore                specifies the number of frozen core orbitals 
+                           in electron correlation calculations.
+                           (default: calculated automatically)
+
+      nvfz                 specifies the number of frozen virtual orbitals
+                           in electron correlation calculations.
+                           (default: 0)
+
     2.2 control keywords
       precision            controls computational precision.
                            The following variables are overridden when these are specified.
@@ -243,12 +251,6 @@
       bqrad(9)             specifies the radii of ghost atoms. (default: 1.06E+0)
 
     2.6 mp2 keywords
-      ncore                specifies the number of frozen core orbitals.
-                           (default: calculated automatically)
-
-      nvfz                 specifies the number of frozen virtual orbitals.
-                           (default: 0)
-
       maxmp2diis           specifies the maximum number of DIIS iterations for CPHF of
                            MP2 energy gradient calculation. (default: 20)
 

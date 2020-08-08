@@ -42,14 +42,14 @@
       logical :: logarray(5)
       logical :: bohr, octupole, flagecp, cartesian
       logical :: spher
-      namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp
+      namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp, ncore, nvfz
       namelist /control/ precision, cutint2, spher, guess, iprint, bohr, check, xyz, threshover, &
 &                        threshatom, octupole
       namelist /scf/ scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub, &
 &                    threshdiis, threshsoscf, threshqc
       namelist /opt/ nopt, optconv, cartesian, fbond
       namelist /dft/ nrad, nleb, threshweight, threshrho, threshdfock, threshdftao, bqrad
-      namelist /mp2/ ncore, nvfz, maxmp2diis, maxmp2iter, threshmp2cphf
+      namelist /mp2/ maxmp2diis, maxmp2iter, threshmp2cphf
 !
       if(datacomp%master) then
         do ii= 1,maxline
