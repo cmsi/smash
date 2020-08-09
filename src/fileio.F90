@@ -36,12 +36,11 @@
       real(8) :: charge
       character(len=256) :: line
       character(len=32) :: chararray(9)
-      character(len=256) :: check, xyz, comment, char256array(3)
+      character(len=256) :: check, xyz, char256array(2)
       character(len=32) :: method, runtype, scftype, memory, guess, precision, scfconv
       character(len=32) :: basis, ecp, mem=''
-      logical :: logarray(5)
-      logical :: bohr, octupole, flagecp, cartesian
-      logical :: spher
+      logical :: bohr, octupole, flagecp, cartesian, spher, logarray(5)
+      logical :: writeinput
       namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp, ncore, nvfz
       namelist /control/ precision, cutint2, spher, guess, iprint, bohr, check, xyz, threshover, &
 &                        threshatom, octupole
@@ -52,10 +51,16 @@
       namelist /mp2/ maxmp2diis, maxmp2iter, threshmp2cphf
 !
       if(datacomp%master) then
+        writeinput=.true.
+        write(datacomp%iout,'(" --------------")')
+        write(datacomp%iout,'("   Input data")')
+        write(datacomp%iout,'(" --------------")')
+!
         do ii= 1,maxline
           read(datacomp%inpstd,'(a)',end=100) line
           line=adjustl(line)
           llen=len_trim(line)
+          if(writeinput) write(datacomp%iout,'(a)')"  "//trim(line)
           call low2up(line,llen)
           select case(line(1:3))
             case('JOB')
@@ -78,18 +83,11 @@
               call addapos(line,'SCFCONV=',8)
             case('OPT','DFT','MP2')
               line="&"//trim(line)//" /"
-            case('COM')
-              line= adjustl(line(8:llen))
-              llen= len_trim(line)
-              datajob%comment=line(1:llen)
-              line= 'COMMENT '//line
+            case('GEO')
+              write(datacomp%iout,'("--------------",/)')
+              writeinput=.false.
           end select
-          llen=len_trim(line)
-          if(llen > 0) then
-            write(datacomp%inpcopy,'(a)')line(1:llen)
-          else
-            write(datacomp%inpcopy,*)
-          endif
+          write(datacomp%inpcopy,'(a)')trim(line)
           if(ii == maxline) then
             write(*,'(" Error! Input file is too long in Subroutine readinput!")')
             call iabort
@@ -144,7 +142,6 @@
         check      = datajob%check
         xyz        = datajob%xyz
         fbond      = datajob%fbond
-        comment    = datajob%comment
 !
         read(datacomp%inpcopy,nml=job,end=110,iostat=info)
 110     if(info > 0) then
@@ -206,7 +203,6 @@
         chararray(9)= precision
         char256array(1)= check
         char256array(2)= xyz
-        char256array(3)= comment
         realarray( 1)= charge
         realarray( 2)= cutint2
         realarray( 3)= dconv
@@ -254,14 +250,13 @@
       endif
 !
       call para_bcastc(chararray,32*9,0,datacomp%mpi_comm1)
-      call para_bcastc(char256array,256*3,0,datacomp%mpi_comm1)
+      call para_bcastc(char256array,256*2,0,datacomp%mpi_comm1)
       call para_bcastr(realarray,24,0,datacomp%mpi_comm1)
       call para_bcasti(intarray,15,0,datacomp%mpi_comm1)
       call para_bcastl(logarray,5,0,datacomp%mpi_comm1)
 !
       datajob%check   = char256array(1)
       datajob%xyz     = char256array(2)
-      datajob%comment = char256array(3)
       datajob%method  = chararray(1)
       datajob%runtype = chararray(2)
       databasis%basis = chararray(3)
@@ -556,8 +551,6 @@ end
 &         write(datacomp%iout,'("   Check   = ",a)') trim(datajob%check)
         if(datajob%xyz /= '') &
 &         write(datacomp%iout,'("   Xyz     = ",a)') trim(datajob%xyz)
-        if(datajob%comment /= '') &
-&         write(datacomp%iout,'("   Comment = ",a)') trim(datajob%comment)
         write(datacomp%iout,'(" -------------------------------------------------------------------------")')
 
         write(datacomp%iout,'(/," ------------------------------------------------")')
@@ -603,10 +596,6 @@ end
       if(inum > 0) then
         ispace= index(line(inum:),' ')
         line(inum+4:inum+ispace-2)= linecopy(inum+4:inum+ispace-2)
-      endif
-      inum= index(line(1:llen),'COMMENT ')
-      if((inum > 0).and.(llen > 7)) then
-        line(8:llen)= linecopy(8:llen)
       endif
       return
 end
