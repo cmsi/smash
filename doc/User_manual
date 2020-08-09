@@ -260,10 +260,7 @@
       threshmp2cphf        specifies the CPHF convergence tolerance of
                            MP2 energy gradient calculation. (default: 1.0E-10)
 
-    2.7 comment
-      Comments can be added after the word "comment" on the same line.
-
-    2.8 geom
+    2.7 geom
       Write "geom" to specify the starting point for the molecular geometry.
       After the line of "geom", write element symbols and their nuclear Cartesian
       coordinates. A blank line or the end of the file means the end of the
@@ -280,7 +277,7 @@
            H   0.0  1.0  0.0
            X   0.0  0.0  3.0
 
-    2.9 basis
+    2.8 basis
       To use the basis section, basis=gen in the job section is necessary.
       Write "basis" to specify the starting point for the basis functions.
       After the line of "basis", write element symbols. From the next line,
@@ -330,7 +327,7 @@
                   0.1612778      1.0000000
            ****
 
-    2.10 ecp
+    2.9 ecp
       To use the ecp section, ecp=gen in the job section is necessary.
       Write "ecp" to specify the starting point for the ECP functions.
       After the line of "basis", write element symbols. From the next line,
@@ -404,7 +401,7 @@
            2       8.7537199      76.9924162
            2       1.6633189       9.4818270
 
-    2.11 charge
+    2.10 charge
       Write "charge" to specify nuclear charges.
       A dummy atom is set using X in geom section to specify a point charge.
       The format of nuclear charges is as follows.
