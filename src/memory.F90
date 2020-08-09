@@ -23,6 +23,7 @@
       type(typejob),intent(in) :: datajob
       type(typecomp),intent(inout) :: datacomp
       integer :: lock, locm, locg, loct, locb
+      integer(selected_int_kind(18)) :: mem64
 !
       if(len_trim(datajob%memory) /= 0) then
         lock=scan(datajob%memory,'K')
@@ -31,23 +32,42 @@
         loct=scan(datajob%memory,'T')
         locb=scan(datajob%memory,'B')
         if(lock /= 0) then
-          read(datajob%memory(1:lock-1),*)datacomp%memmax
-          datacomp%memmax=datacomp%memmax*125
+          read(datajob%memory(1:lock-1),*) datacomp%memmax
+          mem64= datacomp%memmax
+          mem64= mem64*125
+          datacomp%memmax= datacomp%memmax*125
         elseif(locm /= 0) then
-          read(datajob%memory(1:locm-1),*)datacomp%memmax
-          datacomp%memmax=datacomp%memmax*125000
+          read(datajob%memory(1:locm-1),*) datacomp%memmax
+          mem64= datacomp%memmax
+          mem64= mem64*125000
+          datacomp%memmax= datacomp%memmax*125000
         elseif(locg /= 0) then
-          read(datajob%memory(1:locg-1),*)datacomp%memmax
-          datacomp%memmax=datacomp%memmax*125000000
+          read(datajob%memory(1:locg-1),*) datacomp%memmax
+          mem64= datacomp%memmax
+          mem64= mem64*125000000
+          datacomp%memmax= datacomp%memmax*125000000
         elseif(loct /= 0) then
-          read(datajob%memory(1:loct-1),*)datacomp%memmax
-          datacomp%memmax=datacomp%memmax*125000000*1000
+          read(datajob%memory(1:loct-1),*) datacomp%memmax
+          mem64= datacomp%memmax
+          mem64= mem64*125000000*1000
+          datacomp%memmax= datacomp%memmax*125000000*1000
         elseif(locb /= 0) then
-          read(datajob%memory(1:locb-1),*)datacomp%memmax
-          datacomp%memmax=datacomp%memmax/8
+          read(datajob%memory(1:locb-1),*) datacomp%memmax
+          mem64= datacomp%memmax
+          mem64= mem64/8
+          datacomp%memmax= datacomp%memmax/8
         else
-          read(datajob%memory,*)datacomp%memmax
-          datacomp%memmax=datacomp%memmax/8
+          read(datajob%memory,*) datacomp%memmax
+          mem64= datacomp%memmax
+          mem64= mem64/8
+          datacomp%memmax= datacomp%memmax/8
+        endif
+        if(datacomp%memmax /= mem64) then
+          if(datacomp%master) then
+            write(*,'(" Error! Compilation with 32-bit integer supports up to 17.1GB memory.",/, &
+&                     " Reduce memory size, or compile with 64-bit integer.",/)')
+            call iabort
+          endif
         endif
       endif
       return

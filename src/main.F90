@@ -209,7 +209,7 @@ end
 !
 ! Reset defaults after reading input file
 !
-      call setdefault2(datajob,datacomp)
+      call setdefault(datajob,datacomp)
 !
 ! Set functional information and adjust the number of DFT grids
 !
@@ -234,9 +234,9 @@ end
 end
 
 
-!-------------------------------------------
-  subroutine setdefault2(datajob,datacomp)
-!-------------------------------------------
+!------------------------------------------
+  subroutine setdefault(datajob,datacomp)
+!------------------------------------------
 !
 ! Reset defaults after reading input file
 !
