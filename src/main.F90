@@ -116,27 +116,30 @@
 !
 ! Check convergence of SCF and geometry optimization
 !
-      if(.not.datacomp%convergedscf) then
-        if(datacomp%master) then
-          write(datacomp%iout,'(" Used memory :",1x,i6," MB")') datacomp%memusedmax/125000
-          write(datacomp%iout,'(" =============================================")')
-          write(datacomp%iout,'("    Error! SCF calculation did not converge!")')
-          write(datacomp%iout,'(" =============================================")')
-        endif
-        return
-      elseif(.not.datacomp%convergedgeom) then
-        if(datacomp%master) then
-          write(datacomp%iout,'(" Used memory :",1x,i6," MB")') datacomp%memusedmax/125000
-          write(datacomp%iout,'(" ================================================================")')
-          write(datacomp%iout,'("    Error! Geometry optimization calculation did not converge!")')
-          write(datacomp%iout,'(" ================================================================")')
-        endif
-        return
-      endif
-!
       if(datacomp%master) then
-        write(datacomp%iout,'(" Used memory :",1x,i6," MB")') datacomp%memusedmax/125000
-        write(datacomp%iout,'(" Your calculation finished successfully with",i3," warning(s).")') datacomp%nwarn
+        if(.not.datacomp%convergedscf) then
+          write(datacomp%iout, &
+&           '(" Used memory :",i8," MB",/, &
+&             " =============================================",/, &
+&             "    Error! SCF calculation did not converge!",/, &
+&             " =============================================")') datacomp%memusedmax/125000
+          return
+!
+        elseif(.not.datacomp%convergedgeom) then
+          write(datacomp%iout, &
+&           '(" Used memory :",i8," MB",/, &
+&             " ================================================================",/, &
+&             "    Error! Geometry optimization calculation did not converge!",/, &
+&             " ================================================================")') &
+&             datacomp%memusedmax/125000
+          return
+!
+        else
+          write(datacomp%iout, &
+&           '(" Used memory :",i8," MB",/, &
+&             " Your calculation finished successfully with",i3," warning(s).")') &
+&             datacomp%memusedmax/125000, datacomp%nwarn
+        endif
       endif
       return
 end
