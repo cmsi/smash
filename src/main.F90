@@ -456,7 +456,7 @@ end
 !
 ! Print MOs
 !
-      if(datacomp%master.and.(datajob%iprint >= 2)) then
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
         write(datacomp%iout,'("  -------------------")')
         write(datacomp%iout,'("    MO coefficients")')
         write(datacomp%iout,'("  -------------------")')
@@ -619,7 +619,7 @@ end
 !
 ! Print MOs
 !
-      if(datacomp%master.and.(datajob%iprint >= 2)) then
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
         write(datacomp%iout,'("  -------------------------")')
         write(datacomp%iout,'("    Alpha MO coefficients")')
         write(datacomp%iout,'("  -------------------------")')
@@ -818,7 +818,7 @@ end
 !
 ! Print MOs
 !
-      if(datacomp%master.and.(datajob%iprint >= 2)) then
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
         write(datacomp%iout,'("  -------------------")')
         write(datacomp%iout,'("    MO coefficients")')
         write(datacomp%iout,'("  -------------------")')
@@ -1012,7 +1012,7 @@ end
 !
 ! Print MOs
 !
-      if(datacomp%master.and.(datajob%iprint >= 2)) then
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
         write(datacomp%iout,'("  -------------------------")')
         write(datacomp%iout,'("    Alpha MO coefficients")')
         write(datacomp%iout,'("  -------------------------")')
@@ -1327,7 +1327,7 @@ end
 !
 ! Print MOs
 !
-      if(datacomp%master.and.(datajob%iprint >= 2)) then
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
         write(datacomp%iout,'("  -------------------")')
         write(datacomp%iout,'("    MO coefficients")')
         write(datacomp%iout,'("  -------------------")')
@@ -1664,7 +1664,7 @@ end
 !
 ! Print MOs
 !
-      if(datacomp%master.and.(datajob%iprint >= 2)) then
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
         write(datacomp%iout,'("  -------------------------")')
         write(datacomp%iout,'("    Alpha MO coefficients")')
         write(datacomp%iout,'("  -------------------------")')

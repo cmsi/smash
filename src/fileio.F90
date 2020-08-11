@@ -382,7 +382,7 @@ end
 ! Write basis functions
 !
       second=.false.
-      if(datacomp%master.and.(datajob%iprint >= 1)) then
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 3)) then
         iatom= 0
         write(datacomp%iout,'(" -------------")')
         write(datacomp%iout,'("   Basis set")')
@@ -449,7 +449,7 @@ end
 !
 ! Write ECP functions
 !
-      if(datacomp%master.and.(datajob%iprint >= 1)) then
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 3)) then
         write(datacomp%iout,'(" ----------------")')
         write(datacomp%iout,'("   ECP function")')
         write(datacomp%iout,'(" ----------------")')
@@ -1290,7 +1290,7 @@ end
 !
 ! Closed-shell
 !
-      if(datacomp%master.and.(datajob%iprint >= 1)) then
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
         if(itype == 1) then
           write(datacomp%iout,'(1x,80("-"))')
           write(datacomp%iout,'("   Eigenvalues (Hartree)")')
@@ -1363,8 +1363,6 @@ end
 &       'Iyyyzzz','Iyyzzzz','Iyzzzzz','Izzzzzz','I-6    ','I-5    ','I-4    ','I-3    ', &
 &       'I-2    ','I-1    ','I0     ','I+1    ','I+2    ','I+3    ','I+4    ','I+5    ', &
 &       'I+6    '/)
-!
-      if(mod(datajob%iprint,10) <= 1) return
 !
       if(maxval(databasis%mtype(1:databasis%nshell)) > 6) then
         if(datacomp%master) &

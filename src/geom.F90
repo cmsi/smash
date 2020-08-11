@@ -494,7 +494,7 @@ end
 !
 ! Print delta xyz
 !
-      if(datacomp%master.and.(datajob%iprint >= 2)) then
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 1)) then
         write(datacomp%iout,'(" ----------------------------------------------------")')
         write(datacomp%iout,'("          Delta xyz (Angstrom)")')
         write(datacomp%iout,'("  Atom            X             Y             Z")')
@@ -712,7 +712,7 @@ end
         do ii= 1,numdim
           suml= suml+workv(ii,1)*workv(ii,1)/(rlambda-workv(ii,3))
         enddo
-        if(datacomp%master.and.(datajob%iprint >= 3)) then
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 4)) then
           write(datacomp%iout,'(" Lambda iteration of RFO",i3,3x,"Lambda=",1p,d15.8,4x,"Sum=",1p,d15.8)') &
 &               iterrfo,rlambda,suml
         endif
@@ -752,7 +752,7 @@ end
 !
         rmsdx= sqrt(ddot(natom3,workv,1,workv,1)/natom3)
         rmsqx= sqrt(ddot(numredun,workv(1,2),1,workv(1,2),1)/numredun)
-        if(datacomp%master.and.(datajob%iprint >= 3)) then
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 4)) then
           write(datacomp%iout,'(" Displacement Iteration",i3,2x,"RMS(Cart)=",1p,d10.3,4x, &
 &                   "RMS(Red)=",1p,d10.3)') iterdx, rmsdx, rmsqx
         endif
@@ -819,40 +819,42 @@ end
         endif
       enddo
       if(datacomp%master) then
-        if(datajob%iprint >= 3) write(datacomp%iout,*)
-        write(datacomp%iout,'(" ---------------------------------------------------------------")')
-        write(datacomp%iout,'("   Redundant coordinate parameters (Angstrom and Degree)")')
-        write(datacomp%iout,'("                                        New           Old")')
-        write(datacomp%iout,'(" ---------------------------------------------------------------")')
-        do ii= 1,numbond
-          write(chartmp(1:3),'(i5)')ii,iredun(1:2,ii)
-          paramred= trim(trim("Bond"//adjustl(chartmp(1)) //"   ("//adjustl(chartmp(2)))//"," &
-&                                  //adjustl(chartmp(3)))//")"
-          write(datacomp%iout,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*toang, &
-&                                                  coordredun(ii,2)*toang
-        enddo
-        do ii= numbond+1,numbond+numangle
-          write(chartmp(1:4),'(i5)')ii-numbond,iredun(1:3,ii)
-          paramred= trim(trim(trim("Angle"//adjustl(chartmp(1)) //"  ("//adjustl(chartmp(2))) &
-&                                    //","//adjustl(chartmp(3)))//","//adjustl(chartmp(4)))//")"
-          write(datacomp%iout,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*rad2deg, &
-&                                                  coordredun(ii,2)*rad2deg
-        enddo
-        do ii= numbond+numangle+1,numbond+numangle+numtorsion
-          write(chartmp(1:5),'(i5)')ii-numbond-numangle,iredun(1:4,ii)
-          paramred= trim(trim(trim(trim("Torsion"//adjustl(chartmp(1)) //"("// &
-&                   adjustl(chartmp(2)))//","//adjustl(chartmp(3)))//","// &
-&                   adjustl(chartmp(4)))//","//adjustl(chartmp(5)))//")"
-          write(datacomp%iout,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*rad2deg, &
-&                                                  coordredun(ii,2)*rad2deg
-        enddo
-        write(datacomp%iout,'(" ---------------------------------------------------------------")')
+        if(mod(datajob%iprint,10) >= 2) then
+          write(datacomp%iout,*)
+          write(datacomp%iout,'(" ---------------------------------------------------------------")')
+          write(datacomp%iout,'("   Redundant coordinate parameters (Angstrom and Degree)")')
+          write(datacomp%iout,'("                                        New           Old")')
+          write(datacomp%iout,'(" ---------------------------------------------------------------")')
+          do ii= 1,numbond
+            write(chartmp(1:3),'(i5)')ii,iredun(1:2,ii)
+            paramred= trim(trim("Bond"//adjustl(chartmp(1)) //"   ("//adjustl(chartmp(2)))//"," &
+&                                    //adjustl(chartmp(3)))//")"
+            write(datacomp%iout,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*toang, &
+&                                                    coordredun(ii,2)*toang
+          enddo
+          do ii= numbond+1,numbond+numangle
+            write(chartmp(1:4),'(i5)')ii-numbond,iredun(1:3,ii)
+            paramred= trim(trim(trim("Angle"//adjustl(chartmp(1)) //"  ("//adjustl(chartmp(2))) &
+&                                      //","//adjustl(chartmp(3)))//","//adjustl(chartmp(4)))//")"
+            write(datacomp%iout,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*rad2deg, &
+&                                                    coordredun(ii,2)*rad2deg
+          enddo
+          do ii= numbond+numangle+1,numbond+numangle+numtorsion
+            write(chartmp(1:5),'(i5)')ii-numbond-numangle,iredun(1:4,ii)
+            paramred= trim(trim(trim(trim("Torsion"//adjustl(chartmp(1)) //"("// &
+&                     adjustl(chartmp(2)))//","//adjustl(chartmp(3)))//","// &
+&                     adjustl(chartmp(4)))//","//adjustl(chartmp(5)))//")"
+            write(datacomp%iout,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*rad2deg, &
+&                                                    coordredun(ii,2)*rad2deg
+          enddo
+          write(datacomp%iout,'(" ---------------------------------------------------------------")')
+        endif
       endif
 
 !
 ! Print delta xyz
 !
-      if(datacomp%master.and.(datajob%iprint >= 2)) then
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 1)) then
         write(datacomp%iout,'(" ----------------------------------------------------")')
         write(datacomp%iout,'("          Delta xyz (Angstrom)")')
         write(datacomp%iout,'("  Atom            X             Y             Z")')
