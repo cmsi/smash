@@ -1331,7 +1331,7 @@ end
       type(typecomp),intent(in) :: datacomp
       integer :: minmo, maxmo, imin, imax, ii, jj, kk, iao, iatom
       real(8),intent(in) :: cmo(databasis%nao,databasis%nao), eigen(datamol%nmo)
-      character(len=8) :: atomlabel(mxao)
+      character(len=10) :: atomlabel(mxao)
       character(len=7) :: bflabel(mxao)
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
@@ -1376,96 +1376,94 @@ end
         select case(databasis%mtype(ii))
           case(0)
             bflabel(iao)= anglabel(1)
-            if(databasis%locatom(ii) /= iatom) then
-              iatom= databasis%locatom(ii)
-              write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
-            endif
+            iatom= databasis%locatom(ii)
+            write(atomlabel(iao),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
             iao= iao+1
           case(1)
             bflabel(iao:iao+2)= anglabel(2:4)
-            if(databasis%locatom(ii) /= iatom) then
-              iatom= databasis%locatom(ii)
-              write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
-            endif
+            iatom= databasis%locatom(ii)
+            do jj= 0,2
+              write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+            enddo
             iao= iao+3
           case(2)
             if(databasis%spher) then
               bflabel(iao:iao+4)= anglabel(11:15)
-              if(databasis%locatom(ii) /= iatom) then
-                iatom= databasis%locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
-              endif
+              iatom= databasis%locatom(ii)
+              do jj= 0,4
+                write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              enddo
               iao= iao+5
             else
               bflabel(iao:iao+5)= anglabel(5:10)
-              if(databasis%locatom(ii) /= iatom) then
-                iatom= databasis%locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
-              endif
+              iatom= databasis%locatom(ii)
+              do jj= 0,5
+                write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              enddo
               iao= iao+6
             endif
           case(3)
             if(databasis%spher) then
               bflabel(iao:iao+6)= anglabel(26:32)
-              if(databasis%locatom(ii) /= iatom) then
-                iatom= databasis%locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
-              endif
+              iatom= databasis%locatom(ii)
+              do jj= 0,6
+                write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              enddo
               iao= iao+7
             else
               bflabel(iao:iao+9)= anglabel(16:25)
-              if(databasis%locatom(ii) /= iatom) then
-                iatom= databasis%locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
-              endif
+              iatom= databasis%locatom(ii)
+              do jj= 0,9
+                write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              enddo
               iao= iao+10
             endif
           case(4)
             if(databasis%spher) then
               bflabel(iao:iao+8)= anglabel(48:56)
-              if(databasis%locatom(ii) /= iatom) then
-                iatom= databasis%locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
-              endif
+              iatom= databasis%locatom(ii)
+              do jj= 0,8
+                write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              enddo
               iao= iao+9
             else
               bflabel(iao:iao+14)= anglabel(33:47)
-              if(databasis%locatom(ii) /= iatom) then
-                iatom= databasis%locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
-              endif
+              iatom= databasis%locatom(ii)
+              do jj= 0,14
+                write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              enddo
               iao= iao+15
             endif
           case(5)
             if(databasis%spher) then
               bflabel(iao:iao+10)= anglabel(78:88)
-              if(databasis%locatom(ii) /= iatom) then
-                iatom= databasis%locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
-              endif
+              iatom= databasis%locatom(ii)
+              do jj= 0,10
+                write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              enddo
               iao= iao+11
             else
               bflabel(iao:iao+20)= anglabel(57:77)
-              if(databasis%locatom(ii) /= iatom) then
-                iatom= databasis%locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
-              endif
+              iatom= databasis%locatom(ii)
+              do jj= 0,20
+                write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              enddo
               iao= iao+21
             endif
           case(6)
             if(databasis%spher) then
               bflabel(iao:iao+12)= anglabel(117:129)
-              if(databasis%locatom(ii) /= iatom) then
-                iatom= databasis%locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
-              endif
+              iatom= databasis%locatom(ii)
+              do jj= 0,12
+                write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              enddo
               iao= iao+13
             else
               bflabel(iao:iao+27)= anglabel(89:116)
-              if(databasis%locatom(ii) /= iatom) then
-                iatom= databasis%locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
-              endif
+              iatom= databasis%locatom(ii)
+              do jj= 0,27
+                write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              enddo
               iao= iao+28
             endif
         end select
@@ -1479,10 +1477,10 @@ end
         do ii= 1,(maxmo-minmo-1)/5+1
           if(imax > maxmo) imax= maxmo
           write(datacomp%iout,*)
-          write(datacomp%iout,'(20x,5(5x,i4,2x))')(jj,jj=imin,imax)
-          write(datacomp%iout,'(20x,5f11.4)')(eigen(jj),jj=imin,imax)
+          write(datacomp%iout,'(21x,5(6x,i4,2x))')(jj,jj=imin,imax)
+          write(datacomp%iout,'(5x,"MO Energy",8x,5f12.5)')(eigen(jj),jj=imin,imax)
           do kk= 1,databasis%nao
-            write(datacomp%iout,'(i5,a8,a7,5f11.4)')kk,atomlabel(kk),bflabel(kk),(cmo(kk,jj),jj=imin,imax)
+            write(datacomp%iout,'(i5,a10,a7,5f12.6)')kk,atomlabel(kk),bflabel(kk),(cmo(kk,jj),jj=imin,imax)
           enddo
           imin= imin+5
           imax= imax+5
