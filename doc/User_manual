@@ -169,10 +169,11 @@
               = .false.    Angstrom (default)
               = .true.     Atomic unit
 
-      iprint               controls output.
-              = 1          minimal printing
-              = 2          normal printing (default)
-              = 3          detailed information
+      output               controls output format.
+              = minimal    minimal output without MO coefficients
+              = compact    compact output with MO coefficients of HOMO-14 to LUMO+14
+              = standard   standard output with MO coefficients of HOMO-14 to LUMO+14 (default)
+              = all        detailed output with MO coefficients of all MOs
 
       threshover           specifies the linear dependence threshold of basis functions.
                            (default : 1.0E-6)
