@@ -282,6 +282,22 @@ end
 &                                       a16,".")') datajob%precision
           call iabort
       end select
+      select case(datajob%output)
+        case('MINIMUM')
+          datajob%iprint= 1
+        case('COMPACT')
+          datajob%iprint= 2
+        case('STANDARD')
+          datajob%iprint= 3
+        case('ALL')
+          datajob%iprint= 4
+        case('VERBOSE')
+          datajob%iprint= 5
+        case default
+          if(datacomp%master) write(*,'(" Error! This program does not support output= ", &
+&                                       a16,".")') datajob%output
+          call iabort
+      end select
 !
       return
 end
