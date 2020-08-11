@@ -1317,15 +1317,16 @@ end
 end
 
 
-!--------------------------------------------------------------------
-  subroutine writeeigenvector(cmo,eigen,datamol,databasis,datacomp)
-!--------------------------------------------------------------------
+!----------------------------------------------------------------------------
+  subroutine writeeigenvector(cmo,eigen,datajob,datamol,databasis,datacomp)
+!----------------------------------------------------------------------------
 !
 ! Write eigenvalues
 !
       use modparam, only : mxao
-      use modtype, only : typemol, typebasis, typecomp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
@@ -1363,13 +1364,14 @@ end
 &       'I-2    ','I-1    ','I0     ','I+1    ','I+2    ','I+3    ','I+4    ','I+5    ', &
 &       'I+6    '/)
 !
+      if(mod(datajob%iprint,10) <= 1) return
+!
       if(maxval(databasis%mtype(1:databasis%nshell)) > 6) then
         if(datacomp%master) &
 &         write(*,'(" Sorry! This program can display MOs of up to i functions.")')
         return
       endif
 !
-      atomlabel(1:databasis%nao)= ''
       iao= 1
       iatom= 0
       do ii= 1,databasis%nshell
@@ -1469,23 +1471,42 @@ end
         end select
       enddo
 !
-      minmo=max(1,datamol%neleca-15)
-      maxmo=min(datamol%nmo,datamol%neleca+15)
+      select case(mod(datajob%iprint,10))
+        case(2,3)
+          minmo=max(1,datamol%neleca-15)
+          maxmo=min(datamol%nmo,datamol%neleca+15)
+        case(4)
+          minmo= 1
+          maxmo= datamol%nmo
+      end select
       imin= minmo
       imax= minmo+4
       if(datacomp%master) then
-        do ii= 1,(maxmo-minmo-1)/5+1
-          if(imax > maxmo) imax= maxmo
-          write(datacomp%iout,*)
-          write(datacomp%iout,'(21x,5(6x,i4,2x))')(jj,jj=imin,imax)
-          write(datacomp%iout,'(5x,"MO Energy",8x,5f12.5)')(eigen(jj),jj=imin,imax)
-          do kk= 1,databasis%nao
-            write(datacomp%iout,'(i5,a10,a7,5f12.6)')kk,atomlabel(kk),bflabel(kk),(cmo(kk,jj),jj=imin,imax)
-          enddo
-          imin= imin+5
-          imax= imax+5
-        enddo
-        write(datacomp%iout,*)
+        select case(mod(datajob%iprint,10))
+          case(3,4)
+            do ii= 1,(maxmo-minmo-1)/5+1
+              if(imax > maxmo) imax= maxmo
+              write(datacomp%iout,*)
+              write(datacomp%iout,'(21x,5(6x,i4,2x))')(jj,jj=imin,imax)
+              write(datacomp%iout,'(5x,"MO Energy",8x,5f12.5)')(eigen(jj),jj=imin,imax)
+              do kk= 1,databasis%nao
+                write(datacomp%iout,'(i5,a10,a7,5f12.6)')kk,atomlabel(kk),bflabel(kk),(cmo(kk,jj),jj=imin,imax)
+              enddo
+              imin= imin+5
+              imax= imax+5
+            enddo
+            write(datacomp%iout,*)
+          case(2)
+            do jj= minmo,maxmo
+              write(datacomp%iout,'(27x,i4)') jj
+              write(datacomp%iout,'(5x,"MO Energy",8x,f12.5)')eigen(jj)
+              do kk= 1,databasis%nao
+                if(abs(cmo(kk,jj)) > 1.5D-01) &
+&                  write(datacomp%iout,'(i5,a10,a7,5f12.6)')kk,atomlabel(kk),bflabel(kk),cmo(kk,jj)
+              enddo
+              write(datacomp%iout,*)
+            enddo
+        end select
       endif
 !
       return
