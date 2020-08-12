@@ -542,6 +542,8 @@ end
 &                  ccharge, cmulti, databasis%spher
         write(datacomp%iout,'("   Bohr    = ",l1,11x,",  Guess   = ",a12," ,  Octupole = ",l1)') &
 &                  datajob%bohr, datajob%guess, datajob%octupole
+        write(datacomp%iout,'("   Output  = ",a12)') &
+&                  datajob%output
         if(datajob%runtype == 'OPT') then
           write(datacomp%iout,'("   Nopt    = ",a12,",  Optconv = ",1p,e8.2,5x,",  Cartesian= ",l1)') &
 &                  cnopt, datajob%optconv, datajob%cartesian
