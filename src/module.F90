@@ -159,10 +159,7 @@ end
 !
 ! Job control
 !
-! iprint : Print option
-!          = 0  minimal output
-!          = 1  normal output
-!          = 2  verbose output
+! iprint       : Print control
 ! maxiter      : Maximum number of SCF iterations
 ! maxdiis      : Maximum number of DIIS cycles
 ! maxsoscf     : Maximum number of Second-order SCF cycles
@@ -223,7 +220,7 @@ end
         real(8) :: threshdftao=-1.0D+00, threshmp2cphf=1.0D-10
         character(len=32) :: method='HF', runtype='ENERGY', scftype='RHF', memory=''
         character(len=32) :: version='3.0.0', guess='HUCKEL', precision='MEDIUM'
-        character(len=32) :: scfconv='DIIS', output='STANDARD'
+        character(len=32) :: scfconv='DIIS', output='NORMAL'
         character(len=256) :: check='', xyz=''
         logical :: bohr=.false., octupole=.false., flagecp=.false., extrap=.false.
         logical :: cartesian=.false.

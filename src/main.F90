@@ -288,7 +288,7 @@ end
           datajob%iprint= 1
         case('COMPACT')
           datajob%iprint= 2
-        case('STANDARD')
+        case('NORMAL')
           datajob%iprint= 3
         case('ALL')
           datajob%iprint= 4

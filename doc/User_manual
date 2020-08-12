@@ -173,7 +173,7 @@
       output               controls output format.
               = minimal    minimal output without MO coefficients
               = compact    compact output with MO coefficients of HOMO-14 to LUMO+14
-              = standard   standard output with MO coefficients of HOMO-14 to LUMO+14 (default)
+              = normal     normal output with MO coefficients of HOMO-14 to LUMO+14 (default)
               = all        detailed output with MO coefficients of all MOs
 
       threshover           specifies the linear dependence threshold of basis functions.
