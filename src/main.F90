@@ -282,6 +282,7 @@ end
 &                                       a16,".")') datajob%precision
           call iabort
       end select
+!
       select case(datajob%output)
         case('MINIMUM')
           datajob%iprint= 1
@@ -298,6 +299,12 @@ end
 &                                       a16,".")') datajob%output
           call iabort
       end select
+!
+      if((datajob%method == 'HF').and.(datajob%guess == 'HF')) then
+        datajob%guess= 'HUCKEL'
+        if(datacomp%master) write(datacomp%iout,'(" Warning! Guess changes from HF to HUCKEL.")')
+        datacomp%nwarn= datacomp%nwarn+1
+      endif
 !
       return
 end

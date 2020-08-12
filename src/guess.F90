@@ -187,7 +187,7 @@ end
 !
       call diag('V','U',dataguessbs%nao,hmo,dataguessbs%nao,eigen,datacomp)
 !
-      if(datacomp%master.and.(mod(datajob%iprint,10) >= 4)) then
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 5)) then
         write(datacomp%iout,'("   Eigenvalues of Huckel guess")')
         write(datacomp%iout,'(4x,8f9.3)')eigen
       endif
