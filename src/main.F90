@@ -290,7 +290,7 @@ end
           datajob%iprint= 2
         case('NORMAL')
           datajob%iprint= 3
-        case('ALL')
+        case('DETAILED')
           datajob%iprint= 4
         case('VERBOSE')
           datajob%iprint= 5
