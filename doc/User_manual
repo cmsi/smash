@@ -155,8 +155,9 @@
               = .false.    Cartesian (6d, 10f, 15g)
 
       guess                specifies the guess calculation.
-              = huckel     Huckel calculation (default)
+              = huckel     extended Huckel calculation (default)
               = check      checkpoint file
+              = hf         Hartree-Fock calculation, valid only for DFT calculation
 
       check                specifies the checkpoint file. (defalut: <empty>)
 

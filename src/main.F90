@@ -428,7 +428,7 @@ end
         call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
-        if(datajob%guess == 'HUCKEL') then
+        if(datajob%guess == 'HF') then
           savedconv= datajob%dconv
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
@@ -598,7 +598,7 @@ end
         call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
-        if(datajob%guess == 'HUCKEL') then
+        if(datajob%guess == 'HF') then
           savedconv= datajob%dconv
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
@@ -766,7 +766,7 @@ end
         call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
-        if(datajob%guess == 'HUCKEL') then
+        if(datajob%guess == 'HF') then
           savedconv= datajob%dconv
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
@@ -962,7 +962,7 @@ end
         call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
-        if(datajob%guess == 'HUCKEL') then
+        if(datajob%guess == 'HF') then
           savedconv= datajob%dconv
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
@@ -1212,7 +1212,7 @@ end
           if(iopt == 1) call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
           call tstamp(1,datacomp)
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
-          if((iopt == 1).and.(datajob%guess == 'HUCKEL')) then
+          if((iopt == 1).and.(datajob%guess == 'HF')) then
             savedconv= datajob%dconv
             savecutint2= datajob%cutint2
             datajob%dconv= max(datajob%dconv,1.0D-2)
@@ -1551,7 +1551,7 @@ end
           if(iopt == 1) call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
           call tstamp(1,datacomp)
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
-          if((iopt == 1).and.(datajob%guess == 'HUCKEL')) then
+          if((iopt == 1).and.(datajob%guess == 'HF')) then
             savedconv= datajob%dconv
             savecutint2= datajob%cutint2
             datajob%dconv= max(datajob%dconv,1.0D-2)

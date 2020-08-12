@@ -39,7 +39,7 @@
       endif
 !
       select case(datajob%guess)
-        case('HUCKEL')
+        case('HUCKEL','HF')
           if(datacomp%master) &
 &           write(datacomp%iout,'("   Guess MOs are generated using extended Huckel orbitals.")')
           call huckelguess(cmoa,overinv,datajob,datamol,databasis,datacomp)
