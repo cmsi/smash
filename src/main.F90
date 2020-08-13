@@ -288,12 +288,18 @@ end
           datajob%iprint= 1
         case('COMPACT')
           datajob%iprint= 2
-        case('NORMAL')
+        case('COMPACTALL')
           datajob%iprint= 3
-        case('DETAILED')
+        case('NORMAL')
           datajob%iprint= 4
-        case('VERBOSE')
+        case('NORMALALL')
           datajob%iprint= 5
+        case('DETAILED')
+          datajob%iprint= 6
+        case('DETAILEDALL')
+          datajob%iprint= 7
+        case('VERBOSE')
+          datajob%iprint= 8
         case default
           if(datacomp%master) write(*,'(" Error! This program does not support output= ", &
 &                                       a16,".")') datajob%output
@@ -1115,7 +1121,7 @@ end
       real(8), allocatable :: workv(:), coordredun(:), egradredun(:)
       real(8) :: egradmax, egradrms
       real(8) :: savedconv, savecutint2
-      logical :: exceed
+      logical :: exceed, writeeigen
 !
       nao= databasis%nao
       nao2= nao*nao
@@ -1123,6 +1129,7 @@ end
       nshell3=(databasis%nshell*(databasis%nshell+1))/2
       natom3= datamol%natom*3
       datacomp%convergedgeom=.false.
+      writeeigen=(datajob%iprint == 3).or.(datajob%iprint == 5).or.(datajob%iprint == 7)
 !
 ! Calculate redundant coordinate
 !
@@ -1216,7 +1223,15 @@ end
             call tstamp(1,datacomp)
             return
           endif
-          if(iopt == 1) call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
+          if((iopt == 1).or.writeeigen) then
+            call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
+            if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
+              write(datacomp%iout,'("  -------------------")')
+              write(datacomp%iout,'("    MO coefficients")')
+              write(datacomp%iout,'("  -------------------")')
+              call writeeigenvector(cmo,energymo,datajob,datamol,databasis,datacomp)
+            endif
+          endif
           call tstamp(1,datacomp)
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
           if((iopt == 1).and.(datajob%guess == 'HF')) then
@@ -1240,7 +1255,15 @@ end
             call tstamp(1,datacomp)
             return
           endif
-          if(iopt == 1) call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
+          if((iopt == 1).or.writeeigen) then
+            call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
+            if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
+              write(datacomp%iout,'("  -------------------")')
+              write(datacomp%iout,'("    MO coefficients")')
+              write(datacomp%iout,'("  -------------------")')
+              call writeeigenvector(cmo,energymo,datajob,datamol,databasis,datacomp)
+            endif
+          endif
           call tstamp(1,datacomp)
         else
           if(datacomp%master) then
@@ -1454,7 +1477,7 @@ end
       real(8), allocatable :: workv(:), coordredun(:), egradredun(:)
       real(8) :: egradmax, egradrms
       real(8) :: savedconv, savecutint2
-      logical :: exceed
+      logical :: exceed, writeeigen
 !
       nao= databasis%nao
       nao2= nao*nao
@@ -1462,6 +1485,7 @@ end
       nshell3=(databasis%nshell*(databasis%nshell+1))/2
       natom3= datamol%natom*3
       datacomp%convergedgeom=.false.
+      writeeigen=(datajob%iprint == 3).or.(datajob%iprint == 5).or.(datajob%iprint == 7)
 !
 ! Calculate redundant coordinate
 !
@@ -1555,7 +1579,19 @@ end
             call tstamp(1,datacomp)
             return
           endif
-          if(iopt == 1) call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
+          if((iopt == 1).or.writeeigen) then
+            call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
+            if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
+              write(datacomp%iout,'("  -------------------------")')
+              write(datacomp%iout,'("    Alpha MO coefficients")')
+              write(datacomp%iout,'("  -------------------------")')
+              call writeeigenvector(cmoa,energymoa,datajob,datamol,databasis,datacomp)
+              write(datacomp%iout,'("  ------------------------")')
+              write(datacomp%iout,'("    Beta MO coefficients")')
+              write(datacomp%iout,'("  ------------------------")')
+              call writeeigenvector(cmob,energymob,datajob,datamol,databasis,datacomp)
+            endif
+          endif
           call tstamp(1,datacomp)
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
           if((iopt == 1).and.(datajob%guess == 'HF')) then
@@ -1579,7 +1615,19 @@ end
             call tstamp(1,datacomp)
             return
           endif
-          if(iopt == 1) call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
+          if((iopt == 1).or.writeeigen) then
+            call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
+            if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
+              write(datacomp%iout,'("  -------------------------")')
+              write(datacomp%iout,'("    Alpha MO coefficients")')
+              write(datacomp%iout,'("  -------------------------")')
+              call writeeigenvector(cmoa,energymoa,datajob,datamol,databasis,datacomp)
+              write(datacomp%iout,'("  ------------------------")')
+              write(datacomp%iout,'("    Beta MO coefficients")')
+              write(datacomp%iout,'("  ------------------------")')
+              call writeeigenvector(cmob,energymob,datajob,datamol,databasis,datacomp)
+            endif
+          endif
           call tstamp(1,datacomp)
         else
           if(datacomp%master) then
@@ -1621,7 +1669,7 @@ end
 ! Check convergence
 !
         if((egradmax <= datajob%optconv).and.(egradrms <= datajob%optconv*third)) then
-          if(datacomp%master) write(datacomp%iout,'(" Geometry converged.",/)')
+          if(datacomp%master) write(datacomp%iout,'("   ==== Geometry converged ====",/)')
           datacomp%convergedgeom=.true.
           exit
           call tstamp(1,datacomp)

@@ -348,7 +348,7 @@
         call dcopy(nao3,dmtrx,1,dmtrxprev,1)
         call dcopy(nao3,work,1,dmtrx,1)
         call cpu_time(time4)
-        if(datacomp%master.and.(mod(datajob%iprint,10) >= 5)) &
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 8)) &
 &         write(datacomp%iout,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
@@ -1320,7 +1320,7 @@ end
         call dcopy(nao3,dmtrx,1,dmtrxprev,1)
         call dcopy(nao3,work,1,dmtrx,1)
         call cpu_time(time4)
-        if(datacomp%master.and.(mod(datajob%iprint,10) >= 5)) &
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 8)) &
 &         write(datacomp%iout,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
@@ -1773,7 +1773,7 @@ end
         call dcopy(nao3,work(1),1,dmtrxa,1)
         call dcopy(nao3,work(nao3+1),1,dmtrxb,1)
         call cpu_time(time4)
-        if(datacomp%master.and.(mod(datajob%iprint,10) >= 5)) &
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 8)) &
 &         write(datacomp%iout,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
@@ -2576,7 +2576,7 @@ end
         call dcopy(nao3,work(1),1,dmtrxa,1)
         call dcopy(nao3,work(nao3+1),1,dmtrxb,1)
         call cpu_time(time4)
-        if(datacomp%master.and.(mod(datajob%iprint,10) >= 5)) &
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 8)) &
 &         write(datacomp%iout,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !

@@ -85,7 +85,7 @@
             case('OPT','DFT','MP2')
               line="&"//trim(line)//" /"
             case('GEO')
-              write(datacomp%iout,'("--------------",/)')
+              write(datacomp%iout,'(" --------------",/)')
               writeinput=.false.
           end select
           write(datacomp%inpcopy,'(a)')trim(line)
@@ -383,7 +383,7 @@ end
 ! Write basis functions
 !
       second=.false.
-      if(datacomp%master.and.(mod(datajob%iprint,10) >= 3)) then
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 4)) then
         iatom= 0
         write(datacomp%iout,'(" -------------")')
         write(datacomp%iout,'("   Basis set")')
@@ -450,7 +450,7 @@ end
 !
 ! Write ECP functions
 !
-      if(datacomp%master.and.(mod(datajob%iprint,10) >= 3)) then
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 4)) then
         write(datacomp%iout,'(" ----------------")')
         write(datacomp%iout,'("   ECP function")')
         write(datacomp%iout,'(" ----------------")')
@@ -1293,10 +1293,10 @@ end
 !
 ! Closed-shell
 !
-      if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 1)) then
         if(itype == 1) then
           write(datacomp%iout,'(1x,80("-"))')
-          write(datacomp%iout,'("   Eigenvalues (Hartree)")')
+          write(datacomp%iout,'("   Orbital Energies (Hartree)")')
           write(datacomp%iout,'(1x,80("-"))')
           write(datacomp%iout,'("   Alpha Occupied: ",5f12.5)')(eigena(imo),imo=1,datamol%neleca)
           write(datacomp%iout,'("   Alpha Virtual : ",5f12.5)')(eigena(imo),imo=datamol%neleca+1,datamol%nmo)
@@ -1306,7 +1306,7 @@ end
 !
         elseif(itype == 2) then
           write(datacomp%iout,'(1x,80("-"))')
-          write(datacomp%iout,'("   Eigenvalues (Hartree)")')
+          write(datacomp%iout,'("   Orbital Energies (Hartree)")')
           write(datacomp%iout,'(1x,80("-"))')
           write(datacomp%iout,'("   Alpha Occupied: ",5f12.5)')(eigena(imo),imo=1,datamol%neleca)
           write(datacomp%iout,'("   Alpha Virtual : ",5f12.5)')(eigena(imo),imo=datamol%neleca+1,datamol%nmo)
@@ -1473,10 +1473,10 @@ end
       enddo
 !
       select case(mod(datajob%iprint,10))
-        case(2,3)
+        case(2:5)
           minmo=max(1,datamol%neleca-15)
           maxmo=min(datamol%nmo,datamol%neleca+15)
-        case(4)
+        case(6:8)
           minmo= 1
           maxmo= datamol%nmo
       end select
@@ -1484,12 +1484,12 @@ end
       imax= minmo+4
       if(datacomp%master) then
         select case(mod(datajob%iprint,10))
-          case(3,4)
+          case(4:8)
             do ii= 1,(maxmo-minmo-1)/5+1
               if(imax > maxmo) imax= maxmo
               write(datacomp%iout,*)
               write(datacomp%iout,'(21x,5(6x,i4,2x))')(jj,jj=imin,imax)
-              write(datacomp%iout,'(5x,"MO Energy",8x,5f12.5)')(eigen(jj),jj=imin,imax)
+              write(datacomp%iout,'(4x,"Orbital Energy",4x,5f12.5)')(eigen(jj),jj=imin,imax)
               do kk= 1,databasis%nao
                 write(datacomp%iout,'(i5,a10,a7,5f12.6)')kk,atomlabel(kk),bflabel(kk),(cmo(kk,jj),jj=imin,imax)
               enddo
@@ -1497,10 +1497,10 @@ end
               imax= imax+5
             enddo
             write(datacomp%iout,*)
-          case(2)
+          case(2:3)
             do jj= minmo,maxmo
               write(datacomp%iout,'(27x,i4)') jj
-              write(datacomp%iout,'(5x,"MO Energy",8x,f12.5)')eigen(jj)
+              write(datacomp%iout,'(4x,"Orbital Energy",4x,f12.5)')eigen(jj)
               do kk= 1,databasis%nao
                 if(abs(cmo(kk,jj)) > 1.5D-01) &
 &                  write(datacomp%iout,'(i5,a10,a7,5f12.6)')kk,atomlabel(kk),bflabel(kk),cmo(kk,jj)

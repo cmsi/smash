@@ -207,7 +207,7 @@ end
 ! extrap       : Pople extrapolation of Fock matrix
 ! cartesian    : Type of coordinate system (True: Cartesian, False: redundant coordinate)
       type typejob
-        integer :: iprint=3
+        integer :: iprint=4
         integer :: maxiter=150, maxdiis=20, maxsoscf=20, maxqc=15, maxqcdiag=100, maxqcdiagsub=10
         integer :: idftex=0, idftcor=0, nrad=0, nleb=0
         integer :: ncore=-1, nvfz=0, maxmp2diis=20, maxmp2iter=100

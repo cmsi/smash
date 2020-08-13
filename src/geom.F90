@@ -712,7 +712,7 @@ end
         do ii= 1,numdim
           suml= suml+workv(ii,1)*workv(ii,1)/(rlambda-workv(ii,3))
         enddo
-        if(datacomp%master.and.(mod(datajob%iprint,10) >= 4)) then
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 6)) then
           write(datacomp%iout,'(" Lambda iteration of RFO",i3,3x,"Lambda=",1p,d15.8,4x,"Sum=",1p,d15.8)') &
 &               iterrfo,rlambda,suml
         endif
@@ -752,7 +752,7 @@ end
 !
         rmsdx= sqrt(ddot(natom3,workv,1,workv,1)/natom3)
         rmsqx= sqrt(ddot(numredun,workv(1,2),1,workv(1,2),1)/numredun)
-        if(datacomp%master.and.(mod(datajob%iprint,10) >= 4)) then
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 6)) then
           write(datacomp%iout,'(" Displacement Iteration",i3,2x,"RMS(Cart)=",1p,d10.3,4x, &
 &                   "RMS(Red)=",1p,d10.3)') iterdx, rmsdx, rmsqx
         endif

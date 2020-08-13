@@ -461,7 +461,7 @@ end
         endif
       enddo
 !
-!     if(iprint >= 4) then
+!     if(iprint >= 8) then
 !       write(datacomp%iout,'("Time for Tr1=",f9.3,"  Time for Tr2=",f9.3,i3)')tr1,tr2,myrank
 !     endif
       return
@@ -965,7 +965,7 @@ end
         endif
       enddo
 !
-!     if(iprint >= 4) then
+!     if(iprint >= 8) then
 !       write(datacomp%iout,'("Time for Tr1=",f9.3,"  Time for Tr2=",f9.3,i3)')tr1,tr2,myrank
 !     endif
       return
