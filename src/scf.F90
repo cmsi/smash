@@ -169,18 +169,15 @@
           datacomp%nwarn= datacomp%nwarn+1
         endif
 !
-        write(datacomp%iout,'(" ====================")')
-        write(datacomp%iout,'("    SCF Iteration")')
-        write(datacomp%iout,'(" ====================")')
         select case(scfconv)
           case('DIIS')
-            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density     DIIS Error")')
           case('SOSCF')
-            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density    Orbital Grad")')
           case('QC')
-            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density")')
         end select
       endif
@@ -296,17 +293,17 @@
               itsub= itdiis
             endif
             if(datacomp%master) &
-&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,2f17.9)') &
 &             iter,itsub,datamol%escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
             if(datacomp%master) &
-&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,2f17.9)') &
 &             iter,itsub,datamol%escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
             if(datacomp%master) &
-&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,datamol%escf,deltae,diffmax
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,1f17.9)')iter,itsub,datamol%escf,deltae,diffmax
         end select
 !
 ! Check SCF convergence
@@ -352,11 +349,17 @@
 &         write(datacomp%iout,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
-      if((datacomp%master).and.(datacomp%convergedscf).and.(datajob%guess/='HF')) then
-        write(datacomp%iout,'(" --------------------------------------------")')
-        write(datacomp%iout,'("    SCF Converged.")')
-        write(datacomp%iout,'("    RHF Energy = ",f17.9," Hartree")') datamol%escf
-        write(datacomp%iout,'(" --------------------------------------------"/)')
+      if((datacomp%master).and.(datacomp%convergedscf))then
+        if(datajob%guess /= 'HF') then
+          write(datacomp%iout,'(" --------------------------------------------")')
+          write(datacomp%iout,'("    SCF Converged.")')
+          write(datacomp%iout,'("    RHF Energy = ",f17.9," Hartree")') datamol%escf
+          write(datacomp%iout,'(" --------------------------------------------",/)')
+        else
+          write(datacomp%iout,'(" --------------------")')
+          write(datacomp%iout,'("    SCF Converged.")')
+          write(datacomp%iout,'(" --------------------",/)')
+        endif
       endif
 !
 ! Unset arrays
@@ -1129,18 +1132,15 @@ end
           datacomp%nwarn= datacomp%nwarn+1
         endif
 !
-        write(datacomp%iout,'(" ====================")')
-        write(datacomp%iout,'("    SCF Iteration")')
-        write(datacomp%iout,'(" ====================")')
         select case(scfconv)
           case('DIIS')
-            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density     DIIS Error")')
           case('SOSCF')
-            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density    Orbital Grad")')
           case('QC')
-            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density")')
         end select
       endif
@@ -1268,17 +1268,17 @@ end
               itsub= itdiis
             endif
             if(datacomp%master) &
-&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,2f17.9)') &
 &             iter,itsub,datamol%escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
             if(datacomp%master) &
-&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,2f17.9)') &
 &             iter,itsub,datamol%escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
             if(datacomp%master) &
-&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,datamol%escf,deltae,diffmax
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,1f17.9)')iter,itsub,datamol%escf,deltae,diffmax
         end select
 !
 ! Check SCF convergence
@@ -1552,18 +1552,15 @@ end
           datacomp%nwarn= datacomp%nwarn+1
         endif
 !
-        write(datacomp%iout,'(" ====================")')
-        write(datacomp%iout,'("    SCF Iteration")')
-        write(datacomp%iout,'(" ====================")')
         select case(scfconv)
           case('DIIS')
-            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density     DIIS Error")')
           case('SOSCF')
-            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density    Orbital Grad")')
           case('QC')
-            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density")')
         end select
       endif
@@ -1719,17 +1716,17 @@ end
               itsub= itdiis
             endif
             if(datacomp%master) &
-&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,2f17.9)') &
 &             iter,itsub,datamol%escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
             if(datacomp%master) &
-&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,2f17.9)') &
 &             iter,itsub,datamol%escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
             if(datacomp%master) &
-&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,datamol%escf,deltae,diffmax
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,1f17.9)')iter,itsub,datamol%escf,deltae,diffmax
         end select
 !
 ! Check SCF convergence
@@ -1777,24 +1774,32 @@ end
 &         write(datacomp%iout,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
-      if((datacomp%convergedscf).and.(datajob%guess/='HF')) then
-        if(datacomp%master) then
-          write(datacomp%iout,'(" --------------------------------------------")')
-          write(datacomp%iout,'("    SCF Converged.")')
-          write(datacomp%iout,'("    UHF Energy = ",f17.9," Hartree")') datamol%escf
-          write(datacomp%iout,'(" --------------------------------------------"/)')
-        endif
+      if(datacomp%convergedscf) then
+        if(datajob%guess/='HF') then
+          if(datacomp%master) then
+            write(datacomp%iout,'(" --------------------------------------------")')
+            write(datacomp%iout,'("    SCF Converged.")')
+            write(datacomp%iout,'("    UHF Energy = ",f17.9," Hartree")') datamol%escf
+            write(datacomp%iout,'(" --------------------------------------------"/)')
+          endif
 !
 ! Calculate spin expectation values
 !
-        call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,datamol%neleca,datamol%nelecb, &
-  &                   nao,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+          call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,datamol%neleca,datamol%nelecb, &
+  &                     nao,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
 !
-        if(datacomp%master) then
-          write(datacomp%iout,'(" -------------------------------")')
-          write(datacomp%iout,'("    Sz =",f7.3)')sz
-          write(datacomp%iout,'("    S-squared =",f7.3)')s2
-          write(datacomp%iout,'(" -------------------------------"/)')
+          if(datacomp%master) then
+            write(datacomp%iout,'(" -------------------------------")')
+            write(datacomp%iout,'("    Sz =",f7.3)')sz
+            write(datacomp%iout,'("    S-squared =",f7.3)')s2
+            write(datacomp%iout,'(" -------------------------------"/)')
+          endif
+        else
+          if(datacomp%master) then
+            write(datacomp%iout,'(" --------------------")')
+            write(datacomp%iout,'("    SCF Converged.")')
+            write(datacomp%iout,'(" --------------------",/)')
+          endif
         endif
       endif
 !
@@ -2342,18 +2347,15 @@ end
           datacomp%nwarn= datacomp%nwarn+1
         endif
 !
-        write(datacomp%iout,'(" ====================")')
-        write(datacomp%iout,'("    SCF Iteration")')
-        write(datacomp%iout,'(" ====================")')
         select case(scfconv)
           case('DIIS')
-            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density     DIIS Error")')
           case('SOSCF')
-            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density    Orbital Grad")')
           case('QC')
-            write(datacomp%iout,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density")')
         end select
       endif
@@ -2522,17 +2524,17 @@ end
               itsub= itdiis
             endif
             if(datacomp%master) &
-&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,2f17.9)') &
 &             iter,itsub,datamol%escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
             if(datacomp%master) &
-&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)') &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,2f17.9)') &
 &             iter,itsub,datamol%escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
             if(datacomp%master) &
-&             write(datacomp%iout,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,datamol%escf,deltae,diffmax
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,1f17.9)')iter,itsub,datamol%escf,deltae,diffmax
         end select
 !
 ! Check SCF convergence

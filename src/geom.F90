@@ -503,7 +503,7 @@ end
           write(datacomp%iout,'(3x,a3,3x,3f14.7)')table(datamol%numatomic(i)), &
 &              ((coord((i-1)*3+j)-coordold((i-1)*3+j))*toang,j=1,3)
         enddo
-        write(datacomp%iout,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------------",/)')
       endif
 !
       return
@@ -863,7 +863,7 @@ end
           write(datacomp%iout,'(3x,a3,3x,3f14.7)') table(datamol%numatomic(ii)), &
 &              ((coord((ii-1)*3+jj)-coordold((ii-1)*3+jj))*toang,jj=1,3)
         enddo
-        write(datacomp%iout,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------------",/)')
       endif
 !
       return

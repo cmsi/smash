@@ -1301,7 +1301,7 @@ end
 &                   " -----------------------------------",/, &
 &                   "     Maximum gradient  =",f10.6,/, &
 &                   "     RMS gradient      =",f10.6,/, &
-&                   " -----------------------------------")') &
+&                   " -----------------------------------",/)') &
 &                   iopt,datajob%nopt,datajob%optconv,egradmax,egradrms
 !
 ! Check convergence
@@ -1663,7 +1663,7 @@ end
 &                   " -----------------------------------",/, &
 &                   "     Maximum gradient  =",f10.6,/, &
 &                   "     RMS gradient      =",f10.6,/, &
-&                   " -----------------------------------")') &
+&                   " -----------------------------------",/)') &
 &                   iopt,datajob%nopt,datajob%optconv,egradmax,egradrms
 !
 ! Check convergence
