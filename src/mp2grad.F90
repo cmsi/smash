@@ -69,9 +69,9 @@
       nvac= nvir-datajob%nvfz
 !
       if(datacomp%master) then
-        write(datacomp%iout,'(" ----------------------------------------------")')
+        write(datacomp%iout,'(" ==============================================")')
         write(datacomp%iout,'("   MP2 energy gradient calculation ")')
-        write(datacomp%iout,'(" ----------------------------------------------")')
+        write(datacomp%iout,'(" ==============================================")')
         write(datacomp%iout,'("     Ncore=",i4,",   Nvfz=",i4)') datajob%ncore, datajob%nvfz
         write(datacomp%iout,'(" ----------------------------------------------")')
         write(datacomp%iout,'("     Number of basis functions         =",i5)')nao

@@ -133,13 +133,13 @@
 !
       if(datacomp%master) then
         write(cmaxiter,'(i0)') datajob%maxiter
-        write(datacomp%iout,'(1x,74("-"))')
+        write(datacomp%iout,'(1x,74("="))')
         if(datajob%guess=='HF') then
           write(datacomp%iout,'("   Restricted Hartree-Fock calculation for DFT guess orbitals")')
         else
           write(datacomp%iout,'("   Restricted Hartree-Fock calculation")')
         endif
-        write(datacomp%iout,'(1x,74("-"))')
+        write(datacomp%iout,'(1x,74("="))')
         write(datacomp%iout,'("   SCFConv    = ",a8,",  Dconv      =",1p,e9.2,",  MaxIter     = ",a8)') &
 &                    scfconv, datajob%dconv, cmaxiter
         write(datacomp%iout,'("   Cutint2    =",1p,e9.2,",  ThreshEx   =",e9.2,",  ThreshOver  =",e9.2)') &
@@ -1096,9 +1096,9 @@ end
         write(cmaxiter,'(i0)') datajob%maxiter
         write(cnrad,'(i0)') nrad
         write(cnleb,'(i0)') nleb
-        write(datacomp%iout,'(1x,74("-"))')
+        write(datacomp%iout,'(1x,74("="))')
         write(datacomp%iout,'("   Restricted DFT calculation")')
-        write(datacomp%iout,'(1x,74("-"))')
+        write(datacomp%iout,'(1x,74("="))')
         write(datacomp%iout,'("   SCFConv    = ",a8,",  Dconv      =",1p,e9.2,",  MaxIter     = ",a8)') &
 &                    scfconv, datajob%dconv, cmaxiter
         write(datacomp%iout,'("   Cutint2    =",1p,e9.2,",  ThreshEx   =",e9.2,",  ThreshOver  =",e9.2)') &
@@ -1516,13 +1516,13 @@ end
 !
       if(datacomp%master) then
         write(cmaxiter,'(i0)') datajob%maxiter
-        write(datacomp%iout,'(1x,74("-"))')
+        write(datacomp%iout,'(1x,74("="))')
         if(datajob%guess=='HF') then
           write(datacomp%iout,'("   Unrestricted Hartree-Fock calculation for DFT guess orbitals")')
         else
           write(datacomp%iout,'("   Unrestricted Hartree-Fock calculation")')
         endif
-        write(datacomp%iout,'(1x,74("-"))')
+        write(datacomp%iout,'(1x,74("="))')
         write(datacomp%iout,'("   SCFConv    = ",a8,",  Dconv      =",1p,e9.2,",  MaxIter     = ",a8)') &
 &                    scfconv, datajob%dconv, cmaxiter
         write(datacomp%iout,'("   Cutint2    =",1p,e9.2,",  ThreshEx   =",e9.2,",  ThreshOver  =",e9.2)') &
@@ -2311,9 +2311,9 @@ end
         write(cmaxiter,'(i0)') datajob%maxiter
         write(cnrad,'(i0)') nrad
         write(cnleb,'(i0)') nleb
-        write(datacomp%iout,'(1x,74("-"))')
+        write(datacomp%iout,'(1x,74("="))')
         write(datacomp%iout,'("   Unrestricted DFT calculation")')
-        write(datacomp%iout,'(1x,74("-"))')
+        write(datacomp%iout,'(1x,74("="))')
         write(datacomp%iout,'("   SCFConv    = ",a8,",  Dconv      =",1p,e9.2,",  MaxIter     = ",a8)') &
 &                    scfconv, datajob%dconv, cmaxiter
         write(datacomp%iout,'("   Cutint2    =",1p,e9.2,",  ThreshEx   =",e9.2,",  ThreshOver  =",e9.2)') &

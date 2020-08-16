@@ -45,9 +45,9 @@
       data maxfunc/1,3,6,10,15,21,28,36/
 !
       if(datacomp%master) then
-        write(datacomp%iout,'(" --------------------------------------------")')
+        write(datacomp%iout,'(" ============================================")')
         write(datacomp%iout,'("   Hartree-Fock energy gradient calculation")')
-        write(datacomp%iout,'(" --------------------------------------------")')
+        write(datacomp%iout,'(" ============================================")')
       endif
 !
 ! Set arrays
@@ -138,9 +138,9 @@ end
       data maxfunc/1,3,6,10,15,21,28,36/
 !
       if(datacomp%master) then
-        write(datacomp%iout,'(" ---------------------------------------------------------")')
+        write(datacomp%iout,'(" =========================================================")')
         write(datacomp%iout,'("   Unrestricted Hartree-Fock energy gradient calculation")')
-        write(datacomp%iout,'(" ---------------------------------------------------------")')
+        write(datacomp%iout,'(" =========================================================")')
       endif
 !
 ! Set arrays
@@ -235,9 +235,9 @@ end
       data maxfunc/1,3,6,10,15,21,28,36/
 !
       if(datacomp%master) then
-        write(datacomp%iout,'(" -----------------------------------")')
+        write(datacomp%iout,'(" ===================================")')
         write(datacomp%iout,'("   DFT energy gradient calculation")')
-        write(datacomp%iout,'(" -----------------------------------")')
+        write(datacomp%iout,'(" ===================================")')
       endif
 !
 ! Set arrays
@@ -363,9 +363,9 @@ end
       data maxfunc/1,3,6,10,15,21,28,36/
 !
       if(datacomp%master) then
-        write(datacomp%iout,'(" ------------------------------------------------")')
+        write(datacomp%iout,'(" ================================================")')
         write(datacomp%iout,'("   Unrestricted DFT energy gradient calculation")')
-        write(datacomp%iout,'(" ------------------------------------------------")')
+        write(datacomp%iout,'(" ================================================")')
       endif
 !
 ! Set arrays

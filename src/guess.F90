@@ -33,9 +33,9 @@
       real(8),intent(inout):: overinv(databasis%nao**2)
 !
       if(datacomp%master) then
-        write(datacomp%iout,'(" ---------------------")')
+        write(datacomp%iout,'(" =====================")')
         write(datacomp%iout,'("   Guess calculation")')
-        write(datacomp%iout,'(" ---------------------")')
+        write(datacomp%iout,'(" =====================")')
       endif
 !
       select case(datajob%guess)

@@ -48,9 +48,9 @@
       noac3= noac*(noac+1)/2
 !
       if(datacomp%master) then
-        write(datacomp%iout,'(" ----------------------------------------------")')
+        write(datacomp%iout,'(" ==============================================")')
         write(datacomp%iout,'("   MP2 calculation ")')
-        write(datacomp%iout,'(" ----------------------------------------------")')
+        write(datacomp%iout,'(" ==============================================")')
         write(datacomp%iout,'("     Ncore=",i4,",   Nvfz=",i4)') datajob%ncore, datajob%nvfz
         write(datacomp%iout,'(" ----------------------------------------------")')
         write(datacomp%iout,'("     Number of basis functions         =",i5)')nao

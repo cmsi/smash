@@ -448,6 +448,12 @@ end
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
 &       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
 !
+      if(datacomp%master) then
+        write(datacomp%iout,'(" ====================================================")')
+        write(datacomp%iout,'("   New geometry calculation in Cartesian coordinate")')
+        write(datacomp%iout,'(" ====================================================")')
+      endif
+!
       if(iopt == 1) then
 !
 ! Set initial hessian
@@ -582,6 +588,12 @@ end
 &     1.69D+00, 1.70D+00, 1.71D+00, 1.72D+00, 1.66D+00, 1.66D+00, 1.68D+00, 1.68D+00, 1.65D+00, &
 &     1.67D+00, 1.73D+00, 1.76D+00, 1.61D+00, 1.57D+00, 1.49D+00, 1.43D+00, 1.41D+00, 1.34D+00, &
 &     1.29D+00, 1.28D+00, 1.21D+00, 1.22D+00/
+!
+      if(datacomp%master) then
+        write(datacomp%iout,'(" ====================================================")')
+        write(datacomp%iout,'("   New geometry calculation in redundant coordinate")')
+        write(datacomp%iout,'(" ====================================================")')
+      endif
 !
       natom3= datamol%natom*3
 !
@@ -820,11 +832,10 @@ end
       enddo
       if(datacomp%master) then
         if(mod(datajob%iprint,10) >= 2) then
-          write(datacomp%iout,*)
-          write(datacomp%iout,'(" ---------------------------------------------------------------")')
+          write(datacomp%iout,'(" ------------------------------------------------------------")')
           write(datacomp%iout,'("   Redundant coordinate parameters (Angstrom and Degree)")')
           write(datacomp%iout,'("                                        New           Old")')
-          write(datacomp%iout,'(" ---------------------------------------------------------------")')
+          write(datacomp%iout,'(" ------------------------------------------------------------")')
           do ii= 1,numbond
             write(chartmp(1:3),'(i5)')ii,iredun(1:2,ii)
             paramred= trim(trim("Bond"//adjustl(chartmp(1)) //"   ("//adjustl(chartmp(2)))//"," &
@@ -847,7 +858,7 @@ end
             write(datacomp%iout,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*rad2deg, &
 &                                                    coordredun(ii,2)*rad2deg
           enddo
-          write(datacomp%iout,'(" ---------------------------------------------------------------")')
+          write(datacomp%iout,'(" ------------------------------------------------------------")')
         endif
       endif
 
