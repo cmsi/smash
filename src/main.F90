@@ -401,7 +401,7 @@ end
 !
       call nucenergy(datajob%threshatom,datamol,datacomp)
       if(datacomp%master) then
-        write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," Hartree",/)') datamol%enuc
+        write(datacomp%iout,'(" Nuclear repulsion energy =",f18.9," Hartree",/)') datamol%enuc
       endif
 !
 ! Set arrays 2
@@ -492,30 +492,38 @@ end
         call writeeigenvector(cmo,energymo,datajob,datamol,databasis,datacomp)
       endif
 !
+      if(datajob%method /= 'MP2') then
+!
 ! Calculate Mulliken charge
 !
-      call calcrmulliken(dmtrx,smtrx,datamol,databasis,datacomp)
+        if(datacomp%master) then
+          write(datacomp%iout,'(" ========================")')
+          write(datacomp%iout,'("   Property calculation")')
+          write(datacomp%iout,'(" ========================")')
+        endif
+        call calcrmulliken(dmtrx,smtrx,datamol,databasis,datacomp)
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
-      if(datajob%octupole) then
-        call memset(nao3*29,datacomp)
-        allocate(work(nao3*29))
-        call calcroctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrx, &
-&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
-&                          datajob,datamol,databasis,datacomp)
-        deallocate(work)
-        call memunset(nao3*29,datacomp)
-      else
+        if(datajob%octupole) then
+          call memset(nao3*29,datacomp)
+          allocate(work(nao3*29))
+          call calcroctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrx, &
+&                            datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                            datajob,datamol,databasis,datacomp)
+          deallocate(work)
+          call memunset(nao3*29,datacomp)
+        else
 !
 ! Calculate dipole moment
 !
-        call memset(nao3*6,datacomp)
-        allocate(work(nao3*6))
-        call calcrdipole(work,work(nao3*3+1),dmtrx,datacomp%nproc1,datacomp%myrank1, &
-&                        datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
-        deallocate(work)
-        call memunset(nao3*6,datacomp)
+          call memset(nao3*6,datacomp)
+          allocate(work(nao3*6))
+          call calcrdipole(work,work(nao3*3+1),dmtrx,datacomp%nproc1,datacomp%myrank1, &
+&                          datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
+          deallocate(work)
+          call memunset(nao3*6,datacomp)
+        endif
       endif
 !
 ! Write checkpoint file
@@ -571,7 +579,7 @@ end
 !
       call nucenergy(datajob%threshatom,datamol,datacomp)
       if(datacomp%master) then
-        write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," Hartree",/)') datamol%enuc
+        write(datacomp%iout,'(" Nuclear repulsion energy =",f18.9," Hartree",/)') datamol%enuc
       endif
 !
 ! Set arrays 2
@@ -659,30 +667,38 @@ end
         call writeeigenvector(cmob,energymob,datajob,datamol,databasis,datacomp)
       endif
 !
+      if(datajob%method /= 'MP2') then
+!
 ! Calculate Mulliken charge
 !
-      call calcumulliken(dmtrxa,dmtrxb,smtrx,datamol,databasis,datacomp)
+        if(datacomp%master) then
+          write(datacomp%iout,'(" ========================")')
+          write(datacomp%iout,'("   Property calculation")')
+          write(datacomp%iout,'(" ========================")')
+        endif
+        call calcumulliken(dmtrxa,dmtrxb,smtrx,datamol,databasis,datacomp)
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
-      if(datajob%octupole) then
-        call memset(nao3*29,datacomp)
-        allocate(work(nao3*29))
-        call calcuoctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrxa,dmtrxb, &
-&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
-&                          datajob,datamol,databasis,datacomp)
-        deallocate(work)
-        call memunset(nao3*29,datacomp)
-      else
+        if(datajob%octupole) then
+          call memset(nao3*29,datacomp)
+          allocate(work(nao3*29))
+          call calcuoctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrxa,dmtrxb, &
+&                            datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                            datajob,datamol,databasis,datacomp)
+          deallocate(work)
+          call memunset(nao3*29,datacomp)
+        else
 !
 ! Calculate dipole moment
 !
-        call memset(nao3*6,datacomp)
-        allocate(work(nao3*6))
-        call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1, &
-&                        datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
-        deallocate(work)
-        call memunset(nao3*6,datacomp)
+          call memset(nao3*6,datacomp)
+          allocate(work(nao3*6))
+          call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1, &
+&                          datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
+          deallocate(work)
+          call memunset(nao3*6,datacomp)
+        endif
       endif
 !
 ! Write checkpoint file
@@ -739,7 +755,7 @@ end
 !
       call nucenergy(datajob%threshatom,datamol,datacomp)
       if(datacomp%master) then
-        write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," Hartree",/)') datamol%enuc
+        write(datacomp%iout,'(" Nuclear repulsion energy =",f18.9," Hartree",/)') datamol%enuc
       endif
 !
 ! Set arrays 2
@@ -854,30 +870,38 @@ end
         call writeeigenvector(cmo,energymo,datajob,datamol,databasis,datacomp)
       endif
 !
+      if(datajob%method /= 'MP2') then
+!
 ! Calculate Mulliken charge
 !
-      call calcrmulliken(dmtrx,smtrx,datamol,databasis,datacomp)
+        if(datacomp%master) then
+          write(datacomp%iout,'(" ========================")')
+          write(datacomp%iout,'("   Property calculation")')
+          write(datacomp%iout,'(" ========================")')
+        endif
+        call calcrmulliken(dmtrx,smtrx,datamol,databasis,datacomp)
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
-      if(datajob%octupole) then
-        call memset(nao3*29,datacomp)
-        allocate(work(nao3*29))
-        call calcroctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrx, &
-&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
-&                          datajob,datamol,databasis,datacomp)
-        deallocate(work)
-        call memunset(nao3*29,datacomp)
-      else
+        if(datajob%octupole) then
+          call memset(nao3*29,datacomp)
+          allocate(work(nao3*29))
+          call calcroctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrx, &
+&                            datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                            datajob,datamol,databasis,datacomp)
+          deallocate(work)
+          call memunset(nao3*29,datacomp)
+        else
 !
 ! Calculate dipole moment
 !
-        call memset(nao3*6,datacomp)
-        allocate(work(nao3*6))
-        call calcrdipole(work,work(nao3*3+1),dmtrx,datacomp%nproc1,datacomp%myrank1, &
-&                        datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
-        deallocate(work)
-        call memunset(nao3*6,datacomp)
+          call memset(nao3*6,datacomp)
+          allocate(work(nao3*6))
+          call calcrdipole(work,work(nao3*3+1),dmtrx,datacomp%nproc1,datacomp%myrank1, &
+&                          datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
+          deallocate(work)
+          call memunset(nao3*6,datacomp)
+        endif
       endif
 !
 ! Write checkpoint file
@@ -935,7 +959,7 @@ end
 !
       call nucenergy(datajob%threshatom,datamol,datacomp)
       if(datacomp%master) then
-        write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," Hartree",/)') datamol%enuc
+        write(datacomp%iout,'(" Nuclear repulsion energy =",f18.9," Hartree",/)') datamol%enuc
       endif
 !
 ! Set arrays 2
@@ -1052,30 +1076,38 @@ end
         call writeeigenvector(cmob,energymob,datajob,datamol,databasis,datacomp)
       endif
 !
+      if(datajob%method /= 'MP2') then
+!
 ! Calculate Mulliken charge
 !
-      call calcumulliken(dmtrxa,dmtrxb,smtrx,datamol,databasis,datacomp)
+        if(datacomp%master) then
+          write(datacomp%iout,'(" ========================")')
+          write(datacomp%iout,'("   Property calculation")')
+          write(datacomp%iout,'(" ========================")')
+        endif
+        call calcumulliken(dmtrxa,dmtrxb,smtrx,datamol,databasis,datacomp)
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
-      if(datajob%octupole) then
-        call memset(nao3*29,datacomp)
-        allocate(work(nao3*29))
-        call calcuoctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrxa,dmtrxb, &
-&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
-&                          datajob,datamol,databasis,datacomp)
-        deallocate(work)
-        call memunset(nao3*29,datacomp)
-      else
+        if(datajob%octupole) then
+          call memset(nao3*29,datacomp)
+          allocate(work(nao3*29))
+          call calcuoctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrxa,dmtrxb, &
+&                            datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                            datajob,datamol,databasis,datacomp)
+          deallocate(work)
+          call memunset(nao3*29,datacomp)
+        else
 !
 ! Calculate dipole moment
 !
-        call memset(nao3*6,datacomp)
-        allocate(work(nao3*6))
-        call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1, &
-&                        datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
-        deallocate(work)
-        call memunset(nao3*6,datacomp)
+          call memset(nao3*6,datacomp)
+          allocate(work(nao3*6))
+          call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1, &
+&                          datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
+          deallocate(work)
+          call memunset(nao3*6,datacomp)
+        endif
       endif
 !
 ! Write checkpoint file
@@ -1184,7 +1216,7 @@ end
 !
         call nucenergy(datajob%threshatom,datamol,datacomp)
         if(datacomp%master) then
-          write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," Hartree",/)') datamol%enuc
+          write(datacomp%iout,'(" Nuclear repulsion energy =",f18.9," Hartree",/)') datamol%enuc
         endif
 !
 ! Set work arrays 1
@@ -1380,39 +1412,55 @@ end
         call writeeigenvector(cmo,energymo,datajob,datamol,databasis,datacomp)
       endif
 !
+      if(datajob%method /= 'MP2') then
+!
 ! Calculate Mulliken charge
 !
-      call calcrmulliken(dmtrx,smtrx,datamol,databasis,datacomp)
+        if(datacomp%master) then
+          write(datacomp%iout,'(" ========================")')
+          write(datacomp%iout,'("   Property calculation")')
+          write(datacomp%iout,'(" ========================")')
+        endif
+        call calcrmulliken(dmtrx,smtrx,datamol,databasis,datacomp)
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
-      if(datajob%octupole) then
-        call memset(nao3*29,datacomp)
-        allocate(work(nao3,29))
-        call calcroctupole(work,work(1,4),work(1,10),work(1,20),dmtrx, &
-&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
-&                          datajob,datamol,databasis,datacomp)
-        deallocate(work)
-        call memunset(nao3*29,datacomp)
-      else
+        if(datajob%octupole) then
+          call memset(nao3*29,datacomp)
+          allocate(work(nao3,29))
+          call calcroctupole(work,work(1,4),work(1,10),work(1,20),dmtrx, &
+&                            datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                            datajob,datamol,databasis,datacomp)
+          deallocate(work)
+          call memunset(nao3*29,datacomp)
+        else
 !
 ! Calculate dipole moment
 !
-        call memset(nao3*6,datacomp)
-        allocate(work(nao3,6))
-        call calcrdipole(work,work(1,4),dmtrx,datacomp%nproc1,datacomp%myrank1, &
-&                        datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
-        deallocate(work)
-        call memunset(nao3*6,datacomp)
+          call memset(nao3*6,datacomp)
+          allocate(work(nao3,6))
+          call calcrdipole(work,work(1,4),dmtrx,datacomp%nproc1,datacomp%myrank1, &
+&                          datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
+          deallocate(work)
+          call memunset(nao3*6,datacomp)
+        endif
       endif
 !
 ! Write optimized geometry
 !
       if(datacomp%master) then
-        write(datacomp%iout,'(" ==========================")')
-        write(datacomp%iout,'("     Optimized Geometry")')
-        write(datacomp%iout,'(" ==========================")')
-        call writegeom(datamol,datacomp)
+        write(datacomp%iout,'(" ===========")')
+        write(datacomp%iout,'("   Summary")')
+        write(datacomp%iout,'(" ===========")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
+        if(datajob%method == 'HF') then
+          write(datacomp%iout,'("   Final HF Energy =",f18.9," Hartree")') datamol%escf
+        elseif(datajob%method == 'MP2') then
+          write(datacomp%iout,'("   Final MP2 Energy =",f18.9," Hartree")') datamol%escf+datamol%emp2
+        elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
+          write(datacomp%iout,'("   Final DFT Energy =",f18.9," Hartree")') datamol%escf
+        endif
+        call writeoptgeom(datamol,datacomp)
       endif
 !
 ! Write checkpoint file
@@ -1540,7 +1588,7 @@ end
 !
         call nucenergy(datajob%threshatom,datamol,datacomp)
         if(datacomp%master) then
-          write(datacomp%iout,'(" Nuclear repulsion energy =",f15.8," Hartree",/)') datamol%enuc
+          write(datacomp%iout,'(" Nuclear repulsion energy =",f18.9," Hartree",/)') datamol%enuc
         endif
 !
 ! Set arrays 1
@@ -1746,39 +1794,55 @@ end
         call writeeigenvector(cmob,energymob,datajob,datamol,databasis,datacomp)
       endif
 !
+      if(datajob%method /= 'MP2') then
+!
 ! Calculate Mulliken charge
 !
-      call calcumulliken(dmtrxa,dmtrxb,smtrx,datamol,databasis,datacomp)
+        if(datacomp%master) then
+          write(datacomp%iout,'(" ========================")')
+          write(datacomp%iout,'("   Property calculation")')
+          write(datacomp%iout,'(" ========================")')
+        endif
+        call calcumulliken(dmtrxa,dmtrxb,smtrx,datamol,databasis,datacomp)
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
-      if(datajob%octupole) then
-        call memset(nao3*29,datacomp)
-        allocate(work(nao3,29))
-        call calcuoctupole(work,work(1,4),work(1,10),work(1,20),dmtrxa,dmtrxb, &
-&                          datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
-&                          datajob,datamol,databasis,datacomp)
-        deallocate(work)
-        call memunset(nao3*29,datacomp)
-      else
+        if(datajob%octupole) then
+          call memset(nao3*29,datacomp)
+          allocate(work(nao3,29))
+          call calcuoctupole(work,work(1,4),work(1,10),work(1,20),dmtrxa,dmtrxb, &
+&                            datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                            datajob,datamol,databasis,datacomp)
+          deallocate(work)
+          call memunset(nao3*29,datacomp)
+        else
 !
 ! Calculate dipole moment
 !
-        call memset(nao3*6,datacomp)
-        allocate(work(nao3,6))
-        call calcudipole(work,work(1,4),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1, &
-&                        datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
-        deallocate(work)
-        call memunset(nao3*6,datacomp)
+          call memset(nao3*6,datacomp)
+          allocate(work(nao3,6))
+          call calcudipole(work,work(1,4),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1, &
+&                          datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
+          deallocate(work)
+          call memunset(nao3*6,datacomp)
+        endif
       endif
 !
 ! Write optimized geometry
 !
       if(datacomp%master) then
-        write(datacomp%iout,'(" ==========================")')
-        write(datacomp%iout,'("     Optimized Geometry")')
-        write(datacomp%iout,'(" ==========================")')
-        call writegeom(datamol,datacomp)
+        write(datacomp%iout,'(" ===========")')
+        write(datacomp%iout,'("   Summary")')
+        write(datacomp%iout,'(" ===========")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
+        if(datajob%method == 'HF') then
+          write(datacomp%iout,'("   Final HF Energy =",f18.9," Hartree")') datamol%escf
+        elseif(datajob%method == 'MP2') then
+          write(datacomp%iout,'("   Final MP2 Energy =",f18.9," Hartree")') datamol%escf+datamol%emp2
+        elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
+          write(datacomp%iout,'("   Final DFT Energy =",f18.9," Hartree")') datamol%escf
+        endif
+        call writeoptgeom(datamol,datacomp)
       endif
 !
 ! Write checkpoint file

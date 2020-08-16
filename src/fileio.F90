@@ -353,6 +353,43 @@ end
 end
 
 
+!--------------------------------------------
+  subroutine writeoptgeom(datamol,datacomp)
+!--------------------------------------------
+!
+! Write molecular geometry
+!
+      use modparam, only : toang
+      use modtype, only : typemol, typecomp
+      implicit none
+      type(typemol),intent(in) :: datamol
+      type(typecomp),intent(in) :: datacomp
+      integer :: i, j
+      character(len=3) :: table(-9:112)= &
+&     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+&       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
+&       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
+&       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
+&       'Pm ','Sm ','Eu ','Gd ','Tb ','Dy ','Ho ','Er ','Tm ','Yb ','Lu ','Hf ','Ta ','W  ','Re ',&
+&       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
+&       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
+&       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
+!
+      if(datacomp%master) then
+        write(datacomp%iout,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'("       Optimized Molecular Geometry (Angstrom)")')
+        write(datacomp%iout,'("  Atom            X             Y             Z")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
+        do i= 1,datamol%natom
+          write(datacomp%iout,'(3x,a3,3x,3f14.7)')table(datamol%numatomic(i)),(datamol%coord(j,i)*toang,j=1,3)
+        enddo
+        write(datacomp%iout,'(" ----------------------------------------------------",/)')
+      endif
+      return
+end
+
+
 !------------------------------------------------------------
   subroutine writebasis(datajob,datamol,databasis,datacomp)
 !------------------------------------------------------------

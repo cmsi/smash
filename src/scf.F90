@@ -353,7 +353,7 @@
         if(datajob%guess /= 'HF') then
           write(datacomp%iout,'(" --------------------------------------------")')
           write(datacomp%iout,'("    SCF Converged.")')
-          write(datacomp%iout,'("    RHF Energy = ",f17.9," Hartree")') datamol%escf
+          write(datacomp%iout,'("    RHF Energy =",f18.9," Hartree")') datamol%escf
           write(datacomp%iout,'(" --------------------------------------------",/)')
         else
           write(datacomp%iout,'(" --------------------")')
@@ -1327,9 +1327,9 @@ end
       if(datacomp%master.and.datacomp%convergedscf) then
         write(datacomp%iout,'(" ---------------------------------------------------------------")')
         write(datacomp%iout,'("    SCF Converged.")')
-        write(datacomp%iout,'("    DFT Energy = ",f17.9," Hartree")') datamol%escf
-        write(datacomp%iout,'("    Exchange + Correlation energy = ",f17.9," Hartree")') edft
-        write(datacomp%iout,'("    Number of electrons           = ",f17.9)') totalelec
+        write(datacomp%iout,'("    DFT Energy =",f18.9," Hartree")') datamol%escf
+        write(datacomp%iout,'("    Exchange + Correlation energy =",f18.9," Hartree")') edft
+        write(datacomp%iout,'("    Number of electrons           =",f18.9)') totalelec
         write(datacomp%iout,'(" ---------------------------------------------------------------"/)')
       endif
 !
@@ -1779,7 +1779,7 @@ end
           if(datacomp%master) then
             write(datacomp%iout,'(" --------------------------------------------")')
             write(datacomp%iout,'("    SCF Converged.")')
-            write(datacomp%iout,'("    UHF Energy = ",f17.9," Hartree")') datamol%escf
+            write(datacomp%iout,'("    UHF Energy =",f18.9," Hartree")') datamol%escf
             write(datacomp%iout,'(" --------------------------------------------"/)')
           endif
 !
@@ -2586,9 +2586,9 @@ end
         if(datacomp%master) then
           write(datacomp%iout,'(" ---------------------------------------------------------------")')
           write(datacomp%iout,'("    SCF Converged.")')
-          write(datacomp%iout,'("    DFT Energy = ",f17.9," Hartree")')datamol%escf
-          write(datacomp%iout,'("    Exchange + Correlation energy = ",f17.9," Hartree")')edft
-          write(datacomp%iout,'("    Number of electrons           = ",f17.9)')totalelec
+          write(datacomp%iout,'("    DFT Energy =",f18.9," Hartree")')datamol%escf
+          write(datacomp%iout,'("    Exchange + Correlation energy =",f18.9," Hartree")')edft
+          write(datacomp%iout,'("    Number of electrons           =",f18.9)')totalelec
           write(datacomp%iout,'(" ---------------------------------------------------------------")')
         endif
 !
