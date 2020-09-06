@@ -61,41 +61,38 @@
 !
 ! Start calculations
 !
-      select case(datajob%scftype)
-        case('RHF')
-          select case(datajob%runtype)
-            case('ENERGY')
+      if((datajob%scftype /= 'RHF').and.(datajob%scftype /= 'UHF').and.datacomp%master) then
+        write(*,'(" Error! SCFtype=",a16," is not supported.")') datajob%scftype
+        call iabort
+      endif
+!
+      select case(datajob%runtype)
+        case('ENERGY')
+          select case(datajob%scftype)
+            case('RHF')
               call calcrenergy(datajob,datamol,databasis,datacomp)
-            case('GRADIENT')
-              call calcrgradient(datajob,datamol,databasis,datacomp)
-            case('OPT')
-              call calcrgeometry(datajob,datamol,databasis,datacomp)
-            case default
-              if(datacomp%master) then
-                write(*,'(" Error! This program does not support runtype= ",a16,".")') &
-&                       datajob%runtype
-                call iabort
-              endif
-          end select
-        case('UHF')
-          select case(datajob%runtype)
-            case('ENERGY')
+            case('UHF')
               call calcuenergy(datajob,datamol,databasis,datacomp)
-            case('GRADIENT')
+          end select
+        case('GRADIENT')
+          select case(datajob%scftype)
+            case('RHF')
+              call calcrgradient(datajob,datamol,databasis,datacomp)
+            case('UHF')
               call calcugradient(datajob,datamol,databasis,datacomp)
-            case('OPT')
+          end select
+        case('OPT')
+          select case(datajob%scftype)
+            case('RHF')
+              call calcrgeometry(datajob,datamol,databasis,datacomp)
+            case('UHF')
               call calcugeometry(datajob,datamol,databasis,datacomp)
-            case default
-              if(datacomp%master) then
-                write(*,'(" Error! This program does not support runtype= ",a16,".")') &
-&                       datajob%runtype
-                call iabort
-              endif
           end select
         case default
-          if(datacomp%master) &
-&           write(*,'(" Error! SCFtype=",a16," is not supported.")') datajob%scftype
-          call iabort
+          if(datacomp%master) then
+            write(*,'(" Error! This program does not support runtype= ",a16,".")') datajob%runtype
+            call iabort
+          endif
       end select
 !
 ! Open, write, and close xyz file if set
