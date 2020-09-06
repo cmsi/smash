@@ -12,19 +12,19 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!-----------------------------------------------------------
-  subroutine smashmain(datajob,datamol,databasis,datacomp)
-!-----------------------------------------------------------
+!---------------------------------
+  subroutine smashmain(datacomp)
+!---------------------------------
 !
 ! This is the main driver of Scalable Molecular Analysis Solver 
 ! for High performance computing systems (SMASH).
 !
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
-      type(typejob),intent(inout) :: datajob
-      type(typemol),intent(inout) :: datamol
-      type(typebasis),intent(inout) :: databasis
       type(typecomp),intent(inout) :: datacomp
+      type(typejob) :: datajob
+      type(typemol) :: datamol
+      type(typebasis) :: databasis
 !
 ! Write SMASH version, starting time, and parallel information
 !

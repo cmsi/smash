@@ -20,11 +20,8 @@
 ! Main program of Scalable Molecular Analysis Solver
 ! for High performance computing systems (SMASH).
 !
-      use modtype, only : typejob, typemol, typebasis, typecomp
+      use modtype, only : typecomp
       implicit none
-      type(typejob) :: datajob
-      type(typemol) :: datamol
-      type(typebasis) :: databasis
       type(typecomp) :: datacomp
 !
 ! Initialize and get MPI execution environment
@@ -33,7 +30,7 @@
 !
 ! Main driver of SMASH
 !
-      call smashmain(datajob,datamol,databasis,datacomp)
+      call smashmain(datacomp)
 !
 ! Finalize MPI
 !
