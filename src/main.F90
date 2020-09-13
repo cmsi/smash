@@ -25,6 +25,8 @@
       type(typejob) :: datajob
       type(typemol) :: datamol
       type(typebasis) :: databasis
+      integer :: nao, nao2
+      real(8),allocatable :: egrad(:), cmo(:), cmob(:), energymo(:), energymob(:)
 !
 ! Write SMASH version, starting time, and parallel information
 !
@@ -66,27 +68,55 @@
         call iabort
       endif
 !
+      nao = databasis%nao
+      nao2= nao*nao
       select case(datajob%runtype)
         case('ENERGY')
           select case(datajob%scftype)
             case('RHF')
-              call calcrenergy(datajob,datamol,databasis,datacomp)
+              call memset(nao2+nao,datacomp)
+              allocate(cmo(nao2),energymo(nao))
+              call calcrenergy(cmo,energymo,datajob,datamol,databasis,datacomp)
+              deallocate(cmo,energymo)
+              call memunset(nao2+nao,datacomp)
             case('UHF')
-              call calcuenergy(datajob,datamol,databasis,datacomp)
+              call memset(nao2*2+nao*2,datacomp)
+              allocate(cmo(nao2),cmob(nao2),energymo(nao),energymob(nao))
+              call calcuenergy(cmo,cmob,energymo,energymob,datajob,datamol,databasis,datacomp)
+              deallocate(cmo,cmob,energymo,energymob)
+              call memunset(nao2*2+nao*2,datacomp)
           end select
         case('GRADIENT')
           select case(datajob%scftype)
             case('RHF')
-              call calcrgradient(datajob,datamol,databasis,datacomp)
+              call memset(datamol%natom*3+nao2+nao,datacomp)
+              allocate(egrad(datamol%natom*3),cmo(nao2),energymo(nao))
+              call calcrgradient(egrad,cmo,energymo,datajob,datamol,databasis,datacomp)
+              deallocate(egrad,cmo,energymo)
+              call memunset(datamol%natom*3+nao2+nao,datacomp)
             case('UHF')
-              call calcugradient(datajob,datamol,databasis,datacomp)
+              call memset(datamol%natom*3+nao2*2+nao*2,datacomp)
+              allocate(egrad(datamol%natom*3),cmo(nao2),cmob(nao2),energymo(nao),energymob(nao))
+              call calcugradient(egrad,cmo,cmob,energymo,energymob, &
+&                                datajob,datamol,databasis,datacomp)
+              deallocate(egrad,cmo,cmob,energymo,energymob)
+              call memunset(datamol%natom*3+nao2*2+nao*2,datacomp)
           end select
         case('OPT')
           select case(datajob%scftype)
             case('RHF')
-              call calcrgeometry(datajob,datamol,databasis,datacomp)
+              call memset(datamol%natom*3+nao2+nao,datacomp)
+              allocate(egrad(datamol%natom*3),cmo(nao2),energymo(nao))
+              call calcrgeometry(egrad,cmo,energymo,datajob,datamol,databasis,datacomp)
+              deallocate(egrad,cmo,energymo)
+              call memunset(datamol%natom*3+nao2+nao,datacomp)
             case('UHF')
-              call calcugeometry(datajob,datamol,databasis,datacomp)
+              call memset(datamol%natom*3+nao2*2+nao*2,datacomp)
+              allocate(egrad(datamol%natom*3),cmo(nao2),cmob(nao2),energymo(nao),energymob(nao))
+              call calcugeometry(egrad,cmo,cmob,energymo,energymob, &
+&                                datajob,datamol,databasis,datacomp)
+              deallocate(egrad,cmo,cmob,energymo,energymob)
+              call memunset(datamol%natom*3+nao2*2+nao*2,datacomp)
           end select
         case default
           if(datacomp%master) then
@@ -363,13 +393,16 @@ end
 end
 
 
-!-------------------------------------------------------------
-  subroutine calcrenergy(datajob,datamol,databasis,datacomp)
-!-------------------------------------------------------------
+!--------------------------------------------------------------------------
+  subroutine calcrenergy(cmo,energymo,datajob,datamol,databasis,datacomp)
+!--------------------------------------------------------------------------
 !
 ! Driver of closed-shell energy calculation
 !
 ! Parallel information
+!   nproc1, myrank1, mpi_comm1 : MPI_COMM_WORLD (all nodes)
+!   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
+!                               (default: MPI_COMM_WORLD)
 !
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
@@ -378,9 +411,9 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao, nao2, nao3, nshell3
-      real(8), allocatable :: h1mtrx(:), fock(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
-      real(8), allocatable :: xint(:), energymo(:)
-      real(8), allocatable :: overinv(:), work(:)
+      real(8),intent(out) :: cmo(databasis%nao**2), energymo(databasis%nao)
+      real(8), allocatable :: h1mtrx(:), fock(:), smtrx(:), tmtrx(:), ortho(:), dmtrx(:)
+      real(8), allocatable :: xint(:), overinv(:), work(:)
       real(8) :: savedconv, savecutint2
 !
       nao= databasis%nao
@@ -390,9 +423,9 @@ end
 !
 ! Set arrays 1
 !
-      call memset(nao3*5+nao2*2+nshell3+nao,datacomp)
-      allocate(h1mtrx(nao3),fock(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2),dmtrx(nao3),&
-&              xint(nshell3),energymo(nao))
+      call memset(nao3*5+nao2+nshell3,datacomp)
+      allocate(h1mtrx(nao3),fock(nao3),smtrx(nao3),tmtrx(nao3),ortho(nao2),dmtrx(nao3), &
+&              xint(nshell3))
 !
 ! Calculate nuclear repulsion energy
 !
@@ -530,17 +563,17 @@ end
 !
 ! Unset arrays 1
 !
-      deallocate(h1mtrx,fock,smtrx,tmtrx,cmo,ortho,dmtrx, &
-&                xint,energymo)
-      call memunset(nao3*5+nao2*2+nshell3+nao,datacomp)
+      deallocate(h1mtrx,fock,smtrx,tmtrx,ortho,dmtrx, &
+&                xint)
+      call memunset(nao3*5+nao2+nshell3,datacomp)
       call tstamp(1,datacomp)
       return
 end
 
 
-!-------------------------------------------------------------
-  subroutine calcuenergy(datajob,datamol,databasis,datacomp)
-!-------------------------------------------------------------
+!-------------------------------------------------------------------------------------------
+  subroutine calcuenergy(cmoa,cmob,energymoa,energymob,datajob,datamol,databasis,datacomp)
+!-------------------------------------------------------------------------------------------
 !
 ! Driver of open-shell energy calculation
 !
@@ -556,9 +589,10 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao, nao2, nao3, nshell3
-      real(8), allocatable :: h1mtrx(:), focka(:), fockb(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
-      real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), energymoa(:), energymob(:)
-      real(8), allocatable :: overinv(:), work(:)
+      real(8), intent(out) :: cmoa(databasis%nao**2), cmob(databasis%nao**2)
+      real(8), intent(out) :: energymoa(databasis%nao), energymob(databasis%nao)
+      real(8), allocatable :: h1mtrx(:), focka(:), fockb(:), smtrx(:), tmtrx(:), ortho(:)
+      real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), overinv(:), work(:)
       real(8) :: savedconv, savecutint2
 !
       nao= databasis%nao
@@ -568,9 +602,9 @@ end
 !
 ! Set arrays 1
 !
-      call memset(nao3*7+nao2*3+nshell3+nao*2,datacomp)
-      allocate(h1mtrx(nao3),focka(nao3),fockb(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),cmob(nao2),ortho(nao2),&
-&              dmtrxa(nao3),dmtrxb(nao3),xint(nshell3),energymoa(nao),energymob(nao))
+      call memset(nao3*7+nao2+nshell3,datacomp)
+      allocate(h1mtrx(nao3),focka(nao3),fockb(nao3),smtrx(nao3),tmtrx(nao3),ortho(nao2),&
+&              dmtrxa(nao3),dmtrxb(nao3),xint(nshell3))
 !
 ! Calculate nuclear repulsion energy
 !
@@ -705,16 +739,16 @@ end
 !
 ! Unset arrays 1
 !
-      deallocate(h1mtrx,focka,fockb,smtrx,tmtrx,cmoa,cmob,ortho, &
-&                dmtrxa,dmtrxb,xint,energymoa,energymob)
-      call memunset(nao3*7+nao2*3+nshell3+nao*2,datacomp)
+      deallocate(h1mtrx,focka,fockb,smtrx,tmtrx,ortho, &
+&                dmtrxa,dmtrxb,xint)
+      call memunset(nao3*7+nao2+nshell3,datacomp)
       return
 end
 
 
-!---------------------------------------------------------------
-  subroutine calcrgradient(datajob,datamol,databasis,datacomp)
-!---------------------------------------------------------------
+!--------------------------------------------------------------------------------
+  subroutine calcrgradient(egrad,cmo,energymo,datajob,datamol,databasis,datacomp)
+!--------------------------------------------------------------------------------
 !
 ! Driver of energy gradient calculation
 !
@@ -730,10 +764,10 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao, nao2, nao3, nshell3
-      real(8), allocatable :: h1mtrx(:), fock(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
-      real(8), allocatable :: xint(:), energymo(:)
+      real(8), intent(out) :: egrad(datamol%natom*3), cmo(databasis%nao**2), energymo(databasis%nao)
+      real(8), allocatable :: h1mtrx(:), fock(:), smtrx(:), tmtrx(:), ortho(:), dmtrx(:)
+      real(8), allocatable :: xint(:)
       real(8), allocatable :: overinv(:), work(:)
-      real(8), allocatable :: egrad(:)
       real(8) :: egradmax, egradrms
       real(8) :: savedconv, savecutint2
 !
@@ -744,9 +778,9 @@ end
 !
 ! Set arrays 1
 !
-      call memset(nao3*5+nao2*2+nshell3+nao,datacomp)
-      allocate(h1mtrx(nao3),fock(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2),dmtrx(nao3),&
-&              xint(nshell3),energymo(nao))
+      call memset(nao3*5+nao2+nshell3,datacomp)
+      allocate(h1mtrx(nao3),fock(nao3),smtrx(nao3),tmtrx(nao3),ortho(nao2),dmtrx(nao3),&
+&              xint(nshell3))
 !
 ! Calculate nuclear repulsion energy
 !
@@ -822,11 +856,6 @@ end
         endif
       endif
 !
-! Set arrays 3
-!
-      call memset(datamol%natom*3,datacomp)
-      allocate(egrad(datamol%natom*3))
-!
 ! Calculate energy gradient
 !
       if(datajob%method == 'HF') then
@@ -852,11 +881,6 @@ end
 &       write(datacomp%iout,'("   Maximum gradient =",f13.8,/,"   RMS gradient     =",f13.8,/, &
 &                 " ----------------------------------------------------",/)') egradmax,egradrms
       call tstamp(1,datacomp)
-!
-! Unset arrays 3
-!
-      deallocate(egrad)
-      call memunset(datamol%natom*3,datacomp)
 !
 ! Print MOs
 !
@@ -908,17 +932,18 @@ end
 !
 ! Unset arrays 1
 !
-      deallocate(h1mtrx,fock,smtrx,tmtrx,cmo,ortho,dmtrx, &
-&                xint,energymo)
-      call memunset(nao3*5+nao2*2+nshell3+nao,datacomp)
+      deallocate(h1mtrx,fock,smtrx,tmtrx,ortho,dmtrx, &
+&                xint)
+      call memunset(nao3*5+nao2+nshell3,datacomp)
       call tstamp(1,datacomp)
       return
 end
 
 
-!---------------------------------------------------------------
-  subroutine calcugradient(datajob,datamol,databasis,datacomp)
-!---------------------------------------------------------------
+!------------------------------------------------------------------
+  subroutine calcugradient(egrad,cmoa,cmob,energymoa,energymob, &
+&                          datajob,datamol,databasis,datacomp)
+!------------------------------------------------------------------
 !
 ! Driver of open-shell energy gradient calculation
 !
@@ -934,10 +959,11 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer :: nao, nao2, nao3, nshell3
-      real(8), allocatable :: h1mtrx(:), focka(:), fockb(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
-      real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), energymoa(:), energymob(:)
+      real(8), intent(out) :: egrad(datamol%natom*3), cmoa(databasis%nao**2), cmob(databasis%nao**2)
+      real(8), intent(out) :: energymoa(databasis%nao), energymob(databasis%nao)
+      real(8), allocatable :: h1mtrx(:), focka(:), fockb(:), smtrx(:), tmtrx(:), ortho(:)
+      real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:)
       real(8), allocatable :: overinv(:), work(:)
-      real(8), allocatable :: egrad(:)
       real(8) :: egradmax, egradrms
       real(8) :: savedconv, savecutint2
 !
@@ -948,9 +974,9 @@ end
 !
 ! Set arrays 1
 !
-      call memset(nao3*7+nao2*3+nshell3+nao*2,datacomp)
-      allocate(h1mtrx(nao3),focka(nao3),fockb(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),cmob(nao2),ortho(nao2),&
-&              dmtrxa(nao3),dmtrxb(nao3),xint(nshell3),energymoa(nao),energymob(nao))
+      call memset(nao3*7+nao2+nshell3,datacomp)
+      allocate(h1mtrx(nao3),focka(nao3),fockb(nao3),smtrx(nao3),tmtrx(nao3),ortho(nao2),&
+&              dmtrxa(nao3),dmtrxb(nao3),xint(nshell3))
 !
 ! Calculate nuclear repulsion energy
 !
@@ -1026,11 +1052,6 @@ end
         endif
       endif
 !
-! Set arrays 3
-!
-      call memset(datamol%natom*3,datacomp)
-      allocate(egrad(datamol%natom*3))
-!
 ! Calculate energy gradient
 !
       if(datajob%method == 'HF') then
@@ -1054,11 +1075,6 @@ end
 &       write(datacomp%iout,'("   Maximum gradient =",f13.8,/,"   RMS gradient     =",f13.8,/, &
 &                 " ----------------------------------------------------",/)') egradmax,egradrms
       call tstamp(1,datacomp)
-!
-! Unset arrays 3
-!
-      deallocate(egrad)
-      call memunset(datamol%natom*3,datacomp)
 !
 ! Print MOs
 !
@@ -1114,17 +1130,17 @@ end
 !
 ! Unset arrays 1
 !
-      deallocate(h1mtrx,focka,fockb,smtrx,tmtrx,cmoa,cmob,ortho, &
-&                dmtrxa,dmtrxb,xint,energymoa,energymob)
-      call memunset(nao3*7+nao2*3+nshell3+nao*2,datacomp)
+      deallocate(h1mtrx,focka,fockb,smtrx,tmtrx,ortho, &
+&                dmtrxa,dmtrxb,xint)
+      call memunset(nao3*7+nao2+nshell3,datacomp)
       call tstamp(1,datacomp)
       return
 end
 
 
-!-------------------------------------------------------------------------
-  subroutine calcrgeometry(datajob,datamol,databasis,datacomp)
-!-------------------------------------------------------------------------
+!----------------------------------------------------------------------------------
+  subroutine calcrgeometry(egrad,cmo,energymo,datajob,datamol,databasis,datacomp)
+!----------------------------------------------------------------------------------
 !
 ! Driver of geometry optimization calculation
 !
@@ -1143,9 +1159,10 @@ end
       integer :: nao, nao2, nao3, nshell3, natom3, ii, iopt
       integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
       real(8), parameter :: third=0.3333333333333333D+00
-      real(8), allocatable :: h1mtrx(:), fock(:), smtrx(:), tmtrx(:), cmo(:), ortho(:), dmtrx(:)
-      real(8), allocatable :: xint(:), energymo(:)
-      real(8), allocatable :: egrad(:), egradold(:), ehess(:)
+      real(8), intent(out) :: egrad(datamol%natom*3), cmo(databasis%nao**2), energymo(databasis%nao)
+      real(8), allocatable :: h1mtrx(:), fock(:), smtrx(:), tmtrx(:), ortho(:), dmtrx(:)
+      real(8), allocatable :: xint(:)
+      real(8), allocatable :: egradold(:), ehess(:)
       real(8), allocatable :: overinv(:), work(:,:)
       real(8), allocatable :: workv(:), coordredun(:), egradredun(:)
       real(8) :: egradmax, egradrms
@@ -1186,19 +1203,18 @@ end
 !
 ! Set arrays for energy
 !
-      call memset(nao3*5+nao2*2+nshell3+nao,datacomp)
-      allocate(h1mtrx(nao3),fock(nao3),smtrx(nao3),tmtrx(nao3),cmo(nao2),ortho(nao2),dmtrx(nao3), &
-&              xint(nshell3),energymo(nao))
+      call memset(nao3*5+nao2+nshell3,datacomp)
+      allocate(h1mtrx(nao3),fock(nao3),smtrx(nao3),tmtrx(nao3),ortho(nao2),dmtrx(nao3), &
+&              xint(nshell3))
 !
 ! Set arrays for energy gradient and geometry optimization
 !
       if(datajob%cartesian) then
-        call memset(natom3*2+natom3*(natom3+1)/2,datacomp)
-        allocate(egrad(natom3),egradold(natom3),ehess(natom3*(natom3+1)/2))
+        call memset(natom3+natom3*(natom3+1)/2,datacomp)
+        allocate(egradold(natom3),ehess(natom3*(natom3+1)/2))
       else
-        call memset(natom3+numredun*4+numredun*(numredun+1)/2,datacomp)
-        allocate(egrad(natom3),coordredun(numredun*2),egradredun(numredun*2), &
-&                ehess(numredun*(numredun+1)/2))
+        call memset(numredun*4+numredun*(numredun+1)/2,datacomp)
+        allocate(coordredun(numredun*2),egradredun(numredun*2),ehess(numredun*(numredun+1)/2))
       endif
 !
 ! Start geometry optimization cycle
@@ -1468,19 +1484,18 @@ end
 ! Unset arrays for energy gradient and geometry optimization
 !
       if(datajob%cartesian) then
-        deallocate(egrad,egradold,ehess)
-        call memunset(natom3*2+natom3*(natom3+1)/2,datacomp)
+        deallocate(egradold,ehess)
+        call memunset(natom3+natom3*(natom3+1)/2,datacomp)
       else
-        deallocate(egrad,coordredun,egradredun, &
-&                  ehess)
-        call memunset(natom3+numredun*4+numredun*(numredun+1)/2,datacomp)
+        deallocate(coordredun,egradredun,ehess)
+        call memunset(numredun*4+numredun*(numredun+1)/2,datacomp)
       endif
 !
 ! Unset arrays for energy
 !
-      deallocate(h1mtrx,fock,smtrx,tmtrx,cmo,ortho,dmtrx, &
-&                xint,energymo)
-      call memunset(nao3*5+nao2*2+nshell3+nao,datacomp)
+      deallocate(h1mtrx,fock,smtrx,tmtrx,ortho,dmtrx, &
+&                xint)
+      call memunset(nao3*5+nao2+nshell3,datacomp)
 !
 ! Unset array for redundant coordinate
 !
@@ -1494,9 +1509,10 @@ end
 end
 
 
-!----------------------------------------------------------------------------------------
-  subroutine calcugeometry(datajob,datamol,databasis,datacomp)
-!----------------------------------------------------------------------------------------
+!------------------------------------------------------------------
+  subroutine calcugeometry(egrad,cmoa,cmob,energymoa,energymob, &
+&                          datajob,datamol,databasis,datacomp)
+!------------------------------------------------------------------
 !
 ! Driver of open-shell geometry optimization calculation
 !
@@ -1515,9 +1531,11 @@ end
       integer :: nao, nao2, nao3, nshell3, natom3, ii, iopt
       integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
       real(8), parameter :: third=0.3333333333333333D+00
-      real(8), allocatable :: h1mtrx(:), focka(:), fockb(:), smtrx(:), tmtrx(:), cmoa(:), cmob(:), ortho(:)
-      real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), energymoa(:), energymob(:)
-      real(8), allocatable :: egrad(:), egradold(:), ehess(:)
+      real(8), intent(out) :: egrad(datamol%natom*3), cmoa(databasis%nao**2), cmob(databasis%nao**2)
+      real(8), intent(out) :: energymoa(databasis%nao), energymob(databasis%nao)
+      real(8), allocatable :: h1mtrx(:), focka(:), fockb(:), smtrx(:), tmtrx(:), ortho(:)
+      real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:)
+      real(8), allocatable :: egradold(:), ehess(:)
       real(8), allocatable :: overinv(:,:), work(:,:)
       real(8), allocatable :: workv(:), coordredun(:), egradredun(:)
       real(8) :: egradmax, egradrms
@@ -1558,19 +1576,18 @@ end
 !
 ! Set arrays for energy
 !
-      call memset(nao3*7+nao2*3+nshell3+nao*2,datacomp)
-      allocate(h1mtrx(nao3),focka(nao3),fockb(nao3),smtrx(nao3),tmtrx(nao3),cmoa(nao2),cmob(nao2),ortho(nao2), &
-&              dmtrxa(nao3),dmtrxb(nao3),xint(nshell3),energymoa(nao),energymob(nao))
+      call memset(nao3*7+nao2+nshell3,datacomp)
+      allocate(h1mtrx(nao3),focka(nao3),fockb(nao3),smtrx(nao3),tmtrx(nao3),ortho(nao2), &
+&              dmtrxa(nao3),dmtrxb(nao3),xint(nshell3))
 !
 ! Set arrays for energy gradient and geometry optimization
 !
       if(datajob%cartesian) then
-        call memset(natom3*2+natom3*(natom3+1)/2,datacomp)
-        allocate(egrad(natom3),egradold(natom3),ehess(natom3*(natom3+1)/2))
+        call memset(natom3+natom3*(natom3+1)/2,datacomp)
+        allocate(egradold(natom3),ehess(natom3*(natom3+1)/2))
       else
-        call memset(natom3+numredun*4+numredun*(numredun+1)/2,datacomp)
-        allocate(egrad(natom3),coordredun(numredun*2),egradredun(numredun*2), &
-&                ehess(numredun*(numredun+1)/2))
+        call memset(numredun*4+numredun*(numredun+1)/2,datacomp)
+        allocate(coordredun(numredun*2),egradredun(numredun*2),ehess(numredun*(numredun+1)/2))
       endif
 !
 ! Start geometry optimization cycle
@@ -1850,19 +1867,18 @@ end
 ! Unset arrays for energy gradient and geometry optimization
 !
       if(datajob%cartesian) then
-        deallocate(egrad,egradold,ehess)
-        call memunset(natom3*2+natom3*(natom3+1)/2,datacomp)
+        deallocate(egradold,ehess)
+        call memunset(natom3+natom3*(natom3+1)/2,datacomp)
       else
-        deallocate(egrad,coordredun,egradredun, &
-&                ehess)
-        call memunset(natom3+numredun*4+numredun*(numredun+1)/2,datacomp)
+        deallocate(coordredun,egradredun,ehess)
+        call memunset(numredun*4+numredun*(numredun+1)/2,datacomp)
       endif
 !
 ! Unset arrays for energy
 !
-      deallocate(h1mtrx,focka,fockb,smtrx,tmtrx,cmoa,cmob,ortho, &
-&                dmtrxa,dmtrxb,xint,energymoa,energymob)
-      call memunset(nao3*7+nao2*3+nshell3+nao*2,datacomp)
+      deallocate(h1mtrx,focka,fockb,smtrx,tmtrx,ortho, &
+&                dmtrxa,dmtrxb,xint)
+      call memunset(nao3*7+nao2+nshell3,datacomp)
       call tstamp(1,datacomp)
 !
 ! Unset array for redundant coordinate
