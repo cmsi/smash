@@ -404,26 +404,31 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
+!$    use omp_lib
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
       type(typemol),intent(inout) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
-      integer :: nao, nao2, nao3, nshell3
+      integer :: nao, nao2, nao3, nshell3, nthread
       real(8),intent(out) :: cmo(databasis%nao**2), energymo(databasis%nao)
       real(8), allocatable :: h1mtrx(:), fock(:), smtrx(:), tmtrx(:), ortho(:), dmtrx(:)
       real(8), allocatable :: xint(:), overinv(:), work(:)
       real(8) :: savedconv, savecutint2
 !
-      nao= databasis%nao
-      nao2= nao*nao
-      nao3=(nao*(nao+1))/2
+      nao    = databasis%nao
+      nao2   = nao*nao
+      nao3   =(nao*(nao+1))/2
       nshell3=(databasis%nshell*(databasis%nshell+1))/2
+      nthread= 1
+!$omp parallel
+!$    nthread= omp_get_num_threads()
+!$omp end parallel 
 !
-! Set arrays 1
+! Set arrays 1 (actually, fock(nao3*nthread))
 !
-      call memset(nao3*5+nao2+nshell3,datacomp)
+      call memset(nao3*(4+nthread)+nao2+nshell3,datacomp)
       allocate(h1mtrx(nao3),fock(nao3),smtrx(nao3),tmtrx(nao3),ortho(nao2),dmtrx(nao3), &
 &              xint(nshell3))
 !
@@ -565,7 +570,7 @@ end
 !
       deallocate(h1mtrx,fock,smtrx,tmtrx,ortho,dmtrx, &
 &                xint)
-      call memunset(nao3*5+nao2+nshell3,datacomp)
+      call memunset(nao3*(4+nthread)+nao2+nshell3,datacomp)
       call tstamp(1,datacomp)
       return
 end
@@ -582,29 +587,34 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
+!$    use omp_lib
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
       type(typemol),intent(inout) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
-      integer :: nao, nao2, nao3, nshell3
+      integer :: nao, nao2, nao3, nshell3, nthread
       real(8), intent(out) :: cmoa(databasis%nao**2), cmob(databasis%nao**2)
       real(8), intent(out) :: energymoa(databasis%nao), energymob(databasis%nao)
       real(8), allocatable :: h1mtrx(:), focka(:), fockb(:), smtrx(:), tmtrx(:), ortho(:)
       real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), overinv(:), work(:)
       real(8) :: savedconv, savecutint2
 !
-      nao= databasis%nao
-      nao2= nao*nao
-      nao3=(nao*(nao+1))/2
+      nao    = databasis%nao
+      nao2   = nao*nao
+      nao3   =(nao*(nao+1))/2
       nshell3=(databasis%nshell*(databasis%nshell+1))/2
+      nthread= 1
+!$omp parallel
+!$    nthread= omp_get_num_threads()
+!$omp end parallel
 !
-! Set arrays 1
+! Set arrays 1 (actually, focka(nao3*nthread), fockb(nao3*nthread))
 !
-      call memset(nao3*7+nao2+nshell3,datacomp)
-      allocate(h1mtrx(nao3),focka(nao3),fockb(nao3),smtrx(nao3),tmtrx(nao3),ortho(nao2),&
-&              dmtrxa(nao3),dmtrxb(nao3),xint(nshell3))
+      call memset(nao3*(5+nthread*2)+nao2+nshell3,datacomp)
+      allocate(h1mtrx(nao3),focka(nao3),fockb(nao3),smtrx(nao3),tmtrx(nao3), &
+&              ortho(nao2),dmtrxa(nao3),dmtrxb(nao3),xint(nshell3))
 !
 ! Calculate nuclear repulsion energy
 !
@@ -739,9 +749,9 @@ end
 !
 ! Unset arrays 1
 !
-      deallocate(h1mtrx,focka,fockb,smtrx,tmtrx,ortho, &
-&                dmtrxa,dmtrxb,xint)
-      call memunset(nao3*7+nao2+nshell3,datacomp)
+      deallocate(h1mtrx,focka,fockb,smtrx,tmtrx, &
+&                ortho,dmtrxa,dmtrxb,xint)
+      call memunset(nao3*(5+nthread*2)+nao2+nshell3,datacomp)
       return
 end
 
@@ -757,13 +767,14 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
+!$    use omp_lib
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
       type(typemol),intent(inout) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
-      integer :: nao, nao2, nao3, nshell3
+      integer :: nao, nao2, nao3, nshell3, nthread
       real(8), intent(out) :: egrad(datamol%natom*3), cmo(databasis%nao**2), energymo(databasis%nao)
       real(8), allocatable :: h1mtrx(:), fock(:), smtrx(:), tmtrx(:), ortho(:), dmtrx(:)
       real(8), allocatable :: xint(:)
@@ -771,15 +782,19 @@ end
       real(8) :: egradmax, egradrms
       real(8) :: savedconv, savecutint2
 !
-      nao= databasis%nao
-      nao2= nao*nao
-      nao3=(nao*(nao+1))/2
+      nao    = databasis%nao
+      nao2   = nao*nao
+      nao3   =(nao*(nao+1))/2
       nshell3=(databasis%nshell*(databasis%nshell+1))/2
+      nthread= 1
+!$omp parallel
+!$    nthread= omp_get_num_threads()
+!$omp end parallel
 !
-! Set arrays 1
+! Set arrays 1 (actually, fock(nao3*nthread))
 !
-      call memset(nao3*5+nao2+nshell3,datacomp)
-      allocate(h1mtrx(nao3),fock(nao3),smtrx(nao3),tmtrx(nao3),ortho(nao2),dmtrx(nao3),&
+      call memset(nao3*(4+nthread)+nao2+nshell3,datacomp)
+      allocate(h1mtrx(nao3),fock(nao3),smtrx(nao3),tmtrx(nao3),ortho(nao2),dmtrx(nao3), &
 &              xint(nshell3))
 !
 ! Calculate nuclear repulsion energy
@@ -934,7 +949,7 @@ end
 !
       deallocate(h1mtrx,fock,smtrx,tmtrx,ortho,dmtrx, &
 &                xint)
-      call memunset(nao3*5+nao2+nshell3,datacomp)
+      call memunset(nao3*(4+nthread)+nao2+nshell3,datacomp)
       call tstamp(1,datacomp)
       return
 end
@@ -952,13 +967,14 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
+!$    use omp_lib
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
       type(typemol),intent(inout) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
-      integer :: nao, nao2, nao3, nshell3
+      integer :: nao, nao2, nao3, nshell3, nthread
       real(8), intent(out) :: egrad(datamol%natom*3), cmoa(databasis%nao**2), cmob(databasis%nao**2)
       real(8), intent(out) :: energymoa(databasis%nao), energymob(databasis%nao)
       real(8), allocatable :: h1mtrx(:), focka(:), fockb(:), smtrx(:), tmtrx(:), ortho(:)
@@ -967,16 +983,20 @@ end
       real(8) :: egradmax, egradrms
       real(8) :: savedconv, savecutint2
 !
-      nao= databasis%nao
-      nao2= nao*nao
-      nao3=(nao*(nao+1))/2
+      nao    = databasis%nao
+      nao2   = nao*nao
+      nao3   =(nao*(nao+1))/2
       nshell3=(databasis%nshell*(databasis%nshell+1))/2
+      nthread= 1
+!$omp parallel
+!$    nthread= omp_get_num_threads()
+!$omp end parallel
 !
-! Set arrays 1
+! Set arrays 1 (actually, focka(nao3*nthread), fockb(nao3*nthread))
 !
-      call memset(nao3*7+nao2+nshell3,datacomp)
-      allocate(h1mtrx(nao3),focka(nao3),fockb(nao3),smtrx(nao3),tmtrx(nao3),ortho(nao2),&
-&              dmtrxa(nao3),dmtrxb(nao3),xint(nshell3))
+      call memset(nao3*(5+nthread*2)+nao2+nshell3,datacomp)
+      allocate(h1mtrx(nao3),focka(nao3),fockb(nao3),smtrx(nao3),tmtrx(nao3), &
+&              ortho(nao2),dmtrxa(nao3),dmtrxb(nao3),xint(nshell3))
 !
 ! Calculate nuclear repulsion energy
 !
@@ -1130,9 +1150,9 @@ end
 !
 ! Unset arrays 1
 !
-      deallocate(h1mtrx,focka,fockb,smtrx,tmtrx,ortho, &
-&                dmtrxa,dmtrxb,xint)
-      call memunset(nao3*7+nao2+nshell3,datacomp)
+      deallocate(h1mtrx,focka,fockb,smtrx,tmtrx, &
+&                ortho,dmtrxa,dmtrxb,xint)
+      call memunset(nao3*(5+nthread*2)+nao2+nshell3,datacomp)
       call tstamp(1,datacomp)
       return
 end
@@ -1149,6 +1169,7 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
+!$    use omp_lib
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -1156,7 +1177,7 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,allocatable :: iredun(:)
-      integer :: nao, nao2, nao3, nshell3, natom3, ii, iopt
+      integer :: nao, nao2, nao3, nshell3, natom3, nthread, ii, iopt
       integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
       real(8), parameter :: third=0.3333333333333333D+00
       real(8), intent(out) :: egrad(datamol%natom*3), cmo(databasis%nao**2), energymo(databasis%nao)
@@ -1169,11 +1190,16 @@ end
       real(8) :: savedconv, savecutint2
       logical :: exceed, writeeigen
 !
-      nao= databasis%nao
-      nao2= nao*nao
-      nao3=(nao*(nao+1))/2
+      nao    = databasis%nao
+      nao2   = nao*nao
+      nao3   =(nao*(nao+1))/2
       nshell3=(databasis%nshell*(databasis%nshell+1))/2
-      natom3= datamol%natom*3
+      natom3 = datamol%natom*3
+      nthread= 1
+!$omp parallel
+!$    nthread= omp_get_num_threads()
+!$omp end parallel
+!
       datacomp%convergedgeom=.false.
       writeeigen=(datajob%iprint == 3).or.(datajob%iprint == 5).or.(datajob%iprint == 7)
 !
@@ -1201,9 +1227,9 @@ end
         maxredun= max(numredun,natom3)
       endif
 !
-! Set arrays for energy
+! Set arrays for energy (actually, fock(nao3*nthread))
 !
-      call memset(nao3*5+nao2+nshell3,datacomp)
+      call memset(nao3*(4+nthread)+nao2+nshell3,datacomp)
       allocate(h1mtrx(nao3),fock(nao3),smtrx(nao3),tmtrx(nao3),ortho(nao2),dmtrx(nao3), &
 &              xint(nshell3))
 !
@@ -1495,7 +1521,7 @@ end
 !
       deallocate(h1mtrx,fock,smtrx,tmtrx,ortho,dmtrx, &
 &                xint)
-      call memunset(nao3*5+nao2+nshell3,datacomp)
+      call memunset(nao3*(4+nthread)+nao2+nshell3,datacomp)
 !
 ! Unset array for redundant coordinate
 !
@@ -1521,6 +1547,7 @@ end
 !   nproc2, myrank2, mpi_comm2 : new communicator for matrix operations
 !                               (default: MPI_COMM_WORLD)
 !
+!$    use omp_lib
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(inout) :: datajob
@@ -1528,7 +1555,7 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,allocatable :: iredun(:)
-      integer :: nao, nao2, nao3, nshell3, natom3, ii, iopt
+      integer :: nao, nao2, nao3, nshell3, natom3, nthread, ii, iopt
       integer :: isizered, numbond, numangle, numtorsion, numredun, maxredun
       real(8), parameter :: third=0.3333333333333333D+00
       real(8), intent(out) :: egrad(datamol%natom*3), cmoa(databasis%nao**2), cmob(databasis%nao**2)
@@ -1542,11 +1569,16 @@ end
       real(8) :: savedconv, savecutint2
       logical :: exceed, writeeigen
 !
-      nao= databasis%nao
-      nao2= nao*nao
-      nao3=(nao*(nao+1))/2
+      nao    = databasis%nao
+      nao2   = nao*nao
+      nao3   =(nao*(nao+1))/2
       nshell3=(databasis%nshell*(databasis%nshell+1))/2
-      natom3= datamol%natom*3
+      natom3 = datamol%natom*3
+      nthread= 1
+!$omp parallel
+!$    nthread= omp_get_num_threads()
+!$omp end parallel
+!
       datacomp%convergedgeom=.false.
       writeeigen=(datajob%iprint == 3).or.(datajob%iprint == 5).or.(datajob%iprint == 7)
 !
@@ -1574,11 +1606,11 @@ end
         maxredun= max(numredun,natom3)
       endif
 !
-! Set arrays for energy
+! Set arrays for energy (actually, focka(nao3*nthread), fockb(nao3*nthread))
 !
-      call memset(nao3*7+nao2+nshell3,datacomp)
-      allocate(h1mtrx(nao3),focka(nao3),fockb(nao3),smtrx(nao3),tmtrx(nao3),ortho(nao2), &
-&              dmtrxa(nao3),dmtrxb(nao3),xint(nshell3))
+      call memset(nao3*(5+nthread*2)+nao2+nshell3,datacomp)
+      allocate(h1mtrx(nao3),focka(nao3),fockb(nao3),smtrx(nao3),tmtrx(nao3), &
+&              ortho(nao2),dmtrxa(nao3),dmtrxb(nao3),xint(nshell3))
 !
 ! Set arrays for energy gradient and geometry optimization
 !
@@ -1876,9 +1908,9 @@ end
 !
 ! Unset arrays for energy
 !
-      deallocate(h1mtrx,focka,fockb,smtrx,tmtrx,ortho, &
-&                dmtrxa,dmtrxb,xint)
-      call memunset(nao3*7+nao2+nshell3,datacomp)
+      deallocate(h1mtrx,focka,fockb,smtrx,tmtrx, &
+&                ortho,dmtrxa,dmtrxb,xint)
+      call memunset(nao3*(5+nthread*2)+nao2+nshell3,datacomp)
       call tstamp(1,datacomp)
 !
 ! Unset array for redundant coordinate
