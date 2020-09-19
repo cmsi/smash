@@ -265,6 +265,7 @@ end
 !       egrad   (Partial MP2 energy gradients)
 ! Work: egradtmp(Work space for MP2 energy gradients)
 !
+!$    use omp_lib
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
@@ -275,7 +276,7 @@ end
       integer,intent(in) :: nproc, myrank, mpi_comm, idis(0:nproc-1,8), npass
       integer,intent(in) :: numi, numab, numirecv
       integer :: maxmp2diis, nao, nshell, nao2, nao3, nocc2, nocc3, nvir2, numitrans, ipass
-      integer :: msize, mlsize, istart, mlsize2
+      integer :: msize, mlsize, istart, mlsize2, nthread
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(datamol%nmo)
       real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
@@ -298,6 +299,10 @@ end
       nocc3= nocc*(nocc+1)/2
       nvir2= nvir*nvir
       numitrans= numi
+      nthread= 1
+!$omp parallel
+!$    nthread= omp_get_num_threads()
+!$omp end parallel
 ! mem1
       call memset(nocc2+nvir2+nocc*nvac+nocc*nvir+nao2,datacomp)
       allocate(wij(nocc2),wab(nvir2),wai(nocc*nvac),xlai(nocc*nvir),pmn(nao2))
@@ -368,8 +373,8 @@ end
         call memrest(msize,datacomp)
         mlsize2=(msize-nao*numi-2*nao2)/(nao*(numi+1))
         if(mlsize2 > maxsize) mlsize2= maxsize
-        call memset(numi*mlsize2*nao+nao*numi+2*nao2+nao*mlsize2,datacomp)
-        allocate(tisml(numi*mlsize2*nao),xlmi(nao*numi),xlmn(nao2),work1(nao2),work2(nao*mlsize2))
+        call memset(numi*mlsize2*nao+nao*numi*nthread+nao2*nthread+nao2+nao*mlsize2,datacomp)
+        allocate(tisml(numi*mlsize2*nao),xlmi(nao*numi*nthread),xlmn(nao2*nthread),work1(nao2),work2(nao*mlsize2))
 !
         if(ipass /= npass) then
           call mp2gradbacktrans1(egrad,egradtmp,xlai,tisml,xlmi,cmo,xint,trint2,work1,work2, &
@@ -383,7 +388,7 @@ end
         endif
 !
         deallocate(tisml,xlmi,xlmn,work1,work2)
-        call memunset(numi*mlsize2*nao+nao*numi+2*nao2+nao*mlsize2,datacomp)
+        call memunset(numi*mlsize2*nao+nao*numi*nthread+nao2*nthread+nao2+nao*mlsize2,datacomp)
 !ishimura
 !call tstamp(1)
       enddo
