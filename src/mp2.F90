@@ -136,6 +136,8 @@
 !
       if(datacomp%master) then
         write(datacomp%iout,'(" -------------------------------------------------")')
+        write(datacomp%iout,'("   Energy (Hartree)")')
+        write(datacomp%iout,'(" -------------------------------------------------")')
         write(datacomp%iout,'("   HF Energy                  =",f17.9)') datamol%escf
         write(datacomp%iout,'("   MP2 Correlation Energy     =",f17.9)') datamol%emp2
         write(datacomp%iout,'("   HF + MP2 Energy            =",f17.9)') datamol%escf+datamol%emp2
