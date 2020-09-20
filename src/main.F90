@@ -521,10 +521,7 @@ end
 ! Print MOs
 !
       if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
-        write(datacomp%iout,'("  -------------------")')
-        write(datacomp%iout,'("    MO coefficients")')
-        write(datacomp%iout,'("  -------------------")')
-        call writeeigenvector(cmo,energymo,datajob,datamol,databasis,datacomp)
+        call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
       endif
 !
       if(datajob%method /= 'MP2') then
@@ -698,14 +695,8 @@ end
 ! Print MOs
 !
       if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
-        write(datacomp%iout,'("  -------------------------")')
-        write(datacomp%iout,'("    Alpha MO coefficients")')
-        write(datacomp%iout,'("  -------------------------")')
-        call writeeigenvector(cmoa,energymoa,datajob,datamol,databasis,datacomp)
-        write(datacomp%iout,'("  ------------------------")')
-        write(datacomp%iout,'("    Beta MO coefficients")')
-        write(datacomp%iout,'("  ------------------------")')
-        call writeeigenvector(cmob,energymob,datajob,datamol,databasis,datacomp)
+        call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)
+        call writeeigenvector(cmob,energymob,2,datajob,datamol,databasis,datacomp)
       endif
 !
       if(datajob%method /= 'MP2') then
@@ -900,10 +891,7 @@ end
 ! Print MOs
 !
       if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
-        write(datacomp%iout,'("  -------------------")')
-        write(datacomp%iout,'("    MO coefficients")')
-        write(datacomp%iout,'("  -------------------")')
-        call writeeigenvector(cmo,energymo,datajob,datamol,databasis,datacomp)
+        call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
       endif
 !
       if(datajob%method /= 'MP2') then
@@ -1099,14 +1087,8 @@ end
 ! Print MOs
 !
       if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
-        write(datacomp%iout,'("  -------------------------")')
-        write(datacomp%iout,'("    Alpha MO coefficients")')
-        write(datacomp%iout,'("  -------------------------")')
-        call writeeigenvector(cmoa,energymoa,datajob,datamol,databasis,datacomp)
-        write(datacomp%iout,'("  ------------------------")')
-        write(datacomp%iout,'("    Beta MO coefficients")')
-        write(datacomp%iout,'("  ------------------------")')
-        call writeeigenvector(cmob,energymob,datajob,datamol,databasis,datacomp)
+        call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)
+        call writeeigenvector(cmob,energymob,2,datajob,datamol,databasis,datacomp)
       endif
 !
       if(datajob%method /= 'MP2') then
@@ -1297,10 +1279,7 @@ end
           if((iopt == 1).or.writeeigen) then
             call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
             if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
-              write(datacomp%iout,'("  -------------------")')
-              write(datacomp%iout,'("    MO coefficients")')
-              write(datacomp%iout,'("  -------------------")')
-              call writeeigenvector(cmo,energymo,datajob,datamol,databasis,datacomp)
+              call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
             endif
           endif
           call tstamp(1,datacomp)
@@ -1329,10 +1308,7 @@ end
           if((iopt == 1).or.writeeigen) then
             call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
             if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
-              write(datacomp%iout,'("  -------------------")')
-              write(datacomp%iout,'("    MO coefficients")')
-              write(datacomp%iout,'("  -------------------")')
-              call writeeigenvector(cmo,energymo,datajob,datamol,databasis,datacomp)
+              call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
             endif
           endif
           call tstamp(1,datacomp)
@@ -1445,10 +1421,7 @@ end
 ! Print MOs
 !
       if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
-        write(datacomp%iout,'("  -------------------")')
-        write(datacomp%iout,'("    MO coefficients")')
-        write(datacomp%iout,'("  -------------------")')
-        call writeeigenvector(cmo,energymo,datajob,datamol,databasis,datacomp)
+        call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
       endif
 !
       if(datajob%method /= 'MP2') then
@@ -1676,14 +1649,8 @@ end
           if((iopt == 1).or.writeeigen) then
             call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
             if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
-              write(datacomp%iout,'("  -------------------------")')
-              write(datacomp%iout,'("    Alpha MO coefficients")')
-              write(datacomp%iout,'("  -------------------------")')
-              call writeeigenvector(cmoa,energymoa,datajob,datamol,databasis,datacomp)
-              write(datacomp%iout,'("  ------------------------")')
-              write(datacomp%iout,'("    Beta MO coefficients")')
-              write(datacomp%iout,'("  ------------------------")')
-              call writeeigenvector(cmob,energymob,datajob,datamol,databasis,datacomp)
+              call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)
+              call writeeigenvector(cmob,energymob,2,datajob,datamol,databasis,datacomp)
             endif
           endif
           call tstamp(1,datacomp)
@@ -1712,14 +1679,8 @@ end
           if((iopt == 1).or.writeeigen) then
             call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
             if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
-              write(datacomp%iout,'("  -------------------------")')
-              write(datacomp%iout,'("    Alpha MO coefficients")')
-              write(datacomp%iout,'("  -------------------------")')
-              call writeeigenvector(cmoa,energymoa,datajob,datamol,databasis,datacomp)
-              write(datacomp%iout,'("  ------------------------")')
-              write(datacomp%iout,'("    Beta MO coefficients")')
-              write(datacomp%iout,'("  ------------------------")')
-              call writeeigenvector(cmob,energymob,datajob,datamol,databasis,datacomp)
+              call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)
+              call writeeigenvector(cmob,energymob,2,datajob,datamol,databasis,datacomp)
             endif
           endif
           call tstamp(1,datacomp)
@@ -1830,14 +1791,8 @@ end
 ! Print MOs
 !
       if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
-        write(datacomp%iout,'("  -------------------------")')
-        write(datacomp%iout,'("    Alpha MO coefficients")')
-        write(datacomp%iout,'("  -------------------------")')
-        call writeeigenvector(cmoa,energymoa,datajob,datamol,databasis,datacomp)
-        write(datacomp%iout,'("  ------------------------")')
-        write(datacomp%iout,'("    Beta MO coefficients")')
-        write(datacomp%iout,'("  ------------------------")')
-        call writeeigenvector(cmob,energymob,datajob,datamol,databasis,datacomp)
+        call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)
+        call writeeigenvector(cmob,energymob,2,datajob,datamol,databasis,datacomp)
       endif
 !
       if(datajob%method /= 'MP2') then

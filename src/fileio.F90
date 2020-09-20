@@ -1357,9 +1357,9 @@ end
 end
 
 
-!----------------------------------------------------------------------------
-  subroutine writeeigenvector(cmo,eigen,datajob,datamol,databasis,datacomp)
-!----------------------------------------------------------------------------
+!----------------------------------------------------------------------------------
+  subroutine writeeigenvector(cmo,eigen,itype,datajob,datamol,databasis,datacomp)
+!----------------------------------------------------------------------------------
 !
 ! Write eigenvalues
 !
@@ -1370,6 +1370,7 @@ end
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: itype
       integer :: minmo, maxmo, imin, imax, ii, jj, kk, iao, iatom
       real(8),intent(in) :: cmo(databasis%nao,databasis%nao), eigen(datamol%nmo)
       character(len=10) :: atomlabel(mxao)
@@ -1408,6 +1409,18 @@ end
         if(datacomp%master) &
 &         write(*,'(" Sorry! This program can display MOs of up to i functions.")')
         return
+      endif
+!
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
+        if(itype == 1) then
+          write(datacomp%iout,'("  -------------------------")')
+          write(datacomp%iout,'("    Alpha MO coefficients")')
+          write(datacomp%iout,'("  -------------------------")')
+        elseif(itype == 2) then
+          write(datacomp%iout,'("  ------------------------")')
+          write(datacomp%iout,'("    Beta MO coefficients")')
+          write(datacomp%iout,'("  ------------------------")')
+        endif
       endif
 !
       iao= 1
@@ -1524,19 +1537,18 @@ end
           case(4:8)
             do ii= 1,(maxmo-minmo-1)/5+1
               if(imax > maxmo) imax= maxmo
-              write(datacomp%iout,*)
-              write(datacomp%iout,'(21x,5(6x,i4,2x))')(jj,jj=imin,imax)
+              write(datacomp%iout,'(21x,5(5x,i5,2x))')(jj,jj=imin,imax)
               write(datacomp%iout,'(4x,"Orbital Energy",4x,5f12.5)')(eigen(jj),jj=imin,imax)
               do kk= 1,databasis%nao
                 write(datacomp%iout,'(i5,a10,a7,5f12.6)')kk,atomlabel(kk),bflabel(kk),(cmo(kk,jj),jj=imin,imax)
               enddo
               imin= imin+5
               imax= imax+5
+              write(datacomp%iout,*)
             enddo
-            write(datacomp%iout,*)
           case(2:3)
             do jj= minmo,maxmo
-              write(datacomp%iout,'(27x,i4)') jj
+              write(datacomp%iout,'(4x,"MO :",i5)') jj
               write(datacomp%iout,'(4x,"Orbital Energy",4x,f12.5)')eigen(jj)
               do kk= 1,databasis%nao
                 if(abs(cmo(kk,jj)) > 1.5D-01) &
