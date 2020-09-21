@@ -25,10 +25,10 @@
       type(typemol),intent(inout) :: datamol
       type(typebasis),intent(inout) :: databasis
       type(typecomp),intent(inout) :: datacomp
-      integer :: ii, llen, intarray(14), info
+      integer :: ii, llen, intarray(15), info
       integer :: maxiter, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
       integer :: nrad, nleb, ncore, nvfz, maxmp2diis, maxmp2iter, nopt
-      integer :: multi
+      integer :: multi, iprint
       real(8) :: realarray(24)
       real(8) :: threshover, threshatom, threshdiis, cutint2, threshsoscf
       real(8) :: threshqc, threshweight,threshrho, threshdfock, threshdftao, threshmp2cphf
@@ -43,7 +43,7 @@
       logical :: writeinput
       namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp, ncore, nvfz
       namelist /control/ precision, cutint2, spher, guess, bohr, check, xyz, threshover, &
-&                        threshatom, octupole, output
+&                        threshatom, octupole, output, iprint
       namelist /scf/ scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub, &
 &                    threshdiis, threshsoscf, threshqc
       namelist /opt/ nopt, optconv, cartesian, fbond
@@ -143,6 +143,7 @@
         xyz        = datajob%xyz
         fbond      = datajob%fbond
         output     = datajob%output
+        iprint     = datajob%iprint
 !
         read(datacomp%inpcopy,nml=job,end=110,iostat=info)
 110     if(info > 0) then
@@ -243,6 +244,7 @@
         intarray(12)= nvfz
         intarray(13)= maxmp2diis
         intarray(14)= maxmp2iter
+        intarray(15)= iprint
         logarray(1)= spher
         logarray(2)= bohr
         logarray(3)= flagecp
@@ -253,7 +255,7 @@
       call para_bcastc(chararray,32*10,0,datacomp%mpi_comm1)
       call para_bcastc(char256array,256*2,0,datacomp%mpi_comm1)
       call para_bcastr(realarray,24,0,datacomp%mpi_comm1)
-      call para_bcasti(intarray,14,0,datacomp%mpi_comm1)
+      call para_bcasti(intarray,15,0,datacomp%mpi_comm1)
       call para_bcastl(logarray,5,0,datacomp%mpi_comm1)
 !
       datajob%check       = char256array(1)
@@ -306,6 +308,7 @@
       datajob%nvfz        = intarray(12)
       datajob%maxmp2diis  = intarray(13)
       datajob%maxmp2iter  = intarray(14)
+      datajob%iprint      = intarray(15)
       databasis%spher     = logarray(1)
       datajob%bohr        = logarray(2)
       datajob%flagecp     = logarray(3)
@@ -550,7 +553,7 @@ end
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
-      character(len=12) :: cmemory, ccharge, cmulti, cnopt
+      character(len=12) :: cmemory, ccharge, cmulti, cnopt, ciprint
 !
       if(datacomp%master) then
 !
@@ -567,6 +570,7 @@ end
         ccharge= adjustl(ccharge)
         write(cmulti,'(i0)') datamol%multi
         write(cnopt,'(i0)') datajob%nopt
+        write(ciprint,'(i0)') datajob%iprint
 !
         write(datacomp%iout,'(" -------------------------------------------------------------------------")')
         write(datacomp%iout,'("   Job infomation")')
@@ -579,8 +583,8 @@ end
 &                  ccharge, cmulti, databasis%spher
         write(datacomp%iout,'("   Bohr    = ",l1,11x,",  Guess   = ",a12," ,  Octupole = ",l1)') &
 &                  datajob%bohr, datajob%guess, datajob%octupole
-        write(datacomp%iout,'("   Output  = ",a12)') &
-&                  datajob%output
+        write(datacomp%iout,'("   Iprint  = ",a12)') &
+&                  ciprint
         if(datajob%runtype == 'OPT') then
           write(datacomp%iout,'("   Nopt    = ",a12,",  Optconv = ",1p,e8.2,5x,",  Cartesian= ",l1)') &
 &                  cnopt, datajob%optconv, datajob%cartesian

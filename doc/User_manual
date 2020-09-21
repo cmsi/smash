@@ -173,13 +173,18 @@
       output                controls output format.
               = minimal     Minimal output without MO coefficients
               = compact     Compact output with MO coefficients of HOMO-14 to LUMO+14
-              = compactall  Compact output with MO coefficients of HOMO-14 to LUMO+14
-                            in every opt cycle
               = normal      Normal output with MO coefficients of HOMO-14 to LUMO+14 (default)
-              = normalall   Normal output with MO coefficients of HOMO-14 to LUMO+14
+              = normalall   Normal output with all MO coefficients
+              = verbose     Verbose output with all MO coefficients of all MOs
                             in every opt cycle
-              = detailed    Detailed output with MO coefficients of all MOs
-              = detailedall Detailed output with MO coefficients of all MOs
+
+      iprint                controls output format.
+                            Keyword "output" overrides "iprint" if both are set.
+              = 1           Minimal output without MO coefficients
+              = 2           Compact output with MO coefficients of HOMO-14 to LUMO+14
+              = 3           Normal output with MO coefficients of HOMO-14 to LUMO+14 (default)
+              = 4           Normal output with all MO coefficients
+              = 5           Verbose output with all MO coefficients of all MOs
                             in every opt cycle
 
       threshover            specifies the linear dependence threshold of basis functions.
