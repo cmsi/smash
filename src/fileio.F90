@@ -420,7 +420,7 @@ end
 ! Write basis functions
 !
       second=.false.
-      if(datacomp%master.and.(mod(datajob%iprint,10) >= 4)) then
+      if(datacomp%master.and.((mod(datajob%iprint,10) >= 3).or.(databasis%basis == "GEN"))) then
         iatom= 0
         write(datacomp%iout,'(" -------------")')
         write(datacomp%iout,'("   Basis set")')
@@ -487,7 +487,7 @@ end
 !
 ! Write ECP functions
 !
-      if(datacomp%master.and.(mod(datajob%iprint,10) >= 4)) then
+      if(datacomp%master.and.((mod(datajob%iprint,10) >= 3).or.(databasis%ecp == "GEN"))) then
         write(datacomp%iout,'(" ----------------")')
         write(datacomp%iout,'("   ECP function")')
         write(datacomp%iout,'(" ----------------")')
@@ -1330,7 +1330,7 @@ end
 !
 ! Closed-shell
 !
-      if(datacomp%master.and.(mod(datajob%iprint,10) >= 1)) then
+      if(datacomp%master) then
         if(itype == 1) then
           write(datacomp%iout,'(1x,80("-"))')
           write(datacomp%iout,'("   Orbital Energies (Hartree)")')
@@ -1411,15 +1411,15 @@ end
         return
       endif
 !
-      if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
+      if(datacomp%master) then
         if(itype == 1) then
-          write(datacomp%iout,'("  -------------------------")')
-          write(datacomp%iout,'("    Alpha MO coefficients")')
-          write(datacomp%iout,'("  -------------------------")')
+          write(datacomp%iout,'(" -------------------------")')
+          write(datacomp%iout,'("   Alpha MO coefficients")')
+          write(datacomp%iout,'(" -------------------------")')
         elseif(itype == 2) then
-          write(datacomp%iout,'("  ------------------------")')
-          write(datacomp%iout,'("    Beta MO coefficients")')
-          write(datacomp%iout,'("  ------------------------")')
+          write(datacomp%iout,'(" ------------------------")')
+          write(datacomp%iout,'("   Beta MO coefficients")')
+          write(datacomp%iout,'(" ------------------------")')
         endif
       endif
 !
@@ -1523,10 +1523,10 @@ end
       enddo
 !
       select case(mod(datajob%iprint,10))
-        case(2:5)
+        case(2:3)
           minmo=max(1,datamol%neleca-15)
           maxmo=min(datamol%nmo,datamol%neleca+15)
-        case(6:8)
+        case(4:)
           minmo= 1
           maxmo= datamol%nmo
       end select
@@ -1534,7 +1534,7 @@ end
       imax= minmo+4
       if(datacomp%master) then
         select case(mod(datajob%iprint,10))
-          case(4:8)
+          case(3:)
             do ii= 1,(maxmo-minmo-1)/5+1
               if(imax > maxmo) imax= maxmo
               write(datacomp%iout,'(21x,5(5x,i5,2x))')(jj,jj=imin,imax)
@@ -1546,7 +1546,7 @@ end
               imax= imax+5
               write(datacomp%iout,*)
             enddo
-          case(2:3)
+          case(2)
             do jj= minmo,maxmo
               write(datacomp%iout,'(4x,"MO :",i5)') jj
               write(datacomp%iout,'(4x,"Orbital Energy",4x,f12.5)')eigen(jj)

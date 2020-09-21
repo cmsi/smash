@@ -162,10 +162,16 @@
           return
 !
         else
-          write(datacomp%iout, &
-&           '(" Used memory :",i8," MB",/, &
-&             " Your calculation finished successfully with",i3," warning(s).")') &
-&             datacomp%memusedmax/125000, datacomp%nwarn
+          write(datacomp%iout,'(" Used memory :",i8," MB")') datacomp%memusedmax/125000
+          if(datacomp%nwarn <= 1) then
+            write(datacomp%iout, &
+&             '(" Your calculation finished successfully with",i3," warning.")') &
+&             datacomp%nwarn
+          else
+            write(datacomp%iout, &
+&             '(" Your calculation finished successfully with",i3," warnings.")') &
+&             datacomp%nwarn
+          endif
         endif
       endif
       return
@@ -315,18 +321,13 @@ end
           datajob%iprint= 1
         case('COMPACT')
           datajob%iprint= 2
-        case('COMPACTALL')
-          datajob%iprint= 3
         case('NORMAL')
-          datajob%iprint= 4
+          datajob%iprint= 3
         case('NORMALALL')
-          datajob%iprint= 5
-        case('DETAILED')
-          datajob%iprint= 6
-        case('DETAILEDALL')
-          datajob%iprint= 7
+          datajob%iprint= 4
         case('VERBOSE')
-          datajob%iprint= 8
+          datajob%iprint= 5
+        case('')
         case default
           if(datacomp%master) write(*,'(" Error! This program does not support output= ", &
 &                                       a16,".")') datajob%output
@@ -829,8 +830,6 @@ end
           call tstamp(1,datacomp)
           return
         endif
-        call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
-        call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
         if(datajob%guess == 'HF') then
           savedconv= datajob%dconv
@@ -853,14 +852,18 @@ end
           call tstamp(1,datacomp)
           return
         endif
-        call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
-        call tstamp(1,datacomp)
       else
         if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
           call iabort
         endif
       endif
+!
+      call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
+      if(mod(datajob%iprint,10) >= 2) then
+        call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
+      endif
+      call tstamp(1,datacomp)
 !
 ! Calculate energy gradient
 !
@@ -887,12 +890,6 @@ end
 &       write(datacomp%iout,'("   Maximum gradient =",f13.8,/,"   RMS gradient     =",f13.8,/, &
 &                 " ----------------------------------------------------",/)') egradmax,egradrms
       call tstamp(1,datacomp)
-!
-! Print MOs
-!
-      if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
-        call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
-      endif
 !
       if(datajob%method /= 'MP2') then
 !
@@ -1027,8 +1024,6 @@ end
           call tstamp(1,datacomp)
           return
         endif
-        call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
-        call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
         if(datajob%guess == 'HF') then
           savedconv= datajob%dconv
@@ -1051,14 +1046,19 @@ end
           call tstamp(1,datacomp)
           return
         endif
-        call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
-        call tstamp(1,datacomp)
       else
         if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
           call iabort
         endif
       endif
+!
+      call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
+      if(mod(datajob%iprint,10) >= 2) then
+        call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)
+        call writeeigenvector(cmob,energymob,2,datajob,datamol,databasis,datacomp)
+      endif
+      call tstamp(1,datacomp)
 !
 ! Calculate energy gradient
 !
@@ -1083,13 +1083,6 @@ end
 &       write(datacomp%iout,'("   Maximum gradient =",f13.8,/,"   RMS gradient     =",f13.8,/, &
 &                 " ----------------------------------------------------",/)') egradmax,egradrms
       call tstamp(1,datacomp)
-!
-! Print MOs
-!
-      if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
-        call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)
-        call writeeigenvector(cmob,energymob,2,datajob,datamol,databasis,datacomp)
-      endif
 !
       if(datajob%method /= 'MP2') then
 !
@@ -1170,7 +1163,7 @@ end
       real(8), allocatable :: workv(:), coordredun(:), egradredun(:)
       real(8) :: egradmax, egradrms
       real(8) :: savedconv, savecutint2
-      logical :: exceed, writeeigen
+      logical :: exceed
 !
       nao    = databasis%nao
       nao2   = nao*nao
@@ -1183,7 +1176,6 @@ end
 !$omp end parallel
 !
       datacomp%convergedgeom=.false.
-      writeeigen=(datajob%iprint == 3).or.(datajob%iprint == 5).or.(datajob%iprint == 7)
 !
 ! Calculate redundant coordinate
 !
@@ -1276,13 +1268,6 @@ end
             call tstamp(1,datacomp)
             return
           endif
-          if((iopt == 1).or.writeeigen) then
-            call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
-            if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
-              call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
-            endif
-          endif
-          call tstamp(1,datacomp)
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
           if((iopt == 1).and.(datajob%guess == 'HF')) then
             savedconv= datajob%dconv
@@ -1305,19 +1290,22 @@ end
             call tstamp(1,datacomp)
             return
           endif
-          if((iopt == 1).or.writeeigen) then
-            call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
-            if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
-              call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
-            endif
-          endif
-          call tstamp(1,datacomp)
         else
           if(datacomp%master) then
             write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
             call iabort
           endif
         endif
+!
+        if(((iopt == 1).and.(mod(datajob%iprint,10) >= 2)).or. &
+&          (mod(datajob%iprint,10) >= 3)) then
+          call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
+        endif
+        if(((iopt == 1).and.(mod(datajob%iprint,10) >= 2)).or. &
+&          (mod(datajob%iprint,10) >= 5)) then
+          call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
+        endif
+        call tstamp(1,datacomp)
 !
 ! Calculate energy gradient
 !
@@ -1416,11 +1404,13 @@ end
 !
 ! End of optimization cycle 
 !
-      call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
 !
-! Print MOs
+! Print MO energies and coefficients if necessary
 !
-      if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
+      if(mod(datajob%iprint,10) <= 2) then
+        call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
+      endif
+      if((mod(datajob%iprint,10) >= 2).and.(mod(datajob%iprint,10) <= 4)) then
         call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
       endif
 !
@@ -1540,7 +1530,7 @@ end
       real(8), allocatable :: workv(:), coordredun(:), egradredun(:)
       real(8) :: egradmax, egradrms
       real(8) :: savedconv, savecutint2
-      logical :: exceed, writeeigen
+      logical :: exceed
 !
       nao    = databasis%nao
       nao2   = nao*nao
@@ -1553,7 +1543,6 @@ end
 !$omp end parallel
 !
       datacomp%convergedgeom=.false.
-      writeeigen=(datajob%iprint == 3).or.(datajob%iprint == 5).or.(datajob%iprint == 7)
 !
 ! Calculate redundant coordinate
 !
@@ -1646,14 +1635,6 @@ end
             call tstamp(1,datacomp)
             return
           endif
-          if((iopt == 1).or.writeeigen) then
-            call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
-            if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
-              call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)
-              call writeeigenvector(cmob,energymob,2,datajob,datamol,databasis,datacomp)
-            endif
-          endif
-          call tstamp(1,datacomp)
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
           if((iopt == 1).and.(datajob%guess == 'HF')) then
             savedconv= datajob%dconv
@@ -1676,20 +1657,23 @@ end
             call tstamp(1,datacomp)
             return
           endif
-          if((iopt == 1).or.writeeigen) then
-            call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
-            if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
-              call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)
-              call writeeigenvector(cmob,energymob,2,datajob,datamol,databasis,datacomp)
-            endif
-          endif
-          call tstamp(1,datacomp)
         else
           if(datacomp%master) then
             write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
             call iabort
           endif
         endif
+!
+        if(((iopt == 1).and.(mod(datajob%iprint,10) >= 2)).or. &
+&          (mod(datajob%iprint,10) >= 3)) then
+          call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
+        endif
+        if(((iopt == 1).and.(mod(datajob%iprint,10) >= 2)).or. &
+&          (mod(datajob%iprint,10) >= 5)) then
+          call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)
+          call writeeigenvector(cmob,energymob,2,datajob,datamol,databasis,datacomp)
+        endif
+        call tstamp(1,datacomp)
 !
 ! Calculate energy gradient
 !
@@ -1786,11 +1770,13 @@ end
 !
 ! End of optimization cycle 
 !
-      call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
 !
-! Print MOs
+! Print MO energies and coefficients if necessary
 !
-      if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
+      if(mod(datajob%iprint,10) <= 2) then
+        call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
+      endif
+      if((mod(datajob%iprint,10) >= 2).and.(mod(datajob%iprint,10) <= 4)) then
         call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)
         call writeeigenvector(cmob,energymob,2,datajob,datamol,databasis,datacomp)
       endif

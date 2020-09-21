@@ -500,7 +500,7 @@ end
 !
 ! Print delta xyz
 !
-      if(datacomp%master.and.(mod(datajob%iprint,10) >= 1)) then
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
         write(datacomp%iout,'(" ----------------------------------------------------")')
         write(datacomp%iout,'("          Delta xyz (Angstrom)")')
         write(datacomp%iout,'("  Atom            X             Y             Z")')
@@ -724,14 +724,19 @@ end
         do ii= 1,numdim
           suml= suml+workv(ii,1)*workv(ii,1)/(rlambda-workv(ii,3))
         enddo
-        if(datacomp%master.and.(mod(datajob%iprint,10) >= 6)) then
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 5)) then
           write(datacomp%iout,'(" Lambda iteration of RFO",i3,3x,"Lambda=",1p,d15.8,4x,"Sum=",1p,d15.8)') &
 &               iterrfo,rlambda,suml
         endif
         if(abs(rlambda-suml) <= convl) exit
         rlambda= suml
         if(iterrfo == maxiterrfo) then
-          if(datacomp%master) write(*,'(" Error! RFO step in calcnewcoordred dit not converge.")')
+          if(datacomp%master) then
+            write(*,'(" Lambda iteration of RFO",i3,3x,"Lambda=",1p,d15.8,4x,"Sum=",1p,d15.8)') &
+&                iterrfo,rlambda,suml
+            write(*,'(" Error! RFO step in calcnewcoordred did not converge.")')
+            write(*,'(" Try cartesian=.false. in opt section of input file.")')
+          endif
           call iabort
         endif
       enddo
@@ -764,7 +769,7 @@ end
 !
         rmsdx= sqrt(ddot(natom3,workv,1,workv,1)/natom3)
         rmsqx= sqrt(ddot(numredun,workv(1,2),1,workv(1,2),1)/numredun)
-        if(datacomp%master.and.(mod(datajob%iprint,10) >= 6)) then
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 5)) then
           write(datacomp%iout,'(" Displacement Iteration",i3,2x,"RMS(Cart)=",1p,d10.3,4x, &
 &                   "RMS(Red)=",1p,d10.3)') iterdx, rmsdx, rmsqx
         endif
@@ -825,7 +830,10 @@ end
 !
         if(iterdx == maxiterdx) then
           if(datacomp%master) then
+            write(*,'(" Displacement Iteration",i3,2x,"RMS(Cart)=",1p,d10.3,4x, &
+&                     "RMS(Red)=",1p,d10.3)') iterdx, rmsdx, rmsqx
             write(*,'(" Error! Transformation from redundant to Cartesian did not converge.")')
+            write(*,'(" Try cartesian=.false. in opt section of input file.")')
           endif
           call iabort
         endif
@@ -865,7 +873,7 @@ end
 !
 ! Print delta xyz
 !
-      if(datacomp%master.and.(mod(datajob%iprint,10) >= 1)) then
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
         write(datacomp%iout,'(" ----------------------------------------------------")')
         write(datacomp%iout,'("          Delta xyz (Angstrom)")')
         write(datacomp%iout,'("  Atom            X             Y             Z")')
