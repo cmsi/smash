@@ -188,23 +188,17 @@ end
       implicit none
       type(typecomp),intent(inout) :: datacomp
 !
-! Initialize variable for parallelization
-!
-      datacomp%master = .true.
-!
 ! Start MPI parallelization and set mpi_comm1=MPI_COMM_WORLD
 !
       call para_init(datacomp%mpi_comm1)
       call para_comm_size(datacomp%nproc1,datacomp%mpi_comm1)
       call para_comm_rank(datacomp%myrank1,datacomp%mpi_comm1)
 !
-      datacomp%nproc2= datacomp%nproc1
-      datacomp%myrank2= datacomp%myrank1
+      datacomp%nproc2   = datacomp%nproc1
+      datacomp%myrank2  = datacomp%myrank1
       datacomp%mpi_comm2= datacomp%mpi_comm1
 !
-      if(datacomp%nproc1.gt.1) then
-        datacomp%master =(datacomp%myrank1 == 0)
-      endif
+      if(datacomp%nproc1.gt.1) datacomp%master =(datacomp%myrank1 == 0)
 !
       return
 end
@@ -334,7 +328,7 @@ end
           call iabort
       end select
 !
-      if((datajob%method == 'HF').and.(datajob%guess == 'HF')) then
+      if(((datajob%idftex == 0).and.(datajob%idftcor == 0)).and.(datajob%guess == 'HF')) then
         datajob%guess= 'HUCKEL'
         if(datacomp%master) write(datacomp%iout,'(" Warning! Guess changes from HF to HUCKEL.")')
         datacomp%nwarn= datacomp%nwarn+1

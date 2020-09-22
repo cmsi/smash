@@ -301,6 +301,6 @@ end
         integer :: iwall0, iwall1
         integer :: nproc1, myrank1, mpi_comm1, nproc2, myrank2, mpi_comm2
         real(8) :: cpu0, cpu1
-        logical :: master, convergedscf=.true., convergedgeom=.true.
+        logical :: master=.true., convergedscf=.true., convergedgeom=.true.
       end type
 end module
