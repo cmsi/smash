@@ -1,4 +1,4 @@
-! Copyright 2014-2019  Kazuya Ishimura
+! Copyright 2014-2020  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -87,7 +87,8 @@
 &                          +xyzpt(3,jatom)*xyzpt(3,jatom)
             enddo
 !
-            call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,datajob%threshex,ndftatom,datamol,databasis)
+            call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,datajob%threshex,ndftatom, &
+&                          datamol,databasis)
 !
             rhoa= zero
             grhoa(1:3)= zero
@@ -583,8 +584,8 @@ end
       integer,intent(in) :: nrad, nleb, ndftatom, nproc, myrank
       integer :: katom, irad, ileb, iatom, jatom, i, icount, ilebstart, ngridatom
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, oneh=1.5D+00
-      real(8),intent(in) :: rad(ndftatom), radpt(2,nrad), angpt(4,nleb), atomvec(5,ndftatom,ndftatom)
-      real(8),intent(in) :: surface(ndftatom,ndftatom)
+      real(8),intent(in) :: rad(ndftatom), radpt(2,nrad), angpt(4,nleb)
+      real(8),intent(in) :: atomvec(5,ndftatom,ndftatom), surface(ndftatom,ndftatom)
       real(8),intent(out) :: ptweight(nleb,nrad,ndftatom), xyzpt(3,ndftatom), work(ndftatom,2)
       real(8) :: xyzgrid(3), radpoint, radweight, wttot, cutij, cutji, xmuij, zmuij, f4, f2
 !
@@ -645,9 +646,10 @@ end
 end
 
 
-!-----------------------------------------------------------------------------------------
-  subroutine gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,threshex,ndftatom,datamol,databasis)
-!-----------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------
+  subroutine gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,threshex,ndftatom, &
+&                      datamol,databasis)
+!----------------------------------------------------------------------------------
 !
 ! Calculate closed-shell AO and MO values for a grid point
 !
@@ -2448,7 +2450,8 @@ end
               uvec(3,jatom)= xyzpt(3,jatom)*tmp
             enddo
 !
-            call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,datajob%threshex,ndftatom,datamol,databasis)
+            call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,datajob%threshex,ndftatom, &
+&                          datamol,databasis)
 !
             rhoa= zero
             grhoa(1:3)= zero
@@ -2659,8 +2662,8 @@ end
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, oneh=1.5D+00, two=2.0D+00
       real(8),parameter :: pdcoeff=-2.53125D+00 !-81/32
       real(8),parameter :: threshcut=1.0D-12, threshg4=1.0D-08
-      real(8),intent(in) :: uvec(3,ndftatom), atomvec(5,ndftatom,ndftatom), surface(ndftatom,ndftatom)
-      real(8),intent(in) :: rr(ndftatom), sphweight
+      real(8),intent(in) :: uvec(3,ndftatom), atomvec(5,ndftatom,ndftatom)
+      real(8),intent(in) :: surface(ndftatom,ndftatom), rr(ndftatom), sphweight
       real(8),intent(out) :: dweight(3,ndftatom), dpa(3,ndftatom,ndftatom), pa(ndftatom)
       real(8) :: cutij, cutji, xmuij, zmuij, f4, g4, f2, tmp1, tmp2, dmuji(3), dcoeff
       real(8) :: dcutij, dcutji, weighta, zz, dzz(3)
@@ -2759,10 +2762,10 @@ end
 end
 
 
-!-----------------------------------------------------------------------------
+!--------------------------------------------------------------------------------
   subroutine formgradexcor(edftgrad,fulldmtrxa,fulldmtrxb,vao,vgao,vg2ao, &
 &                          excora,excorb,weight,katom,ndftatom,itype,databasis)
-!-----------------------------------------------------------------------------
+!--------------------------------------------------------------------------------
 !
 ! Calculate DFT energy gradient terms
 !

@@ -1594,9 +1594,10 @@ end
 end
 
 
-!-----------------------------------------------------------------------------------------------
-  subroutine writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis,datacomp)
-!-----------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------
+  subroutine writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob, &
+&                       datajob,datamol,databasis,datacomp)
+!-----------------------------------------------------------------------
 !
 ! Write checkpoint file
 !

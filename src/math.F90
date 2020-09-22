@@ -40,7 +40,7 @@ end
   subroutine mtrxcanon(ortho,overlap,eigen,ndim,newdim,threshover,datacomp)
 !----------------------------------------------------------------------------
 !
-! Calculate canonicalization matrix
+! Calculate canonical transformation matrix
 !
 ! The ortho matrix satisfiles (Ortho)-daggar * S * (Ortho) = I
 ! where S is the overlap matrix.
@@ -215,7 +215,7 @@ end
   subroutine mtrxcanoninv(ortho,overinv,overlap,ndim,newdim,threshover,datacomp)
 !---------------------------------------------------------------------------------
 !
-! Calculate canonicalization matrix and inverse matrix of overlap
+! Calculate canonical transformation matrix and inverse matrix of overlap
 !
 ! The ortho matrix satisfiles (Ortho)-daggar * S * (Ortho) = I
 ! where S is the overlap matrix.

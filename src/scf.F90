@@ -1370,10 +1370,10 @@ end
 end
 
 
-!----------------------------------------------------------------------------------------
-  subroutine calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb, &
-&                    datajob,datamol,databasis,datacomp)
-!----------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------------
+  subroutine calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,overlap,dmtrxa,dmtrxb,xint,eigena, &
+&                    eigenb,datajob,datamol,databasis,datacomp)
+!---------------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted Hartree-Fock calculation
 !
@@ -2129,10 +2129,10 @@ end
 end
 
 
-!-----------------------------------------------------------------------------------------
-  subroutine calcudft(h1mtrx,cmoa,cmob,focka,fockb,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb, &
-&                     datajob,datamol,databasis,datacomp)
-!-----------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------------
+  subroutine calcudft(h1mtrx,cmoa,cmob,focka,fockb,ortho,overlap,dmtrxa,dmtrxb,xint,eigena, &
+&                     eigenb,datajob,datamol,databasis,datacomp)
+!----------------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted DFT calculation
 !

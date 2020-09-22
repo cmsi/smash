@@ -1,4 +1,4 @@
-! Copyright 2014-2019  Kazuya Ishimura
+! Copyright 2014-2020  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -1004,7 +1004,8 @@ end
             if((datamol%numatomic(iatom) >= 1).and.(datamol%numatomic(iatom) <= 54)) then
               call bssto3g_g(iatom,ishell,1,datajob%flagecp,datamol%numatomic,databasis,dataguessbs)
             elseif(datamol%numatomic(iatom) >= 55) then
-              call bshuzmini6_g(iatom,ishell,1,datajob%flagecp,datamol%numatomic,databasis,dataguessbs)
+              call bshuzmini6_g(iatom,ishell,1,datajob%flagecp,datamol%numatomic, &
+&                               databasis,dataguessbs)
             endif
           enddo
           nshell_v= ishell
@@ -1016,7 +1017,8 @@ end
             if((datamol%numatomic(iatom) >= 1).and.(datamol%numatomic(iatom) <= 54)) then
               call bssto3g_g(iatom,ishell,2,datajob%flagecp,datamol%numatomic,databasis,dataguessbs)
             elseif(datamol%numatomic(iatom) >= 55) then
-              call bshuzmini6_g(iatom,ishell,2,datajob%flagecp,datamol%numatomic,databasis,dataguessbs)
+              call bshuzmini6_g(iatom,ishell,2,datajob%flagecp,datamol%numatomic, &
+&                               databasis,dataguessbs)
             endif
           enddo
           dataguessbs%nshell= ishell
@@ -1034,7 +1036,8 @@ end
             if((datamol%numatomic(iatom) >= 1).and.(datamol%numatomic(iatom) <= 54)) then
               call bssto3g_g(iatom,ishell,3,datajob%flagecp,datamol%numatomic,databasis,dataguessbs)
             elseif(datamol%numatomic(iatom) >= 55) then
-              call bshuzmini6_g(iatom,ishell,3,datajob%flagecp,datamol%numatomic,databasis,dataguessbs)
+              call bshuzmini6_g(iatom,ishell,3,datajob%flagecp,datamol%numatomic, &
+&                               databasis,dataguessbs)
             endif
           enddo
           dataguessbs%nshell= ishell
@@ -9602,9 +9605,10 @@ end
 end
 
 
-!--------------------------------------------------------------------------------------
-  subroutine bshuzmini6_g(iatom,ishell,itype,flagecp,numatomic,databasis,dataguessbs)
-!--------------------------------------------------------------------------------------
+!------------------------------------------------------------------
+  subroutine bshuzmini6_g(iatom,ishell,itype,flagecp,numatomic, &
+&                         databasis,dataguessbs)
+!------------------------------------------------------------------
 !
 ! Set 6th row basis functions of minimal Huzinaga set for guess calculation
 ! itype = 1 : valence functions

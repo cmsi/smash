@@ -444,7 +444,7 @@ end
       call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
 &                datajob,datamol,databasis)
 !
-! Calculate canonicalization and inverse overlap matrices
+! Calculate canonical transformation matrix and inverse matrix of overlap
 !
       call fullmtrx(smtrx,work,nao)
       call mtrxcanoninv(ortho,overinv,work,nao,datamol%nmo,datajob%threshover,datacomp)
@@ -469,7 +469,10 @@ end
           return
         endif
         call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) &
+&         call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
         call tstamp(1,datacomp)
+!
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
         if(datajob%guess == 'HF') then
           savedconv= datajob%dconv
@@ -493,7 +496,10 @@ end
           return
         endif
         call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) &
+&         call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
         call tstamp(1,datacomp)
+!
       elseif(datajob%method == 'MP2') then
         call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                    datajob,datamol,databasis,datacomp)
@@ -502,6 +508,8 @@ end
           return
         endif
         call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) &
+&         call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
         call tstamp(1,datacomp)
         call calcrmp2(cmo,energymo,xint,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
 &                     datajob,datamol,databasis,datacomp)
@@ -511,12 +519,6 @@ end
           write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
           call iabort
         endif
-      endif
-!
-! Print MOs
-!
-      if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
-        call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
       endif
 !
       if(datajob%method /= 'MP2') then
@@ -556,7 +558,8 @@ end
 ! Write checkpoint file
 !
       if(datacomp%master.and.(datajob%check /= '')) &
-&       call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,datamol,databasis,datacomp)
+&       call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo, &
+&                       datajob,datamol,databasis,datacomp)
 !
 ! Unset arrays 1
 !
@@ -625,7 +628,7 @@ end
       call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
 &                datajob,datamol,databasis)
 !
-! Calculate canonicalization and inverse overlap matrices
+! Calculate canonical transformation matrix and inverse matrix of overlap
 !
       call fullmtrx(smtrx,work,nao)
       call mtrxcanoninv(ortho,overinv,work,nao,datamol%nmo,datajob%threshover,datacomp)
@@ -643,13 +646,17 @@ end
 ! Start SCF
 !
       if(datajob%method == 'HF') then
-        call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                    datajob,datamol,databasis,datacomp)
+        call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
+&                    energymob,datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) then
           call tstamp(1,datacomp)
           return
         endif
         call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
+          call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)
+          call writeeigenvector(cmob,energymob,2,datajob,datamol,databasis,datacomp)
+        endif
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
         if(datajob%guess == 'HF') then
@@ -657,8 +664,8 @@ end
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
-          call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                      datajob,datamol,databasis,datacomp)
+          call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
+&                      energymob,datajob,datamol,databasis,datacomp)
           if(.not.datacomp%convergedscf) then
             call tstamp(1,datacomp)
             return
@@ -667,31 +674,24 @@ end
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
-        call calcudft(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                     datajob,datamol,databasis,datacomp)
+        call calcudft(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
+&                     energymob,datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) then
           call tstamp(1,datacomp)
           return
         endif
         call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
+          call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)
+          call writeeigenvector(cmob,energymob,2,datajob,datamol,databasis,datacomp)
+        endif
         call tstamp(1,datacomp)
 !     elseif(method == 'MP2') then
-!       call calcuhf(h1mtrx,cmoa,ortho,smtrx,xint,energymoa)
-!       call tstamp(1)
-!       call calcump2(cmoa,energymoa,xint)
-!       call tstamp(1)
       else
         if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16,".")')datajob%method
           call iabort
         endif
-      endif
-!
-! Print MOs
-!
-      if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
-        call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)
-        call writeeigenvector(cmob,energymob,2,datajob,datamol,databasis,datacomp)
       endif
 !
       if(datajob%method /= 'MP2') then
@@ -731,7 +731,8 @@ end
 ! Write checkpoint file
 !
       if(datacomp%master.and.(datajob%check /= '')) &
-&        call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis,datacomp)
+&       call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob, &
+&                       datajob,datamol,databasis,datacomp)
 !
 ! Unset arrays 1
 !
@@ -800,7 +801,7 @@ end
       call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
 &                datajob,datamol,databasis)
 !
-! Calculate canonicalization and inverse overlap matrices
+! Calculate canonical transformation matrix and inverse matrix of overlap
 !
       call fullmtrx(smtrx,work,nao)
       call mtrxcanoninv(ortho,overinv,work,nao,datamol%nmo,datajob%threshover,datacomp)
@@ -922,7 +923,8 @@ end
 ! Write checkpoint file
 !
       if(datacomp%master.and.(datajob%check /= '')) &
-&        call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,datamol,databasis,datacomp)
+&       call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo, &
+&                       datajob,datamol,databasis,datacomp)
 !
 ! Unset arrays 1
 !
@@ -994,7 +996,7 @@ end
       call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
 &                datajob,datamol,databasis)
 !
-! Calculate canonicalization and inverse overlap matrices
+! Calculate canonical transformation matrix and inverse matrix of overlap
 !
       call fullmtrx(smtrx,work,nao)
       call mtrxcanoninv(ortho,overinv,work,nao,datamol%nmo,datajob%threshover,datacomp)
@@ -1012,8 +1014,8 @@ end
 ! Start SCF
 !
       if(datajob%method == 'HF') then
-        call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                    datajob,datamol,databasis,datacomp)
+        call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
+&                    energymob,datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) then
           call tstamp(1,datacomp)
           return
@@ -1024,8 +1026,8 @@ end
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
-          call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                      datajob,datamol,databasis,datacomp)
+          call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
+&                      energymob,datajob,datamol,databasis,datacomp)
           if(.not.datacomp%convergedscf) then
             call tstamp(1,datacomp)
             return
@@ -1034,8 +1036,8 @@ end
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
-        call calcudft(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                     datajob,datamol,databasis,datacomp)
+        call calcudft(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
+&                     energymob,datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) then
           call tstamp(1,datacomp)
           return
@@ -1115,7 +1117,8 @@ end
 ! Write checkpoint file
 !
       if(datacomp%master.and.(datajob%check /= '')) &
-&        call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis,datacomp)
+&       call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob, &
+&                       datajob,datamol,databasis,datacomp)
 !
 ! Unset arrays 1
 !
@@ -1236,7 +1239,7 @@ end
         call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
 &                  datajob,datamol,databasis)
 !
-! Calculate canonicalization and inverse overlap matrices
+! Calculate canonical transformation matrix and inverse matrix of overlap
 !
         call fullmtrx(smtrx,work,nao)
         call mtrxcanoninv(ortho,overinv,work,nao,datamol%nmo,datajob%threshover,datacomp)
@@ -1323,20 +1326,24 @@ end
 !
         call calcmaxgrad(egradmax,egradrms,egrad,natom3)
         if(datacomp%master) &
-&         write(datacomp%iout,'(" -----------------------------------",/, &
+&         write(datacomp%iout, &
+&                 '(" -----------------------------------",/, &
 &                   "   Geometry convergence check",/, &
 &                   "     Optimization cycle:",i4," /",i4,/, &
 &                   "     Optconv           =",f10.6,/, &
 &                   " -----------------------------------",/, &
 &                   "     Maximum gradient  =",f10.6,/, &
 &                   "     RMS gradient      =",f10.6,/, &
-&                   " -----------------------------------",/)') &
+&                   " -----------------------------------")') &
 &                   iopt,datajob%nopt,datajob%optconv,egradmax,egradrms
 !
 ! Check convergence
 !
         if((egradmax <= datajob%optconv).and.(egradrms <= datajob%optconv*third)) then
-          if(datacomp%master) write(datacomp%iout,'("   ==== Geometry converged ====",/)')
+          if(datacomp%master) &
+&           write(datacomp%iout,'("   ============================",/, &
+&                                 "   ==== Geometry converged ====",/, &
+&                                 "   ============================",/)')
           datacomp%convergedgeom=.true.
           call tstamp(1,datacomp)
           exit
@@ -1346,7 +1353,8 @@ end
 ! Write checkpoint file
 !
         if(datacomp%master.and.(datajob%check /= '')) &
-&         call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,datamol,databasis,datacomp)
+&         call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo, &
+&                         datajob,datamol,databasis,datacomp)
 !
 ! Set work arrays 2
 !
@@ -1386,9 +1394,9 @@ end
 !
         if(iopt == datajob%nopt) then
           if(datacomp%master) then
-            write(datacomp%iout,'(" ------------------------------")')
+            write(datacomp%iout,'(" ==============================")')
             write(datacomp%iout,'("   Geometry did not converge.")')
-            write(datacomp%iout,'(" ------------------------------"/)')
+            write(datacomp%iout,'(" =============================="/)')
             call tstamp(1,datacomp)
           endif
           return
@@ -1452,9 +1460,9 @@ end
         if(datajob%method == 'HF') then
           write(datacomp%iout,'("   Final HF Energy =",f18.9," Hartree")') datamol%escf
         elseif(datajob%method == 'MP2') then
-          write(datacomp%iout,'("   Final MP2 Energy =",f18.9," Hartree")') datamol%escf+datamol%emp2
+          write(datacomp%iout,'("   Final MP2 Energy =",f18.9," Hartree")')datamol%escf+datamol%emp2
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
-          write(datacomp%iout,'("   Final DFT Energy =",f18.9," Hartree")') datamol%escf
+          write(datacomp%iout,'("   Final DFT Energy =",f18.9," Hartree")')datamol%escf
         endif
         call writeoptgeom(datamol,datacomp)
       endif
@@ -1462,7 +1470,8 @@ end
 ! Write checkpoint file
 !
       if(datacomp%master.and.(datajob%check /= '')) &
-&       call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,datajob,datamol,databasis,datacomp)
+&       call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo, &
+&                       datajob,datamol,databasis,datacomp)
 !
 ! Unset arrays for energy gradient and geometry optimization
 !
@@ -1603,7 +1612,7 @@ end
         call oneei(h1mtrx,smtrx,tmtrx,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
 &                  datajob,datamol,databasis)
 !
-! Calculate canonicalization and inverse overlap matrices
+! Calculate canonical transformation matrix and inverse matrix of overlap
 !
         call fullmtrx(smtrx,work,nao)
         call mtrxcanoninv(ortho,overinv,work,nao,datamol%nmo,datajob%threshover,datacomp)
@@ -1623,8 +1632,8 @@ end
 ! Calculate energy
 !
         if(datajob%method == 'HF') then
-          call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                      datajob,datamol,databasis,datacomp)
+          call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
+&                      energymob,datajob,datamol,databasis,datacomp)
           if(.not.datacomp%convergedscf) then
             call tstamp(1,datacomp)
             return
@@ -1635,8 +1644,8 @@ end
             savecutint2= datajob%cutint2
             datajob%dconv= max(datajob%dconv,1.0D-2)
             datajob%cutint2= max(datajob%cutint2,1.0D-9)
-            call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                        datajob,datamol,databasis,datacomp)
+            call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
+&                        energymob,datajob,datamol,databasis,datacomp)
             if(.not.datacomp%convergedscf) then
               call tstamp(1,datacomp)
               return
@@ -1645,8 +1654,8 @@ end
             datajob%cutint2= savecutint2
             call tstamp(1,datacomp)
           endif
-          call calcudft(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa,energymob, &
-&                       datajob,datamol,databasis,datacomp)
+          call calcudft(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
+&                       energymob,datajob,datamol,databasis,datacomp)
           if(.not.datacomp%convergedscf) then
             call tstamp(1,datacomp)
             return
@@ -1689,20 +1698,24 @@ end
 !
         call calcmaxgrad(egradmax,egradrms,egrad,natom3)
         if(datacomp%master) &
-&         write(datacomp%iout,'(" -----------------------------------",/, &
+&         write(datacomp%iout, &
+&                 '(" -----------------------------------",/, &
 &                   "   Geometry convergence check",/, &
 &                   "     Optimization cycle:",i4," /",i4,/, &
 &                   "     Optconv           =",f10.6,/, &
 &                   " -----------------------------------",/, &
 &                   "     Maximum gradient  =",f10.6,/, &
 &                   "     RMS gradient      =",f10.6,/, &
-&                   " -----------------------------------",/)') &
+&                   " -----------------------------------")') &
 &                   iopt,datajob%nopt,datajob%optconv,egradmax,egradrms
 !
 ! Check convergence
 !
         if((egradmax <= datajob%optconv).and.(egradrms <= datajob%optconv*third)) then
-          if(datacomp%master) write(datacomp%iout,'("   ==== Geometry converged ====",/)')
+          if(datacomp%master) &
+&           write(datacomp%iout,'("   ============================",/, &
+&                                 "   ==== Geometry converged ====",/, &
+&                                 "   ============================",/)')
           datacomp%convergedgeom=.true.
           call tstamp(1,datacomp)
           exit
@@ -1712,7 +1725,8 @@ end
 ! Write checkpoint file
 !
         if(datacomp%master.and.(datajob%check /= '')) &
-&          call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis,datacomp)
+&         call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob, &
+&                         datajob,datamol,databasis,datacomp)
 !
 ! Set work arrays 2
 !
@@ -1752,9 +1766,9 @@ end
 !
         if(iopt == datajob%nopt) then
           if(datacomp%master) then
-            write(datacomp%iout,'(" ------------------------------")')
+            write(datacomp%iout,'(" ==============================")')
             write(datacomp%iout,'("   Geometry did not converge.")')
-            write(datacomp%iout,'(" ------------------------------"/)')
+            write(datacomp%iout,'(" =============================="/)')
             call tstamp(1,datacomp)
           endif
           return
@@ -1819,7 +1833,7 @@ end
         if(datajob%method == 'HF') then
           write(datacomp%iout,'("   Final HF Energy =",f18.9," Hartree")') datamol%escf
         elseif(datajob%method == 'MP2') then
-          write(datacomp%iout,'("   Final MP2 Energy =",f18.9," Hartree")') datamol%escf+datamol%emp2
+          write(datacomp%iout,'("   Final MP2 Energy =",f18.9," Hartree")')datamol%escf+datamol%emp2
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
           write(datacomp%iout,'("   Final DFT Energy =",f18.9," Hartree")') datamol%escf
         endif
@@ -1829,7 +1843,8 @@ end
 ! Write checkpoint file
 !
       if(datacomp%master.and.(datajob%check /= '')) &
-&        call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,datajob,datamol,databasis,datacomp)
+&       call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob, &
+&                       datajob,datamol,databasis,datacomp)
 !
 ! Unset arrays for energy gradient and geometry optimization
 !
@@ -1933,7 +1948,8 @@ end
         if(((maxelem >= 55).or.(databasis%nao >= 2000)).and. &
 &          ((datajob%nrad == 96).and.(datajob%nleb == 302))) then
           datacomp%nwarn= datacomp%nwarn+1
-          if(datacomp%master) write(datacomp%iout,'(" Warning! The number of DFT grids may not be enough.")')
+          if(datacomp%master) &
+&           write(datacomp%iout,'(" Warning! The number of DFT grids may not be enough.")')
         endif
       endif
 !

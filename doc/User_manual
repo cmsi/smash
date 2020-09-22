@@ -190,7 +190,7 @@
       threshover            specifies the linear dependence threshold of basis functions.
                             (default : 1.0E-6)
 
-      threshatom            specifies the atom distance threshold.
+      threshatom            specifies the atom distance threshold in Bohr.
                             (default : 2.0E-1)
 
       octupole              controls dipole, quadrupole, and octupole calculations.
@@ -232,7 +232,8 @@
                             (default: 100)
 
       optconv               specifies the gradient convergence tolerance of geometry
-                            optimization. (default: 1.0E-4)
+                            optimization in Hartree/Bohr. (default: 1.0E-4)
+                            RMS gradient tolerance is 1/3 of optonv.
 
       cartesian             specifies the type of the coordinate system.
               = .false.     Redundant coordinate (default)
@@ -298,7 +299,7 @@
       or functions, write "****".
       The format of basis functions is as follows.
         (element symbols)
-        (angular momentum=S,P,D,F,G,SP)  (number of primitive functions) 
+        (angular momentum=S,P,D,F,G,H,ISP)  (number of primitive functions) 
           (Gaussian exponent) (contraction coefficient) (P contraction coefficient if SP)
           (Gaussian exponent) (contraction coefficient) (P contraction coefficient if SP)
           ...repeat the primitive function number of times
