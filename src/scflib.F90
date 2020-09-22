@@ -1,4 +1,4 @@
-! Copyright 2014-2019  Kazuya Ishimura
+! Copyright 2014-2020  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -1354,16 +1354,26 @@ end
         yyquadpplus= yyquadpplus+datamol%coord(2,iatom)*datamol%coord(2,iatom)*datamol%znuc(iatom)
         yzquadpplus= yzquadpplus+datamol%coord(2,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
         zzquadpplus= zzquadpplus+datamol%coord(3,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
-        xxxoctpplus= xxxoctpplus+datamol%coord(1,iatom)*datamol%coord(1,iatom)*datamol%coord(1,iatom)*datamol%znuc(iatom)
-        xxyoctpplus= xxyoctpplus+datamol%coord(1,iatom)*datamol%coord(1,iatom)*datamol%coord(2,iatom)*datamol%znuc(iatom)
-        xxzoctpplus= xxzoctpplus+datamol%coord(1,iatom)*datamol%coord(1,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
-        xyyoctpplus= xyyoctpplus+datamol%coord(1,iatom)*datamol%coord(2,iatom)*datamol%coord(2,iatom)*datamol%znuc(iatom)
-        xyzoctpplus= xyzoctpplus+datamol%coord(1,iatom)*datamol%coord(2,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
-        xzzoctpplus= xzzoctpplus+datamol%coord(1,iatom)*datamol%coord(3,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
-        yyyoctpplus= yyyoctpplus+datamol%coord(2,iatom)*datamol%coord(2,iatom)*datamol%coord(2,iatom)*datamol%znuc(iatom)
-        yyzoctpplus= yyzoctpplus+datamol%coord(2,iatom)*datamol%coord(2,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
-        yzzoctpplus= yzzoctpplus+datamol%coord(2,iatom)*datamol%coord(3,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
-        zzzoctpplus= zzzoctpplus+datamol%coord(3,iatom)*datamol%coord(3,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
+        xxxoctpplus= xxxoctpplus+datamol%coord(1,iatom)*datamol%coord(1,iatom) &
+&                   *datamol%coord(1,iatom)*datamol%znuc(iatom)
+        xxyoctpplus= xxyoctpplus+datamol%coord(1,iatom)*datamol%coord(1,iatom) &
+&                   *datamol%coord(2,iatom)*datamol%znuc(iatom)
+        xxzoctpplus= xxzoctpplus+datamol%coord(1,iatom)*datamol%coord(1,iatom) &
+&                   *datamol%coord(3,iatom)*datamol%znuc(iatom)
+        xyyoctpplus= xyyoctpplus+datamol%coord(1,iatom)*datamol%coord(2,iatom) &
+&                   *datamol%coord(2,iatom)*datamol%znuc(iatom)
+        xyzoctpplus= xyzoctpplus+datamol%coord(1,iatom)*datamol%coord(2,iatom) &
+&                   *datamol%coord(3,iatom)*datamol%znuc(iatom)
+        xzzoctpplus= xzzoctpplus+datamol%coord(1,iatom)*datamol%coord(3,iatom) &
+&                   *datamol%coord(3,iatom)*datamol%znuc(iatom)
+        yyyoctpplus= yyyoctpplus+datamol%coord(2,iatom)*datamol%coord(2,iatom) &
+&                   *datamol%coord(2,iatom)*datamol%znuc(iatom)
+        yyzoctpplus= yyzoctpplus+datamol%coord(2,iatom)*datamol%coord(2,iatom) &
+&                   *datamol%coord(3,iatom)*datamol%znuc(iatom)
+        yzzoctpplus= yzzoctpplus+datamol%coord(2,iatom)*datamol%coord(3,iatom) &
+&                   *datamol%coord(3,iatom)*datamol%znuc(iatom)
+        zzzoctpplus= zzzoctpplus+datamol%coord(3,iatom)*datamol%coord(3,iatom) &
+&                   *datamol%coord(3,iatom)*datamol%znuc(iatom)
       enddo
 !
 ! Electron part
@@ -1442,12 +1452,12 @@ end
         write(datacomp%iout,'(" ----------------------------------------------")')
         write(datacomp%iout,'(1x,4f11.4)')xdip, ydip, zdip, totaldip
         write(datacomp%iout,'(" ----------------------------------------------",/)')
-        write(datacomp%iout,'(" --------------------------------------------------------------------")')
+        write(datacomp%iout,'(1x,68("-"))')
         write(datacomp%iout,'("               Quadrupole Momemt (Debye*Angstrom)")')
         write(datacomp%iout,'("        XX         XY         XZ         YY         YZ         ZZ")')
-        write(datacomp%iout,'(" --------------------------------------------------------------------")')
+        write(datacomp%iout,'(1x,68("-"))')
         write(datacomp%iout,'(1x,6f11.4)')(quadp(ii),ii=1,6)
-        write(datacomp%iout,'(" --------------------------------------------------------------------",/)')
+        write(datacomp%iout,'(1x,68("-"))')
         write(datacomp%iout,'(" ---------------------------------------------------------")')
         write(datacomp%iout,'("               Octupole Momemt (Debye*Angstrom^2)")')
         write(datacomp%iout,'("       XXX        XXY        XXZ       XYY        XYZ")')
@@ -1599,16 +1609,26 @@ end
         yyquadpplus= yyquadpplus+datamol%coord(2,iatom)*datamol%coord(2,iatom)*datamol%znuc(iatom)
         yzquadpplus= yzquadpplus+datamol%coord(2,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
         zzquadpplus= zzquadpplus+datamol%coord(3,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
-        xxxoctpplus= xxxoctpplus+datamol%coord(1,iatom)*datamol%coord(1,iatom)*datamol%coord(1,iatom)*datamol%znuc(iatom)
-        xxyoctpplus= xxyoctpplus+datamol%coord(1,iatom)*datamol%coord(1,iatom)*datamol%coord(2,iatom)*datamol%znuc(iatom)
-        xxzoctpplus= xxzoctpplus+datamol%coord(1,iatom)*datamol%coord(1,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
-        xyyoctpplus= xyyoctpplus+datamol%coord(1,iatom)*datamol%coord(2,iatom)*datamol%coord(2,iatom)*datamol%znuc(iatom)
-        xyzoctpplus= xyzoctpplus+datamol%coord(1,iatom)*datamol%coord(2,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
-        xzzoctpplus= xzzoctpplus+datamol%coord(1,iatom)*datamol%coord(3,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
-        yyyoctpplus= yyyoctpplus+datamol%coord(2,iatom)*datamol%coord(2,iatom)*datamol%coord(2,iatom)*datamol%znuc(iatom)
-        yyzoctpplus= yyzoctpplus+datamol%coord(2,iatom)*datamol%coord(2,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
-        yzzoctpplus= yzzoctpplus+datamol%coord(2,iatom)*datamol%coord(3,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
-        zzzoctpplus= zzzoctpplus+datamol%coord(3,iatom)*datamol%coord(3,iatom)*datamol%coord(3,iatom)*datamol%znuc(iatom)
+        xxxoctpplus= xxxoctpplus+datamol%coord(1,iatom)*datamol%coord(1,iatom) &
+&                   *datamol%coord(1,iatom)*datamol%znuc(iatom)
+        xxyoctpplus= xxyoctpplus+datamol%coord(1,iatom)*datamol%coord(1,iatom) &
+&                   *datamol%coord(2,iatom)*datamol%znuc(iatom)
+        xxzoctpplus= xxzoctpplus+datamol%coord(1,iatom)*datamol%coord(1,iatom) &
+&                   *datamol%coord(3,iatom)*datamol%znuc(iatom)
+        xyyoctpplus= xyyoctpplus+datamol%coord(1,iatom)*datamol%coord(2,iatom) &
+&                   *datamol%coord(2,iatom)*datamol%znuc(iatom)
+        xyzoctpplus= xyzoctpplus+datamol%coord(1,iatom)*datamol%coord(2,iatom) &
+&                   *datamol%coord(3,iatom)*datamol%znuc(iatom)
+        xzzoctpplus= xzzoctpplus+datamol%coord(1,iatom)*datamol%coord(3,iatom) &
+&                   *datamol%coord(3,iatom)*datamol%znuc(iatom)
+        yyyoctpplus= yyyoctpplus+datamol%coord(2,iatom)*datamol%coord(2,iatom) &
+&                   *datamol%coord(2,iatom)*datamol%znuc(iatom)
+        yyzoctpplus= yyzoctpplus+datamol%coord(2,iatom)*datamol%coord(2,iatom) &
+&                   *datamol%coord(3,iatom)*datamol%znuc(iatom)
+        yzzoctpplus= yzzoctpplus+datamol%coord(2,iatom)*datamol%coord(3,iatom) &
+&                   *datamol%coord(3,iatom)*datamol%znuc(iatom)
+        zzzoctpplus= zzzoctpplus+datamol%coord(3,iatom)*datamol%coord(3,iatom) &
+&                   *datamol%coord(3,iatom)*datamol%znuc(iatom)
       enddo
 !
 ! Electron part
@@ -1691,12 +1711,13 @@ end
         write(datacomp%iout,'(" ----------------------------------------------")')
         write(datacomp%iout,'(1x,4f11.4)')xdip, ydip, zdip, totaldip
         write(datacomp%iout,'(" ----------------------------------------------",/)')
-        write(datacomp%iout,'(" --------------------------------------------------------------------")')
+        write(datacomp%iout,'(1x,68("-"))')
+        write(datacomp%iout,'(" ")')
         write(datacomp%iout,'("               Quadrupole Momemt (Debye*Angstrom)")')
         write(datacomp%iout,'("        XX         XY         XZ         YY         YZ         ZZ")')
-        write(datacomp%iout,'(" --------------------------------------------------------------------")')
+        write(datacomp%iout,'(1x,68("-"))')
         write(datacomp%iout,'(1x,6f11.4)')(quadp(ii),ii=1,6)
-        write(datacomp%iout,'(" --------------------------------------------------------------------",/)')
+        write(datacomp%iout,'(1x,68("-"))')
         write(datacomp%iout,'(" ---------------------------------------------------------")')
         write(datacomp%iout,'("               Octupole Momemt (Debye*Angstrom^2)")')
         write(datacomp%iout,'("       XXX        XXY        XXZ       XYY        XYZ")')
@@ -1792,8 +1813,8 @@ end
 
 !---------------------------------------------------------------------------------------
   subroutine rhfqc(fock,cmo,qcrmax,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
-&                  qcwork,work1,work2,cutint2,hfexchange,nao,nmo,nocc,nvir,nshell, &
-&                  maxdim,maxqcdiag,maxqcdiagsub,threshqc, &
+&                  qcwork,work1,work2,cutint2,hfexchange,nao,nmo, &
+&                  nocc,nvir,nshell,maxdim,maxqcdiag,maxqcdiagsub,threshqc, &
 &                  datajob,datamol,databasis,datacomp)
 !---------------------------------------------------------------------------------------
 !
@@ -1935,7 +1956,8 @@ end
 !$OMP end parallel do
         qcnorm= sqrt(qcnorm)
 !
-        if(datacomp%master) write(datacomp%iout,'(5x,"QC Cycle ",i2," : Norm = ",1p,e10.3)') itdav-1, qcnorm
+        if(datacomp%master)  &
+&         write(datacomp%iout,'(5x,"QC Cycle ",i2," : Norm = ",1p,e10.3)') itdav-1, qcnorm
 !
 ! Check convergence
 !
@@ -2099,13 +2121,14 @@ end
 end
 
 
-!----------------------------------------------------------------------------------
+!-----------------------------------------------------------------------
   subroutine uhfqc(focka,fockb,cmoa,cmob,qcrmax,qcvec, &
 &                  qcmat,qcmatsave,qceigen,overlap,xint, &
-&                  qcworka,qcworkb,work,worka,workb,cutint2,hfexchange,nao,nmo,nocca,noccb, &
+&                  qcworka,qcworkb,work,worka,workb,cutint2, &
+&                  hfexchange,nao,nmo,nocca,noccb, &
 &                  nvira,nvirb,nshell,maxdim,maxqcdiag,maxqcdiagsub, &
 &                  threshqc,datajob,datamol,databasis,datacomp)
-!----------------------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
 ! Driver of Davidson diagonalization for quadratically convergent of UHF
 !
@@ -2127,8 +2150,8 @@ end
       real(8),intent(inout) :: qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2)
       real(8),intent(inout) :: qceigen(maxqcdiagsub)
       real(8),intent(inout) :: qcworka(nao,nao), qcworkb(nao,nao), work(nao,nao)
-      real(8),intent(inout) :: worka(nao,nao), workb(nao,nao)
-      real(8),intent(inout) :: focka(nao*(nao+1)/2),fockb(nao*(nao+1)/2), cmoa(nao,nao), cmob(nao,nao)
+      real(8),intent(inout) :: worka(nao,nao), workb(nao,nao), focka(nao*(nao+1)/2)
+      real(8),intent(inout) :: fockb(nao*(nao+1)/2), cmoa(nao,nao), cmob(nao,nao)
       real(8) :: tmp, tmpa, tmpb, qcnorm, ddot, rotqc
 !
       qcmatsave(:)= zero
@@ -2289,7 +2312,8 @@ end
 !$OMP end parallel do
         qcnorm= sqrt(qcnorm)
 !
-        if(datacomp%master) write(datacomp%iout,'(5x,"QC Cycle ",i2," : Norm = ",1p,e10.3)') itdav-1, qcnorm
+        if(datacomp%master) &
+&         write(datacomp%iout,'(5x,"QC Cycle ",i2," : Norm = ",1p,e10.3)') itdav-1, qcnorm
 !
 ! Check convergence
 !

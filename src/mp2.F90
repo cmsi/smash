@@ -1,4 +1,4 @@
-! Copyright 2014-2019  Kazuya Ishimura
+! Copyright 2014-2020  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -138,11 +138,11 @@
         write(datacomp%iout,'(" -------------------------------------------------")')
         write(datacomp%iout,'("   Energy (Hartree)")')
         write(datacomp%iout,'(" -------------------------------------------------")')
-        write(datacomp%iout,'("   HF Energy                  =",f17.9)') datamol%escf
-        write(datacomp%iout,'("   MP2 Correlation Energy     =",f17.9)') datamol%emp2
-        write(datacomp%iout,'("   HF + MP2 Energy            =",f17.9)') datamol%escf+datamol%emp2
-        write(datacomp%iout,'("   SCS-MP2 Correlation Energy =",f17.9)') datamol%escsmp2
-        write(datacomp%iout,'("   HF + SCS-MP2 Energy        =",f17.9)') datamol%escf+datamol%escsmp2
+        write(datacomp%iout,'("   HF Energy                  =",f17.9)')datamol%escf
+        write(datacomp%iout,'("   MP2 Correlation Energy     =",f17.9)')datamol%emp2
+        write(datacomp%iout,'("   HF + MP2 Energy            =",f17.9)')datamol%escf+datamol%emp2
+        write(datacomp%iout,'("   SCS-MP2 Correlation Energy =",f17.9)')datamol%escsmp2
+        write(datacomp%iout,'("   HF + SCS-MP2 Energy        =",f17.9)')datamol%escf+datamol%escsmp2
         write(datacomp%iout,'(" -------------------------------------------------")')
       endif
       return
@@ -224,7 +224,8 @@ end
 !
 ! AO intengral generation and first and second integral transformations
 !
-      if(datacomp%master) write(datacomp%iout,'("    Start first and second integral transformations")')
+      if(datacomp%master) &
+&       write(datacomp%iout,'("    Start first and second integral transformations")')
       call mp2trans12(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
 &                     mlsize,noac,maxdim,datajob%cutint2,idis,nproc,myrank, &
 &                     datajob,datamol,databasis)
@@ -237,7 +238,8 @@ end
 !
 ! Third and fourth integral transformations and MP2 energy calculation
 !
-      if(datacomp%master) write(datacomp%iout,'("    Start third and fourth integral transformations")')
+      if(datacomp%master) &
+&       write(datacomp%iout,'("    Start third and fourth integral transformations")')
       call mp2trans34(cmo(1,datamol%neleca+1),energymo,trint2,trint3,trint4,emp2st,noac,nvac, &
 &                     ncore,idis,nproc,myrank,mpi_comm,datamol,databasis)
 !
@@ -343,8 +345,8 @@ end
 !
 ! AO intengral generation and first and second integral transformations
 !
-        if(datacomp%master) &
-&         write(datacomp%iout,'("    Start first and second integral transformations of Pass",i5)')ipass
+        if(datacomp%master) write(datacomp%iout, &
+&         '("    Start first and second integral transformations of Pass",i5)')ipass
         call mp2trans12m(cmo(1,ncore+1),cmowrk,trint1a,trint1b,trint2,xint, &
 &                        mlsize,noac,maxdim,datajob%cutint2,idis,numij,ijindex(1,ipass), &
 &                        nproc,myrank,datajob,datamol,databasis)
@@ -357,8 +359,8 @@ end
 !
 ! Third and fourth integral transformations and MP2 energy calculation
 !
-        if(datacomp%master) &
-&         write(datacomp%iout,'("    Start third and fourth integral transformations of Pass",i5)')ipass
+        if(datacomp%master) write(datacomp%iout, &
+&         '("    Start third and fourth integral transformations of Pass",i5)')ipass
         call mp2trans34m(cmo(1,datamol%neleca+1),energymo,trint2,trint3,trint4,emp2st,nvac, &
 &                        ncore,idis,numij,ijindex(1,ipass),nproc,myrank,mpi_comm,datamol,databasis)
 !

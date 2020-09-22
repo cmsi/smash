@@ -1,4 +1,4 @@
-! Copyright 2014-2019  Kazuya Ishimura
+! Copyright 2014-2020  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -252,10 +252,10 @@ end
       allocate(fulldmtrx(nao2),ewdmtrx(nao3),egradtmp(3,datamol%natom))
       call memset(ndftatom*ndftatom*9+ndftatom*13+nrad*2+nleb*4+nleb*nrad*ndftatom+nao*10 &
 &                +datamol%neleca*(nao+4),datacomp)
-      allocate(atomvec(5*ndftatom*ndftatom),surface(ndftatom*ndftatom),radpt(2*nrad),angpt(4*nleb), &
-&              rad(ndftatom),ptweight(nleb*nrad*ndftatom),xyzpt(3*ndftatom),rsqrd(ndftatom),rr(ndftatom), &
-&              uvec(3*ndftatom),vao(10*nao),vmo(4*datamol%neleca),dweight(3*ndftatom), &
-&              dpa(3*ndftatom*ndftatom),pa(ndftatom),work(datamol%neleca*nao))
+      allocate(atomvec(5*ndftatom*ndftatom),surface(ndftatom*ndftatom),radpt(2*nrad), &
+&              angpt(4*nleb),rad(ndftatom),ptweight(nleb*nrad*ndftatom),xyzpt(3*ndftatom), &
+&              rsqrd(ndftatom),rr(ndftatom),uvec(3*ndftatom),vao(10*nao),vmo(4*datamol%neleca), &
+&              dweight(3*ndftatom),dpa(3*ndftatom*ndftatom),pa(ndftatom),work(datamol%neleca*nao))
 !
       egradtmp(:,:)= zero
 !
@@ -312,10 +312,10 @@ end
 !
 ! Unset arrays
 !
-      deallocate(atomvec,surface,radpt,angpt, &
-&                rad,ptweight,xyzpt,rsqrd,rr, &
-&                uvec,vao,vmo,dweight, &
-&                dpa,pa,work)
+      deallocate(atomvec,surface,radpt, &
+&                angpt,rad,ptweight,xyzpt, &
+&                rsqrd,rr,uvec,vao,vmo, &
+&                dweight,dpa,pa,work)
       call memunset(ndftatom*ndftatom*9+ndftatom*13+nrad*2+nleb*4+nleb*nrad*ndftatom+nao*10 &
 &                  +datamol%neleca*(nao+4),datacomp)
       deallocate(fulldmtrx,ewdmtrx,egradtmp)
@@ -339,8 +339,9 @@ end
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
-      integer :: nrad, nleb, nao, ndftatom, nao2, nao3, maxdim, maxgraddim, maxfunc(0:7), i, j, iatom
       integer,intent(in) :: nproc1, myrank1, mpi_comm1
+      integer :: nrad, nleb, nao, ndftatom, nao2, nao3, maxdim, maxgraddim, maxfunc(0:7)
+      integer :: i, j, iatom
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: cmoa(databasis%nao*databasis%nao), cmob(databasis%nao*databasis%nao)
       real(8),intent(in) :: energymoa(databasis%nao), energymob(databasis%nao)
@@ -380,10 +381,10 @@ end
       allocate(fulldmtrx1(nao2),fulldmtrx2(nao2),ewdmtrx(nao3),egradtmp(3,datamol%natom))
       call memset(ndftatom*ndftatom*9+ndftatom*13+nrad*2+nleb*4+nleb*nrad*ndftatom+nao*10 &
 &                +datamol%neleca*4+datamol%nelecb*4+(datamol%neleca+datamol%nelecb)*nao,datacomp)
-      allocate(atomvec(5*ndftatom*ndftatom),surface(ndftatom*ndftatom),radpt(2*nrad),angpt(4*nleb), &
-&              rad(ndftatom),ptweight(nleb*nrad*ndftatom),xyzpt(3*ndftatom),rsqrd(ndftatom),rr(ndftatom), &
-&              uvec(3*ndftatom),vao(10*nao),vmoa(4*datamol%neleca),vmob(4*datamol%nelecb), &
-&              dweight(3*ndftatom),dpa(3*ndftatom*ndftatom),pa(ndftatom), &
+      allocate(atomvec(5*ndftatom*ndftatom),surface(ndftatom*ndftatom),radpt(2*nrad), &
+&              angpt(4*nleb),rad(ndftatom),ptweight(nleb*nrad*ndftatom),xyzpt(3*ndftatom), &
+&              rsqrd(ndftatom),rr(ndftatom),uvec(3*ndftatom),vao(10*nao),vmoa(4*datamol%neleca), &
+&              vmob(4*datamol%nelecb),dweight(3*ndftatom),dpa(3*ndftatom*ndftatom),pa(ndftatom), &
 &              work((datamol%neleca+datamol%nelecb)*nao))
 !
       egradtmp(:,:)= zero
@@ -424,8 +425,8 @@ end
 ! Calculate derivatives of exchange-correlation terms 
 !
       call graduexcor(egradtmp,egrad,cmoa,cmob,fulldmtrx1,fulldmtrx2,atomvec,surface,radpt, &
-&                     angpt,rad,ptweight,xyzpt,rsqrd,rr,uvec,vao,vmoa,vmob,dweight, &
-&                     dpa,pa,work,work(datamol%neleca*nao+1),ndftatom,datajob%idftex,datajob%idftcor, &
+&                     angpt,rad,ptweight,xyzpt,rsqrd,rr,uvec,vao,vmoa,vmob,dweight,dpa,pa, &
+&                     work,work(datamol%neleca*nao+1),ndftatom,datajob%idftex,datajob%idftcor, &
 &                     nproc1,myrank1,datajob,datamol,databasis,datacomp)
 !
       call para_allreducer(egradtmp(1,1),egrad(1,1),3*datamol%natom,mpi_comm1)
@@ -443,10 +444,10 @@ end
 !
 ! Unset arrays
 !
-      deallocate(atomvec,surface,radpt,angpt, &
-&                rad,ptweight,xyzpt,rsqrd,rr, &
-&                uvec,vao,vmoa,vmob, &
-&                dweight,dpa,pa, &
+      deallocate(atomvec,surface,radpt, &
+&                angpt,rad,ptweight,xyzpt, &
+&                rsqrd,rr,uvec,vao,vmoa, &
+&                vmob,dweight,dpa,pa, &
 &                work)
       call memunset(ndftatom*ndftatom*9+ndftatom*13+nrad*2+nleb*4+nleb*nrad*ndftatom+nao*10 &
 &                  +datamol%neleca*4+datamol%nelecb*4+(datamol%neleca+datamol%nelecb)*nao,datacomp)

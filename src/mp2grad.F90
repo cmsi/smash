@@ -1,4 +1,4 @@
-! Copyright 2016-2019  Kazuya Ishimura
+! Copyright 2016-2020  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -213,11 +213,11 @@
         write(datacomp%iout,'(" -------------------------------------------------")')
         write(datacomp%iout,'("               Energy (Hartree)")')
         write(datacomp%iout,'(" -------------------------------------------------")')
-        write(datacomp%iout,'("   HF Energy                  =",f17.9)') datamol%escf
-        write(datacomp%iout,'("   MP2 Correlation Energy     =",f17.9)') datamol%emp2
-        write(datacomp%iout,'("   HF + MP2 Energy            =",f17.9)') datamol%escf+datamol%emp2
-        write(datacomp%iout,'("   SCS-MP2 Correlation Energy =",f17.9)') datamol%escsmp2
-        write(datacomp%iout,'("   HF + SCS-MP2 Energy        =",f17.9)') datamol%escf+datamol%escsmp2
+        write(datacomp%iout,'("   HF Energy                  =",f17.9)')datamol%escf
+        write(datacomp%iout,'("   MP2 Correlation Energy     =",f17.9)')datamol%emp2
+        write(datacomp%iout,'("   HF + MP2 Energy            =",f17.9)')datamol%escf+datamol%emp2
+        write(datacomp%iout,'("   SCS-MP2 Correlation Energy =",f17.9)')datamol%escsmp2
+        write(datacomp%iout,'("   HF + SCS-MP2 Energy        =",f17.9)')datamol%escf+datamol%escsmp2
         write(datacomp%iout,'(" -------------------------------------------------")')
       endif
 !
@@ -229,7 +229,8 @@
         write(datacomp%iout,'("  Atom            X             Y             Z")')
         write(datacomp%iout,'(" ----------------------------------------------------")')
         do ii= 1,datamol%natom
-          write(datacomp%iout,'(3x,a3,3x,3f14.7)') table(datamol%numatomic(ii)),(egrad(jj,ii),jj=1,3)
+          write(datacomp%iout,'(3x,a3,3x,3f14.7)') &
+&               table(datamol%numatomic(ii)),(egrad(jj,ii),jj=1,3)
         enddo
         write(datacomp%iout,'(" ----------------------------------------------------")')
       endif
@@ -376,7 +377,8 @@ end
         mlsize2=(msize-nao*numi-2*nao2)/(nao*(numi+1))
         if(mlsize2 > maxsize) mlsize2= maxsize
         call memset(numi*mlsize2*nao+nao*numi*nthread+nao2*nthread+nao2+nao*mlsize2,datacomp)
-        allocate(tisml(numi*mlsize2*nao),xlmi(nao*numi*nthread),xlmn(nao2*nthread),work1(nao2),work2(nao*mlsize2))
+        allocate(tisml(numi*mlsize2*nao),xlmi(nao*numi*nthread),xlmn(nao2*nthread), &
+&                work1(nao2),work2(nao*mlsize2))
 !
         if(ipass /= npass) then
           call mp2gradbacktrans1(egrad,egradtmp,xlai,tisml,xlmi,cmo,xint,trint2,work1,work2, &
@@ -389,7 +391,8 @@ end
 &                                nproc,myrank,mpi_comm,datajob,datamol,databasis)
         endif
 !
-        deallocate(tisml,xlmi,xlmn,work1,work2)
+        deallocate(tisml,xlmi,xlmn, &
+&                  work1,work2)
         call memunset(numi*mlsize2*nao+nao*numi*nthread+nao2*nthread+nao2+nao*mlsize2,datacomp)
 !ishimura
 !call tstamp(1)
@@ -1499,8 +1502,8 @@ end
 !$OMP end parallel do
 !
         deltapai= sqrt(deltapai/(nocc*nvir))
-!ishimura
-        if(datacomp%master) write(datacomp%iout,'(6x,"Cycle",i3,3x,"Z-Vector error=",1p,d11.3)')iter,deltapai
+        if(datacomp%master) &
+&         write(datacomp%iout,'(6x,"Cycle",i3,3x,"Z-Vector error=",1p,d11.3)')iter,deltapai
         if(deltapai < datajob%threshmp2cphf) exit
 !
         if(itdiis == datajob%maxmp2diis) itdiis= 0

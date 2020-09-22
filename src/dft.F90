@@ -2504,8 +2504,8 @@ end
 
 !------------------------------------------------------------------------------------------------
   subroutine graduexcor(egrad,edftgrad,cmoa,cmob,fulldmtrx1,fulldmtrx2,atomvec,surface,radpt, &
-&                       angpt,rad,ptweight,xyzpt,rsqrd,rr,uvec,vao,vmoa,vmob,dweight, &
-&                       dpa,pa,transcmoa,transcmob,ndftatom,idftex,idftcor, &
+&                       angpt,rad,ptweight,xyzpt,rsqrd,rr,uvec,vao,vmoa,vmob,dweight,dpa,pa, &
+&                       transcmoa,transcmob,ndftatom,idftex,idftcor, &
 &                       nproc,myrank,datajob,datamol,databasis,datacomp)
 !------------------------------------------------------------------------------------------------
 !

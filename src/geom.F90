@@ -39,7 +39,8 @@
           if(rr /= zero) then
             datamol%enuc= datamol%enuc+chrgij/rr
             if((rr <= threshatom).and.datacomp%master) then
-              write(datacomp%iout,'("Warning! Distance of Atoms",i4," and",i4," is short!")') iatom, jatom
+              write(datacomp%iout, &
+&                   '("Warning! Distance of Atoms",i4," and",i4," is short!")') iatom, jatom
               datacomp%nwarn= datacomp%nwarn+1
             endif       
           else
@@ -547,7 +548,8 @@ end
       integer :: numdim
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, convl=1.0D-08, convrms=1.0D-06
       real(8),parameter :: rad2deg=5.729577951308232D+01
-      real(8),intent(inout) :: coord(datamol%natom*3), coordold(datamol%natom*3), coordredun(numredun,2)
+      real(8),intent(inout) :: coord(datamol%natom*3), coordold(datamol%natom*3)
+      real(8),intent(inout) :: coordredun(numredun,2)
       real(8),intent(inout) :: egrad(datamol%natom*3), egradredun(numredun,2)
       real(8),intent(inout) :: ehess(numredun*(numredun+1)/2), work1(maxredun,maxredun)
       real(8),intent(inout) :: work2(maxredun,maxredun), work3(maxredun,maxredun)
@@ -725,7 +727,8 @@ end
           suml= suml+workv(ii,1)*workv(ii,1)/(rlambda-workv(ii,3))
         enddo
         if(datacomp%master.and.(mod(datajob%iprint,10) >= 5)) then
-          write(datacomp%iout,'(" Lambda iteration of RFO",i3,3x,"Lambda=",1p,d15.8,4x,"Sum=",1p,d15.8)') &
+          write(datacomp%iout, &
+&               '(" Lambda iteration of RFO",i3,3x,"Lambda=",1p,d15.8,4x,"Sum=",1p,d15.8)') &
 &               iterrfo,rlambda,suml
         endif
         if(abs(rlambda-suml) <= convl) exit

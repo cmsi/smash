@@ -348,7 +348,8 @@ end
         write(datacomp%iout,'("  Atom            X             Y             Z")')
         write(datacomp%iout,'(" ----------------------------------------------------")')
         do i= 1,datamol%natom
-          write(datacomp%iout,'(3x,a3,3x,3f14.7)')table(datamol%numatomic(i)),(datamol%coord(j,i)*toang,j=1,3)
+          write(datacomp%iout,'(3x,a3,3x,3f14.7)') &
+&               table(datamol%numatomic(i)),(datamol%coord(j,i)*toang,j=1,3)
         enddo
         write(datacomp%iout,'(" ----------------------------------------------------",/)')
       endif
@@ -385,7 +386,8 @@ end
         write(datacomp%iout,'("  Atom            X             Y             Z")')
         write(datacomp%iout,'(" ----------------------------------------------------")')
         do i= 1,datamol%natom
-          write(datacomp%iout,'(3x,a3,3x,3f14.7)')table(datamol%numatomic(i)),(datamol%coord(j,i)*toang,j=1,3)
+          write(datacomp%iout,'(3x,a3,3x,3f14.7)') &
+&               table(datamol%numatomic(i)),(datamol%coord(j,i)*toang,j=1,3)
         enddo
         write(datacomp%iout,'(" ----------------------------------------------------",/)')
       endif
@@ -437,13 +439,13 @@ end
             write(datacomp%iout,'(2x,a3)')table(datamol%numatomic(databasis%locatom(ishell)))
             iatom= databasis%locatom(ishell)
           endif
-          if(databasis%mtype(ishell) == 0) write(datacomp%iout,'(4x,"S",i3)') databasis%mprim(ishell)
-          if(databasis%mtype(ishell) == 1) write(datacomp%iout,'(4x,"P",i3)') databasis%mprim(ishell)
-          if(databasis%mtype(ishell) == 2) write(datacomp%iout,'(4x,"D",i3)') databasis%mprim(ishell)
-          if(databasis%mtype(ishell) == 3) write(datacomp%iout,'(4x,"F",i3)') databasis%mprim(ishell)
-          if(databasis%mtype(ishell) == 4) write(datacomp%iout,'(4x,"G",i3)') databasis%mprim(ishell)
-          if(databasis%mtype(ishell) == 5) write(datacomp%iout,'(4x,"H",i3)') databasis%mprim(ishell)
-          if(databasis%mtype(ishell) == 6) write(datacomp%iout,'(4x,"I",i3)') databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 0) write(datacomp%iout,'(4x,"S",i3)')databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 1) write(datacomp%iout,'(4x,"P",i3)')databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 2) write(datacomp%iout,'(4x,"D",i3)')databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 3) write(datacomp%iout,'(4x,"F",i3)')databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 4) write(datacomp%iout,'(4x,"G",i3)')databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 5) write(datacomp%iout,'(4x,"H",i3)')databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 6) write(datacomp%iout,'(4x,"I",i3)')databasis%mprim(ishell)
 !
           if(databasis%mtype(ishell) >  6) then
             write(*,'(" Error! The subroutine writebasis supports up to i functions.")')
@@ -452,7 +454,8 @@ end
 !
           iloc= databasis%locprim(ishell)
           do iprim= 1,databasis%mprim(ishell)
-             write(datacomp%iout,'(3x,f16.7,1x,f15.8)') databasis%ex(iloc+iprim), databasis%coeffinp(iloc+iprim)
+             write(datacomp%iout,'(3x,f16.7,1x,f15.8)') &
+&                  databasis%ex(iloc+iprim), databasis%coeffinp(iloc+iprim)
           enddo
         enddo
         write(datacomp%iout,'("  ****",/)')
@@ -572,9 +575,9 @@ end
         write(cnopt,'(i0)') datajob%nopt
         write(ciprint,'(i0)') datajob%iprint
 !
-        write(datacomp%iout,'(" -------------------------------------------------------------------------")')
+        write(datacomp%iout,'(1x,73("-"))')
         write(datacomp%iout,'("   Job infomation")')
-        write(datacomp%iout,'(" -------------------------------------------------------------------------")')
+        write(datacomp%iout,'(1x,73("-"))')
         write(datacomp%iout,'("   Runtype = ",a12,",  Method  = ",a12," ,  Basis    = ",a12)') &
 &                  datajob%runtype, datajob%method, databasis%basis
         write(datacomp%iout,'("   Memory  = ",a12,",  SCFtype = ",a12," ,  Precision= ",a12)') &
@@ -586,8 +589,8 @@ end
         write(datacomp%iout,'("   Iprint  = ",a12)') &
 &                  ciprint
         if(datajob%runtype == 'OPT') then
-          write(datacomp%iout,'("   Nopt    = ",a12,",  Optconv = ",1p,e8.2,5x,",  Cartesian= ",l1)') &
-&                  cnopt, datajob%optconv, datajob%cartesian
+          write(datacomp%iout,'("   Nopt    = ",a12,",  Optconv = ",1p,e8.2,5x, &
+&                               ",  Cartesian= ",l1)') cnopt, datajob%optconv, datajob%cartesian
           write(datacomp%iout,'("   Fbond   = ",1p,e8.2)') &
 &                  datajob%fbond
         endif
@@ -595,7 +598,7 @@ end
 &         write(datacomp%iout,'("   Check   = ",a)') trim(datajob%check)
         if(datajob%xyz /= '') &
 &         write(datacomp%iout,'("   Xyz     = ",a)') trim(datajob%xyz)
-        write(datacomp%iout,'(" -------------------------------------------------------------------------")')
+        write(datacomp%iout,'(1x,73("-"))')
 
         write(datacomp%iout,'(/," ------------------------------------------------")')
         write(datacomp%iout,'("   Computational condition")')
@@ -785,7 +788,8 @@ end
         minatomic= minval(datamol%numatomic(1:datamol%natom))
         if((minatomic <= 0).and.(.not.datajob%cartesian)) then
           datajob%cartesian=.true.
-          write(datacomp%iout,'(" Warning! Cartesian coordinate is used during geometry optimization.")')
+          write(datacomp%iout, &
+&               '(" Warning! Cartesian coordinate is used during geometry optimization.")')
           datacomp%nwarn= datacomp%nwarn+1
         endif
       endif
@@ -941,13 +945,15 @@ end
             if(symbol /= 'SP') then
               do kprim= 1,numprim 
                 iprim= iprim+1
-                read(datacomp%inpcopy,*,end=9998,err=9998) datagenbasis%ex(iprim), datagenbasis%coeff(iprim)
+                read(datacomp%inpcopy,*,end=9998,err=9998) &
+&                    datagenbasis%ex(iprim), datagenbasis%coeff(iprim)
               enddo
             else
               do kprim= 1,numprim 
                 iprim= iprim+1
-                read(datacomp%inpcopy,*,end=9998,err=9998) datagenbasis%ex(iprim), datagenbasis%coeff(iprim), &
-&                                               datagenbasis%coeff(iprim+numprim)
+                read(datacomp%inpcopy,*,end=9998,err=9998) &
+&                    datagenbasis%ex(iprim), datagenbasis%coeff(iprim), &
+&                    datagenbasis%coeff(iprim+numprim)
                 datagenbasis%ex(iprim+numprim)= datagenbasis%ex(iprim)
               enddo
               ishell= ishell+1
@@ -1073,8 +1079,8 @@ end
       if(datacomp%master) then
         rewind(datacomp%icheck)
         read(datacomp%icheck,end=9999)
-        read(datacomp%icheck,err=9998) scftype_g, natom_g, dataguessbs%nao, nmo_g, dataguessbs%nshell, &
-&                             dataguessbs%nprim, neleca_g, nelecb_g, cdummy, &
+        read(datacomp%icheck,err=9998) scftype_g, natom_g, dataguessbs%nao, nmo_g,  &
+&                             dataguessbs%nshell,dataguessbs%nprim, neleca_g, nelecb_g, cdummy, &
 &                             cdummy, charge_g, idummy, flagecp_g
         if(natom_g /= natom) then
           write(*,'(" Error! The numbers of atoms in checkpoint and input files are different.")')
@@ -1339,8 +1345,10 @@ end
           write(datacomp%iout,'(1x,80("-"))')
           write(datacomp%iout,'("   Orbital Energies (Hartree)")')
           write(datacomp%iout,'(1x,80("-"))')
-          write(datacomp%iout,'("   Alpha Occupied: ",5f12.5)')(eigena(imo),imo=1,datamol%neleca)
-          write(datacomp%iout,'("   Alpha Virtual : ",5f12.5)')(eigena(imo),imo=datamol%neleca+1,datamol%nmo)
+          write(datacomp%iout,'("   Alpha Occupied: ",5f12.5)') &
+&              (eigena(imo),imo=1,datamol%neleca)
+          write(datacomp%iout,'("   Alpha Virtual : ",5f12.5)') &
+&              (eigena(imo),imo=datamol%neleca+1,datamol%nmo)
           write(datacomp%iout,'(1x,80("-"))')
 !
 ! Open-shell
@@ -1349,10 +1357,14 @@ end
           write(datacomp%iout,'(1x,80("-"))')
           write(datacomp%iout,'("   Orbital Energies (Hartree)")')
           write(datacomp%iout,'(1x,80("-"))')
-          write(datacomp%iout,'("   Alpha Occupied: ",5f12.5)')(eigena(imo),imo=1,datamol%neleca)
-          write(datacomp%iout,'("   Alpha Virtual : ",5f12.5)')(eigena(imo),imo=datamol%neleca+1,datamol%nmo)
-          write(datacomp%iout,'("   Beta  Occupied: ",5f12.5)')(eigenb(imo),imo=1,datamol%nelecb)
-          write(datacomp%iout,'("   Beta  Virtual : ",5f12.5)')(eigenb(imo),imo=datamol%nelecb+1,datamol%nmo)
+          write(datacomp%iout,'("   Alpha Occupied: ",5f12.5)') &
+&              (eigena(imo),imo=1,datamol%neleca)
+          write(datacomp%iout,'("   Alpha Virtual : ",5f12.5)') &
+&              (eigena(imo),imo=datamol%neleca+1,datamol%nmo)
+          write(datacomp%iout,'("   Beta  Occupied: ",5f12.5)') &
+&              (eigenb(imo),imo=1,datamol%nelecb)
+          write(datacomp%iout,'("   Beta  Virtual : ",5f12.5)') &
+&              (eigenb(imo),imo=datamol%nelecb+1,datamol%nmo)
           write(datacomp%iout,'(1x,80("-"))')
         endif
       endif
@@ -1437,13 +1449,15 @@ end
           case(0)
             bflabel(iao)= anglabel(1)
             iatom= databasis%locatom(ii)
-            write(atomlabel(iao),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+            write(atomlabel(iao),'(i5,x,a3,x)') &
+&                 iatom, table(datamol%numatomic(databasis%locatom(ii)))
             iao= iao+1
           case(1)
             bflabel(iao:iao+2)= anglabel(2:4)
             iatom= databasis%locatom(ii)
             do jj= 0,2
-              write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                   iatom, table(datamol%numatomic(databasis%locatom(ii)))
             enddo
             iao= iao+3
           case(2)
@@ -1451,14 +1465,16 @@ end
               bflabel(iao:iao+4)= anglabel(11:15)
               iatom= databasis%locatom(ii)
               do jj= 0,4
-                write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+                write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                     iatom, table(datamol%numatomic(databasis%locatom(ii)))
               enddo
               iao= iao+5
             else
               bflabel(iao:iao+5)= anglabel(5:10)
               iatom= databasis%locatom(ii)
               do jj= 0,5
-                write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+                write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                     iatom, table(datamol%numatomic(databasis%locatom(ii)))
               enddo
               iao= iao+6
             endif
@@ -1467,14 +1483,16 @@ end
               bflabel(iao:iao+6)= anglabel(26:32)
               iatom= databasis%locatom(ii)
               do jj= 0,6
-                write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+                write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                     iatom, table(datamol%numatomic(databasis%locatom(ii)))
               enddo
               iao= iao+7
             else
               bflabel(iao:iao+9)= anglabel(16:25)
               iatom= databasis%locatom(ii)
               do jj= 0,9
-                write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+                write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                     iatom, table(datamol%numatomic(databasis%locatom(ii)))
               enddo
               iao= iao+10
             endif
@@ -1483,14 +1501,16 @@ end
               bflabel(iao:iao+8)= anglabel(48:56)
               iatom= databasis%locatom(ii)
               do jj= 0,8
-                write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+                write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                     iatom, table(datamol%numatomic(databasis%locatom(ii)))
               enddo
               iao= iao+9
             else
               bflabel(iao:iao+14)= anglabel(33:47)
               iatom= databasis%locatom(ii)
               do jj= 0,14
-                write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+                write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                     iatom, table(datamol%numatomic(databasis%locatom(ii)))
               enddo
               iao= iao+15
             endif
@@ -1499,14 +1519,16 @@ end
               bflabel(iao:iao+10)= anglabel(78:88)
               iatom= databasis%locatom(ii)
               do jj= 0,10
-                write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+                write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                     iatom, table(datamol%numatomic(databasis%locatom(ii)))
               enddo
               iao= iao+11
             else
               bflabel(iao:iao+20)= anglabel(57:77)
               iatom= databasis%locatom(ii)
               do jj= 0,20
-                write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+                write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                     iatom, table(datamol%numatomic(databasis%locatom(ii)))
               enddo
               iao= iao+21
             endif
@@ -1515,14 +1537,16 @@ end
               bflabel(iao:iao+12)= anglabel(117:129)
               iatom= databasis%locatom(ii)
               do jj= 0,12
-                write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+                write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                     iatom, table(datamol%numatomic(databasis%locatom(ii)))
               enddo
               iao= iao+13
             else
               bflabel(iao:iao+27)= anglabel(89:116)
               iatom= databasis%locatom(ii)
               do jj= 0,27
-                write(atomlabel(iao+jj),'(i5,x,a3,x)')iatom, table(datamol%numatomic(databasis%locatom(ii)))
+                write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                     iatom, table(datamol%numatomic(databasis%locatom(ii)))
               enddo
               iao= iao+28
             endif
@@ -1547,7 +1571,8 @@ end
               write(datacomp%iout,'(21x,5(5x,i5,2x))')(jj,jj=imin,imax)
               write(datacomp%iout,'(4x,"Orbital Energy",4x,5f12.5)')(eigen(jj),jj=imin,imax)
               do kk= 1,databasis%nao
-                write(datacomp%iout,'(i5,a10,a7,5f12.6)')kk,atomlabel(kk),bflabel(kk),(cmo(kk,jj),jj=imin,imax)
+                write(datacomp%iout,'(i5,a10,a7,5f12.6)') &
+&                     kk,atomlabel(kk),bflabel(kk),(cmo(kk,jj),jj=imin,imax)
               enddo
               imin= imin+5
               imax= imax+5
@@ -1775,7 +1800,8 @@ end
         write(datacomp%ixyz,'(i0)') datamol%natom
         write(datacomp%ixyz,'("SMASH data in Angstrom")')
         do iatom= 1,datamol%natom
-          write(datacomp%ixyz,'(a3,x,3f14.7)') table(datamol%numatomic(iatom)),(datamol%coord(j,iatom)*toang,j=1,3)
+          write(datacomp%ixyz,'(a3,x,3f14.7)') &
+&               table(datamol%numatomic(iatom)),(datamol%coord(j,iatom)*toang,j=1,3)
         enddo
       endif
 !
