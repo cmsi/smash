@@ -1375,8 +1375,11 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: itype
-      integer :: minmo, maxmo, imin, imax, ii, jj, kk, iao, iatom
+      integer,parameter :: maxprintmo=10
+      integer :: minmo, maxmo, imin, imax, ii, jj, kk, ll, iao, iatom
+      integer :: mosave(maxprintmo), mocount, momin, idamax
       real(8),intent(in) :: cmo(databasis%nao,databasis%nao), eigen(datamol%nmo)
+      real(8) :: cmosave(maxprintmo), cmomin
       character(len=10) :: atomlabel(mxao)
       character(len=7) :: bflabel(mxao)
       character(len=3) :: table(-9:112)= &
@@ -1552,11 +1555,35 @@ end
             enddo
           case(2)
             do jj= minmo,maxmo
+              mocount= 0
+              cmomin = 1.0D+02
+              do kk= 1,databasis%nao
+                if(abs(cmo(kk,jj)) > 1.5D-01) then
+                  if(mocount <  maxprintmo) then
+                    mocount= mocount+1
+                    mosave(mocount) = kk
+                    cmosave(mocount)= abs(cmo(kk,jj))
+                    if(abs(cmo(kk,jj)) < cmomin) then
+                      momin = mocount
+                      cmomin= abs(cmo(kk,jj))
+                    endif
+                  elseif(abs(cmo(kk,jj)) > cmomin) then
+                    do ll= momin+1,maxprintmo
+                      mosave(ll-1) = mosave(ll)
+                      cmosave(ll-1)= cmosave(ll)
+                    enddo
+                    mosave(maxprintmo) = kk
+                    cmosave(maxprintmo)= abs(cmo(kk,jj))
+                    momin= idamax(maxprintmo,cmosave,1)
+                    cmomin= abs(cmosave(momin))
+                  endif
+                endif
+              enddo
               write(datacomp%iout,'(4x,"MO :",i5)') jj
               write(datacomp%iout,'(4x,"Orbital Energy",4x,f12.5)')eigen(jj)
-              do kk= 1,databasis%nao
-                if(abs(cmo(kk,jj)) > 1.5D-01) &
-&                  write(datacomp%iout,'(i5,a10,a7,5f12.6)')kk,atomlabel(kk),bflabel(kk),cmo(kk,jj)
+              do ll= 1,mocount
+                kk= mosave(ll)
+                write(datacomp%iout,'(i5,a10,a7,5f12.6)')kk,atomlabel(kk),bflabel(kk),cmo(kk,jj)
               enddo
               write(datacomp%iout,*)
             enddo

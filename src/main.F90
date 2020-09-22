@@ -1710,8 +1710,8 @@ end
         if((egradmax <= datajob%optconv).and.(egradrms <= datajob%optconv*third)) then
           if(datacomp%master) write(datacomp%iout,'("   ==== Geometry converged ====",/)')
           datacomp%convergedgeom=.true.
-          exit
           call tstamp(1,datacomp)
+          exit
         endif
         call tstamp(1,datacomp)
 !
