@@ -200,7 +200,7 @@
     2.3 scf keywords
       scfconv               specifies the type of SCF convergence method.
               = DIIS        Pulay's DIIS interpolation (defalut)
-              = SOSCF       Approximated second-order SCF (SOSCF) method
+              = SOSCF       Approximate second-order SCF (SOSCF) method
               = QC          Quadratically convergent (QC) SCF method
 
       maxiter               specifies the maximum number of SCF iteration cycles.

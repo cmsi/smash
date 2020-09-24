@@ -236,7 +236,7 @@
             call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
 &                         datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
 !
-! Approximated Second-order SCF method
+! Approximate Second-order SCF method
 !
           case('SOSCF')
             if((itsoscf == 0).or.(convsoscf)) then
@@ -1215,7 +1215,7 @@ end
             call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
 &                         datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
 !
-! Approximated Second-order SCF method
+! Approximate Second-order SCF method
 !
           case('SOSCF')
             if((itsoscf == 0).or.(convsoscf)) then
@@ -1639,7 +1639,7 @@ end
             call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
 &                         datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
 !
-! Approximated Second-order SCF method
+! Approximate Second-order SCF method
 !
           case('SOSCF')
             if((itsoscf == 0).or.(convsoscf)) then
@@ -2454,7 +2454,7 @@ end
             call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
 &                         datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
 !
-! Approximated Second-order SCF method
+! Approximate Second-order SCF method
 !
           case('SOSCF')
             if((itsoscf == 0).or.(convsoscf)) then

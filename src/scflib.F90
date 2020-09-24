@@ -694,7 +694,7 @@ end
   subroutine soscfnewh(hstart,sograd,sodisp,sovecy,nocc,nvir,itsoscf,maxsoscf,sodispmax)
 !-----------------------------------------------------------------------------------------
 !
-! Update inverse Hessian matrix for approximated SOSCF method
+! Update inverse Hessian matrix for approximate SOSCF method
 !
       implicit none
       integer,intent(in) :: nocc, nvir, itsoscf, maxsoscf
@@ -793,7 +793,7 @@ end
 &                       nocca,noccb,nvira,nvirb,itsoscf,maxsoscf,sodispmax)
 !-------------------------------------------------------------------------------------------
 !
-! Update inverse Hessian matrix for approximated SOSCF method (unrestricted version)
+! Update inverse Hessian matrix for approximate SOSCF method (unrestricted version)
 !
       implicit none
       integer,intent(in) :: nocca, noccb, nvira, nvirb, itsoscf, maxsoscf
@@ -957,7 +957,7 @@ end
 &                        nproc,myrank,mpi_comm)
 !-----------------------------------------------------------------------------
 !
-! Update molecular orbitals using approximated SOSCF method
+! Update molecular orbitals using approximate SOSCF method
 !
       implicit none
       integer,intent(in) :: nocc, nvir, itsoscf, maxsoscf, nao, nmo, nproc, myrank, mpi_comm
