@@ -48,7 +48,7 @@
         wall1= dble(iwall2-datacomp%iwall1)/dble(iwrate)
         call fdate(tdate)
         write(datacomp%iout,'(1x,"Step CPU :",f10.1,", Total CPU :",f10.1,&
-&             " of Master node")') cpu2-datacomp%cpu1, cpu2-datacomp%cpu0
+&             " of Master process")') cpu2-datacomp%cpu1, cpu2-datacomp%cpu0
         write(datacomp%iout,'(1x,"Step Wall :",f9.1", Total Wall :",f9.1,&
 &             " at ",a24,/)') wall1,wall0,tdate
         datacomp%cpu1 = cpu2
