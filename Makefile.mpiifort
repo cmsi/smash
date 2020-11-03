@@ -1,3 +1,4 @@
+# Makefile for Intel MPI Library (mpiifort)
 F90 = mpiifort -DILP64
 LIB = -mkl=parallel
 OPT = -qopenmp -i8 -xHOST -ilp64

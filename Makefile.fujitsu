@@ -1,3 +1,4 @@
+# Makefile for Fujitsu compiler
 F90 = mpifrtpx
 LIB = -SSL2BLAMP
 OPT = -Kfast,openmp

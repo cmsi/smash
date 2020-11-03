@@ -1,3 +1,4 @@
+# Makefile for OpenMPI fortran with intel compiler
 F90 = mpif90
 LIB = -mkl=parallel
 OPT = -qopenmp -i8 -xHOST
