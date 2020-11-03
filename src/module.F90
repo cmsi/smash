@@ -19,6 +19,13 @@
 ! Maximum sizes for AOs (basis functions), MOs, atoms, shells
 ! Factors of unit conversion
 !
+! Fundamental Physical Constants: 2018 CODATA
+!   Eite Tiesinga, Peter J. Mohr, David B. Newell, and Barry N. Taylor (2020),
+!   "The 2018 CODATA Recommended Values of the Fundamental Physical Constants"
+!   (Web Version 8.1). Database developed by J. Baker, M. Douma, and S.
+!   Kotochigova. Available at http://physics.nist.gov/constants, National
+!   Institute of Standards and Technology, Gaithersburg, MD 20899.
+!
       implicit none
       integer,parameter :: mxao=10000
       integer,parameter :: mxmo=10000
@@ -28,8 +35,8 @@
       integer,parameter :: mxprsh=30
       integer,parameter :: mxang=7
       integer,parameter :: maxline=100000
-      real(8),parameter :: toang= 0.5291772108D+00, tobohr= 1.889726125D+00
-      real(8),parameter :: todebye= 2.541746D+00
+      real(8),parameter :: toang= 0.5291772109D+00, tobohr= 1.889726125D+00
+      real(8),parameter :: todebye= 2.541746473D+00
 end
 
 
