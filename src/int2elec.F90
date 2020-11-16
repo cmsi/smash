@@ -62,7 +62,11 @@ end
 !----------------------------------------------------------------------------------------
 !
 ! Driver of two-electron integrals from (ss|ss) to (dd|dd)
-! using McMurchie-Davidson and Pople-Hehre mathods
+! using McMurchie-Davidson and Pople-Hehre methods
+!
+! L. E. McMurchie, E. R. Davidson, J. Comput. Phys., 26, 218-231 (1978).
+! J. A. Pople, W. J. Hehre, J. Comput. Phys., 27, 161-168 (1978).
+! K. Ishimura, S. Nagase, Theor. Chem. Account, 120, 185-189 (2008).
 !
 ! In  : exijkl    (Exponents of basis functions)
 !       coijkl    (Coefficients of basis functions)
@@ -421,6 +425,10 @@ end
 !---------------------------------------------------------------------------------------
 !
 ! Calculate two-electron integrals using Rys quadrature
+!
+! H. F. King, M. Dupuis, J. Comput. Phys., 21, 144-165 (1976).
+! M. Dupuis, J. Rys, H. F. King, J. Chem. Phys. 65, 111-116 (1976).
+! J. Rys, M. Dupuis, H. F. King, J. Comput. Chem., 4, 154-157 (1983).
 !
 ! In  : exijkl    (Exponents of basis functions)
 !       coijkl    (Coefficients of basis functions)

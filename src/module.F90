@@ -254,7 +254,7 @@ end
 ! escsmp2    : SCS-MP2 energy
 ! atomrad    : Atom radii
 !                H       : Bohr radius
-!                He - Cn : P. Pyykko, M. Atsumi, Chem. Eur. J., 186 (2009) 15.
+!                He - Cn : P. Pyykko, M. Atsumi, Chem. Eur. J., 15, 186-197 (2009).
       type typemol
         integer :: numatomic(mxatom), natom, neleca, nelecb, nmo, multi=1, ndummyatom
         real(8) :: coord(3,mxatom), znuc(mxatom), coordold(3,mxatom), charge=0.0D+00
