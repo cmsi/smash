@@ -232,7 +232,7 @@ end
   subroutine openinputfile(datacomp)
 !-------------------------------------
 !
-! Open argument input file
+! Open input file set by command argument
 !
       use modtype, only : typecomp
       implicit none
@@ -243,7 +243,7 @@ end
       if(datacomp%master) then
         call get_command_argument(1,filename)
         llen= len_trim(filename)
-        datacomp%inpstd= 9
+        datacomp%inpstd= 7
         open(unit=datacomp%inpstd,file=filename(1:llen),status='old',err=9999)
       endif
 !
@@ -254,10 +254,33 @@ end
 
 
 !--------------------------------------
+  subroutine openoutputfile(datacomp)
+!--------------------------------------
+!
+! Open output file set by command argument
+!
+      use modtype, only : typecomp
+      implicit none
+      type(typecomp),intent(inout) :: datacomp
+      integer :: llen
+      character(len=256) :: filename
+!
+      if(datacomp%master) then
+        call get_command_argument(2,filename)
+        llen= len_trim(filename)
+        datacomp%iout= 8
+        open(unit=datacomp%iout,file=filename(1:llen))
+      endif
+!
+      return
+end
+
+
+!--------------------------------------
   subroutine closeinputfile(datacomp)
 !--------------------------------------
 !
-! Close argument input file
+! Close input file set by command argument
 !
       use modtype, only : typecomp
       implicit none
@@ -265,6 +288,24 @@ end
 !
       if(datacomp%master) then
         close(datacomp%inpstd)
+      endif
+!
+      return
+end
+
+
+!---------------------------------------
+  subroutine closeoutputfile(datacomp)
+!---------------------------------------
+!
+! Close output file set by command argument
+!
+      use modtype, only : typecomp
+      implicit none
+      type(typecomp),intent(inout) :: datacomp
+!
+      if(datacomp%master) then
+        close(datacomp%iout)
       endif
 !
       return

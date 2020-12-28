@@ -283,11 +283,11 @@ end
 ! memused      : Used memory size in words
 ! memusedmax   : Maximum used memory size in words
 ! nwarn        : Number of warnings
-! inpstd       : Unit number of input
-! iout         : Unit number of standard output
-! inpcopy      : Unit number of copied input file
-! icheck       : Unit number of checkpoint file
-! ixyz         : Unit number of xyz file
+! inpstd       : Unit number of input (default: 5, set by command argument: 7)
+! iout         : Unit number of standard output (default: 6, set by command argument: 8)
+! inpcopy      : Unit number of copied input file (default: 10)
+! icheck       : Unit number of checkpoint file (default: 11)
+! ixyz         : Unit number of xyz file (default: 12)
 ! iwall0       : System_clock count at the beginning of calculation
 ! iwall1       : System_clock count at the beginning of step
 ! nproc1       : Number of MPI processes of MPI_COMM_WORLD

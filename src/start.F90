@@ -28,9 +28,23 @@
 !
       call setparallel(datacomp)
 !
+! Open input and output files if necessary
+!
+      if(datacomp%master) then
+        if(command_argument_count() >= 1) call openinputfile(datacomp)
+        if(command_argument_count() >= 2) call openoutputfile(datacomp)
+      endif
+!
 ! Main driver of SMASH
 !
       call smashmain(datacomp)
+!
+! Close input and output files if necessary
+!
+      if(datacomp%master) then
+        if(command_argument_count() >= 1) call closeinputfile(datacomp)
+        if(command_argument_count() >= 2) call closeoutputfile(datacomp)
+      endif
 !
 ! Finalize MPI
 !

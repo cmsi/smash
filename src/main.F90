@@ -42,20 +42,14 @@
       call tstamp(0,datacomp)
       call parallelinfo(datacomp)
 !
-! Read input data and open argument input file if necessary
+! Open input.dat file and read input data
 !
-      if(datacomp%master) then
-        call opendatfile(datacomp)
-        if(command_argument_count() >= 1) call openinputfile(datacomp)
-      endif
+      if(datacomp%master) call opendatfile(datacomp)
       call readinput(datajob,datamol,databasis,datacomp)
 !
-! Open checkpoint file and close argument input file if necessary
+! Open checkpoint file
 !
-      if(datacomp%master) then
-        if(datajob%check /= '') call opencheckfile(datajob,datacomp)
-        if(command_argument_count() >= 1) call closeinputfile(datacomp)
-      endif
+      if((datacomp%master).and.(datajob%check /= '')) call opencheckfile(datajob,datacomp)
 !
 ! Set parameters and write computaional conditions
 !
