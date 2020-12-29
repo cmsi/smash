@@ -12,10 +12,10 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!------------------------------------------------------------------
+!-----------------------------------------------------------------------
   subroutine calcrhf(h1mtrx,cmo,fock,ortho,overlap,dmtrx,xint,eigen, &
 &                    datajob,datamol,databasis,datacomp)
-!------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
 ! Driver of restricted Hartree-Fock calculation
 !

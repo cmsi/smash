@@ -582,10 +582,10 @@ end
 !end
 
 
-!-----------------------------------------------------------------
+!----------------------------------------------------------------
   subroutine int1cmd(cint,exij,coij,coordij,coord,znuc,natom, &
 &                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
-!-----------------------------------------------------------------
+!----------------------------------------------------------------
 !
 ! Driver of 1-electron Coulomb integrals (j|Z/r|i) using McMurchie-Davidson method
 !
@@ -2150,9 +2150,10 @@ end
 end
 
 
-!-------------------------------------------------------------------------------------------
-  subroutine calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm,datajob,datamol,databasis)
-!-------------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------------
+  subroutine calcmatoctupole(dipmat,quadpmat,octpmat,work,dipcenter,nproc,myrank,mpi_comm, &
+&                            datajob,datamol,databasis)
+!---------------------------------------------------------------------------------------------
 !
 ! Driver of dipole, quadrupole, and octupole moment matrix calculation
 !
