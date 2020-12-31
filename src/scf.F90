@@ -135,7 +135,8 @@
         write(cmaxiter,'(i0)') datajob%maxiter
         write(datacomp%iout,'(1x,74("="))')
         if(datajob%guess=='HF') then
-          write(datacomp%iout,'("   Restricted Hartree-Fock calculation for DFT guess orbitals")')
+          write(datacomp%iout, &
+&               '("   Restricted Hartree-Fock calculation for guess orbitals of DFT")')
         else
           write(datacomp%iout,'("   Restricted Hartree-Fock calculation")')
         endif
@@ -1525,7 +1526,8 @@ end
         write(cmaxiter,'(i0)') datajob%maxiter
         write(datacomp%iout,'(1x,74("="))')
         if(datajob%guess=='HF') then
-          write(datacomp%iout,'("   Unrestricted Hartree-Fock calculation for DFT guess orbitals")')
+          write(datacomp%iout, &
+&               '("   Unrestricted Hartree-Fock calculation for guess orbitals of DFT")')
         else
           write(datacomp%iout,'("   Unrestricted Hartree-Fock calculation")')
         endif

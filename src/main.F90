@@ -47,7 +47,7 @@
       if(datacomp%master) call opendatfile(datacomp)
       call readinput(datajob,datamol,databasis,datacomp)
 !
-! Open checkpoint file
+! Open checkpoint file if necessary
 !
       if((datacomp%master).and.(datajob%check /= '')) call opencheckfile(datajob,datacomp)
 !
@@ -56,11 +56,6 @@
       call setdetails(datajob,datamol,databasis,datacomp)
 !
 ! Start calculations
-!
-      if((datajob%scftype /= 'RHF').and.(datajob%scftype /= 'UHF').and.datacomp%master) then
-        write(*,'(" Error! SCFtype=",a16," is not supported.")') datajob%scftype
-        call iabort
-      endif
 !
       nao = databasis%nao
       nao2= nao*nao
@@ -119,7 +114,7 @@
           endif
       end select
 !
-! Open, write, and close xyz file if set
+! Open, write, and close xyz file if necessary
 !
       if(datacomp%master.and.(datajob%xyz /= '')) then
         call openxyzfile(datajob,datacomp)
@@ -135,36 +130,29 @@
       call memcheck(datacomp)
       call tstamp(2,datacomp)
 !
-! Check convergence of SCF and geometry optimization
+! Write final message
 !
       if(datacomp%master) then
+        write(datacomp%iout,'(" Used memory :",i8," MB")') datacomp%memusedmax/125000
         if(.not.datacomp%convergedscf) then
           write(datacomp%iout, &
-&           '(" Used memory :",i8," MB",/, &
-&             " =============================================",/, &
+&           '(" =============================================",/, &
 &             "    Error! SCF calculation did not converge!",/, &
-&             " =============================================")') datacomp%memusedmax/125000
+&             " =============================================")')
           return
-!
         elseif(.not.datacomp%convergedgeom) then
           write(datacomp%iout, &
-&           '(" Used memory :",i8," MB",/, &
-&             " ================================================================",/, &
+&           '(" ================================================================",/, &
 &             "    Error! Geometry optimization calculation did not converge!",/, &
-&             " ================================================================")') &
-&             datacomp%memusedmax/125000
+&             " ================================================================")')
           return
-!
         else
-          write(datacomp%iout,'(" Used memory :",i8," MB")') datacomp%memusedmax/125000
           if(datacomp%nwarn <= 1) then
             write(datacomp%iout, &
-&             '(" Your calculation finished successfully with",i3," warning.")') &
-&             datacomp%nwarn
+&             '(" Your calculation finished successfully with",i3," warning.")') datacomp%nwarn
           else
             write(datacomp%iout, &
-&             '(" Your calculation finished successfully with",i3," warnings.")') &
-&             datacomp%nwarn
+&             '(" Your calculation finished successfully with",i3," warnings.")') datacomp%nwarn
           endif
         endif
       endif
@@ -202,7 +190,7 @@ end
   subroutine setdetails(datajob,datamol,databasis,datacomp)
 !------------------------------------------------------------
 !
-! Read input file and set variables
+! Set variables
 !
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
@@ -215,12 +203,9 @@ end
 !
       call readatom(datajob,datamol,datacomp)
 !
-! Set basis functions
+! Set basis and ECP functions
 !
       call setbasis(datajob,datamol,databasis,datacomp)
-!
-! Set ECP functions
-!
       if(datajob%flagecp) call setecp(datamol,databasis,datacomp)
 !
 ! Set maximum memory size
@@ -253,6 +238,18 @@ end
 ! Set atom charge including dummy atom
 !
       call setcharge(datamol,datacomp)
+!
+! Check keywords
+!
+      if((datajob%scftype /= 'RHF').and.(datajob%scftype /= 'UHF').and.datacomp%master) then
+        write(*,'(" Error! SCFtype=",a16," is not supported.")') datajob%scftype
+        call iabort
+      endif
+!
+      if((datajob%octupole).and.(datajob%method == 'MP2').and.datacomp%master) then
+        write(*,'(" Error! This program does not suupport MP2 octupole calculation.")')
+        call iabort
+      endif
 !
       return
 end
@@ -321,12 +318,6 @@ end
 &                                       a16,".")') datajob%output
           call iabort
       end select
-!
-      if(((datajob%idftex == 0).and.(datajob%idftcor == 0)).and.(datajob%guess == 'HF')) then
-        datajob%guess= 'HUCKEL'
-        if(datacomp%master) write(datacomp%iout,'(" Warning! Guess changes from HF to HUCKEL.")')
-        datacomp%nwarn= datacomp%nwarn+1
-      endif
 !
       return
 end
@@ -458,10 +449,7 @@ end
       if(datajob%method == 'HF') then
         call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                    datajob,datamol,databasis,datacomp)
-        if(.not.datacomp%convergedscf) then
-          call tstamp(1,datacomp)
-          return
-        endif
+        if(.not.datacomp%convergedscf) go to 9999
         call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) &
 &         call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
@@ -475,20 +463,14 @@ end
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
           call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                      datajob,datamol,databasis,datacomp)
-          if(.not.datacomp%convergedscf) then
-            call tstamp(1,datacomp)
-            return
-          endif
+          if(.not.datacomp%convergedscf) go to 9999
           datajob%dconv= savedconv
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
         call calcrdft(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                     datajob,datamol,databasis,datacomp)
-        if(.not.datacomp%convergedscf) then
-          call tstamp(1,datacomp)
-          return
-        endif
+        if(.not.datacomp%convergedscf) go to 9999
         call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) &
 &         call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
@@ -497,10 +479,7 @@ end
       elseif(datajob%method == 'MP2') then
         call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                    datajob,datamol,databasis,datacomp)
-        if(.not.datacomp%convergedscf) then
-          call tstamp(1,datacomp)
-          return
-        endif
+        if(.not.datacomp%convergedscf) go to 9999
         call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
         if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) &
 &         call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
@@ -548,6 +527,8 @@ end
           call memunset(nao3*6,datacomp)
         endif
       endif
+!
+9999 continue
 !
 ! Write checkpoint file
 !
@@ -642,10 +623,7 @@ end
       if(datajob%method == 'HF') then
         call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
 &                    energymob,datajob,datamol,databasis,datacomp)
-        if(.not.datacomp%convergedscf) then
-          call tstamp(1,datacomp)
-          return
-        endif
+        if(.not.datacomp%convergedscf) go to 9999
         call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
         if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
           call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)
@@ -660,20 +638,14 @@ end
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
           call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
 &                      energymob,datajob,datamol,databasis,datacomp)
-          if(.not.datacomp%convergedscf) then
-            call tstamp(1,datacomp)
-            return
-          endif
+          if(.not.datacomp%convergedscf) go to 9999
           datajob%dconv= savedconv
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
         call calcudft(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
 &                     energymob,datajob,datamol,databasis,datacomp)
-        if(.not.datacomp%convergedscf) then
-          call tstamp(1,datacomp)
-          return
-        endif
+        if(.not.datacomp%convergedscf) go to 9999
         call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
         if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
           call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)
@@ -721,6 +693,8 @@ end
           call memunset(nao3*6,datacomp)
         endif
       endif
+!
+9999 continue
 !
 ! Write checkpoint file
 !
@@ -815,10 +789,7 @@ end
       if((datajob%method == 'HF').or.(datajob%method == 'MP2')) then
         call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                    datajob,datamol,databasis,datacomp)
-        if(.not.datacomp%convergedscf) then
-          call tstamp(1,datacomp)
-          return
-        endif
+        if(.not.datacomp%convergedscf) go to 9999
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
         if(datajob%guess == 'HF') then
           savedconv= datajob%dconv
@@ -827,20 +798,14 @@ end
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
           call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                      datajob,datamol,databasis,datacomp)
-          if(.not.datacomp%convergedscf) then
-            call tstamp(1,datacomp)
-            return
-          endif
+          if(.not.datacomp%convergedscf) go to 9999
           datajob%dconv= savedconv
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
         call calcrdft(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                     datajob,datamol,databasis,datacomp)
-        if(.not.datacomp%convergedscf) then
-          call tstamp(1,datacomp)
-          return
-        endif
+        if(.not.datacomp%convergedscf) go to 9999
       else
         if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
@@ -913,6 +878,8 @@ end
           call memunset(nao3*6,datacomp)
         endif
       endif
+!
+9999 continue
 !
 ! Write checkpoint file
 !
@@ -1010,10 +977,7 @@ end
       if(datajob%method == 'HF') then
         call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
 &                    energymob,datajob,datamol,databasis,datacomp)
-        if(.not.datacomp%convergedscf) then
-          call tstamp(1,datacomp)
-          return
-        endif
+        if(.not.datacomp%convergedscf) go to 9999
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
         if(datajob%guess == 'HF') then
           savedconv= datajob%dconv
@@ -1022,20 +986,14 @@ end
           datajob%cutint2= max(datajob%cutint2,1.0D-9)
           call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
 &                      energymob,datajob,datamol,databasis,datacomp)
-          if(.not.datacomp%convergedscf) then
-            call tstamp(1,datacomp)
-            return
-          endif
+          if(.not.datacomp%convergedscf) go to 9999
           datajob%dconv= savedconv
           datajob%cutint2= savecutint2
           call tstamp(1,datacomp)
         endif
         call calcudft(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
 &                     energymob,datajob,datamol,databasis,datacomp)
-        if(.not.datacomp%convergedscf) then
-          call tstamp(1,datacomp)
-          return
-        endif
+        if(.not.datacomp%convergedscf) go to 9999
       else
         if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
@@ -1107,6 +1065,8 @@ end
           call memunset(nao3*6,datacomp)
         endif
       endif
+!
+9999 continue
 !
 ! Write checkpoint file
 !
@@ -1255,10 +1215,7 @@ end
         if((datajob%method == 'HF').or.(datajob%method == 'MP2')) then
           call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                      datajob,datamol,databasis,datacomp)
-          if(.not.datacomp%convergedscf) then
-            call tstamp(1,datacomp)
-            return
-          endif
+          if(.not.datacomp%convergedscf) go to 9999
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
           if((iopt == 1).and.(datajob%guess == 'HF')) then
             savedconv= datajob%dconv
@@ -1267,20 +1224,14 @@ end
             datajob%cutint2= max(datajob%cutint2,1.0D-9)
             call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                        datajob,datamol,databasis,datacomp)
-            if(.not.datacomp%convergedscf) then
-              call tstamp(1,datacomp)
-              return
-            endif
+            if(.not.datacomp%convergedscf) go to 9999
             datajob%dconv= savedconv
             datajob%cutint2= savecutint2
             call tstamp(1,datacomp)
           endif
           call calcrdft(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                       datajob,datamol,databasis,datacomp)
-          if(.not.datacomp%convergedscf) then
-            call tstamp(1,datacomp)
-            return
-          endif
+          if(.not.datacomp%convergedscf) go to 9999
         else
           if(datacomp%master) then
             write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
@@ -1381,9 +1332,9 @@ end
           deallocate(work,workv)
           call memunset(maxredun*maxredun*4+maxredun*3,datacomp)
         endif
-!
-! Set guess MO calculation flag from Huckel to projection
-!
+!!
+!! Set guess MO calculation flag from Huckel to projection
+!!
 !       call setnextopt(coordold,datamol%natom,iopt,datajob)
 !
         if(iopt == datajob%nopt) then
@@ -1393,7 +1344,7 @@ end
             write(datacomp%iout,'(" =============================="/)')
             call tstamp(1,datacomp)
           endif
-          return
+          go to 9999
         endif
         call tstamp(1,datacomp)
       enddo
@@ -1460,6 +1411,8 @@ end
         endif
         call writeoptgeom(datamol,datacomp)
       endif
+!
+9999 continue
 !
 ! Write checkpoint file
 !
@@ -1628,10 +1581,7 @@ end
         if(datajob%method == 'HF') then
           call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
 &                      energymob,datajob,datamol,databasis,datacomp)
-          if(.not.datacomp%convergedscf) then
-            call tstamp(1,datacomp)
-            return
-          endif
+          if(.not.datacomp%convergedscf) go to 9999
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
           if((iopt == 1).and.(datajob%guess == 'HF')) then
             savedconv= datajob%dconv
@@ -1640,20 +1590,14 @@ end
             datajob%cutint2= max(datajob%cutint2,1.0D-9)
             call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
 &                        energymob,datajob,datamol,databasis,datacomp)
-            if(.not.datacomp%convergedscf) then
-              call tstamp(1,datacomp)
-              return
-            endif
+            if(.not.datacomp%convergedscf) go to 9999
             datajob%dconv= savedconv
             datajob%cutint2= savecutint2
             call tstamp(1,datacomp)
           endif
           call calcudft(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
 &                       energymob,datajob,datamol,databasis,datacomp)
-          if(.not.datacomp%convergedscf) then
-            call tstamp(1,datacomp)
-            return
-          endif
+          if(.not.datacomp%convergedscf) go to 9999
         else
           if(datacomp%master) then
             write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
@@ -1765,7 +1709,7 @@ end
             write(datacomp%iout,'(" =============================="/)')
             call tstamp(1,datacomp)
           endif
-          return
+          go to 9999
         endif
         call tstamp(1,datacomp)
       enddo
@@ -1833,6 +1777,8 @@ end
         endif
         call writeoptgeom(datamol,datacomp)
       endif
+!
+9999 continue
 !
 ! Write checkpoint file
 !
@@ -1947,6 +1893,12 @@ end
         endif
       endif
 !
+      if(((datajob%idftex == 0).and.(datajob%idftcor == 0)).and.(datajob%guess == 'HF')) then
+        datajob%guess= 'HUCKEL'
+        if(datacomp%master) write(datacomp%iout,'(" Warning! Guess changes from HF to HUCKEL.")')
+        datacomp%nwarn= datacomp%nwarn+1
+      endif
+!
       return
 end
 
@@ -1955,7 +1907,7 @@ end
   subroutine setmp2(datajob,datamol,databasis)
 !-----------------------------------------------
 !
-! Set MP2 information
+! Set MP2 data
 !
       use modtype, only : typejob, typemol, typebasis
       implicit none
