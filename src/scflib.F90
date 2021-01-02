@@ -1232,16 +1232,16 @@ end
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
-      type(typemol),intent(in) :: datamol
+      type(typemol),intent(inout) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nproc, myrank, mpi_comm
-      integer :: iatom
+      integer :: iatom, ii
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: dmtrx((databasis%nao*(databasis%nao+1))/2)
       real(8),intent(out) :: dipmat((databasis%nao*(databasis%nao+1))/2,3)
       real(8),intent(out) :: work((databasis%nao*(databasis%nao+1))/2,3)
-      real(8) :: dipcenter(3), xdip, ydip, zdip, totaldip, tridot
+      real(8) :: dipcenter(3), tridot
       real(8) :: xdipplus, ydipplus, zdipplus, xdipminus, ydipminus, zdipminus
 !
 ! Nuclear part
@@ -1268,17 +1268,17 @@ end
 !
 ! Sum Nuclear and Electron parts
 !
-      xdip=(xdipplus+xdipminus)*todebye
-      ydip=(ydipplus+ydipminus)*todebye
-      zdip=(zdipplus+zdipminus)*todebye
-      totaldip= sqrt(xdip*xdip+ydip*ydip+zdip*zdip)
+      datamol%dipole(1)=(xdipplus+xdipminus)
+      datamol%dipole(2)=(ydipplus+ydipminus)
+      datamol%dipole(3)=(zdipplus+zdipminus)
+      datamol%dipole(4)= sqrt(datamol%dipole(1)**2+datamol%dipole(2)**2+datamol%dipole(3)**2)
 !
       if(datacomp%master) then
         write(datacomp%iout,'(" ----------------------------------------------")')
         write(datacomp%iout,'("               Dipole Momemt (Debye)")')
         write(datacomp%iout,'("        X          Y          Z       Total")')
         write(datacomp%iout,'(" ----------------------------------------------")')
-        write(datacomp%iout,'(1x,4f11.4)')xdip, ydip, zdip, totaldip
+        write(datacomp%iout,'(1x,4f11.4)') (datamol%dipole(ii)*todebye, ii=1,4)
         write(datacomp%iout,'(" ----------------------------------------------",/)')
       endif
 !

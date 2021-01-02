@@ -1619,10 +1619,10 @@ end
 end
 
 
-!-----------------------------------------------------------------------
-  subroutine writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob, &
+!------------------------------------------------------------------------------------------------
+  subroutine writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,focka,fockb,smtrx,h1mtrx, &
 &                       datajob,datamol,databasis,datacomp)
-!-----------------------------------------------------------------------
+!------------------------------------------------------------------------------------------------
 !
 ! Write checkpoint file
 !
@@ -1635,15 +1635,19 @@ end
       integer :: ii, jj
       real(8),intent(in) :: cmoa(databasis%nao,databasis%nao)
       real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2), energymoa(databasis%nao)
+      real(8),intent(in) :: focka(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: cmob(databasis%nao,databasis%nao)
       real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2), energymob(databasis%nao)
+      real(8),intent(in) :: fockb(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: smtrx(databasis%nao*(databasis%nao+1)/2), h1mtrx(databasis%nao*(databasis%nao+1)/2)
       character(len=32) :: datatype
 !
       rewind(datacomp%icheck)
       write(datacomp%icheck) datajob%version
-      write(datacomp%icheck) datajob%scftype, datamol%natom, databasis%nao, datamol%nmo, databasis%nshell, &
-&                   databasis%nprim, datamol%neleca, datamol%nelecb, datajob%method, &
-&                   datajob%runtype, datamol%charge, datamol%multi, datajob%flagecp
+      write(datacomp%icheck) datajob%scftype, datamol%natom, databasis%nao, datamol%nmo, &
+&                            databasis%nshell, databasis%nprim, datamol%neleca, datamol%nelecb, &
+&                            datajob%method, datajob%runtype, datamol%charge, datamol%multi,  &
+&                            datajob%flagecp, databasis%basis, databasis%ecp
 !
       datatype= 'numatomic'
       write(datacomp%icheck) datatype
@@ -1701,6 +1705,10 @@ end
         datatype= 'energymo'
         write(datacomp%icheck) datatype
         write(datacomp%icheck) (energymoa(ii),ii=1,datamol%nmo)
+!
+        datatype= 'fock'
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck) (focka(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
       elseif(datajob%scftype == 'UHF') then
         datatype= 'cmoa'
         write(datacomp%icheck) datatype
@@ -1725,7 +1733,27 @@ end
         datatype= 'energymob'
         write(datacomp%icheck) datatype
         write(datacomp%icheck) (energymob(ii),ii=1,datamol%nmo)
+!
+        datatype= 'focka'
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck) (focka(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
+!
+        datatype= 'fockb'
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck) (fockb(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
       endif
+!
+      datatype= 'smtrx'
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (smtrx(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
+!
+      datatype= 'h1mtrx'
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (h1mtrx(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
+!
+      datatype= 'dipole'
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (datamol%dipole(ii),ii=1,4)
 !
       return
 end

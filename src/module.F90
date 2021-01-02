@@ -252,13 +252,14 @@ end
 ! escfe      : Electronic energy
 ! emp2       : MP2 energy
 ! escsmp2    : SCS-MP2 energy
+! dipole     : Dipole moment (x, y, z, total in a.u.)
 ! atomrad    : Atom radii
 !                H       : Bohr radius
 !                He - Cn : P. Pyykko, M. Atsumi, Chem. Eur. J., 15, 186-197 (2009).
       type typemol
         integer :: numatomic(mxatom), natom, neleca, nelecb, nmo, multi=1, ndummyatom
         real(8) :: coord(3,mxatom), znuc(mxatom), coordold(3,mxatom), charge=0.0D+00
-        real(8) :: enuc, escf, escfe, emp2, escsmp2
+        real(8) :: enuc, escf, escfe, emp2, escsmp2, dipole(4)
         real(8) :: atomrad(-9:112)=(/ &
 &       1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, &
 &       0.00D+00, &
@@ -283,8 +284,8 @@ end
 ! memused      : Used memory size in words
 ! memusedmax   : Maximum used memory size in words
 ! nwarn        : Number of warnings
-! inpstd       : Unit number of input (default: 5, set by command argument: 7)
-! iout         : Unit number of standard output (default: 6, set by command argument: 8)
+! inpstd       : Unit number of input (default: 5, setting by command argument: 7)
+! iout         : Unit number of standard output (default: 6, setting by command argument: 8)
 ! inpcopy      : Unit number of copied input file (default: 10)
 ! icheck       : Unit number of checkpoint file (default: 11)
 ! ixyz         : Unit number of xyz file (default: 12)
