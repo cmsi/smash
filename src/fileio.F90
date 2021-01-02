@@ -1621,7 +1621,7 @@ end
 
 !------------------------------------------------------------------------------------------------
   subroutine writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,focka,fockb,smtrx,h1mtrx, &
-&                       datajob,datamol,databasis,datacomp)
+&                       egrad,datajob,datamol,databasis,datacomp)
 !------------------------------------------------------------------------------------------------
 !
 ! Write checkpoint file
@@ -1639,7 +1639,9 @@ end
       real(8),intent(in) :: cmob(databasis%nao,databasis%nao)
       real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2), energymob(databasis%nao)
       real(8),intent(in) :: fockb(databasis%nao*(databasis%nao+1)/2)
-      real(8),intent(in) :: smtrx(databasis%nao*(databasis%nao+1)/2), h1mtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: smtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: h1mtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: egrad(datamol%natom*3)
       character(len=32) :: datatype
 !
       rewind(datacomp%icheck)
@@ -1647,7 +1649,7 @@ end
       write(datacomp%icheck) datajob%scftype, datamol%natom, databasis%nao, datamol%nmo, &
 &                            databasis%nshell, databasis%nprim, datamol%neleca, datamol%nelecb, &
 &                            datajob%method, datajob%runtype, datamol%charge, datamol%multi,  &
-&                            datajob%flagecp, databasis%basis, databasis%ecp
+&                            datajob%flagecp, databasis%basis, databasis%ecp, datamol%ndummyatom
 !
       datatype= 'numatomic'
       write(datacomp%icheck) datatype
@@ -1754,6 +1756,12 @@ end
       datatype= 'dipole'
       write(datacomp%icheck) datatype
       write(datacomp%icheck) (datamol%dipole(ii),ii=1,4)
+!
+      if((datajob%runtype == 'GRADIENT').or.(datajob%runtype == 'OPT')) then
+        datatype= 'egrad'
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck) (egrad(ii),ii=1,datamol%natom*3)
+      endif
 !
       return
 end

@@ -395,7 +395,7 @@ end
       real(8),intent(out) :: cmo(databasis%nao**2), energymo(databasis%nao)
       real(8), allocatable :: h1mtrx(:), fock(:), smtrx(:), tmtrx(:), ortho(:), dmtrx(:)
       real(8), allocatable :: xint(:), overinv(:), work(:)
-      real(8) :: savedconv, savecutint2
+      real(8) :: savedconv, savecutint2, dummy
 !
       nao    = databasis%nao
       nao2   = nao*nao
@@ -533,8 +533,8 @@ end
 ! Write checkpoint file
 !
       if(datacomp%master.and.(datajob%check /= '')) &
-&       call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,fock,fock,smtrx,h1mtrx, &
-&                       datajob,datamol,databasis,datacomp)
+&       call writecheck(cmo,dummy,dmtrx,dummy,energymo,dummy,fock,dummy,smtrx,h1mtrx, &
+&                       dummy,datajob,datamol,databasis,datacomp)
 !
 ! Unset arrays 1
 !
@@ -569,7 +569,7 @@ end
       real(8), intent(out) :: energymoa(databasis%nao), energymob(databasis%nao)
       real(8), allocatable :: h1mtrx(:), focka(:), fockb(:), smtrx(:), tmtrx(:), ortho(:)
       real(8), allocatable :: dmtrxa(:), dmtrxb(:), xint(:), overinv(:), work(:)
-      real(8) :: savedconv, savecutint2
+      real(8) :: savedconv, savecutint2, dummy
 !
       nao    = databasis%nao
       nao2   = nao*nao
@@ -700,7 +700,7 @@ end
 !
       if(datacomp%master.and.(datajob%check /= '')) &
 &       call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,focka,fockb,smtrx,h1mtrx, &
-&                       datajob,datamol,databasis,datacomp)
+&                       dummy,datajob,datamol,databasis,datacomp)
 !
 ! Unset arrays 1
 !
@@ -735,7 +735,7 @@ end
       real(8), allocatable :: xint(:)
       real(8), allocatable :: overinv(:), work(:)
       real(8) :: egradmax, egradrms
-      real(8) :: savedconv, savecutint2
+      real(8) :: savedconv, savecutint2, dummy
 !
       nao    = databasis%nao
       nao2   = nao*nao
@@ -884,8 +884,8 @@ end
 ! Write checkpoint file
 !
       if(datacomp%master.and.(datajob%check /= '')) &
-&       call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,fock,fock,smtrx,h1mtrx, &
-&                       datajob,datamol,databasis,datacomp)
+&       call writecheck(cmo,dummy,dmtrx,dummy,energymo,dummy,fock,dummy,smtrx,h1mtrx, &
+&                       egrad,datajob,datamol,databasis,datacomp)
 !
 ! Unset arrays 1
 !
@@ -1072,7 +1072,7 @@ end
 !
       if(datacomp%master.and.(datajob%check /= '')) &
 &       call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,focka,fockb,smtrx,h1mtrx, &
-&                       datajob,datamol,databasis,datacomp)
+&                       egrad,datajob,datamol,databasis,datacomp)
 !
 ! Unset arrays 1
 !
@@ -1113,7 +1113,7 @@ end
       real(8), allocatable :: overinv(:), work(:,:)
       real(8), allocatable :: workv(:), coordredun(:), egradredun(:)
       real(8) :: egradmax, egradrms
-      real(8) :: savedconv, savecutint2
+      real(8) :: savedconv, savecutint2, dummy
       logical :: exceed
 !
       nao    = databasis%nao
@@ -1298,8 +1298,8 @@ end
 ! Write checkpoint file
 !
         if(datacomp%master.and.(datajob%check /= '')) &
-&         call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,fock,fock,smtrx,h1mtrx, &
-&                         datajob,datamol,databasis,datacomp)
+&         call writecheck(cmo,dummy,dmtrx,dummy,energymo,dummy,fock,dummy,smtrx,h1mtrx, &
+&                         egrad,datajob,datamol,databasis,datacomp)
 !
 ! Set work arrays 2
 !
@@ -1417,8 +1417,8 @@ end
 ! Write checkpoint file
 !
       if(datacomp%master.and.(datajob%check /= '')) &
-&       call writecheck(cmo,cmo,dmtrx,dmtrx,energymo,energymo,fock,fock,smtrx,h1mtrx, &
-&                       datajob,datamol,databasis,datacomp)
+&       call writecheck(cmo,dummy,dmtrx,dummy,energymo,dummy,fock,dummy,smtrx,h1mtrx, &
+&                       egrad,datajob,datamol,databasis,datacomp)
 !
 ! Unset arrays for energy gradient and geometry optimization
 !
@@ -1664,7 +1664,7 @@ end
 !
         if(datacomp%master.and.(datajob%check /= '')) &
 &         call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,focka,fockb,smtrx,h1mtrx, &
-&                         datajob,datamol,databasis,datacomp)
+&                         egrad,datajob,datamol,databasis,datacomp)
 !
 ! Set work arrays 2
 !
@@ -1784,7 +1784,7 @@ end
 !
       if(datacomp%master.and.(datajob%check /= '')) &
 &       call writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,focka,fockb,smtrx,h1mtrx, &
-&                       datajob,datamol,databasis,datacomp)
+&                       egrad,datajob,datamol,databasis,datacomp)
 !
 ! Unset arrays for energy gradient and geometry optimization
 !
