@@ -204,9 +204,51 @@ end
       call memunset(3*ndim*ndim+45*ndim,datacomp)
 !
       if(info /= 0) then
-        if(datacomp%master)write(*,'(" Error! Diagonalization failed, info =",i5)')info
+        if(datacomp%master)write(*,'(" Error! Diagonalization in diag failed, info =",i5)')info
         call iabort
       endif
+      return
+end
+
+
+!---------------------------------------------------------------------------------
+  subroutine gendiag(itype,jobz,uplo,ndim,vector,lda,bmatrix,ldb,eigen,datacomp)
+!---------------------------------------------------------------------------------
+!
+! Solve real generalized symmetric-difinite eigenproblem (Ax=lBx, ABx=lx, BAx=lx)
+!
+      use modtype, only : typecomp
+      implicit none
+      type(typecomp),intent(inout) :: datacomp
+      integer,intent(in) :: itype, ndim, lda, ldb
+      integer :: info, lwork, liwork, itmp
+      integer, allocatable :: iwork(:)
+      real(8),intent(out) :: eigen(lda)
+      real(8),intent(inout) :: vector(*), bmatrix(*)
+      real(8), allocatable :: work(:)
+      real(8) :: tmp
+      character(len=1),intent(in) :: jobz, uplo
+!
+! Get optimal sizes of work and iwork arrays
+!
+      call dsygvd(itype,jobz,uplo,ndim,vector,lda,bmatrix,ldb,eigen,tmp,-1,itmp,-1,info)
+      lwork= nint(tmp)
+      liwork= itmp
+      call memset(lwork+liwork,datacomp)
+      allocate(work(lwork),iwork(liwork))
+      info= 0
+!
+! Call LAPACK routine
+!
+      call dsygvd(itype,jobz,uplo,ndim,vector,lda,bmatrix,ldb,eigen,work,lwork,iwork,liwork,info)
+!
+      deallocate(work,iwork)
+      call memunset(lwork+liwork,datacomp)
+      if(info /= 0) then
+        if(datacomp%master)write(*,'(" Error! Diagonalization in gendiag failed, info =",i5)')info
+        call iabort
+      endif
+!
       return
 end
 

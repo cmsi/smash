@@ -2779,3 +2779,1146 @@ end
       return
 end
 
+
+!----------------------------------------------------------------
+  subroutine calcrnpa(dmtrx,fock,overlap,datamol,databasis,datacomp)
+!----------------------------------------------------------------
+!
+! Driver of Natural Population Analysis
+!
+      use modtype, only : typemol, typebasis, typecomp
+      implicit none
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      type(typebasis) :: databasisnpa0, databasisnpa1, databasisnpa2
+      integer :: maxang, nao, maxsize, numnmb, numnrb, numnmbshell, iao, numlnrb, numsnrb
+      integer,allocatable :: infobasis(:,:,:), infonmb(:,:,:), list1(:), list2(:)
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: fock(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
+      real(8),allocatable :: pnao(:,:), fnao(:,:), snao(:,:), trans(:,:), work1(:,:), work2(:,:), work3(:,:), wnao(:)
+!
+      maxang= maxval(databasis%mtype(1:databasis%nshell))
+      nao   = databasis%nao
+!
+      allocate(pnao(nao,nao),fnao(nao,nao),snao(nao,nao),trans(nao,nao),work1(nao,nao),work2(nao,nao),work3(nao,nao))
+      allocate(wnao(nao),infobasis(3,maxang+1,datamol%natom),infonmb(3,7,datamol%natom),list1(nao),list2(nao))
+      infobasis(:,:,:)= 0
+      infonmb(:,:,:)= 0
+!
+      call expand(dmtrx,pnao,nao)
+      call expand(fock,fnao,nao)
+      call expand2(overlap,snao,nao)
+      call dsymm('L','U',nao,nao,one,pnao,nao,snao,nao,zero,work1,nao)
+      call dsymm('L','U',nao,nao,one,snao,nao,work1,nao,zero,pnao,nao)
+      trans(1:nao,1:nao)= zero
+      do iao= 1,nao
+        trans(iao,iao)= one
+      enddo
+!
+! Change Cartesian basis to Spherial Harmonics basis
+!
+!     if(.not.databasis%spher) then
+!       call setnpaspher(datamol,databasis,databasisnpa0)
+!     else
+      databasisnpa0= databasis
+!     endif
+!
+! Set numbers of core and valance NMB sets
+!
+      call setnmb(infonmb,numnmb,numnrb,numnmbshell,datamol,databasisnpa0,datacomp)
+!
+! Sort basis by atoms and angular momenta
+!
+      call sortbasisnpa1(pnao,snao,trans,work1,maxang,infobasis,datamol,databasisnpa0,databasisnpa1)
+      maxsize= maxval(infobasis(2,1:maxang+1,1:datamol%natom))
+!
+! Calculate pre-NAOs
+!
+      call calcprenao1(pnao,snao,trans,work1,work2,wnao,maxang,maxsize,infonmb,infobasis,list1, &
+& numnmb,numnmbshell,datamol,databasisnpa1,databasisnpa2,datacomp)
+!
+! Orthogonalize NMB sets
+!
+      call orthonmb(pnao,snao,trans,wnao,work1,work2,work3,numnmb,databasisnpa2,datacomp)
+!
+! Orthogonalize NRB sets to NMB sets
+!
+      call orthonrb1(pnao,snao,trans,work1,work2,numnmb,numnrb,databasisnpa2,datacomp)
+!ishimura-OK
+!return
+
+! Calculate pre-NAOs of NRB sets
+       call calcprenao2(pnao,snao,trans,work1,work2,wnao,maxang,maxsize,infonmb,infobasis,list1, &
+& list2,numnmb,numnmbshell,numlnrb,numsnrb,datamol,databasisnpa2,datacomp)
+
+! Orthogonalize NRB sets with large w
+      call orthonrb2(pnao,snao,trans,wnao,work1,work2,work3,numnmb,numlnrb,databasisnpa2,datacomp)
+
+! Orthogonalize NRB sets with small w
+      call orthonrb3(pnao,snao,trans,work1,work2,work3,wnao,numnmb,numnrb,numlnrb,numsnrb,databasisnpa2,datacomp)
+!ishimura
+!return
+
+! Sort basis by atoms and angular momenta
+      call sortbasisnpa2(pnao,snao,trans,work1,list2,databasisnpa2)
+
+! Calculate pre-NAOs
+      call calcprenao3(pnao,snao,trans,work1,work2,maxang,maxsize,infobasis,datamol,databasisnpa1,datacomp)
+
+! Transform fock matrix and print result
+      call printnpa(pnao,fnao,trans,work1,work2,work3,wnao,maxang,maxsize,infonmb,infobasis,datamol,databasisnpa1)
+
+
+!     deallocate(pnao,snao,work1,work2,infobasis,infonmb)
+!
+      return
+end
+
+
+!---------------------------------------------------------------------------------------------------
+  subroutine sortbasisnpa1(pnao,snao,trans,work,maxang,infobasis,datamol,databasisnpa0,databasisnpa1)
+!---------------------------------------------------------------------------------------------------
+!
+! Sort basis functions by atoms and angular momenta
+!
+      use modtype, only : typemol, typebasis
+      implicit none
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasisnpa0
+      type(typebasis),intent(out) :: databasisnpa1
+      integer,intent(in) :: maxang
+      integer,intent(out) :: infobasis(3,0:maxang,datamol%natom)
+      integer :: jao, jloc, jshell, iatom, iang, ishell, iao, list(databasisnpa0%nao)
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(inout) :: pnao(databasisnpa0%nao,databasisnpa0%nao)
+      real(8),intent(inout) :: snao(databasisnpa0%nao,databasisnpa0%nao)
+      real(8),intent(inout) :: trans(databasisnpa0%nao,databasisnpa0%nao)
+      real(8),intent(out) :: work(databasisnpa0%nao,databasisnpa0%nao)
+!
+      databasisnpa1%nshell= databasisnpa0%nshell
+      databasisnpa1%nao= databasisnpa0%nao
+!
+! Make list
+!
+      jao= 0
+      jloc= 0
+      jshell= 0
+      do iatom= 1,datamol%natom
+        do iang= 0,maxang
+          do ishell= 1,databasisnpa0%nshell
+            if((databasisnpa0%locatom(ishell) == iatom).and. &
+&              (databasisnpa0%mtype(ishell) == iang)) then
+              infobasis(1,iang,iatom)= infobasis(1,iang,iatom)+1
+              infobasis(2,iang,iatom)= infobasis(2,iang,iatom)+2*iang+1
+              jshell= jshell+1
+!             databasisnpa1%locatom(jshell)= iatom
+!             databasisnpa1%mtype(jshell)= iang
+!             databasisnpa1%mbf(jshell)= databasisnpa0%mbf(ishell)
+              databasisnpa1%locbf(jshell)= jloc
+              jloc= jloc+2*iang+1
+              do iao= 1,2*iang+1
+                jao= jao+1
+                list(jao)= databasisnpa0%locbf(ishell)+iao
+              enddo
+            endif
+          enddo
+        enddo
+      enddo
+!
+! Reorder pnao, snao, and trans matrices
+!
+      do iao= 1,databasisnpa0%nao
+        do jao= 1,databasisnpa0%nao
+          work(iao,jao)= pnao(jao,list(iao))
+        enddo
+      enddo
+      do iao= 1,databasisnpa0%nao
+        do jao= 1,databasisnpa0%nao
+          pnao(jao,iao)= work(jao,list(iao))
+        enddo
+      enddo
+!
+      do iao= 1,databasisnpa0%nao
+        do jao= 1,databasisnpa0%nao
+          work(iao,jao)= snao(jao,list(iao))
+        enddo
+      enddo
+      do iao= 1,databasisnpa0%nao
+        do jao= 1,databasisnpa0%nao
+          snao(jao,iao)= work(jao,list(iao))
+        enddo
+      enddo
+!
+      do iao= 1,databasisnpa0%nao
+        do jao= 1,databasisnpa0%nao
+          work(jao,iao)= trans(jao,list(iao))
+        enddo
+      enddo
+      do iao= 1,databasisnpa0%nao
+        do jao= 1,databasisnpa0%nao
+          trans(jao,iao)= work(jao,iao)
+        enddo
+      enddo
+!
+      return
+end
+
+
+!----------------------------------------------------------------
+  subroutine calcprenao1(pnao,snao,trans,worktrans,work,wnao,maxang,maxsize,infonmb,infobasis,list1, &
+&   numnmb,numnmbshell,datamol,databasisnpa1,databasisnpa2,datacomp)
+!----------------------------------------------------------------
+!
+! Calculate pre-NAOs and separate them into Natural Minimal Basis (NMB) and 
+! Natural Rydberg Basis (NRB) sets
+!
+      use modtype, only : typemol, typebasis, typecomp
+      implicit none
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasisnpa1
+      type(typebasis),intent(out) :: databasisnpa2
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: maxang, maxsize, infonmb(3,0:6,datamol%natom), numnmb, numnmbshell
+      integer,intent(inout) :: infobasis(3,0:maxang,datamol%natom)
+      integer,intent(out) :: list1(databasisnpa1%nao)
+      integer :: locshell, iatom, iang, ishell, jshell, iao, jao, numshell, locnmb, locnrb, nao
+      integer :: locnmbshell, locnrbshell
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(inout) :: pnao(databasisnpa1%nao,databasisnpa1%nao)
+      real(8),intent(inout) :: snao(databasisnpa1%nao,databasisnpa1%nao)
+      real(8),intent(inout) :: trans(databasisnpa1%nao,databasisnpa1%nao)
+      real(8),intent(out) :: worktrans(databasisnpa1%nao,databasisnpa1%nao)
+      real(8),intent(out) :: work(databasisnpa1%nao,databasisnpa1%nao)
+      real(8),intent(out) :: wnao(databasisnpa1%nao)
+      real(8) :: pblock(maxsize,maxsize), sblock(maxsize,maxsize), wblock(maxsize)
+      real(8) :: pelem
+!
+      nao= databasisnpa1%nao
+      worktrans(1:nao,1:nao)= zero
+      databasisnpa2= databasisnpa1
+!
+! Calculate pre-NAO transformation matrix
+!
+      locshell= 0
+      locnmb= 0
+      locnrb= numnmb
+      locnmbshell= 0
+      locnrbshell= numnmbshell
+      do iatom= 1,datamol%natom
+        do iang= 0,maxang
+          numshell= infobasis(1,iang,iatom)
+          if(numshell == 0) cycle
+!
+!   Construct and diagonalize P-Al and S-Al subblocks
+!
+          do ishell= 1,numshell
+            do jshell= 1,ishell
+              pelem= zero
+              do iao= 1,2*iang+1
+                pelem= pelem+pnao(databasisnpa1%locbf(locshell+jshell)+iao, &
+&                                 databasisnpa1%locbf(locshell+ishell)+iao)
+              enddo
+              pblock(jshell,ishell)= pelem/dble(2*iang+1)
+              sblock(jshell,ishell)= snao(databasisnpa1%locbf(locshell+jshell)+1, &
+&                                         databasisnpa1%locbf(locshell+ishell)+1)
+            enddo
+          enddo
+          call gendiag(1,'V','U',numshell,pblock,maxsize,sblock,maxsize, &
+&                      wblock,datacomp)
+!
+!   Set NMB transformation
+!
+          do ishell= 1,infonmb(1,iang,iatom)
+            do iao= 1,2*iang+1
+              wnao(locnmb+iao)= wblock(numshell-ishell+1)
+              list1(locnmb+iao)= databasisnpa1%locbf(locshell+ishell)+iao
+            enddo
+            do jshell= 1,numshell
+              do jao= 1,2*iang+1
+                worktrans(databasisnpa1%locbf(locshell+jshell)+jao, &
+&                         locnmb+jao)= pblock(jshell,numshell-ishell+1)
+              enddo
+            enddo
+!           databasisnpa2%locatom(locnmbshell+1)= iatom
+!           databasisnpa2%mtype(locnmbshell+1)  = iang
+!           databasisnpa2%mbf(locnmbshell+1)    = 2*iang+1
+            databasisnpa2%locbf(locnmbshell+1)  = locnmb
+            locnmb= locnmb+2*iang+1
+            locnmbshell= locnmbshell+1
+          enddo
+!
+!   Set NRB transformation
+!
+          do ishell= infonmb(1,iang,iatom)+1,numshell
+            do iao= 1,2*iang+1
+              wnao(locnrb+iao)= wblock(numshell-ishell+1)
+              list1(locnrb+iao)= databasisnpa1%locbf(locshell+ishell)+iao
+            enddo
+            do jshell= 1,numshell
+              do jao= 1,2*iang+1
+                worktrans(databasisnpa1%locbf(locshell+jshell)+jao, &
+&                         locnrb+jao)= pblock(jshell,numshell-ishell+1)
+              enddo
+            enddo
+!           databasisnpa2%locatom(locnrbshell+1)= iatom
+!           databasisnpa2%mtype(locnrbshell+1)  = iang
+!           databasisnpa2%mbf(locnrbshell+1)    = 2*iang+1
+            databasisnpa2%locbf(locnrbshell+1)  = locnrb
+            locnrb= locnrb+2*iang+1
+            locnrbshell= locnrbshell+1
+            infobasis(3,iang,iatom)= infobasis(3,iang,iatom)+1
+          enddo
+          locshell= locshell+numshell
+        enddo
+      enddo
+!
+! Transform into pre-NAOs and separate into NMB and NRB sets
+!
+      call dsymm('L','U',nao,nao,one,pnao,nao,worktrans,nao,zero,work,nao)
+      call dgemm('T','N',nao,nao,nao,one,worktrans,nao,work,nao,zero,pnao,nao)
+      call dsymm('L','U',nao,nao,one,snao,nao,worktrans,nao,zero,work,nao)
+      call dgemm('T','N',nao,nao,nao,one,worktrans,nao,work,nao,zero,snao,nao)
+      call dgemm('N','N',nao,nao,nao,one,trans,nao,worktrans,nao,zero,work,nao)
+      trans(1:nao,1:nao)= work(1:nao,1:nao)
+!
+      return
+end
+
+
+!----------------------------------------------------------------
+  subroutine calcprenao2(pnao,snao,trans,worktrans,work,wnao,maxang,maxsize,infonmb,infobasis,list1, &
+& list2,numnmb,numnmbshell,numlnrb,numsnrb,datamol,databasisnpa2,datacomp)
+!----------------------------------------------------------------
+!
+! Calculate pre-NAOs of NRB sets and separate them into 2 groups which have large or small Ws.
+!
+      use modtype, only : typemol, typebasis, typecomp
+      implicit none
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasisnpa2
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: maxang, maxsize, infonmb(3,0:6,datamol%natom), numnmb, numnmbshell
+      integer,intent(in) :: infobasis(3,0:maxang,datamol%natom)
+      integer,intent(in) :: list1(databasisnpa2%nao)
+      integer,intent(out) :: list2(databasisnpa2%nao), numlnrb, numsnrb
+      integer :: iatom, iang, ishell, jshell, iao, jao, numshell, locnmb, locnrb, nao
+      integer :: locnmbshell, locnrbshell, listtmp(databasisnpa2%nao), loclnrb, locsnrb
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, wthresh=1.0D-02
+      real(8),intent(inout) :: pnao(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(inout) :: snao(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(inout) :: trans(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(out) :: worktrans(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(out) :: work(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(out) :: wnao(databasisnpa2%nao)
+      real(8) :: pblock(maxsize,maxsize), sblock(maxsize,maxsize), wblock(maxsize)
+      real(8) :: pelem, selem
+!
+      nao= databasisnpa2%nao
+      worktrans(1:nao,1:nao)= zero
+      work(1:nao,1:(nao-numnmb))= zero
+      do iao= 1,numnmb
+        worktrans(iao,iao)= one
+        list2(iao)= list1(iao)
+      enddo
+!
+! Calculate pre-NAO transformation matrix
+!
+      loclnrb= numnmb
+      locsnrb= 0
+      locnrbshell= numnmbshell
+      numlnrb= 0
+      numsnrb= 0
+      do iatom= 1,datamol%natom
+        do iang= 0,maxang
+          numshell= infobasis(3,iang,iatom)
+          if(numshell == 0) cycle
+!
+!   Construct and diagonalize P-Al and S-Al subblocks
+!
+          do ishell= 1,numshell
+            do jshell= 1,ishell
+              pelem= zero
+              selem= zero
+              do iao= 1,2*iang+1
+                pelem= pelem+pnao(databasisnpa2%locbf(locnrbshell+jshell)+iao, &
+&                                 databasisnpa2%locbf(locnrbshell+ishell)+iao)
+                selem= selem+snao(databasisnpa2%locbf(locnrbshell+jshell)+iao, &
+&                                 databasisnpa2%locbf(locnrbshell+ishell)+iao)
+              enddo
+              pblock(jshell,ishell)= pelem/dble(2*iang+1)
+              sblock(jshell,ishell)= selem/dble(2*iang+1)
+            enddo
+          enddo
+          call gendiag(1,'V','U',numshell,pblock,maxsize,sblock,maxsize, &
+&                      wblock,datacomp)
+!
+!   Set NRB transformation
+!
+          do ishell= 1,numshell
+            if(wblock(ishell) >= wthresh) then
+              do iao= 1,2*iang+1
+                wnao(loclnrb+iao)= wblock(ishell)
+                list2(loclnrb+iao)= list1(databasisnpa2%locbf(locnrbshell+ishell)+iao)
+              enddo
+              do jshell= 1,numshell
+                do jao= 1,2*iang+1
+                  worktrans(databasisnpa2%locbf(locnrbshell+jshell)+jao, &
+&                           loclnrb+jao)= pblock(jshell,ishell)
+!&                           databasisnpa2%locbf(loclnrb+jao))= pblock(jshell,ishell)
+                enddo
+              enddo
+              loclnrb= loclnrb+2*iang+1
+              numlnrb= numlnrb+2*iang+1
+            else
+              do iao= 1,2*iang+1
+                listtmp(locsnrb+iao)= list1(databasisnpa2%locbf(locnrbshell+ishell)+iao)
+              enddo
+              do jshell= 1,numshell
+                do jao= 1,2*iang+1
+                  work(databasisnpa2%locbf(locnrbshell+jshell)+jao, &
+&                       locsnrb+jao)= pblock(jshell,ishell)
+!&                       databasisnpa2%locbf(locsnrb+jao))= pblock(jshell,ishell)
+                enddo
+              enddo
+              locsnrb= locsnrb+2*iang+1
+              numsnrb= numsnrb+2*iang+1
+            endif
+          enddo
+          locnrbshell= locnrbshell+numshell
+        enddo
+      enddo
+!
+      worktrans(numnmb+1:nao,numnmb+numlnrb+1:nao)= work(numnmb+1:nao,1:numsnrb)
+      list2(numnmb+numlnrb+1:nao)= listtmp(1:numsnrb)
+!
+! Transform all NRB sets into pre-NAOs and separate them into large-w and small-w NRB groups
+!
+      call dsymm('L','U',nao,nao,one,pnao,nao,worktrans,nao,zero,work,nao)
+      call dgemm('T','N',nao,nao,nao,one,worktrans,nao,work,nao,zero,pnao,nao)
+      call dsymm('L','U',nao,nao,one,snao,nao,worktrans,nao,zero,work,nao)
+      call dgemm('T','N',nao,nao,nao,one,worktrans,nao,work,nao,zero,snao,nao)
+      call dgemm('N','N',nao,nao,nao,one,trans,nao,worktrans,nao,zero,work,nao)
+      trans(1:nao,1:nao)= work(1:nao,1:nao)
+!ishimura
+!write(*,'(13f7.3)')snao
+!write(*,'(19f5.2)')snao
+!
+      return
+end
+
+
+!----------------------------------------------------------------
+  subroutine calcprenao3(pnao,snao,trans,worktrans,work,maxang,maxsize,infobasis,datamol,databasisnpa1,datacomp)
+!----------------------------------------------------------------
+!
+! Calculate pre-NAOs
+!
+      use modtype, only : typemol, typebasis, typecomp
+      implicit none
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasisnpa1
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: maxang, maxsize, infobasis(3,0:maxang,datamol%natom)
+      integer :: locshell, locao, iatom, iang, ishell, jshell, iao, jao, numshell, nao
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(inout) :: pnao(databasisnpa1%nao,databasisnpa1%nao)
+      real(8),intent(inout) :: snao(databasisnpa1%nao,databasisnpa1%nao)
+      real(8),intent(inout) :: trans(databasisnpa1%nao,databasisnpa1%nao)
+      real(8),intent(out) :: worktrans(databasisnpa1%nao,databasisnpa1%nao)
+      real(8),intent(out) :: work(databasisnpa1%nao,databasisnpa1%nao)
+      real(8) :: pblock(maxsize,maxsize), sblock(maxsize,maxsize), wblock(maxsize)
+      real(8) :: pelem
+!
+      nao= databasisnpa1%nao
+      worktrans(1:nao,1:nao)= zero
+!
+! Calculate pre-NAO transformation matrix
+!
+      locshell= 0
+      do iatom= 1,datamol%natom
+        do iang= 0,maxang
+          numshell= infobasis(1,iang,iatom)
+          if(numshell == 0) cycle
+!
+!   Construct and diagonalize P-Al and S-Al subblocks
+!
+          do ishell= 1,numshell
+            do jshell= 1,ishell
+              pelem= zero
+              do iao= 1,2*iang+1
+                pelem= pelem+pnao(databasisnpa1%locbf(locshell+jshell)+iao, &
+&                                 databasisnpa1%locbf(locshell+ishell)+iao)
+              enddo
+              pblock(jshell,ishell)= pelem/dble(2*iang+1)
+!!!!!!!!!!not average ok?
+              sblock(jshell,ishell)= snao(databasisnpa1%locbf(locshell+jshell)+1, &
+&                                         databasisnpa1%locbf(locshell+ishell)+1)
+            enddo
+          enddo
+          call gendiag(1,'V','U',numshell,pblock,maxsize,sblock,maxsize, &
+&                      wblock,datacomp)
+!
+!   Set final transformation
+!
+          do ishell= 1,numshell
+            do jshell= 1,numshell
+              do jao= 1,2*iang+1
+                worktrans(databasisnpa1%locbf(locshell+jshell)+jao, &
+&                         databasisnpa1%locbf(locshell+ishell)+jao)= pblock(jshell,ishell)
+              enddo
+            enddo
+          enddo
+          locshell= locshell+numshell
+        enddo
+      enddo
+!
+! Transform into pre-NAOs and separate into NMB and NRB sets
+!
+      call dsymm('L','U',nao,nao,one,pnao,nao,worktrans,nao,zero,work,nao)
+      call dgemm('T','N',nao,nao,nao,one,worktrans,nao,work,nao,zero,pnao,nao)
+!not needed
+!     call dsymm('L','U',nao,nao,one,snao,nao,worktrans,nao,zero,work,nao)
+!     call dgemm('T','N',nao,nao,nao,one,worktrans,nao,work,nao,zero,snao,nao)
+      call dgemm('N','N',nao,nao,nao,one,trans,nao,worktrans,nao,zero,work,nao)
+      trans(1:nao,1:nao)= work(1:nao,1:nao)
+!ishimura
+write(*,'(13f7.3)')pnao
+!write(*,'(19f5.2)')snao
+!
+      return
+end
+
+
+
+!--------------------------------------------------
+  subroutine setnmb(infonmb,numnmb,numnrb,numnmbshell,datamol,databasisnpa0,datacomp)
+!--------------------------------------------------
+!
+! Set numbers of core and valance NMB sets
+!
+      use modtype, only : typemol, typebasis, typecomp
+      implicit none
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasisnpa0
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(out) :: infonmb(3,0:6,datamol%natom), numnmb, numnrb, numnmbshell
+      integer :: iatom, iang
+!
+!     infonmb(1,*,*) : number of NMBs
+!     infonmb(2,*,*) : number of cores
+!     infonmb(3,*,*) : number of frozen cores
+!
+      do iatom= 1,datamol%natom
+        select case(datamol%numatomic(iatom))
+! H - He
+          case(1:2)
+            infonmb(1,0,iatom)= 1
+! Li - Be
+          case(3:4)
+            infonmb(1,0,iatom)= 2
+            infonmb(2,0,iatom)= 1
+! B - Ne
+          case(5:10)
+            infonmb(1,0,iatom)= 2
+            infonmb(2,0,iatom)= 1
+            infonmb(1,1,iatom)= 1
+! Na - Mg
+          case(11:12)
+            infonmb(1,0,iatom)= 3
+            infonmb(2,0,iatom)= 2
+            infonmb(1,1,iatom)= 1
+            infonmb(2,1,iatom)= 1
+! Al - Ar
+          case(13:18)
+            infonmb(1,0,iatom)= 3
+            infonmb(2,0,iatom)= 2
+            infonmb(1,1,iatom)= 2
+            infonmb(2,1,iatom)= 1
+! K - Ca
+          case(19:20)
+            infonmb(1,0,iatom)= 4
+            infonmb(2,0,iatom)= 3
+            infonmb(1,1,iatom)= 2
+            infonmb(2,1,iatom)= 2
+! Sc - Zn
+          case(21:30)
+            infonmb(1,0,iatom)= 4
+            infonmb(2,0,iatom)= 3
+            infonmb(1,1,iatom)= 3
+            infonmb(2,1,iatom)= 2
+            infonmb(1,2,iatom)= 1
+! Ga - Kr
+          case(31:36)
+            infonmb(1,0,iatom)= 4
+            infonmb(2,0,iatom)= 3
+            infonmb(1,1,iatom)= 3
+            infonmb(2,1,iatom)= 2
+            infonmb(1,2,iatom)= 1
+            infonmb(2,2,iatom)= 1
+! Rb - Sr
+          case(37:38)
+            infonmb(1,0,iatom)= 5
+            infonmb(2,0,iatom)= 4
+            infonmb(1,1,iatom)= 3
+            infonmb(2,1,iatom)= 3
+            infonmb(1,2,iatom)= 1
+            infonmb(2,2,iatom)= 1
+! Y - Cd
+          case(39:48)
+            infonmb(1,0,iatom)= 5
+            infonmb(2,0,iatom)= 4
+            infonmb(1,1,iatom)= 4
+            infonmb(2,1,iatom)= 3
+            infonmb(1,2,iatom)= 2
+            infonmb(2,2,iatom)= 1
+! In - Xe
+          case(49:54)
+            infonmb(1,0,iatom)= 5
+            infonmb(2,0,iatom)= 4
+            infonmb(1,1,iatom)= 4
+            infonmb(2,1,iatom)= 3
+            infonmb(1,2,iatom)= 2
+            infonmb(2,2,iatom)= 2
+! Cs - Ba
+          case(55:56)
+            infonmb(1,0,iatom)= 6
+            infonmb(2,0,iatom)= 5
+            infonmb(1,1,iatom)= 4
+            infonmb(2,1,iatom)= 4
+            infonmb(1,2,iatom)= 2
+            infonmb(2,2,iatom)= 2
+! La - Yb
+          case(57:70)
+            infonmb(1,0,iatom)= 6
+            infonmb(2,0,iatom)= 5
+            infonmb(1,1,iatom)= 5
+            infonmb(2,1,iatom)= 4
+            infonmb(1,2,iatom)= 3
+            infonmb(2,2,iatom)= 2
+            infonmb(1,3,iatom)= 1
+! Lu - Hg
+          case(71:80)
+            infonmb(1,0,iatom)= 6
+            infonmb(2,0,iatom)= 5
+            infonmb(1,1,iatom)= 5
+            infonmb(2,1,iatom)= 4
+            infonmb(1,2,iatom)= 3
+            infonmb(2,2,iatom)= 2
+            infonmb(1,3,iatom)= 1
+            infonmb(1,3,iatom)= 1
+! Tl - Rn
+          case(81:86)
+            infonmb(1,0,iatom)= 6
+            infonmb(2,0,iatom)= 5
+            infonmb(1,1,iatom)= 5
+            infonmb(2,1,iatom)= 4
+            infonmb(1,2,iatom)= 3
+            infonmb(2,2,iatom)= 3
+            infonmb(1,3,iatom)= 1
+            infonmb(1,3,iatom)= 1
+          case(87:)
+            if(datacomp%master) then
+              write(*,'(" Error! Supportted atom in Natural Population Analysis is up to Rn.")')
+              call iabort
+            endif
+        end select
+        if(databasisnpa0%izcore(iatom) /= 0) then
+          select case(databasisnpa0%izcore(iatom))
+            case(2)
+              infonmb(1,0,iatom)= infonmb(1,1,iatom)-1
+              infonmb(2,0,iatom)= infonmb(2,1,iatom)-1
+              infonmb(3,0,iatom)= 1
+            case(10)
+              infonmb(1,0,iatom)= infonmb(1,1,iatom)-2
+              infonmb(2,0,iatom)= infonmb(2,1,iatom)-2
+              infonmb(3,0,iatom)= 2
+              infonmb(1,1,iatom)= infonmb(1,2,iatom)-1
+              infonmb(2,1,iatom)= infonmb(2,2,iatom)-1
+              infonmb(3,1,iatom)= 1
+            case(18)
+              infonmb(1,0,iatom)= infonmb(1,1,iatom)-3
+              infonmb(2,0,iatom)= infonmb(2,1,iatom)-3
+              infonmb(3,0,iatom)= 3
+              infonmb(1,1,iatom)= infonmb(1,2,iatom)-2
+              infonmb(2,1,iatom)= infonmb(2,2,iatom)-2
+              infonmb(3,1,iatom)= 2
+            case(28)
+              infonmb(1,0,iatom)= infonmb(1,1,iatom)-3
+              infonmb(2,0,iatom)= infonmb(2,1,iatom)-3
+              infonmb(3,0,iatom)= 3
+              infonmb(1,1,iatom)= infonmb(1,2,iatom)-2
+              infonmb(2,1,iatom)= infonmb(2,2,iatom)-2
+              infonmb(3,1,iatom)= 2
+              infonmb(1,2,iatom)= infonmb(1,3,iatom)-1
+              infonmb(2,2,iatom)= infonmb(2,3,iatom)-1
+              infonmb(3,2,iatom)= 1
+            case(36)
+              infonmb(1,0,iatom)= infonmb(1,1,iatom)-4
+              infonmb(2,0,iatom)= infonmb(2,1,iatom)-4
+              infonmb(3,0,iatom)= 4
+              infonmb(1,1,iatom)= infonmb(1,2,iatom)-3
+              infonmb(2,1,iatom)= infonmb(2,2,iatom)-3
+              infonmb(3,1,iatom)= 3
+              infonmb(1,2,iatom)= infonmb(1,3,iatom)-1
+              infonmb(2,2,iatom)= infonmb(2,3,iatom)-1
+              infonmb(3,2,iatom)= 1
+            case(46)
+              infonmb(1,0,iatom)= infonmb(1,1,iatom)-4
+              infonmb(2,0,iatom)= infonmb(2,1,iatom)-4
+              infonmb(3,0,iatom)= 4
+              infonmb(1,1,iatom)= infonmb(1,2,iatom)-3
+              infonmb(2,1,iatom)= infonmb(2,2,iatom)-3
+              infonmb(3,1,iatom)= 3
+              infonmb(1,2,iatom)= infonmb(1,3,iatom)-2
+              infonmb(2,2,iatom)= infonmb(2,3,iatom)-2
+              infonmb(3,2,iatom)= 2
+            case(60)
+              infonmb(1,0,iatom)= infonmb(1,1,iatom)-4
+              infonmb(2,0,iatom)= infonmb(2,1,iatom)-4
+              infonmb(3,0,iatom)= 4
+              infonmb(1,1,iatom)= infonmb(1,2,iatom)-3
+              infonmb(2,1,iatom)= infonmb(2,2,iatom)-3
+              infonmb(3,1,iatom)= 3
+              infonmb(1,2,iatom)= infonmb(1,3,iatom)-2
+              infonmb(2,2,iatom)= infonmb(2,3,iatom)-2
+              infonmb(3,2,iatom)= 2
+              infonmb(1,3,iatom)= infonmb(1,4,iatom)-1
+              infonmb(2,3,iatom)= infonmb(2,4,iatom)-1
+              infonmb(3,3,iatom)= 1
+            case(68)
+              infonmb(1,0,iatom)= infonmb(1,1,iatom)-5
+              infonmb(2,0,iatom)= infonmb(2,1,iatom)-5
+              infonmb(3,0,iatom)= 5
+              infonmb(1,1,iatom)= infonmb(1,2,iatom)-4
+              infonmb(2,1,iatom)= infonmb(2,2,iatom)-4
+              infonmb(3,1,iatom)= 4
+              infonmb(1,2,iatom)= infonmb(1,3,iatom)-2
+              infonmb(2,2,iatom)= infonmb(2,3,iatom)-2
+              infonmb(3,2,iatom)= 2
+              infonmb(1,3,iatom)= infonmb(1,4,iatom)-1
+              infonmb(2,3,iatom)= infonmb(2,4,iatom)-1
+              infonmb(3,3,iatom)= 1
+            case(78)
+              infonmb(1,0,iatom)= infonmb(1,1,iatom)-5
+              infonmb(2,0,iatom)= infonmb(2,1,iatom)-5
+              infonmb(3,0,iatom)= 5
+              infonmb(1,1,iatom)= infonmb(1,2,iatom)-4
+              infonmb(2,1,iatom)= infonmb(2,2,iatom)-4
+              infonmb(3,1,iatom)= 4
+              infonmb(1,2,iatom)= infonmb(1,3,iatom)-3
+              infonmb(2,2,iatom)= infonmb(2,3,iatom)-3
+              infonmb(3,2,iatom)= 3
+              infonmb(1,3,iatom)= infonmb(1,4,iatom)-1
+              infonmb(2,3,iatom)= infonmb(2,4,iatom)-1
+              infonmb(3,3,iatom)= 1
+            case default 
+              if(datacomp%master) then
+                write(*,'(" Error! This ECP is not supported in Natural Population Analysis.")')
+                call iabort
+              endif
+          end select
+        endif
+      enddo
+!
+      numnmb= 0
+      numnmbshell= 0
+      do iatom= 1,datamol%natom
+        do iang= 0,3
+          numnmb     = numnmb+infonmb(1,iang,iatom)*(2*iang+1)
+          numnmbshell= numnmbshell+infonmb(1,iang,iatom)
+        enddo
+      enddo
+      numnrb= databasisnpa0%nao-numnmb
+!
+      return
+end
+
+
+!-----------------------------------------------------------------------
+  subroutine orthonmb(pnao,snao,trans,wnao,work1,work2,work3,numnmb,databasisnpa2,datacomp)
+!-----------------------------------------------------------------------
+!
+! Orthogonalize NMB sets
+!
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(in) :: databasisnpa2
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: numnmb
+      integer :: nao, iao, jao
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(in) :: wnao(databasisnpa2%nao)
+      real(8),intent(out) :: work1(databasisnpa2%nao,databasisnpa2%nao)  !  work1(nunmnb,numnmb)
+      real(8),intent(out) :: work2(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(out) :: work3(databasisnpa2%nao,databasisnpa2%nao)  !  work3(nunmnb,numnmb)
+      real(8),intent(inout) :: pnao(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(inout) :: snao(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(inout) :: trans(databasisnpa2%nao,databasisnpa2%nao)
+!
+! Calculate WSW matrix
+!
+      nao= databasisnpa2%nao
+      do iao= 1,numnmb
+        do jao= 1,numnmb
+          work1(jao,iao)= snao(jao,iao)*wnao(iao)*wnao(jao)
+        enddo
+      enddo
+!
+! Diagonalize WSW matrix and calculate W(WSW)^-1/2
+!
+      call diag('V','U',numnmb,work1,nao,work3,datacomp)
+      do iao= 1,numnmb
+        do jao= 1,numnmb
+          work2(jao,iao)= work1(jao,iao)/(sqrt(work3(iao,1)))
+        enddo
+      enddo
+      call dgemm('N','T',numnmb,numnmb,numnmb,one,work2,nao,work1,nao,zero,work3,nao)
+      do iao= 1,numnmb
+        do jao= 1,numnmb
+          work3(jao,iao)= work3(jao,iao)*wnao(jao)
+        enddo
+      enddo
+!
+! Occupancy-weighted symmetric orthonalization
+!
+      call dgemm('N','N',nao,numnmb,numnmb,one,pnao,nao,work3,nao,zero,work2,nao)
+      pnao(1:nao,1:numnmb)= work2(1:nao,1:numnmb)
+      call dgemm('T','N',numnmb,nao,numnmb,one,work3,nao,pnao,nao,zero,work2,nao)
+      pnao(1:numnmb,1:nao)= work2(1:numnmb,1:nao)
+      call dgemm('N','N',nao,numnmb,numnmb,one,snao,nao,work3,nao,zero,work2,nao)
+      snao(1:nao,1:numnmb)= work2(1:nao,1:numnmb)
+      call dgemm('T','N',numnmb,nao,numnmb,one,work3,nao,snao,nao,zero,work2,nao)
+      snao(1:numnmb,1:nao)= work2(1:numnmb,1:nao)
+      call dgemm('N','N',nao,numnmb,numnmb,one,trans,nao,work3,nao,zero,work2,nao)
+      trans(1:nao,1:numnmb)= work2(1:nao,1:numnmb)
+!
+      return
+end
+
+
+!----------------------------------------------------------------------------------
+  subroutine orthonrb1(pnao,snao,trans,worktrans,work,numnmb,numnrb,databasisnpa2,datacomp)
+!----------------------------------------------------------------------------------
+!
+! Orthogonalize NRB sets to NMB sets by Gram-Schmidt process
+!
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(in) :: databasisnpa2
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: numnmb, numnrb
+      integer :: nao, iao, jao
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(out) :: worktrans(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(out) :: work(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(inout) :: pnao(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(inout) :: snao(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(inout) :: trans(databasisnpa2%nao,databasisnpa2%nao)
+!
+      nao= databasisnpa2%nao
+      worktrans(1:nao,1:nao)= zero
+!
+      do iao= 1,nao
+        worktrans(iao,iao)= one
+      enddo 
+      do iao= numnmb+1,nao
+        do jao= 1,numnmb
+          worktrans(iao,iao)= worktrans(iao,iao)-snao(jao,iao)*snao(jao,iao)
+        enddo 
+        worktrans(iao,iao)= one/sqrt(worktrans(iao,iao))
+        do jao= 1,numnmb
+          worktrans(jao,iao)=-snao(jao,iao)*worktrans(iao,iao)
+        enddo 
+      enddo 
+!
+      call dgemm('N','N',nao,nao,nao,one,pnao,nao,worktrans,nao,zero,work,nao)
+      call dgemm('T','N',nao,nao,nao,one,worktrans,nao,work,nao,zero,pnao,nao)
+      call dgemm('N','N',nao,nao,nao,one,snao,nao,worktrans,nao,zero,work,nao)
+      call dgemm('T','N',nao,nao,nao,one,worktrans,nao,work,nao,zero,snao,nao)
+      call dgemm('N','N',nao,nao,nao,one,trans,nao,worktrans,nao,zero,work,nao)
+      trans(1:nao,1:nao)= work(1:nao,1:nao)
+!
+      return
+end
+
+!-----------------------------------------------------------------------
+  subroutine orthonrb2(pnao,snao,trans,wnao,work1,work2,work3,numnmb,numlnrb,databasisnpa2,datacomp)
+!-----------------------------------------------------------------------
+!
+! Orthogonalize NRB sets with large w
+!
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(in) :: databasisnpa2
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: numnmb, numlnrb
+      integer :: nao, iao, jao
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(in) :: wnao(databasisnpa2%nao)
+      real(8),intent(out) :: work1(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(out) :: work2(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(out) :: work3(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(inout) :: pnao(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(inout) :: snao(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(inout) :: trans(databasisnpa2%nao,databasisnpa2%nao)
+!
+! Calculate WSW matrix
+!
+      nao= databasisnpa2%nao
+      do iao= 1,numlnrb
+        do jao= 1,numlnrb
+          work1(jao,iao)= snao(numnmb+jao,numnmb+iao)*wnao(numnmb+iao)*wnao(numnmb+jao)
+        enddo
+      enddo
+!
+! Diagonalize WSW matrix and calculate W(WSW)^-1/2
+!
+      call diag('V','U',numlnrb,work1,nao,work3,datacomp)
+      do iao= 1,numlnrb
+        do jao= 1,numlnrb
+          work2(jao,iao)= work1(jao,iao)/(sqrt(work3(iao,1)))
+        enddo
+      enddo
+      call dgemm('N','T',numlnrb,numlnrb,numlnrb,one,work2,nao,work1,nao,zero,work3,nao)
+      do iao= 1,numlnrb
+        do jao= 1,numlnrb
+          work3(jao,iao)= work3(jao,iao)*wnao(numnmb+jao)
+        enddo
+      enddo
+!
+! Occupancy-weighted symmetric orthonalization
+!
+      call dgemm('N','N',nao,numlnrb,numlnrb,one,pnao(1,numnmb+1),nao,work3,nao,zero,work2,nao)
+      pnao(1:nao,numnmb+1:numnmb+numlnrb)= work2(1:nao,1:numlnrb)
+      call dgemm('T','N',numlnrb,nao,numlnrb,one,work3,nao,pnao(numnmb+1,1),nao,zero,work2,nao)
+      pnao(numnmb+1:numnmb+numlnrb,1:nao)= work2(1:numlnrb,1:nao)
+      call dgemm('N','N',nao,numlnrb,numlnrb,one,snao(1,numnmb+1),nao,work3,nao,zero,work2,nao)
+      snao(1:nao,numnmb+1:numnmb+numlnrb)= work2(1:nao,1:numlnrb)
+      call dgemm('T','N',numlnrb,nao,numlnrb,one,work3,nao,snao(numnmb+1,1),nao,zero,work2,nao)
+      snao(numnmb+1:numnmb+numlnrb,1:nao)= work2(1:numlnrb,1:nao)
+      call dgemm('N','N',nao,numlnrb,numlnrb,one,trans(1,numnmb+1),nao,work3,nao,zero,work2,nao)
+      trans(1:nao,numnmb+1:numnmb+numlnrb)= work2(1:nao,1:numlnrb)
+!
+      return
+end
+
+
+!-----------------------------------------------------------------------
+  subroutine orthonrb3(pnao,snao,trans,worktrans,work2,work3,work4,numnmb,numnrb,numlnrb,numsnrb,databasisnpa2,datacomp)
+!-----------------------------------------------------------------------
+!
+! Orthogonalize NRB sets with small w
+!
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(in) :: databasisnpa2
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: numnmb, numnrb, numlnrb, numsnrb
+      integer :: nao, iao, jao
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(out) :: worktrans(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(out) :: work2(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(out) :: work3(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(out) :: work4(databasisnpa2%nao)
+      real(8),intent(inout) :: pnao(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(inout) :: snao(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(inout) :: trans(databasisnpa2%nao,databasisnpa2%nao)
+!
+! Orthogonalize small-w NRB sets to large-w NRB sets by Gram-Schmidt process
+!
+      nao= databasisnpa2%nao
+      worktrans(1:numnrb,1:numsnrb)= zero
+!
+      do iao= 1,numsnrb
+        worktrans(numlnrb+iao,iao)= one
+      enddo
+      do iao= 1,numsnrb !numnmb+1,nao
+        do jao= 1,numlnrb
+          worktrans(numlnrb+iao,iao)= worktrans(numlnrb+iao,iao) &
+&                                    -snao(numnmb+jao,numnmb+numlnrb+iao)**2
+        enddo
+        worktrans(numlnrb+iao,iao)= one/sqrt(worktrans(numlnrb+iao,iao))
+        do jao= 1,numlnrb
+          worktrans(jao,iao)=-snao(numnmb+jao,numnmb+numlnrb+iao)*worktrans(numlnrb+iao,iao)
+        enddo
+      enddo
+!
+      call dgemm('N','N',nao,numsnrb,numnrb,one,pnao(1,numnmb+1),nao,worktrans,nao,zero,work2,nao)
+      pnao(1:nao,numnmb+numlnrb+1:nao)= work2(1:nao,1:numsnrb)
+      call dgemm('T','N',numsnrb,nao,numnrb,one,worktrans,nao,pnao(numnmb+1,1),nao,zero,work2,nao)
+      pnao(numnmb+numlnrb+1:nao,1:nao)= work2(1:numsnrb,1:nao)
+      call dgemm('N','N',nao,numsnrb,numnrb,one,snao(1,numnmb+1),nao,worktrans,nao,zero,work2,nao)
+      snao(1:nao,numnmb+numlnrb+1:nao)= work2(1:nao,1:numsnrb)
+      call dgemm('T','N',numsnrb,nao,numnrb,one,worktrans,nao,snao(numnmb+1,1),nao,zero,work2,nao)
+      snao(numnmb+numlnrb+1:nao,1:nao)= work2(1:numsnrb,1:nao)
+      call dgemm('N','N',nao,numsnrb,numnrb,one,trans(1,numnmb+1),nao,worktrans,nao,zero,work2,nao)
+      trans(1:nao,numnmb+numlnrb+1:nao)= work2(1:nao,1:numsnrb)
+!
+! Orthogonalize within small-w NRB sets
+!
+      do iao= 1,numsnrb
+        do jao= 1,numsnrb
+          work2(jao,iao)= snao(numnmb+numlnrb+jao,numnmb+numlnrb+iao)
+        enddo
+      enddo
+!
+!   Diagonalize S matrix and calculate S^-1/2
+!
+      call diag('V','U',numsnrb,work2,nao,work4,datacomp)
+      do iao= 1,numsnrb
+        do jao= 1,numsnrb
+          work3(jao,iao)= work2(jao,iao)/(sqrt(work4(iao)))
+        enddo
+      enddo
+      call dgemm('N','T',numsnrb,numsnrb,numsnrb,one,work3,nao,work2,nao,zero,worktrans,nao)
+!
+! Occupancy-weighted symmetric orthonalization
+!
+      call dgemm('N','N',nao,numsnrb,numsnrb,one,pnao(1,numnmb+numlnrb+1),nao,worktrans,nao,zero,work2,nao)
+      pnao(1:nao,numnmb+numlnrb+1:nao)= work2(1:nao,1:numsnrb)
+      call dgemm('T','N',numsnrb,nao,numsnrb,one,worktrans,nao,pnao(numnmb+numlnrb+1,1),nao,zero,work2,nao)
+      pnao(numnmb+numlnrb+1:nao,1:nao)= work2(1:numsnrb,1:nao)
+      call dgemm('N','N',nao,numsnrb,numsnrb,one,snao(1,numnmb+numlnrb+1),nao,worktrans,nao,zero,work2,nao)
+      snao(1:nao,numnmb+numlnrb+1:nao)= work2(1:nao,1:numsnrb)
+      call dgemm('T','N',numsnrb,nao,numsnrb,one,worktrans,nao,snao(numnmb+numlnrb+1,1),nao,zero,work2,nao)
+      snao(numnmb+numlnrb+1:nao,1:nao)= work2(1:numsnrb,1:nao)
+      call dgemm('N','N',nao,numsnrb,numsnrb,one,trans(1,numnmb+numlnrb+1),nao,worktrans,nao,zero,work2,nao)
+      trans(1:nao,numnmb+numlnrb+1:nao)= work2(1:nao,1:numsnrb)
+!
+!ishimura
+!write(*,'(13f7.3)')pnao
+!write(*,'(19f5.2)')snao
+      return
+end
+
+
+!---------------------------------------------------------------------
+  subroutine sortbasisnpa2(pnao,snao,trans,work,list2,databasisnpa2)
+!---------------------------------------------------------------------
+!
+! Resort NMB + NRB sets by atoms and angular momenta
+!
+      use modtype, only : typebasis
+      implicit none
+      type(typebasis),intent(in) :: databasisnpa2
+      integer,intent(out) :: list2(databasisnpa2%nao)
+      integer :: iao, jao
+      real(8),intent(out) :: work(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(inout) :: pnao(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(inout) :: snao(databasisnpa2%nao,databasisnpa2%nao)
+      real(8),intent(inout) :: trans(databasisnpa2%nao,databasisnpa2%nao)
+!
+
+      do iao= 1,databasisnpa2%nao
+        do jao= 1,databasisnpa2%nao
+          work(jao,list2(iao))= pnao(jao,iao)
+        enddo
+      enddo
+      do iao= 1,databasisnpa2%nao
+        do jao= 1,databasisnpa2%nao
+          pnao(list2(jao),iao)= work(jao,iao)
+        enddo
+      enddo
+      do iao= 1,databasisnpa2%nao
+        do jao= 1,databasisnpa2%nao
+          work(jao,list2(iao))= snao(jao,iao)
+        enddo
+      enddo
+      do iao= 1,databasisnpa2%nao
+        do jao= 1,databasisnpa2%nao
+          snao(list2(jao),iao)= work(jao,iao)
+        enddo
+      enddo
+      do iao= 1,databasisnpa2%nao
+        do jao= 1,databasisnpa2%nao
+          work(jao,list2(iao))= trans(jao,iao)
+        enddo
+      enddo
+      do iao= 1,databasisnpa2%nao
+        do jao= 1,databasisnpa2%nao
+          trans(jao,iao)= work(jao,iao)
+        enddo
+      enddo
+!
+!ishimura
+!write(*,'(13f7.3)')snao
+!write(*,'(19f5.2)')snao
+      return
+end
+
+!---------------------------------------------------------------------
+  subroutine printnpa(pnao,fnao,trans,work,fwork,pwork,fshell,maxang,maxsize,infonmb,infobasis,datamol,databasisnpa1)
+!---------------------------------------------------------------------
+!
+! Print Natural Population Analysis Result
+!
+      use modtype, only : typemol, typebasis
+      implicit none
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasisnpa1
+      integer,intent(in) :: maxang, maxsize, infonmb(3,0:6,datamol%natom)
+      integer,intent(in) :: infobasis(3,0:maxang,datamol%natom)
+      integer :: nao, iatom, iang, ishell, iao, numshell, locao, itmp, list(maxsize), ii, jj
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(in) :: pnao(databasisnpa1%nao,databasisnpa1%nao)
+      real(8),intent(in) :: trans(databasisnpa1%nao,databasisnpa1%nao)
+      real(8),intent(inout) :: fnao(databasisnpa1%nao,databasisnpa1%nao)
+      real(8),intent(out) :: work(databasisnpa1%nao,databasisnpa1%nao)
+      real(8),intent(out) :: fwork(databasisnpa1%nao)
+      real(8),intent(out) :: pwork(databasisnpa1%nao)
+      real(8),intent(out) :: fshell(databasisnpa1%nshell)
+      real(8) :: faverage, tmp
+!
+! Transform Fock matrix to Natural Atomic Orbital basis
+!
+      nao   = databasisnpa1%nao
+      call dsymm('L','U',nao,nao,one,fnao,nao,trans,nao,zero,work,nao)
+      call dgemm('T','N',nao,nao,nao,one,trans,nao,work,nao,zero,fnao,nao)
+!
+! Summarize Natural Atomic Orbital Energies
+!
+      locao= 0
+      do iatom= 1,datamol%natom
+        do iang= 0,maxang
+          numshell= infobasis(1,iang,iatom)
+!
+          do ishell= 1,numshell
+            faverage= zero
+            do iao= 1,2*iang+1
+              fwork((ishell-1)*(2*iang+1)+iao)= fnao(locao+iao,locao+iao)
+              pwork((ishell-1)*(2*iang+1)+iao)= pnao(locao+iao,locao+iao)
+              faverage= faverage+fnao(locao+iao,locao+iao)
+            enddo
+            fshell(ishell)= faverage/dble(2*iang+1)
+            list(ishell)= ishell-1
+            locao= locao+2*iang+1
+          enddo
+!
+          do ii= 1,numshell-1
+            do jj= ii+1, numshell
+              if(fshell(ii) > fshell(jj)) then
+                tmp= fshell(ii)
+                fshell(ii)= fshell(jj)
+                fshell(jj)= tmp
+                itmp= list(ii)
+                list(ii)= list(jj)
+                list(jj)= itmp
+              endif
+            enddo
+          enddo
+!
+          do ishell= 1,numshell
+            do iao= 1,2*iang+1
+!ishimura????????????????????
+! write(*,*)list(ishell)*(2*iang+1)+iao
+              write(*,'(2f15.6)')pwork(list(ishell)*(2*iang+1)+iao),fwork(list(ishell)*(2*iang+1)+iao)
+            enddo
+          enddo
+        enddo
+      enddo
+!
+      return
+end

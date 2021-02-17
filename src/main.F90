@@ -504,6 +504,8 @@ end
           write(datacomp%iout,'(" ========================")')
         endif
         call calcrmulliken(dmtrx,smtrx,datamol,databasis,datacomp)
+!ishimura-tmp
+        call calcrnpa(dmtrx,fock,smtrx,datamol,databasis,datacomp)
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
