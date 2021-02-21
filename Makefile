@@ -6,7 +6,7 @@ SRC =   basis.F90 geom.F90 guess.F90 fileio.F90 int1.F90 machine.F90 main.F90 ma
 	memory.F90 scf.F90 scflib.F90 int2.F90 int2elec.F90 int2sp.F90 int2spd1.F90 \
 	int2spd2.F90 int2spd3.F90 int2spd4.F90 gradient.F90 rysquad.F90 \
 	dft.F90 dftfunc.F90 lebedev.F90 mp2.F90 mp2grad.F90 grad1.F90 grad2.F90 ecp.F90 \
-	ecpfunc.F90 ecpder.F90 parallel.F90 start.F90
+	ecpfunc.F90 ecpder.F90 parallel.F90 start.F90 prop.F90
 MOD = module.F90 modulefmt.F90 modulerys.F90
 OBJ = $(addprefix obj/,$(SRC:.F90=.o))
 OBJM= $(addprefix obj/,$(MOD:.F90=.o))
