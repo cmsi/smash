@@ -686,7 +686,7 @@ end
   subroutine calcrnpa(dmtrx,fock,overlap,datamol,databasis,datacomp)
 !----------------------------------------------------------------
 !
-! Driver of Natural Population Analysis
+! Driver of Natural Population Analysis calculation
 !
       use modtype, only : typemol, typebasis, typecomp
       implicit none
@@ -722,11 +722,17 @@ end
 !
 ! Change Cartesian basis to Spherial Harmonics basis
 !
-!     if(.not.databasis%spher) then
-!       call setnpaspher(datamol,databasis,databasisnpa0)
-!     else
+      if(.not.databasis%spher) then
+        if(maxang >= 5) then
+          write(*,'(" Error! This program supports up to g Cartesian fucntions", &
+&                   " in Natural Population Analysis.",/, &
+&                   " Set spher=.true. in Control section.")')
+          call iabort
+        endif
+        call setnpaspher(pnao,snao,trans,work1,databasis,databasisnpa0,datacomp)
+      else
       databasisnpa0= databasis
-!     endif
+      endif
 !
 ! Set numbers of core and valance NMB sets
 !
@@ -749,8 +755,6 @@ end
 ! Orthogonalize NRB sets to NMB sets
 !
       call orthonrb1(pnao,snao,trans,work1,work2,numnmb,numnrb,databasisnpa2,datacomp)
-!ishimura-OK
-!return
 
 ! Calculate pre-NAOs of NRB sets
        call calcprenao2(pnao,snao,trans,work1,work2,wnao,maxang,maxsize,infonmb,infobasis,list1, &
@@ -761,8 +765,6 @@ end
 
 ! Orthogonalize NRB sets with small w
       call orthonrb3(pnao,snao,trans,work1,work2,work3,wnao,numnmb,numnrb,numlnrb,numsnrb,databasisnpa2,datacomp)
-!ishimura
-!return
 
 ! Sort basis by atoms and angular momenta
       call sortbasisnpa2(pnao,snao,trans,work1,list2,databasisnpa2)
@@ -779,6 +781,133 @@ end
       return
 end
 
+!--------------------------------------------------------------------------------
+  subroutine setnpaspher(pnao,snao,trans,work,databasis,databasisnpa0,datacomp)
+!--------------------------------------------------------------------------------
+!
+! Transform basis functions from Cartesian to Spherical Harminics
+!
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(in) :: databasis
+      type(typebasis),intent(out) :: databasisnpa0
+      type(typecomp),intent(in) :: datacomp
+      integer :: newshell, ishell, loc, nao
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00, halfm=-0.5D+00, one=1.0D+00
+      real(8),parameter :: sqrtfifth=4.472135954999579D-01, sqrt3h=8.660254037844386D-01
+      real(8),parameter :: sqrt3hm=-8.660254037844386D-01
+      real(8),parameter :: facp1 = 6.546536707079771D-01 !  sqrt(3/7)
+      real(8),parameter :: facp2 = 2.927700218845599D-01 !  sqrt(3/35)
+      real(8),parameter :: facf1 = 1.060660171779821D+00 !  (3/2)sqrt(1/2)
+      real(8),parameter :: facf2 =-7.905694150420948D-01 ! -(1/2)sqrt(5/2)
+      real(8),parameter :: facf3 =-2.738612787525830D-01 ! -(1/2)sqrt(3/10)
+      real(8),parameter :: facf4 =-6.123724356957945D-01 ! -(1/2)sqrt(3/2)
+      real(8),parameter :: facf5 = 1.095445115010332D+00 !  2sqrt(3/10)
+      real(8),parameter :: facf6 =-6.708203932499369D-01 ! -3/2sqrt(1/5)
+      real(8),parameter :: facf7 = 8.660254037844386D-01 !  (1/2)sqrt(3)
+      real(8),parameter :: facf8 =-8.660254037844386D-01 ! -(1/2)sqrt(3)
+      real(8),parameter :: facf9 = 7.905694150420948D-01 !  (1/2)sqrt(5/2)
+      real(8),parameter :: facf10=-1.060660171779821D+00 ! -(3/2)sqrt(1/2)
+      real(8),intent(inout) :: pnao(databasis%nao,databasis%nao)
+      real(8),intent(inout) :: snao(databasis%nao,databasis%nao)
+      real(8),intent(inout) :: trans(databasis%nao,databasis%nao)
+      real(8),intent(out) :: work(databasis%nao,databasis%nao)
+      real(8) :: dtrans(6,6), ftrans(10,10), gtrans(15,15)
+      data dtrans / &
+&     sqrtfifth, zero, zero, sqrtfifth, zero, sqrtfifth, &  ! s
+&     zero     , one , zero, zero     , zero, zero     , &  ! d-2
+&     halfm    , zero, zero, halfm    , zero, one      , &  ! d-1
+&     zero     , zero, zero, zero     , one , zero     , &  ! d0
+&     zero     , zero, one , zero     , zero, zero     , &  ! d+1
+&     sqrt3h   , zero, zero, sqrt3hm  , zero, zero     /    ! d+2
+     data ftrans / &
+&    facp1, zero , zero , facp2 , zero, facp2, zero , zero , zero , zero , & ! p-1
+&    zero , facp2, zero , zero  , zero, zero , facp1, zero , facp2, zero , & ! p0
+&    zero , zero , facp2, zero  , zero, zero , zero , facp2, zero , facp1, & ! p+1
+&    zero , facf1, zero , zero  , zero, zero , facf2, zero , zero , zero , & ! f-3
+&    zero , zero , zero , zero  , one , zero , zero , zero , zero , zero , & ! f-2
+&    zero , facf3, zero , zero  , zero, zero , facf4, zero , facf5, zero , & ! f-1
+&    zero , zero , facf6, zero  , zero, zero , zero , facf6, zero , one  , & ! f0
+&    facf4, zero , zero , facf3 , zero, facf5, zero , zero , zero , zero , & ! f+1
+&    zero , zero , facf7, zero  , zero, zero , zero , facf8, zero , zero , & ! f+2
+&    facf9, zero , zero , facf10, zero, zero , zero , zero , zero , zero/    ! f+2
+!
+      newshell= 0
+      do ishell= 1,databasis%nshell
+        select case(databasis%mtype(ishell))
+          case(0:1) ! s or p shell
+            newshell= newshell+1
+            databasisnpa0%mtype(newshell)  = databasis%mtype(ishell)
+            databasisnpa0%mbf(newshell)    = databasis%mbf(ishell)
+            databasisnpa0%locatom(newshell)= databasis%locatom(ishell)
+            databasisnpa0%locbf(newshell)  = databasis%locbf(ishell)
+          case(2)  ! d shell
+            newshell= newshell+1
+            databasisnpa0%mtype(newshell)  = 0
+            databasisnpa0%mbf(newshell)    = 1
+            databasisnpa0%locatom(newshell)= databasis%locatom(ishell)
+            databasisnpa0%locbf(newshell)  = databasis%locbf(ishell)
+            newshell= newshell+1
+            databasisnpa0%mtype(newshell)  = 2
+            databasisnpa0%mbf(newshell)    = 5
+            databasisnpa0%locatom(newshell)= databasis%locatom(ishell)
+            databasisnpa0%locbf(newshell)  = databasis%locbf(ishell)+1
+            loc= databasis%locbf(ishell)
+            trans(loc+1:loc+6,loc+1:loc+6)= dtrans(1:6,1:6)
+          case(3)  ! f shell
+            newshell= newshell+1
+            databasisnpa0%mtype(newshell)  = 1
+            databasisnpa0%mbf(newshell)    = 3
+            databasisnpa0%locatom(newshell)= databasis%locatom(ishell)
+            databasisnpa0%locbf(newshell)  = databasis%locbf(ishell)
+            newshell= newshell+1
+            databasisnpa0%mtype(newshell)  = 3
+            databasisnpa0%mbf(newshell)    = 7
+            databasisnpa0%locatom(newshell)= databasis%locatom(ishell)
+            databasisnpa0%locbf(newshell)  = databasis%locbf(ishell)+3
+            loc= databasis%locbf(ishell)
+            trans(loc+1:loc+10,loc+1:loc+10)= ftrans(1:10,1:10)
+          case(4)  ! g shell
+            newshell= newshell+1
+            databasisnpa0%mtype(newshell)  = 0
+            databasisnpa0%mbf(newshell)    = 1
+            databasisnpa0%locatom(newshell)= databasis%locatom(ishell)
+            databasisnpa0%locbf(newshell)  = databasis%locbf(ishell)
+            newshell= newshell+1
+            databasisnpa0%mtype(newshell)  = 2
+            databasisnpa0%mbf(newshell)    = 5
+            databasisnpa0%locatom(newshell)= databasis%locatom(ishell)
+            databasisnpa0%locbf(newshell)  = databasis%locbf(ishell)+1
+            newshell= newshell+1
+            databasisnpa0%mtype(newshell)  = 4
+            databasisnpa0%mbf(newshell)    = 9
+            databasisnpa0%locatom(newshell)= databasis%locatom(ishell)
+            databasisnpa0%locbf(newshell)  = databasis%locbf(ishell)+6
+          case(5:)  ! h or higher shell
+            if(datacomp%master) then
+              write(*,'(" Error! This program supports up to g Cartesian fucntions", &
+&                       " in Natural Population Analysis.")')
+              call iabort
+            endif
+        end select
+      enddo
+      databasisnpa0%nao   = databasis%nao
+      databasisnpa0%nshell= newshell
+!
+!ishimura
+!write(*,'(10f9.6)')snao(6:15,6:15)
+!write(*,*)
+      nao= databasis%nao
+      call dsymm('L','U',nao,nao,one,pnao,nao,trans,nao,zero,work,nao)
+      call dgemm('T','N',nao,nao,nao,one,trans,nao,work,nao,zero,pnao,nao)
+      call dsymm('L','U',nao,nao,one,snao,nao,trans,nao,zero,work,nao)
+      call dgemm('T','N',nao,nao,nao,one,trans,nao,work,nao,zero,snao,nao)
+!ishimura
+!write(*,'(10f9.6)')snao(6:15,6:15)
+!write(*,'(19f5.2)')snao
+!
+      return
+end
 
 !---------------------------------------------------------------------------------------------------
   subroutine sortbasisnpa1(pnao,snao,trans,work,maxang,infobasis,datamol,databasisnpa0,databasisnpa1)
