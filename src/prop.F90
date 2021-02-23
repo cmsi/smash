@@ -799,75 +799,60 @@ end
       real(8),parameter :: sqrt3h=8.660254037844386D-01, sqrt3hm=-8.660254037844386D-01
       real(8),parameter :: sqrtseventh=3.779644730092272D-01, sqrtinv35=1.690308509457033D-01
       real(8),parameter :: sqrt3inv35=2.927700218845599D-01
-      real(8),parameter :: ffac1(10)=(/6.546536707079771D-01, & ! sqrt(3/7)
-&                                      6.546536707079771D-01, & ! sqrt(3/7)
-&                                      6.546536707079771D-01, & ! sqrt(3/7)
-&                                      7.905694150420948D-01, & ! sqrt(5/2)/2
-&                                      3.872983346207416D+00, & ! sqrt(15)
-&                                      6.123724356957945D-01, & ! sqrt(3/2)/2
-&                                      5.000000000000000D-01, & ! (1/2)
-&                                      6.123724356957945D-01, & ! sqrt(3/2)/2
-&                                      1.936491673103708D+00, & ! sqrt(15)/2
-&                                      7.905694150420948D-01/)  ! sqrt(5/2)/2
-      real(8),parameter :: ffac2(10)=(/one, sqrtfifth, sqrtfifth, sqrtfifth, sqrtfifteen, &
-&                                      sqrtfifth, one, sqrtfifth, sqrtfifth, one/)
-      real(8),parameter :: gfac1(15)=(/3.333333333333333D-01, & ! (1/3)
-&                                      1.290994448735805D+00, & ! sqrt(5/3)
-&                                      1.290994448735805D+00, & ! sqrt(5/3)
-&                                      3.726779962499649D-01, & ! sqrt(5)/6
-&                                      1.290994448735805D+00, & ! sqrt(5/3)
-&                                      6.454972243679028D-01, & ! sqrt(5/12)
-&                                      2.958039891549808D+00, & ! sqrt(35)/2
-&                                      2.091650066335188D+00, & ! sqrt(35/2)/2
-&                                      1.118033988749894D+00, & ! sqrt(5)/2
-&                                      7.905694150420948D-01, & ! sqrt(5/2)/2
-&                                      1.250000000000000D-01, & ! (1/8)
-&                                      7.905694150420948D-01, & ! sqrt(5/2)/2
-&                                      5.590169943749474D-01, & ! sqrt(5)/4
-&                                      2.091650066335188D+00, & ! sqrt(35/2)/2
-&                                      7.395099728874520D-01/)  ! sqrt(35)/80
-      real(8),parameter :: gfac2(15)=(/one, sqrtseventh, sqrtseventh, sqrt3inv35, sqrtinv35, &
-&                                      sqrt3inv35, sqrtseventh, sqrtinv35, sqrtinv35, sqrtseventh, &
-&                                      one, sqrtseventh, sqrt3inv35, sqrtseventh, one/)
       real(8),intent(inout) :: pnao(databasis%nao,databasis%nao)
       real(8),intent(inout) :: snao(databasis%nao,databasis%nao)
       real(8),intent(inout) :: trans(databasis%nao,databasis%nao)
       real(8),intent(out) :: work(databasis%nao,databasis%nao)
-      real(8) :: dtrans(6,6), ffac(10)
-      data dtrans / &
-&     sqrtfifth, zero, zero, sqrtfifth, zero, sqrtfifth, &  ! s
-&     zero     , one , zero, zero     , zero, zero     , &  ! d-2
-&     halfm    , zero, zero, halfm    , zero, one      , &  ! d-1
-&     zero     , zero, zero, zero     , one , zero     , &  ! d0
-&     zero     , zero, one , zero     , zero, zero     , &  ! d+1
-&     sqrt3h   , zero, zero, sqrt3hm  , zero, zero     /    ! d+2
-      data intftrans / &
-&      1,  0,  0,  1,  0,    1,  0,  0,  0,  0, & ! p-1
-&      0,  1,  0,  0,  0,    0,  1,  0,  1,  0, & ! p0
-&      0,  0,  1,  0,  0,    0,  0,  1,  0,  1, & ! p+1
-&      0,  3,  0,  0,  0,    0, -1,  0,  0,  0, & ! f-3
-&      0,  0,  0,  0,  1,    0,  0,  0,  0,  0, & ! f-2
-&      0, -1,  0,  0,  0,    0, -1,  0,  4,  0, & ! f-1
-&      0,  0, -3,  0,  0,    0,  0, -3,  0,  2, & ! f0
-&     -1,  0,  0, -1,  0,    4,  0,  0,  0,  0, & ! f+1
-&      0,  0,  1,  0,  0,    0,  0, -1,  0,  0, & ! f+2
-&      1,  0,  0, -3,  0,    0,  0,  0,  0,  0/   ! f+3
-      data intgtrans / &
-&      1,  0,  0,  2,  0,    2,  0,  0,  0,  0,    1,  0,  2,  0,  1, & ! s
-&      0,  1,  0,  0,  0,    0,  1,  0,  1,  0,    0,  0,  0,  0,  0, & ! d-2
-&      0,  0,  0,  0,  1,    0,  0,  0,  0,  0,    0,  1,  0,  1,  0, & ! d-1
-&     -1,  0,  0, -2,  0,    1,  0,  0,  0,  0,   -1,  0,  1,  0,  2, & ! d0
-&      0,  0,  1,  0,  0,    0,  0,  1,  0,  1,    0,  0,  0,  0,  0, & ! d+1
-&      1,  0,  0,  0,  0,    1,  0,  0,  0,  0,   -1,  0, -1,  0,  0, & ! d+2
-&      0,  1,  0,  0,  0,    0, -1,  0,  0,  0,    0,  0,  0,  0,  0, & ! g-4
-&      0,  0,  0,  0,  3,    0,  0,  0,  0,  0,    0, -1,  0,  0,  0, & ! g-3
-&      0, -1,  0,  0,  0,    0, -1,  0,  6,  0,    0,  0,  0,  0,  0, & ! g-2
-&      0,  0,  0,  0, -3,    0,  0,  0,  0,  0,    0, -3,  0,  4,  0, & ! g-1
-&      3,  0,  0,  6,  0,  -24,  0,  0,  0,  0,    3,  0,-24,  0,  8, & ! g0
-&      0,  0, -3,  0,  0,    0,  0, -3,  0,  4,    0,  0,  0,  0,  0, & ! g+1
-&     -1,  0,  0,  0,  0,    6,  0,  0,  0,  0,    1,  0, -6,  0,  0, & ! g+2
-&      0,  0,  1,  0,  0,    0,  0, -3,  0,  0,    0,  0,  0,  0,  0, & ! g+3
-&      1,  0,  0, -6,  0,    0,  0,  0,  0,  0,    1,  0,  0,  0,  0/   ! g+4
+      real(8) :: dtrans(6,6), ffac1(10), ffac2(10), gfac1(15), gfac2(15)
+      data dtrans / sqrtfifth, zero, zero, sqrtfifth, zero, sqrtfifth, &  ! s
+&                   zero     , one , zero, zero     , zero, zero     , &  ! d-2
+&                   halfm    , zero, zero, halfm    , zero, one      , &  ! d-1
+&                   zero     , zero, zero, zero     , one , zero     , &  ! d0
+&                   zero     , zero, one , zero     , zero, zero     , &  ! d+1
+&                   sqrt3h   , zero, zero, sqrt3hm  , zero, zero     /    ! d+2
+      data ffac1 / 6.546536707079771D-01, 6.546536707079771D-01, & ! sqrt(3/7) , sqrt(3/7)
+&                  6.546536707079771D-01, 7.905694150420948D-01, & ! sqrt(3/7) , sqrt(5/2)/2 
+&                  3.872983346207416D+00, 6.123724356957945D-01, & ! sqrt(15)  , sqrt(3/2)/2 
+&                  5.000000000000000D-01, 6.123724356957945D-01, & ! (1/2)     , sqrt(3/2)/2 
+&                  1.936491673103708D+00, 7.905694150420948D-01/   ! sqrt(15)/2, sqrt(5/2)/2
+      data ffac2 / one, sqrtfifth, sqrtfifth, sqrtfifth, sqrtfifteen, &
+&                  sqrtfifth, one, sqrtfifth, sqrtfifth, one/
+      data gfac1 / 3.333333333333333D-01, 1.290994448735805D+00, & ! (1/3)     , sqrt(5/3) 
+&                  1.290994448735805D+00, 3.726779962499649D-01, & ! sqrt(5/3) , sqrt(5)/6
+&                  1.290994448735805D+00, 6.454972243679028D-01, & ! sqrt(5/3) , sqrt(5/12)
+&                  2.958039891549808D+00, 2.091650066335188D+00, & ! sqrt(35)/2, sqrt(35/2)/2
+&                  1.118033988749894D+00, 7.905694150420948D-01, & ! sqrt(5)/2 , sqrt(5/2)/2
+&                  1.250000000000000D-01, 7.905694150420948D-01, & ! (1/8)     , sqrt(5/2)/2
+&                  5.590169943749474D-01, 2.091650066335188D+00, & ! sqrt(5)/4 , sqrt(35/2)/2 
+&                  7.395099728874520D-01/                          ! sqrt(35)/80
+      data gfac2 / one, sqrtseventh, sqrtseventh, sqrt3inv35, sqrtinv35, &
+&                  sqrt3inv35, sqrtseventh, sqrtinv35, sqrtinv35, sqrtseventh,&
+&                  one, sqrtseventh, sqrt3inv35, sqrtseventh, one/
+      data intftrans / 1,  0,  0,  1,  0,    1,  0,  0,  0,  0, & ! p-1
+&                      0,  1,  0,  0,  0,    0,  1,  0,  1,  0, & ! p0
+&                      0,  0,  1,  0,  0,    0,  0,  1,  0,  1, & ! p+1
+&                      0,  3,  0,  0,  0,    0, -1,  0,  0,  0, & ! f-3
+&                      0,  0,  0,  0,  1,    0,  0,  0,  0,  0, & ! f-2
+&                      0, -1,  0,  0,  0,    0, -1,  0,  4,  0, & ! f-1
+&                      0,  0, -3,  0,  0,    0,  0, -3,  0,  2, & ! f0
+&                     -1,  0,  0, -1,  0,    4,  0,  0,  0,  0, & ! f+1
+&                      0,  0,  1,  0,  0,    0,  0, -1,  0,  0, & ! f+2
+&                      1,  0,  0, -3,  0,    0,  0,  0,  0,  0/   ! f+3
+      data intgtrans / 1,  0,  0,  2,  0,    2,  0,  0,  0,  0,    1,  0,  2,  0,  1, & ! s
+&                      0,  1,  0,  0,  0,    0,  1,  0,  1,  0,    0,  0,  0,  0,  0, & ! d-2
+&                      0,  0,  0,  0,  1,    0,  0,  0,  0,  0,    0,  1,  0,  1,  0, & ! d-1
+&                     -1,  0,  0, -2,  0,    1,  0,  0,  0,  0,   -1,  0,  1,  0,  2, & ! d0
+&                      0,  0,  1,  0,  0,    0,  0,  1,  0,  1,    0,  0,  0,  0,  0, & ! d+1
+&                      1,  0,  0,  0,  0,    1,  0,  0,  0,  0,   -1,  0, -1,  0,  0, & ! d+2
+&                      0,  1,  0,  0,  0,    0, -1,  0,  0,  0,    0,  0,  0,  0,  0, & ! g-4
+&                      0,  0,  0,  0,  3,    0,  0,  0,  0,  0,    0, -1,  0,  0,  0, & ! g-3
+&                      0, -1,  0,  0,  0,    0, -1,  0,  6,  0,    0,  0,  0,  0,  0, & ! g-2
+&                      0,  0,  0,  0, -3,    0,  0,  0,  0,  0,    0, -3,  0,  4,  0, & ! g-1
+&                      3,  0,  0,  6,  0,  -24,  0,  0,  0,  0,    3,  0,-24,  0,  8, & ! g0
+&                      0,  0, -3,  0,  0,    0,  0, -3,  0,  4,    0,  0,  0,  0,  0, & ! g+1
+&                     -1,  0,  0,  0,  0,    6,  0,  0,  0,  0,    1,  0, -6,  0,  0, & ! g+2
+&                      0,  0,  1,  0,  0,    0,  0, -3,  0,  0,    0,  0,  0,  0,  0, & ! g+3
+&                      1,  0,  0, -6,  0,    0,  0,  0,  0,  0,    1,  0,  0,  0,  0/   ! g+4
 !
       newshell= 0
       do ishell= 1,databasis%nshell
@@ -1696,6 +1681,8 @@ end
       real(8),intent(inout) :: snao(databasisnpa2%nao,databasisnpa2%nao)
       real(8),intent(inout) :: trans(databasisnpa2%nao,databasisnpa2%nao)
 !
+      if(numnrb == 0) return
+!
       nao= databasisnpa2%nao
       worktrans(1:nao,1:nao)= zero
 !
@@ -1742,6 +1729,8 @@ end
       real(8),intent(inout) :: pnao(databasisnpa2%nao,databasisnpa2%nao)
       real(8),intent(inout) :: snao(databasisnpa2%nao,databasisnpa2%nao)
       real(8),intent(inout) :: trans(databasisnpa2%nao,databasisnpa2%nao)
+!
+      if(numlnrb == 0) return
 !
 ! Calculate WSW matrix
 !
@@ -1804,6 +1793,8 @@ end
       real(8),intent(inout) :: pnao(databasisnpa2%nao,databasisnpa2%nao)
       real(8),intent(inout) :: snao(databasisnpa2%nao,databasisnpa2%nao)
       real(8),intent(inout) :: trans(databasisnpa2%nao,databasisnpa2%nao)
+!
+      if(numsnrb == 0) return
 !
 ! Orthogonalize small-w NRB sets to large-w NRB sets by Gram-Schmidt process
 !
