@@ -773,7 +773,7 @@ end
       call calcprenao3(pnao,snao,trans,work1,work2,maxang,maxsize,infobasis,datamol,databasisnpa1,datacomp)
 
 ! Transform fock matrix and print result
-      call printnpa(pnao,fnao,trans,work1,work2,work3,wnao,maxang,maxsize,infonmb,infobasis,datamol,databasisnpa1)
+      call printnpa(pnao,fnao,trans,work1,work2,work3,wnao,maxang,maxsize,infonmb,infobasis,datamol,databasisnpa1,datacomp)
 
 
 !     deallocate(pnao,snao,work1,work2,infobasis,infonmb)
@@ -1348,7 +1348,7 @@ end
       call dgemm('N','N',nao,nao,nao,one,trans,nao,worktrans,nao,zero,work,nao)
       trans(1:nao,1:nao)= work(1:nao,1:nao)
 !ishimura
-write(*,'(13f7.3)')pnao
+!write(*,'(13f7.3)')pnao
 !write(*,'(19f5.2)')snao
 !
       return
@@ -1919,18 +1919,19 @@ end
 end
 
 !---------------------------------------------------------------------
-  subroutine printnpa(pnao,fnao,trans,work,fwork,pwork,fshell,maxang,maxsize,infonmb,infobasis,datamol,databasisnpa1)
+  subroutine printnpa(pnao,fnao,trans,work,fwork,pwork,fshell,maxang,maxsize,infonmb,infobasis,datamol,databasisnpa1,datacomp)
 !---------------------------------------------------------------------
 !
 ! Print Natural Population Analysis Result
 !
-      use modtype, only : typemol, typebasis
+      use modtype, only : typemol, typebasis, typecomp
       implicit none
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasisnpa1
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: maxang, maxsize, infonmb(3,0:6,datamol%natom)
       integer,intent(in) :: infobasis(3,0:maxang,datamol%natom)
-      integer :: nao, iatom, iang, ishell, iao, numshell, locao, itmp, list(maxsize), ii, jj
+      integer :: nao, iatom, iang, ishell, iao, jao, numshell, locao, itmp, list(maxsize), ii, jj, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: pnao(databasisnpa1%nao,databasisnpa1%nao)
       real(8),intent(in) :: trans(databasisnpa1%nao,databasisnpa1%nao)
@@ -1939,17 +1940,51 @@ end
       real(8),intent(out) :: fwork(databasisnpa1%nao)
       real(8),intent(out) :: pwork(databasisnpa1%nao)
       real(8),intent(out) :: fshell(databasisnpa1%nshell)
-      real(8) :: faverage, tmp
+      real(8) :: faverage, tmp, chargenpa(3,0:maxang,datamol%natom), atomnpa(4,0:datamol%natom)
+      real(8) :: totalcharge
+      character(len=3) :: table(-9:112)= &
+&     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+&       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
+&       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
+&       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
+&       'Pm ','Sm ','Eu ','Gd ','Tb ','Dy ','Ho ','Er ','Tm ','Yb ','Lu ','Hf ','Ta ','W  ','Re ',&
+&       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
+&       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
+&       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
+      character(len=3) :: anglabel(91)= &
+&     (/'s  ','   ','   ','   ','   ','   ','   ','   ','   ','   ','   ','   ','   ', &
+&       'px ','py ','pz ','   ','   ','   ','   ','   ','   ','   ','   ','   ','   ', &
+&       'd-2','d-1','d0 ','d+1','d+2','   ','   ','   ','   ','   ','   ','   ','   ', &
+&       'f-3','f-2','f-1','f0 ','f+1','f+2','f+3','   ','   ','   ','   ','   ','   ', &
+&       'g-4','g-3','g-2','g-1','g0 ','g+1','g+2','g+3','g+4','   ','   ','   ','   ', &
+&       'h-5','h-4','h-3','h-2','h-1','h0 ','h+1','h+2','h+3','h+4','h+5','   ','   ', &
+&       'i-6','i-5','i-4','i-3','i-2','i-1','i0 ','i+1','i+2','i+3','i+4','i+5','i+6'/)
+      character(len=3) :: motype(3)=(/'Cor','Val','Ryd'/)
+!
+      chargenpa(1:3,0:maxang,1:datamol%natom)= zero
+      atomnpa(1:4,0:datamol%natom)= zero
+      totalcharge= zero
+!
+      if(datacomp%master) then
+        write(datacomp%iout, &
+&         '(" -----------------------------------------------------------",/ &
+&           "      Natural Population Analysis (Each orbital)",/ &
+&           "    NAO   Atom   nlm    Type    Occupancy        Energy",/ &
+&           " -----------------------------------------------------------")')
+!         write(datacomp%iout,'(1x,i4,2x,a3,f12.6,4f13.6)')iatom,table(datamol%numatomic(iatom)), &
+      endif
 !
 ! Transform Fock matrix to Natural Atomic Orbital basis
 !
-      nao   = databasisnpa1%nao
+      nao= databasisnpa1%nao
       call dsymm('L','U',nao,nao,one,fnao,nao,trans,nao,zero,work,nao)
       call dgemm('T','N',nao,nao,nao,one,trans,nao,work,nao,zero,fnao,nao)
 !
 ! Summarize Natural Atomic Orbital Energies
 !
       locao= 0
+      jao  = 0
       do iatom= 1,datamol%natom
         do iang= 0,maxang
           numshell= infobasis(1,iang,iatom)
@@ -1980,14 +2015,54 @@ end
           enddo
 !
           do ishell= 1,numshell
+            if(ishell <= infonmb(1,iang,iatom)) then
+              if(ishell <= infonmb(2,iang,iatom)) then
+                imo= 1
+              else
+                imo= 2
+              endif
+            else
+              imo= 3
+            endif
             do iao= 1,2*iang+1
-!ishimura????????????????????
-! write(*,*)list(ishell)*(2*iang+1)+iao
-              write(*,'(2f15.6)')pwork(list(ishell)*(2*iang+1)+iao),fwork(list(ishell)*(2*iang+1)+iao)
+              jao= jao+1
+              write(datacomp%iout,'(i6,i5,1x,a3,1x,i2,a3,4x,a3,f13.6,f16.6)')jao, iatom, table(datamol%numatomic(iatom)), &
+&      ishell+infonmb(3,iang,iatom)+iang,   anglabel(13*iang+iao), motype(imo),  &
+&      pwork(list(ishell)*(2*iang+1)+iao),fwork(list(ishell)*(2*iang+1)+iao)
+              chargenpa(imo,iang,iatom)= chargenpa(imo,iang,iatom)+pwork(list(ishell)*(2*iang+1)+iao)
             enddo
           enddo
         enddo
       enddo
+!
+      write(datacomp%iout, &
+&       '(" -----------------------------------------------------------",/, &
+&         " ----------------------------------------------------------------------------",/, &
+&         "      Natural Population Analysis (Summary)",/, &
+&         "     Atom       Charge     Pop(Total)     Core        Valence      Rydberg",/, &
+&         " ----------------------------------------------------------------------------")')
+!&         "     Atom       Charge       Core        Valence      Rydberg      Total",/, &
+      do iatom= 1,datamol%natom
+        do imo= 1,3
+          do iang= 0,maxang
+            atomnpa(imo,iatom)= atomnpa(imo,iatom)+chargenpa(imo,iang,iatom)
+          enddo
+        enddo
+        atomnpa(4,iatom)= atomnpa(1,iatom)+atomnpa(2,iatom)+atomnpa(3,iatom)
+        atomnpa(1,0)= atomnpa(1,0)+atomnpa(1,iatom)
+        atomnpa(2,0)= atomnpa(2,0)+atomnpa(2,iatom)
+        atomnpa(3,0)= atomnpa(3,0)+atomnpa(3,iatom)
+        atomnpa(4,0)= atomnpa(4,0)+atomnpa(4,iatom)
+        totalcharge= totalcharge+datamol%znuc(iatom)-atomnpa(4,iatom)
+        write(datacomp%iout,'(i6,1x,a3,5f13.6)')iatom, table(datamol%numatomic(iatom)), &
+&                                datamol%znuc(iatom)-atomnpa(4,iatom), atomnpa(4,iatom), &
+&                                atomnpa(1,iatom),atomnpa(2,iatom), atomnpa(3,iatom)
+      enddo
+      write(datacomp%iout, &
+&       '(" ----------------------------------------------------------------------------",/, &
+&         "    Total ",5f13.6,/, &
+&         " ----------------------------------------------------------------------------",/)') &
+&         totalcharge, atomnpa(4,0),atomnpa(1:3,0)
 !
       return
 end
