@@ -1967,7 +1967,7 @@ end
       real(8),intent(inout) :: fnao(databasisnpa1%nao,databasisnpa1%nao)
       real(8),intent(out) :: work(databasisnpa1%nao,databasisnpa1%nao)
       real(8),intent(out) :: fwork(databasisnpa1%nao), pwork(databasisnpa1%nao), fshell(maxsize)
-      real(8) :: faverage, tmp, chargenpa(3,0:maxang,datamol%natom), atomnpa(4,0:datamol%natom)
+      real(8) :: faverage, tmp, chargenpa(3,0:maxang,datamol%natom), atomnpa(0:3,0:datamol%natom)
       real(8) :: totalcharge
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
@@ -1990,7 +1990,7 @@ end
       character(len=3) :: motype(3)=(/'Cor','Val','Ryd'/)
 !
       chargenpa(1:3,0:maxang,1:datamol%natom)= zero
-      atomnpa(1:4,0:datamol%natom)= zero
+      atomnpa(0:3,0:datamol%natom)= zero
       totalcharge= zero
 !
       if(datacomp%master) then
@@ -2076,21 +2076,21 @@ end
             atomnpa(imo,iatom)= atomnpa(imo,iatom)+chargenpa(imo,iang,iatom)
           enddo
         enddo
-        atomnpa(4,iatom)= atomnpa(1,iatom)+atomnpa(2,iatom)+atomnpa(3,iatom)
+        atomnpa(0,iatom)= atomnpa(1,iatom)+atomnpa(2,iatom)+atomnpa(3,iatom)
+        atomnpa(0,0)= atomnpa(0,0)+atomnpa(0,iatom)
         atomnpa(1,0)= atomnpa(1,0)+atomnpa(1,iatom)
         atomnpa(2,0)= atomnpa(2,0)+atomnpa(2,iatom)
         atomnpa(3,0)= atomnpa(3,0)+atomnpa(3,iatom)
-        atomnpa(4,0)= atomnpa(4,0)+atomnpa(4,iatom)
-        totalcharge= totalcharge+datamol%znuc(iatom)-atomnpa(4,iatom)
+        totalcharge= totalcharge+datamol%znuc(iatom)-atomnpa(0,iatom)
         write(datacomp%iout,'(i6,1x,a3,5f13.6)') &
-&             iatom, table(datamol%numatomic(iatom)), datamol%znuc(iatom)-atomnpa(4,iatom), &
-&             atomnpa(4,iatom), atomnpa(1:3,iatom)
+&             iatom, table(datamol%numatomic(iatom)), datamol%znuc(iatom)-atomnpa(0,iatom), &
+&             atomnpa(0:3,iatom)
       enddo
       write(datacomp%iout, &
 &       '(" ----------------------------------------------------------------------------",/, &
 &         "    Total ",5f13.6,/, &
 &         " ----------------------------------------------------------------------------",/)') &
-&         totalcharge, atomnpa(4,0), atomnpa(1:3,0)
+&         totalcharge, atomnpa(0:3,0)
 !
       return
 end
