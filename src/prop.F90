@@ -682,9 +682,9 @@ end
 end
 
 
-!----------------------------------------------------------------
+!---------------------------------------------------------------------
   subroutine calcrnpa(dmtrx,fock,overlap,datamol,databasis,datacomp)
-!----------------------------------------------------------------
+!---------------------------------------------------------------------
 !
 ! Driver of Natural Population Analysis calculation
 !
@@ -700,16 +700,23 @@ end
       real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
-      real(8),allocatable :: pnao(:), fnao(:), snao(:), trans(:,:), work1(:), work2(:), work3(:), wnao(:)
+      real(8),allocatable :: pnao(:), fnao(:), snao(:), trans(:,:), work1(:), work2(:), work3(:)
+      real(8),allocatable :: wnao(:)
 !
       maxang= maxval(databasis%mtype(1:databasis%nshell))
       nao   = databasis%nao
       nao2  = nao*nao
 !
-      allocate(pnao(nao2),fnao(nao2),snao(nao2),trans(nao,nao),work1(nao2),work2(nao2),work3(nao2))
-      allocate(wnao(nao),infobasis(3,maxang+1,datamol%natom),infonmb(3,7,datamol%natom),list1(nao),list2(nao))
+! Set arrays
+!
+      call memset(nao2*7+nao*3+3*(maxang+8)*datamol%natom,datacomp)
+      allocate(pnao(nao2),fnao(nao2),snao(nao2),trans(nao,nao),work1(nao2),work2(nao2), &
+&              work3(nao2),wnao(nao),infobasis(3,maxang+1,datamol%natom), &
+&              infonmb(3,7,datamol%natom),list1(nao),list2(nao))
       infobasis(:,:,:)= 0
       infonmb(:,:,:)= 0
+!
+! Set full matrices of density, fock, overlap, and NPA transformation
 !
       call expand(dmtrx,pnao,nao)
       call expand(fock,fnao,nao)
@@ -757,32 +764,40 @@ end
 ! Orthogonalize NRB sets to NMB sets
 !
       call orthonrb1(pnao,snao,trans,work1,work2,numnmb,numnrb,databasisnpa2)
-
+!
 ! Calculate pre-NAOs of NRB sets
+!
        call calcprenao2(pnao,snao,trans,work1,work2,wnao,maxang,maxsize,infobasis,list1, &
 &                       list2,numnmb,numnmbshell,numlnrb,numsnrb,datamol,databasisnpa2,datacomp)
-
+!
 ! Orthogonalize NRB sets with large w
+!
       call orthonrb2(pnao,snao,trans,wnao,work1,work2,work3,numnmb,numlnrb, &
 &                    databasisnpa2,datacomp)
-
+!
 ! Orthogonalize NRB sets with small w
+!
       call orthonrb3(pnao,snao,trans,work1,work2,work3,wnao,numnmb,numnrb,numlnrb,numsnrb, &
 &                    databasisnpa2,datacomp)
-
+!
 ! Sort basis by atoms and angular momenta
+!
       call sortbasisnpa2(pnao,snao,trans,work1,list2,databasisnpa2)
-
+!
 ! Calculate pre-NAOs
+!
       call calcprenao3(pnao,snao,trans,work1,work2,maxang,maxsize,infobasis, &
 &                      datamol,databasisnpa1,datacomp)
-
+!
 ! Transform fock matrix and print result
+!
       call printnpa(pnao,fnao,trans,work1,work2,work3,wnao,maxang,maxsize,infonmb,infobasis, &
 &                   datamol,databasisnpa1,datacomp)
-
-
-!     deallocate(pnao,snao,work1,work2,infobasis,infonmb)
+!
+      call memunset(nao2*7+nao*3+3*(maxang+8)*datamol%natom,datacomp)
+      deallocate(pnao,fnao,snao,trans,work1,work2, &
+&                work3,wnao,infobasis, &
+&                infonmb,list1,list2)
 !
       return
 end
@@ -1192,8 +1207,8 @@ end
       integer,intent(in) :: infobasis(3,0:maxang,datamol%natom)
       integer,intent(in) :: list1(databasisnpa2%nao)
       integer,intent(out) :: list2(databasisnpa2%nao), numlnrb, numsnrb
-      integer :: iatom, iang, ishell, jshell, iao, jao, numshell, locnmb, locnrb, nao
-      integer :: locnmbshell, locnrbshell, listtmp(databasisnpa2%nao), loclnrb, locsnrb
+      integer :: iatom, iang, ishell, jshell, iao, jao, numshell, nao
+      integer :: locnrbshell, listtmp(databasisnpa2%nao), loclnrb, locsnrb
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, wthresh=1.0D-02
       real(8),intent(inout) :: pnao(databasisnpa2%nao,databasisnpa2%nao)
       real(8),intent(inout) :: snao(databasisnpa2%nao,databasisnpa2%nao)
@@ -1306,7 +1321,7 @@ end
       type(typebasis),intent(in) :: databasisnpa1
       type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: maxang, maxsize, infobasis(3,0:maxang,datamol%natom)
-      integer :: locshell, locao, iatom, iang, ishell, jshell, iao, jao, numshell, nao
+      integer :: locshell, iatom, iang, ishell, jshell, iao, jao, numshell, nao
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(inout) :: pnao(databasisnpa1%nao,databasisnpa1%nao)
       real(8),intent(inout) :: snao(databasisnpa1%nao,databasisnpa1%nao)
@@ -1900,7 +1915,7 @@ end
       use modtype, only : typebasis
       implicit none
       type(typebasis),intent(in) :: databasisnpa2
-      integer,intent(out) :: list2(databasisnpa2%nao)
+      integer,intent(in) :: list2(databasisnpa2%nao)
       integer :: iao, jao
       real(8),intent(out) :: work(databasisnpa2%nao,databasisnpa2%nao)
       real(8),intent(inout) :: pnao(databasisnpa2%nao,databasisnpa2%nao)

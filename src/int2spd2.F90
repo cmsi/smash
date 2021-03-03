@@ -1164,10 +1164,8 @@ end
       real(8) :: xiq, yiq, ziq, xiq2, yiq2, xyiq, xiq4, yiq4, xyiq2, xiq6, yiq6, x4y2, x2y4
       real(8) :: xypq2, zpq, zpq2, zpq3, zpq4, zpq5, fac, ex33q, ex34q, zjp
       real(8) :: pmd, pmd2, qmd, qmd2, qmd3, qmd3x, qmd3y, qmd3xy
-      real(8) :: qx, qz, xx, xz, zz, xxx, xxz, xzz, zzz
       real(8) :: eri(6,3,6,3), work(8), f1w(3,6), f2w(6,8), f3w(10,9), f4w(15,6), f5w(21,3)
       real(8) :: rot2(6,6), rot3(6,5)
-      real(8) :: rrr(10), rxyz(45)
 !
 ! Zero-clear
 !

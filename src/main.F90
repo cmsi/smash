@@ -450,7 +450,7 @@ end
         call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                    datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) go to 9999
-        call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
+        call writeeigenvalue(energymo,energymo,1,datamol,datacomp)
         if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) &
 &         call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
         call tstamp(1,datacomp)
@@ -471,7 +471,7 @@ end
         call calcrdft(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                     datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) go to 9999
-        call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
+        call writeeigenvalue(energymo,energymo,1,datamol,datacomp)
         if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) &
 &         call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
         call tstamp(1,datacomp)
@@ -480,7 +480,7 @@ end
         call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                    datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) go to 9999
-        call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
+        call writeeigenvalue(energymo,energymo,1,datamol,datacomp)
         if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) &
 &         call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
         call tstamp(1,datacomp)
@@ -626,7 +626,7 @@ end
         call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
 &                    energymob,datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) go to 9999
-        call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
+        call writeeigenvalue(energymoa,energymob,2,datamol,datacomp)
         if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
           call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)
           call writeeigenvector(cmob,energymob,2,datajob,datamol,databasis,datacomp)
@@ -648,7 +648,7 @@ end
         call calcudft(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
 &                     energymob,datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) go to 9999
-        call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
+        call writeeigenvalue(energymoa,energymob,2,datamol,datacomp)
         if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
           call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)
           call writeeigenvector(cmob,energymob,2,datajob,datamol,databasis,datacomp)
@@ -815,7 +815,7 @@ end
         endif
       endif
 !
-      call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
+      call writeeigenvalue(energymo,energymo,1,datamol,datacomp)
       if(mod(datajob%iprint,10) >= 2) then
         call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
       endif
@@ -1003,7 +1003,7 @@ end
         endif
       endif
 !
-      call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
+      call writeeigenvalue(energymoa,energymob,2,datamol,datacomp)
       if(mod(datajob%iprint,10) >= 2) then
         call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)
         call writeeigenvector(cmob,energymob,2,datajob,datamol,databasis,datacomp)
@@ -1243,7 +1243,7 @@ end
 !
         if(((iopt == 1).and.(mod(datajob%iprint,10) >= 2)).or. &
 &          (mod(datajob%iprint,10) >= 3)) then
-          call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
+          call writeeigenvalue(energymo,energymo,1,datamol,datacomp)
         endif
         if(((iopt == 1).and.(mod(datajob%iprint,10) >= 2)).or. &
 &          (mod(datajob%iprint,10) >= 5)) then
@@ -1357,7 +1357,7 @@ end
 ! Print MO energies and coefficients if necessary
 !
       if(mod(datajob%iprint,10) <= 2) then
-        call writeeigenvalue(energymo,energymo,1,datajob,datamol,datacomp)
+        call writeeigenvalue(energymo,energymo,1,datamol,datacomp)
       endif
       if((mod(datajob%iprint,10) >= 2).and.(mod(datajob%iprint,10) <= 4)) then
         call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
@@ -1609,7 +1609,7 @@ end
 !
         if(((iopt == 1).and.(mod(datajob%iprint,10) >= 2)).or. &
 &          (mod(datajob%iprint,10) >= 3)) then
-          call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
+          call writeeigenvalue(energymoa,energymob,2,datamol,datacomp)
         endif
         if(((iopt == 1).and.(mod(datajob%iprint,10) >= 2)).or. &
 &          (mod(datajob%iprint,10) >= 5)) then
@@ -1722,7 +1722,7 @@ end
 ! Print MO energies and coefficients if necessary
 !
       if(mod(datajob%iprint,10) <= 2) then
-        call writeeigenvalue(energymoa,energymob,2,datajob,datamol,datacomp)
+        call writeeigenvalue(energymoa,energymob,2,datamol,datacomp)
       endif
       if((mod(datajob%iprint,10) >= 2).and.(mod(datajob%iprint,10) <= 4)) then
         call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)

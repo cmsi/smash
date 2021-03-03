@@ -93,7 +93,7 @@
         case('SOSCF')
           call memset(nao2+nao3*2+nshell3+nocc*nvir*3*maxsoscf+isize1,datacomp)
           allocate(fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
-                   hstart(nocc*nvir),sograd(nocc*nvir,maxsoscf),sodisp(nocc*nvir*maxsoscf), &
+&                  hstart(nocc*nvir),sograd(nocc*nvir,maxsoscf),sodisp(nocc*nvir*maxsoscf), &
 &                  sovecy(nocc*nvir*(maxsoscf-1)),work2(isize1))
         case('QC')
           call memset(nao2*3+nao3*2+nshell3+(nocc*nvir+1)*(maxqcdiagsub+1)*2+maxqcdiagsub**2 &
@@ -378,7 +378,7 @@
         case('SOSCF')
           call memunset(nao2+nao3*2+nshell3+nocc*nvir*3*maxsoscf+isize1,datacomp)
           deallocate(fockprev,dmtrxprev,dmax,work, &
-                     hstart,sograd,sodisp, &
+&                    hstart,sograd,sodisp, &
 &                    sovecy,work2)
         case('QC')
           call memunset(nao2*3+nao3*2+nshell3+(nocc*nvir+1)*(maxqcdiagsub+1)*2+maxqcdiagsub**2 &

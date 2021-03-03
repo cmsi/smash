@@ -593,9 +593,9 @@ end
         write(datacomp%iout,'("   Iprint  = ",a12)') &
 &                  ciprint
         if(datajob%runtype == 'OPT') then
-          write(datacomp%iout,'("   Nopt    = ",a12,",  Optconv = ",1p,e8.2,5x, &
+          write(datacomp%iout,'("   Nopt    = ",a12,",  Optconv =",1p,e9.2,5x, &
 &                               ",  Cartesian= ",l1)') cnopt, datajob%optconv, datajob%cartesian
-          write(datacomp%iout,'("   Fbond   = ",1p,e8.2)') &
+          write(datacomp%iout,'("   Fbond   =",1p,e9.2)') &
 &                  datajob%fbond
         endif
         if(datajob%check /= '') &
@@ -1327,15 +1327,14 @@ end
 end
 
 
-!---------------------------------------------------------------------------
-  subroutine writeeigenvalue(eigena,eigenb,itype,datajob,datamol,datacomp)
-!---------------------------------------------------------------------------
+!-------------------------------------------------------------------
+  subroutine writeeigenvalue(eigena,eigenb,itype,datamol,datacomp)
+!-------------------------------------------------------------------
 !
 ! Write eigenvalues
 !
       use modtype, only : typejob, typemol, typecomp
       implicit none
-      type(typejob),intent(in) :: datajob
       type(typemol),intent(in) :: datamol
       type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: itype
