@@ -104,7 +104,7 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(inout) :: datacomp
       type(typebasis) :: dataguessbs
-      integer :: nao_v, ntmp, i, j, nao_g, nao_g2
+      integer :: nao_v, ntmp, i, j, nao_g, nao_g2, maxnao
       real(8),intent(in):: overinv(databasis%nao**2)
       real(8),intent(out):: cmo(databasis%nao**2)
       real(8),allocatable :: hmo(:), overlap(:), work1(:), work2(:), eigen(:)
@@ -127,13 +127,15 @@ end
 !
       nao_g = dataguessbs%nao
       nao_g2= nao_g*nao_g
-      call memset(2*nao_g2+2*databasis%nao*nao_g+nao_g,datacomp)
-      allocate(hmo(nao_g2),overlap(databasis%nao*nao_g),work1(databasis%nao*nao_g), &
+      maxnao= max(databasis%nao,nao_g)
+      call memset(2*nao_g2+2*maxnao*nao_g+nao_g,datacomp)
+      allocate(hmo(nao_g2),overlap(maxnao*nao_g),work1(maxnao*nao_g), &
 &              work2(nao_g2),eigen(nao_g))
 !
 ! Calculate Extended Huckel method
 !
-      call calchuckelg(hmo,eigen,coord_g,nao_v,datajob,datamol,databasis,dataguessbs,datacomp)
+      call calchuckelg(hmo,work1,work2,overlap,eigen,coord_g,nao_v,datajob,datamol, &
+&                      databasis,dataguessbs,datacomp)
 !
 ! Calculate overlap integrals between input basis and Huckel basis
 !
@@ -145,14 +147,15 @@ end
       call projectmo(cmo,overinv,overlap,hmo,work1,work2,eigen,databasis%nao,nao_g,nao_g,datacomp)
       deallocate(hmo,overlap,work1, &
 &                work2,eigen)
-      call memunset(2*nao_g2+2*databasis%nao*nao_g+nao_g,datacomp)
+      call memunset(2*nao_g2+2*maxnao*nao_g+nao_g,datacomp)
       return
 end
 
 
-!-------------------------------------------------------------------------------------------------
-  subroutine calchuckelg(hmo,eigen,coord_g,nao_v,datajob,datamol,databasis,dataguessbs,datacomp)
-!-------------------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------
+  subroutine calchuckelg(hmo,work1,work2,work3,eigen,coord_g,nao_v,datajob,datamol, &
+&                        databasis,dataguessbs,datacomp)
+!--------------------------------------------------------------------------------------
 !
 ! Driver of extended Huckel calculation for guess generation
 !
@@ -166,14 +169,25 @@ end
       type(typebasis),intent(in) :: databasis, dataguessbs
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nao_v
+      integer :: nmo, ii, jj, kk
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
-      real(8),intent(out) :: hmo(dataguessbs%nao*2), eigen(dataguessbs%nao)
       real(8),intent(in) :: coord_g(3,mxatom)
+      real(8),intent(out) :: hmo(dataguessbs%nao,dataguessbs%nao)
+      real(8),intent(out) :: work1(dataguessbs%nao,dataguessbs%nao)
+      real(8),intent(out) :: work2(dataguessbs%nao**2), work3(dataguessbs%nao**2)
+      real(8),intent(out) ::eigen(dataguessbs%nao)
+      real(8) :: vnorm
 !
 ! Calculate overlap integrals
 ! (guess basis)x(guess basis)
 !
       call calcover1(hmo,coord_g,datajob%threshex,dataguessbs)
+!
+! Calculate canonical transformation matrix
+!
+      work1(:,:)= hmo(:,:)
+      call mtrxcanon(work2,work1,eigen,dataguessbs%nao,nmo,datajob%threshover,datacomp)
+      work1(:,:)= hmo(:,:)
 !
 ! Set ionization potentials
 !
@@ -187,6 +201,45 @@ end
 ! Diagonalize extended Huckel matrix
 !
       call diag('V','U',dataguessbs%nao,hmo,dataguessbs%nao,eigen,datacomp)
+!
+! Orthonormalize Huckel orbitals
+!
+!   Overlap * C
+!
+      call dsymm('L','U',dataguessbs%nao,nmo,one,work1,dataguessbs%nao, &
+&                hmo,dataguessbs%nao,zero,work3,dataguessbs%nao)
+!
+!   C'= (Ortho)-daggar * Overlap * C
+!
+      call dgemm('T','N',dataguessbs%nao,dataguessbs%nao,nmo,one,work2,dataguessbs%nao, &
+&                work3,dataguessbs%nao,zero,work1,dataguessbs%nao)
+!
+!   Gram-Schmidt procedure
+!
+      do ii= 1,nmo
+        vnorm= zero
+        do kk= 1,dataguessbs%nao
+          vnorm= vnorm+work1(kk,ii)*work1(kk,ii)
+        enddo
+        do kk= 1,dataguessbs%nao
+          work1(kk,ii)= work1(kk,ii)/sqrt(vnorm)
+        enddo
+        do jj= ii+1,nmo
+          vnorm= zero
+          do kk= 1,dataguessbs%nao
+            vnorm= vnorm-work1(kk,ii)*work1(kk,jj)
+          enddo
+          do kk= 1,dataguessbs%nao
+            work1(kk,jj)= work1(kk,jj)+vnorm*work1(kk,ii)
+          enddo
+        enddo
+      enddo
+!
+!   C= Ortho * C'
+!
+      call dgemm('N','N',dataguessbs%nao,dataguessbs%nao,nmo,one,work2,dataguessbs%nao, &
+&                work1,dataguessbs%nao,zero,hmo,dataguessbs%nao)
+      if(dataguessbs%nao /= nmo)  hmo(1:dataguessbs%nao,nmo+1:dataguessbs%nao)= zero
 !
       if(datacomp%master.and.(mod(datajob%iprint,10) >= 5)) then
         write(datacomp%iout,'("   Eigenvalues of Huckel guess")')
