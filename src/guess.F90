@@ -1,4 +1,4 @@
-! Copyright 2014-2020  Kazuya Ishimura
+! Copyright 2014-2021  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -584,30 +584,34 @@ end
             case(1:2)
               iao= iao+1
               energy(iao)= row1(numatomic(iatom))
-! Li - Ne
-            case(3:10)
+! Li - Be
+            case(3:4)
+              iao= iao+1
+              energy(iao)= row2(2,numatomic(iatom))
+! B - Ne
+            case(5:10)
               iao= iao+1
               energy(iao)= row2(2,numatomic(iatom))
               do i= 1,3
                 iao= iao+1
                 energy(iao)= row2(3,numatomic(iatom))
               enddo
-! Na - Ar
-            case(11:18)
+! Na - Mg
+            case(11:12)
+              iao= iao+1
+              energy(iao)= row3(4,numatomic(iatom))
+! Si - Ar
+            case(13:18)
               iao= iao+1
               energy(iao)= row3(4,numatomic(iatom))
               do i= 1,3
                 iao= iao+1
                 energy(iao)= row3(5,numatomic(iatom))
               enddo
-! K  - Ca, Ga - Kr
-            case(19:20,31:36)
+! K  - Ca
+            case(19:20)
               iao= iao+1
               energy(iao)= row4(7,numatomic(iatom))
-              do i= 1,3
-                iao= iao+1
-                energy(iao)= row4(8,numatomic(iatom))
-              enddo
 ! Sc - Zn
             case(21:30)
               iao= iao+1
@@ -619,6 +623,14 @@ end
               do i= 1,5
                 iao= iao+1
                 energy(iao)= row4(6,numatomic(iatom))
+              enddo
+! Ga - Kr
+            case(31:36)
+              iao= iao+1
+              energy(iao)= row4(7,numatomic(iatom))
+              do i= 1,3
+                iao= iao+1
+                energy(iao)= row4(8,numatomic(iatom))
               enddo
 ! Rb - Sr, In - Xe
             case(37:38,49:54)
@@ -2640,26 +2652,14 @@ end
       do iatom= 1,datamol%natom
         numatom= datamol%numatomic(iatom)
         select case(numatom)
-! H - He
-            case(1:2)
+! H, He, Li, Be, Na, Mg, K, Ca
+            case(1:2,3:4,11:12,19:20)
               iao= iao+1
               energy(iao)= dftbips(numatom)
               ishell= ishell+1
               uhub(ishell)= uhubs(numatom)
-! Li - Ar
-            case(3:18)
-              iao= iao+1
-              energy(iao)= dftbips(numatom)
-              do i= 1,3
-                iao= iao+1
-                energy(iao)= dftbipp(numatom)
-              enddo
-              ishell= ishell+1
-              uhub(ishell)= uhubs(numatom)
-              ishell= ishell+1
-              uhub(ishell)= uhubp(numatom)
-! K  - Ca, Ga - Kr
-            case(19:20,31:36)
+! B - Ne, Al - Ar
+            case(5:10,13:18)
               iao= iao+1
               energy(iao)= dftbips(numatom)
               do i= 1,3
@@ -2688,6 +2688,18 @@ end
               uhub(ishell)= uhubp(numatom)
               ishell= ishell+1
               uhub(ishell)= uhubd(numatom)
+! Ga - Kr
+            case(31:36)
+              iao= iao+1
+              energy(iao)= dftbips(numatom)
+              do i= 1,3
+                iao= iao+1
+                energy(iao)= dftbipp(numatom)
+              enddo
+              ishell= ishell+1
+              uhub(ishell)= uhubs(numatom)
+              ishell= ishell+1
+              uhub(ishell)= uhubp(numatom)
 ! Rb - Sr, In - Xe
             case(37:38,49:54)
               iao= iao+1
