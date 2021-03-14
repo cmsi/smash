@@ -10614,6 +10614,18 @@ end
             dataguessbs%locatom(ishell)= iatom
             dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
             dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
+!   P function
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(ip(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(ip(numatomic(iatom))+j+3)
+            enddo
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 3
+            dataguessbs%mtype(ishell)= 1
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+3
           endif
         endif
 !
@@ -10680,6 +10692,18 @@ end
             dataguessbs%locatom(ishell)= iatom
             dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
             dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
+!   P function
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(ip(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(ip(numatomic(iatom))+j+3)
+            enddo
+            dataguessbs%mprim(ishell)= 3
+            dataguessbs%mbf(ishell)= 3
+            dataguessbs%mtype(ishell)= 1
+            dataguessbs%locatom(ishell)= iatom
+            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
+            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+3
           endif
         endif
       endif
