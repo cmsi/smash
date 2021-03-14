@@ -382,61 +382,8 @@ end
             databasis%ex(databasis%locprim(ishell)+jj)= datagenbasis%ex(lprim+jj)
             databasis%coeff(databasis%locprim(ishell)+jj)= datagenbasis%coeff(lprim+jj)
           enddo
-          databasis%mprim(ishell)= datagenbasis%mprim(ll+ii)
-          databasis%mtype(ishell)= datagenbasis%mtype(ll+ii)
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+datagenbasis%mprim(ll+ii)
-          select case(datagenbasis%mtype(ll+ii))
-            case(0)
-              databasis%mbf(ishell)= 1
-              databasis%locbf(ishell+1)= databasis%locbf(ishell)+1
-            case(1)
-              databasis%mbf(ishell)= 3
-              databasis%locbf(ishell+1)= databasis%locbf(ishell)+3
-            case(2)
-              if(databasis%spher) then
-                databasis%mbf(ishell)= 5
-                databasis%locbf(ishell+1)= databasis%locbf(ishell)+5
-              else
-                databasis%mbf(ishell)= 6
-                databasis%locbf(ishell+1)= databasis%locbf(ishell)+6
-              endif
-            case(3)
-              if(databasis%spher) then
-                databasis%mbf(ishell)= 7
-                databasis%locbf(ishell+1)= databasis%locbf(ishell)+7
-              else
-                databasis%mbf(ishell)= 10
-                databasis%locbf(ishell+1)= databasis%locbf(ishell)+10
-              endif
-            case(4)
-              if(databasis%spher) then
-                databasis%mbf(ishell)= 9
-                databasis%locbf(ishell+1)= databasis%locbf(ishell)+9
-              else
-                databasis%mbf(ishell)= 15
-                databasis%locbf(ishell+1)= databasis%locbf(ishell)+15
-              endif
-            case(5)
-              if(databasis%spher) then
-                databasis%mbf(ishell)= 11
-                databasis%locbf(ishell+1)= databasis%locbf(ishell)+11
-              else
-                databasis%mbf(ishell)= 21
-                databasis%locbf(ishell+1)= databasis%locbf(ishell)+21
-              endif
-            case(6)
-              if(databasis%spher) then
-                databasis%mbf(ishell)= 13
-                databasis%locbf(ishell+1)= databasis%locbf(ishell)+13
-              else
-                databasis%mbf(ishell)= 28
-                databasis%locbf(ishell+1)= databasis%locbf(ishell)+28
-              endif
-            case default
-              write(*,'(" Error! This program supports up to i function.")')
-              call iabort
-          end select
+          call  basisparam(ishell,datagenbasis%mtype(ll+ii),datagenbasis%mprim(ll+ii),iatom, &
+&                          databasis%spher,databasis)
         enddo
       enddo
 !
