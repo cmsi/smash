@@ -201,6 +201,83 @@ end
       return
 end
 
+!--------------------------------------------------------------------
+  subroutine basisparam(ishell,mtype,numprim,iatom,spher,databasis)
+!--------------------------------------------------------------------
+!
+! Set basis set parameters
+!
+      use modtype, only : typebasis
+      use modparam, only : mxprim, mxshell
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      integer,intent(in) :: ishell, mtype, numprim, iatom
+      logical,intent(in) :: spher
+!
+      databasis%mtype(ishell)= mtype
+      databasis%mprim(ishell)= numprim
+      databasis%locprim(ishell+1)= databasis%locprim(ishell)+numprim
+      databasis%locatom(ishell)= iatom
+      select case(mtype)
+! S function
+        case(0)
+          databasis%mbf(ishell)= 1
+          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+! P function
+        case(1)
+          databasis%mbf(ishell)= 3
+          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+! D function
+        case(2)
+          if(spher) then
+            databasis%mbf(ishell)= 5
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+5
+          else
+            databasis%mbf(ishell)= 6
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+6
+          endif
+! F function
+        case(3)
+          if(spher) then
+            databasis%mbf(ishell)= 7
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+7
+          else
+            databasis%mbf(ishell)= 10
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+10
+          endif
+! G function
+        case(4)
+          if(databasis%spher) then
+            databasis%mbf(ishell)= 9
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+9
+          else
+            databasis%mbf(ishell)= 15
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+15
+          endif
+! H function
+        case(5)
+          if(databasis%spher) then
+            databasis%mbf(ishell)= 11
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+11
+          else
+            databasis%mbf(ishell)= 21
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+21
+          endif
+! I function
+        case(6)
+          if(databasis%spher) then
+            databasis%mbf(ishell)= 13
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+13
+          else
+            databasis%mbf(ishell)= 28
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+28
+          endif
+        case default
+          write(*,'(" Error! This program supports up to i function.")')
+          call iabort
+      end select
+      return
+end
 
 !---------------------------------------------------------------------------
   subroutine setgenbasis(atombasis,locgenshell,ngenshell,ishell,flagecp, &
@@ -10098,7 +10175,7 @@ end
 &       1.670327D-01, 5.357835D-01, 5.445086D-01, 1.637813D-01, 5.341357D-01, 5.469714D-01/
 !
       if((numatomic(iatom) > 86).or.(numatomic(iatom) < 55)) then
-        write(*,'(" Error! This program supports only 6th row elements in bshuzmini6_g.")')
+        write(*,'(" Error! Subroutine bshuzmini6_g supports only 6th row elements.")')
         call iabort
       endif
 !
