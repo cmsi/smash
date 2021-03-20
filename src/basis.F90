@@ -7352,48 +7352,28 @@ end
             databasis%ex(databasis%locprim(ishell)+j)= exps3(ise3(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs3(ise3(numatomic(iatom))+j)
           enddo
-          databasis%mprim(ishell)= 2
-          databasis%mbf(ishell)= 1
-          databasis%mtype(ishell)= 0
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+2
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+          call basisparam(ishell,0,2,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,1
             databasis%ex(databasis%locprim(ishell)+j)= exps3(ise3(numatomic(iatom))+j+2)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs3(ise3(numatomic(iatom))+j+2)
           enddo
-          databasis%mprim(ishell)= 1
-          databasis%mbf(ishell)= 1
-          databasis%mtype(ishell)= 0
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis)
 ! P function
           ishell= ishell+1
           do j= 1,2
             databasis%ex(databasis%locprim(ishell)+j)= expp3(ise3(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp3(ise3(numatomic(iatom))+j)
           enddo
-          databasis%mprim(ishell)= 2
-          databasis%mbf(ishell)= 3
-          databasis%mtype(ishell)= 1
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+2
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+          call basisparam(ishell,1,2,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,1
             databasis%ex(databasis%locprim(ishell)+j)= expp3(ise3(numatomic(iatom))+j+2)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp3(ise3(numatomic(iatom))+j+2)
           enddo
-          databasis%mprim(ishell)= 1
-          databasis%mbf(ishell)= 3
-          databasis%mtype(ishell)= 1
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis)
 !
 ! Set K  - Ca functions
 !
@@ -7404,72 +7384,42 @@ end
             databasis%ex(databasis%locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j)
           enddo
-          databasis%mprim(ishell)= 3
-          databasis%mbf(ishell)= 1
-          databasis%mtype(ishell)= 0
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,4
             databasis%ex(databasis%locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j+3)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j+3)
           enddo
-          databasis%mprim(ishell)= 4
-          databasis%mbf(ishell)= 1
-          databasis%mtype(ishell)= 0
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+4
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+          call basisparam(ishell,0,4,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,1
             databasis%ex(databasis%locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j+7)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j+7)
           enddo
-          databasis%mprim(ishell)= 1
-          databasis%mbf(ishell)= 1
-          databasis%mtype(ishell)= 0
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis)
 ! P function
           ishell= ishell+1
           do j= 1,3
             databasis%ex(databasis%locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j)
           enddo
-          databasis%mprim(ishell)= 3
-          databasis%mbf(ishell)= 3
-          databasis%mtype(ishell)= 1
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,1
             databasis%ex(databasis%locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j+3)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j+3)
           enddo
-          databasis%mprim(ishell)= 1
-          databasis%mbf(ishell)= 3
-          databasis%mtype(ishell)= 1
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,1
             databasis%ex(databasis%locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j+4)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j+4)
           enddo
-          databasis%mprim(ishell)= 1
-          databasis%mbf(ishell)= 3
-          databasis%mtype(ishell)= 1
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis)
 !
 ! Set Sc - Cu functions
 !
@@ -7480,106 +7430,56 @@ end
             databasis%ex(databasis%locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j)
           enddo
-          databasis%mprim(ishell)= 3
-          databasis%mbf(ishell)= 1
-          databasis%mtype(ishell)= 0
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,4
             databasis%ex(databasis%locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j+3)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j+3)
           enddo
-          databasis%mprim(ishell)= 4
-          databasis%mbf(ishell)= 1
-          databasis%mtype(ishell)= 0
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+4
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+          call basisparam(ishell,0,4,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,1
             databasis%ex(databasis%locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j+7)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j+7)
           enddo
-          databasis%mprim(ishell)= 1
-          databasis%mbf(ishell)= 1
-          databasis%mtype(ishell)= 0
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis)
 ! P function
           ishell= ishell+1
           do j= 1,3
             databasis%ex(databasis%locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j)
           enddo
-          databasis%mprim(ishell)= 3
-          databasis%mbf(ishell)= 3
-          databasis%mtype(ishell)= 1
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,1
             databasis%ex(databasis%locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j+3)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j+3)
           enddo
-          databasis%mprim(ishell)= 1
-          databasis%mbf(ishell)= 3
-          databasis%mtype(ishell)= 1
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,1
             databasis%ex(databasis%locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j+4)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j+4)
           enddo
-          databasis%mprim(ishell)= 1
-          databasis%mbf(ishell)= 3
-          databasis%mtype(ishell)= 1
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis)
 ! D function
           ishell= ishell+1
           do j= 1,4
             databasis%ex(databasis%locprim(ishell)+j)= expd4(ide4(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffd4(ide4(numatomic(iatom))+j)
           enddo
-          databasis%mprim(ishell)= 4
-          databasis%mtype(ishell)= 2
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+4
-          if(databasis%spher) then
-            databasis%mbf(ishell)= 5
-            databasis%locbf(ishell+1)= databasis%locbf(ishell)+5
-          else
-            databasis%mbf(ishell)= 6
-            databasis%locbf(ishell+1)= databasis%locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,4,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,1
             databasis%ex(databasis%locprim(ishell)+j)= expd4(ide4(numatomic(iatom))+j+4)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffd4(ide4(numatomic(iatom))+j+4)
           enddo
-          databasis%mprim(ishell)= 1
-          databasis%mtype(ishell)= 2
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-          if(databasis%spher) then
-            databasis%mbf(ishell)= 5
-            databasis%locbf(ishell+1)= databasis%locbf(ishell)+5
-          else
-            databasis%mbf(ishell)= 6
-            databasis%locbf(ishell+1)= databasis%locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,1,iatom,databasis)
 !
 ! Set Zn  - Kr functions
 !
@@ -7590,24 +7490,14 @@ end
             databasis%ex(databasis%locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j)
           enddo
-          databasis%mprim(ishell)= 2
-          databasis%mbf(ishell)= 1
-          databasis%mtype(ishell)= 0
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+2
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+          call basisparam(ishell,0,2,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,1
             databasis%ex(databasis%locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j+2)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j+2)
           enddo
-          databasis%mprim(ishell)= 1
-          databasis%mbf(ishell)= 1
-          databasis%mtype(ishell)= 0
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis)
 ! P function
           nump= 2
           if(numatomic(iatom) == 30) nump= 1
@@ -7616,24 +7506,14 @@ end
             databasis%ex(databasis%locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j)
           enddo
-          databasis%mprim(ishell)= nump
-          databasis%mbf(ishell)= 3
-          databasis%mtype(ishell)= 1
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+nump
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+          call basisparam(ishell,1,nump,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,1
             databasis%ex(databasis%locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j+nump)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j+nump)
           enddo
-          databasis%mprim(ishell)= 1
-          databasis%mbf(ishell)= 3
-          databasis%mtype(ishell)= 1
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis)
 ! D function
           if(numatomic(iatom) == 30) then
             ishell= ishell+1
@@ -7641,34 +7521,14 @@ end
               databasis%ex(databasis%locprim(ishell)+j)= expd4(ide4(numatomic(iatom))+j)
               databasis%coeff(databasis%locprim(ishell)+j)= coeffd4(ide4(numatomic(iatom))+j)
             enddo
-            databasis%mprim(ishell)= 4
-            databasis%mtype(ishell)= 2
-            databasis%locatom(ishell)= iatom
-            databasis%locprim(ishell+1)= databasis%locprim(ishell)+4
-            if(databasis%spher) then
-              databasis%mbf(ishell)= 5
-              databasis%locbf(ishell+1)= databasis%locbf(ishell)+5
-            else
-              databasis%mbf(ishell)= 6
-              databasis%locbf(ishell+1)= databasis%locbf(ishell)+6
-            endif
+            call basisparam(ishell,2,4,iatom,databasis)
 !
             ishell= ishell+1
             do j= 1,1
               databasis%ex(databasis%locprim(ishell)+j)= expd4(ide4(numatomic(iatom))+j+4)
               databasis%coeff(databasis%locprim(ishell)+j)= coeffd4(ide4(numatomic(iatom))+j+4)
             enddo
-            databasis%mprim(ishell)= 1
-            databasis%mtype(ishell)= 2
-            databasis%locatom(ishell)= iatom
-            databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-            if(databasis%spher) then
-              databasis%mbf(ishell)= 5
-              databasis%locbf(ishell+1)= databasis%locbf(ishell)+5
-            else
-              databasis%mbf(ishell)= 6
-              databasis%locbf(ishell+1)= databasis%locbf(ishell)+6
-            endif
+            call basisparam(ishell,2,1,iatom,databasis)
           endif
 !
 ! Set Rb - Ag functions
@@ -7680,72 +7540,42 @@ end
             databasis%ex(databasis%locprim(ishell)+j)= exps5(ise5(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs5(ise5(numatomic(iatom))+j)
           enddo
-          databasis%mprim(ishell)= 3
-          databasis%mbf(ishell)= 1
-          databasis%mtype(ishell)= 0
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,4
             databasis%ex(databasis%locprim(ishell)+j)= exps5(ise5(numatomic(iatom))+j+3)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs5(ise5(numatomic(iatom))+j+3)
           enddo
-          databasis%mprim(ishell)= 4
-          databasis%mbf(ishell)= 1
-          databasis%mtype(ishell)= 0
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+4
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+          call basisparam(ishell,0,4,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,1
             databasis%ex(databasis%locprim(ishell)+j)= exps5(ise5(numatomic(iatom))+j+7)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs5(ise5(numatomic(iatom))+j+7)
           enddo
-          databasis%mprim(ishell)= 1
-          databasis%mbf(ishell)= 1
-          databasis%mtype(ishell)= 0
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis)
 ! P function
           ishell= ishell+1
           do j= 1,3
             databasis%ex(databasis%locprim(ishell)+j)= expp5(ipe5(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp5(ipe5(numatomic(iatom))+j)
           enddo
-          databasis%mprim(ishell)= 3
-          databasis%mbf(ishell)= 3
-          databasis%mtype(ishell)= 1
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,2
             databasis%ex(databasis%locprim(ishell)+j)= expp5(ipe5(numatomic(iatom))+j+3)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp5(ipe5(numatomic(iatom))+j+3)
           enddo
-          databasis%mprim(ishell)= 2
-          databasis%mbf(ishell)= 3
-          databasis%mtype(ishell)= 1
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+2
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+          call basisparam(ishell,1,2,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,1
             databasis%ex(databasis%locprim(ishell)+j)= expp5(ipe5(numatomic(iatom))+j+5)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp5(ipe5(numatomic(iatom))+j+5)
           enddo
-          databasis%mprim(ishell)= 1
-          databasis%mbf(ishell)= 3
-          databasis%mtype(ishell)= 1
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis)
 ! D function
           if(numatomic(iatom) >= 39) then
             ishell= ishell+1
@@ -7753,34 +7583,14 @@ end
               databasis%ex(databasis%locprim(ishell)+j)= expd5(ide5(numatomic(iatom))+j)
               databasis%coeff(databasis%locprim(ishell)+j)= coeffd5(ide5(numatomic(iatom))+j)
             enddo
-            databasis%mprim(ishell)= 3
-            databasis%mtype(ishell)= 2
-            databasis%locatom(ishell)= iatom
-            databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
-            if(databasis%spher) then
-              databasis%mbf(ishell)= 5
-              databasis%locbf(ishell+1)= databasis%locbf(ishell)+5
-            else
-              databasis%mbf(ishell)= 6
-              databasis%locbf(ishell+1)= databasis%locbf(ishell)+6
-            endif
+            call basisparam(ishell,2,3,iatom,databasis)
 !
             ishell= ishell+1
             do j= 1,1
               databasis%ex(databasis%locprim(ishell)+j)= expd5(ide5(numatomic(iatom))+j+3)
               databasis%coeff(databasis%locprim(ishell)+j)= coeffd5(ide5(numatomic(iatom))+j+3)
             enddo
-            databasis%mprim(ishell)= 1
-            databasis%mtype(ishell)= 2
-            databasis%locatom(ishell)= iatom
-            databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-            if(databasis%spher) then
-              databasis%mbf(ishell)= 5
-              databasis%locbf(ishell+1)= databasis%locbf(ishell)+5
-            else
-              databasis%mbf(ishell)= 6
-              databasis%locbf(ishell+1)= databasis%locbf(ishell)+6
-            endif
+            call basisparam(ishell,2,1,iatom,databasis)
           endif
 !
 ! Set Cd - Xe functions
@@ -7792,48 +7602,28 @@ end
             databasis%ex(databasis%locprim(ishell)+j)= exps5(ise5(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs5(ise5(numatomic(iatom))+j)
           enddo
-          databasis%mprim(ishell)= 2
-          databasis%mbf(ishell)= 1
-          databasis%mtype(ishell)= 0
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+2
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+          call basisparam(ishell,0,2,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,1
             databasis%ex(databasis%locprim(ishell)+j)= exps5(ise5(numatomic(iatom))+j+2)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs5(ise5(numatomic(iatom))+j+2)
           enddo
-          databasis%mprim(ishell)= 1
-          databasis%mbf(ishell)= 1
-          databasis%mtype(ishell)= 0
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis)
 ! P function
           ishell= ishell+1
           do j= 1,2
             databasis%ex(databasis%locprim(ishell)+j)= expp5(ipe5(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp5(ipe5(numatomic(iatom))+j)
           enddo
-          databasis%mprim(ishell)= 2
-          databasis%mbf(ishell)= 3
-          databasis%mtype(ishell)= 1
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+2
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+          call basisparam(ishell,1,2,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,1
             databasis%ex(databasis%locprim(ishell)+j)= expp5(ipe5(numatomic(iatom))+j+2)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp5(ipe5(numatomic(iatom))+j+2)
           enddo
-          databasis%mprim(ishell)= 1
-          databasis%mbf(ishell)= 3
-          databasis%mtype(ishell)= 1
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis)
 ! D function
           if(numatomic(iatom) == 48) then
             ishell= ishell+1
@@ -7841,34 +7631,14 @@ end
               databasis%ex(databasis%locprim(ishell)+j)= expd5(ide5(numatomic(iatom))+j)
               databasis%coeff(databasis%locprim(ishell)+j)= coeffd5(ide5(numatomic(iatom))+j)
             enddo
-            databasis%mprim(ishell)= 3
-            databasis%mtype(ishell)= 2
-            databasis%locatom(ishell)= iatom
-            databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
-            if(databasis%spher) then
-              databasis%mbf(ishell)= 5
-              databasis%locbf(ishell+1)= databasis%locbf(ishell)+5
-            else
-              databasis%mbf(ishell)= 6
-              databasis%locbf(ishell+1)= databasis%locbf(ishell)+6
-            endif
+            call basisparam(ishell,2,3,iatom,databasis)
 !
             ishell= ishell+1
             do j= 1,1
               databasis%ex(databasis%locprim(ishell)+j)= expd5(ide5(numatomic(iatom))+j+3)
               databasis%coeff(databasis%locprim(ishell)+j)= coeffd5(ide5(numatomic(iatom))+j+3)
             enddo
-            databasis%mprim(ishell)= 1
-            databasis%mtype(ishell)= 2
-            databasis%locatom(ishell)= iatom
-            databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-            if(databasis%spher) then
-              databasis%mbf(ishell)= 5
-              databasis%locbf(ishell+1)= databasis%locbf(ishell)+5
-            else
-              databasis%mbf(ishell)= 6
-              databasis%locbf(ishell+1)= databasis%locbf(ishell)+6
-            endif
+            call basisparam(ishell,2,1,iatom,databasis)
           endif
 !
 ! Set Cs - La, Hf - Au  functions
@@ -7880,72 +7650,42 @@ end
             databasis%ex(databasis%locprim(ishell)+j)= exps6(ise6(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs6(ise6(numatomic(iatom))+j)
           enddo
-          databasis%mprim(ishell)= 3
-          databasis%mbf(ishell)= 1
-          databasis%mtype(ishell)= 0
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,4
             databasis%ex(databasis%locprim(ishell)+j)= exps6(ise6(numatomic(iatom))+j+3)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs6(ise6(numatomic(iatom))+j+3)
           enddo
-          databasis%mprim(ishell)= 4
-          databasis%mbf(ishell)= 1
-          databasis%mtype(ishell)= 0
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+4
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+          call basisparam(ishell,0,4,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,1
             databasis%ex(databasis%locprim(ishell)+j)= exps6(ise6(numatomic(iatom))+j+7)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs6(ise6(numatomic(iatom))+j+7)
           enddo
-          databasis%mprim(ishell)= 1
-          databasis%mbf(ishell)= 1
-          databasis%mtype(ishell)= 0
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis)
 ! P function
           ishell= ishell+1
           do j= 1,3
             databasis%ex(databasis%locprim(ishell)+j)= expp6(ipe6(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp6(ipe6(numatomic(iatom))+j)
           enddo
-          databasis%mprim(ishell)= 3
-          databasis%mbf(ishell)= 3
-          databasis%mtype(ishell)= 1
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+3
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,2
             databasis%ex(databasis%locprim(ishell)+j)= expp6(ipe6(numatomic(iatom))+j+3)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp6(ipe6(numatomic(iatom))+j+3)
           enddo
-          databasis%mprim(ishell)= 2
-          databasis%mbf(ishell)= 3
-          databasis%mtype(ishell)= 1
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+2
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+          call basisparam(ishell,1,2,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,1
             databasis%ex(databasis%locprim(ishell)+j)= expp6(ipe6(numatomic(iatom))+j+5)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp6(ipe6(numatomic(iatom))+j+5)
           enddo
-          databasis%mprim(ishell)= 1
-          databasis%mbf(ishell)= 3
-          databasis%mtype(ishell)= 1
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis)
 ! D function
           if(numatomic(iatom) >= 57) then
             ishell= ishell+1
@@ -7953,34 +7693,14 @@ end
               databasis%ex(databasis%locprim(ishell)+j)= expd6(ide6(numatomic(iatom))+j)
               databasis%coeff(databasis%locprim(ishell)+j)= coeffd6(ide6(numatomic(iatom))+j)
             enddo
-            databasis%mprim(ishell)= 2
-            databasis%mtype(ishell)= 2
-            databasis%locatom(ishell)= iatom
-            databasis%locprim(ishell+1)= databasis%locprim(ishell)+2
-            if(databasis%spher) then
-              databasis%mbf(ishell)= 5
-              databasis%locbf(ishell+1)= databasis%locbf(ishell)+5
-            else
-              databasis%mbf(ishell)= 6
-              databasis%locbf(ishell+1)= databasis%locbf(ishell)+6
-            endif
+            call basisparam(ishell,2,2,iatom,databasis)
 !
             ishell= ishell+1
             do j= 1,1
               databasis%ex(databasis%locprim(ishell)+j)= expd6(ide6(numatomic(iatom))+j+2)
               databasis%coeff(databasis%locprim(ishell)+j)= coeffd6(ide6(numatomic(iatom))+j+2)
             enddo
-            databasis%mprim(ishell)= 1
-            databasis%mtype(ishell)= 2
-            databasis%locatom(ishell)= iatom
-            databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-            if(databasis%spher) then
-              databasis%mbf(ishell)= 5
-              databasis%locbf(ishell+1)= databasis%locbf(ishell)+5
-            else
-              databasis%mbf(ishell)= 6
-              databasis%locbf(ishell+1)= databasis%locbf(ishell)+6
-            endif
+            call basisparam(ishell,2,1,iatom,databasis)
           endif
 !
 ! Set Hg - Bi functions
@@ -7992,48 +7712,43 @@ end
             databasis%ex(databasis%locprim(ishell)+j)= exps6(ise6(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs6(ise6(numatomic(iatom))+j)
           enddo
-          databasis%mprim(ishell)= 2
-          databasis%mbf(ishell)= 1
-          databasis%mtype(ishell)= 0
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+2
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+          call basisparam(ishell,0,2,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,1
             databasis%ex(databasis%locprim(ishell)+j)= exps6(ise6(numatomic(iatom))+j+2)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffs6(ise6(numatomic(iatom))+j+2)
           enddo
-          databasis%mprim(ishell)= 1
-          databasis%mbf(ishell)= 1
-          databasis%mtype(ishell)= 0
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis)
 ! P function
           ishell= ishell+1
           do j= 1,2
             databasis%ex(databasis%locprim(ishell)+j)= expp6(ipe6(numatomic(iatom))+j)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp6(ipe6(numatomic(iatom))+j)
           enddo
-          databasis%mprim(ishell)= 2
-          databasis%mbf(ishell)= 3
-          databasis%mtype(ishell)= 1
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+2
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+          call basisparam(ishell,1,2,iatom,databasis)
 !
           ishell= ishell+1
           do j= 1,1
             databasis%ex(databasis%locprim(ishell)+j)= expp6(ipe6(numatomic(iatom))+j+2)
             databasis%coeff(databasis%locprim(ishell)+j)= coeffp6(ipe6(numatomic(iatom))+j+2)
           enddo
-          databasis%mprim(ishell)= 1
-          databasis%mbf(ishell)= 3
-          databasis%mtype(ishell)= 1
-          databasis%locatom(ishell)= iatom
-          databasis%locprim(ishell+1)= databasis%locprim(ishell)+1
-          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis)
+          if(numatomic(iatom) <= 81) then
+            ishell= ishell+1
+            do j= 1,2
+              databasis%ex(databasis%locprim(ishell)+j)= expd6(ide6(numatomic(iatom))+j)
+              databasis%coeff(databasis%locprim(ishell)+j)= coeffd6(ide6(numatomic(iatom))+j)
+            enddo
+            call basisparam(ishell,2,2,iatom,databasis)
+!
+            ishell= ishell+1
+            do j= 1,1
+              databasis%ex(databasis%locprim(ishell)+j)= expd6(ide6(numatomic(iatom))+j+2)
+              databasis%coeff(databasis%locprim(ishell)+j)= coeffd6(ide6(numatomic(iatom))+j+2)
+            enddo
+            call basisparam(ishell,2,1,iatom,databasis)
+          endif
         case default
           write(*,'(" Error! This program supports Na - La, Hf - Bi Lanl2dz basis set.")')
           call iabort
