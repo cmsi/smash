@@ -616,10 +616,6 @@ end
             case(21:30)
               iao= iao+1
               energy(iao)= row4(7,numatomic(iatom))
-              do i= 1,3
-                iao= iao+1
-                energy(iao)= row4(8,numatomic(iatom))
-              enddo
               do i= 1,5
                 iao= iao+1
                 energy(iao)= row4(6,numatomic(iatom))
