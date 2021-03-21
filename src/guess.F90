@@ -628,25 +628,25 @@ end
                 iao= iao+1
                 energy(iao)= row4(8,numatomic(iatom))
               enddo
-! Rb - Sr, In - Xe
-            case(37:38,49:54)
+! Rb - Sr
+            case(37:38)
               iao= iao+1
               energy(iao)= row5(10,numatomic(iatom))
-              do i= 1,3
-                iao= iao+1
-                energy(iao)= row5(11,numatomic(iatom))
-              enddo
 ! Y  - Cd
             case(39:48)
               iao= iao+1
               energy(iao)= row5(10,numatomic(iatom))
-              do i= 1,3
-                iao= iao+1
-                energy(iao)= row5(11,numatomic(iatom))
-              enddo
               do i= 1,5
                 iao= iao+1
                 energy(iao)= row5(9,numatomic(iatom))
+              enddo
+! In - Xe
+            case(49:54)
+              iao= iao+1
+              energy(iao)= row5(10,numatomic(iatom))
+              do i= 1,3
+                iao= iao+1
+                energy(iao)= row5(11,numatomic(iatom))
               enddo
 ! Cs - Ba
             case(55:56)

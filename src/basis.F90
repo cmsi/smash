@@ -972,8 +972,8 @@ end
                 call bshuzmini4_g(iatom,ishell,1,datajob%flagecp,datamol%numatomic, &
 &                                 databasis,dataguessbs)
               case(37:54)
-                call bssto3g_g(iatom,ishell,1,datajob%flagecp,datamol%numatomic, &
-&                              databasis,dataguessbs)
+                call bshuzmini5_g(iatom,ishell,1,datajob%flagecp,datamol%numatomic, &
+&                                 databasis,dataguessbs)
               case(55:)
                 call bshuzmini6_g(iatom,ishell,1,datajob%flagecp,datamol%numatomic, &
 &                                 databasis,dataguessbs)
@@ -993,8 +993,8 @@ end
                 call bshuzmini4_g(iatom,ishell,2,datajob%flagecp,datamol%numatomic, &
 &                                 databasis,dataguessbs)
               case(37:54)
-                call bssto3g_g(iatom,ishell,2,datajob%flagecp,datamol%numatomic, &
-&                              databasis,dataguessbs)
+                call bshuzmini5_g(iatom,ishell,2,datajob%flagecp,datamol%numatomic, &
+&                                 databasis,dataguessbs)
               case(55:)
                 call bshuzmini6_g(iatom,ishell,2,datajob%flagecp,datamol%numatomic, &
 &                               databasis,dataguessbs)
@@ -1020,8 +1020,8 @@ end
                 call bshuzmini4_g(iatom,ishell,3,datajob%flagecp,datamol%numatomic, &
 &                                 databasis,dataguessbs)
               case(37:54)
-                call bssto3g_g(iatom,ishell,3,datajob%flagecp,datamol%numatomic, &
-&                              databasis,dataguessbs)
+                call bshuzmini5_g(iatom,ishell,3,datajob%flagecp,datamol%numatomic, &
+&                                 databasis,dataguessbs)
               case(55:)
                 call bshuzmini6_g(iatom,ishell,3,datajob%flagecp,datamol%numatomic, &
 &                               databasis,dataguessbs)
@@ -7610,6 +7610,7 @@ end
 ! Set 6th row basis functions of minimal Huzinaga set for guess calculation
 ! itype = 1 : valence functions
 !       = 2 : core functions
+!       = 3 : core functions for core calculation
 !
       use modparam, only : mxatom, mxao, mxshell, mxprim
       use modtype, only : typebasis
@@ -8682,6 +8683,7 @@ end
 ! Set 4th row basis functions of minimal Huzinaga set for guess calculation
 ! itype = 1 : valence functions
 !       = 2 : core functions
+!       = 3 : core functions for core calculation
 !
       use modparam, only : mxatom, mxao, mxshell, mxprim
       use modtype, only : typebasis
@@ -8978,6 +8980,442 @@ end
             dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd4(j,numatomic(iatom))
           enddo
           call basisparam(ishell,2,3,iatom,dataguessbs)
+        endif
+      endif
+!
+      return
+end
+
+
+!------------------------------------------------------------------
+  subroutine bshuzmini5_g(iatom,ishell,itype,flagecp,numatomic, &
+&                         databasis,dataguessbs)
+!------------------------------------------------------------------
+!
+! Set 5th row basis functions of minimal Huzinaga set for guess calculation
+! itype = 1 : valence functions
+!       = 2 : core functions
+!       = 3 : core functions for core calculation
+!
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis
+      implicit none
+      type(typebasis),intent(in) :: databasis
+      type(typebasis),intent(inout) :: dataguessbs
+      integer,intent(in) :: iatom, itype, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+      integer :: j
+      real(8) :: exps5(3,5,37:54), expp5(3,2:5,37:54), expd5(3,3:4,37:54)
+      real(8) :: coeffs5(3,5,37:54), coeffp5(3,2:5,37:54), coeffd5(3,3:4,37:54)
+      logical,intent(in) :: flagecp
+      data exps5/ &
+&       0.6816722D+04, 0.1033001D+04, 0.2269086D+03, 0.3028363D+03, 0.2920147D+02, 0.1208285D+02, &
+&       0.2469261D+02, 0.4201651D+01, 0.1852260D+01, 0.2935988D+01, 0.5254264D+00, 0.2191689D+00, &
+&       0.1916679D+00, 0.3343655D-01, 0.1473352D-01, 0.7215474D+04, 0.1092852D+04, 0.2399818D+03, &
+&       0.3204609D+03, 0.3074278D+02, 0.1261208D+02, 0.2623412D+02, 0.4459950D+01, 0.1983925D+01, &
+&       0.3196205D+01, 0.6083665D+00, 0.2657352D+00, 0.3342018D+00, 0.5169948D-01, 0.2174977D-01, &
+&       0.7647693D+04, 0.1157002D+04, 0.2537570D+03, 0.3391036D+03, 0.3240326D+02, 0.1328189D+02, &
+&       0.2799626D+02, 0.4682921D+01, 0.2056616D+01, 0.3486430D+01, 0.6674451D+00, 0.2795970D+00, &
+&       0.4686723D+00, 0.4978055D-01, 0.2040820D-01, 0.8074544D+04, 0.1220530D+04, 0.2675475D+03, &
+&       0.3576811D+03, 0.3414257D+02, 0.1394757D+02, 0.2961052D+02, 0.4980939D+01, 0.2185038D+01, &
+&       0.3839990D+01, 0.7397870D+00, 0.3096192D+00, 0.5550213D+00, 0.5532887D-01, 0.2137166D-01, &
+&       0.8465087D+04, 0.1281116D+04, 0.2812116D+03, 0.3758503D+03, 0.3605337D+02, 0.1481664D+02, &
+&       0.3136551D+02, 0.5271893D+01, 0.2307086D+01, 0.4167790D+01, 0.8215584D+00, 0.3432495D+00, &
+&       0.5871670D+00, 0.6616704D-01, 0.2593466D-01, 0.8898975D+04, 0.1346693D+04, 0.2956288D+03, &
+&       0.3950816D+03, 0.3796458D+02, 0.1560890D+02, 0.3308523D+02, 0.5618035D+01, 0.2482532D+01, &
+&       0.4500009D+01, 0.9059394D+00, 0.3777734D+00, 0.6541946D+00, 0.7258102D-01, 0.2797177D-01, &
+&       0.9331866D+04, 0.1412744D+04, 0.3102829D+03, 0.4145663D+03, 0.3994490D+02, 0.1645170D+02, &
+&       0.3488784D+02, 0.5947051D+01, 0.2624042D+01, 0.4854129D+01, 0.9879252D+00, 0.4109310D+00, &
+&       0.7102329D+00, 0.7580316D-01, 0.2868756D-01, 0.9786143D+04, 0.1481471D+04, 0.3254026D+03, &
+&       0.4347953D+03, 0.4191878D+02, 0.1725780D+02, 0.3673518D+02, 0.6278044D+01, 0.2751976D+01, &
+&       0.5217388D+01, 0.1075951D+01, 0.4471085D+00, 0.7934362D+00, 0.7742209D-01, 0.2934842D-01, &
+&       0.1022525D+05, 0.1549139D+04, 0.3405685D+03, 0.4551797D+03, 0.4398695D+02, 0.1813296D+02, &
+&       0.3875188D+02, 0.6603779D+01, 0.2895271D+01, 0.5615291D+01, 0.1161391D+01, 0.4802013D+00, &
+&       0.8545143D+00, 0.7947300D-01, 0.3009295D-01, 0.1073227D+05, 0.1624256D+04, 0.3567744D+03, &
+&       0.4764598D+03, 0.4608908D+02, 0.1901146D+02, 0.4050182D+02, 0.7031718D+01, 0.3110288D+01, &
+&       0.5953554D+01, 0.1273778D+01, 0.5293206D+00, 0.9168060D+00, 0.8014658D-01, 0.3033468D-01, &
+&       0.1119539D+05, 0.1695611D+04, 0.3727156D+03, 0.4980879D+03, 0.4818927D+02, 0.1987923D+02, &
+&       0.4261730D+02, 0.7354984D+01, 0.3219366D+01, 0.6447184D+01, 0.1340634D+01, 0.5508249D+00, &
+&       0.8960240D+00, 0.7873945D-01, 0.2942569D-01, 0.1168609D+05, 0.1770111D+04, 0.3892090D+03, &
+&       0.5199111D+03, 0.5039799D+02, 0.2083427D+02, 0.4465253D+02, 0.7750672D+01, 0.3381808D+01, &
+&       0.6789700D+01, 0.1466414D+01, 0.6180606D+00, 0.9177348D+00, 0.1120234D+00, 0.4082857D-01, &
+&       0.1221455D+05, 0.1848914D+04, 0.4063683D+03, 0.5413424D+03, 0.5301838D+02, 0.2219028D+02, &
+&       0.4641445D+02, 0.8353166D+01, 0.3864909D+01, 0.7177594D+01, 0.1621446D+01, 0.7199692D+00, &
+&       0.1065487D+01, 0.1443150D+00, 0.5458735D-01, 0.1274167D+05, 0.1928469D+04, 0.4238080D+03, &
+&       0.5646822D+03, 0.5524183D+02, 0.2312142D+02, 0.4849310D+02, 0.8770315D+01, 0.4037810D+01, &
+&       0.7615495D+01, 0.1729893D+01, 0.7718881D+00, 0.1197655D+01, 0.1730368D+00, 0.6695953D-01, &
+&       0.1328938D+05, 0.2010522D+04, 0.4416981D+03, 0.5883879D+03, 0.5752319D+02, 0.2403669D+02, &
+&       0.5078774D+02, 0.9147331D+01, 0.4172370D+01, 0.7999600D+01, 0.1838119D+01, 0.8312633D+00, &
+&       0.1344526D+01, 0.2114684D+00, 0.8689142D-01, 0.1379656D+05, 0.2088880D+04, 0.4593932D+03, &
+&       0.6115844D+03, 0.6022119D+02, 0.2549137D+02, 0.5304233D+02, 0.9663203D+01, 0.4418858D+01, &
+&       0.8458281D+01, 0.1975393D+01, 0.9081833D+00, 0.1427026D+01, 0.2388022D+00, 0.9319910D-01, &
+&       0.1435119D+05, 0.2173074D+04, 0.4778721D+03, 0.6362830D+03, 0.6236894D+02, 0.2603556D+02, &
+&       0.5513558D+02, 0.1012645D+02, 0.4592863D+01, 0.8904979D+01, 0.2092569D+01, 0.9735899D+00, &
+&       0.1553999D+01, 0.2748809D+00, 0.1082667D+00, 0.1490224D+05, 0.2256538D+04, 0.4963732D+03, &
+&       0.6609495D+03, 0.6486304D+02, 0.2711140D+02, 0.5751526D+02, 0.1053608D+02, 0.4704271D+01, &
+&       0.9378608D+01, 0.2240118D+01, 0.1061597D+01, 0.1695808D+01, 0.3065118D+00, 0.1204935D+00/
+      data expp5/ &
+&       0.4078684D+03, 0.9445549D+02, 0.2774551D+02, 0.1071505D+02, 0.4231163D+01, 0.1743470D+01, &
+&       0.8499190D+00, 0.3435337D+00, 0.1394105D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.4345691D+03, 0.1007036D+03, 0.2962503D+02, 0.1157209D+02, 0.4593745D+01, 0.1906081D+01, &
+&       0.9550617D+00, 0.3945392D+00, 0.1575933D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.4646239D+03, 0.1075481D+03, 0.3165041D+02, 0.1244391D+02, 0.4993456D+01, 0.2103387D+01, &
+&       0.1094792D+01, 0.4607263D+00, 0.1842897D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.4916220D+03, 0.1139304D+03, 0.3360551D+02, 0.1324729D+02, 0.5338991D+01, 0.2252502D+01, &
+&       0.1231475D+01, 0.5297885D+00, 0.2140876D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.5192875D+03, 0.1204590D+03, 0.3560811D+02, 0.1397658D+02, 0.5638861D+01, 0.2371227D+01, &
+&       0.1345522D+01, 0.5684675D+00, 0.2269623D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.5488639D+03, 0.1273927D+03, 0.3771284D+02, 0.1474459D+02, 0.5960035D+01, 0.2493753D+01, &
+&       0.1462155D+01, 0.6082758D+00, 0.2391247D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.5809436D+03, 0.1353604D+03, 0.3988994D+02, 0.8734719D+02, 0.1328789D+02, 0.4909056D+01, &
+&       0.1925852D+01, 0.8438556D+00, 0.3361854D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.6132351D+03, 0.1428949D+03, 0.4213671D+02, 0.9124369D+02, 0.1413810D+02, 0.5256848D+01, &
+&       0.2054238D+01, 0.8848989D+00, 0.3500592D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.6442321D+03, 0.1502801D+03, 0.4438451D+02, 0.9583330D+02, 0.1496330D+02, 0.5601316D+01, &
+&       0.2151308D+01, 0.9093210D+00, 0.3584824D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.6761655D+03, 0.1578524D+03, 0.4669913D+02, 0.1012561D+03, 0.1576033D+02, 0.5941637D+01, &
+&       0.2308244D+01, 0.9707511D+00, 0.3829481D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.7097935D+03, 0.1657507D+03, 0.4907937D+02, 0.1059019D+03, 0.1674607D+02, 0.6343350D+01, &
+&       0.2511517D+01, 0.1056080D+01, 0.4159573D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.7451048D+03, 0.1740470D+03, 0.5155244D+02, 0.1062784D+03, 0.1792499D+02, 0.6790410D+01, &
+&       0.2579247D+01, 0.1057390D+01, 0.4066846D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.7818692D+03, 0.1827982D+03, 0.5421114D+02, 0.1140363D+03, 0.1871313D+02, 0.7166048D+01, &
+&       0.2796378D+01, 0.1184122D+01, 0.4877346D+00, 0.2299340D+00, 0.8355539D-01, 0.3249889D-01, &
+&       0.8167732D+03, 0.1911277D+03, 0.5677159D+02, 0.1212449D+03, 0.1957790D+02, 0.7571713D+01, &
+&       0.3047403D+01, 0.1302218D+01, 0.5446291D+00, 0.2675286D+00, 0.1041825D+00, 0.4162604D-01, &
+&       0.8600807D+03, 0.2010142D+03, 0.5965760D+02, 0.1222711D+03, 0.2092966D+02, 0.8098035D+01, &
+&       0.3300369D+01, 0.1428774D+01, 0.5950513D+00, 0.3280185D+00, 0.1366129D+00, 0.5411368D-01, &
+&       0.8950750D+03, 0.2095786D+03, 0.6240521D+02, 0.1314480D+03, 0.2166318D+02, 0.8466730D+01, &
+&       0.3428100D+01, 0.1494340D+01, 0.6384852D+00, 0.3661446D+00, 0.1488787D+00, 0.5976329D-01, &
+&       0.9334828D+03, 0.2185056D+03, 0.6532578D+02, 0.1584829D+03, 0.2121514D+02, 0.8462315D+01, &
+&       0.3629560D+01, 0.1613374D+01, 0.7073388D+00, 0.4230758D+00, 0.1712839D+00, 0.6847909D-01, &
+&       0.9719885D+03, 0.2277224D+03, 0.6816256D+02, 0.1645382D+03, 0.2221048D+02, 0.8900006D+01, &
+&       0.3764923D+01, 0.1652238D+01, 0.6764963D+00, 0.4784285D+00, 0.1978129D+00, 0.7915387D-01/
+      data expd5/ &
+&       0.4086603D+02, 0.1084089D+02, 0.3050834D+01, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.4456612D+02, 0.1188149D+02, 0.3387558D+01, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.5034862D+02, 0.1349709D+02, 0.3916624D+01, 0.1404617D+01, 0.4520259D+00, 0.1249728D+00, &
+&       0.5471607D+02, 0.1474389D+02, 0.4333320D+01, 0.1685906D+01, 0.5374352D+00, 0.1502210D+00, &
+&       0.5903580D+02, 0.1599712D+02, 0.4757480D+01, 0.1979268D+01, 0.6292619D+00, 0.1775229D+00, &
+&       0.6379205D+02, 0.1735642D+02, 0.5210952D+01, 0.2286143D+01, 0.7293195D+00, 0.2094156D+00, &
+&       0.6901682D+02, 0.1883011D+02, 0.5692529D+01, 0.2636093D+01, 0.8401953D+00, 0.2396514D+00, &
+&       0.7408853D+02, 0.2028372D+02, 0.6177856D+01, 0.2898340D+01, 0.9273541D+00, 0.2661899D+00, &
+&       0.7928488D+02, 0.2177763D+02, 0.6678629D+01, 0.3222521D+01, 0.1034905D+01, 0.2982145D+00, &
+&       0.8445690D+02, 0.2327798D+02, 0.7186966D+01, 0.3488655D+01, 0.1126621D+01, 0.3267044D+00, &
+&       0.9002298D+02, 0.2487571D+02, 0.7722491D+01, 0.3785432D+01, 0.1227856D+01, 0.3590246D+00, &
+&       0.9547274D+02, 0.2648196D+02, 0.8282886D+01, 0.4082141D+01, 0.1357279D+01, 0.4208308D+00, &
+&       0.1021736D+03, 0.2839463D+02, 0.8924805D+01, 0.4535364D+01, 0.1537148D+01, 0.4994923D+00, &
+&       0.1080563D+03, 0.3013158D+02, 0.9530036D+01, 0.4962610D+01, 0.1712083D+01, 0.5771945D+00, &
+&       0.1158096D+03, 0.3230584D+02, 0.1025033D+02, 0.5486210D+01, 0.1921620D+01, 0.6660626D+00, &
+&       0.1214083D+03, 0.3401522D+02, 0.1086914D+02, 0.5803111D+01, 0.2058066D+01, 0.7328302D+00, &
+&       0.1280903D+03, 0.3598238D+02, 0.1155112D+02, 0.6146152D+01, 0.2220937D+01, 0.8099120D+00, &
+&       0.1349133D+03, 0.3795639D+02, 0.1222748D+02, 0.6600493D+01, 0.2398051D+01, 0.8864824D+00/
+      data coeffs5/ &
+&       0.6249620D-01, 0.3719500D+00, 0.6857293D+00,-0.1074004D+00, 0.7049410D+00, 0.3622692D+00, &
+&      -0.2430518D+00, 0.7375963D+00, 0.3988455D+00,-0.2806358D+00, 0.7159840D+00, 0.4402934D+00, &
+&       0.1580968D+00,-0.6855144D+00,-0.4191493D+00, 0.6228180D-01, 0.3713101D+00, 0.6864439D+00, &
+&      -0.1074604D+00, 0.7140333D+00, 0.3533614D+00,-0.2455863D+00, 0.7556468D+00, 0.3814041D+00, &
+&      -0.2974230D+00, 0.7364992D+00, 0.4298103D+00, 0.1961392D+00,-0.6888851D+00,-0.4263861D+00, &
+&       0.6188180D-01, 0.3701570D+00, 0.6878017D+00,-0.1075786D+00, 0.7181663D+00, 0.3490842D+00, &
+&      -0.2457049D+00, 0.7878323D+00, 0.3488907D+00,-0.3000605D+00, 0.7858715D+00, 0.3857544D+00, &
+&      -0.2438980D+00, 0.7576396D+00, 0.3475036D+00, 0.6166060D-01, 0.3696140D+00, 0.6884549D+00, &
+&      -0.1077339D+00, 0.7216851D+00, 0.3456921D+00,-0.2483862D+00, 0.8005982D+00, 0.3376774D+00, &
+&      -0.3104305D+00, 0.8022937D+00, 0.3741656D+00,-0.2288857D+00, 0.7817074D+00, 0.3195193D+00, &
+&       0.6181440D-01, 0.3698298D+00, 0.6880474D+00,-0.1080131D+00, 0.7199938D+00, 0.3472657D+00, &
+&      -0.2499774D+00, 0.8156328D+00, 0.3232937D+00,-0.3163261D+00, 0.8073422D+00, 0.3740729D+00, &
+&      -0.2224673D+00, 0.7048521D+00, 0.4026700D+00, 0.6171060D-01, 0.3694639D+00, 0.6884201D+00, &
+&      -0.1082198D+00, 0.7205080D+00, 0.3468176D+00,-0.2526233D+00, 0.8177164D+00, 0.3225675D+00, &
+&      -0.3206422D+00, 0.8092539D+00, 0.3763588D+00,-0.2116815D+00, 0.6864946D+00, 0.4187549D+00, &
+&       0.6169470D-01, 0.3693039D+00, 0.6885214D+00,-0.1084438D+00, 0.7206125D+00, 0.3467395D+00, &
+&      -0.2545651D+00, 0.8276066D+00, 0.3138042D+00,-0.3241571D+00, 0.8151655D+00, 0.3733329D+00, &
+&      -0.1967391D+00, 0.6579450D+00, 0.4429358D+00, 0.6160490D-01, 0.3689840D+00, 0.6888455D+00, &
+&      -0.1086056D+00, 0.7222292D+00, 0.3451630D+00,-0.2564513D+00, 0.8399185D+00, 0.3027171D+00, &
+&      -0.3265667D+00, 0.8168014D+00, 0.3742870D+00,-0.1864361D+00, 0.6339363D+00, 0.4599697D+00, &
+&       0.6168460D-01, 0.3690559D+00, 0.6886519D+00,-0.1088006D+00, 0.7224507D+00, 0.3449743D+00, &
+&      -0.2573715D+00, 0.8517085D+00, 0.2909376D+00,-0.3266525D+00, 0.8214561D+00, 0.3704174D+00, &
+&      -0.1758253D+00, 0.6050953D+00, 0.4842742D+00, 0.6140910D-01, 0.3683372D+00, 0.6895216D+00, &
+&      -0.1089646D+00, 0.7229184D+00, 0.3445285D+00,-0.2610873D+00, 0.8473020D+00, 0.2980309D+00, &
+&      -0.3315604D+00, 0.8065730D+00, 0.3906202D+00,-0.1665563D+00, 0.5960441D+00, 0.4889716D+00, &
+&       0.6146520D-01, 0.3683407D+00, 0.6894170D+00,-0.1090984D+00, 0.7248356D+00, 0.3425905D+00, &
+&      -0.2616127D+00, 0.8638930D+00, 0.2814949D+00,-0.3264484D+00, 0.8244194D+00, 0.3684570D+00, &
+&      -0.1464338D+00, 0.6078123D+00, 0.4745780D+00, 0.6142650D-01, 0.3681567D+00, 0.6895722D+00, &
+&      -0.1092676D+00, 0.7250389D+00, 0.3423508D+00,-0.2634441D+00, 0.8694815D+00, 0.2772414D+00, &
+&      -0.3343146D+00, 0.8177517D+00, 0.3812846D+00,-0.1509803D+00, 0.6086784D+00, 0.4891503D+00, &
+&       0.6124760D-01, 0.3676754D+00, 0.6901359D+00,-0.1096575D+00, 0.7156786D+00, 0.3516058D+00, &
+&      -0.2690027D+00, 0.8333355D+00, 0.3162081D+00,-0.3439307D+00, 0.7769627D+00, 0.4273271D+00, &
+&      -0.2008092D+00, 0.6599925D+00, 0.4553545D+00, 0.6113530D-01, 0.3672929D+00, 0.6905447D+00, &
+&      -0.1097488D+00, 0.7181120D+00, 0.3490973D+00,-0.2708984D+00, 0.8409064D+00, 0.3101030D+00, &
+&      -0.3475656D+00, 0.7937583D+00, 0.4132006D+00,-0.2385589D+00, 0.7059861D+00, 0.4236124D+00, &
+&       0.6098430D-01, 0.3668487D+00, 0.6910501D+00,-0.1098365D+00, 0.7203891D+00, 0.3468674D+00, &
+&      -0.2714342D+00, 0.8547971D+00, 0.2964847D+00,-0.3512204D+00, 0.8121005D+00, 0.3980049D+00, &
+&      -0.2714728D+00, 0.6682413D+00, 0.4725305D+00, 0.6108620D-01, 0.3669629D+00, 0.6907944D+00, &
+&      -0.1101441D+00, 0.7134762D+00, 0.3534463D+00,-0.2728363D+00, 0.8475640D+00, 0.3052385D+00, &
+&      -0.3587862D+00, 0.8112858D+00, 0.4033116D+00,-0.2806370D+00, 0.7509597D+00, 0.4038957D+00, &
+&       0.6100280D-01, 0.3666398D+00, 0.6911306D+00,-0.1100819D+00, 0.7219464D+00, 0.3454775D+00, &
+&      -0.2754113D+00, 0.8543504D+00, 0.3006473D+00,-0.3630477D+00, 0.8279763D+00, 0.3894209D+00, &
+&       0.2967653D+00,-0.7583335D+00,-0.4067087D+00, 0.6099690D-01, 0.3666290D+00, 0.6911155D+00, &
+&      -0.1102247D+00, 0.7225832D+00, 0.3448171D+00,-0.2761463D+00, 0.8678121D+00, 0.2879474D+00, &
+&      -0.3673742D+00, 0.8242752D+00, 0.3963011D+00,-0.3127449D+00, 0.7841594D+00, 0.3890762D+00/
+      data coeffp5/ &
+&       0.8900530D-01, 0.4411370D+00, 0.6204330D+00, 0.2867814D+00, 0.5863660D+00, 0.2277478D+00, &
+&       0.3796538D+00, 0.5370593D+00, 0.1869077D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8827720D-01, 0.4395651D+00, 0.6220621D+00, 0.2829866D+00, 0.5896899D+00, 0.2263017D+00, &
+&       0.4130687D+00, 0.5407330D+00, 0.1403073D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8700020D-01, 0.4370123D+00, 0.6250957D+00, 0.2788493D+00, 0.5885743D+00, 0.2292208D+00, &
+&       0.4060140D+00, 0.5320897D+00, 0.1575146D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8674090D-01, 0.4362728D+00, 0.6255724D+00, 0.2803844D+00, 0.5922702D+00, 0.2225147D+00, &
+&       0.4058518D+00, 0.5246687D+00, 0.1633953D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8652380D-01, 0.4357148D+00, 0.6258786D+00, 0.2867436D+00, 0.5975733D+00, 0.2096306D+00, &
+&       0.4308749D+00, 0.5215640D+00, 0.1404843D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8606650D-01, 0.4346698D+00, 0.6268737D+00, 0.2917026D+00, 0.6020321D+00, 0.1991546D+00, &
+&       0.4518315D+00, 0.5172613D+00, 0.1232182D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8453260D-01, 0.4321914D+00, 0.6304900D+00,-0.2955230D-01, 0.4201419D+00, 0.6547726D+00, &
+&       0.3011680D+00, 0.5688683D+00, 0.2252629D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8393060D-01, 0.4310037D+00, 0.6318141D+00,-0.2984900D-01, 0.4184301D+00, 0.6558081D+00, &
+&       0.3259420D+00, 0.5693077D+00, 0.2001975D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8373500D-01, 0.4304508D+00, 0.6321828D+00,-0.3009170D-01, 0.4189458D+00, 0.6546474D+00, &
+&       0.3612858D+00, 0.5622628D+00, 0.1716521D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8353990D-01, 0.4299341D+00, 0.6325113D+00,-0.3035930D-01, 0.4214283D+00, 0.6515363D+00, &
+&       0.3727721D+00, 0.5581097D+00, 0.1642278D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8320160D-01, 0.4292951D+00, 0.6331456D+00,-0.3055490D-01, 0.4170359D+00, 0.6552444D+00, &
+&       0.3678284D+00, 0.5598336D+00, 0.1679555D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8273470D-01, 0.4283685D+00, 0.6341921D+00,-0.3056390D-01, 0.4096720D+00, 0.6626091D+00, &
+&       0.4155160D+00, 0.5559935D+00, 0.1202681D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8218860D-01, 0.4267795D+00, 0.6357629D+00,-0.3114070D-01, 0.4133453D+00, 0.6578615D+00, &
+&       0.4068683D+00, 0.5479905D+00, 0.1323252D+00, 0.2630070D+00, 0.5733118D+00, 0.2829178D+00, &
+&       0.8207290D-01, 0.4264331D+00, 0.6359016D+00,-0.3156430D-01, 0.4151667D+00, 0.6549931D+00, &
+&       0.3982670D+00, 0.5557792D+00, 0.1301395D+00, 0.3210906D+00, 0.5659043D+00, 0.2218115D+00, &
+&       0.8097580D-01, 0.4241487D+00, 0.6387257D+00,-0.3181120D-01, 0.4045588D+00, 0.6653749D+00, &
+&       0.3889519D+00, 0.5640495D+00, 0.1289287D+00, 0.3110910D+00, 0.5652580D+00, 0.2257358D+00, &
+&       0.8110990D-01, 0.4236824D+00, 0.6386030D+00,-0.3202100D-01, 0.4119187D+00, 0.6571079D+00, &
+&       0.4159312D+00, 0.5489605D+00, 0.1133174D+00, 0.3690254D+00, 0.5355049D+00, 0.2011813D+00, &
+&       0.8109280D-01, 0.4231510D+00, 0.6385674D+00,-0.2834650D-01, 0.4622270D+00, 0.6046503D+00, &
+&       0.4210620D+00, 0.5427157D+00, 0.1108784D+00, 0.3814674D+00, 0.5321926D+00, 0.1922032D+00, &
+&       0.8095620D-01, 0.4227290D+00, 0.6388428D+00,-0.2851550D-01, 0.4626758D+00, 0.6037699D+00, &
+&       0.4503453D+00, 0.5400257D+00, 0.8283500D-01,-0.3900001D+00,-0.5233464D+00,-0.1906046D+00/
+      data coeffd5/ &
+&       0.1466037D+00, 0.5127252D+00, 0.5699804D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.1451271D+00, 0.5130677D+00, 0.5676640D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.1367063D+00, 0.5029592D+00, 0.5788425D+00, 0.1778019D+00, 0.4652198D+00, 0.5916440D+00, &
+&       0.1347642D+00, 0.5014995D+00, 0.5786696D+00, 0.1925337D+00, 0.5052917D+00, 0.5385693D+00, &
+&       0.1335596D+00, 0.5006254D+00, 0.5776791D+00, 0.2015902D+00, 0.5271681D+00, 0.5065745D+00, &
+&       0.1316317D+00, 0.4990747D+00, 0.5782636D+00, 0.2072519D+00, 0.5396099D+00, 0.4846239D+00, &
+&       0.1290297D+00, 0.4966878D+00, 0.5805887D+00, 0.2078727D+00, 0.5439701D+00, 0.4804963D+00, &
+&       0.1274352D+00, 0.4953767D+00, 0.5811668D+00, 0.2189550D+00, 0.5502884D+00, 0.4631699D+00, &
+&       0.1260477D+00, 0.4942743D+00, 0.5815451D+00, 0.2230469D+00, 0.5533923D+00, 0.4551932D+00, &
+&       0.1251206D+00, 0.4936143D+00, 0.5812637D+00, 0.2326503D+00, 0.5566155D+00, 0.4419046D+00, &
+&       0.1237838D+00, 0.4925467D+00, 0.5818767D+00, 0.2395459D+00, 0.5591501D+00, 0.4311417D+00, &
+&       0.1230828D+00, 0.4916768D+00, 0.5815408D+00, 0.2516043D+00, 0.5652168D+00, 0.3995299D+00, &
+&       0.1205559D+00, 0.4884976D+00, 0.5850190D+00, 0.2508574D+00, 0.5693113D+00, 0.3840635D+00, &
+&       0.1198237D+00, 0.4875910D+00, 0.5849874D+00, 0.2529487D+00, 0.5727612D+00, 0.3690387D+00, &
+&       0.1166279D+00, 0.4834363D+00, 0.5901395D+00, 0.2483656D+00, 0.5743154D+00, 0.3643044D+00, &
+&       0.1169136D+00, 0.4835555D+00, 0.5883864D+00, 0.2601939D+00, 0.5797758D+00, 0.3405580D+00, &
+&       0.1158636D+00, 0.4820494D+00, 0.5894448D+00, 0.2681817D+00, 0.5800614D+00, 0.3262263D+00, &
+&       0.1150105D+00, 0.4815952D+00, 0.5896133D+00, 0.2718844D+00, 0.5855569D+00, 0.3127456D+00/
+!
+      if((numatomic(iatom) > 54).or.(numatomic(iatom) < 36)) then
+        write(*,'(" Error! Subroutine bshuzmini5_g supports only 5th row elements.")')
+        call iabort
+      endif
+!
+! Set valence basis functions
+!
+      if(itype == 1) then
+!   5S function
+        ishell= ishell+1
+        do j= 1,3
+          dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps5(j,5,numatomic(iatom))
+          dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs5(j,5,numatomic(iatom))
+        enddo
+        call basisparam(ishell,0,3,iatom,dataguessbs)
+!
+        select case(numatomic(iatom))
+! Set Y - Cd functions
+          case(39:48)
+!   4D function
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd5(j,4,numatomic(iatom))
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd5(j,4,numatomic(iatom))
+            enddo
+            call basisparam(ishell,2,3,iatom,dataguessbs)
+! Set Lu - Hg functions
+          case(49:54)
+!   5P function
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp5(j,5,numatomic(iatom))
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp5(j,5,numatomic(iatom))
+            enddo
+            call basisparam(ishell,1,3,iatom,dataguessbs)
+        end select
+!
+! Set valence basis functions
+!
+      elseif(itype == 2) then
+! Set 1S functions
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 2)) then
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps5(j,1,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs5(j,1,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs)
+        endif
+! Set 2SP functions
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 10)) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps5(j,2,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs5(j,2,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp5(j,2,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp5(j,2,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs)
+        endif
+! Set 3SPD functions
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 18)) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps5(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs5(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp5(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp5(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs)
+        endif
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 28)) then
+!   D function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd5(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd5(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,2,3,iatom,dataguessbs)
+        endif
+! Set 4SPD functions
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 36)) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps5(j,4,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs5(j,4,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp5(j,4,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp5(j,4,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs)
+        endif
+!   D function
+        if(numatomic(iatom) >= 49) then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 46)) then
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd5(j,4,numatomic(iatom))
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd5(j,4,numatomic(iatom))
+            enddo
+            call basisparam(ishell,2,3,iatom,dataguessbs)
+          endif
+        endif
+!
+! Set core basis functions for core orbital calculation
+!
+      elseif(itype == 3) then
+! Set 1S functions
+        if(databasis%izcore(iatom) >= 2) then
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps5(j,1,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs5(j,1,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs)
+        endif
+! Set 2SP functions
+        if(databasis%izcore(iatom) >= 10) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps5(j,2,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs5(j,2,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp5(j,2,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp5(j,2,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs)
+        endif
+! Set 3SPD functions
+        if(databasis%izcore(iatom) >= 18) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps5(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs5(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp5(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp5(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs)
+        endif
+!   D function
+        if(databasis%izcore(iatom) >= 28) then
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd5(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd5(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,2,3,iatom,dataguessbs)
+        endif
+! Set 4SPD functions
+        if(databasis%izcore(iatom) >= 36) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps5(j,4,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs5(j,4,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp5(j,4,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp5(j,4,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs)
+        endif
+!   D function
+        if(numatomic(iatom) >= 49) then
+          if(databasis%izcore(iatom) >= 46) then
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd5(j,4,numatomic(iatom))
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd5(j,4,numatomic(iatom))
+            enddo
+            call basisparam(ishell,2,3,iatom,dataguessbs)
+          endif
         endif
       endif
 !
