@@ -8096,12 +8096,7 @@ end
           dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,6,numatomic(iatom))
           dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,6,numatomic(iatom))
         enddo
-        dataguessbs%mprim(ishell)= 3
-        dataguessbs%mbf(ishell)= 1
-        dataguessbs%mtype(ishell)= 0
-        dataguessbs%locatom(ishell)= iatom
-        dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
-        dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
+        call basisparam(ishell,0,3,iatom,dataguessbs)
 !
         select case(numatomic(iatom))
 !
@@ -8114,17 +8109,7 @@ end
               dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expf1(j,numatomic(iatom))
               dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coefff1(j,numatomic(iatom))
             enddo
-            dataguessbs%mprim(ishell)= 4
-            dataguessbs%mtype(ishell)= 3
-            dataguessbs%locatom(ishell)= iatom
-            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+4
-            if(dataguessbs%spher) then
-              dataguessbs%mbf(ishell)= 7
-              dataguessbs%locbf(ishell+1)= dataguessbs%locbf(ishell)+7
-            else
-              dataguessbs%mbf(ishell)= 10
-              dataguessbs%locbf(ishell+1)= dataguessbs%locbf(ishell)+10
-            endif
+            call basisparam(ishell,3,4,iatom,dataguessbs)
 !ishi
    if(numatomic(iatom)==58)then
             ishell= ishell+1
@@ -8132,24 +8117,14 @@ end
               dataguessbs%ex(dataguessbs%locprim(ishell)+j)= 0.05D0
               dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= 1.0D0
             enddo
-            dataguessbs%mprim(ishell)= 1
-            dataguessbs%mtype(ishell)= 1
-            dataguessbs%locatom(ishell)= iatom
-            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+1
-            dataguessbs%mbf(ishell)= 3
-            dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+3
+            call basisparam(ishell,1,1,iatom,dataguessbs)
 !
             ishell= ishell+1
             do j= 1,1
               dataguessbs%ex(dataguessbs%locprim(ishell)+j)= 0.3D0
               dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= 1.0D0
             enddo
-            dataguessbs%mprim(ishell)= 1
-            dataguessbs%mtype(ishell)= 2
-            dataguessbs%locatom(ishell)= iatom
-            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+1
-            dataguessbs%mbf(ishell)= 5
-            dataguessbs%locbf(ishell+1)= dataguessbs%locbf(ishell)+5
+            call basisparam(ishell,2,1,iatom,dataguessbs)
     endif   
 !
 ! Set Lu - Hg functions
@@ -8161,17 +8136,7 @@ end
               dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd(j,5,numatomic(iatom))
               dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd(j,5,numatomic(iatom))
             enddo
-            dataguessbs%mprim(ishell)= 3
-            dataguessbs%mtype(ishell)= 2
-            dataguessbs%locatom(ishell)= iatom
-            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
-            if(dataguessbs%spher) then
-              dataguessbs%mbf(ishell)= 5
-              dataguessbs%locbf(ishell+1)= dataguessbs%locbf(ishell)+5
-            else
-              dataguessbs%mbf(ishell)= 6
-              dataguessbs%locbf(ishell+1)= dataguessbs%locbf(ishell)+6
-            endif
+            call basisparam(ishell,2,3,iatom,dataguessbs)
 !
 ! Set Tl - Rn functions
 !
@@ -8182,17 +8147,12 @@ end
               dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(j,6,numatomic(iatom))
               dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(j,6,numatomic(iatom))
             enddo
-            dataguessbs%mprim(ishell)= 3
-            dataguessbs%mbf(ishell)= 3
-            dataguessbs%mtype(ishell)= 1
-            dataguessbs%locatom(ishell)= iatom
-            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
-            dataguessbs%locbf(ishell+1)= dataguessbs%locbf(ishell)+3
+            call basisparam(ishell,1,3,iatom,dataguessbs)
         end select
 !
 ! Set valence basis functions
 !
-      else
+      elseif(itype == 2) then
 ! Set 1S functions
         if(.not.flagecp.or.(databasis%izcore(iatom) < 2)) then
           ishell= ishell+1
@@ -8200,12 +8160,7 @@ end
             dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,1,numatomic(iatom))
             dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,1,numatomic(iatom))
           enddo
-          dataguessbs%mprim(ishell)= 3
-          dataguessbs%mbf(ishell)= 1
-          dataguessbs%mtype(ishell)= 0
-          dataguessbs%locatom(ishell)= iatom
-          dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
-          dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,dataguessbs)
         endif
 ! Set 2SP functions
         if(.not.flagecp.or.(databasis%izcore(iatom) < 10)) then
@@ -8215,24 +8170,14 @@ end
             dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,2,numatomic(iatom))
             dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,2,numatomic(iatom))
           enddo
-          dataguessbs%mprim(ishell)= 3
-          dataguessbs%mbf(ishell)= 1
-          dataguessbs%mtype(ishell)= 0
-          dataguessbs%locatom(ishell)= iatom
-          dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
-          dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,dataguessbs)
 !   P function
           ishell= ishell+1
           do j= 1,3
             dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(j,2,numatomic(iatom))
             dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(j,2,numatomic(iatom))
           enddo
-          dataguessbs%mprim(ishell)= 3
-          dataguessbs%mbf(ishell)= 3
-          dataguessbs%mtype(ishell)= 1
-          dataguessbs%locatom(ishell)= iatom
-          dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
-          dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,dataguessbs)
         endif
 ! Set 3SPD functions
         if(.not.flagecp.or.(databasis%izcore(iatom) < 18)) then
@@ -8242,24 +8187,14 @@ end
             dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,3,numatomic(iatom))
             dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,3,numatomic(iatom))
           enddo
-          dataguessbs%mprim(ishell)= 3
-          dataguessbs%mbf(ishell)= 1
-          dataguessbs%mtype(ishell)= 0
-          dataguessbs%locatom(ishell)= iatom
-          dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
-          dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,dataguessbs)
 !   P function
           ishell= ishell+1
           do j= 1,3
             dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(j,3,numatomic(iatom))
             dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(j,3,numatomic(iatom))
           enddo
-          dataguessbs%mprim(ishell)= 3
-          dataguessbs%mbf(ishell)= 3
-          dataguessbs%mtype(ishell)= 1
-          dataguessbs%locatom(ishell)= iatom
-          dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
-          dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,dataguessbs)
         endif
         if(.not.flagecp.or.(databasis%izcore(iatom) < 28)) then
 !   D function
@@ -8268,17 +8203,7 @@ end
             dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd(j,3,numatomic(iatom))
             dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd(j,3,numatomic(iatom))
           enddo
-          dataguessbs%mprim(ishell)= 3
-          dataguessbs%mtype(ishell)= 2
-          dataguessbs%locatom(ishell)= iatom
-          dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
-          if(dataguessbs%spher) then
-            dataguessbs%mbf(ishell)= 5
-            dataguessbs%locbf(ishell+1)= dataguessbs%locbf(ishell)+5
-          else
-            dataguessbs%mbf(ishell)= 6
-            dataguessbs%locbf(ishell+1)= dataguessbs%locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,3,iatom,dataguessbs)
         endif
 ! Set 4SPDF functions
         if(.not.flagecp.or.(databasis%izcore(iatom) < 36)) then
@@ -8288,24 +8213,14 @@ end
             dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,4,numatomic(iatom))
             dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,4,numatomic(iatom))
           enddo
-          dataguessbs%mprim(ishell)= 3
-          dataguessbs%mbf(ishell)= 1
-          dataguessbs%mtype(ishell)= 0
-          dataguessbs%locatom(ishell)= iatom
-          dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
-          dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,dataguessbs)
 !   P function
           ishell= ishell+1
           do j= 1,3
             dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(j,4,numatomic(iatom))
             dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(j,4,numatomic(iatom))
           enddo
-          dataguessbs%mprim(ishell)= 3
-          dataguessbs%mbf(ishell)= 3
-          dataguessbs%mtype(ishell)= 1
-          dataguessbs%locatom(ishell)= iatom
-          dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
-          dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,dataguessbs)
         endif
 !   D function
         if(.not.flagecp.or.(databasis%izcore(iatom) < 46)) then
@@ -8314,17 +8229,7 @@ end
             dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd(j,4,numatomic(iatom))
             dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd(j,4,numatomic(iatom))
           enddo
-          dataguessbs%mprim(ishell)= 3
-          dataguessbs%mtype(ishell)= 2
-          dataguessbs%locatom(ishell)= iatom
-          dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
-          if(dataguessbs%spher) then
-            dataguessbs%mbf(ishell)= 5
-            dataguessbs%locbf(ishell+1)= dataguessbs%locbf(ishell)+5
-          else
-            dataguessbs%mbf(ishell)= 6
-            dataguessbs%locbf(ishell+1)= dataguessbs%locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,3,iatom,dataguessbs)
         endif
 !   F function
         if(numatomic(iatom) >= 71) then
@@ -8334,45 +8239,26 @@ end
                 dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expf2(j,numatomic(iatom))
                 dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coefff2(j,numatomic(iatom))
               enddo
-              dataguessbs%mprim(ishell)= 3
-              dataguessbs%mtype(ishell)= 3
-              dataguessbs%locatom(ishell)= iatom
-              dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
-              if(dataguessbs%spher) then
-                dataguessbs%mbf(ishell)= 7
-                dataguessbs%locbf(ishell+1)= dataguessbs%locbf(ishell)+7
-              else
-                dataguessbs%mbf(ishell)= 10
-                dataguessbs%locbf(ishell+1)= dataguessbs%locbf(ishell)+10
-              endif
+              call basisparam(ishell,3,3,iatom,dataguessbs)
             endif
           endif
 ! Set 5SPD functions
-        if(.not.flagecp.or.((databasis%izcore(iatom) /= 54).and.(databasis%izcore(iatom) < 68))) then
+        if(.not.flagecp.or. &
+&          ((databasis%izcore(iatom) /= 54).and.(databasis%izcore(iatom) < 68))) then
 !   S function
           ishell= ishell+1
           do j= 1,3
             dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,5,numatomic(iatom))
             dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,5,numatomic(iatom))
           enddo
-          dataguessbs%mprim(ishell)= 3
-          dataguessbs%mbf(ishell)= 1
-          dataguessbs%mtype(ishell)= 0
-          dataguessbs%locatom(ishell)= iatom
-          dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
-          dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,dataguessbs)
 !   P function
           ishell= ishell+1
           do j= 1,3
             dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(j,5,numatomic(iatom))
             dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(j,5,numatomic(iatom))
           enddo
-          dataguessbs%mprim(ishell)= 3
-          dataguessbs%mbf(ishell)= 3
-          dataguessbs%mtype(ishell)= 1
-          dataguessbs%locatom(ishell)= iatom
-          dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
-          dataguessbs%locbf(ishell+1) = dataguessbs%locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,dataguessbs)
         endif
 !   D function
         if(numatomic(iatom) >= 81) then
@@ -8382,17 +8268,128 @@ end
               dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd(j,5,numatomic(iatom))
               dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd(j,5,numatomic(iatom))
             enddo
-            dataguessbs%mprim(ishell)= 3
-            dataguessbs%mtype(ishell)= 2
-            dataguessbs%locatom(ishell)= iatom
-            dataguessbs%locprim(ishell+1)= dataguessbs%locprim(ishell)+3
-            if(dataguessbs%spher) then
-              dataguessbs%mbf(ishell)= 5
-              dataguessbs%locbf(ishell+1)= dataguessbs%locbf(ishell)+5
-            else
-              dataguessbs%mbf(ishell)= 6
-              dataguessbs%locbf(ishell+1)= dataguessbs%locbf(ishell)+6
+            call basisparam(ishell,2,3,iatom,dataguessbs)
+          endif
+        endif
+!
+! Set core basis functions for core orbital calculation
+!
+      elseif(itype == 3) then
+! Set 1S functions
+        if(databasis%izcore(iatom) >= 2) then
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,1,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,1,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs)
+        endif
+! Set 2SP functions
+        if(databasis%izcore(iatom) >= 10) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,2,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,2,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(j,2,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(j,2,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs)
+        endif
+! Set 3SPD functions
+        if(databasis%izcore(iatom) >= 18) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs)
+        endif
+!   D function
+        if(databasis%izcore(iatom) >= 28) then
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,2,3,iatom,dataguessbs)
+        endif
+! Set 4SPDF functions
+        if(databasis%izcore(iatom) >= 36) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,4,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,4,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(j,4,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(j,4,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs)
+        endif
+!   D function
+        if(databasis%izcore(iatom) >= 46) then
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd(j,4,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd(j,4,numatomic(iatom))
+          enddo
+          call basisparam(ishell,2,3,iatom,dataguessbs)
+        endif
+!   F function
+        if(numatomic(iatom) >= 71) then
+          if(databasis%izcore(iatom) >= 60) then
+              ishell= ishell+1
+              do j= 1,3
+                dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expf2(j,numatomic(iatom))
+                dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coefff2(j,numatomic(iatom))
+              enddo
+              call basisparam(ishell,3,3,iatom,dataguessbs)
             endif
+          endif
+! Set 5SPD functions
+        if((databasis%izcore(iatom) == 54).or.(databasis%izcore(iatom) >= 68)) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,5,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,5,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(j,5,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(j,5,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs)
+        endif
+!   D function
+        if(numatomic(iatom) >= 81) then
+          if(databasis%izcore(iatom) >= 78) then
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd(j,5,numatomic(iatom))
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd(j,5,numatomic(iatom))
+            enddo
+            call basisparam(ishell,2,3,iatom,dataguessbs)
           endif
         endif
       endif
