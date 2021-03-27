@@ -157,7 +157,6 @@
       guess                 specifies the guess calculation.
               = huckel      extended Huckel calculation (default)
               = check       checkpoint file
-              = hf          Hartree-Fock calculation, valid only for DFT calculation
 
       check                 specifies the checkpoint file. (defalut: <empty>)
 

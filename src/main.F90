@@ -456,7 +456,7 @@ end
         call tstamp(1,datacomp)
 !
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
-        if(datajob%guess == 'HF') then
+        if(datajob%guess == 'HUCKEL') then
           savedconv= datajob%dconv
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
@@ -633,7 +633,7 @@ end
         endif
         call tstamp(1,datacomp)
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
-        if(datajob%guess == 'HF') then
+        if(datajob%guess == 'HUCKEL') then
           savedconv= datajob%dconv
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
@@ -793,7 +793,7 @@ end
 &                    datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) go to 9999
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
-        if(datajob%guess == 'HF') then
+        if(datajob%guess == 'HUCKEL') then
           savedconv= datajob%dconv
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
@@ -981,7 +981,7 @@ end
 &                    energymob,datajob,datamol,databasis,datacomp)
         if(.not.datacomp%convergedscf) go to 9999
       elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
-        if(datajob%guess == 'HF') then
+        if(datajob%guess == 'HUCKEL') then
           savedconv= datajob%dconv
           savecutint2= datajob%cutint2
           datajob%dconv= max(datajob%dconv,1.0D-2)
@@ -1219,7 +1219,7 @@ end
 &                      datajob,datamol,databasis,datacomp)
           if(.not.datacomp%convergedscf) go to 9999
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
-          if((iopt == 1).and.(datajob%guess == 'HF')) then
+          if((iopt == 1).and.(datajob%guess == 'HUCKEL')) then
             savedconv= datajob%dconv
             savecutint2= datajob%cutint2
             datajob%dconv= max(datajob%dconv,1.0D-2)
@@ -1585,7 +1585,7 @@ end
 &                      energymob,datajob,datamol,databasis,datacomp)
           if(.not.datacomp%convergedscf) go to 9999
         elseif((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
-          if((iopt == 1).and.(datajob%guess == 'HF')) then
+          if((iopt == 1).and.(datajob%guess == 'HUCKEL')) then
             savedconv= datajob%dconv
             savecutint2= datajob%cutint2
             datajob%dconv= max(datajob%dconv,1.0D-2)
@@ -1895,11 +1895,11 @@ end
         endif
       endif
 !
-      if(((datajob%idftex == 0).and.(datajob%idftcor == 0)).and.(datajob%guess == 'HF')) then
-        datajob%guess= 'HUCKEL'
-        if(datacomp%master) write(datacomp%iout,'(" Warning! Guess changes from HF to HUCKEL.")')
-        datacomp%nwarn= datacomp%nwarn+1
-      endif
+!     if(((datajob%idftex == 0).and.(datajob%idftcor == 0)).and.(datajob%guess == 'HF')) then
+!       datajob%guess= 'HUCKEL'
+!       if(datacomp%master) write(datacomp%iout,'(" Warning! Guess changes from HF to HUCKEL.")')
+!       datacomp%nwarn= datacomp%nwarn+1
+!     endif
 !
       return
 end

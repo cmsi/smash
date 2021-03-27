@@ -134,7 +134,7 @@
       if(datacomp%master) then
         write(cmaxiter,'(i0)') datajob%maxiter
         write(datacomp%iout,'(1x,74("="))')
-        if(datajob%guess=='HF') then
+        if((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
           write(datacomp%iout, &
 &               '("   Restricted Hartree-Fock calculation for guess orbitals of DFT")')
         else
@@ -354,7 +354,7 @@
       enddo
 !
       if((datacomp%master).and.(datacomp%convergedscf))then
-        if(datajob%guess /= 'HF') then
+        if((datajob%idftex == 0).and.(datajob%idftcor == 0)) then
           write(datacomp%iout,'(" --------------------------------------------")')
           write(datacomp%iout,'("    SCF Converged.")')
           write(datacomp%iout,'("    RHF Energy =",f18.9," Hartree")') datamol%escf
@@ -1525,7 +1525,7 @@ end
       if(datacomp%master) then
         write(cmaxiter,'(i0)') datajob%maxiter
         write(datacomp%iout,'(1x,74("="))')
-        if(datajob%guess=='HF') then
+        if((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
           write(datacomp%iout, &
 &               '("   Unrestricted Hartree-Fock calculation for guess orbitals of DFT")')
         else
@@ -1788,7 +1788,7 @@ end
       enddo
 !
       if(datacomp%convergedscf) then
-        if(datajob%guess/='HF') then
+        if((datajob%idftex == 0).and.(datajob%idftcor == 0)) then
           if(datacomp%master) then
             write(datacomp%iout,'(" --------------------------------------------")')
             write(datacomp%iout,'("    SCF Converged.")')
