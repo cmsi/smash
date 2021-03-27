@@ -1558,8 +1558,8 @@ end
 !
       select case(mod(datajob%iprint,10))
         case(2:3)
-          minmo=max(1,datamol%neleca-15)
-          maxmo=min(datamol%nmo,datamol%neleca+15)
+          minmo=max(1,datamol%neleca-10)
+          maxmo=min(datamol%nmo,datamol%neleca+10)
         case(4:)
           minmo= 1
           maxmo= datamol%nmo
