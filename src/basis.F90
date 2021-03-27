@@ -6817,7 +6817,7 @@ end
           call basisparam(ishell,0,1,iatom,databasis)
 !
           nump= 4
-          if(numatomic(iatom) == 4) nump= 3
+          if(numatomic(iatom) == 3) nump= 3
           ishell= ishell+1
           do j= 1,nump
             databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
@@ -8494,8 +8494,8 @@ end
 &        0.103673D+00, 0.458190D+00, 0.613400D+00, 0.229436D+00, 0.552960D+00, 0.353700D+00, &
 &        0.101789D+00, 0.456107D+00, 0.614282D+00, 0.235903D+00, 0.558066D+00, 0.346600D+00, &
 &        0.100079D+00, 0.454226D+00, 0.615259D+00, 0.237276D+00, 0.558360D+00, 0.346165D+00, &
-&        0.857898D+02, 0.192548D+02, 0.526862D+01, 0.168314D+01, 0.625809D+00, 0.223898D+00, &
-&        0.979746D+02, 0.220674D+02, 0.609388D+01, 0.201789D+01, 0.766651D+00, 0.284319D+00/)
+&        0.980350D-01, 0.451041D+00, 0.617708D+00, 0.238636D+00, 0.571057D+00, 0.316536D+00, &
+&        0.963160D-01, 0.448108D+00, 0.619921D+00, 0.245029D+00, 0.584385D+00, 0.287666D+00/)
       logical,intent(in) :: flagecp
 !
 ! Set valence basis functions
@@ -8594,7 +8594,7 @@ end
             call basisparam(ishell,1,3,iatom,dataguessbs)
           endif
         endif
-! Set 3S functions
+! Set 3SP functions
         if(numatomic(iatom) >= 19) then
           if(.not.flagecp.or.(databasis%izcore(iatom) < 18))then
 !   S function
