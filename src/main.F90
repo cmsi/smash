@@ -459,8 +459,8 @@ end
         if(datajob%guess == 'HUCKEL') then
           savedconv= datajob%dconv
           savecutint2= datajob%cutint2
-          datajob%dconv= max(datajob%dconv,1.0D-2)
-          datajob%cutint2= max(datajob%cutint2,1.0D-9)
+          datajob%dconv= min(datajob%dconv*1.0D+04,1.0D-1)
+          datajob%cutint2= min(datajob%cutint2*5.0D+02,1.0D-8)
           call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                      datajob,datamol,databasis,datacomp)
           if(.not.datacomp%convergedscf) go to 9999
@@ -636,8 +636,8 @@ end
         if(datajob%guess == 'HUCKEL') then
           savedconv= datajob%dconv
           savecutint2= datajob%cutint2
-          datajob%dconv= max(datajob%dconv,1.0D-2)
-          datajob%cutint2= max(datajob%cutint2,1.0D-9)
+          datajob%dconv= min(datajob%dconv*1.0D+04,1.0D-1)
+          datajob%cutint2= min(datajob%cutint2*5.0D+02,1.0D-8)
           call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
 &                      energymob,datajob,datamol,databasis,datacomp)
           if(.not.datacomp%convergedscf) go to 9999
@@ -796,8 +796,8 @@ end
         if(datajob%guess == 'HUCKEL') then
           savedconv= datajob%dconv
           savecutint2= datajob%cutint2
-          datajob%dconv= max(datajob%dconv,1.0D-2)
-          datajob%cutint2= max(datajob%cutint2,1.0D-9)
+          datajob%dconv= min(datajob%dconv*1.0D+04,1.0D-1)
+          datajob%cutint2= min(datajob%cutint2*5.0D+02,1.0D-8)
           call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                      datajob,datamol,databasis,datacomp)
           if(.not.datacomp%convergedscf) go to 9999
@@ -984,8 +984,8 @@ end
         if(datajob%guess == 'HUCKEL') then
           savedconv= datajob%dconv
           savecutint2= datajob%cutint2
-          datajob%dconv= max(datajob%dconv,1.0D-2)
-          datajob%cutint2= max(datajob%cutint2,1.0D-9)
+          datajob%dconv= min(datajob%dconv*1.0D+04,1.0D-1)
+          datajob%cutint2= min(datajob%cutint2*5.0D+02,1.0D-8)
           call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
 &                      energymob,datajob,datamol,databasis,datacomp)
           if(.not.datacomp%convergedscf) go to 9999
@@ -1222,8 +1222,8 @@ end
           if((iopt == 1).and.(datajob%guess == 'HUCKEL')) then
             savedconv= datajob%dconv
             savecutint2= datajob%cutint2
-            datajob%dconv= max(datajob%dconv,1.0D-2)
-            datajob%cutint2= max(datajob%cutint2,1.0D-9)
+            datajob%dconv= min(datajob%dconv*1.0D+04,1.0D-1)
+            datajob%cutint2= min(datajob%cutint2*5.0D+02,1.0D-8)
             call calcrhf(h1mtrx,cmo,fock,ortho,smtrx,dmtrx,xint,energymo, &
 &                        datajob,datamol,databasis,datacomp)
             if(.not.datacomp%convergedscf) go to 9999
@@ -1588,8 +1588,8 @@ end
           if((iopt == 1).and.(datajob%guess == 'HUCKEL')) then
             savedconv= datajob%dconv
             savecutint2= datajob%cutint2
-            datajob%dconv= max(datajob%dconv,1.0D-2)
-            datajob%cutint2= max(datajob%cutint2,1.0D-9)
+            datajob%dconv= min(datajob%dconv*1.0D+04,1.0D-1)
+            datajob%cutint2= min(datajob%cutint2*5.0D+02,1.0D-8)
             call calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,smtrx,dmtrxa,dmtrxb,xint,energymoa, &
 &                        energymob,datajob,datamol,databasis,datacomp)
             if(.not.datacomp%convergedscf) go to 9999
