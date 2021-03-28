@@ -3046,15 +3046,16 @@ end
       integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       real(8),parameter :: one=1.0D+00
-      real(8) :: ex631gs(3:30)= &
-&     (/2.00D-01,4.00D-01,6.00D-01,8.00D-01,8.00D-01,8.00D-01,8.00D-01,8.00D-01, &
-&       1.75D-01,1.75D-01,3.25D-01,4.50D-01,5.50D-01,6.50D-01,7.50D-01,8.50D-01, &
-&       2.00D-01,2.00D-01,8.00D-01,8.00D-01,8.00D-01,8.00D-01,8.00D-01,8.00D-01, &
-&       8.00D-01,8.00D-01,8.00D-01,8.00D-01/)
+      real(8) :: ex631gs(3:36)= &
+&     (/ 2.00D-01, 4.00D-01, 6.00D-01, 8.00D-01, 8.00D-01, 8.00D-01, 8.00D-01, 8.00D-01, &
+&        1.75D-01, 1.75D-01, 3.25D-01, 4.50D-01, 5.50D-01, 6.50D-01, 7.50D-01, 8.50D-01, &
+&       4.485D-02, 5.02D-02, 8.00D-01, 8.00D-01, 8.00D-01, 8.00D-01, 8.00D-01, 8.00D-01, &
+&        8.00D-01, 8.00D-01, 8.00D-01, 8.00D-01,2.289D-01,2.772D-01,3.277D-01,3.810D-01, &
+&       4.366D-01,4.948D-01/)
 !
       select case (numatomic(iatom))
         case(:2)
-        case(3:20)
+        case(3:20, 31:36)
           ishell= ishell+1
           databasis%ex(databasis%locprim(ishell)+1)= ex631gs(numatomic(iatom))
           databasis%coeff(databasis%locprim(ishell)+1)= one
@@ -3065,7 +3066,7 @@ end
           databasis%coeff(databasis%locprim(ishell)+1)= one
           call basisparam(ishell,3,1,iatom,databasis)
         case default
-          write(*,'(" Error! This program supports Li - Zn 6-31G* basis set.")')
+          write(*,'(" Error! This program supports Li - Kr 6-31G* basis set.")')
           call iabort
       end select
 !
