@@ -1044,7 +1044,7 @@ end
 !      nangij   (degrees of angular momentum)
 !      nbfij    (numbers of basis functions)
 !      locbfij  (starting addresses of basis functions)
-!      mxprsh   (size of primitive fuction array)
+!      mxprsh   (size of primitive function array)
 !      threshex (threshold of exponential calculation)
 !      iandj    (flag of ish == jsh)
 ! Out: egrad    (energy gradient value)

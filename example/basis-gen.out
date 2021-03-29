@@ -11,7 +11,7 @@
  Number of threads   =    28
 
  -------------------------------------------------------------------------
-   Job infomation
+   Job information
  -------------------------------------------------------------------------
    Runtype = ENERGY      ,  Method  = B3LYP        ,  Basis    = GEN         
    Memory  =      8000MB ,  SCFtype = RHF          ,  Precision= MEDIUM      

@@ -14,7 +14,7 @@
   -------------------------
   In a SMASH calculation, create a checkpoint file
   (See Input format 2.2 in doc/User_manual).
-  The cube-generator requires four argments.
+  The cube-generator requires four arguments.
     1. checkpoint file
        Name of the checkpoint file.
     2. cube file

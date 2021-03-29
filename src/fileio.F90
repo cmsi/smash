@@ -580,7 +580,7 @@ end
         write(ciprint,'(i0)') datajob%iprint
 !
         write(datacomp%iout,'(1x,73("-"))')
-        write(datacomp%iout,'("   Job infomation")')
+        write(datacomp%iout,'("   Job information")')
         write(datacomp%iout,'(1x,73("-"))')
         write(datacomp%iout,'("   Runtype = ",a12,",  Method  = ",a12," ,  Basis    = ",a12)') &
 &                  datajob%runtype, datajob%method, databasis%basis

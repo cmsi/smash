@@ -234,7 +234,7 @@ end
 !       logical :: fdiff=.true.
       end type
 !
-! Molecule Infomation
+! Molecule Information
 !
 ! numatomic  : Atomic number
 ! natom      : Number of atoms

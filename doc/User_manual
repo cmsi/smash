@@ -158,12 +158,12 @@
               = huckel      extended Huckel calculation (default)
               = check       checkpoint file
 
-      check                 specifies the checkpoint file. (defalut: <empty>)
+      check                 specifies the checkpoint file. (default: <empty>)
 
-      xyz                   specifies the xyz file. (defalut: <empty>)
+      xyz                   specifies the xyz file. (default: <empty>)
 
       cutint2               specifies the threshold for the two-electron integral calculation.
-                            (defalut: 1.0E-11)
+                            (default: 1.0E-11)
 
       bohr                  specifies the unit of the input geometry.
               = .false.     Angstrom (default)
@@ -198,7 +198,7 @@
 
     2.3 scf keywords
       scfconv               specifies the type of SCF convergence method.
-              = DIIS        Pulay's DIIS interpolation (defalut)
+              = DIIS        Pulay's DIIS interpolation (default)
               = SOSCF       Approximate second-order SCF (SOSCF) method
               = QC          Quadratically convergent (QC) SCF method
 
