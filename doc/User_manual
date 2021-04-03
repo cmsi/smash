@@ -102,8 +102,25 @@
               = STO-3G      (default)
               = gen         Basis functions for each element are set in
                             "basis" section. See Section 2.7.
+              = 3-21G
               = 6-31G
-              = 6-31G(d)
+              = 6-31G*
+              = 6-31G**
+              = 6-31+G
+              = 6-31+G*
+              = 6-31+G**
+              = 6-31++G
+              = 6-31++G*
+              = 6-31++G**
+              = 6-311G
+              = 6-311G*
+              = 6-311G**
+              = 6-311+G
+              = 6-311+G*
+              = 6-311+G**
+              = 6-311++G
+              = 6-311++G*
+              = 6-311++G**
               = cc-pvdz
               = cc-pvtz
               = cc-pvqz
@@ -308,7 +325,7 @@
       basis function section.
 
       e.g.1) C O
-           6-31G(d)
+           6-31G*
            ****
            H
            STO-3G

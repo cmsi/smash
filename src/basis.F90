@@ -55,6 +55,30 @@
             do iatom= 1, datamol%natom
               call bs631gdp(iatom,ishell,datamol%numatomic,databasis)
             enddo
+          case('6-31+G')
+            do iatom= 1, datamol%natom
+              call bs631pg(iatom,ishell,datamol%numatomic,databasis)
+            enddo
+          case('6-31+G(D)','6-31+G*')
+            do iatom= 1, datamol%natom
+              call bs631pgd(iatom,ishell,datamol%numatomic,databasis)
+            enddo
+          case('6-31+G(D,P)','6-31+G**')
+            do iatom= 1, datamol%natom
+              call bs631pgdp(iatom,ishell,datamol%numatomic,databasis)
+            enddo
+          case('6-31++G')
+            do iatom= 1, datamol%natom
+              call bs631ppg(iatom,ishell,datamol%numatomic,databasis)
+            enddo
+          case('6-31++G(D)','6-31++G*')
+            do iatom= 1, datamol%natom
+              call bs631ppgd(iatom,ishell,datamol%numatomic,databasis)
+            enddo
+          case('6-31++G(D,P)','6-31++G**')
+            do iatom= 1, datamol%natom
+              call bs631ppgdp(iatom,ishell,datamol%numatomic,databasis)
+            enddo
           case('6-311G')
             do iatom= 1, datamol%natom
               call bs6311g(iatom,ishell,datamol%numatomic,databasis)
@@ -66,6 +90,30 @@
           case('6-311G(D,P)','6-311G**')
             do iatom= 1, datamol%natom
               call bs6311gdp(iatom,ishell,datamol%numatomic,databasis)
+            enddo
+          case('6-311+G')
+            do iatom= 1, datamol%natom
+              call bs6311pg(iatom,ishell,datamol%numatomic,databasis)
+            enddo
+          case('6-311+G(D)','6-311+G*')
+            do iatom= 1, datamol%natom
+              call bs6311pgd(iatom,ishell,datamol%numatomic,databasis)
+            enddo
+          case('6-311+G(D,P)','6-311+G**')
+            do iatom= 1, datamol%natom
+              call bs6311pgdp(iatom,ishell,datamol%numatomic,databasis)
+            enddo
+          case('6-311++G')
+            do iatom= 1, datamol%natom
+              call bs6311ppg(iatom,ishell,datamol%numatomic,databasis)
+            enddo
+          case('6-311++G(D)','6-311++G*')
+            do iatom= 1, datamol%natom
+              call bs6311ppgd(iatom,ishell,datamol%numatomic,databasis)
+            enddo
+          case('6-311++G(D,P)','6-311++G**')
+            do iatom= 1, datamol%natom
+              call bs6311ppgdp(iatom,ishell,datamol%numatomic,databasis)
             enddo
           case('CC-PVDZ')
             do iatom= 1, datamol%natom
@@ -337,12 +385,36 @@ end
             call bs631gd(iatom,ishell,datamol%numatomic,databasis)
           case('6-31G(D,P)','6-31G**')
             call bs631gdp(iatom,ishell,datamol%numatomic,databasis)
+          case('6-31+G')
+            call bs631pg(iatom,ishell,datamol%numatomic,databasis)
+          case('6-31+G(D)','6-31+G*')
+            call bs631pgd(iatom,ishell,datamol%numatomic,databasis)
+          case('6-31+G(D,P)','6-31+G**')
+            call bs631pgdp(iatom,ishell,datamol%numatomic,databasis)
+          case('6-31++G')
+            call bs631ppg(iatom,ishell,datamol%numatomic,databasis)
+          case('6-31++G(D)','6-31++G*')
+            call bs631ppgd(iatom,ishell,datamol%numatomic,databasis)
+          case('6-31++G(D,P)','6-31++G**')
+            call bs631ppgdp(iatom,ishell,datamol%numatomic,databasis)
           case('6-311G')
             call bs6311g(iatom,ishell,datamol%numatomic,databasis)
           case('6-311G(D)','6-311G*')
             call bs6311gd(iatom,ishell,datamol%numatomic,databasis)
           case('6-311G(D,P)','6-311G**')
             call bs6311gdp(iatom,ishell,datamol%numatomic,databasis)
+          case('6-311+G')
+            call bs6311pg(iatom,ishell,datamol%numatomic,databasis)
+          case('6-311+G(D)','6-311+G*')
+            call bs6311pgd(iatom,ishell,datamol%numatomic,databasis)
+          case('6-311+G(D,P)','6-311+G**')
+            call bs6311pgdp(iatom,ishell,datamol%numatomic,databasis)
+          case('6-311++G')
+            call bs6311ppg(iatom,ishell,datamol%numatomic,databasis)
+          case('6-311++G(D)','6-311++G*')
+            call bs6311ppgd(iatom,ishell,datamol%numatomic,databasis)
+          case('6-311++G(D,P)','6-311++G**')
+            call bs6311ppgdp(iatom,ishell,datamol%numatomic,databasis)
           case('CC-PVDZ')
             call bsccpvdz(iatom,ishell,datamol%numatomic,databasis)
           case('CC-PVTZ')
@@ -2524,7 +2596,6 @@ end
       integer :: ip(36)=(/0,0,0,4,8,12,16,20,24,28,32,42,52,62,72,82,92,102, &
 &                         112,128,144,160,176,192,208,224,240,256,272,288,304,320,336,352,368,384/)
       integer :: id(19:36)=(/0,4,8,12,16,20,24,28,32,36,40,44,48,52,56,60,64,68/)
-!     real(8) :: ex631g(480)= &
       real(8) :: ex631g(612)= &
 &     (/1.873113696D+01,2.825394365D+00,6.401216923D-01,1.612777588D-01,3.842163400D+01, &
 &       5.778030000D+00,1.241774000D+00,2.979640000D-01,6.424189150D+02,9.679851530D+01, &
@@ -3076,7 +3147,7 @@ end
   subroutine bs631gd(iatom,ishell,numatomic,databasis)
 !-------------------------------------------------------
 !
-! Set basis functions of 6-31G(d)
+! Set basis functions of 6-31G*
 !
       use modparam, only : mxatom
       use modtype, only : typebasis
@@ -3085,9 +3156,17 @@ end
       integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
 !
-      call bs631g(iatom,ishell,numatomic,databasis)
-!
-      call bs631gs(iatom,ishell,numatomic,databasis)
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs631g(iatom,ishell,numatomic,databasis)
+        case(3:36)
+          call bs631g(iatom,ishell,numatomic,databasis)
+          call bs631gs(iatom,ishell,numatomic,databasis)
+        case (:0)
+        case default
+          write(*,'(" Error! This program supports H - Kr 6-31G* basis set.")')
+          call iabort
+      end select
 !
       return
 end
@@ -3097,7 +3176,7 @@ end
   subroutine bs631gdp(iatom,ishell,numatomic,databasis)
 !--------------------------------------------------------
 !
-! Set basis functions of 6-31G(d,p)
+! Set basis functions of 6-31G**
 !
       use modparam, only : mxatom
       use modtype, only : typebasis
@@ -3106,13 +3185,199 @@ end
       integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
 !
-      call bs631g(iatom,ishell,numatomic,databasis)
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs631g(iatom,ishell,numatomic,databasis)
+          call bs631gss(iatom,ishell,numatomic,databasis)
+        case(3:36)
+          call bs631g(iatom,ishell,numatomic,databasis)
+          call bs631gs(iatom,ishell,numatomic,databasis)
+        case (:0)
+        case default
+          write(*,'(" Error! This program supports H - Kr 6-31G** basis set.")')
+          call iabort
+      end select
+!
+      return
+end
+
+
+!-------------------------------------------------------
+  subroutine bs631pg(iatom,ishell,numatomic,databasis)
+!-------------------------------------------------------
+!
+! Set basis functions of 6-31+G
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
 !
       select case(numatomic(iatom))
         case(1:2)
-          call bs631gss(iatom,ishell,numatomic,databasis)
-        case(3:)
+          call bs631g(iatom,ishell,numatomic,databasis)
+        case(3:20)
+          call bs631g(iatom,ishell,numatomic,databasis)
+          call bsdiffuse(iatom,ishell,numatomic,databasis)
+        case (:0)
+        case default
+          write(*,'(" Error! This program supports H - Ca 6-31+G basis set.")')
+          call iabort
+      end select
+!
+      return
+end
+
+!--------------------------------------------------------
+  subroutine bs631pgd(iatom,ishell,numatomic,databasis)
+!--------------------------------------------------------
+!
+! Set basis functions of 6-31+G*
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs631g(iatom,ishell,numatomic,databasis)
+        case(3:20)
+          call bs631g(iatom,ishell,numatomic,databasis)
           call bs631gs(iatom,ishell,numatomic,databasis)
+          call bsdiffuse(iatom,ishell,numatomic,databasis)
+        case (:0)
+        case default
+          write(*,'(" Error! This program supports H - Ca 6-31+G* basis set.")')
+          call iabort
+      end select
+!
+      return
+end
+
+
+!---------------------------------------------------------
+  subroutine bs631pgdp(iatom,ishell,numatomic,databasis)
+!---------------------------------------------------------
+!
+! Set basis functions of 6-31+G**
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs631g(iatom,ishell,numatomic,databasis)
+          call bs631gss(iatom,ishell,numatomic,databasis)
+        case(3:20)
+          call bs631g(iatom,ishell,numatomic,databasis)
+          call bs631gs(iatom,ishell,numatomic,databasis)
+          call bsdiffuse(iatom,ishell,numatomic,databasis)
+        case (:0)
+        case default
+          write(*,'(" Error! This program supports H - Ca 6-31+G** basis set.")')
+          call iabort
+      end select
+!
+      return
+end
+
+
+!--------------------------------------------------------
+  subroutine bs631ppg(iatom,ishell,numatomic,databasis)
+!--------------------------------------------------------
+!
+! Set basis functions of 6-31++G
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs631g(iatom,ishell,numatomic,databasis)
+          call bsdiffuse(iatom,ishell,numatomic,databasis)
+        case(3:20)
+          call bs631g(iatom,ishell,numatomic,databasis)
+          call bsdiffuse(iatom,ishell,numatomic,databasis)
+        case (:0)
+        case default
+          write(*,'(" Error! This program supports H - Ca 6-31++G basis set.")')
+          call iabort
+      end select
+!
+      return
+end
+
+
+!---------------------------------------------------------
+  subroutine bs631ppgd(iatom,ishell,numatomic,databasis)
+!---------------------------------------------------------
+!
+! Set basis functions of 6-31++G*
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs631g(iatom,ishell,numatomic,databasis)
+          call bsdiffuse(iatom,ishell,numatomic,databasis)
+        case(3:20)
+          call bs631g(iatom,ishell,numatomic,databasis)
+          call bs631gs(iatom,ishell,numatomic,databasis)
+          call bsdiffuse(iatom,ishell,numatomic,databasis)
+        case (:0)
+        case default
+          write(*,'(" Error! This program supports H - Ca 6-31++G* basis set.")')
+          call iabort
+      end select
+!
+      return
+end
+
+
+!----------------------------------------------------------
+  subroutine bs631ppgdp(iatom,ishell,numatomic,databasis)
+!----------------------------------------------------------
+!
+! Set basis functions of 6-31++G**
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs631g(iatom,ishell,numatomic,databasis)
+          call bs631gss(iatom,ishell,numatomic,databasis)
+          call bsdiffuse(iatom,ishell,numatomic,databasis)
+        case(3:20)
+          call bs631g(iatom,ishell,numatomic,databasis)
+          call bs631gs(iatom,ishell,numatomic,databasis)
+          call bsdiffuse(iatom,ishell,numatomic,databasis)
+        case (:0)
+        case default
+          write(*,'(" Error! This program supports H - Ca 6-31++G** basis set.")')
+          call iabort
       end select
 !
       return
@@ -3123,7 +3388,7 @@ end
   subroutine bs631gs(iatom,ishell,numatomic,databasis)
 !-------------------------------------------------------
 !
-! Set basis polarization function of 6-31G(d)
+! Set polarization function of 6-31G*
 !
       use modparam, only : mxatom, mxao, mxshell, mxprim
       use modtype, only : typebasis
@@ -3140,7 +3405,6 @@ end
 &       4.366D-01,4.948D-01/)
 !
       select case (numatomic(iatom))
-        case(:2)
         case(3:20, 31:36)
           ishell= ishell+1
           databasis%ex(databasis%locprim(ishell)+1)= ex631gs(numatomic(iatom))
@@ -3151,9 +3415,6 @@ end
           databasis%ex(databasis%locprim(ishell)+1)= ex631gs(numatomic(iatom))
           databasis%coeff(databasis%locprim(ishell)+1)= one
           call basisparam(ishell,3,1,iatom,databasis)
-        case default
-          write(*,'(" Error! This program supports Li - Kr 6-31G* basis set.")')
-          call iabort
       end select
 !
       return
@@ -3164,7 +3425,7 @@ end
   subroutine bs631gss(iatom,ishell,numatomic,databasis)
 !--------------------------------------------------------
 !
-! Set basis polarization function of Hydrogen 6-31G(d,p)
+! Set polarization function of Hydrogen 6-31G**
 !
       use modparam, only : mxatom, mxao, mxshell, mxprim
       use modtype, only : typebasis
@@ -3178,6 +3439,46 @@ end
         case(1:2)
           ishell= ishell+1
           databasis%ex(databasis%locprim(ishell)+1)= ex631gss
+          databasis%coeff(databasis%locprim(ishell)+1)= one
+          call basisparam(ishell,1,1,iatom,databasis)
+      end select
+!
+      return
+end
+
+
+!---------------------------------------------------------
+  subroutine bsdiffuse(iatom,ishell,numatomic,databasis)
+!---------------------------------------------------------
+!
+! Set diffuse function of 6-31++G and 6-311++G series
+!
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+      real(8),parameter :: one=1.0D+00
+      real(8) :: exdiffuse(20)= &
+&     (/ 3.600D-02, 8.600D-02, 7.400D-03, 2.070D-02, 3.150D-02, &
+&        4.380D-02, 6.390D-02, 8.450D-02, 1.076D-01, 1.300D-01, &
+&        7.600D-03, 1.460D-02, 3.180D-02, 3.310D-02, 3.480D-02, &
+&        4.050D-02, 4.830D-02, 6.000D-02, 4.700D-03, 7.100D-03/)
+!
+      select case (numatomic(iatom))
+        case(1:2)
+          ishell= ishell+1
+          databasis%ex(databasis%locprim(ishell)+1)= exdiffuse(numatomic(iatom))
+          databasis%coeff(databasis%locprim(ishell)+1)= one
+          call basisparam(ishell,0,1,iatom,databasis)
+        case(3:20)
+          ishell= ishell+1
+          databasis%ex(databasis%locprim(ishell)+1)= exdiffuse(numatomic(iatom))
+          databasis%coeff(databasis%locprim(ishell)+1)= one
+          call basisparam(ishell,0,1,iatom,databasis)
+          ishell= ishell+1
+          databasis%ex(databasis%locprim(ishell)+1)= exdiffuse(numatomic(iatom))
           databasis%coeff(databasis%locprim(ishell)+1)= one
           call basisparam(ishell,1,1,iatom,databasis)
       end select
@@ -3709,7 +4010,7 @@ end
   subroutine bs6311gd(iatom,ishell,numatomic,databasis)
 !--------------------------------------------------------
 !
-! Set basis functions of 6-311G(d)
+! Set basis functions of 6-311G*
 !
       use modparam, only : mxatom
       use modtype, only : typebasis
@@ -3718,9 +4019,17 @@ end
       integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
 !
-      call bs6311g(iatom,ishell,numatomic,databasis)
-!
-      call bs6311gs(iatom,ishell,numatomic,databasis)
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs6311g(iatom,ishell,numatomic,databasis)
+        case(3:20,31:36)
+          call bs6311g(iatom,ishell,numatomic,databasis)
+          call bs6311gs(iatom,ishell,numatomic,databasis)
+        case(:0)
+        case default
+          write(*,'(" Error! This program supports H - Ca, Ga - Kr 6-311G* basis set.")')
+          call iabort
+      end select
 !
       return
 end
@@ -3730,7 +4039,7 @@ end
   subroutine bs6311gdp(iatom,ishell,numatomic,databasis)
 !---------------------------------------------------------
 !
-! Set basis functions of 6-311G(d,p)
+! Set basis functions of 6-311G**
 !
       use modparam, only : mxatom
       use modtype, only : typebasis
@@ -3739,13 +4048,200 @@ end
       integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
 !
-      call bs6311g(iatom,ishell,numatomic,databasis)
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs6311g(iatom,ishell,numatomic,databasis)
+          call bs6311gss(iatom,ishell,numatomic,databasis)
+        case(3:20,31:36)
+          call bs6311g(iatom,ishell,numatomic,databasis)
+          call bs6311gs(iatom,ishell,numatomic,databasis)
+        case(:0)
+        case default
+          write(*,'(" Error! This program supports H - Ca, Ga - Kr 6-311G** basis set.")')
+          call iabort
+      end select
+!
+      return
+end
+
+
+!--------------------------------------------------------
+  subroutine bs6311pg(iatom,ishell,numatomic,databasis)
+!--------------------------------------------------------
+!
+! Set basis functions of 6-311+G
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
 !
       select case(numatomic(iatom))
         case(1:2)
+          call bs6311g(iatom,ishell,numatomic,databasis)
+        case(3:20)
+          call bs6311g(iatom,ishell,numatomic,databasis)
+          call bsdiffuse(iatom,ishell,numatomic,databasis)
+        case(:0)
+        case default
+          write(*,'(" Error! This program supports H - Ca 6-311+G basis set.")')
+          call iabort
+      end select
+!
+      return
+end
+
+
+!---------------------------------------------------------
+  subroutine bs6311pgd(iatom,ishell,numatomic,databasis)
+!---------------------------------------------------------
+!
+! Set basis functions of 6-311+G*
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs6311g(iatom,ishell,numatomic,databasis)
+        case(3:20)
+          call bs6311g(iatom,ishell,numatomic,databasis)
+          call bs6311gs(iatom,ishell,numatomic,databasis)
+          call bsdiffuse(iatom,ishell,numatomic,databasis)
+        case(:0)
+        case default
+          write(*,'(" Error! This program supports H - Ca 6-311+G* basis set.")')
+          call iabort
+      end select
+!
+      return
+end
+
+
+!----------------------------------------------------------
+  subroutine bs6311pgdp(iatom,ishell,numatomic,databasis)
+!----------------------------------------------------------
+!
+! Set basis functions of 6-311+G**
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs6311g(iatom,ishell,numatomic,databasis)
           call bs6311gss(iatom,ishell,numatomic,databasis)
-        case(3:)
-        call bs6311gs(iatom,ishell,numatomic,databasis)
+        case(3:20)
+          call bs6311g(iatom,ishell,numatomic,databasis)
+          call bs6311gs(iatom,ishell,numatomic,databasis)
+          call bsdiffuse(iatom,ishell,numatomic,databasis)
+        case(:0)
+        case default
+          write(*,'(" Error! This program supports H - Ca 6-311+G** basis set.")')
+          call iabort
+      end select
+!
+      return
+end
+
+
+!---------------------------------------------------------
+  subroutine bs6311ppg(iatom,ishell,numatomic,databasis)
+!---------------------------------------------------------
+!
+! Set basis functions of 6-311++G
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs6311g(iatom,ishell,numatomic,databasis)
+          call bsdiffuse(iatom,ishell,numatomic,databasis)
+        case(3:20)
+          call bs6311g(iatom,ishell,numatomic,databasis)
+          call bsdiffuse(iatom,ishell,numatomic,databasis)
+        case(:0)
+        case default
+          write(*,'(" Error! This program supports H - Ca 6-311++G basis set.")')
+          call iabort
+      end select
+!
+      return
+end
+
+
+!----------------------------------------------------------
+  subroutine bs6311ppgd(iatom,ishell,numatomic,databasis)
+!----------------------------------------------------------
+!
+! Set basis functions of 6-311++G*
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs6311g(iatom,ishell,numatomic,databasis)
+          call bsdiffuse(iatom,ishell,numatomic,databasis)
+        case(3:20)
+          call bs6311g(iatom,ishell,numatomic,databasis)
+          call bs6311gs(iatom,ishell,numatomic,databasis)
+          call bsdiffuse(iatom,ishell,numatomic,databasis)
+        case(:0)
+        case default
+          write(*,'(" Error! This program supports H - Ca 6-311++G* basis set.")')
+          call iabort
+      end select
+!
+      return
+end
+
+
+!-----------------------------------------------------------
+  subroutine bs6311ppgdp(iatom,ishell,numatomic,databasis)
+!-----------------------------------------------------------
+!
+! Set basis functions of 6-311++G**
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs6311g(iatom,ishell,numatomic,databasis)
+          call bs6311gss(iatom,ishell,numatomic,databasis)
+          call bsdiffuse(iatom,ishell,numatomic,databasis)
+        case(3:20)
+          call bs6311g(iatom,ishell,numatomic,databasis)
+          call bs6311gs(iatom,ishell,numatomic,databasis)
+          call bsdiffuse(iatom,ishell,numatomic,databasis)
+        case(:0)
+        case default
+          write(*,'(" Error! This program supports H - Ca 6-311++G** basis set.")')
+          call iabort
       end select
 !
       return
@@ -3756,7 +4252,7 @@ end
   subroutine bs6311gs(iatom,ishell,numatomic,databasis)
 !--------------------------------------------------------
 !
-! Set basis polarization function of 6-311G(d)
+! Set basis polarization function of 6-311G*
 !
       use modparam, only : mxatom, mxao, mxshell, mxprim
       use modtype, only : typebasis
@@ -3774,15 +4270,11 @@ end
 &      /1.690D-01,2.280D-01,2.640D-01,3.050D-01,4.510D-01,3.950D-01/
 !
       select case (numatomic(iatom))
-        case(:2)
         case(3:20,31:36)
           ishell= ishell+1
           databasis%ex(databasis%locprim(ishell)+1)= ex6311gs(numatomic(iatom))
           databasis%coeff(databasis%locprim(ishell)+1)= one
           call basisparam(ishell,2,1,iatom,databasis)
-        case default
-          write(*,'(" Error! This program supports Li - Ca, Ga - Kr 6-311G* basis set.")')
-          call iabort
       end select
 !
       return
@@ -3793,7 +4285,7 @@ end
   subroutine bs6311gss(iatom,ishell,numatomic,databasis)
 !---------------------------------------------------------
 !
-! Set basis polarization function of Hydrogen 6-311G(d,p)
+! Set basis polarization function of Hydrogen 6-311G**
 !
       use modparam, only : mxatom, mxao, mxshell, mxprim
       use modtype, only : typebasis
