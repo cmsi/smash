@@ -11,7 +11,7 @@
  Number of threads   =    28
 
  -------------------------------------------------------------------------
-   Job infomation
+   Job information
  -------------------------------------------------------------------------
    Runtype = OPTIMIZE    ,  Method  = HARTREE-FOCK ,  Basis    = 6-31G(D)    
    Memory  =      8000MB ,  SCFtype = UHF          ,  Precision= MEDIUM      

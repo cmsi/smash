@@ -732,7 +732,7 @@ end
 !
       if(.not.databasis%spher) then
         if(maxang >= 5) then
-          write(*,'(" Error! This program supports up to g Cartesian fucntions", &
+          write(*,'(" Error! This program supports up to g Cartesian functions", &
 &                   " in Natural Population Analysis.",/, &
 &                   " Set spher=.true. in Control section.")')
           call iabort
@@ -938,7 +938,7 @@ end
             enddo
           case(5:)  ! h or higher shell
             if(datacomp%master) then
-              write(*,'(" Error! This program supports up to g Cartesian fucntions", &
+              write(*,'(" Error! This program supports up to g Cartesian functions", &
 &                       " in Natural Population Analysis.")')
               call iabort
             endif

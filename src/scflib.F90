@@ -613,7 +613,7 @@ end
 ! Calculate orbital gradient <occ|F|vir>
 !
 ! In  : work      (Fock matrix (filled in upper triangle))
-!       cmo       (MO coeffient matrix)
+!       cmo       (MO coefficient matrix)
 !       itype     (1:Alpha electron, 2:Beta electron)
 ! Out : sograd    (SOSCF gradient matrix)
 !       sogradmax (Maximum SOSCF gradient
@@ -1031,7 +1031,7 @@ end
       call expand(dmtrxa,work,nao)
       call expand2(overlap,work2,nao)
 !
-! Calcualte S*Da*S
+! Calculate S*Da*S
 !
       num=idis(myrank+1,1)
       istart=idis(myrank+1,2)+1

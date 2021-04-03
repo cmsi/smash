@@ -818,7 +818,7 @@ end
         enddo
       endif
 !
-! Adjust coefficients for over d funcions.
+! Adjust coefficients for over d functions.
 !
       if(nbfijkl(1) == 5)then
         do j= 1,ncartijkl(2)

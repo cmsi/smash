@@ -12,7 +12,7 @@
 
  Geometry is read from checkpoint file.
  -------------------------------------------------------------------------
-   Job infomation
+   Job information
  -------------------------------------------------------------------------
    Runtype = ENERGY      ,  Method  = B3LYP        ,  Basis    = CC-PVDZ     
    Memory  =      8000MB ,  SCFtype = RHF          ,  Precision= MEDIUM      
