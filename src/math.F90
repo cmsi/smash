@@ -178,30 +178,34 @@ end
   subroutine diag(jobz,uplo,ndim,vector,lda,eigen,datacomp)
 !------------------------------------------------------------
 !
-! Diagonalize matrix
+! Diagonalize symmetric matrix using divide and conquer algorithm
 !
       use modtype, only : typecomp
       implicit none
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: ndim, lda
-      integer :: info
+      integer :: isize, info
       integer, allocatable :: iwork(:)
       real(8),intent(out) :: eigen(lda)
       real(8),intent(inout) :: vector(*)
       real(8), allocatable :: work(:)
+      real(8) :: rsize
       character(len=1),intent(in) :: jobz, uplo
 !
+! Get optimal sizes of work and iwork arrays
+!
+      rsize=0.0D+00
+      isize=0
+      call dsyevd(jobz,uplo,ndim,vector,lda,eigen,rsize,-1,isize,-1,info)
+!
+! Diagonalize symmetric matrix using divide and conquer algorithm
+!
+      call memset(nint(rsize)+isize,datacomp)
+      allocate(work(nint(rsize)),iwork(isize))
       info= 0
-!     call memset(ndim*ndim)
-!     allocate(work(ndim*ndim))
-!     call dsyev(jobz,uplo,ndim,vector,lda,eigen,work,ndim*ndim,info)
-!     deallocate(work)
-!     call memunset(ndim*ndim)
-      call memset(3*ndim*ndim+45*ndim,datacomp)
-      allocate(iwork(10*ndim),work(3*ndim*ndim+35*ndim))
-      call dsyevd(jobz,uplo,ndim,vector,lda,eigen,work,3*ndim*ndim+35*ndim,iwork,10*ndim,info)
+      call dsyevd(jobz,uplo,ndim,vector,lda,eigen,work,nint(rsize),iwork,isize,info)
       deallocate(iwork,work)
-      call memunset(3*ndim*ndim+45*ndim,datacomp)
+      call memunset(nint(rsize)+isize,datacomp)
 !
       if(info /= 0) then
         if(datacomp%master)write(*,'(" Error! Diagonalization in diag failed, info =",i5)')info
