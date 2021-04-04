@@ -35,15 +35,15 @@
       real(8) :: dconv, bqrad(9), optconv, fbond
       real(8) :: charge
       character(len=256) :: line
-      character(len=32) :: chararray(11)
+      character(len=32) :: chararray(12)
       character(len=256) :: check, xyz, char256array(2)
       character(len=32) :: method, runtype, scftype, memory, guess, precision, scfconv
-      character(len=32) :: basis, ecp, mem='', output, pop
+      character(len=32) :: basis, ecp, mem='', output, pop, multipole
       logical :: bohr, octupole, flagecp, cartesian, spher, logarray(5)
       logical :: writeinput
       namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp, ncore, nvfz
       namelist /control/ precision, cutint2, spher, guess, bohr, check, xyz, threshover, &
-&                        threshatom, octupole, output, iprint, pop
+&                        threshatom, octupole, output, iprint, pop, multipole
       namelist /scf/ scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub, &
 &                    threshdiis, threshsoscf, threshqc
       namelist /opt/ nopt, optconv, cartesian, fbond
@@ -80,6 +80,7 @@
               call addapos(line,'PRECISION=',10)
               call addapos(line,'OUTPUT=',7)
               call addapos(line,'POP=',4)
+              call addapos(line,'MULTIPOLE=',10)
             case('SCF')
               line="&"//trim(line)//" /"
               call addapos(line,'SCFCONV=',8)
@@ -146,6 +147,7 @@
         output     = datajob%output
         iprint     = datajob%iprint
         pop        = datajob%pop
+        multipole  = datajob%multipole
 !
         read(datacomp%inpcopy,nml=job,end=110,iostat=info)
 110     if(info > 0) then
@@ -207,6 +209,7 @@
         chararray( 9)= precision
         chararray(10)= output
         chararray(11)= pop
+        chararray(12)= multipole
         char256array(1)= check
         char256array(2)= xyz
         realarray( 1)= charge
@@ -255,7 +258,7 @@
         logarray(5)= octupole
       endif
 !
-      call para_bcastc(chararray,32*11,0,datacomp%mpi_comm1)
+      call para_bcastc(chararray,32*12,0,datacomp%mpi_comm1)
       call para_bcastc(char256array,256*2,0,datacomp%mpi_comm1)
       call para_bcastr(realarray,24,0,datacomp%mpi_comm1)
       call para_bcasti(intarray,15,0,datacomp%mpi_comm1)
@@ -274,6 +277,7 @@
       datajob%precision   = chararray( 9)
       datajob%output      = chararray(10)
       datajob%pop         = chararray(11)
+      datajob%multipole   = chararray(12)
       datamol%charge      = realarray( 1)
       datajob%cutint2     = realarray( 2)
       datajob%dconv       = realarray( 3)

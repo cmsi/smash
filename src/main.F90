@@ -241,14 +241,31 @@ end
 !
 ! Check keywords
 !
-      if((datajob%scftype /= 'RHF').and.(datajob%scftype /= 'UHF').and.datacomp%master) then
-        write(*,'(" Error! SCFtype=",a16," is not supported.")') datajob%scftype
-        call iabort
-      endif
+      if(datacomp%master) then
+        if((datajob%scftype /= 'RHF').and.(datajob%scftype /= 'UHF')) then
+          write(*,'(" Error! SCFtype=",a16," is not supported.")') datajob%scftype
+          call iabort
+        endif
 !
-      if((datajob%octupole).and.(datajob%method == 'MP2').and.datacomp%master) then
-        write(*,'(" Error! This program does not suupport MP2 octupole calculation.")')
-        call iabort
+        if((datajob%octupole).and.(datajob%method == 'MP2')) then
+          write(*,'(" Error! This program does not suupport MP2 octupole calculation.")')
+          call iabort
+        endif
+!
+        select case(datajob%pop)
+          case('MULLIKEN','NPA','NBO','NONE','')
+          case default
+            write(*,'(" Error! This program does not support pop= ", a16,".")') datajob%pop
+            call iabort
+        end select
+!
+        select case(datajob%multipole)
+          case('DIPOLE','OCTUPOLE','NONE','')
+          case default
+            write(*,'(" Error! This program does not support multipole= ", a16,".")') &
+&                 datajob%multipole
+            call iabort
+        end select
       endif
 !
       return
@@ -513,24 +530,26 @@ end
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
-        if(datajob%octupole) then
-          call memset(nao3*29,datacomp)
-          allocate(work(nao3*29))
-          call calcroctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrx, &
-&                            datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
-&                            datajob,datamol,databasis,datacomp)
-          deallocate(work)
-          call memunset(nao3*29,datacomp)
-        else
-!
-! Calculate dipole moment
-!
-          call memset(nao3*6,datacomp)
-          allocate(work(nao3*6))
-          call calcrdipole(work,work(nao3*3+1),dmtrx,datacomp%nproc1,datacomp%myrank1, &
-&                          datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
-          deallocate(work)
-          call memunset(nao3*6,datacomp)
+        select case(datajob%multipole)
+          case('DIPOLE')
+            call memset(nao3*6,datacomp)
+            allocate(work(nao3*6))
+            call calcrdipole(work,work(nao3*3+1),dmtrx,datacomp%nproc1,datacomp%myrank1, &
+&                            datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
+            deallocate(work)
+            call memunset(nao3*6,datacomp)
+          case('OCTUPOLE')
+            call memset(nao3*29,datacomp)
+            allocate(work(nao3*29))
+            call calcroctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrx, &
+&                              datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                              datajob,datamol,databasis,datacomp)
+            deallocate(work)
+            call memunset(nao3*29,datacomp)
+        end select
+      else
+        if(datacomp%master) then
+          write(datacomp%iout,'(" MP2 property calculations are skipped.",/)')
         endif
       endif
 !
@@ -679,25 +698,23 @@ end
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
-        if(datajob%octupole) then
-          call memset(nao3*29,datacomp)
-          allocate(work(nao3*29))
-          call calcuoctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrxa,dmtrxb, &
-&                            datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
-&                            datajob,datamol,databasis,datacomp)
-          deallocate(work)
-          call memunset(nao3*29,datacomp)
-        else
-!
-! Calculate dipole moment
-!
-          call memset(nao3*6,datacomp)
-          allocate(work(nao3*6))
-          call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1, &
-&                          datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
-          deallocate(work)
-          call memunset(nao3*6,datacomp)
-        endif
+        select case(datajob%multipole)
+          case('DIPOLE')
+            call memset(nao3*6,datacomp)
+            allocate(work(nao3*6))
+            call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1, &
+&                            datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
+            deallocate(work)
+            call memunset(nao3*6,datacomp)
+          case('OCTUPOLE')
+            call memset(nao3*29,datacomp)
+            allocate(work(nao3*29))
+            call calcuoctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrxa,dmtrxb, &
+&                              datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                              datajob,datamol,databasis,datacomp)
+            deallocate(work)
+            call memunset(nao3*29,datacomp)
+        end select
       endif
 !
 9999 continue
@@ -864,24 +881,26 @@ end
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
-        if(datajob%octupole) then
-          call memset(nao3*29,datacomp)
-          allocate(work(nao3*29))
-          call calcroctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrx, &
-&                            datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
-&                            datajob,datamol,databasis,datacomp)
-          deallocate(work)
-          call memunset(nao3*29,datacomp)
-        else
-!
-! Calculate dipole moment
-!
-          call memset(nao3*6,datacomp)
-          allocate(work(nao3*6))
-          call calcrdipole(work,work(nao3*3+1),dmtrx,datacomp%nproc1,datacomp%myrank1, &
-&                          datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
-          deallocate(work)
-          call memunset(nao3*6,datacomp)
+        select case(datajob%multipole)
+          case('DIPOLE')
+            call memset(nao3*6,datacomp)
+            allocate(work(nao3*6))
+            call calcrdipole(work,work(nao3*3+1),dmtrx,datacomp%nproc1,datacomp%myrank1, &
+&                            datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
+            deallocate(work)
+            call memunset(nao3*6,datacomp)
+          case('OCTUPOLE')
+            call memset(nao3*29,datacomp)
+            allocate(work(nao3*29))
+            call calcroctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrx, &
+&                              datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                              datajob,datamol,databasis,datacomp)
+            deallocate(work)
+            call memunset(nao3*29,datacomp)
+        end select
+      else
+        if(datacomp%master) then
+          write(datacomp%iout,'(" MP2 property calculations are skipped.",/)')
         endif
       endif
 !
@@ -1051,25 +1070,23 @@ end
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
-        if(datajob%octupole) then
-          call memset(nao3*29,datacomp)
-          allocate(work(nao3*29))
-          call calcuoctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrxa,dmtrxb, &
-&                            datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
-&                            datajob,datamol,databasis,datacomp)
-          deallocate(work)
-          call memunset(nao3*29,datacomp)
-        else
-!
-! Calculate dipole moment
-!
-          call memset(nao3*6,datacomp)
-          allocate(work(nao3*6))
-          call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1, &
-&                          datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
-          deallocate(work)
-          call memunset(nao3*6,datacomp)
-        endif
+        select case(datajob%multipole)
+          case('DIPOLE')
+            call memset(nao3*6,datacomp)
+            allocate(work(nao3*6))
+            call calcudipole(work,work(nao3*3+1),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1, &
+&                            datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
+            deallocate(work)
+            call memunset(nao3*6,datacomp)
+          case('OCTUPOLE')
+            call memset(nao3*29,datacomp)
+            allocate(work(nao3*29))
+            call calcuoctupole(work,work(nao3*3+1),work(nao3*9+1),work(nao3*19+1),dmtrxa,dmtrxb, &
+&                              datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                              datajob,datamol,databasis,datacomp)
+            deallocate(work)
+            call memunset(nao3*29,datacomp)
+        end select
       endif
 !
 9999 continue
@@ -1380,24 +1397,26 @@ end
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
-        if(datajob%octupole) then
-          call memset(nao3*29,datacomp)
-          allocate(work(nao3,29))
-          call calcroctupole(work,work(1,4),work(1,10),work(1,20),dmtrx, &
-&                            datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
-&                            datajob,datamol,databasis,datacomp)
-          deallocate(work)
-          call memunset(nao3*29,datacomp)
-        else
-!
-! Calculate dipole moment
-!
-          call memset(nao3*6,datacomp)
-          allocate(work(nao3,6))
-          call calcrdipole(work,work(1,4),dmtrx,datacomp%nproc1,datacomp%myrank1, &
-&                          datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
-          deallocate(work)
-          call memunset(nao3*6,datacomp)
+        select case(datajob%multipole)
+          case('DIPOLE')
+            call memset(nao3*6,datacomp)
+            allocate(work(nao3,6))
+            call calcrdipole(work,work(1,4),dmtrx,datacomp%nproc1,datacomp%myrank1, &
+&                            datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
+            deallocate(work)
+            call memunset(nao3*6,datacomp)
+          case('OCTUPOLE')
+            call memset(nao3*29,datacomp)
+            allocate(work(nao3,29))
+            call calcroctupole(work,work(1,4),work(1,10),work(1,20),dmtrx, &
+&                              datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                              datajob,datamol,databasis,datacomp)
+            deallocate(work)
+            call memunset(nao3*29,datacomp)
+        end select
+      else
+        if(datacomp%master) then
+          write(datacomp%iout,'(" MP2 property calculations are skipped.",/)')
         endif
       endif
 !
@@ -1746,25 +1765,23 @@ end
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
-        if(datajob%octupole) then
-          call memset(nao3*29,datacomp)
-          allocate(work(nao3,29))
-          call calcuoctupole(work,work(1,4),work(1,10),work(1,20),dmtrxa,dmtrxb, &
-&                            datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
-&                            datajob,datamol,databasis,datacomp)
-          deallocate(work)
-          call memunset(nao3*29,datacomp)
-        else
-!
-! Calculate dipole moment
-!
-          call memset(nao3*6,datacomp)
-          allocate(work(nao3,6))
-          call calcudipole(work,work(1,4),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1, &
-&                          datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
-          deallocate(work)
-          call memunset(nao3*6,datacomp)
-        endif
+        select case(datajob%multipole)
+          case('DIPOLE')
+            call memset(nao3*6,datacomp)
+            allocate(work(nao3,6))
+            call calcudipole(work,work(1,4),dmtrxa,dmtrxb,datacomp%nproc1,datacomp%myrank1, &
+&                            datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
+            deallocate(work)
+            call memunset(nao3*6,datacomp)
+          case('OCTUPOLE')
+            call memset(nao3*29,datacomp)
+            allocate(work(nao3,29))
+            call calcuoctupole(work,work(1,4),work(1,10),work(1,20),dmtrxa,dmtrxb, &
+&                              datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                              datajob,datamol,databasis,datacomp)
+            deallocate(work)
+            call memunset(nao3*29,datacomp)
+        end select
       endif
 !
 ! Write optimized geometry
