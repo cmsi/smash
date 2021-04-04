@@ -247,7 +247,7 @@ end
           call iabort
         endif
 !
-        if((datajob%octupole).and.(datajob%method == 'MP2')) then
+        if((datajob%multipole == 'OCTUPOLE').and.(datajob%method == 'MP2')) then
           write(*,'(" Error! This program does not suupport MP2 octupole calculation.")')
           call iabort
         endif

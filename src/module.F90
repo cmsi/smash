@@ -206,10 +206,12 @@ end
 ! guess        : Guess type
 ! precision    : Computational precision (high, medium, low)
 ! scfconv      : SCF convergence method
+! output       : output control
+! pop          : population control
+! multipole    : Multipole memoent control
 ! check        : Checkpoint file
 ! xyz          : Xyz file
 ! bohr         : Length unit (True: atomic unit, False: Angstrom)
-! octupole     : Flag for octupole calculation
 ! flagecp      : Flag for ECP calculation
 ! extrap       : Pople extrapolation of Fock matrix
 ! cartesian    : Type of coordinate system (True: Cartesian, False: redundant coordinate)
@@ -229,7 +231,7 @@ end
         character(len=32) :: version='3.0.0', guess='HUCKEL', precision='MEDIUM'
         character(len=32) :: scfconv='DIIS', output='', pop='MULLIKEN', multipole='DIPOLE'
         character(len=256) :: check='', xyz=''
-        logical :: bohr=.false., octupole=.false., flagecp=.false., extrap=.false.
+        logical :: bohr=.false., flagecp=.false., extrap=.false.
         logical :: cartesian=.false.
 !       logical :: fdiff=.true.
       end type

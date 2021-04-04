@@ -39,11 +39,11 @@
       character(len=256) :: check, xyz, char256array(2)
       character(len=32) :: method, runtype, scftype, memory, guess, precision, scfconv
       character(len=32) :: basis, ecp, mem='', output, pop, multipole
-      logical :: bohr, octupole, flagecp, cartesian, spher, logarray(5)
+      logical :: bohr, flagecp, cartesian, spher, logarray(4)
       logical :: writeinput
       namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp, ncore, nvfz
       namelist /control/ precision, cutint2, spher, guess, bohr, check, xyz, threshover, &
-&                        threshatom, octupole, output, iprint, pop, multipole
+&                        threshatom, output, iprint, pop, multipole
       namelist /scf/ scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub, &
 &                    threshdiis, threshsoscf, threshqc
       namelist /opt/ nopt, optconv, cartesian, fbond
@@ -140,7 +140,6 @@
         bohr       = datajob%bohr
         flagecp    = datajob%flagecp
         cartesian  = datajob%cartesian
-        octupole   = datajob%octupole
         check      = datajob%check
         xyz        = datajob%xyz
         fbond      = datajob%fbond
@@ -255,14 +254,13 @@
         logarray(2)= bohr
         logarray(3)= flagecp
         logarray(4)= cartesian
-        logarray(5)= octupole
       endif
 !
       call para_bcastc(chararray,32*12,0,datacomp%mpi_comm1)
       call para_bcastc(char256array,256*2,0,datacomp%mpi_comm1)
       call para_bcastr(realarray,24,0,datacomp%mpi_comm1)
       call para_bcasti(intarray,15,0,datacomp%mpi_comm1)
-      call para_bcastl(logarray,5,0,datacomp%mpi_comm1)
+      call para_bcastl(logarray,4,0,datacomp%mpi_comm1)
 !
       datajob%check       = char256array(1)
       datajob%xyz         = char256array(2)
@@ -321,7 +319,6 @@
       datajob%bohr        = logarray(2)
       datajob%flagecp     = logarray(3)
       datajob%cartesian   = logarray(4)
-      datajob%octupole    = logarray(5)
 !
       return
 end
@@ -592,10 +589,10 @@ end
 &                  cmemory, datajob%scftype, datajob%precision
         write(datacomp%iout,'("   Charge  = ",a12,",  Multi   = ",a12," ,  Spher    = ",l1)') &
 &                  ccharge, cmulti, databasis%spher
-        write(datacomp%iout,'("   Bohr    = ",l1,11x,",  Guess   = ",a12," ,  Octupole = ",l1)') &
-&                  datajob%bohr, datajob%guess, datajob%octupole
-        write(datacomp%iout,'("   Iprint  = ",a12)') &
-&                  ciprint
+        write(datacomp%iout,'("   Bohr    = ",l1,11x,",  Guess   = ",a12," ,  Multipole= ",a12)') &
+&                  datajob%bohr, datajob%guess, datajob%multipole
+        write(datacomp%iout,'("   Pop     = ",a12,",  Iprint  = ",a12)') &
+&                  datajob%pop, ciprint
         if(datajob%runtype == 'OPT') then
           write(datacomp%iout,'("   Nopt    = ",a12,",  Optconv =",1p,e9.2,5x, &
 &                               ",  Cartesian= ",l1)') cnopt, datajob%optconv, datajob%cartesian

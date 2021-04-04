@@ -209,9 +209,17 @@
       threshatom            specifies the atom distance threshold in Bohr.
                             (default : 2.0E-1)
 
-      octupole              controls dipole, quadrupole, and octupole calculations.
-              = .false.     Dipole only (default)
-              = .true.      Dipole, quadrupole, and octupole
+      pop                   specifies population (charge) calculations.
+              = mulliken    Mulliken population (default)
+              = nbo         Mulliken + Natural Bond Orbital (NBO) population
+                            (npa is a synonym for nbo.)
+              = none        No population
+
+      multipole             controls dipole, quadrupole, and octupole moment calculations.
+              = dipole      Dipole only (default)
+              = octupole    Dipole, quadrupole, and octupole
+              = none        No multipole
+
 
     2.3 scf keywords
       scfconv               specifies the type of SCF convergence method.
