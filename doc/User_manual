@@ -188,8 +188,8 @@
 
       output                controls output format.
               = minimal     Minimal output without MO coefficients
-              = compact     Compact output with MO coefficients of HOMO-14 to LUMO+14
-              = normal      Normal output with MO coefficients of HOMO-14 to LUMO+14 (default)
+              = compact     Compact output with MO coefficients of HOMO-9 to LUMO+9
+              = normal      Normal output with MO coefficients of HOMO-9 to LUMO+9 (default)
               = normalall   Normal output with all MO coefficients
               = verbose     Verbose output with all MO coefficients of all MOs
                             in every opt cycle
@@ -197,8 +197,8 @@
       iprint                controls output format.
                             Keyword "output" overrides "iprint" if both are set.
               = 1           Minimal output without MO coefficients
-              = 2           Compact output with MO coefficients of HOMO-14 to LUMO+14
-              = 3           Normal output with MO coefficients of HOMO-14 to LUMO+14 (default)
+              = 2           Compact output with MO coefficients of HOMO-9 to LUMO+9
+              = 3           Normal output with MO coefficients of HOMO-9 to LUMO+9 (default)
               = 4           Normal output with all MO coefficients
               = 5           Verbose output with all MO coefficients of all MOs
                             in every opt cycle
