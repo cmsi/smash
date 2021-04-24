@@ -289,17 +289,17 @@ end
 !
       select case(inttype)
         case (1)
-          call int2ssss(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,work,nijkl)
+          call int2ssss(twoeri,exfac,exfac(1,nijkl(1)+1),xyziq,work,nijkl)
         case (2)
-          call int2psss(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,work,nijkl)
+          call int2psss(twoeri,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,work,nijkl,maxdim,intorder)
         case (3)
-          call int2ppss(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,work,nijkl)
+          call int2ppss(twoeri,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,work,nijkl,maxdim,intorder)
         case (4)
-          call int2psps(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,work,nijkl)
+          call int2psps(twoeri,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,work,nijkl,maxdim,intorder)
         case (5)
-          call int2ppps(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,nijkl)
+          call int2ppps(twoeri,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,nijkl,maxdim,intorder)
         case (6)
-          call int2pppp(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,nijkl)
+          call int2pppp(twoeri,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,nijkl,maxdim,intorder)
         case (7)
           call int2dsss(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,nijkl,nbfijkl2)
         case (8)
@@ -332,88 +332,90 @@ end
           call int2dddd(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,nijkl,nbfijkl2)
       end select
 !
-      select case(intorder)
-        case(1)
+      if(inttype >= 7) then
+        select case(intorder)
+          case(1)
+            do i= 1,nbfijkl2(1)
+              do j= 1,nbfijkl2(2)
+                do k= 1,nbfijkl2(3)
+                  do l= 1,nbfijkl2(4)
+                    twoeri(l,k,j,i)= phmdint(l,k,j,i)
+                  enddo
+                enddo
+              enddo
+            enddo
+          case(2)
+            do j= 1,nbfijkl2(1)
+              do i= 1,nbfijkl2(2)
+                do k= 1,nbfijkl2(3)
+                  do l= 1,nbfijkl2(4)
+                    twoeri(l,k,j,i)= phmdint(l,k,i,j)
+                  enddo
+                enddo
+              enddo
+            enddo
+          case(3)
           do i= 1,nbfijkl2(1)
             do j= 1,nbfijkl2(2)
-              do k= 1,nbfijkl2(3)
-                do l= 1,nbfijkl2(4)
-                  twoeri(l,k,j,i)= phmdint(l,k,j,i)
-                enddo
-              enddo
-            enddo
-          enddo
-        case(2)
-          do j= 1,nbfijkl2(1)
-            do i= 1,nbfijkl2(2)
-              do k= 1,nbfijkl2(3)
-                do l= 1,nbfijkl2(4)
-                  twoeri(l,k,j,i)= phmdint(l,k,i,j)
-                enddo
-              enddo
-            enddo
-          enddo
-        case(3)
-        do i= 1,nbfijkl2(1)
-          do j= 1,nbfijkl2(2)
-            do l= 1,nbfijkl2(3)
-              do k= 1,nbfijkl2(4)
-                  twoeri(l,k,j,i)= phmdint(k,l,j,i)
-                enddo
-              enddo
-            enddo
-          enddo
-        case(4)
-          do k= 1,nbfijkl2(1)
-            do l= 1,nbfijkl2(2)
-              do i= 1,nbfijkl2(3)
-                do j= 1,nbfijkl2(4)
-                  twoeri(l,k,j,i)= phmdint(j,i,l,k)
-                enddo
-              enddo
-            enddo
-          enddo
-        case(5)
-          do j= 1,nbfijkl2(1)
-            do i= 1,nbfijkl2(2)
               do l= 1,nbfijkl2(3)
                 do k= 1,nbfijkl2(4)
-                  twoeri(l,k,j,i)= phmdint(k,l,i,j)
+                    twoeri(l,k,j,i)= phmdint(k,l,j,i)
+                  enddo
                 enddo
               enddo
             enddo
-          enddo
-        case(6)
-          do k= 1,nbfijkl2(1)
-            do l= 1,nbfijkl2(2)
-              do j= 1,nbfijkl2(3)
-                do i= 1,nbfijkl2(4)
-                  twoeri(l,k,j,i)= phmdint(i,j,l,k)
+          case(4)
+            do k= 1,nbfijkl2(1)
+              do l= 1,nbfijkl2(2)
+                do i= 1,nbfijkl2(3)
+                  do j= 1,nbfijkl2(4)
+                    twoeri(l,k,j,i)= phmdint(j,i,l,k)
+                  enddo
                 enddo
               enddo
             enddo
-          enddo
-        case(7)
-          do l= 1,nbfijkl2(1)
-            do k= 1,nbfijkl2(2)
-              do i= 1,nbfijkl2(3)
-                do j= 1,nbfijkl2(4)
-                  twoeri(l,k,j,i)= phmdint(j,i,k,l)
+          case(5)
+            do j= 1,nbfijkl2(1)
+              do i= 1,nbfijkl2(2)
+                do l= 1,nbfijkl2(3)
+                  do k= 1,nbfijkl2(4)
+                    twoeri(l,k,j,i)= phmdint(k,l,i,j)
+                  enddo
                 enddo
               enddo
             enddo
-          enddo
-        case(8)
-          do l= 1,nbfijkl2(1)
-            do k= 1,nbfijkl2(2)
-              do j= 1,nbfijkl2(3)
-                do i= 1,nbfijkl2(4)
-                  twoeri(l,k,j,i)= phmdint(i,j,k,l)
+          case(6)
+            do k= 1,nbfijkl2(1)
+              do l= 1,nbfijkl2(2)
+                do j= 1,nbfijkl2(3)
+                  do i= 1,nbfijkl2(4)
+                    twoeri(l,k,j,i)= phmdint(i,j,l,k)
+                  enddo
                 enddo
               enddo
             enddo
-          enddo
-      end select
+          case(7)
+            do l= 1,nbfijkl2(1)
+              do k= 1,nbfijkl2(2)
+                do i= 1,nbfijkl2(3)
+                  do j= 1,nbfijkl2(4)
+                    twoeri(l,k,j,i)= phmdint(j,i,k,l)
+                  enddo
+                enddo
+              enddo
+            enddo
+          case(8)
+            do l= 1,nbfijkl2(1)
+              do k= 1,nbfijkl2(2)
+                do j= 1,nbfijkl2(3)
+                  do i= 1,nbfijkl2(4)
+                    twoeri(l,k,j,i)= phmdint(i,j,k,l)
+                  enddo
+                enddo
+              enddo
+            enddo
+        end select
+      end if
 !
       return
 end
