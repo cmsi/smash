@@ -447,7 +447,7 @@ end
 &       'Pm ','Sm ','Eu ','Gd ','Tb ','Dy ','Ho ','Er ','Tm ','Yb ','Lu ','Hf ','Ta ','W  ','Re ',&
 &       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
-&       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
+&       'Sg ','Bh ','Hs ','Mt ','Ds ','Rg ','Cn '/)
 !
       if(datacomp%master) then
         write(datacomp%iout,'(" ====================================================")')
@@ -566,7 +566,7 @@ end
 &       'Pm ','Sm ','Eu ','Gd ','Tb ','Dy ','Ho ','Er ','Tm ','Yb ','Lu ','Hf ','Ta ','W  ','Re ',&
 &       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
-&       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
+&       'Sg ','Bh ','Hs ','Mt ','Ds ','Rg ','Cn '/)
       data irow/2*1, 8*2, 8*3, 18*4, 18*5, 32*6, 26*7/
       data parambond/ &
 &     -0.2440D+00, 0.3520D+00, 0.6600D+00, 0.7126D+00, 0.8335D+00, 0.9491D+00, 1.0D+00, &
