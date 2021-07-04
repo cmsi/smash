@@ -1391,8 +1391,8 @@ end
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: itype
-      integer,parameter :: maxprintmo=10
-      integer :: minmo, maxmo, imin, imax, ii, jj, kk, ll, iao, iatom
+      integer,parameter :: maxprintmo=20
+      integer :: minmo, maxmo, imin, imax, ii, jj, kk, kk2, ll, iao, iatom
       integer :: mosave(maxprintmo), mocount, momin, idamax
       real(8),intent(in) :: cmo(databasis%nao,databasis%nao), eigen(datamol%nmo)
       real(8) :: cmosave(maxprintmo), cmomin
@@ -1608,12 +1608,18 @@ end
                   endif
                 endif
               enddo
-              write(datacomp%iout,'(4x,"MO :",i5)') jj
-              write(datacomp%iout,'(4x,"Orbital Energy",4x,f12.5)')eigen(jj)
-              do ll= 1,mocount
-                kk= mosave(ll)
-                write(datacomp%iout,'(i5,a10,a7,5f12.6)')kk,atomlabel(kk),bflabel(kk),cmo(kk,jj)
+              write(datacomp%iout,'(3x,"MO:",i5,5x,"Energy:",f10.5)') jj, eigen(jj)
+              do ll= 1,mocount/2
+                kk = mosave(2*(ll-1)+1)
+                kk2= mosave(2*ll)
+                write(datacomp%iout,'(i5,a10,a7,f12.6,5x,i5,a10,a7,f12.6)') &
+&                 kk,atomlabel(kk),bflabel(kk),cmo(kk,jj), &
+&                 kk2,atomlabel(kk2),bflabel(kk2),cmo(kk2,jj)
               enddo
+              if(mod(mocount,2) /= 0) then
+                kk= mosave(mocount)
+                write(datacomp%iout,'(i5,a10,a7,f12.6)')kk,atomlabel(kk),bflabel(kk),cmo(kk,jj)
+              endif
               write(datacomp%iout,*)
             enddo
         end select

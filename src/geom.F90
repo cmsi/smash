@@ -501,7 +501,7 @@ end
 !
 ! Print delta xyz
 !
-      if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 3)) then
         write(datacomp%iout,'(" ----------------------------------------------------")')
         write(datacomp%iout,'("          Delta xyz (Angstrom)")')
         write(datacomp%iout,'("  Atom            X             Y             Z")')
@@ -842,7 +842,7 @@ end
         endif
       enddo
       if(datacomp%master) then
-        if(mod(datajob%iprint,10) >= 2) then
+        if(mod(datajob%iprint,10) >= 3) then
           write(datacomp%iout,'(" ------------------------------------------------------------")')
           write(datacomp%iout,'("   Redundant coordinate parameters (Angstrom and Degree)")')
           write(datacomp%iout,'("                                        New           Old")')
@@ -876,7 +876,7 @@ end
 !
 ! Print delta xyz
 !
-      if(datacomp%master.and.(mod(datajob%iprint,10) >= 2)) then
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 3)) then
         write(datacomp%iout,'(" ----------------------------------------------------")')
         write(datacomp%iout,'("          Delta xyz (Angstrom)")')
         write(datacomp%iout,'("  Atom            X             Y             Z")')

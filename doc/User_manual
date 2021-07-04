@@ -190,7 +190,7 @@
               = minimal     Minimal output without MO coefficients
               = compact     Compact output with MO coefficients of HOMO-9 to LUMO+9
               = normal      Normal output with MO coefficients of HOMO-9 to LUMO+9 (default)
-              = normalall   Normal output with all MO coefficients
+              = fullmo      Normal output with all MO coefficients
               = verbose     Verbose output with all MO coefficients of all MOs
                             in every opt cycle
 

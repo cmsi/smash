@@ -325,7 +325,7 @@ end
           datajob%iprint= 2
         case('NORMAL')
           datajob%iprint= 3
-        case('NORMALALL')
+        case('FULLMO')
           datajob%iprint= 4
         case('VERBOSE')
           datajob%iprint= 5
@@ -1195,10 +1195,6 @@ end
 !
       do iopt= 1,datajob%nopt
 !
-! Print geometry
-!
-        if(iopt >= 2) call writegeom(datamol,datacomp)
-!
 ! Calculate nuclear repulsion energy
 !
         call nucenergy(datajob%threshatom,datamol,datacomp)
@@ -1369,6 +1365,10 @@ end
           endif
           go to 9999
         endif
+!
+! Print geometry
+!
+         call writegeom(datamol,datacomp)
         call tstamp(1,datacomp)
       enddo
 !
@@ -1377,10 +1377,10 @@ end
 !
 ! Print MO energies and coefficients if necessary
 !
-      if(mod(datajob%iprint,10) <= 2) then
+      if((iopt /= 1).and.(mod(datajob%iprint,10) >= 2)) then
         call writeeigenvalue(energymo,energymo,1,datamol,datacomp)
       endif
-      if((mod(datajob%iprint,10) >= 2).and.(mod(datajob%iprint,10) <= 4)) then
+      if(((iopt /= 1).and.(mod(datajob%iprint,10) >= 2)).and.(mod(datajob%iprint,10) <= 4)) then
         call writeeigenvector(cmo,energymo,1,datajob,datamol,databasis,datacomp)
       endif
 !
@@ -1744,10 +1744,10 @@ end
 !
 ! Print MO energies and coefficients if necessary
 !
-      if(mod(datajob%iprint,10) <= 2) then
+      if((iopt /= 1).and.(mod(datajob%iprint,10) >= 2)) then
         call writeeigenvalue(energymoa,energymob,2,datamol,datacomp)
       endif
-      if((mod(datajob%iprint,10) >= 2).and.(mod(datajob%iprint,10) <= 4)) then
+      if(((iopt /= 1).and.(mod(datajob%iprint,10) >= 2)).and.(mod(datajob%iprint,10) <= 4)) then
         call writeeigenvector(cmoa,energymoa,1,datajob,datamol,databasis,datacomp)
         call writeeigenvector(cmob,energymob,2,datajob,datamol,databasis,datacomp)
       endif
