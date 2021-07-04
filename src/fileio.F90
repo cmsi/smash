@@ -38,12 +38,12 @@
       character(len=32) :: chararray(12)
       character(len=256) :: check, xyz, char256array(2)
       character(len=32) :: method, runtype, scftype, memory, guess, precision, scfconv
-      character(len=32) :: basis, ecp, mem='', output, pop, multipole
+      character(len=32) :: basis, ecp, mem='', print, pop, multipole
       logical :: bohr, flagecp, cartesian, spher, logarray(4)
       logical :: writeinput
       namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp, ncore, nvfz
       namelist /control/ precision, cutint2, spher, guess, bohr, check, xyz, threshover, &
-&                        threshatom, output, iprint, pop, multipole
+&                        threshatom, print, iprint, pop, multipole
       namelist /scf/ scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub, &
 &                    threshdiis, threshsoscf, threshqc
       namelist /opt/ nopt, optconv, cartesian, fbond
@@ -78,7 +78,7 @@
               call addapos(line,'CHECK=',6)
               call addapos(line,'XYZ=',4)
               call addapos(line,'PRECISION=',10)
-              call addapos(line,'OUTPUT=',7)
+              call addapos(line,'PRINT=',6)
               call addapos(line,'POP=',4)
               call addapos(line,'MULTIPOLE=',10)
             case('SCF')
@@ -143,7 +143,7 @@
         check      = datajob%check
         xyz        = datajob%xyz
         fbond      = datajob%fbond
-        output     = datajob%output
+        print      = datajob%print
         iprint     = datajob%iprint
         pop        = datajob%pop
         multipole  = datajob%multipole
@@ -206,7 +206,7 @@
         chararray( 7)= ecp
         chararray( 8)= scfconv
         chararray( 9)= precision
-        chararray(10)= output
+        chararray(10)= print
         chararray(11)= pop
         chararray(12)= multipole
         char256array(1)= check
@@ -273,7 +273,7 @@
       databasis%ecp       = chararray( 7)
       datajob%scfconv     = chararray( 8)
       datajob%precision   = chararray( 9)
-      datajob%output      = chararray(10)
+      datajob%print       = chararray(10)
       datajob%pop         = chararray(11)
       datajob%multipole   = chararray(12)
       datamol%charge      = realarray( 1)

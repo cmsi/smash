@@ -318,7 +318,7 @@ end
           call iabort
       end select
 !
-      select case(datajob%output)
+      select case(datajob%print)
         case('MINIMUM')
           datajob%iprint= 1
         case('COMPACT')
@@ -331,8 +331,8 @@ end
           datajob%iprint= 5
         case('')
         case default
-          if(datacomp%master) write(*,'(" Error! This program does not support output= ", &
-&                                       a16,".")') datajob%output
+          if(datacomp%master) write(*,'(" Error! This program does not support print= ", &
+&                                       a16,".")') datajob%print
           call iabort
       end select
 !
