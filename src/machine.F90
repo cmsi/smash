@@ -266,10 +266,24 @@ end
       character(len=256) :: filename
 !
       if(datacomp%master) then
-        call get_command_argument(2,filename)
-        llen= len_trim(filename)
         datacomp%iout= 8
-        open(unit=datacomp%iout,file=filename(1:llen))
+        if(command_argument_count() == 1) then
+          call get_command_argument(1,filename)
+          llen= len_trim(filename)
+          if(filename(llen-3:llen) == ".inp") then
+            filename= filename(1:llen-4)//".out"
+          elseif(filename(llen-4:llen) == ".sinp") then
+            filename= filename(1:llen-5)//".sout"
+          else
+            filename= filename(1:llen)//".out"
+            llen= llen+4
+          endif
+          open(unit=datacomp%iout,file=filename(1:llen))
+        else
+          call get_command_argument(2,filename)
+          llen= len_trim(filename)
+          open(unit=datacomp%iout,file=filename(1:llen))
+        endif
       endif
 !
       return

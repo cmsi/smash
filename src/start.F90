@@ -30,9 +30,9 @@
 !
 ! Open input and output files if necessary
 !
-      if(datacomp%master) then
-        if(command_argument_count() >= 1) call openinputfile(datacomp)
-        if(command_argument_count() >= 2) call openoutputfile(datacomp)
+      if((datacomp%master).and.(command_argument_count() >= 1)) then
+        call openinputfile(datacomp)
+        call openoutputfile(datacomp)
       endif
 !
 ! Main driver of SMASH
@@ -41,9 +41,9 @@
 !
 ! Close input and output files if necessary
 !
-      if(datacomp%master) then
-        if(command_argument_count() >= 1) call closeinputfile(datacomp)
-        if(command_argument_count() >= 2) call closeoutputfile(datacomp)
+      if((datacomp%master).and.(command_argument_count() >= 1)) then
+        call closeinputfile(datacomp)
+        call closeoutputfile(datacomp)
       endif
 !
 ! Finalize MPI
