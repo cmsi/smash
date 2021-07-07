@@ -1770,10 +1770,6 @@ end
       write(datacomp%icheck) datatype
       write(datacomp%icheck) (h1mtrx(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
 !
-      datatype= 'dipole'
-      write(datacomp%icheck) datatype
-      write(datacomp%icheck) (datamol%dipole(ii),ii=1,4)
-!
       if((datajob%runtype == 'GRADIENT').or.(datajob%runtype == 'OPT')) then
         datatype= 'egrad'
         write(datacomp%icheck) datatype
