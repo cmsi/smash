@@ -221,7 +221,7 @@ end
         integer :: idftex=0, idftcor=0, nrad=0, nleb=0
         integer :: ncore=-1, nvfz=0, maxmp2diis=20, maxmp2iter=100
         integer :: nopt=100
-        real(8) :: dconv=-1.0D+00, optconv=1.0D-04, fbond=1.20D+00 
+        real(8) :: dconv=-1.0D+00, optconv=-1.0D+00, fbond=1.20D+00 
         real(8) :: hfexchange=1.0D+00, bqrad(9)=1.0D+00
         real(8) :: threshex=30.0D+00, threshover=1.0D-06, threshatom=2.0D-01
         real(8) :: cutint2=-1.0D+00, threshdiis=6.0D-01, threshsoscf=0.25D+00, threshqc=1.0D-05

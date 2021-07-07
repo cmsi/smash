@@ -288,6 +288,7 @@ end
         case('HIGH')
           if(datajob%cutint2 < zero) datajob%cutint2= 1.0D-12
           if(datajob%dconv   < zero) datajob%dconv  = 5.0D-06
+          if(datajob%optconv < zero) datajob%optconv= 1.0D-05
           if(datajob%threshweight < zero) datajob%threshweight=1.0D-08
           if(datajob%threshrho    < zero) datajob%threshrho   =1.0D-06
           if(datajob%threshdfock  < zero) datajob%threshdfock =1.0D-05
@@ -297,6 +298,7 @@ end
         case('MEDIUM')
           if(datajob%cutint2 < zero) datajob%cutint2= 1.0D-11
           if(datajob%dconv   < zero) datajob%dconv  = 5.0D-06
+          if(datajob%optconv < zero) datajob%optconv= 1.0D-04
           if(datajob%threshweight < zero) datajob%threshweight=1.0D-08
           if(datajob%threshrho    < zero) datajob%threshrho   =1.0D-05
           if(datajob%threshdfock  < zero) datajob%threshdfock =1.0D-04
@@ -306,6 +308,7 @@ end
         case('LOW')
           if(datajob%cutint2 < zero) datajob%cutint2= 1.0D-10
           if(datajob%dconv   < zero) datajob%dconv  = 1.0D-05
+          if(datajob%optconv < zero) datajob%optconv= 1.0D-03
           if(datajob%threshweight < zero) datajob%threshweight=1.0D-08
           if(datajob%threshrho    < zero) datajob%threshrho   =1.0D-04
           if(datajob%threshdfock  < zero) datajob%threshdfock =1.0D-04

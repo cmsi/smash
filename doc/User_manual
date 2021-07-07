@@ -160,12 +160,12 @@
     2.2 control keywords
       precision             controls computational precision.
                             The following variables are overridden when these are specified.
-              = high        cutint2=1.0E-12, dconv=5.0E-6, threshrho=1.0E-6, threshdfock=1.0E-5,
-                            threshdftao=1.0E-4, nrad=150, nleb=590
-              = medium      cutint2=1.0E-11, dconv=5.0E-6, threshrho=1.0E-5, threshdfock=1.0E-4,
-                            threshdftao=1.0E-3, nrad=96, nleb=302 (default)
-              = low         cutint2=1.0E-10, dconv=1.0E-5, threshrho=1.0E-4, threshdfock=1.0E-4,
-                            threshdftao=1.0E-2, nrad=72, nleb=302
+              = high        cutint2=1.0E-12, dconv=5.0E-6, optconv=1.0E-5, threshrho=1.0E-6,
+                            threshdfock=1.0E-5, threshdftao=1.0E-4, nrad=150, nleb=590
+              = medium      cutint2=1.0E-11, dconv=5.0E-6, optconv=1.0E-4, threshrho=1.0E-5,
+                            threshdfock=1.0E-4, threshdftao=1.0E-3, nrad=96, nleb=302 (default)
+              = low         cutint2=1.0E-10, dconv=1.0E-5, optconv=1.0E-3, threshrho=1.0E-4,
+                            threshdfock=1.0E-4, threshdftao=1.0E-2, nrad=72, nleb=302
 
       spher                 specifies spherical harmonics or Cartesian basis functions.
               = .true.      Speherical harmonics (5d, 7f, 9g, default)
