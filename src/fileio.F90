@@ -36,13 +36,13 @@
       real(8) :: charge
       character(len=256) :: line
       character(len=32) :: chararray(12)
-      character(len=256) :: check, xyz, char256array(2)
+      character(len=256) :: check, chk='', xyz, char256array(2)
       character(len=32) :: method, runtype, scftype, memory, guess, precision, scfconv
       character(len=32) :: basis, ecp, mem='', print, pop, multipole
       logical :: bohr, flagecp, cartesian, spher, logarray(4)
       logical :: writeinput
       namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp, ncore, nvfz
-      namelist /control/ precision, cutint2, spher, guess, bohr, check, xyz, threshover, &
+      namelist /control/ precision, cutint2, spher, guess, bohr, check, chk, xyz, threshover, &
 &                        threshatom, print, iprint, pop, multipole
       namelist /scf/ scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub, &
 &                    threshdiis, threshsoscf, threshqc
@@ -76,6 +76,7 @@
               line="&"//trim(line)//" /"
               call addapos(line,'GUESS=',6)
               call addapos(line,'CHECK=',6)
+              call addapos(line,'CHK=',4)
               call addapos(line,'XYZ=',4)
               call addapos(line,'PRECISION=',10)
               call addapos(line,'PRINT=',6)
@@ -161,6 +162,7 @@
           write(*,'(" Error was found in control line of input file!")')
           call iabort
         endif
+        if(len_trim(chk) /= 0) check = chk
 !
         rewind(datacomp%inpcopy)
         read(datacomp%inpcopy,nml=scf,end=130,iostat=info)
@@ -643,6 +645,11 @@ end
       if(inum > 0) then
         ispace= index(line(inum:),' ')
         line(inum+6:inum+ispace-2)= linecopy(inum+6:inum+ispace-2)
+      endif
+      inum= index(line(1:llen),'CHK=')
+      if(inum > 0) then
+        ispace= index(line(inum:),' ')
+        line(inum+4:inum+ispace-2)= linecopy(inum+4:inum+ispace-2)
       endif
       inum= index(line(1:llen),'XYZ=')
       if(inum > 0) then
