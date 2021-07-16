@@ -74,14 +74,14 @@
       if(datacomp%master) then
         write(datacomp%iout,'(" -------------------------------------")')
         write(datacomp%iout,'("      Mulliken Population Analysis")')
-        write(datacomp%iout,'("     Atom     Population     Charge")')
+        write(datacomp%iout,'("     Atom       Charge     Population")')
         write(datacomp%iout,'(" -------------------------------------")')
         do iatom= 1,datamol%natom
           write(datacomp%iout,'(1x,i4,2x,a3,2f13.6)')iatom,table(datamol%numatomic(iatom)), &
-&                                        grossatom(iatom),datamol%znuc(iatom)-grossatom(iatom)
+&                                        datamol%znuc(iatom)-grossatom(iatom),grossatom(iatom)
         enddo
         write(datacomp%iout,'(" -------------------------------------")')
-        write(datacomp%iout,'("     Total",13x,f13.6)')totalgross
+        write(datacomp%iout,'("     Total",f13.6)')totalgross
         write(datacomp%iout,'(" -------------------------------------")')
         write(datacomp%iout,*)
       endif
@@ -153,14 +153,14 @@ end
       if(datacomp%master) then
         write(datacomp%iout,'(" -------------------------------------")')
         write(datacomp%iout,'("      Mulliken Population Analysis")')
-        write(datacomp%iout,'("     Atom     Population     Charge")')
+        write(datacomp%iout,'("     Atom       Charge     Population")')
         write(datacomp%iout,'(" -------------------------------------")')
         do iatom= 1,datamol%natom
           write(datacomp%iout,'(1x,i4,2x,a3,2f13.6)')iatom,table(datamol%numatomic(iatom)), &
-&                                        grossatom(iatom),datamol%znuc(iatom)-grossatom(iatom)
+&                                        datamol%znuc(iatom)-grossatom(iatom),grossatom(iatom)
         enddo
         write(datacomp%iout,'(" -------------------------------------")')
-        write(datacomp%iout,'("     Total",13x,f13.6)')totalgross
+        write(datacomp%iout,'("     Total",f13.6)')totalgross
         write(datacomp%iout,'(" -------------------------------------")')
         write(datacomp%iout,*)
       endif
