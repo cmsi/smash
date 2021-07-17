@@ -692,9 +692,8 @@ end
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
-      integer :: maxang, nao, nao2, maxsize, numnmb, numnrb, numnmbshell, iao, numlnrb, numsnrb
+      integer :: maxang, nao, nao2, maxsize
       integer,allocatable :: infobasis(:,:,:), infonmb(:,:,:), list1(:), list2(:)
-      real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
@@ -705,7 +704,7 @@ end
       nao   = databasis%nao
       nao2  = nao*nao
 !
-! Set arrays
+! Allocate arrays
 !
       call memset(nao2*6+nao*3+3*(maxang+8)*datamol%natom,datacomp)
       allocate(pnao(nao2),snao(nao2),trans(nao,nao),work1(nao2),work2(nao2), &
@@ -719,8 +718,10 @@ end
 !
 ! Transform fock matrix and print result
 !
-      call printnpa(pnao,trans,fock,work1,work2,work3,wnao,maxang,maxsize,infonmb,infobasis, &
-&                   datamol,databasis,datacomp)
+      call printrnpa(pnao,trans,fock,work1,work2,work3,wnao,infonmb,infobasis, &
+&                    maxang,maxsize,datamol,databasis,datacomp)
+!
+! Deallocate arrays
 !
       call memunset(nao2*6+nao*3+3*(maxang+8)*datamol%natom,datacomp)
       deallocate(pnao,snao,trans,work1,work2, &
@@ -1010,7 +1011,6 @@ end
       integer,intent(in) :: maxang
       integer,intent(out) :: infobasis(3,0:maxang,datamol%natom)
       integer :: jao, jloc, jshell, iatom, iang, ishell, iao, list(databasisnpa0%nao)
-      real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(inout) :: pnao(databasisnpa0%nao,databasisnpa0%nao)
       real(8),intent(inout) :: snao(databasisnpa0%nao,databasisnpa0%nao)
       real(8),intent(inout) :: trans(databasisnpa0%nao,databasisnpa0%nao)
@@ -1384,6 +1384,7 @@ end
 &                                 databasisnpa1%locbf(locshell+ishell)+iao)
               enddo
               pblock(jshell,ishell)= pelem/dble(2*iang+1)
+!ishimura
 !!!!!!!!!!not average ok?
               sblock(jshell,ishell)= snao(databasisnpa1%locbf(locshell+jshell)+1, &
 &                                         databasisnpa1%locbf(locshell+ishell)+1)
@@ -1410,15 +1411,11 @@ end
 !
       call dsymm('L','U',nao,nao,one,pnao,nao,worktrans,nao,zero,work,nao)
       call dgemm('T','N',nao,nao,nao,one,worktrans,nao,work,nao,zero,pnao,nao)
-!not needed
-!     call dsymm('L','U',nao,nao,one,snao,nao,worktrans,nao,zero,work,nao)
-!     call dgemm('T','N',nao,nao,nao,one,worktrans,nao,work,nao,zero,snao,nao)
       call dgemm('N','N',nao,nao,nao,one,trans,nao,worktrans,nao,zero,work,nao)
       trans(1:nao,1:nao)= work(1:nao,1:nao)
 !
       return
 end
-
 
 
 !--------------------------------------------------------------------------------------
@@ -1773,6 +1770,7 @@ end
       return
 end
 
+
 !--------------------------------------------------------------------------------
   subroutine orthonrb2(pnao,snao,trans,wnao,work1,work2,work3,numnmb,numlnrb, &
 &                      databasisnpa2,datacomp)
@@ -1838,10 +1836,10 @@ end
 end
 
 
-!--------------------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------------------
   subroutine orthonrb3(pnao,snao,trans,worktrans,work2,work3,work4,numnmb,numnrb,numlnrb,numsnrb, &
 &                      databasisnpa2,datacomp)
-!--------------------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------------------
 !
 ! Orthogonalize NRB sets with small w
 !
@@ -1983,12 +1981,13 @@ end
       return
 end
 
-!---------------------------------------------------------------------
-  subroutine printnpa(pnao,trans,fock,fnao,work,fpwork,fshell,maxang,maxsize,infonmb,infobasis, &
-&                     datamol,databasis,datacomp)
-!---------------------------------------------------------------------
+
+!------------------------------------------------------------------------------------
+  subroutine printrnpa(pnao,trans,fock,fnao,work,fpwork,fshell,infonmb,infobasis, &
+&                      maxang,maxsize,datamol,databasis,datacomp)
+!------------------------------------------------------------------------------------
 !
-! Print Natural Population Analysis Result
+! Print closed-shell Natural Population Analysis Result
 !
       use modtype, only : typemol, typebasis, typecomp
       implicit none
@@ -2038,7 +2037,6 @@ end
 &           "      Natural Population Analysis (Orbitals)",/ &
 &           "    NAO   Atom   nlm    Type    Occupancy        Energy",/ &
 &           " -----------------------------------------------------------")')
-!         write(datacomp%iout,'(1x,i4,2x,a3,f12.6,4f13.6)')iatom,table(datamol%numatomic(iatom)), &
       endif
 !
 ! Transform Fock matrix to Natural Atomic Orbital basis
