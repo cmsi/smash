@@ -698,7 +698,7 @@ end
       real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
-      real(8),allocatable :: pnao(:), fnao(:), snao(:), trans(:,:), work1(:), work2(:), work3(:)
+      real(8),allocatable :: pnao(:), snao(:), trans(:,:), work1(:), work2(:), work3(:)
       real(8),allocatable :: wnao(:)
 !
       maxang= maxval(databasis%mtype(1:databasis%nshell))
@@ -707,23 +707,23 @@ end
 !
 ! Set arrays
 !
-      call memset(nao2*7+nao*3+3*(maxang+8)*datamol%natom,datacomp)
-      allocate(pnao(nao2),fnao(nao2),snao(nao2),trans(nao,nao),work1(nao2),work2(nao2), &
+      call memset(nao2*6+nao*3+3*(maxang+8)*datamol%natom,datacomp)
+      allocate(pnao(nao2),snao(nao2),trans(nao,nao),work1(nao2),work2(nao2), &
 &              work3(nao2),wnao(nao),infobasis(3,maxang+1,datamol%natom), &
 &              infonmb(3,7,datamol%natom),list1(nao),list2(nao))
 !
 ! Calculate Natural Population
 !
-      call calcnpa(dmtrx,fock,overlap,pnao,fnao,snao,trans,work1,work2,work3,wnao, &
+      call calcnpa(dmtrx,fock,overlap,pnao,snao,trans,work1,work2,work3,wnao, &
 &                  infobasis,infonmb,list1,list2,maxang,maxsize,datamol,databasis,datacomp)
 !
 ! Transform fock matrix and print result
 !
-      call printnpa(pnao,fnao,trans,work1,work2,work3,wnao,maxang,maxsize,infonmb,infobasis, &
+      call printnpa(pnao,trans,fock,work1,work2,work3,wnao,maxang,maxsize,infonmb,infobasis, &
 &                   datamol,databasis,datacomp)
 !
-      call memunset(nao2*7+nao*3+3*(maxang+8)*datamol%natom,datacomp)
-      deallocate(pnao,fnao,snao,trans,work1,work2, &
+      call memunset(nao2*6+nao*3+3*(maxang+8)*datamol%natom,datacomp)
+      deallocate(pnao,snao,trans,work1,work2, &
 &                work3,wnao,infobasis, &
 &                infonmb,list1,list2)
 !
@@ -732,7 +732,7 @@ end
 
 
 !----------------------------------------------------------------------------------------------
-  subroutine calcnpa(dmtrx,fock,overlap,pnao,fnao,snao,trans,work1,work2,work3,wnao, &
+  subroutine calcnpa(dmtrx,fock,overlap,pnao,snao,trans,work1,work2,work3,wnao, &
 &                    infobasis,infonmb,list1,list2,maxang,maxsize,datamol,databasis,datacomp)
 !----------------------------------------------------------------------------------------------
 !
@@ -752,7 +752,7 @@ end
       real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
-      real(8),intent(out) :: pnao(databasis%nao**2), fnao(databasis%nao**2), snao(databasis%nao**2)
+      real(8),intent(out) :: pnao(databasis%nao**2), snao(databasis%nao**2)
       real(8),intent(out) :: trans(databasis%nao,databasis%nao), work1(databasis%nao**2)
       real(8),intent(out) :: work2(databasis%nao**2), work3(databasis%nao**2), wnao(databasis%nao)
 !
@@ -767,7 +767,6 @@ end
 ! Set full matrices of density, fock, overlap, and NPA transformation
 !
       call expand(dmtrx,pnao,nao)
-      call expand(fock,fnao,nao)
       call expand2(overlap,snao,nao)
       call dsymm('L','U',nao,nao,one,pnao,nao,snao,nao,zero,work1,nao)
       call dsymm('L','U',nao,nao,one,snao,nao,work1,nao,zero,pnao,nao)
@@ -1985,7 +1984,7 @@ end
 end
 
 !---------------------------------------------------------------------
-  subroutine printnpa(pnao,fnao,trans,work,fwork,pwork,fshell,maxang,maxsize,infonmb,infobasis, &
+  subroutine printnpa(pnao,trans,fock,fnao,work,fpwork,fshell,maxang,maxsize,infonmb,infobasis, &
 &                     datamol,databasis,datacomp)
 !---------------------------------------------------------------------
 !
@@ -2003,9 +2002,10 @@ end
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: pnao(databasis%nao,databasis%nao)
       real(8),intent(in) :: trans(databasis%nao,databasis%nao)
-      real(8),intent(inout) :: fnao(databasis%nao,databasis%nao)
+      real(8),intent(in) :: fock(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fnao(databasis%nao,databasis%nao)
       real(8),intent(out) :: work(databasis%nao,databasis%nao)
-      real(8),intent(out) :: fwork(databasis%nao), pwork(databasis%nao), fshell(maxsize)
+      real(8),intent(out) :: fpwork(databasis%nao,2), fshell(maxsize)
       real(8) :: faverage, tmp, chargenpa(3,0:maxang,datamol%natom), atomnpa(0:3,0:datamol%natom)
       real(8) :: totalcharge
       character(len=3) :: table(-9:112)= &
@@ -2044,6 +2044,7 @@ end
 ! Transform Fock matrix to Natural Atomic Orbital basis
 !
       nao= databasis%nao
+      call expand(fock,fnao,nao)
       call dsymm('L','U',nao,nao,one,fnao,nao,trans,nao,zero,work,nao)
       call dgemm('T','N',nao,nao,nao,one,trans,nao,work,nao,zero,fnao,nao)
 !
@@ -2058,8 +2059,8 @@ end
           do ishell= 1,numshell
             faverage= zero
             do iao= 1,2*iang+1
-              fwork((ishell-1)*(2*iang+1)+iao)= fnao(locao+iao,locao+iao)
-              pwork((ishell-1)*(2*iang+1)+iao)= pnao(locao+iao,locao+iao)
+              fpwork((ishell-1)*(2*iang+1)+iao,1)= fnao(locao+iao,locao+iao)
+              fpwork((ishell-1)*(2*iang+1)+iao,2)= pnao(locao+iao,locao+iao)
               faverage= faverage+fnao(locao+iao,locao+iao)
             enddo
             fshell(ishell)= faverage/dble(2*iang+1)
@@ -2095,9 +2096,9 @@ end
               write(datacomp%iout,'(i6,i5,1x,a3,1x,i2,a3,4x,a3,f13.6,f16.6)') &
 &                   jao, iatom, table(datamol%numatomic(iatom)), &
 &                   ishell+infonmb(3,iang,iatom)+iang, anglabel(13*iang+iao), motype(imo),  &
-&                   pwork(list(ishell)*(2*iang+1)+iao), fwork(list(ishell)*(2*iang+1)+iao)
+&                   fpwork(list(ishell)*(2*iang+1)+iao,2), fpwork(list(ishell)*(2*iang+1)+iao,1)
               chargenpa(imo,iang,iatom)= chargenpa(imo,iang,iatom) &
-&                                       +pwork(list(ishell)*(2*iang+1)+iao)
+&                                       +fpwork(list(ishell)*(2*iang+1)+iao,2)
             enddo
           enddo
         enddo
