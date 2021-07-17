@@ -872,15 +872,21 @@ end
       call tstamp(1,datacomp)
 !
       if(datajob%method /= 'MP2') then
-!
-! Calculate Mulliken charge
-!
         if(datacomp%master) then
           write(datacomp%iout,'(" ========================")')
           write(datacomp%iout,'("   Property calculation")')
           write(datacomp%iout,'(" ========================")')
         endif
-        call calcrmulliken(dmtrx,smtrx,datamol,databasis,datacomp)
+!
+! Calculate Mulliken and/or NBO charge
+!
+        select case(datajob%pop)
+          case('MULLIKEN')
+            call calcrmulliken(dmtrx,smtrx,datamol,databasis,datacomp)
+          case('NPA','NBO')
+            call calcrmulliken(dmtrx,smtrx,datamol,databasis,datacomp)
+            call calcrnpa(dmtrx,fock,smtrx,datamol,databasis,datacomp)
+        end select
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
@@ -1388,15 +1394,21 @@ end
       endif
 !
       if(datajob%method /= 'MP2') then
-!
-! Calculate Mulliken charge
-!
         if(datacomp%master) then
           write(datacomp%iout,'(" ========================")')
           write(datacomp%iout,'("   Property calculation")')
           write(datacomp%iout,'(" ========================")')
         endif
-        call calcrmulliken(dmtrx,smtrx,datamol,databasis,datacomp)
+!
+! Calculate Mulliken and/or NBO charge
+!
+        select case(datajob%pop)
+          case('MULLIKEN')
+            call calcrmulliken(dmtrx,smtrx,datamol,databasis,datacomp)
+          case('NPA','NBO')
+            call calcrmulliken(dmtrx,smtrx,datamol,databasis,datacomp)
+            call calcrnpa(dmtrx,fock,smtrx,datamol,databasis,datacomp)
+        end select
 !
 ! Calculate dipole, quadrupole, and octupole moments
 !
