@@ -685,14 +685,13 @@ end
   subroutine calcrnpa(dmtrx,fock,overlap,datamol,databasis,datacomp)
 !---------------------------------------------------------------------
 !
-! Driver of Natural Population Analysis calculation
+! Driver of closed-shell Natural Population Analysis calculation
 !
       use modtype, only : typemol, typebasis, typecomp
       implicit none
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
-      type(typebasis) :: databasisnpa0, databasisnpa1, databasisnpa2
       integer :: maxang, nao, nao2, maxsize, numnmb, numnrb, numnmbshell, iao, numlnrb, numsnrb
       integer,allocatable :: infobasis(:,:,:), infonmb(:,:,:), list1(:), list2(:)
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
@@ -712,6 +711,56 @@ end
       allocate(pnao(nao2),fnao(nao2),snao(nao2),trans(nao,nao),work1(nao2),work2(nao2), &
 &              work3(nao2),wnao(nao),infobasis(3,maxang+1,datamol%natom), &
 &              infonmb(3,7,datamol%natom),list1(nao),list2(nao))
+!
+! Calculate Natural Population
+!
+      call calcnpa(dmtrx,fock,overlap,pnao,fnao,snao,trans,work1,work2,work3,wnao, &
+&                  infobasis,infonmb,list1,list2,maxang,maxsize,datamol,databasis,datacomp)
+!
+! Transform fock matrix and print result
+!
+      call printnpa(pnao,fnao,trans,work1,work2,work3,wnao,maxang,maxsize,infonmb,infobasis, &
+&                   datamol,databasis,datacomp)
+!
+      call memunset(nao2*7+nao*3+3*(maxang+8)*datamol%natom,datacomp)
+      deallocate(pnao,fnao,snao,trans,work1,work2, &
+&                work3,wnao,infobasis, &
+&                infonmb,list1,list2)
+!
+      return
+end
+
+
+!----------------------------------------------------------------------------------------------
+  subroutine calcnpa(dmtrx,fock,overlap,pnao,fnao,snao,trans,work1,work2,work3,wnao, &
+&                    infobasis,infonmb,list1,list2,maxang,maxsize,datamol,databasis,datacomp)
+!----------------------------------------------------------------------------------------------
+!
+! Main driver of Natural Population Analysis calculation
+!
+      use modtype, only : typemol, typebasis, typecomp
+      implicit none
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      type(typebasis) :: databasisnpa0, databasisnpa1, databasisnpa2
+      integer :: nao, nao2, numnmb, numnrb, numnmbshell, iao, numlnrb, numsnrb
+      integer,intent(in) :: maxang
+      integer,intent(out) :: infobasis(3,maxang+1,datamol%natom), infonmb(3,7,datamol%natom), maxsize
+      integer,intent(out) :: list1(databasis%nao), list2(databasis%nao)
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00
+      real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: fock(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: pnao(databasis%nao**2), fnao(databasis%nao**2), snao(databasis%nao**2)
+      real(8),intent(out) :: trans(databasis%nao,databasis%nao), work1(databasis%nao**2)
+      real(8),intent(out) :: work2(databasis%nao**2), work3(databasis%nao**2), wnao(databasis%nao)
+!
+      nao   = databasis%nao
+      nao2  = nao*nao
+!
+! Set arrays
+!
       infobasis(:,:,:)= 0
       infonmb(:,:,:)= 0
 !
@@ -741,7 +790,7 @@ end
         databasisnpa0= databasis
       endif
 !
-! Set numbers of core and valance NMB sets
+! Set numbers of core and valance Natural Minimal Basis (NMB) sets
 !
       call setnmb(infonmb,numnmb,numnrb,numnmbshell,datamol,databasisnpa0,datacomp)
 !
@@ -751,7 +800,7 @@ end
 &                        databasisnpa1)
       maxsize= maxval(infobasis(2,1:maxang+1,1:datamol%natom))
 !
-! Calculate pre-NAOs
+! Calculate pre-NAOs and seperate them into NMB and Natural Rydberg Basis (NRB) sets
 !
       call calcprenao1(pnao,snao,trans,work1,work2,wnao,maxang,maxsize,infonmb,infobasis, &
 &                      list1,numnmb,numnmbshell,datamol,databasisnpa1,databasisnpa2,datacomp)
@@ -788,18 +837,9 @@ end
       call calcprenao3(pnao,snao,trans,work1,work2,maxang,maxsize,infobasis, &
 &                      datamol,databasisnpa1,datacomp)
 !
-! Transform fock matrix and print result
-!
-      call printnpa(pnao,fnao,trans,work1,work2,work3,wnao,maxang,maxsize,infonmb,infobasis, &
-&                   datamol,databasisnpa1,datacomp)
-!
-      call memunset(nao2*7+nao*3+3*(maxang+8)*datamol%natom,datacomp)
-      deallocate(pnao,fnao,snao,trans,work1,work2, &
-&                work3,wnao,infobasis, &
-&                infonmb,list1,list2)
-!
       return
 end
+
 
 !--------------------------------------------------------------------------------
   subroutine setnpaspher(pnao,snao,trans,work,databasis,databasisnpa0,datacomp)
@@ -812,7 +852,7 @@ end
       type(typebasis),intent(in) :: databasis
       type(typebasis),intent(out) :: databasisnpa0
       type(typecomp),intent(in) :: datacomp
-      integer :: newshell, ishell, loc, nao, ii, jj
+      integer :: newshell, ishell, loctrans, nao, ii, jj
       integer :: intftrans(10,10), intgtrans(15,15)
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, halfm=-0.5D+00, one=1.0D+00
       real(8),parameter :: sqrtfifth=4.472135954999579D-01, sqrtfifteen=2.581988897471611D-01
@@ -894,8 +934,8 @@ end
             databasisnpa0%mbf(newshell)    = 5
             databasisnpa0%locatom(newshell)= databasis%locatom(ishell)
             databasisnpa0%locbf(newshell)  = databasis%locbf(ishell)+1
-            loc= databasis%locbf(ishell)
-            trans(loc+1:loc+6,loc+1:loc+6)= dtrans(1:6,1:6)
+            loctrans= databasis%locbf(ishell)
+            trans(loctrans+1:loctrans+6,loctrans+1:loctrans+6)= dtrans(1:6,1:6)
           case(3)  ! f shell
             newshell= newshell+1
             databasisnpa0%mtype(newshell)  = 1
@@ -907,10 +947,10 @@ end
             databasisnpa0%mbf(newshell)    = 7
             databasisnpa0%locatom(newshell)= databasis%locatom(ishell)
             databasisnpa0%locbf(newshell)  = databasis%locbf(ishell)+3
-            loc= databasis%locbf(ishell)
+            loctrans= databasis%locbf(ishell)
             do ii= 1,10
               do jj= 1,10
-                trans(loc+jj,loc+ii)= dble(intftrans(jj,ii))*ffac1(ii)*ffac2(jj)
+                trans(loctrans+jj,loctrans+ii)= dble(intftrans(jj,ii))*ffac1(ii)*ffac2(jj)
               enddo
             enddo
           case(4)  ! g shell
@@ -929,10 +969,10 @@ end
             databasisnpa0%mbf(newshell)    = 9
             databasisnpa0%locatom(newshell)= databasis%locatom(ishell)
             databasisnpa0%locbf(newshell)  = databasis%locbf(ishell)+6
-            loc= databasis%locbf(ishell)
+            loctrans= databasis%locbf(ishell)
             do ii= 1,15
               do jj= 1,15
-                trans(loc+jj,loc+ii)= dble(intgtrans(jj,ii))*gfac1(ii)*gfac2(jj)
+                trans(loctrans+jj,loctrans+ii)= dble(intgtrans(jj,ii))*gfac1(ii)*gfac2(jj)
               enddo
             enddo
           case(5:)  ! h or higher shell
@@ -946,17 +986,11 @@ end
       databasisnpa0%nao   = databasis%nao
       databasisnpa0%nshell= newshell
 !
-!ishimura
-!write(*,'(15f7.4)')snao(6:20,6:20)
-!write(*,*)
       nao= databasis%nao
       call dsymm('L','U',nao,nao,one,pnao,nao,trans,nao,zero,work,nao)
       call dgemm('T','N',nao,nao,nao,one,trans,nao,work,nao,zero,pnao,nao)
       call dsymm('L','U',nao,nao,one,snao,nao,trans,nao,zero,work,nao)
       call dgemm('T','N',nao,nao,nao,one,trans,nao,work,nao,zero,snao,nao)
-!ishimura
-!write(*,'(15f7.4)')snao(6:20,6:20)
-!write(*,'(19f5.2)')snao
 !
       return
 end
@@ -1382,9 +1416,6 @@ end
 !     call dgemm('T','N',nao,nao,nao,one,worktrans,nao,work,nao,zero,snao,nao)
       call dgemm('N','N',nao,nao,nao,one,trans,nao,worktrans,nao,zero,work,nao)
       trans(1:nao,1:nao)= work(1:nao,1:nao)
-!ishimura
-!write(*,'(13f7.3)')pnao
-!write(*,'(19f5.2)')snao
 !
       return
 end
@@ -1395,7 +1426,7 @@ end
   subroutine setnmb(infonmb,numnmb,numnrb,numnmbshell,datamol,databasisnpa0,datacomp)
 !--------------------------------------------------------------------------------------
 !
-! Set numbers of core and valance NMB sets
+! Set numbers of core and valance Natural Minimal Basis (NMB) sets
 !
 !   infonmb(1,*,*) : number of NMBs
 !   infonmb(2,*,*) : number of cores
@@ -1898,9 +1929,6 @@ end
 &                zero,work2,nao)
       trans(1:nao,numnmb+numlnrb+1:nao)= work2(1:nao,1:numsnrb)
 !
-!ishimura
-!write(*,'(13f7.3)')pnao
-!write(*,'(19f5.2)')snao
       return
 end
 
@@ -1953,15 +1981,12 @@ end
         enddo
       enddo
 !
-!ishimura
-!write(*,'(13f7.3)')snao
-!write(*,'(19f5.2)')snao
       return
 end
 
 !---------------------------------------------------------------------
   subroutine printnpa(pnao,fnao,trans,work,fwork,pwork,fshell,maxang,maxsize,infonmb,infobasis, &
-&                     datamol,databasisnpa1,datacomp)
+&                     datamol,databasis,datacomp)
 !---------------------------------------------------------------------
 !
 ! Print Natural Population Analysis Result
@@ -1969,18 +1994,18 @@ end
       use modtype, only : typemol, typebasis, typecomp
       implicit none
       type(typemol),intent(in) :: datamol
-      type(typebasis),intent(in) :: databasisnpa1
+      type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: maxang, maxsize, infonmb(3,0:6,datamol%natom)
       integer,intent(in) :: infobasis(3,0:maxang,datamol%natom)
       integer :: nao, iatom, iang, ishell, iao, jao, numshell, locao, itmp, list(maxsize)
       integer :: ii, jj, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
-      real(8),intent(in) :: pnao(databasisnpa1%nao,databasisnpa1%nao)
-      real(8),intent(in) :: trans(databasisnpa1%nao,databasisnpa1%nao)
-      real(8),intent(inout) :: fnao(databasisnpa1%nao,databasisnpa1%nao)
-      real(8),intent(out) :: work(databasisnpa1%nao,databasisnpa1%nao)
-      real(8),intent(out) :: fwork(databasisnpa1%nao), pwork(databasisnpa1%nao), fshell(maxsize)
+      real(8),intent(in) :: pnao(databasis%nao,databasis%nao)
+      real(8),intent(in) :: trans(databasis%nao,databasis%nao)
+      real(8),intent(inout) :: fnao(databasis%nao,databasis%nao)
+      real(8),intent(out) :: work(databasis%nao,databasis%nao)
+      real(8),intent(out) :: fwork(databasis%nao), pwork(databasis%nao), fshell(maxsize)
       real(8) :: faverage, tmp, chargenpa(3,0:maxang,datamol%natom), atomnpa(0:3,0:datamol%natom)
       real(8) :: totalcharge
       character(len=3) :: table(-9:112)= &
@@ -2018,7 +2043,7 @@ end
 !
 ! Transform Fock matrix to Natural Atomic Orbital basis
 !
-      nao= databasisnpa1%nao
+      nao= databasis%nao
       call dsymm('L','U',nao,nao,one,fnao,nao,trans,nao,zero,work,nao)
       call dgemm('T','N',nao,nao,nao,one,trans,nao,work,nao,zero,fnao,nao)
 !
