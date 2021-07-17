@@ -697,7 +697,7 @@ end
       real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
-      real(8),allocatable :: pnao(:), snao(:), trans(:,:), work1(:), work2(:), work3(:)
+      real(8),allocatable :: pnao(:), snao(:), trans(:), work1(:), work2(:), work3(:)
       real(8),allocatable :: wnao(:)
 !
       maxang= maxval(databasis%mtype(1:databasis%nshell))
@@ -707,13 +707,13 @@ end
 ! Allocate arrays
 !
       call memset(nao2*6+nao*3+3*(maxang+8)*datamol%natom,datacomp)
-      allocate(pnao(nao2),snao(nao2),trans(nao,nao),work1(nao2),work2(nao2), &
+      allocate(pnao(nao2),snao(nao2),trans(nao2),work1(nao2),work2(nao2), &
 &              work3(nao2),wnao(nao),infobasis(3,maxang+1,datamol%natom), &
 &              infonmb(3,7,datamol%natom),list1(nao),list2(nao))
 !
 ! Calculate Natural Population
 !
-      call calcnpa(dmtrx,fock,overlap,pnao,snao,trans,work1,work2,work3,wnao, &
+      call calcnpa(dmtrx,overlap,pnao,snao,trans,work1,work2,work3,wnao, &
 &                  infobasis,infonmb,list1,list2,maxang,maxsize,datamol,databasis,datacomp)
 !
 ! Transform fock matrix and print result
@@ -733,7 +733,7 @@ end
 
 
 !----------------------------------------------------------------------------------------------
-  subroutine calcnpa(dmtrx,fock,overlap,pnao,snao,trans,work1,work2,work3,wnao, &
+  subroutine calcnpa(dmtrx,overlap,pnao,snao,trans,work1,work2,work3,wnao, &
 &                    infobasis,infonmb,list1,list2,maxang,maxsize,datamol,databasis,datacomp)
 !----------------------------------------------------------------------------------------------
 !
@@ -751,7 +751,6 @@ end
       integer,intent(out) :: list1(databasis%nao), list2(databasis%nao)
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
-      real(8),intent(in) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: pnao(databasis%nao**2), snao(databasis%nao**2)
       real(8),intent(out) :: trans(databasis%nao,databasis%nao), work1(databasis%nao**2)
@@ -765,7 +764,7 @@ end
       infobasis(:,:,:)= 0
       infonmb(:,:,:)= 0
 !
-! Set full matrices of density, fock, overlap, and NPA transformation
+! Set full matrices of density, overlap, and NPA transformation
 !
       call expand(dmtrx,pnao,nao)
       call expand2(overlap,snao,nao)
