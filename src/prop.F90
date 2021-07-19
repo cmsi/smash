@@ -718,7 +718,7 @@ end
 !
 ! Transform fock matrix and print result
 !
-      call printrnpa(pnao,trans,fock,work1,work2,work3,wnao,infonmb,infobasis, &
+      call printrnpa(pnao,trans,fock,work1,work2,infonmb,infobasis, &
 &                    maxang,maxsize,datamol,databasis,datacomp)
 !
 ! Deallocate arrays
@@ -1981,10 +1981,10 @@ end
 end
 
 
-!------------------------------------------------------------------------------------
-  subroutine printrnpa(pnao,trans,fock,fnao,work,fpwork,fshell,infonmb,infobasis, &
+!----------------------------------------------------------------------
+  subroutine printrnpa(pnao,trans,fock,fnao,work,infonmb,infobasis, &
 &                      maxang,maxsize,datamol,databasis,datacomp)
-!------------------------------------------------------------------------------------
+!----------------------------------------------------------------------
 !
 ! Print closed-shell Natural Population Analysis Result
 !
@@ -2003,9 +2003,8 @@ end
       real(8),intent(in) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: fnao(databasis%nao,databasis%nao)
       real(8),intent(out) :: work(databasis%nao,databasis%nao)
-      real(8),intent(out) :: fpwork(databasis%nao,2), fshell(maxsize)
-      real(8) :: faverage, tmp, chargenpa(3,0:maxang,datamol%natom), atomnpa(0:3,0:datamol%natom)
-      real(8) :: totalcharge
+      real(8) :: faverage, fpwork(maxsize,2), fshell(maxsize), tmp, chargenpa(3,0:maxang,datamol%natom)
+      real(8) :: atomnpa(0:3,0:datamol%natom), totalcharge
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
 &       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
