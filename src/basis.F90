@@ -8689,22 +8689,6 @@ end
               dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coefff1(j,numatomic(iatom))
             enddo
             call basisparam(ishell,3,4,iatom,dataguessbs)
-!ishi
-   if(numatomic(iatom)==58)then
-            ishell= ishell+1
-            do j= 1,1
-              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= 0.05D0
-              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= 1.0D0
-            enddo
-            call basisparam(ishell,1,1,iatom,dataguessbs)
-!
-            ishell= ishell+1
-            do j= 1,1
-              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= 0.3D0
-              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= 1.0D0
-            enddo
-            call basisparam(ishell,2,1,iatom,dataguessbs)
-    endif   
 !
 ! Set Lu - Hg functions
 !
