@@ -2003,8 +2003,8 @@ end
       real(8),intent(in) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(out) :: fnao(databasis%nao,databasis%nao)
       real(8),intent(out) :: work(databasis%nao,databasis%nao)
-      real(8) :: faverage, fpwork(maxsize,2), fshell(maxsize), tmp, chargenpa(3,0:maxang,datamol%natom)
-      real(8) :: atomnpa(0:3,0:datamol%natom), totalcharge
+      real(8) :: faverage, fdiag(maxsize), pdiag(maxsize), fshell(maxsize), tmp
+      real(8) :: chargenpa(3,0:maxang,datamol%natom), atomnpa(0:3,0:datamol%natom), totalcharge
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
 &       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
@@ -2055,8 +2055,8 @@ end
           do ishell= 1,numshell
             faverage= zero
             do iao= 1,2*iang+1
-              fpwork((ishell-1)*(2*iang+1)+iao,1)= fnao(locao+iao,locao+iao)
-              fpwork((ishell-1)*(2*iang+1)+iao,2)= pnao(locao+iao,locao+iao)
+              fdiag((ishell-1)*(2*iang+1)+iao)= fnao(locao+iao,locao+iao)
+              pdiag((ishell-1)*(2*iang+1)+iao)= pnao(locao+iao,locao+iao)
               faverage= faverage+fnao(locao+iao,locao+iao)
             enddo
             fshell(ishell)= faverage/dble(2*iang+1)
@@ -2092,9 +2092,9 @@ end
               write(datacomp%iout,'(i6,i5,1x,a3,1x,i2,a3,4x,a3,f13.6,f16.6)') &
 &                   jao, iatom, table(datamol%numatomic(iatom)), &
 &                   ishell+infonmb(3,iang,iatom)+iang, anglabel(13*iang+iao), motype(imo),  &
-&                   fpwork(list(ishell)*(2*iang+1)+iao,2), fpwork(list(ishell)*(2*iang+1)+iao,1)
+&                   pdiag(list(ishell)*(2*iang+1)+iao), fdiag(list(ishell)*(2*iang+1)+iao)
               chargenpa(imo,iang,iatom)= chargenpa(imo,iang,iatom) &
-&                                       +fpwork(list(ishell)*(2*iang+1)+iao,2)
+&                                       +pdiag(list(ishell)*(2*iang+1)+iao)
             enddo
           enddo
         enddo
