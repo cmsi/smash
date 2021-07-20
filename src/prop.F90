@@ -743,47 +743,44 @@ end
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
       type(typecomp),intent(in) :: datacomp
-      integer :: maxang, nao, nao2, maxsize
+      integer :: maxang, nao, nao2, nao3, maxsize
       integer,allocatable :: infobasis(:,:,:), infonmb(:,:,:), list1(:), list2(:)
       real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: focka(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: fockb(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
-      real(8),allocatable :: pnaoa(:), pnaob(:), snao(:), transa(:), transb(:), work1(:), work2(:), work3(:)
+      real(8),allocatable :: pnao(:), snao(:), trans(:), work1(:), work2(:), work3(:), dmtrxab(:)
       real(8),allocatable :: wnao(:)
 !
       maxang= maxval(databasis%mtype(1:databasis%nshell))
       nao   = databasis%nao
       nao2  = nao*nao
+      nao3  = nao*(nao+1)/2
 !
 ! Allocate arrays
 !
-      call memset(nao2*8+nao*3+3*(maxang+8)*datamol%natom,datacomp)
-      allocate(pnaoa(nao2),pnaob(nao2),snao(nao2),transa(nao2),transb(nao2),work1(nao2),work2(nao2), &
-&              work3(nao2),wnao(nao),infobasis(3,maxang+1,datamol%natom), &
+      call memset(nao2*6+nao3+nao*3+3*(maxang+8)*datamol%natom,datacomp)
+      allocate(pnao(nao2),snao(nao2),trans(nao2),work1(nao2),work2(nao2), &
+&              work3(nao2),dmtrxab(nao3),wnao(nao),infobasis(3,maxang+1,datamol%natom), &
 &              infonmb(3,7,datamol%natom),list1(nao),list2(nao))
 !
 ! Calculate Natural Population
 !
-      call calcnpa(dmtrxa,overlap,pnaoa,snao,transa,work1,work2,work3,wnao, &
-&                  infobasis,infonmb,list1,list2,maxang,maxsize,datamol,databasis,datacomp)
-!
-! Calculate Natural Population
-!
-      call calcnpa(dmtrxb,overlap,pnaob,snao,transb,work1,work2,work3,wnao, &
+      dmtrxab(1:nao3)= dmtrxa(1:nao3)+dmtrxb(1:nao3)
+      call calcnpa(dmtrxab,overlap,pnao,snao,trans,work1,work2,work3,wnao, &
 &                  infobasis,infonmb,list1,list2,maxang,maxsize,datamol,databasis,datacomp)
 !
 ! Transform fock matrix and print result
 !
-      call printunpa(pnaoa,pnaob,transa,transb,focka,fockb,work1,work2,work3,infonmb,infobasis, &
+      call printunpa(focka,fockb,dmtrxa,dmtrxb,overlap,trans,pnao,work1,work2,work3,infonmb,infobasis, &
 &                    maxang,maxsize,datamol,databasis,datacomp)
 !
 ! Deallocate arrays
 !
-      call memunset(nao2*8+nao*3+3*(maxang+8)*datamol%natom,datacomp)
-      deallocate(pnaoa,pnaob,snao,transa,transb,work1,work2, &
-&                work3,wnao,infobasis, &
+      call memunset(nao2*6+nao3+nao*3+3*(maxang+8)*datamol%natom,datacomp)
+      deallocate(pnao,snao,trans,work1,work2, &
+&                work3,dmtrxab,wnao,infobasis, &
 &                infonmb,list1,list2)
 !
       return
@@ -2190,10 +2187,10 @@ end
 end
 
 
-!---------------------------------------------------------------------------------------------------
-  subroutine printunpa(pnaoa,pnaob,transa,transb,focka,fockb,fnao,worka,workb,infonmb,infobasis, &
+!----------------------------------------------------------------------------------------------------------
+  subroutine printunpa(focka,fockb,dmtrxa,dmtrxb,overlap,trans,pnao,fnao,worka,workb,infonmb,infobasis, &
 &                      maxang,maxsize,datamol,databasis,datacomp)
-!---------------------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------------------------
 !
 ! Print open-shell Natural Population Analysis Result
 !
@@ -2207,10 +2204,13 @@ end
       integer :: nao, iatom, iang, ishell, iao, jao, numshell, locao, itmp, list(maxsize)
       integer :: ii, jj, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, half=0.5D+00
-      real(8),intent(in) :: pnaoa(databasis%nao,databasis%nao), pnaob(databasis%nao,databasis%nao)
-      real(8),intent(in) :: transa(databasis%nao,databasis%nao), transb(databasis%nao,databasis%nao)
       real(8),intent(in) :: focka(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: fockb(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: trans(databasis%nao,databasis%nao)
+      real(8),intent(out) :: pnao(databasis%nao,databasis%nao)
       real(8),intent(out) :: fnao(databasis%nao,databasis%nao)
       real(8),intent(out) :: worka(databasis%nao*databasis%nao)
       real(8),intent(out) :: workb(databasis%nao*databasis%nao)
@@ -2257,11 +2257,17 @@ end
 !   Transform alpha Fock matrix to Natural Atomic Orbital basis
 !
       nao= databasis%nao
+      call expand(dmtrxa,pnao,nao)
+      call expand2(overlap,fnao,nao)
+      call dsymm('L','U',nao,nao,one,pnao,nao,fnao,nao,zero,worka,nao)
+      call dsymm('L','U',nao,nao,one,fnao,nao,worka,nao,zero,pnao,nao)
+      call dsymm('L','U',nao,nao,one,pnao,nao,trans,nao,zero,worka,nao)
+      call dgemm('T','N',nao,nao,nao,one,trans,nao,worka,nao,zero,pnao,nao)
       call expand(focka,fnao,nao)
-      call dsymm('L','U',nao,nao,one,fnao,nao,transa,nao,zero,worka,nao)
-      call dgemm('T','N',nao,nao,nao,one,transa,nao,worka,nao,zero,fnao,nao)
+      call dsymm('L','U',nao,nao,one,fnao,nao,trans,nao,zero,worka,nao)
+      call dgemm('T','N',nao,nao,nao,one,trans,nao,worka,nao,zero,fnao,nao)
 !
-!  Summarize alpha Natural Atomic Orbital Energies
+!   Summarize alpha Natural Atomic Orbital Energies
 !
       locao= 0
       jao  = 0
@@ -2273,7 +2279,7 @@ end
             faverage= zero
             do iao= 1,2*iang+1
               fdiag((ishell-1)*(2*iang+1)+iao)= fnao(locao+iao,locao+iao)
-              pdiag((ishell-1)*(2*iang+1)+iao)= pnaoa(locao+iao,locao+iao)
+              pdiag((ishell-1)*(2*iang+1)+iao)= pnao(locao+iao,locao+iao)
               faverage= faverage+fnao(locao+iao,locao+iao)
             enddo
             fshell(ishell)= faverage/dble(2*iang+1)
@@ -2358,10 +2364,15 @@ end
 !
 !   Transform beta Fock matrix to Natural Atomic Orbital basis
 !
-      nao= databasis%nao
+      call expand(dmtrxb,pnao,nao)
+      call expand2(overlap,fnao,nao)
+      call dsymm('L','U',nao,nao,one,pnao,nao,fnao,nao,zero,workb,nao)
+      call dsymm('L','U',nao,nao,one,fnao,nao,workb,nao,zero,pnao,nao)
+      call dsymm('L','U',nao,nao,one,pnao,nao,trans,nao,zero,workb,nao)
+      call dgemm('T','N',nao,nao,nao,one,trans,nao,workb,nao,zero,pnao,nao)
       call expand(fockb,fnao,nao)
-      call dsymm('L','U',nao,nao,one,fnao,nao,transb,nao,zero,workb,nao)
-      call dgemm('T','N',nao,nao,nao,one,transb,nao,workb,nao,zero,fnao,nao)
+      call dsymm('L','U',nao,nao,one,fnao,nao,trans,nao,zero,workb,nao)
+      call dgemm('T','N',nao,nao,nao,one,trans,nao,workb,nao,zero,fnao,nao)
 !
 !   Summarize beta Natural Atomic Orbital Energies
 !
@@ -2375,7 +2386,7 @@ end
             faverage= zero
             do iao= 1,2*iang+1
               fdiag((ishell-1)*(2*iang+1)+iao)= fnao(locao+iao,locao+iao)
-              pdiag((ishell-1)*(2*iang+1)+iao)= pnaob(locao+iao,locao+iao)
+              pdiag((ishell-1)*(2*iang+1)+iao)= pnao(locao+iao,locao+iao)
               faverage= faverage+fnao(locao+iao,locao+iao)
             enddo
             fshell(ishell)= faverage/dble(2*iang+1)
