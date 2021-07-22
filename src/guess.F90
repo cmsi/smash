@@ -1600,8 +1600,8 @@ end
 !
 ! Adjust the number of projected MOs
 !
-      nelect  = datamol%neleca+datamol%nelecb-nint(datamol%charge)
-      nelect_g= neleca_g      +nelecb_g      -nint(charge_g)
+      nelect  = datamol%neleca+datamol%nelecb+nint(datamol%charge)
+      nelect_g= neleca_g      +nelecb_g      +nint(charge_g)
       ncore=(nelect_g-nelect)/2
 !
       if(ncore < 0) then
