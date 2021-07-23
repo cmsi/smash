@@ -14,7 +14,7 @@
   efficiency. The Fortran 90/95 language is used with MPI and OpenMP for
   inter-node and intra-node parallelization, respectively. Supported
   platforms are x86-64/Linux with Intel, NVIDIA HPC SDK (ex-PGI), or GNU 
-  compilers, and Fugaku Supercomputer, FX700, and FX1000 with Fujitsu compiler.
+  compilers, and Supercomputer Fugaku and FX1000/700 with Fujitsu compiler.
 
   Documentation
   -------------

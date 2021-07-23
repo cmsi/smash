@@ -44,12 +44,24 @@
     After the setting, start a calculation.
 
       $ bin/smash < input > output
+    or
+      $ bin/smash input output
+    or
+      $ bin/smash input
+
+    In the case of the last command, if the input file name is ***.inp or ***.sinp,
+    the output file name is set to ***.out or ***.sout.
+    If not, the output file is set to (input file).out.
   
   * Inter-node (MPI) parallel computing
     Use "mpirun" or "mpiexec" command to start a calculation, and specify
     the number of MPI processes by -np option.
 
       $ mpirun -np (# of processes) bin/smash < input > output
+    or
+      $ mpirun -np (# of processes) bin/smash input output
+    or
+      $ mpirun -np (# of processes) bin/smash input
 
   * Hybrid parallel computing
     Parallel computing with MPI and OpenMP when you use cluster or

@@ -14,9 +14,9 @@
       $ make -f Makefile.mpiifort
 
     (x86-64 without MPI)
-      $ make -f Makefile.x86_64.noMPI
+      $ make -f Makefile.noMPI
 
-    (K Computer or FX10 with MPI)
+    (Supercomputer Fugaku or FX1000/700 with MPI)
       $ make -f Makefile.fujitsu
 
   If it is successfully completed, you can find the bin/smash file.
