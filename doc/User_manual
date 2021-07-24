@@ -223,8 +223,8 @@
 
       pop                   specifies population (charge) calculations.
               = mulliken    Mulliken population (default)
-              = nbo         Mulliken + Natural Bond Orbital (NBO) population
-                            (npa is a synonym for nbo.)
+              = npa         Natural Population Analysis (Natural Bond Orbital (NBO) charge)
+                            + Mulliken population (nbo is a synonym for npa.)
               = none        No population
 
       multipole             controls dipole, quadrupole, and octupole moment calculations.
