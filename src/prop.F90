@@ -1295,7 +1295,7 @@ end
       integer,intent(out) :: list2(databasisnpa2%nao), numlnrb, numsnrb
       integer :: iatom, iang, ishell, jshell, iao, jao, numshell, nao
       integer :: locnrbshell, listtmp(databasisnpa2%nao), loclnrb, locsnrb
-      real(8),parameter :: zero=0.0D+00, one=1.0D+00, wthresh=1.0D-02
+      real(8),parameter :: zero=0.0D+00, one=1.0D+00, wthresh=1.0D-03
       real(8),intent(inout) :: pnao(databasisnpa2%nao,databasisnpa2%nao)
       real(8),intent(inout) :: snao(databasisnpa2%nao,databasisnpa2%nao)
       real(8),intent(inout) :: trans(databasisnpa2%nao,databasisnpa2%nao)
