@@ -199,7 +199,7 @@
               = .true.      Atomic unit
 
       print                 controls output format.
-              = minimal     Minimal output without MO coefficients
+              = minimum     Minimum output without MO coefficients
               = compact     Compact output with MO coefficients of HOMO-9 to LUMO+9
               = normal      Normal output with MO coefficients of HOMO-9 to LUMO+9 (default)
               = fullmo      Normal output with all MO coefficients
@@ -208,7 +208,7 @@
 
       iprint                controls output format.
                             Keyword "output" overrides "iprint" if both are set.
-              = 1           Minimal output without MO coefficients
+              = 1           Minimum output without MO coefficients
               = 2           Compact output with MO coefficients of HOMO-9 to LUMO+9
               = 3           Normal output with MO coefficients of HOMO-9 to LUMO+9 (default)
               = 4           Normal output with all MO coefficients
