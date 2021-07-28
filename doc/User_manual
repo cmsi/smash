@@ -171,7 +171,8 @@
 
     2.2 control keywords
       precision             controls computational precision.
-                            The following variables are overridden when these are specified.
+                            If the following variables are set, they take precedence
+                            over the precision setting.
               = high        cutint2=1.0E-12, dconv=5.0E-6, optconv=1.0E-5, threshrho=1.0E-6,
                             threshdfock=1.0E-5, threshdftao=1.0E-4, nrad=150, nleb=590
               = medium      cutint2=1.0E-11, dconv=5.0E-6, optconv=1.0E-4, threshrho=1.0E-5,
@@ -199,6 +200,7 @@
               = .true.      Atomic unit
 
       print                 controls output format.
+                            If iprint is set, it takes precedence over the print setting.
               = minimum     Minimum output without MO coefficients
               = compact     Compact output with MO coefficients of HOMO-9 to LUMO+9
               = normal      Normal output with MO coefficients of HOMO-9 to LUMO+9 (default)
