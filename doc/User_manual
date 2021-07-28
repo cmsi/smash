@@ -26,7 +26,7 @@
 
   Sample input and output
   -----------------------
-  Sample input and output files are included in the example/ directory.
+  Sample input and output files are included in the example directory.
 
 
   How to run SMASH
@@ -180,8 +180,8 @@
                             threshdfock=1.0E-4, threshdftao=1.0E-2, nrad=72, nleb=302
 
       spher                 specifies spherical harmonics or Cartesian basis functions.
-              = .true.      Speherical harmonics (5d, 7f, 9g, default)
-              = .false.     Cartesian (6d, 10f, 15g)
+              = .true.      Speherical harmonics (5d, 7f, 9g, 11h, 13i, default)
+              = .false.     Cartesian (6d, 10f, 15g, 21h, 28i)
 
       guess                 specifies the guess calculation.
               = huckel      extended Huckel calculation (default)
