@@ -1503,7 +1503,7 @@ end
 !
         deltapai= sqrt(deltapai/(nocc*nvir))
         if(datacomp%master) &
-&         write(datacomp%iout,'(6x,"Cycle",i3,3x,"Z-Vector error=",1p,d11.3)')iter,deltapai
+&         write(datacomp%iout,'(6x,"Cycle",i3,3x,"Z-Vector error=",1p,e11.3)')iter,deltapai
         if(deltapai < datajob%threshmp2cphf) exit
 !
         if(itdiis == datajob%maxmp2diis) itdiis= 0
