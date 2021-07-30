@@ -110,7 +110,7 @@
         case default
           if(datacomp%master) then
             write(*,'(" Error! This program does not support runtype= ",a16,".")') datajob%runtype
-            call iabort
+            call iabort(datacomp)
           endif
       end select
 !
@@ -244,19 +244,19 @@ end
       if(datacomp%master) then
         if((datajob%scftype /= 'RHF').and.(datajob%scftype /= 'UHF')) then
           write(*,'(" Error! SCFtype=",a16," is not supported.")') datajob%scftype
-          call iabort
+          call iabort(datacomp)
         endif
 !
         if((datajob%multipole == 'OCTUPOLE').and.(datajob%method == 'MP2')) then
           write(*,'(" Error! This program does not suupport MP2 octupole calculation.")')
-          call iabort
+          call iabort(datacomp)
         endif
 !
         select case(datajob%pop)
           case('MULLIKEN','NPA','NBO','NONE','')
           case default
             write(*,'(" Error! This program does not support pop= ", a16,".")') datajob%pop
-            call iabort
+            call iabort(datacomp)
         end select
 !
         select case(datajob%multipole)
@@ -264,7 +264,7 @@ end
           case default
             write(*,'(" Error! This program does not support multipole= ", a16,".")') &
 &                 datajob%multipole
-            call iabort
+            call iabort(datacomp)
         end select
       endif
 !
@@ -318,7 +318,7 @@ end
         case default
           if(datacomp%master) write(*,'(" Error! This program does not support precision= ", &
 &                                       a16,".")') datajob%precision
-          call iabort
+          call iabort(datacomp)
       end select
 !
       select case(datajob%print)
@@ -336,7 +336,7 @@ end
         case default
           if(datacomp%master) write(*,'(" Error! This program does not support print= ", &
 &                                       a16,".")') datajob%print
-          call iabort
+          call iabort(datacomp)
       end select
 !
       return
@@ -386,7 +386,7 @@ end
       if((datamol%neleca+datamol%nelecb)/= nume) then
         if(datacomp%master) write(*,'(" Error! Spin multiplicity is ",i2, &
 &                                     ", but number of elctrons is ",i5,".")') datamol%multi, nume
-        call iabort
+        call iabort(datacomp)
       endif
 !
       return
@@ -510,7 +510,7 @@ end
       else
         if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
-          call iabort
+          call iabort(datacomp)
         endif
       endif
 !
@@ -684,7 +684,7 @@ end
       else
         if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16,".")')datajob%method
-          call iabort
+          call iabort(datacomp)
         endif
       endif
 !
@@ -841,7 +841,7 @@ end
       else
         if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
-          call iabort
+          call iabort(datacomp)
         endif
       endif
 !
@@ -865,7 +865,7 @@ end
       else
         if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
-          call iabort
+          call iabort(datacomp)
         endif
       endif
 !
@@ -1037,7 +1037,7 @@ end
       else
         if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
-          call iabort
+          call iabort(datacomp)
         endif
       endif
 !
@@ -1060,7 +1060,7 @@ end
         if(datacomp%master) then
           write(*,'(" Error! This program does not support method= ",a16," in energy gradient.")') &
 &               datajob%method
-          call iabort
+          call iabort(datacomp)
         endif
       endif
 !
@@ -1189,7 +1189,7 @@ end
           allocate(iredun(isizered))
           if(ii == 10) then
             write(*,'(" Error! The array size for redundant coordinate is too large.")')
-            call iabort
+            call iabort(datacomp)
           endif
         enddo
         numredun= numbond+numangle+numtorsion
@@ -1275,7 +1275,7 @@ end
         else
           if(datacomp%master) then
             write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
-            call iabort
+            call iabort(datacomp)
           endif
         endif
 !
@@ -1303,7 +1303,7 @@ end
         else
           if(datacomp%master) then
             write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
-            call iabort
+            call iabort(datacomp)
           endif
         endif
 !
@@ -1563,7 +1563,7 @@ end
           allocate(iredun(isizered))
           if(ii == 10) then
             write(*,'(" Error! The array size for redundant coordinate is too large.")')
-            call iabort
+            call iabort(datacomp)
           endif
         enddo
         numredun= numbond+numangle+numtorsion
@@ -1653,7 +1653,7 @@ end
         else
           if(datacomp%master) then
             write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
-            call iabort
+            call iabort(datacomp)
           endif
         endif
 !
@@ -1680,7 +1680,7 @@ end
           if(datacomp%master) then
             write(*,'(" Error! This program does not support method= ",a16," in energy gradient.")') &
 &                 datajob%method
-            call iabort
+            call iabort(datacomp)
           endif
         endif
 !
@@ -1935,7 +1935,7 @@ end
         case default
           if(datacomp%master) then
             write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
-            call iabort
+            call iabort(datacomp)
           endif
       endselect
 !

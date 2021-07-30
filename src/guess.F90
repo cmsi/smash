@@ -70,7 +70,7 @@
         case default
           if(datacomp%master) &
 &           write(*,'(" Error! This program does not support guess= ",a10,"!")') datajob%guess
-          call iabort
+          call iabort(datacomp)
       end select
 !
       if(datacomp%master) then
@@ -113,7 +113,7 @@ end
 ! Set basis functions
 !
       dataguessbs%spher=.true.
-      call setbasis_g(nao_v,ntmp,1,datajob,datamol,databasis,dataguessbs)
+      call setbasis_g(nao_v,ntmp,1,datajob,datamol,databasis,dataguessbs,datacomp)
 !
 ! Set coordinate
 !
@@ -692,7 +692,7 @@ end
 !
             case default
               if(datacomp%master) write(*,'(" Error! This program supports up to Rn in huckelip.")')
-              call iabort
+              call iabort(datacomp)
           end select
         enddo
 !
@@ -888,7 +888,7 @@ end
             case(-9:0)
             case default
               if(datacomp%master) write(*,'(" Error! This program supports up to Rn in huckelip.")')
-              call iabort
+              call iabort(datacomp)
           end select
         enddo
 !
@@ -1083,7 +1083,7 @@ end
             case(-9:0)
             case default
               if(datacomp%master) write(*,'(" Error! This program supports up to Rn in huckelip.")')
-              call iabort
+              call iabort(datacomp)
           end select
         enddo
       endif
@@ -1510,7 +1510,7 @@ end
 !
       if(nao < ndim) then
         write(*,'(" Error! Nao is less than ndim in projectmo2.")')
-        call iabort
+        call iabort(datacomp)
       endif
 !
 ! Calculate S12*C2
@@ -1607,17 +1607,17 @@ end
       if(ncore < 0) then
         if(datacomp%master) &
 &         write(*,'(" Error! The number of electrons in checkpoint file is too small.")')
-        call iabort
+        call iabort(datacomp)
       elseif((ncore /= 0).and.flagecp_g) then
         if(datacomp%master) then
           write(*,'(" Error! The ECP functions in checkpoint and input files are different.")')
         endif
-        call iabort
+        call iabort(datacomp)
       endif
 !
       if(ncore > 0) then
         datacorebs%spher=.true.
-        call setbasis_g(ntmp,ntmp,2,datajob,datamol,databasis,datacorebs)
+        call setbasis_g(ntmp,ntmp,2,datajob,datamol,databasis,datacorebs,datacomp)
         nao_gcore= datacorebs%nao
         call memset(nao_gcore*(nao_gcore+nao_g*3+1),datacomp)
         allocate(coremo(nao_gcore,nao_gcore),work1(nao_g*nao_gcore),work2(nao_g*nao_gcore), &
@@ -1889,15 +1889,16 @@ end
 end
 
 
-!--------------------------------------------------
-  subroutine gcheckreorder(cmo,nmo_g,dataguessbs)
-!--------------------------------------------------
+!-----------------------------------------------------------
+  subroutine gcheckreorder(cmo,nmo_g,dataguessbs,datacomp)
+!-----------------------------------------------------------
 !
 ! Reorder guess molecular orbitals
 !
-      use modtype, only : typebasis
+      use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(in) :: dataguessbs
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: nmo_g
       integer :: ish, iloc, imo, iao
       real(8),intent(inout) :: cmo(dataguessbs%nao,dataguessbs%nao)
@@ -1998,7 +1999,7 @@ end
               enddo
             case default
               write(*,'(" Error! Subroutine gcheckreorder supports up to g functions.")')
-              call iabort
+              call iabort(datacomp)
           end select
         endif
       enddo
@@ -2033,7 +2034,7 @@ end
 ! Set basis functions
 !
       dataguessbs%spher=.true.
-      call setbasis_g(nao_v,nshell_v,1,datajob,datamol,databasis,dataguessbs)
+      call setbasis_g(nao_v,nshell_v,1,datajob,datamol,databasis,dataguessbs,datacomp)
       nao_g= dataguessbs%nao
 !
 ! Set coordinate
@@ -2159,12 +2160,12 @@ end
 ! Calculate new Mulliken charge
 !
         qmulliken(1:nshell_v,2)= qmulliken(1:nshell_v,1)
-        call calcdftbmulliken(overlap,dftbmo,work,qmulliken,nelecdftb,nshell_v,datamol,dataguessbs)
+        call calcdftbmulliken(overlap,dftbmo,work,qmulliken,nelecdftb,nshell_v,datamol,dataguessbs,datacomp)
         call diffqmulliken(qmulliken,qmax,nshell_v)
         if(qmax < 1.0D-4) exit
         if(iter == maxiter) then
           if(datacomp%master) write(*,'(" Error! DFTB calculation did not converge.")')
-          call iabort
+          call iabort(datacomp)
         endif
       enddo
 !
@@ -2382,16 +2383,17 @@ end
 end
 
 
-!-------------------------------------------------------------------------------------------------
-  subroutine calcdftbmulliken(overlap,cmo,work,qmulliken,nelecdftb,nshell_v,datamol,dataguessbs)
-!-------------------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------------------------
+  subroutine calcdftbmulliken(overlap,cmo,work,qmulliken,nelecdftb,nshell_v,datamol,dataguessbs,datacomp)
+!----------------------------------------------------------------------------------------------------------
 !
 ! Calculate Mulliken population for DFTB
 !
-      use modtype, only : typemol, typebasis
+      use modtype, only : typemol, typebasis, typecomp
       implicit none
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: dataguessbs
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: nelecdftb(2), nshell_v
       integer :: nao_g, ii, jj, ish, locbfi
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
@@ -2462,7 +2464,7 @@ end
         enddo
       else
         write(*,'(" Error! DFTB for open-shell has not been implemented yet!")')
-        call iabort
+        call iabort(datacomp)
       endif
 !
       return
@@ -2773,10 +2775,9 @@ end
             case default
               if(datacomp%master) &
 &               write(*,'(" Error! This program supports H-La and Lu-Po in dftbip.")')
-              call iabort
+              call iabort(datacomp)
         end select
       enddo
 !
       return
 end
-

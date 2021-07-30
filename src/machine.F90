@@ -249,7 +249,7 @@ end
 !
       return
 9999 write(*,'(" Error! File ",a," is not found.")') filename(1:llen)
-     call iabort
+     call iabort(datacomp)
 end
 
 
@@ -326,20 +326,22 @@ end
 end
 
 
-!--------------------
-  subroutine iabort
-!--------------------
+!------------------------------
+  subroutine iabort(datacomp)
+!------------------------------
 !
 ! Abort the calculation
 !
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(in) :: datacomp
       character(len=24) :: tdate
 !
       call fdate(tdate)
-      write(*,'(" The job finished at ",a)')tdate
-      write(*,'(" ===========================================")')
-      write(*,'("   Error! Calculation finished abnormally.")')
-      write(*,'(" ===========================================")')
+      write(datacomp%iout,'(" The job finished at ",a)')tdate
+      write(datacomp%iout,'(" ===========================================")')
+      write(datacomp%iout,'("   Error! Calculation finished abnormally.")')
+      write(datacomp%iout,'(" ===========================================")')
       call para_abort
       call abort
 end

@@ -105,7 +105,7 @@
         case default
           if(datacomp%master) then
             write(*,'(" Error! SCFConv=",a12,"is not supported.")') 
-            call iabort
+            call iabort(datacomp)
           endif
       end select
 !
@@ -1059,7 +1059,7 @@ end
         case default
           if(datacomp%master) then
             write(*,'(" Error! SCFConv=",a12,"is not supported.")')
-            call iabort
+            call iabort(datacomp)
           endif
       end select
 !
@@ -1075,7 +1075,7 @@ end
 !
       call calcatomvec(atomvec,surface,ndftatom,datamol)
       call calcradpt(radpt,nrad)
-      call calclebpt(angpt,nleb)
+      call calclebpt(angpt,nleb,datacomp)
       do iatom= 1,ndftatom
         rad(iatom)= datamol%atomrad(datamol%numatomic(iatom))*tobohr
       enddo
@@ -1167,7 +1167,7 @@ end
         call formrfockexcor(fockd,fock,edft,totalelec,cmo,atomvec,radpt,angpt, &
 &                           rad,ptweight,vao,vmo,xyzpt,rsqrd,work,work2,ndftatom, &
 &                           datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
-&                           datajob,datamol,databasis)
+&                           datajob,datamol,databasis,datacomp)
 !
 ! Calculate two-electron integrals
 !
@@ -1494,7 +1494,7 @@ end
         case default
           if(datacomp%master) then
             write(*,'(" Error! SCFConv=",a12,"is not supported.")')
-            call iabort
+            call iabort(datacomp)
           endif
       end select
 !
@@ -2282,7 +2282,7 @@ end
         case default
           if(datacomp%master) then
             write(*,'(" Error! SCFConv=",a12,"is not supported.")')
-            call iabort
+            call iabort(datacomp)
           endif
       end select
 !
@@ -2298,7 +2298,7 @@ end
 !
       call calcatomvec(atomvec,surface,ndftatom,datamol)
       call calcradpt(radpt,nrad)
-      call calclebpt(angpt,nleb)
+      call calclebpt(angpt,nleb,datacomp)
       do iatom= 1,ndftatom
         rad(iatom)= datamol%atomrad(datamol%numatomic(iatom))*tobohr
       enddo
@@ -2394,7 +2394,7 @@ end
 &                           radpt,angpt,rad,ptweight,vao,vmoa,vmob,xyzpt,rsqrd, &
 &                           work,work(datamol%neleca*nao+1),work2,ndftatom, &
 &                           datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
-&                           datajob,datamol,databasis)
+&                           datajob,datamol,databasis,datacomp)
 !
 ! Calculate two-electron integrals
 !

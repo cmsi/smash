@@ -298,7 +298,7 @@ end
       if(maxdiis < 6) then
         if(datacomp%master) then
           write(*,'(" Error! Set Maxdiis for more than 6.")')
-          call iabort
+          call iabort(datacomp)
         endif
       endif
 !
@@ -1346,7 +1346,7 @@ end
 &                     "method exceeds maxqcdiag=",i3,".")') maxqcdiag
             write(datacomp%iout,'(" Set larger value for maxqcdiag in scf section.")')
           endif
-          call iabort
+          call iabort(datacomp)
         endif
 !
         qcnorm= one/qcnorm
@@ -1697,7 +1697,7 @@ end
 &                     "method exceeds maxqcdiag=",i3,".")') maxqcdiag
             write(datacomp%iout,'(" Set larger value for maxqcdiag in scf section.")')
           endif
-          call iabort
+          call iabort(datacomp)
         endif
 !
 ! Reset Davidson diagonalization

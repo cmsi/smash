@@ -66,7 +66,7 @@
           if(datacomp%master) then
             write(*,'(" Error! Compilation with 32-bit integer supports up to 17.1GB memory.",/, &
 &                     " Reduce memory size, or compile with 64-bit integer.",/)')
-            call iabort
+            call iabort(datacomp)
           endif
         endif
       endif
@@ -87,7 +87,7 @@ end
 !
       if(msize < 0) then
         if(datacomp%master) write(*,'(" Required memory size is negative!",i6,"MB")')msize/125000
-        call iabort
+        call iabort(datacomp)
       endif
       datacomp%memused= datacomp%memused+msize
       if(datacomp%memused > datacomp%memmax) then
@@ -96,7 +96,7 @@ end
           write(*,'(" Required:",i6,"MB,  Available:",i6,"MB")') &
 &               datacomp%memused/125000, datacomp%memmax/125000
         endif
-        call iabort
+        call iabort(datacomp)
       endif
       datacomp%memusedmax=max(datacomp%memusedmax,datacomp%memused)
       return

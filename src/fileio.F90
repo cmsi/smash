@@ -94,7 +94,7 @@
           write(datacomp%inpcopy,'(a)')trim(line)
           if(ii == maxline) then
             write(*,'(" Error! Input file is too long in Subroutine readinput!")')
-            call iabort
+            call iabort(datacomp)
           endif
         enddo
 100     rewind(datacomp%inpcopy)
@@ -152,7 +152,7 @@
         read(datacomp%inpcopy,nml=job,end=110,iostat=info)
 110     if(info > 0) then
           write(*,'(" Error was found in job line of input file!")')
-          call iabort
+          call iabort(datacomp)
         endif
         if(len_trim(mem) /= 0) memory= mem
 !
@@ -160,7 +160,7 @@
         read(datacomp%inpcopy,nml=control,end=120,iostat=info)
 120     if(info > 0) then
           write(*,'(" Error was found in control line of input file!")')
-          call iabort
+          call iabort(datacomp)
         endif
         if(len_trim(chk) /= 0) check = chk
 !
@@ -168,28 +168,28 @@
         read(datacomp%inpcopy,nml=scf,end=130,iostat=info)
 130     if(info > 0) then
           write(*,'(" Error was found in scf line of input file!")')
-          call iabort
+          call iabort(datacomp)
         endif
 !
         rewind(datacomp%inpcopy)
         read(datacomp%inpcopy,nml=opt,end=140,iostat=info)
 140     if(info > 0) then
           write(*,'(" Error was found in opt line of input file!")')
-          call iabort
+          call iabort(datacomp)
         endif
 !
         rewind(datacomp%inpcopy)
         read(datacomp%inpcopy,nml=dft,end=150,iostat=info)
 150     if(info > 0) then
           write(*,'(" Error was found in dft line of input file!")')
-          call iabort
+          call iabort(datacomp)
         endif
 !
         rewind(datacomp%inpcopy)
         read(datacomp%inpcopy,nml=mp2,end=160,iostat=info)
 160     if(info > 0) then
           write(*,'(" Error was found in mp2 line of input file!")')
-          call iabort
+          call iabort(datacomp)
         endif
       endif
 !
@@ -456,7 +456,7 @@ end
 !
           if(databasis%mtype(ishell) >  6) then
             write(*,'(" Error! The subroutine writebasis supports up to i functions.")')
-            call iabort
+            call iabort(datacomp)
           endif 
 !
           iloc= databasis%locprim(ishell)
@@ -571,7 +571,7 @@ end
 !
         if(datamol%neleca > databasis%nao) then
           write(*,'(" Error! The number of basis functions is smaller than that of electrons.")')
-          call iabort
+          call iabort(datacomp)
         endif
 !
         write(cmemory,'(i0)') datacomp%memmax/125000
@@ -706,7 +706,7 @@ end
           if(line(1:4) == 'GEOM') exit
           if(ii == maxline) then
             write(*,'(" Error! Molecular geometry is not found.")')
-            call iabort
+            call iabort(datacomp)
           endif
         enddo
 !
@@ -724,7 +724,7 @@ end
             if(ii == mxatom) then
               write(*,'(" Error! Number of atoms exceeds mxatom=",i6,".")')mxatom
               write(*,'(" Increase mxatom in src/module.F90 and make again.",/)')
-              call iabort
+              call iabort(datacomp)
             endif
           enddo
 100       continue
@@ -738,7 +738,7 @@ end
                   if(checkdummy) then
                     write(*,'(" Error! Real atom is wriiten after dummy atoms.")')
                     write(*,'(" Dummy atoms should be wriiten at the bottom of GEOM section.")')
-                    call iabort
+                    call iabort(datacomp)
                   endif
                 elseif(jj == 0) then
                   checkdummy=.true.
@@ -751,7 +751,7 @@ end
               endif
               if(jj == 112) then
                 write(*,'(" Error! Atom type ",a3," is not supported.")')atomin(ii)
-                call iabort
+                call iabort(datacomp)
               endif
             enddo
           enddo
@@ -808,11 +808,11 @@ end
       return
 !
 9999  write(*,'(" Error! Keyword GEOM is not found.")')
-      call iabort
+      call iabort(datacomp)
 9998  write(*,'(" Error! Geometry cannot be read from checkpoint file.")')
-      call iabort
+      call iabort(datacomp)
 9997  write(*,'(" Error! Format of molecular geometry is incorrect.")')
-      call iabort
+      call iabort(datacomp)
 !
 end
 
@@ -884,7 +884,7 @@ end
           if(line(1:5) == "BASIS") exit
           if(ii == maxline) then
             write(*,'(" Error! Keyword BASIS is not found.")')
-            call iabort
+            call iabort(datacomp)
           endif
         enddo
 !
@@ -913,7 +913,7 @@ end
               endif
               if(jj == 112) then
                 write(*,'(" Error! This program does not support Atom",a3,".")')element(ii)
-                call iabort
+                call iabort(datacomp)
               endif
             enddo
           enddo
@@ -952,7 +952,7 @@ end
                 datagenbasis%mtype(ishell+1)= 1
               case default
                 write(*,'(" Error! The angular momentum ",a2," is not supported.")') symbol
-                call iabort
+                call iabort(datacomp)
             end select
             if(symbol /= 'SP') then
               do kprim= 1,numprim 
@@ -983,7 +983,7 @@ end
               exit
             elseif(symbol == '') then
               write(*,'(" Error! End of basis functions is not found.")')
-              call iabort
+              call iabort(datacomp)
             endif
             do ii= -9,nelem-10
               atombasis(ielem(ii))= symbol
@@ -996,9 +996,9 @@ end
       return
 !
 9999  write(*,'(" Error! Keyword BASIS is not found.")')
-      call iabort
+      call iabort(datacomp)
 9998  write(*,'(" Error! Format of basis functions is incorrect.")')
-      call iabort
+      call iabort(datacomp)
 end
 
 
@@ -1023,15 +1023,15 @@ end
       write(datacomp%iout,'(" Basis set is read from checkpoint file.")')
       if(databasis%nshell+1 > mxshell) then
         write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
-        call iabort
+        call iabort(datacomp)
       endif
       if(databasis%nprim > mxprim ) then
         write(*,'(" Error! The number of primitive basis functions exceeds mxprim",i6,".")')mxprim
-        call iabort
+        call iabort(datacomp)
       endif
       if(databasis%nao > mxao ) then
         write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
-        call iabort
+        call iabort(datacomp)
       endif
 !
       read(datacomp%icheck)
@@ -1064,7 +1064,7 @@ end
 !
       return
 9999  write(*,'(" Error! Basis set cannot be read from checkpoint file.")')
-      call iabort
+      call iabort(datacomp)
 !
 end
 
@@ -1096,7 +1096,7 @@ end
 &                             cdummy, charge_g, idummy, flagecp_g
         if(natom_g /= natom) then
           write(*,'(" Error! The numbers of atoms in checkpoint and input files are different.")')
-          call iabort
+          call iabort(datacomp)
         endif
         intarray(1)= dataguessbs%nshell
         intarray(2)= nmo_g
@@ -1120,9 +1120,9 @@ end
 !
  9999 write(*,'(" Error! Checkpoint file cannot be read in checkguess.")')
       write(*,'(" Check the checkpoint file name.",/)')
-      call iabort
+      call iabort(datacomp)
  9998 write(*,'(" Error! Checkpoint file cannot be read in checkguess.")')
-      call iabort
+      call iabort(datacomp)
 end
 
 
@@ -1183,9 +1183,9 @@ end
         endif
 ! Interchange the order of basis functions in cmoa_g and cmob_g
         if(checkversion(1:2) == "1.") then
-          call gcheckreorder(cmoa_g,nmo_g,dataguessbs)
+          call gcheckreorder(cmoa_g,nmo_g,dataguessbs,datacomp)
           if((scftype == 'UHF').and.(scftype_g == 'UHF')) &
-&           call gcheckreorder(cmob_g,nmo_g,dataguessbs)
+&           call gcheckreorder(cmob_g,nmo_g,dataguessbs,datacomp)
         endif
       endif
 !
@@ -1249,7 +1249,7 @@ end
           if(line(1:3) == "ECP") exit
           if(ii == maxline) then
             write(*,'(" Error! Keyword ECP is not found.")')
-            call iabort
+            call iabort(datacomp)
           endif
         enddo
 !
@@ -1277,13 +1277,13 @@ end
               endif
               if(jj == 112) then
                 write(*,'(" Error! This program does not support Atom",a3,".")')element(ii)
-                call iabort
+                call iabort(datacomp)
               endif
             enddo
           enddo
           if(nelem == 0) then
             write(*,'(" Error! Atom type is not found during reading ECP functions.")')
-            call iabort
+            call iabort(datacomp)
           endif
 !
 ! Read ECP functions
@@ -1317,10 +1317,10 @@ end
             cycle
           elseif(symbol == '') then
             write(*,'(" Error! ECP functions are not found.")')
-            call iabort
+            call iabort(datacomp)
           else
             write(*,'(" Error! This program does not support ECP function ",a10,".")')symbol
-            call iabort
+            call iabort(datacomp)
           endif
         enddo
 !
@@ -1329,9 +1329,9 @@ end
       return
 !
 9998  write(*,'(" Error! During reading ECP functions from input file.")')
-      call iabort
+      call iabort(datacomp)
 9999  write(*,'(" Error! Keyword ECP is not found.")')
-      call iabort
+      call iabort(datacomp)
 end
 
 

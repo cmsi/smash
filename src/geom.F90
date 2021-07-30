@@ -46,7 +46,7 @@
           else
             if((chrgij /= zero).and.datacomp%master) then
               write(*,'("Error! Atoms",i4," and",i4," are the same position!")') iatom, jatom
-              call iabort
+              call iabort(datacomp)
             endif
           endif
         enddo
@@ -136,12 +136,12 @@ end
         if(datamol%numatomic(iatom) > 112) then
           if(datacomp%master) &
 &         write(*,'(" Error! This program supports up to Cn in Subroutine setredundantcoord.")')
-          call iabort
+          call iabort(datacomp)
         elseif(datamol%numatomic(iatom) < 1) then
           if(datacomp%master) &
 &         write(*,'(" Error! This program does not support dummy and ghost atoms ", &
 &                   "in Subroutine setredundantcoord currently.")')
-          call iabort
+          call iabort(datacomp)
         endif
         icount= 0
         do jatom= 1,datamol%natom
@@ -156,7 +156,7 @@ end
             if(icount > maxconnect) then
               if(datacomp%master) &
 &               write(*,'(" Error! There are too many atoms near Atom",i4,".")')iatom
-              call iabort
+              call iabort(datacomp)
             endif
             ijpair(iatom,icount)= jatom
             if(jatom > iatom) then
@@ -219,7 +219,7 @@ end
             if(icount == maxconnect) then
               if(datacomp%master) &
 &               write(*,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(1)
-              call iabort
+              call iabort(datacomp)
             endif
           enddo
           do icount= 1,maxconnect
@@ -230,7 +230,7 @@ end
             if(icount == maxconnect) then
               if(datacomp%master) &
 &               write(*,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(2)
-              call iabort
+              call iabort(datacomp)
             endif
           enddo
           numredun= numredun+1
@@ -429,7 +429,7 @@ end
       implicit none
       type(typejob),intent(in) :: datajob
       type(typemol),intent(in) :: datamol
-      type(typecomp),intent(in) :: datacomp
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: natom3, iopt
       integer :: i, j, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, third=0.3333333333333333D+00
@@ -601,7 +601,7 @@ end
 !
 ! Calculate B-matrix
 !
-      call calcbmatrix(coordredun,coord,work1,iredun,numbond,numangle,numtorsion,datamol%natom)
+      call calcbmatrix(coordredun,coord,work1,iredun,numbond,numangle,numtorsion,datamol%natom,datacomp)
 !
 ! Calculate G=B*Bt
 !
@@ -740,7 +740,7 @@ end
             write(*,'(" Error! RFO step in calcnewcoordred did not converge.")')
             write(*,'(" Try cartesian=.false. in opt section of input file.")')
           endif
-          call iabort
+          call iabort(datacomp)
         endif
       enddo
 !
@@ -782,7 +782,7 @@ end
 !
 ! delta-q workv(*,3)
 !
-        call calcbmatrix(workv,coord,work1,iredun,numbond,numangle,numtorsion,datamol%natom)
+        call calcbmatrix(workv,coord,work1,iredun,numbond,numangle,numtorsion,datamol%natom,datacomp)
         do ii= 1,numredun
           workv(ii,3)= workv(ii,1)-coordredun(ii,1)
         enddo
@@ -838,7 +838,7 @@ end
             write(*,'(" Error! Transformation from redundant to Cartesian did not converge.")')
             write(*,'(" Try cartesian=.false. in opt section of input file.")')
           endif
-          call iabort
+          call iabort(datacomp)
         endif
       enddo
       if(datacomp%master) then
@@ -892,13 +892,15 @@ end
 end
 
 
-!-----------------------------------------------------------------------------------------
-  subroutine calcbmatrix(coordredun,coord,bmat,iredun,numbond,numangle,numtorsion,natom)
-!-----------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------------------
+  subroutine calcbmatrix(coordredun,coord,bmat,iredun,numbond,numangle,numtorsion,natom,datacomp)
+!--------------------------------------------------------------------------------------------------
 !
 ! Calculate transformation matrix(B-matrix) from Cartesian to internal coordinate
 !
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: numbond, numangle, numtorsion
       integer,intent(in) :: iredun(4,numbond+numangle+numtorsion), natom
       integer :: iatom, jatom, katom, latom, ii, jj, kk, ll, mm, ibond, iangle, itorsion
@@ -959,7 +961,7 @@ end
           write(*,'(" Error! During calculation of bond angles in calcbmatrix.")')
           write(*,'(" Use Cartesian coordinate. The input is")')
           write(*,'("   opt cartesian=.true.",/)')
-          call iabort
+          call iabort(datacomp)
         endif
         coordredun(iangle)= acos(dotj)
 !
@@ -1017,7 +1019,7 @@ end
         cp3(3)= cp1(1)*cp2(2)-cp1(2)*cp2(1)
         if((abs(dotj) >= one).or.(abs(dotk) >= one)) then
           write(*,'(" Error! During calculation of torsion angles in calcbmatrix.")')
-          call iabort
+          call iabort(datacomp)
         endif
 !
         sinj= sqrt(one-dotj*dotj)
@@ -1081,10 +1083,3 @@ end
 !
       return
 end
-
-
-
-
-
-
-

@@ -12,19 +12,20 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!---------------------------------------------------------------------------
-  subroutine gradoneeiecp(egrad1,fulldmtrx,nproc,myrank,datamol,databasis)
-!---------------------------------------------------------------------------
+!------------------------------------------------------------------------------------
+  subroutine gradoneeiecp(egrad1,fulldmtrx,nproc,myrank,datamol,databasis,datacomp)
+!------------------------------------------------------------------------------------
 !
 ! Calculate ECP derivative terms and add them into energy gradient matrix
 !
 ! Inout  : egrad1 (one electron gradient matrix)
 !
       use modecp, only : nterm1, nterm2
-      use modtype, only : typemol, typebasis
+      use modtype, only : typemol, typebasis, typecomp
       implicit none
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: nproc, myrank
       integer :: maxfunc(0:6)=(/1,3,6,10,15,21,28/)
       integer :: maxbasis, numtbasis, maxdim, llmax, maxecpdim, nsizecp1, nsizecp2, ish, jsh
@@ -38,11 +39,11 @@
       llmax= maxval(databasis%maxangecp(1:datamol%natom))
       if(maxbasis >= 6) then
         write(*,'(" Error! This program supports up to g function in ecp derivative calculation.")')
-        call iabort
+        call iabort(datacomp)
       endif
       if(llmax >= 5) then
         write(*,'(" Error! This program supports up to SPDFG core potentials in ecp calculation.")')
-        call iabort
+        call iabort(datacomp)
       endif
       maxecpdim= max(maxbasis,llmax-1)
       numtbasis=(maxecpdim+1)*(maxecpdim+2)*(maxecpdim+3)/6
@@ -64,7 +65,7 @@
         do jsh= 1,databasis%nshell
           call calcdintecp(egrad1,fulldmtrx,term1ecp,term2ecp,term0ecp,xyzintecp, &
 &                          label1ecp,label2ecp,num1ecp,num2ecp,numtbasis,ish,jsh,maxdim, &
-&                          datamol,databasis)
+&                          datamol,databasis,datacomp)
         enddo
 !$OMP enddo
       enddo
@@ -81,7 +82,7 @@ end
 !---------------------------------------------------------------------------------------
   subroutine calcdintecp(egrad1,fulldmtrx,term1ecp,term2ecp,term0ecp,xyzintecp, &
 &                        label1ecp,label2ecp,num1ecp,num2ecp,numtbasis,ish,jsh,len1, &
-&                        datamol,databasis)
+&                        datamol,databasis,datacomp)
 !---------------------------------------------------------------------------------------
 !
 ! Driver of ECP derivative terms
@@ -92,10 +93,11 @@ end
 !
       use modparam, only : mxprsh
       use modecp, only : nterm1, nterm2
-      use modtype, only : typemol, typebasis
+      use modtype, only : typemol, typebasis, typecomp
       implicit none
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: label1ecp(nterm1*9), label2ecp(nterm2*6), num1ecp(*), num2ecp(*)
       integer,intent(in) :: numtbasis, ish, jsh, len1
       integer :: nangij(2), nprimij(2), nbfij(2), iatom, jatom, katom, iloc, jloc, ilocbf, jlocbf
@@ -159,7 +161,7 @@ end
 !
       if((nangij(1) > 6).or.(nangij(2) > 6))then
         write(*,'(" Error! This program supports up to h function in calcdintecp")')
-        call iabort
+        call iabort(datacomp)
       endif
 !
       do i= 1,3

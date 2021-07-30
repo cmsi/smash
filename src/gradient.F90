@@ -80,7 +80,7 @@
       maxgraddim= maxfunc(maxdim+1)
       maxdim= maxfunc(maxdim)
       call grad2eri(egradtmp,egrad,fulldmtrx,fulldmtrx,xint,one, &
-&                   maxdim,maxgraddim,nproc1,myrank1,1,datajob,datamol,databasis)
+&                   maxdim,maxgraddim,nproc1,myrank1,1,datajob,datamol,databasis,datacomp)
 !
       call para_allreducer(egradtmp(1),egrad(1,1),3*natom,mpi_comm1)
 !
@@ -174,7 +174,7 @@ end
       maxgraddim= maxfunc(maxdim+1)
       maxdim= maxfunc(maxdim)
       call grad2eri(egradtmp,egrad,fulldmtrx1,fulldmtrx2,xint,one, &
-&                   maxdim,maxgraddim,nproc1,myrank1,2,datajob,datamol,databasis)
+&                   maxdim,maxgraddim,nproc1,myrank1,2,datajob,datamol,databasis,datacomp)
 !
       call para_allreducer(egradtmp(1),egrad(1,1),3*natom,mpi_comm1)
 !
@@ -276,7 +276,7 @@ end
 !
       call calcatomvec(atomvec,surface,ndftatom,datamol)
       call calcradpt(radpt,nrad)
-      call calclebpt(angpt,nleb)
+      call calclebpt(angpt,nleb,datacomp)
       do iatom= 1,ndftatom
         rad(iatom)= datamol%atomrad(datamol%numatomic(iatom))*tobohr
       enddo
@@ -289,7 +289,7 @@ end
       maxgraddim= maxfunc(maxdim+1)
       maxdim= maxfunc(maxdim)
       call grad2eri(egradtmp,egrad,fulldmtrx,fulldmtrx,xint,datajob%hfexchange, &
-&                   maxdim,maxgraddim,nproc1,myrank1,1,datajob,datamol,databasis)
+&                   maxdim,maxgraddim,nproc1,myrank1,1,datajob,datamol,databasis,datacomp)
 !
 ! Calculate derivatives of exchange-correlation terms 
 !
@@ -407,7 +407,7 @@ end
 !
       call calcatomvec(atomvec,surface,ndftatom,datamol)
       call calcradpt(radpt,nrad)
-      call calclebpt(angpt,nleb)
+      call calclebpt(angpt,nleb,datacomp)
       do iatom= 1,ndftatom
         rad(iatom)= datamol%atomrad(datamol%numatomic(iatom))*tobohr
       enddo
@@ -420,7 +420,7 @@ end
       maxgraddim= maxfunc(maxdim+1)
       maxdim= maxfunc(maxdim)
       call grad2eri(egradtmp,egrad,fulldmtrx1,fulldmtrx2,xint,datajob%hfexchange, &
-&                   maxdim,maxgraddim,nproc1,myrank1,2,datajob,datamol,databasis)
+&                   maxdim,maxgraddim,nproc1,myrank1,2,datajob,datamol,databasis,datacomp)
 !
 ! Calculate derivatives of exchange-correlation terms 
 !

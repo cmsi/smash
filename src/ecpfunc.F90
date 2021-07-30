@@ -38,15 +38,15 @@
       if(datacomp%master) then
         if((databasis%ecp == 'LANL2DZ').or.(databasis%ecp == 'LANL2MB')) then
           do iatom= 1,datamol%natom
-            call ecplanl2(iatom,iprim,datamol%numatomic,databasis)
+            call ecplanl2(iatom,iprim,datamol%numatomic,databasis,datacomp)
           enddo
         elseif(databasis%ecp == 'GEN') then
           call readecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,datagenbasis,datacomp)
           call setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim, &
-&                        datamol,databasis,datagenbasis)
+&                        datamol,databasis,datagenbasis,datacomp)
         else
           write(*,'(" Error! This program does not support ECP function,",a10,".")')databasis%ecp
-          call iabort
+          call iabort(datacomp)
         endif
       endif
 !
@@ -69,17 +69,18 @@ end
 
 !-------------------------------------------------------------------------------------
   subroutine setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim, &
-&                      datamol,databasis,datagenbasis)
+&                      datamol,databasis,datagenbasis,datacomp)
 !-------------------------------------------------------------------------------------
 !
 ! Driver of setting ECP functions from input file
 ! This routine should be called only from master node.
 !
-      use modtype, only : typemol, typebasis
+      use modtype, only : typemol, typebasis, typecomp
       implicit none
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(inout) :: databasis
       type(typebasis),intent(in) :: datagenbasis
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: locgenecp(0:5,-9:112), mgenprimecp(0:5,-9:112)
       integer,intent(in) :: maxgenangecp(-9:112), izgencore(-9:112)
       integer,intent(inout) :: iprim
@@ -92,11 +93,11 @@ end
         nn= datamol%numatomic(iatom)
         select case(atomecp(nn))
           case('LANL2DZ','LANL2MB')
-            call ecplanl2(iatom,iprim,datamol%numatomic,databasis)
+            call ecplanl2(iatom,iprim,datamol%numatomic,databasis,datacomp)
           case('')
           case default
             write(*,'(" Error! This program does not support ECP function ",a10,".")')atomecp(nn)
-            call iabort
+            call iabort(datacomp)
         end select
 !
         lmax= maxgenangecp(nn)
@@ -122,16 +123,17 @@ end
 end
 
 
-!-------------------------------------------------------
-  subroutine ecplanl2(iatom,iprim,numatomic,databasis)
-!-------------------------------------------------------
+!----------------------------------------------------------------
+  subroutine ecplanl2(iatom,iprim,numatomic,databasis,datacomp)
+!----------------------------------------------------------------
 !
 ! Set Hay-Wadt ECP functions
 !
       use modparam, only : mxatom, mxprim
-      use modtype, only : typebasis
+      use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: iprim
       integer :: nangecp3(16)=(/1,2,2,2,2, 0,1,2,2,2, 0,1,2,2,2,2/)
@@ -897,12 +899,12 @@ end
         case (:0)
         case (84:)
           write(*,'(" Error! This program supports Na - La, Hf - Bi Lanl2dz ECP.")')
-          call iabort
+          call iabort(datacomp)
       endselect
 !
       if(iprim > mxprim ) then
         write(*,'(" Error! The number of ECP functions exceeds mxprim",i6,".")')mxprim
-        call iabort
+        call iabort(datacomp)
       endif
       return
 end

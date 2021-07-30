@@ -12,10 +12,10 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!--------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------
   subroutine grad2eri(egrad,egrad2,fulldmtrx1,fulldmtrx2,xint,hfexchange, &
-&                     maxdim,maxgraddim,nproc,myrank,itype,datajob,datamol,databasis)
-!--------------------------------------------------------------------------------------
+&                     maxdim,maxgraddim,nproc,myrank,itype,datajob,datamol,databasis,datacomp)
+!-----------------------------------------------------------------------------------------------
 !
 ! Main driver of derivatives for two-electron integrals
 !
@@ -31,11 +31,12 @@
 !         itype     (1:RHF, 2:UHF)
 ! Inout : egrad2    (Energy gradient values)
 !
-      use modtype, only : typejob, typemol, typebasis
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: maxdim, maxgraddim, nproc, myrank, itype
       integer :: nao, nshell, ijsh, ish, jsh, ksh, lsh, ij, kl
       integer :: ii, kk, kstart, ishcheck
@@ -89,7 +90,7 @@
 &                           ish,jsh,ksh,lsh,maxdim,itype,databasis)
             if((xijkl*pdmax).lt.datajob%cutint2) cycle
             call calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim, &
-&                          datajob,datamol,databasis)
+&                          datajob,datamol,databasis,datacomp)
           enddo
         enddo kloop
       enddo
@@ -104,7 +105,7 @@ end
 
 !-----------------------------------------------------------------------------------------
   subroutine calcd2eri(egrad2,pdmtrx,twoeri,dtwoeri,ish,jsh,ksh,lsh,maxdim,maxgraddim, &
-&                      datajob,datamol,databasis)
+&                      datajob,datamol,databasis,datacomp)
 !-----------------------------------------------------------------------------------------
 !
 ! Driver of derivatives for two-electron integrals
@@ -118,11 +119,12 @@ end
 ! Inout : egrad2    (Energy gradient values)
 !
       use modparam, only : mxprsh
-      use modtype, only : typejob, typemol, typebasis
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer,parameter :: ncart(0:6)=(/1,3,6,10,15,21,28/)
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim, maxgraddim
       integer :: i, j, k, l, iatom, jatom, katom, latom, iloc, jloc, kloc, lloc, ider
@@ -443,7 +445,7 @@ end
           enddo
         case default
           write(*,'(" Error! This program supports up to h function in calcd2eri")')
-          call iabort
+          call iabort(datacomp)
       end select
 !
       if(databasis%mtype(lsh) >= 1) then
@@ -999,7 +1001,7 @@ end
           enddo
         case default
           write(*,'(" Error! This program supports up to h function in calcd2eri")')
-          call iabort
+          call iabort(datacomp)
       end select
 !
       if(databasis%mtype(ksh) >= 1) then
@@ -1555,7 +1557,7 @@ end
           enddo
         case default
           write(*,'(" Error! This program supports up to h function in calcd2eri")')
-          call iabort
+          call iabort(datacomp)
       end select
 !
       if(databasis%mtype(jsh) >= 1) then

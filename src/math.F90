@@ -211,7 +211,7 @@ end
       call memunset(lwork+liwork,datacomp)
       if(info /= 0) then
         if(datacomp%master)write(*,'(" Error! Diagonalization in diag failed, info =",i5)')info
-        call iabort
+        call iabort(datacomp)
       endif
       return
 end
@@ -254,7 +254,7 @@ end
       call memunset(lwork+liwork,datacomp)
       if(info /= 0) then
         if(datacomp%master)write(*,'(" Error! Diagonalization in gendiag failed, info =",i5)')info
-        call iabort
+        call iabort(datacomp)
       endif
 !
       return

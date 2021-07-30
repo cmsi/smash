@@ -962,7 +962,7 @@ end
 !
       implicit none
       integer,intent(in) :: nijkl(2), maxdim, intorder
-      integer :: ij, kl, igrid, ii, i, j, k, l
+      integer :: i, j, k, l
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: exfac1(5,*), exfac2(5,*)
       real(8),intent(in) :: xyziq(3,*), xzkl(2), rot(3,3)
@@ -1240,7 +1240,7 @@ end
       use fmtgrid, only : fgrid, threshtval
       implicit none
       integer,intent(in) :: nijkl(2)
-      integer :: ij, kl, igrid, ii, i, j, k, l
+      integer :: ij, kl, igrid, ii, i, j
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, sqrtpi4=0.8862269254527580D+00
       real(8),parameter :: two=2.0D+00, three=3.0D+00, five=5.0D+00
       real(8),parameter :: six=6.0D+00, seven=7.0D+00

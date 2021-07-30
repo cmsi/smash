@@ -107,7 +107,7 @@
       if(numocc3 <= 0) then
         if(datacomp%master) then
           call memset(maxsize+memneed,datacomp)
-          call iabort
+          call iabort(datacomp)
         endif
 !
 ! Single pass
@@ -1219,65 +1219,64 @@ end
 end
 
 
-!---------------------------------------------------------------------------------------
-  subroutine mp2int_sort(recvint,trint4,icycle,numij,idis,ireq,nproc,myrank,databasis)
-!---------------------------------------------------------------------------------------
-!
-! MPI_Waitall and sorting of receieved second-transformed integrals
-!
-      use modtype, only : typebasis
-      implicit none
-      type(typebasis),intent(in) :: databasis
-      integer,intent(in) :: icycle, nproc, myrank, numij
-      integer,intent(in) :: idis(0:nproc-1,4), ireq(2*nproc)
-      integer :: iproc, ijstart, myij, ish, ksh, nbfi, nbfk
-      integer :: locbfi, locbfk, ii, kk, ik, num, jcount
-      real(8),intent(in) :: recvint(databasis%nao*databasis%nao)
-      real(8),intent(out) :: trint4(databasis%nao,databasis%nao)
-!
-      ijstart=(icycle-1)*nproc+1
-      myij= ijstart+myrank
-!
-      if(nproc > 1) call para_waitall(2*nproc,ireq)
-!
-! Reorder of received data
-!
-      if(myij <= numij) then
-        ik= 0
-        do iproc= 0,nproc-1
-          ish= idis(iproc,1)
-          ksh= idis(iproc,2)
-          jcount= 0
-          do num= 1,idis(iproc,4)
-            nbfi= databasis%mbf(ish)
-            nbfk= databasis%mbf(ksh)
-            locbfi= databasis%locbf(ish)
-            locbfk= databasis%locbf(ksh)
-            do ii= 1,nbfi
-              do kk= 1,nbfk
-                ik= ik+1
-                trint4(locbfk+kk,locbfi+ii)= recvint(ik)
-              enddo
-            enddo
-!
-            if(jcount == iproc) then
-              ksh= ksh+2*nproc-1
-            else
-              ksh= ksh+nproc-1
-            endif
-            if(ksh > databasis%nshell) then
-              do ii= 1,databasis%nshell
-                ksh= ksh-databasis%nshell
-                ish= ish+1
-                if(ksh <= databasis%nshell) exit
-              enddo
-            endif
-            jcount= jcount+1
-            if(jcount == nproc) jcount= 0
-          enddo
-        enddo
-      endif
-!
-      return
-end
-
+!!---------------------------------------------------------------------------------------
+!  subroutine mp2int_sort(recvint,trint4,icycle,numij,idis,ireq,nproc,myrank,databasis)
+!!---------------------------------------------------------------------------------------
+!!
+!! MPI_Waitall and sorting of receieved second-transformed integrals
+!!
+!      use modtype, only : typebasis
+!      implicit none
+!      type(typebasis),intent(in) :: databasis
+!      integer,intent(in) :: icycle, nproc, myrank, numij
+!      integer,intent(in) :: idis(0:nproc-1,4), ireq(2*nproc)
+!      integer :: iproc, ijstart, myij, ish, ksh, nbfi, nbfk
+!      integer :: locbfi, locbfk, ii, kk, ik, num, jcount
+!      real(8),intent(in) :: recvint(databasis%nao*databasis%nao)
+!      real(8),intent(out) :: trint4(databasis%nao,databasis%nao)
+!!
+!      ijstart=(icycle-1)*nproc+1
+!      myij= ijstart+myrank
+!!
+!      if(nproc > 1) call para_waitall(2*nproc,ireq)
+!!
+!! Reorder of received data
+!!
+!      if(myij <= numij) then
+!        ik= 0
+!        do iproc= 0,nproc-1
+!          ish= idis(iproc,1)
+!          ksh= idis(iproc,2)
+!          jcount= 0
+!          do num= 1,idis(iproc,4)
+!            nbfi= databasis%mbf(ish)
+!            nbfk= databasis%mbf(ksh)
+!            locbfi= databasis%locbf(ish)
+!            locbfk= databasis%locbf(ksh)
+!            do ii= 1,nbfi
+!              do kk= 1,nbfk
+!                ik= ik+1
+!                trint4(locbfk+kk,locbfi+ii)= recvint(ik)
+!              enddo
+!            enddo
+!!
+!            if(jcount == iproc) then
+!              ksh= ksh+2*nproc-1
+!            else
+!              ksh= ksh+nproc-1
+!            endif
+!            if(ksh > databasis%nshell) then
+!              do ii= 1,databasis%nshell
+!                ksh= ksh-databasis%nshell
+!                ish= ish+1
+!                if(ksh <= databasis%nshell) exit
+!              enddo
+!            endif
+!            jcount= jcount+1
+!            if(jcount == nproc) jcount= 0
+!          enddo
+!        enddo
+!      endif
+!!
+!      return
+!end

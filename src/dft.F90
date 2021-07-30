@@ -16,7 +16,7 @@
   subroutine formrfockexcor(fockdsum,fockd,energy,totalelec,cmo,atomvec,radpt,angpt, &
 &                           rad,ptweight,vao,vmo,xyzpt,rsqrd,transcmo,work,ndftatom, &
 &                           nproc,myrank,mpi_comm, &
-&                           datajob,datamol,databasis)
+&                           datajob,datamol,databasis,datacomp)
 !---------------------------------------------------------------------------------------
 !
 ! Driver of DFT Fock matrix formation from exchange-correlation functionals
@@ -33,11 +33,12 @@
 !       totalelec(Number of numerially integrated electrons)
 !       vao,vmo,xyzpt,work (work space)
 !
-      use modtype, only : typejob, typemol, typebasis
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: ndftatom, nproc, myrank, mpi_comm
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
@@ -88,7 +89,7 @@
             enddo
 !
             call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,datajob%threshex,ndftatom, &
-&                          datamol,databasis)
+&                          datamol,databasis,datacomp)
 !
             rhoa= zero
             grhoa(1:3)= zero
@@ -214,7 +215,7 @@ end
 &                           radpt,angpt,rad,ptweight,vao,vmoa,vmob,xyzpt,rsqrd, &
 &                           transcmoa,transcmob,work,ndftatom, &
 &                           nproc,myrank,mpi_comm, &
-&                           datajob,datamol,databasis)
+&                           datajob,datamol,databasis,datacomp)
 !---------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted DFT Fock matrix formation from exchange-correlation functionals
@@ -225,11 +226,12 @@ end
 !       fock2 (Beta Fock matrix)
 !       fock3 (Work space)
 !
-      use modtype, only : typejob, typemol, typebasis
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: ndftatom, nproc, myrank, mpi_comm
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
@@ -284,7 +286,7 @@ end
             enddo
 !
             call griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff, &
-&                          datajob%threshex,ndftatom,datamol,databasis)
+&                          datajob%threshex,ndftatom,datamol,databasis,datacomp)
 !
             rhoa= zero
             grhoa(1:3)= zero
@@ -490,9 +492,9 @@ end
 end
 
 
-!-----------------------------------
-  subroutine calclebpt(angpt,nleb)
-!-----------------------------------
+!--------------------------------------------
+  subroutine calclebpt(angpt,nleb,datacomp)
+!--------------------------------------------
 !
 ! Calculate Levedev quadrature points and weights
 !
@@ -500,7 +502,9 @@ end
 ! Out : angpt(1:3,*) (Levedev points)
 !       angpt(4  ,*) (Levedev weights)
 !
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nleb
       integer :: ileb
       real(8),parameter :: pi4=1.256637061435917D+01
@@ -555,7 +559,7 @@ end
           call lebedev1454(angpt)
         case default
           write(*,'(" Error! Nleb=",i4," is not supported. ")')nleb
-          call iabort
+          call iabort(datacomp)
       end select
 !
       do ileb= 1,nleb
@@ -648,15 +652,16 @@ end
 
 !----------------------------------------------------------------------------------
   subroutine gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,threshex,ndftatom, &
-&                      datamol,databasis)
+&                      datamol,databasis,datacomp)
 !----------------------------------------------------------------------------------
 !
 ! Calculate closed-shell AO and MO values for a grid point
 !
-      use modtype, only : typemol, typebasis
+      use modtype, only : typemol, typebasis, typecomp
       implicit none
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: ndftatom
       integer :: ii, jj
       real(8),parameter :: zero=0.0D+00
@@ -667,7 +672,7 @@ end
 ! Calculate AO values for a grid point
 !
       vao(:,:)= zero
-      call gridao(vao,xyzpt,rsqrd,threshex,ndftatom,databasis)
+      call gridao(vao,xyzpt,rsqrd,threshex,ndftatom,databasis,datacomp)
 !
 ! Calculate MO values for a grid point
 !
@@ -690,15 +695,16 @@ end
 
 !---------------------------------------------------------------------------------
   subroutine griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff, &
-&                      threshex,ndftatom,datamol,databasis)
+&                      threshex,ndftatom,datamol,databasis,datacomp)
 !---------------------------------------------------------------------------------
 !
 ! Calculate open-shell AO and MO values for a grid point
 !
-      use modtype, only : typemol, typebasis
+      use modtype, only : typemol, typebasis, typecomp
       implicit none
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: ndftatom
       integer :: ii, jj
       real(8),parameter :: zero=0.0D+00
@@ -709,7 +715,7 @@ end
 !
       vao(:,:)= zero
 !
-      call gridao(vao,xyzpt,rsqrd,threshex,ndftatom,databasis)
+      call gridao(vao,xyzpt,rsqrd,threshex,ndftatom,databasis,datacomp)
 !
       vmoa(:,:)= zero
       vmob(:,:)= zero
@@ -735,15 +741,16 @@ end
 end
 
 
-!--------------------------------------------------------------
-  subroutine gridao(vao,xyzpt,rsqrd,threshex,ndftatom,databasis)
-!--------------------------------------------------------------
+!--------------------------------------------------------------------------
+  subroutine gridao(vao,xyzpt,rsqrd,threshex,ndftatom,databasis,datacomp)
+!--------------------------------------------------------------------------
 !
 ! Calculate AO values for a grid point
 !
-      use modtype, only : typebasis
+      use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: ndftatom
       integer :: icount, ish, numprim, iatom, iprim, nang, nbf, ilocbf, ii, jj
       real(8),parameter :: half=0.5D+00, one=1.0D+00, two=2.0D+00
@@ -1601,7 +1608,7 @@ end
             enddo
           case default
             write(*,'(" Error! Subroutine Gridao supports up to i functions.")')
-            call iabort
+            call iabort(datacomp)
         end select
       enddo
 !
@@ -1609,15 +1616,16 @@ end
 end
 
 
-!------------------------------------------------------------------
-  subroutine gridd2ao(vg2ao,xyzpt,rsqrd,threshex,ndftatom,databasis)
-!------------------------------------------------------------------
+!------------------------------------------------------------------------------
+  subroutine gridd2ao(vg2ao,xyzpt,rsqrd,threshex,ndftatom,databasis,datacomp)
+!------------------------------------------------------------------------------
 !
 ! Calculate second derivatives of AO values for a grid point
 !
-      use modtype, only : typebasis
+      use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: ndftatom
       integer :: icount, ish, numprim, iatom, iprim, nang, nbf, iloc, ii, jj
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00, three=3.0D+00
@@ -2370,7 +2378,7 @@ end
             enddo
           case default
             write(*,'(" Error! Subroutine Gridgao supports up to h functions.")')
-            call iabort
+            call iabort(datacomp)
         end select
       enddo
 !
@@ -2451,7 +2459,7 @@ end
             enddo
 !
             call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,datajob%threshex,ndftatom, &
-&                          datamol,databasis)
+&                          datamol,databasis,datacomp)
 !
             rhoa= zero
             grhoa(1:3)= zero
@@ -2465,7 +2473,7 @@ end
             grhoa(1)= grhoa(1)*two
             grhoa(2)= grhoa(2)*two
             grhoa(3)= grhoa(3)*two
-            call gridd2ao(vao(1,5),xyzpt,rsqrd,datajob%threshex,ndftatom,databasis)
+            call gridd2ao(vao(1,5),xyzpt,rsqrd,datajob%threshex,ndftatom,databasis,datacomp)
 !
 ! Calculate weight derivative
 !
@@ -2581,7 +2589,7 @@ end
             enddo
 !
             call griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff, &
-&                          datajob%threshex,ndftatom,datamol,databasis)
+&                          datajob%threshex,ndftatom,datamol,databasis,datacomp)
 !
             rhoa= zero
             grhoa(1:3)= zero
@@ -2602,7 +2610,7 @@ end
             if((rhoa+rhob) < rcutoff)cycle
             grhoa(1:3)= grhoa(1:3)*two
             grhob(1:3)= grhob(1:3)*two
-            call gridd2ao(vao(1,5),xyzpt,rsqrd,datajob%threshex,ndftatom,databasis)
+            call gridd2ao(vao(1,5),xyzpt,rsqrd,datajob%threshex,ndftatom,databasis,datacomp)
 !
 ! Calculate weight derivative
 !
@@ -2710,7 +2718,7 @@ end
           else
             if(abs(g4) > threshg4) then
               if(datacomp%master) write(*,'(" Error! The value G4 in calcdergridweight is large.")')
-              call iabort
+              call iabort(datacomp)
             endif
           endif
           if(abs(cutji) > threshcut) then
@@ -2721,7 +2729,7 @@ end
           else
             if(abs(g4) > threshg4) then
               if(datacomp%master) write(*,'(" Error! The value G4 in calcdergridweight is large.")')
-              call iabort
+              call iabort(datacomp)
             endif
           endif
         enddo

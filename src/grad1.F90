@@ -38,7 +38,7 @@
       if(maxbasis > 6) then
         if(datacomp%master) &
 &         write(*,'(" Error! This program supports up to h function in gradoneei")')
-        call iabort
+        call iabort(datacomp)
       endif
       len1= maxfunc(maxbasis+1)
       egrad1(:)= zero
@@ -47,8 +47,8 @@
       do ish= databasis%nshell-myrank,1,-nproc
 !$OMP do
         do jsh= 1,ish
-          call calcdoverlap(egrad1,ewdmtrx,ish,jsh,datajob%threshex,datamol,databasis)
-          call calchelfey(egrad1,fulldmtrx,ish,jsh,datajob%threshex,datamol,databasis)
+          call calcdoverlap(egrad1,ewdmtrx,ish,jsh,datajob%threshex,datamol,databasis,datacomp)
+          call calchelfey(egrad1,fulldmtrx,ish,jsh,datajob%threshex,datamol,databasis,datacomp)
         enddo
 !$OMP enddo
       enddo
@@ -56,8 +56,8 @@
       do ish= myrank+1,databasis%nshell,nproc
 !$OMP do
         do jsh= 1,databasis%nshell
-          call calcdkinetic(egrad1,fulldmtrx,ish,jsh,datajob%threshex,datamol,databasis)
-          call calcdcoulomb(egrad1,fulldmtrx,ish,jsh,len1,datajob%threshex,datamol,databasis)
+          call calcdkinetic(egrad1,fulldmtrx,ish,jsh,datajob%threshex,datamol,databasis,datacomp)
+          call calcdcoulomb(egrad1,fulldmtrx,ish,jsh,len1,datajob%threshex,datamol,databasis,datacomp)
         enddo
 !$OMP enddo
       enddo
@@ -71,7 +71,7 @@
 !
       if(datajob%flagecp) then
         egrad1(:)= zero
-        call gradoneeiecp(egrad1,fulldmtrx,nproc,myrank,datamol,databasis)
+        call gradoneeiecp(egrad1,fulldmtrx,nproc,myrank,datamol,databasis,datacomp)
         do i= 1,3*datamol%natom
           egrad(i)= egrad(i)+egrad1(i)*two
         enddo
@@ -182,9 +182,9 @@ end
 end
 
 
-!----------------------------------------------------------------------------
-  subroutine calcdoverlap(egrad,ewdmtrx,ish,jsh,threshex,datamol,databasis)
-!----------------------------------------------------------------------------
+!-------------------------------------------------------------------------------------
+  subroutine calcdoverlap(egrad,ewdmtrx,ish,jsh,threshex,datamol,databasis,datacomp)
+!-------------------------------------------------------------------------------------
 !
 ! Driver of overlap derivative term
 !
@@ -193,10 +193,11 @@ end
 ! Inout : egrad (Energy gradient value)
 !
       use modparam, only : mxprsh
-      use modtype, only : typemol, typebasis
+      use modtype, only : typemol, typebasis, typecomp
       implicit none
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: ish, jsh
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, nprimi, nprimj, nangi, nangj
       integer :: nbfi, nbfj, iprim, jprim, ncarti, ncartj, i, j, iang, jang, ii, ij
@@ -227,7 +228,7 @@ end
 !
       if((nangi > 6).or.(nangj > 6)) then
         write(*,'(" Error! This program supports up to h function in calcdoverlap")')
-        call iabort
+        call iabort(datacomp)
       endif
 !
       do i= 1,3
@@ -329,9 +330,9 @@ end
 end
 
 
-!------------------------------------------------------------------------------
-  subroutine calcdkinetic(egrad,fulldmtrx,ish,jsh,threshex,datamol,databasis)
-!------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------
+  subroutine calcdkinetic(egrad,fulldmtrx,ish,jsh,threshex,datamol,databasis,datacomp)
+!---------------------------------------------------------------------------------------
 !
 ! Driver of kinetic derivative term
 !
@@ -340,10 +341,11 @@ end
 ! Inout : egrad  (Energy gradient value)
 !
       use modparam, only : mxprsh
-      use modtype, only : typemol, typebasis
+      use modtype, only : typemol, typebasis, typecomp
       implicit none
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: ish, jsh
       integer :: iatom, jatom, iloc, jloc, ilocbf, jlocbf, nprimi, nprimj, nangi, nangj
       integer :: nbfi, nbfj, iprim, jprim, ncarti, ncartj, i, j, iang, jang, ii
@@ -372,7 +374,7 @@ end
 !
       if((nangi > 6).or.(nangj > 6))then
         write(*,'(" Error! This program supports up to h function in calcdkinetic.")')
-        call iabort
+        call iabort(datacomp)
       endif
 !
       do i= 1,3
@@ -513,9 +515,9 @@ end
 end
 
 
-!-----------------------------------------------------------------------------------
-  subroutine calcdcoulomb(egrad,fulldmtrx,ish,jsh,len1,threshex,datamol,databasis)
-!-----------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------------
+  subroutine calcdcoulomb(egrad,fulldmtrx,ish,jsh,len1,threshex,datamol,databasis,datacomp)
+!--------------------------------------------------------------------------------------------
 !
 ! Driver of Coulomb derivative term
 !
@@ -524,10 +526,11 @@ end
 ! Inout : egrad  (energy gradient value)
 !
       use modparam, only : mxprsh
-      use modtype, only : typemol, typebasis
+      use modtype, only : typemol, typebasis, typecomp
       implicit none
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: ish, jsh, len1
       integer :: nangij(2), nprimij(2), nbfij(2), iatom, jatom, iloc, jloc, ilocbf, jlocbf
       integer :: iprim, jprim, i, j, k, ii, ncart(0:6)
@@ -606,7 +609,7 @@ end
       else
         if((nangij(1) > 6).or.(nangij(2) > 7))then
           write(*,'(" Error! This program supports up to h function in int1c")')
-          call iabort
+          call iabort(datacomp)
         endif
         call int1rys(cint1,exij,cij,coordij,datamol%coord,datamol%znuc,datamol%natom, &
 &                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
@@ -624,7 +627,7 @@ end
         else
           if((nangij(1) > 6).or.(nangij(2) > 5))then
             write(*,'(" Error! This program supports up to h function in int1c")')
-            call iabort
+            call iabort(datacomp)
           endif
 !
           call int1rys(cint2,exij,cij,coordij,datamol%coord,datamol%znuc,datamol%natom, &
@@ -962,9 +965,9 @@ end
 end
 
 
-!----------------------------------------------------------------------------
-  subroutine calchelfey(egrad,fulldmtrx,ish,jsh,threshex,datamol,databasis)
-!----------------------------------------------------------------------------
+!-------------------------------------------------------------------------------------
+  subroutine calchelfey(egrad,fulldmtrx,ish,jsh,threshex,datamol,databasis,datacomp)
+!-------------------------------------------------------------------------------------
 !
 ! Driver of Helmann-Feynman gradient term
 !
@@ -973,10 +976,11 @@ end
 ! Inout : egrad (energy gradient value)
 !
       use modparam, only : mxprsh
-      use modtype, only : typemol, typebasis
+      use modtype, only : typemol, typebasis, typecomp
       implicit none
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: ish, jsh
       integer :: nangij(2), nprimij(2), nbfij(2), locbfij(2), iatom, jatom
       integer :: iloc, jloc, iprim, jprim, i
@@ -1019,7 +1023,7 @@ end
 &                     databasis%nao,nprimij,nangij,nbfij,locbfij,mxprsh,threshex,iandj)
       else
         write(*,'(" Error! This program supports up to h function in helfey")')
-        call iabort
+        call iabort(datacomp)
       endif
 !
       return

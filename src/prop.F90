@@ -691,7 +691,7 @@ end
       implicit none
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
-      type(typecomp),intent(in) :: datacomp
+      type(typecomp),intent(inout) :: datacomp
       integer :: maxang, nao, nao2, maxsize
       integer,allocatable :: infobasis(:,:,:), infonmb(:,:,:), list1(:), list2(:)
       real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
@@ -742,7 +742,7 @@ end
       implicit none
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
-      type(typecomp),intent(in) :: datacomp
+      type(typecomp),intent(inout) :: datacomp
       integer :: maxang, nao, nao2, nao3, maxsize
       integer,allocatable :: infobasis(:,:,:), infonmb(:,:,:), list1(:), list2(:)
       real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
@@ -798,7 +798,7 @@ end
       implicit none
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasis
-      type(typecomp),intent(in) :: datacomp
+      type(typecomp),intent(inout) :: datacomp
       type(typebasis) :: databasisnpa0, databasisnpa1, databasisnpa2
       integer :: nao, nao2, numnmb, numnrb, numnmbshell, iao, numlnrb, numsnrb
       integer,intent(in) :: maxang
@@ -837,7 +837,7 @@ end
           write(*,'(" Error! This program supports up to g Cartesian functions", &
 &                   " in Natural Population Analysis.",/, &
 &                   " Set spher=.true. in Control section.")')
-          call iabort
+          call iabort(datacomp)
         endif
         call setnpaspher(pnao,snao,trans,work1,databasis,databasisnpa0,datacomp)
       else
@@ -1033,7 +1033,7 @@ end
             if(datacomp%master) then
               write(*,'(" Error! This program supports up to g Cartesian functions", &
 &                       " in Natural Population Analysis.")')
-              call iabort
+              call iabort(datacomp)
             endif
         end select
       enddo
@@ -1167,7 +1167,7 @@ end
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasisnpa1
       type(typebasis),intent(out) :: databasisnpa2
-      type(typecomp),intent(in) :: datacomp
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: maxang, maxsize, infonmb(3,0:6,datamol%natom), numnmb, numnmbshell
       integer,intent(inout) :: infobasis(3,0:maxang,datamol%natom)
       integer,intent(out) :: list1(databasisnpa1%nao)
@@ -1288,7 +1288,7 @@ end
       implicit none
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasisnpa2
-      type(typecomp),intent(in) :: datacomp
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: maxang, maxsize, numnmb, numnmbshell
       integer,intent(in) :: infobasis(3,0:maxang,datamol%natom)
       integer,intent(in) :: list1(databasisnpa2%nao)
@@ -1405,7 +1405,7 @@ end
       implicit none
       type(typemol),intent(in) :: datamol
       type(typebasis),intent(in) :: databasisnpa1
-      type(typecomp),intent(in) :: datacomp
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: maxang, maxsize, infobasis(3,0:maxang,datamol%natom)
       integer :: locshell, iatom, iang, ishell, jshell, iao, jao, numshell, nao
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
@@ -1601,7 +1601,7 @@ end
           case(87:)
             if(datacomp%master) then
               write(*,'(" Error! Supportted atom in Natural Population Analysis is up to Rn.")')
-              call iabort
+              call iabort(datacomp)
             endif
         end select
         if(databasisnpa0%izcore(iatom) /= 0) then
@@ -1696,7 +1696,7 @@ end
             case default 
               if(datacomp%master) then
                 write(*,'(" Error! This ECP is not supported in Natural Population Analysis.")')
-                call iabort
+                call iabort(datacomp)
               endif
           end select
         endif
@@ -1725,7 +1725,7 @@ end
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(in) :: databasisnpa2
-      type(typecomp),intent(in) :: datacomp
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: numnmb
       integer :: nao, iao, jao
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
@@ -1835,7 +1835,7 @@ end
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(in) :: databasisnpa2
-      type(typecomp),intent(in) :: datacomp
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: numnmb, numlnrb
       integer :: nao, iao, jao
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
@@ -1900,8 +1900,8 @@ end
       use modtype, only : typebasis, typecomp
       implicit none
       type(typebasis),intent(in) :: databasisnpa2
-      type(typecomp),intent(in) :: datacomp
-      integer,intent(in) :: numnmb, numnrb, numlnrb, numsnrb
+      type(typecomp),intent(inout) :: datacomp
+      integer,intent(inout) :: numnmb, numnrb, numlnrb, numsnrb
       integer :: nao, iao, jao
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(out) :: worktrans(databasisnpa2%nao,databasisnpa2%nao)
