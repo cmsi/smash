@@ -37,11 +37,11 @@
       llmax= maxval(databasis%maxangecp(1:datamol%natom))
       if(maxbasis >= 6) then
         write(*,'(" Error! This program supports up to h function in ecp calculation.")')
-        call exit
+        call abort
       endif
       if(llmax >= 5) then
         write(*,'(" Error! This program supports up to SPDFG core potentials.")')
-        call exit
+        call abort
       endif
       maxecpdim= max(maxbasis,llmax-1)
       numtbasis=(maxecpdim+1)*(maxecpdim+2)*(maxecpdim+3)/6
@@ -144,7 +144,7 @@ end
 !
       if((nangij(1) > 6).or.(nangij(2) > 6))then
         write(*,'(" Error! This program supports up to i function in calcintecp")')
-        call exit
+        call abort
       endif
 !
       do i= 1,3
@@ -3074,7 +3074,7 @@ end
 !
       if(maxdim > 24) then
         write(*,'(" Error! This program supports up to i function in Subroutine ecpxyz!")')
-        call exit
+        call abort
       endif
 !
       denom= three
@@ -3196,7 +3196,7 @@ end
       enddo
       if(icount > nterm1) then
         write(*,'(" Error! Icount exceeds",i8," in Subroutine ecpangint1!")')nterm1
-        call exit
+        call abort
       endif
 !
       return
@@ -3278,7 +3278,7 @@ end
       enddo
       if(icount > nterm2) then
         write(*,'(" Error! Icount exceeds",i8," in Subroutine ecpangint2!")')nterm2
-        call exit
+        call abort
       endif
 !
       return
@@ -3825,7 +3825,7 @@ end
         enddo
       else
         write(*,'(" Error! Lmax is too big in calczspher,",i3,".")') lmax
-        call exit
+        call abort
       endif
 !
       return
@@ -4135,7 +4135,7 @@ end
           enddo
         case default
           write(*,*)"lmax=",lmax
-          call exit
+          call abort
       end select
 !
       return
@@ -4328,7 +4328,7 @@ end
         denomab2= denomab*denomab
         if(lemax > 6) then
           write(*,'(" Error! Lemax is too big, lemax=",i3)')lemax
-          call exit
+          call abort
         endif
         do ii= 1,15
           rho(ii)= zero
@@ -4395,11 +4395,11 @@ end
         if(alpha*beta > abthresh) then
           if(nangecp > 2) then
             write(*,'(" Error! Nangecp is too big,",i3,", lemax=",i3,".")')nangecp,lemax
-            call exit
+            call abort
           endif
         endif
       elseif(lemax > 6) then
-        call exit
+        call abort
       endif
 !
       nn= nangecp

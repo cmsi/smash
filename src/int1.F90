@@ -120,7 +120,7 @@ end
 !
       if((nangij(1) > 6).or.(nangij(2) > 6))then
         write(*,'(" Error! This program supports up to i function in calcintst1c.")')
-        call exit
+        call abort
       endif
 !
 ! Overlap and kinetic integrals
@@ -560,7 +560,7 @@ end
 !      else
 !        if((nangij(1) > 6).or.(nangij(2) > 6))then
 !          write(*,'(" Error! This program supports up to i function in calcint1c.")')
-!          call exit
+!          call abort
 !        endif
 !!
 !        call int1rys(cint,exij,coij,coordij,coord,znuc,natom, &
@@ -2014,7 +2014,7 @@ end
 !
       if((nangij(1) > 6).or.(nangij(2) > 6))then
         write(*,'(" Error! This program supports up to i function in calcintdipole.")')
-        call exit
+        call abort
       endif
 !
 ! Dipole moment integrals
@@ -2257,7 +2257,7 @@ end
 !
       if((nangij(1) > 6).or.(nangij(2) > 6))then
         write(*,'(" Error! This program supports up to i function in calcintoctupole.")')
-        call exit
+        call abort
       endif
 !
 ! Dipole moment integrals

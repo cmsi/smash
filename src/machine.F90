@@ -341,5 +341,5 @@ end
       write(*,'("   Error! Calculation finished abnormally.")')
       write(*,'(" ===========================================")')
       call para_abort
-      call exit
+      call abort
 end

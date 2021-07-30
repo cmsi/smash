@@ -1063,7 +1063,7 @@ end
 !
       if(mxprsh > mxprsh2) then
         write(*,'(" Error! Parameter mxprsh2 in int1cgmd is small!")')
-        call exit
+        call abort
       endif
 !
       inttyp=nangij(2)*3+nangij(1)+1

@@ -109,7 +109,7 @@ end
 !
       if(mxprsh > mxprsh2) then
         write(*,'(" Error! Parameter mxprsh2 in int2phmd is small!")')
-        call exit
+        call abort
       endif
 !
       nangtotal= nangijkl(1)*27+nangijkl(2)*9+nangijkl(3)*3+nangijkl(4)+1
@@ -457,10 +457,10 @@ end
 !
       if(mxprsh > mxprsh2) then
         write(*,'(" Error! Parameter mxprsh2 in int2rys is small!")')
-        call exit
+        call abort
       elseif(maxdim > maxdim2) then
         write(*,'(" Error! Parameter maxdim2 in int2rys is small!")')
-        call exit
+        call abort
       endif
 !
       ncartijkl(1)= ncart(nangijkl(1))
