@@ -171,7 +171,7 @@
 !
       call memrest(msize,datacomp)
       if((msize < memmin16).and.datacomp%master) then
-        write(*,'(" Error! Available memory size for MP2 energy gradient is small!")')
+        write(datacomp%iout,'(" Error! Available memory size for MP2 energy gradient is small!")')
         call memset(memmin16,datacomp)
         call iabort(datacomp)
       endif
@@ -187,7 +187,7 @@
 !
       if(numi <= 0) then
         if(datacomp%master) then
-          write(*,'(" Error! Available memory size for MP2 energy gradient is small!")')
+          write(datacomp%iout,'(" Error! Available memory size for MP2 energy gradient is small!")')
           call iabort(datacomp)
         endif
       else
@@ -1510,7 +1510,7 @@ end
 !
         if(itdiis == datajob%maxmp2diis) itdiis= 0
         if(iter == datajob%maxmp2iter) then
-          if(datacomp%master) write(*,'(" Error! MP2 CPHF calculation did not converge.")')
+          if(datacomp%master) write(datacomp%iout,'(" Error! MP2 CPHF calculation did not converge.")')
           call iabort(datacomp)
         endif
 !

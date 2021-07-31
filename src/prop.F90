@@ -834,9 +834,9 @@ end
 !
       if(.not.databasis%spher) then
         if(maxang >= 5) then
-          write(*,'(" Error! This program supports up to g Cartesian functions", &
-&                   " in Natural Population Analysis.",/, &
-&                   " Set spher=.true. in Control section.")')
+          write(datacomp%iout,'(" Error! This program supports up to g Cartesian functions", &
+&                               " in Natural Population Analysis.",/, &
+&                               " Set spher=.true. in Control section.")')
           call iabort(datacomp)
         endif
         call setnpaspher(pnao,snao,trans,work1,databasis,databasisnpa0,datacomp)
@@ -1031,8 +1031,8 @@ end
             enddo
           case(5:)  ! h or higher shell
             if(datacomp%master) then
-              write(*,'(" Error! This program supports up to g Cartesian functions", &
-&                       " in Natural Population Analysis.")')
+              write(datacomp%iout,'(" Error! This program supports up to g Cartesian functions", &
+&                                   " in Natural Population Analysis.")')
               call iabort(datacomp)
             endif
         end select
@@ -1600,7 +1600,7 @@ end
             infonmb(1,3,iatom)= 1
           case(87:)
             if(datacomp%master) then
-              write(*,'(" Error! Supportted atom in Natural Population Analysis is up to Rn.")')
+              write(datacomp%iout,'(" Error! Supportted atom in Natural Population Analysis is up to Rn.")')
               call iabort(datacomp)
             endif
         end select
@@ -1695,7 +1695,7 @@ end
               infonmb(3,3,iatom)= 1
             case default 
               if(datacomp%master) then
-                write(*,'(" Error! This ECP is not supported in Natural Population Analysis.")')
+                write(datacomp%iout,'(" Error! This ECP is not supported in Natural Population Analysis.")')
                 call iabort(datacomp)
               endif
           end select

@@ -444,7 +444,7 @@ end
             enddo
           enddo
         case default
-          write(*,'(" Error! This program supports up to h function in calcd2eri")')
+          write(datacomp%iout,'(" Error! This program supports up to h function in calcd2eri")')
           call iabort(datacomp)
       end select
 !
@@ -1000,7 +1000,7 @@ end
             enddo
           enddo
         case default
-          write(*,'(" Error! This program supports up to h function in calcd2eri")')
+          write(datacomp%iout,'(" Error! This program supports up to h function in calcd2eri")')
           call iabort(datacomp)
       end select
 !
@@ -1556,7 +1556,7 @@ end
             enddo
           enddo
         case default
-          write(*,'(" Error! This program supports up to h function in calcd2eri")')
+          write(datacomp%iout,'(" Error! This program supports up to h function in calcd2eri")')
           call iabort(datacomp)
       end select
 !

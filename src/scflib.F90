@@ -297,7 +297,7 @@ end
 !
       if(maxdiis < 6) then
         if(datacomp%master) then
-          write(*,'(" Error! Set Maxdiis for more than 6.")')
+          write(datacomp%iout,'(" Error! Set Maxdiis for more than 6.")')
           call iabort(datacomp)
         endif
       endif

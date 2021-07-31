@@ -38,11 +38,13 @@
       maxdim= maxfunc(maxbasis)
       llmax= maxval(databasis%maxangecp(1:datamol%natom))
       if(maxbasis >= 6) then
-        write(*,'(" Error! This program supports up to g function in ecp derivative calculation.")')
+        write(datacomp%iout,'(" Error! This program supports up to g function", &
+&                             " in ecp derivative calculation.")')
         call iabort(datacomp)
       endif
       if(llmax >= 5) then
-        write(*,'(" Error! This program supports up to SPDFG core potentials in ecp calculation.")')
+        write(datacomp%iout,'(" Error! This program supports up to SPDFG core potentials", &
+&                             " in ecp calculation.")')
         call iabort(datacomp)
       endif
       maxecpdim= max(maxbasis,llmax-1)
@@ -160,7 +162,7 @@ end
       jlocbf= databasis%locbf(jsh)
 !
       if((nangij(1) > 6).or.(nangij(2) > 6))then
-        write(*,'(" Error! This program supports up to h function in calcdintecp")')
+        write(datacomp%iout,'(" Error! This program supports up to h function in calcdintecp")')
         call iabort(datacomp)
       endif
 !

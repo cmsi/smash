@@ -45,7 +45,7 @@
             endif       
           else
             if((chrgij /= zero).and.datacomp%master) then
-              write(*,'("Error! Atoms",i4," and",i4," are the same position!")') iatom, jatom
+              write(datacomp%iout,'("Error! Atoms",i4," and",i4," are the same position!")') iatom, jatom
               call iabort(datacomp)
             endif
           endif
@@ -135,12 +135,12 @@ end
       do iatom= 1,datamol%natom
         if(datamol%numatomic(iatom) > 112) then
           if(datacomp%master) &
-&         write(*,'(" Error! This program supports up to Cn in Subroutine setredundantcoord.")')
+&         write(datacomp%iout,'(" Error! This program supports up to Cn in Subroutine setredundantcoord.")')
           call iabort(datacomp)
         elseif(datamol%numatomic(iatom) < 1) then
           if(datacomp%master) &
-&         write(*,'(" Error! This program does not support dummy and ghost atoms ", &
-&                   "in Subroutine setredundantcoord currently.")')
+&         write(datacomp%iout,'(" Error! This program does not support dummy and ghost atoms ", &
+&                               "in Subroutine setredundantcoord currently.")')
           call iabort(datacomp)
         endif
         icount= 0
@@ -155,7 +155,7 @@ end
             icount= icount+1
             if(icount > maxconnect) then
               if(datacomp%master) &
-&               write(*,'(" Error! There are too many atoms near Atom",i4,".")')iatom
+&               write(datacomp%iout,'(" Error! There are too many atoms near Atom",i4,".")')iatom
               call iabort(datacomp)
             endif
             ijpair(iatom,icount)= jatom
@@ -218,7 +218,7 @@ end
             endif
             if(icount == maxconnect) then
               if(datacomp%master) &
-&               write(*,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(1)
+&               write(datacomp%iout,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(1)
               call iabort(datacomp)
             endif
           enddo
@@ -229,7 +229,7 @@ end
             endif
             if(icount == maxconnect) then
               if(datacomp%master) &
-&               write(*,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(2)
+&               write(datacomp%iout,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(2)
               call iabort(datacomp)
             endif
           enddo
@@ -735,10 +735,10 @@ end
         rlambda= suml
         if(iterrfo == maxiterrfo) then
           if(datacomp%master) then
-            write(*,'(" Lambda iteration of RFO",i3,3x,"Lambda=",1p,e15.8,4x,"Sum=",1p,e15.8)') &
+            write(datacomp%iout,'(" Lambda iteration of RFO",i3,3x,"Lambda=",1p,e15.8,4x,"Sum=",1p,e15.8)') &
 &                iterrfo,rlambda,suml
-            write(*,'(" Error! RFO step in calcnewcoordred did not converge.")')
-            write(*,'(" Try cartesian=.false. in opt section of input file.")')
+            write(datacomp%iout,'(" Error! RFO step in calcnewcoordred did not converge.")')
+            write(datacomp%iout,'(" Try cartesian=.false. in opt section of input file.")')
           endif
           call iabort(datacomp)
         endif
@@ -833,10 +833,10 @@ end
 !
         if(iterdx == maxiterdx) then
           if(datacomp%master) then
-            write(*,'(" Displacement Iteration",i3,2x,"RMS(Cart)=",1p,e10.3,4x, &
-&                     "RMS(Red)=",1p,e10.3)') iterdx, rmsdx, rmsqx
-            write(*,'(" Error! Transformation from redundant to Cartesian did not converge.")')
-            write(*,'(" Try cartesian=.false. in opt section of input file.")')
+            write(datacomp%iout,'(" Displacement Iteration",i3,2x,"RMS(Cart)=",1p,e10.3,4x, &
+&                                 "RMS(Red)=",1p,e10.3)') iterdx, rmsdx, rmsqx
+            write(datacomp%iout,'(" Error! Transformation from redundant to Cartesian did not converge.")')
+            write(datacomp%iout,'(" Try cartesian=.false. in opt section of input file.")')
           endif
           call iabort(datacomp)
         endif
@@ -958,9 +958,9 @@ end
           dotj= dotj+unitji(mm)*unitjk(mm)
         enddo
         if(abs(dotj) >= one) then
-          write(*,'(" Error! During calculation of bond angles in calcbmatrix.")')
-          write(*,'(" Use Cartesian coordinate. The input is")')
-          write(*,'("   opt cartesian=.true.",/)')
+          write(datacomp%iout,'(" Error! During calculation of bond angles in calcbmatrix.")')
+          write(datacomp%iout,'(" Use Cartesian coordinate. The input is")')
+          write(datacomp%iout,'("   opt cartesian=.true.",/)')
           call iabort(datacomp)
         endif
         coordredun(iangle)= acos(dotj)
@@ -1018,7 +1018,7 @@ end
         cp3(2)= cp1(3)*cp2(1)-cp1(1)*cp2(3)
         cp3(3)= cp1(1)*cp2(2)-cp1(2)*cp2(1)
         if((abs(dotj) >= one).or.(abs(dotk) >= one)) then
-          write(*,'(" Error! During calculation of torsion angles in calcbmatrix.")')
+          write(datacomp%iout,'(" Error! During calculation of torsion angles in calcbmatrix.")')
           call iabort(datacomp)
         endif
 !

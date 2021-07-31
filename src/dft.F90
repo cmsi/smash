@@ -558,7 +558,7 @@ end
         case(1454)
           call lebedev1454(angpt)
         case default
-          write(*,'(" Error! Nleb=",i4," is not supported. ")')nleb
+          write(datacomp%iout,'(" Error! Nleb=",i4," is not supported. ")')nleb
           call iabort(datacomp)
       end select
 !
@@ -1607,7 +1607,7 @@ end
               endif
             enddo
           case default
-            write(*,'(" Error! Subroutine Gridao supports up to i functions.")')
+            write(datacomp%iout,'(" Error! Subroutine Gridao supports up to i functions.")')
             call iabort(datacomp)
         end select
       enddo
@@ -2377,7 +2377,7 @@ end
               endif
             enddo
           case default
-            write(*,'(" Error! Subroutine Gridgao supports up to h functions.")')
+            write(datacomp%iout,'(" Error! Subroutine Gridgao supports up to h functions.")')
             call iabort(datacomp)
         end select
       enddo
@@ -2717,7 +2717,8 @@ end
             dpa(3,jatom,iatom)= -dcutij*dmuji(3)
           else
             if(abs(g4) > threshg4) then
-              if(datacomp%master) write(*,'(" Error! The value G4 in calcdergridweight is large.")')
+              if(datacomp%master) &
+&               write(datacomp%iout,'(" Error! The value G4 in calcdergridweight is large.")')
               call iabort(datacomp)
             endif
           endif
@@ -2728,7 +2729,8 @@ end
             dpa(3,iatom,iatom)= dpa(3,iatom,iatom)+dcutji*dmuji(3)
           else
             if(abs(g4) > threshg4) then
-              if(datacomp%master) write(*,'(" Error! The value G4 in calcdergridweight is large.")')
+              if(datacomp%master) &
+&               write(datacomp%iout,'(" Error! The value G4 in calcdergridweight is large.")')
               call iabort(datacomp)
             endif
           endif

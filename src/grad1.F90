@@ -37,7 +37,7 @@
       maxbasis= maxval(databasis%mtype(1:databasis%nshell))
       if(maxbasis > 6) then
         if(datacomp%master) &
-&         write(*,'(" Error! This program supports up to h function in gradoneei")')
+&         write(datacomp%iout,'(" Error! This program supports up to h function in gradoneei")')
         call iabort(datacomp)
       endif
       len1= maxfunc(maxbasis+1)
@@ -227,7 +227,7 @@ end
       nbfj  = databasis%mbf(jsh)
 !
       if((nangi > 6).or.(nangj > 6)) then
-        write(*,'(" Error! This program supports up to h function in calcdoverlap")')
+        write(datacomp%iout,'(" Error! This program supports up to h function in calcdoverlap")')
         call iabort(datacomp)
       endif
 !
@@ -373,7 +373,7 @@ end
       nbfj  = databasis%mbf(jsh)
 !
       if((nangi > 6).or.(nangj > 6))then
-        write(*,'(" Error! This program supports up to h function in calcdkinetic.")')
+        write(datacomp%iout,'(" Error! This program supports up to h function in calcdkinetic.")')
         call iabort(datacomp)
       endif
 !
@@ -608,7 +608,7 @@ end
 &                    nprimij,nangij,nbfij,len1,mxprsh,threshex)
       else
         if((nangij(1) > 6).or.(nangij(2) > 7))then
-          write(*,'(" Error! This program supports up to h function in int1c")')
+          write(datacomp%iout,'(" Error! This program supports up to h function in int1c")')
           call iabort(datacomp)
         endif
         call int1rys(cint1,exij,cij,coordij,datamol%coord,datamol%znuc,datamol%natom, &
@@ -626,7 +626,7 @@ end
 &                      nprimij,nangij,nbfij,len1,mxprsh,threshex)
         else
           if((nangij(1) > 6).or.(nangij(2) > 5))then
-            write(*,'(" Error! This program supports up to h function in int1c")')
+            write(datacomp%iout,'(" Error! This program supports up to h function in int1c")')
             call iabort(datacomp)
           endif
 !
@@ -1022,7 +1022,7 @@ end
         call int1grys(egrad,fulldmtrx,exij,cij,coordij,datamol%coord,datamol%znuc,datamol%natom, &
 &                     databasis%nao,nprimij,nangij,nbfij,locbfij,mxprsh,threshex,iandj)
       else
-        write(*,'(" Error! This program supports up to h function in helfey")')
+        write(datacomp%iout,'(" Error! This program supports up to h function in helfey")')
         call iabort(datacomp)
       endif
 !

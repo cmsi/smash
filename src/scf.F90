@@ -104,7 +104,7 @@
 &                  work2(nao2*2))
         case default
           if(datacomp%master) then
-            write(*,'(" Error! SCFConv=",a12,"is not supported.")') 
+            write(datacomp%iout,'(" Error! SCFConv=",a12,"is not supported.")') 
             call iabort(datacomp)
           endif
       end select
@@ -1058,7 +1058,7 @@ end
 &                  qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2),qceigen(maxqcdiagsub))
         case default
           if(datacomp%master) then
-            write(*,'(" Error! SCFConv=",a12,"is not supported.")')
+            write(datacomp%iout,'(" Error! SCFConv=",a12,"is not supported.")')
             call iabort(datacomp)
           endif
       end select
@@ -1493,7 +1493,7 @@ end
 &                  work(nao3*2),work2(nao2),work3(nao2*3))
         case default
           if(datacomp%master) then
-            write(*,'(" Error! SCFConv=",a12,"is not supported.")')
+            write(datacomp%iout,'(" Error! SCFConv=",a12,"is not supported.")')
             call iabort(datacomp)
           endif
       end select
@@ -2281,7 +2281,7 @@ end
 &                  qceigen(maxqcdiagsub),work2(isize1),work3(nao2*3))
         case default
           if(datacomp%master) then
-            write(*,'(" Error! SCFConv=",a12,"is not supported.")')
+            write(datacomp%iout,'(" Error! SCFConv=",a12,"is not supported.")')
             call iabort(datacomp)
           endif
       end select

@@ -133,7 +133,7 @@
             enddo
           case('LANL2DZ')
             if(.not.datajob%flagecp) then
-              if(datacomp%master) write(*,'(" Error! ECP is not set!.")')
+              if(datacomp%master) write(datacomp%iout,'(" Error! ECP is not set!.")')
               call iabort(datacomp)
             endif
             do iatom= 1, datamol%natom
@@ -151,7 +151,7 @@
             call setcheckbasis(databasis,datacomp)
             ishell= databasis%nshell
           case default
-            write(*,'(" Error! Basis set ",a16,"is not supported.")') databasis%basis
+            write(datacomp%iout,'(" Error! Basis set ",a16,"is not supported.")') databasis%basis
             call iabort(datacomp)
         end select
 !
@@ -321,24 +321,24 @@ end
             databasis%locbf(ishell+1)= databasis%locbf(ishell)+28
           endif
         case default
-          write(*,'(" Error! This program supports up to i function.")')
+          write(datacomp%iout,'(" Error! This program supports up to i function.")')
           call iabort(datacomp)
       end select
 !
       if(ishell > mxshell) then
-        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
-        write(*,'(" Change mxshell in module.F90 and re-build SMASH.")')
+        write(datacomp%iout,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
+        write(datacomp%iout,'(" Change mxshell in module.F90 and re-build SMASH.")')
         call iabort(datacomp)
       endif
       if(databasis%locprim(ishell+1) > mxprim ) then
-        write(*,'(" Error! The number of primitive basis functions exceeds mxprim", &
-&             i6,".")')mxprim
-        write(*,'(" Change mxprim in module.F90 and re-build SMASH.")')
+        write(datacomp%iout,'(" Error! The number of primitive basis functions exceeds mxprim", &
+&                            i6,".")')mxprim
+        write(datacomp%iout,'(" Change mxprim in module.F90 and re-build SMASH.")')
         call iabort(datacomp)
       endif
       if(databasis%locbf(ishell+1) > mxao ) then
-        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
-        write(*,'(" Change mxao in module.F90 and re-build SMASH.")')
+        write(datacomp%iout,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
+        write(datacomp%iout,'(" Change mxao in module.F90 and re-build SMASH.")')
         call iabort(datacomp)
       endif
       return
@@ -427,7 +427,7 @@ end
             call bsd95v(iatom,ishell,datamol%numatomic,databasis,datacomp)
           case('LANL2DZ')
             if(.not.flagecp) then
-              write(*,'(" Error! ECP is not set!.")')
+              write(datacomp%iout,'(" Error! ECP is not set!.")')
               call iabort(datacomp)
             endif
             if(nn > 0) then
@@ -439,11 +439,12 @@ end
             endif
           case('')
             if((nn > 0).and.(ngenshell(nn) == 0)) then
-              write(*,'(" Error! Basis set for ",a3,"is not set.")')table(nn)
+              write(datacomp%iout,'(" Error! Basis set for ",a3,"is not set.")')table(nn)
               call iabort(datacomp)
             endif
           case default
-            write(*,'(" Error! This program is not support the basis set, ",a12,".")')atombasis(nn)
+            write(datacomp%iout,'(" Error! This program is not support the basis set, ",a12,".")') &
+&                 atombasis(nn)
             call iabort(datacomp)
         end select
 !
@@ -889,7 +890,7 @@ end
 &        0.6555473627D+00, 0.2865732590D+00, 0.1250662138D+00, 0.6686785577D+00, 0.3052468245D+00/)
 !
       if(numatomic(iatom) > 54) then
-        write(*,'(" Error! This program supports H - Xe STO-3G basis set.")')
+        write(datacomp%iout,'(" Error! This program supports H - Xe STO-3G basis set.")')
         call iabort(datacomp)
       elseif(numatomic(iatom) <= 0) then
         return
@@ -1636,7 +1637,7 @@ end
               call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
             endif
           case default
-            write(*,'(" Error! This program supports H - Xe basis set in subroutine bssto3g_g.")')
+            write(datacomp%iout,'(" Error! This program supports H - Xe basis set in subroutine bssto3g_g.")')
             call iabort(datacomp)
         endselect
 !
@@ -2576,7 +2577,7 @@ end
           end select
         case (:0)
         case default
-          write(*,'(" Error! This program supports H - Xe 3-21G basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Xe 3-21G basis set.")')
           call iabort(datacomp)
       end select
 !
@@ -3142,7 +3143,7 @@ end
           call basisparam(ishell,2,1,iatom,databasis,datacomp)
         case (:0)
         case default
-          write(*,'(" Error! This program supports H - Kr 6-31G basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Kr 6-31G basis set.")')
           call iabort(datacomp)
       end select
 !
@@ -3172,7 +3173,7 @@ end
           call bs631gs(iatom,ishell,numatomic,databasis,datacomp)
         case (:0)
         case default
-          write(*,'(" Error! This program supports H - Kr 6-31G* basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Kr 6-31G* basis set.")')
           call iabort(datacomp)
       end select
 !
@@ -3203,7 +3204,7 @@ end
           call bs631gs(iatom,ishell,numatomic,databasis,datacomp)
         case (:0)
         case default
-          write(*,'(" Error! This program supports H - Kr 6-31G** basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Kr 6-31G** basis set.")')
           call iabort(datacomp)
       end select
 !
@@ -3233,7 +3234,7 @@ end
           call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
         case (:0)
         case default
-          write(*,'(" Error! This program supports H - Ca 6-31+G basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-31+G basis set.")')
           call iabort(datacomp)
       end select
 !
@@ -3263,7 +3264,7 @@ end
           call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
         case (:0)
         case default
-          write(*,'(" Error! This program supports H - Ca 6-31+G* basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-31+G* basis set.")')
           call iabort(datacomp)
       end select
 !
@@ -3295,7 +3296,7 @@ end
           call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
         case (:0)
         case default
-          write(*,'(" Error! This program supports H - Ca 6-31+G** basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-31+G** basis set.")')
           call iabort(datacomp)
       end select
 !
@@ -3326,7 +3327,7 @@ end
           call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
         case (:0)
         case default
-          write(*,'(" Error! This program supports H - Ca 6-31++G basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-31++G basis set.")')
           call iabort(datacomp)
       end select
 !
@@ -3358,7 +3359,7 @@ end
           call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
         case (:0)
         case default
-          write(*,'(" Error! This program supports H - Ca 6-31++G* basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-31++G* basis set.")')
           call iabort(datacomp)
       end select
 !
@@ -3391,7 +3392,7 @@ end
           call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
         case (:0)
         case default
-          write(*,'(" Error! This program supports H - Ca 6-31++G** basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-31++G** basis set.")')
           call iabort(datacomp)
       end select
 !
@@ -4017,7 +4018,7 @@ end
           endif
         case(:0)
         case default
-          write(*,'(" Error! This program supports H - Ca, Ga - Kr 6-311G basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Ca, Ga - Kr 6-311G basis set.")')
           call iabort(datacomp)
       end select
 !
@@ -4047,7 +4048,7 @@ end
           call bs6311gs(iatom,ishell,numatomic,databasis,datacomp)
         case(:0)
         case default
-          write(*,'(" Error! This program supports H - Ca, Ga - Kr 6-311G* basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Ca, Ga - Kr 6-311G* basis set.")')
           call iabort(datacomp)
       end select
 !
@@ -4078,7 +4079,7 @@ end
           call bs6311gs(iatom,ishell,numatomic,databasis,datacomp)
         case(:0)
         case default
-          write(*,'(" Error! This program supports H - Ca, Ga - Kr 6-311G** basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Ca, Ga - Kr 6-311G** basis set.")')
           call iabort(datacomp)
       end select
 !
@@ -4108,7 +4109,7 @@ end
           call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
         case(:0)
         case default
-          write(*,'(" Error! This program supports H - Ca 6-311+G basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-311+G basis set.")')
           call iabort(datacomp)
       end select
 !
@@ -4139,7 +4140,7 @@ end
           call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
         case(:0)
         case default
-          write(*,'(" Error! This program supports H - Ca 6-311+G* basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-311+G* basis set.")')
           call iabort(datacomp)
       end select
 !
@@ -4171,7 +4172,7 @@ end
           call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
         case(:0)
         case default
-          write(*,'(" Error! This program supports H - Ca 6-311+G** basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-311+G** basis set.")')
           call iabort(datacomp)
       end select
 !
@@ -4202,7 +4203,7 @@ end
           call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
         case(:0)
         case default
-          write(*,'(" Error! This program supports H - Ca 6-311++G basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-311++G basis set.")')
           call iabort(datacomp)
       end select
 !
@@ -4234,7 +4235,7 @@ end
           call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
         case(:0)
         case default
-          write(*,'(" Error! This program supports H - Ca 6-311++G* basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-311++G* basis set.")')
           call iabort(datacomp)
       end select
 !
@@ -4267,7 +4268,7 @@ end
           call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
         case(:0)
         case default
-          write(*,'(" Error! This program supports H - Ca 6-311++G** basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-311++G** basis set.")')
           call iabort(datacomp)
       end select
 !
@@ -5482,7 +5483,7 @@ end
           call basisparam(ishell,3,2,iatom,databasis,datacomp)
         case(:0)
         case default
-          write(*,'(" Error! This program supports H - Ar, Ca - Kr cc-PVDZ basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Ar, Ca - Kr cc-PVDZ basis set.")')
           call iabort(datacomp)
       endselect
 !
@@ -6860,7 +6861,7 @@ end
           call basisparam(ishell,4,1,iatom,databasis,datacomp)
         case(:0)
         case default
-          write(*,'(" Error! This program supports H - Ar, Ca - Kr cc-PVTZ basis set.")')
+          write(datacomp%iout,'(" Error! This program supports H - Ar, Ca - Kr cc-PVTZ basis set.")')
           call iabort(datacomp)
       endselect
 !
@@ -7146,7 +7147,7 @@ end
 &        0.1007000D+01/)
 !
       if(numatomic(iatom) > 18) then
-        write(*,'(" Error! This program supports H - Ar cc-PVQZ basis set.")')
+        write(datacomp%iout,'(" Error! This program supports H - Ar cc-PVQZ basis set.")')
         call iabort(datacomp)
       endif
 !
@@ -7381,7 +7382,7 @@ end
 &        0.1300320D+00, 0.3956790D+00, 0.6214500D+00, 0.1000000D+01/)
 !
       if((numatomic(iatom) >= 11).or.(numatomic(iatom) == 2)) then
-        write(*,'(" Error! This program supports H, Li - Ne D95V basis set.")')
+        write(datacomp%iout,'(" Error! This program supports H, Li - Ne D95V basis set.")')
         call iabort(datacomp)
       endif
 !
@@ -8207,7 +8208,7 @@ end
             call basisparam(ishell,2,1,iatom,databasis,datacomp)
           endif
         case default
-          write(*,'(" Error! This program supports Na - La, Hf - Bi Lanl2dz basis set.")')
+          write(datacomp%iout,'(" Error! This program supports Na - La, Hf - Bi Lanl2dz basis set.")')
           call iabort(datacomp)
       endselect
 !
@@ -8697,7 +8698,7 @@ end
 &       1.670327D-01, 5.357835D-01, 5.445086D-01, 1.637813D-01, 5.341357D-01, 5.469714D-01/
 !
       if((numatomic(iatom) > 86).or.(numatomic(iatom) < 55)) then
-        write(*,'(" Error! Subroutine bshuzmini6_g supports only 6th row elements.")')
+        write(datacomp%iout,'(" Error! Subroutine bshuzmini6_g supports only 6th row elements.")')
         call iabort(datacomp)
       endif
 !
@@ -9155,8 +9156,8 @@ end
             enddo
             call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
           case default
-            write(*,'(" Error! This program supports H - Ca basis set", &
-&                     " in subroutine bsscaledmini_g.")')
+            write(datacomp%iout,'(" Error! This program supports H - Ca basis set", &
+&                                 " in subroutine bsscaledmini_g.")')
             call iabort(datacomp)
         endselect
 !
@@ -9429,7 +9430,7 @@ end
 &       0.1496666D+00, 0.5117475D+00, 0.5759148D+00, 0.1479466D+00, 0.5121719D+00, 0.5729498D+00/
 !
       if((numatomic(iatom) > 36).or.(numatomic(iatom) < 21)) then
-        write(*,'(" Error! Subroutine bshuzmini4_g supports only Sc - Kr elements.")')
+        write(datacomp%iout,'(" Error! Subroutine bshuzmini4_g supports only Sc - Kr elements.")')
         call iabort(datacomp)
       endif
 !
@@ -9812,7 +9813,7 @@ end
 &       0.1150105D+00, 0.4815952D+00, 0.5896133D+00, 0.2718844D+00, 0.5855569D+00, 0.3127456D+00/
 !
       if((numatomic(iatom) > 54).or.(numatomic(iatom) < 36)) then
-        write(*,'(" Error! Subroutine bshuzmini5_g supports only 5th row elements.")')
+        write(datacomp%iout,'(" Error! Subroutine bshuzmini5_g supports only 5th row elements.")')
         call iabort(datacomp)
       endif
 !

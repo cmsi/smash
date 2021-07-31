@@ -64,8 +64,8 @@
         endif
         if(datacomp%memmax /= mem64) then
           if(datacomp%master) then
-            write(*,'(" Error! Compilation with 32-bit integer supports up to 17.1GB memory.",/, &
-&                     " Reduce memory size, or compile with 64-bit integer.",/)')
+            write(datacomp%iout,'(" Error! Compilation with 32-bit integer supports up to 17.1GB memory.",/, &
+&                                 " Reduce memory size, or compile with 64-bit integer.",/)')
             call iabort(datacomp)
           endif
         endif
@@ -86,14 +86,14 @@ end
       integer,intent(in) :: msize
 !
       if(msize < 0) then
-        if(datacomp%master) write(*,'(" Required memory size is negative!",i6,"MB")')msize/125000
+        if(datacomp%master) write(datacomp%iout,'(" Required memory size is negative!",i6,"MB")')msize/125000
         call iabort(datacomp)
       endif
       datacomp%memused= datacomp%memused+msize
       if(datacomp%memused > datacomp%memmax) then
         if(datacomp%master) then
-          write(*,'(" Error! Required memory size exceeds.")')
-          write(*,'(" Required:",i6,"MB,  Available:",i6,"MB")') &
+          write(datacomp%iout,'(" Error! Required memory size exceeds.")')
+          write(datacomp%iout,'(" Required:",i6,"MB,  Available:",i6,"MB")') &
 &               datacomp%memused/125000, datacomp%memmax/125000
         endif
         call iabort(datacomp)

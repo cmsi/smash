@@ -248,7 +248,7 @@ end
       endif
 !
       return
-9999 write(*,'(" Error! File ",a," is not found.")') filename(1:llen)
+9999 write(datacomp%iout,'(" Error! File ",a," is not found.")') filename(1:llen)
      call iabort(datacomp)
 end
 

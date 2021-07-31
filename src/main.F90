@@ -109,7 +109,7 @@
           end select
         case default
           if(datacomp%master) then
-            write(*,'(" Error! This program does not support runtype= ",a16,".")') datajob%runtype
+            write(datacomp%iout,'(" Error! This program does not support runtype= ",a16,".")') datajob%runtype
             call iabort(datacomp)
           endif
       end select
@@ -243,26 +243,26 @@ end
 !
       if(datacomp%master) then
         if((datajob%scftype /= 'RHF').and.(datajob%scftype /= 'UHF')) then
-          write(*,'(" Error! SCFtype=",a16," is not supported.")') datajob%scftype
+          write(datacomp%iout,'(" Error! SCFtype=",a16," is not supported.")') datajob%scftype
           call iabort(datacomp)
         endif
 !
         if((datajob%multipole == 'OCTUPOLE').and.(datajob%method == 'MP2')) then
-          write(*,'(" Error! This program does not suupport MP2 octupole calculation.")')
+          write(datacomp%iout,'(" Error! This program does not suupport MP2 octupole calculation.")')
           call iabort(datacomp)
         endif
 !
         select case(datajob%pop)
           case('MULLIKEN','NPA','NBO','NONE','')
           case default
-            write(*,'(" Error! This program does not support pop= ", a16,".")') datajob%pop
+            write(datacomp%iout,'(" Error! This program does not support pop= ", a16,".")') datajob%pop
             call iabort(datacomp)
         end select
 !
         select case(datajob%multipole)
           case('DIPOLE','OCTUPOLE','NONE','')
           case default
-            write(*,'(" Error! This program does not support multipole= ", a16,".")') &
+            write(datacomp%iout,'(" Error! This program does not support multipole= ", a16,".")') &
 &                 datajob%multipole
             call iabort(datacomp)
         end select
@@ -316,8 +316,8 @@ end
           if(datajob%nrad == 0) datajob%nrad= 72
           if(datajob%nleb == 0) datajob%nleb= 302
         case default
-          if(datacomp%master) write(*,'(" Error! This program does not support precision= ", &
-&                                       a16,".")') datajob%precision
+          if(datacomp%master) write(datacomp%iout,'(" Error! This program does not support precision= ", &
+&                                                   a16,".")') datajob%precision
           call iabort(datacomp)
       end select
 !
@@ -334,8 +334,8 @@ end
           datajob%iprint= 5
         case('')
         case default
-          if(datacomp%master) write(*,'(" Error! This program does not support print= ", &
-&                                       a16,".")') datajob%print
+          if(datacomp%master) write(datacomp%iout,'(" Error! This program does not support print= ", &
+&                                                    a16,".")') datajob%print
           call iabort(datacomp)
       end select
 !
@@ -384,8 +384,8 @@ end
       datamol%neleca=(nume+datamol%multi-1)/2
       datamol%nelecb=(nume-datamol%multi+1)/2
       if((datamol%neleca+datamol%nelecb)/= nume) then
-        if(datacomp%master) write(*,'(" Error! Spin multiplicity is ",i2, &
-&                                     ", but number of elctrons is ",i5,".")') datamol%multi, nume
+        if(datacomp%master) write(datacomp%iout,'(" Error! Spin multiplicity is ",i2, &
+&                                 ", but number of elctrons is ",i5,".")') datamol%multi, nume
         call iabort(datacomp)
       endif
 !
@@ -509,7 +509,7 @@ end
         call tstamp(1,datacomp)
       else
         if(datacomp%master) then
-          write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
+          write(datacomp%iout,'(" Error! This program does not support method= ",a16,".")') datajob%method
           call iabort(datacomp)
         endif
       endif
@@ -683,7 +683,7 @@ end
 !     elseif(method == 'MP2') then
       else
         if(datacomp%master) then
-          write(*,'(" Error! This program does not support method= ",a16,".")')datajob%method
+          write(datacomp%iout,'(" Error! This program does not support method= ",a16,".")')datajob%method
           call iabort(datacomp)
         endif
       endif
@@ -840,7 +840,7 @@ end
         if(.not.datacomp%convergedscf) go to 9999
       else
         if(datacomp%master) then
-          write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
+          write(datacomp%iout,'(" Error! This program does not support method= ",a16,".")') datajob%method
           call iabort(datacomp)
         endif
       endif
@@ -864,7 +864,7 @@ end
 &                         datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
       else
         if(datacomp%master) then
-          write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
+          write(datacomp%iout,'(" Error! This program does not support method= ",a16,".")') datajob%method
           call iabort(datacomp)
         endif
       endif
@@ -1036,7 +1036,7 @@ end
         if(.not.datacomp%convergedscf) go to 9999
       else
         if(datacomp%master) then
-          write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
+          write(datacomp%iout,'(" Error! This program does not support method= ",a16,".")') datajob%method
           call iabort(datacomp)
         endif
       endif
@@ -1058,8 +1058,8 @@ end
 &                         datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
       else
         if(datacomp%master) then
-          write(*,'(" Error! This program does not support method= ",a16," in energy gradient.")') &
-&               datajob%method
+          write(datacomp%iout,'(" Error! This program does not support method= ",a16, &
+&                               " in energy gradient.")') datajob%method
           call iabort(datacomp)
         endif
       endif
@@ -1188,7 +1188,7 @@ end
           call memset(isizered,datacomp)
           allocate(iredun(isizered))
           if(ii == 10) then
-            write(*,'(" Error! The array size for redundant coordinate is too large.")')
+            write(datacomp%iout,'(" Error! The array size for redundant coordinate is too large.")')
             call iabort(datacomp)
           endif
         enddo
@@ -1274,7 +1274,7 @@ end
           if(.not.datacomp%convergedscf) go to 9999
         else
           if(datacomp%master) then
-            write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
+            write(datacomp%iout,'(" Error! This program does not support method= ",a16,".")') datajob%method
             call iabort(datacomp)
           endif
         endif
@@ -1302,7 +1302,7 @@ end
 &                           datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
         else
           if(datacomp%master) then
-            write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
+            write(datacomp%iout,'(" Error! This program does not support method= ",a16,".")') datajob%method
             call iabort(datacomp)
           endif
         endif
@@ -1562,7 +1562,7 @@ end
           call memset(isizered,datacomp)
           allocate(iredun(isizered))
           if(ii == 10) then
-            write(*,'(" Error! The array size for redundant coordinate is too large.")')
+            write(datacomp%iout,'(" Error! The array size for redundant coordinate is too large.")')
             call iabort(datacomp)
           endif
         enddo
@@ -1652,7 +1652,7 @@ end
           if(.not.datacomp%convergedscf) go to 9999
         else
           if(datacomp%master) then
-            write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
+            write(datacomp%iout,'(" Error! This program does not support method= ",a16,".")') datajob%method
             call iabort(datacomp)
           endif
         endif
@@ -1678,8 +1678,8 @@ end
 &                           datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis,datacomp)
         else
           if(datacomp%master) then
-            write(*,'(" Error! This program does not support method= ",a16," in energy gradient.")') &
-&                 datajob%method
+            write(datacomp%iout,'(" Error! This program does not support method= ",a16, &
+&                                 " in energy gradient.")') datajob%method
             call iabort(datacomp)
           endif
         endif
@@ -1934,7 +1934,7 @@ end
         case('HF','MP2')
         case default
           if(datacomp%master) then
-            write(*,'(" Error! This program does not support method= ",a16,".")') datajob%method
+            write(datacomp%iout,'(" Error! This program does not support method= ",a16,".")') datajob%method
             call iabort(datacomp)
           endif
       endselect

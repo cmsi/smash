@@ -69,7 +69,7 @@
           if(datajob%scftype == 'UHF') call dcopy(databasis%nao**2,cmoa,1,cmob,1)
         case default
           if(datacomp%master) &
-&           write(*,'(" Error! This program does not support guess= ",a10,"!")') datajob%guess
+&           write(datacomp%iout,'(" Error! This program does not support guess= ",a10,"!")') datajob%guess
           call iabort(datacomp)
       end select
 !
@@ -691,8 +691,10 @@ end
             case(-9:0)
 !
             case default
-              if(datacomp%master) write(*,'(" Error! This program supports up to Rn in huckelip.")')
-              call iabort(datacomp)
+              if(datacomp%master) then
+                write(datacomp%iout,'(" Error! This program supports up to Rn in huckelip.")')
+                call iabort(datacomp)
+              endif
           end select
         enddo
 !
@@ -887,8 +889,10 @@ end
 ! Bq9 - X
             case(-9:0)
             case default
-              if(datacomp%master) write(*,'(" Error! This program supports up to Rn in huckelip.")')
-              call iabort(datacomp)
+              if(datacomp%master) then
+                write(datacomp%iout,'(" Error! This program supports up to Rn in huckelip.")')
+                call iabort(datacomp)
+              endif
           end select
         enddo
 !
@@ -1082,8 +1086,10 @@ end
 ! Bq9 - X
             case(-9:0)
             case default
-              if(datacomp%master) write(*,'(" Error! This program supports up to Rn in huckelip.")')
-              call iabort(datacomp)
+              if(datacomp%master) then
+                write(datacomp%iout,'(" Error! This program supports up to Rn in huckelip.")')
+                call iabort(datacomp)
+              endif
           end select
         enddo
       endif
@@ -1509,7 +1515,7 @@ end
       real(8) :: eigeninv
 !
       if(nao < ndim) then
-        write(*,'(" Error! Nao is less than ndim in projectmo2.")')
+        write(datacomp%iout,'(" Error! Nao is less than ndim in projectmo2.")')
         call iabort(datacomp)
       endif
 !
@@ -1606,11 +1612,11 @@ end
 !
       if(ncore < 0) then
         if(datacomp%master) &
-&         write(*,'(" Error! The number of electrons in checkpoint file is too small.")')
+&         write(datacomp%iout,'(" Error! The number of electrons in checkpoint file is too small.")')
         call iabort(datacomp)
       elseif((ncore /= 0).and.flagecp_g) then
         if(datacomp%master) then
-          write(*,'(" Error! The ECP functions in checkpoint and input files are different.")')
+          write(datacomp%iout,'(" Error! The ECP functions in checkpoint and input files are different.")')
         endif
         call iabort(datacomp)
       endif
@@ -1998,7 +2004,7 @@ end
                 cmo(iloc+15,imo)= work( 3)
               enddo
             case default
-              write(*,'(" Error! Subroutine gcheckreorder supports up to g functions.")')
+              write(datacomp%iout,'(" Error! Subroutine gcheckreorder supports up to g functions.")')
               call iabort(datacomp)
           end select
         endif
@@ -2164,7 +2170,7 @@ end
         call diffqmulliken(qmulliken,qmax,nshell_v)
         if(qmax < 1.0D-4) exit
         if(iter == maxiter) then
-          if(datacomp%master) write(*,'(" Error! DFTB calculation did not converge.")')
+          if(datacomp%master) write(datacomp%iout,'(" Error! DFTB calculation did not converge.")')
           call iabort(datacomp)
         endif
       enddo
@@ -2463,7 +2469,7 @@ end
 &            -znucshell(dataguessbs%mtype(ish),datamol%numatomic(dataguessbs%locatom(ish)))
         enddo
       else
-        write(*,'(" Error! DFTB for open-shell has not been implemented yet!")')
+        write(datacomp%iout,'(" Error! DFTB for open-shell has not been implemented yet!")')
         call iabort(datacomp)
       endif
 !
@@ -2774,7 +2780,7 @@ end
 !
             case default
               if(datacomp%master) &
-&               write(*,'(" Error! This program supports H-La and Lu-Po in dftbip.")')
+&               write(datacomp%iout,'(" Error! This program supports H-La and Lu-Po in dftbip.")')
               call iabort(datacomp)
         end select
       enddo

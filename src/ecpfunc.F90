@@ -45,7 +45,7 @@
           call setgenecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,iprim, &
 &                        datamol,databasis,datagenbasis,datacomp)
         else
-          write(*,'(" Error! This program does not support ECP function,",a10,".")')databasis%ecp
+          write(datacomp%iout,'(" Error! This program does not support ECP function,",a10,".")')databasis%ecp
           call iabort(datacomp)
         endif
       endif
@@ -96,7 +96,7 @@ end
             call ecplanl2(iatom,iprim,datamol%numatomic,databasis,datacomp)
           case('')
           case default
-            write(*,'(" Error! This program does not support ECP function ",a10,".")')atomecp(nn)
+            write(datacomp%iout,'(" Error! This program does not support ECP function ",a10,".")')atomecp(nn)
             call iabort(datacomp)
         end select
 !
@@ -898,12 +898,12 @@ end
           endif
         case (:0)
         case (84:)
-          write(*,'(" Error! This program supports Na - La, Hf - Bi Lanl2dz ECP.")')
+          write(datacomp%iout,'(" Error! This program supports Na - La, Hf - Bi Lanl2dz ECP.")')
           call iabort(datacomp)
       endselect
 !
       if(iprim > mxprim ) then
-        write(*,'(" Error! The number of ECP functions exceeds mxprim",i6,".")')mxprim
+        write(datacomp%iout,'(" Error! The number of ECP functions exceeds mxprim",i6,".")')mxprim
         call iabort(datacomp)
       endif
       return
