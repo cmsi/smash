@@ -184,7 +184,7 @@ end
 ! nopt         : Maximum number of geometry optimization cycles
 ! dconv        : Threshold for SCF density convergence
 ! optconv      : Threshold for geometry optimization convergence
-! fbond        : Scaling factor of van der Waals radii for bond detection
+! fbond        : Scaling factor of atom radii for bond detection
 ! hfexchange   : Factor of Hartree-Fock Exchange in DFT
 ! bqrad        : Radii of ghost (Bq) atoms
 ! threshex     : Threshold for overlap of two basis functions

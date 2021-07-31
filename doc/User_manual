@@ -277,7 +277,7 @@
               = .false.     Redundant coordinate (default)
               = .true.      Cartesian coordinate
 
-      fbond                 specifies the scaling factor of van der Waals radii for 
+      fbond                 specifies the scaling factor of atom radii for 
                             bond detection. (default: 1.20E+0)
 
     2.5 dft keywords
