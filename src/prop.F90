@@ -833,7 +833,7 @@ end
 ! Transform basis functions from Cartesian to Spherial Harmonics if necessary
 !
       if(.not.databasis%spher) then
-        if(maxang >= 5) then
+        if((maxang >= 5).and.(datacomp%master)) then
           write(datacomp%iout,'(" Error! This program supports up to g Cartesian functions", &
 &                               " in Natural Population Analysis.",/, &
 &                               " Set spher=.true. in Control section.")')
@@ -2080,108 +2080,108 @@ end
 &       'i-6','i-5','i-4','i-3','i-2','i-1','i0 ','i+1','i+2','i+3','i+4','i+5','i+6'/)
       character(len=3) :: motype(3)=(/'Cor','Val','Ryd'/)
 !
-      chargenpa(1:3,0:maxang,1:datamol%natom)= zero
-      atomnpa(0:3,0:datamol%natom)= zero
-      totalcharge= zero
-!
       if(datacomp%master) then
+        chargenpa(1:3,0:maxang,1:datamol%natom)= zero
+        atomnpa(0:3,0:datamol%natom)= zero
+        totalcharge= zero
+!
         write(datacomp%iout, &
 &         '(" -----------------------------------------------------------",/ &
 &           "      Natural Population Analysis (Orbitals)",/ &
 &           "    NAO   Atom   nlm    Type    Occupancy        Energy",/ &
 &           " -----------------------------------------------------------")')
-      endif
 !
 ! Transform Fock matrix to Natural Atomic Orbital basis
 !
-      nao= databasis%nao
-      call expand(fock,fnao,nao)
-      call dsymm('L','U',nao,nao,one,fnao,nao,trans,nao,zero,work,nao)
-      call dgemm('T','N',nao,nao,nao,one,trans,nao,work,nao,zero,fnao,nao)
+        nao= databasis%nao
+        call expand(fock,fnao,nao)
+        call dsymm('L','U',nao,nao,one,fnao,nao,trans,nao,zero,work,nao)
+        call dgemm('T','N',nao,nao,nao,one,trans,nao,work,nao,zero,fnao,nao)
 !
 ! Summarize Natural Atomic Orbital Energies
 !
-      locao= 0
-      jao  = 0
-      do iatom= 1,datamol%natom
-        do iang= 0,maxang
-          numshell= infobasis(1,iang,iatom)
-!
-          do ishell= 1,numshell
-            faverage= zero
-            do iao= 1,2*iang+1
-              fdiag((ishell-1)*(2*iang+1)+iao)= fnao(locao+iao,locao+iao)
-              pdiag((ishell-1)*(2*iang+1)+iao)= pnao(locao+iao,locao+iao)
-              faverage= faverage+fnao(locao+iao,locao+iao)
-            enddo
-            fshell(ishell)= faverage/dble(2*iang+1)
-            list(ishell)= ishell-1
-            locao= locao+2*iang+1
-          enddo
-!
-          do ii= 1,numshell-1
-            do jj= ii+1, numshell
-              if(fshell(ii) > fshell(jj)) then
-                tmp= fshell(ii)
-                fshell(ii)= fshell(jj)
-                fshell(jj)= tmp
-                itmp= list(ii)
-                list(ii)= list(jj)
-                list(jj)= itmp
-              endif
-            enddo
-          enddo
-!
-          do ishell= 1,numshell
-            if(ishell <= infonmb(1,iang,iatom)) then
-              if(ishell <= infonmb(2,iang,iatom)) then
-                imo= 1
-              else
-                imo= 2
-              endif
-            else
-              imo= 3
-            endif
-            do iao= 1,2*iang+1
-              jao= jao+1
-              write(datacomp%iout,'(i6,i5,1x,a3,1x,i2,a3,4x,a3,f13.6,f16.6)') &
-&                   jao, iatom, table(datamol%numatomic(iatom)), &
-&                   ishell+infonmb(3,iang,iatom)+iang, anglabel(13*iang+iao), motype(imo),  &
-&                   pdiag(list(ishell)*(2*iang+1)+iao), fdiag(list(ishell)*(2*iang+1)+iao)
-              chargenpa(imo,iang,iatom)= chargenpa(imo,iang,iatom) &
-&                                       +pdiag(list(ishell)*(2*iang+1)+iao)
-            enddo
-          enddo
-        enddo
-      enddo
-!
-      write(datacomp%iout, &
-&       '(" -----------------------------------------------------------",/, &
-&         " ----------------------------------------------------------------------------",/, &
-&         "      Natural Population Analysis (Atoms)",/, &
-&         "     Atom       Charge     Pop(Total)     Core        Valence      Rydberg",/, &
-&         " ----------------------------------------------------------------------------")')
-      do iatom= 1,datamol%natom
-        do imo= 1,3
+        locao= 0
+        jao  = 0
+        do iatom= 1,datamol%natom
           do iang= 0,maxang
-            atomnpa(imo,iatom)= atomnpa(imo,iatom)+chargenpa(imo,iang,iatom)
+            numshell= infobasis(1,iang,iatom)
+!
+            do ishell= 1,numshell
+              faverage= zero
+              do iao= 1,2*iang+1
+                fdiag((ishell-1)*(2*iang+1)+iao)= fnao(locao+iao,locao+iao)
+                pdiag((ishell-1)*(2*iang+1)+iao)= pnao(locao+iao,locao+iao)
+                faverage= faverage+fnao(locao+iao,locao+iao)
+              enddo
+              fshell(ishell)= faverage/dble(2*iang+1)
+              list(ishell)= ishell-1
+              locao= locao+2*iang+1
+            enddo
+!
+            do ii= 1,numshell-1
+              do jj= ii+1, numshell
+                if(fshell(ii) > fshell(jj)) then
+                  tmp= fshell(ii)
+                  fshell(ii)= fshell(jj)
+                  fshell(jj)= tmp
+                  itmp= list(ii)
+                  list(ii)= list(jj)
+                  list(jj)= itmp
+                endif
+              enddo
+            enddo
+!
+            do ishell= 1,numshell
+              if(ishell <= infonmb(1,iang,iatom)) then
+                if(ishell <= infonmb(2,iang,iatom)) then
+                  imo= 1
+                else
+                  imo= 2
+                endif
+              else
+                imo= 3
+              endif
+              do iao= 1,2*iang+1
+                jao= jao+1
+                write(datacomp%iout,'(i6,i5,1x,a3,1x,i2,a3,4x,a3,f13.6,f16.6)') &
+&                     jao, iatom, table(datamol%numatomic(iatom)), &
+&                     ishell+infonmb(3,iang,iatom)+iang, anglabel(13*iang+iao), motype(imo),  &
+&                     pdiag(list(ishell)*(2*iang+1)+iao), fdiag(list(ishell)*(2*iang+1)+iao)
+                chargenpa(imo,iang,iatom)= chargenpa(imo,iang,iatom) &
+&                                         +pdiag(list(ishell)*(2*iang+1)+iao)
+              enddo
+            enddo
           enddo
         enddo
-        atomnpa(0,iatom)= atomnpa(1,iatom)+atomnpa(2,iatom)+atomnpa(3,iatom)
-        atomnpa(0,0)= atomnpa(0,0)+atomnpa(0,iatom)
-        atomnpa(1,0)= atomnpa(1,0)+atomnpa(1,iatom)
-        atomnpa(2,0)= atomnpa(2,0)+atomnpa(2,iatom)
-        atomnpa(3,0)= atomnpa(3,0)+atomnpa(3,iatom)
-        totalcharge= totalcharge+datamol%znuc(iatom)-atomnpa(0,iatom)
-        write(datacomp%iout,'(i6,1x,a3,5f13.6)') &
-&             iatom, table(datamol%numatomic(iatom)), datamol%znuc(iatom)-atomnpa(0,iatom), &
-&             atomnpa(0:3,iatom)
-      enddo
-      write(datacomp%iout, &
-&       '(" ----------------------------------------------------------------------------",/, &
-&         "    Total ",5f13.6,/, &
-&         " ----------------------------------------------------------------------------",/)') &
-&         totalcharge, atomnpa(0:3,0)
+!
+        write(datacomp%iout, &
+&         '(" -----------------------------------------------------------",/, &
+&           " ----------------------------------------------------------------------------",/, &
+&           "      Natural Population Analysis (Atoms)",/, &
+&           "     Atom       Charge     Pop(Total)      Core       Valence      Rydberg",/, &
+&           " ----------------------------------------------------------------------------")')
+        do iatom= 1,datamol%natom
+          do imo= 1,3
+            do iang= 0,maxang
+              atomnpa(imo,iatom)= atomnpa(imo,iatom)+chargenpa(imo,iang,iatom)
+            enddo
+          enddo
+          atomnpa(0,iatom)= atomnpa(1,iatom)+atomnpa(2,iatom)+atomnpa(3,iatom)
+          atomnpa(0,0)= atomnpa(0,0)+atomnpa(0,iatom)
+          atomnpa(1,0)= atomnpa(1,0)+atomnpa(1,iatom)
+          atomnpa(2,0)= atomnpa(2,0)+atomnpa(2,iatom)
+          atomnpa(3,0)= atomnpa(3,0)+atomnpa(3,iatom)
+          totalcharge= totalcharge+datamol%znuc(iatom)-atomnpa(0,iatom)
+          write(datacomp%iout,'(i6,1x,a3,5f13.6)') &
+&               iatom, table(datamol%numatomic(iatom)), datamol%znuc(iatom)-atomnpa(0,iatom), &
+&               atomnpa(0:3,iatom)
+        enddo
+        write(datacomp%iout, &
+&         '(" ----------------------------------------------------------------------------",/, &
+&           "    Total ",5f13.6,/, &
+&           " ----------------------------------------------------------------------------",/)') &
+&           totalcharge, atomnpa(0:3,0)
+      endif
 !
       return
 end
@@ -2237,281 +2237,276 @@ end
 &       'i-6','i-5','i-4','i-3','i-2','i-1','i0 ','i+1','i+2','i+3','i+4','i+5','i+6'/)
       character(len=3) :: motype(3)=(/'Cor','Val','Ryd'/)
 !
-      chargenpaa(1:3,0:maxang,1:datamol%natom)= zero
-      chargenpab(1:3,0:maxang,1:datamol%natom)= zero
-      atomnpaa(0:3,0:datamol%natom)= zero
-      atomnpab(0:3,0:datamol%natom)= zero
-      totalchargea= zero
-      totalchargeb= zero
+      if(datacomp%master) then
+        chargenpaa(1:3,0:maxang,1:datamol%natom)= zero
+        chargenpab(1:3,0:maxang,1:datamol%natom)= zero
+        atomnpaa(0:3,0:datamol%natom)= zero
+        atomnpab(0:3,0:datamol%natom)= zero
+        totalchargea= zero
+        totalchargeb= zero
 !
 ! Alpha electrons
 !
-      if(datacomp%master) then
         write(datacomp%iout, &
 &         '(" -----------------------------------------------------------",/ &
 &           "      Natural Population Analysis (Orbitals, Alpha)",/ &
 &           "    NAO   Atom   nlm    Type    Occupancy        Energy",/ &
 &           " -----------------------------------------------------------")')
-      endif
 !
 !   Transform alpha Fock matrix to Natural Atomic Orbital basis
 !
-      nao= databasis%nao
-      call expand(dmtrxa,pnao,nao)
-      call expand2(overlap,fnao,nao)
-      call dsymm('L','U',nao,nao,one,pnao,nao,fnao,nao,zero,worka,nao)
-      call dsymm('L','U',nao,nao,one,fnao,nao,worka,nao,zero,pnao,nao)
-      call dsymm('L','U',nao,nao,one,pnao,nao,trans,nao,zero,worka,nao)
-      call dgemm('T','N',nao,nao,nao,one,trans,nao,worka,nao,zero,pnao,nao)
-      call expand(focka,fnao,nao)
-      call dsymm('L','U',nao,nao,one,fnao,nao,trans,nao,zero,worka,nao)
-      call dgemm('T','N',nao,nao,nao,one,trans,nao,worka,nao,zero,fnao,nao)
+        nao= databasis%nao
+        call expand(dmtrxa,pnao,nao)
+        call expand2(overlap,fnao,nao)
+        call dsymm('L','U',nao,nao,one,pnao,nao,fnao,nao,zero,worka,nao)
+        call dsymm('L','U',nao,nao,one,fnao,nao,worka,nao,zero,pnao,nao)
+        call dsymm('L','U',nao,nao,one,pnao,nao,trans,nao,zero,worka,nao)
+        call dgemm('T','N',nao,nao,nao,one,trans,nao,worka,nao,zero,pnao,nao)
+        call expand(focka,fnao,nao)
+        call dsymm('L','U',nao,nao,one,fnao,nao,trans,nao,zero,worka,nao)
+        call dgemm('T','N',nao,nao,nao,one,trans,nao,worka,nao,zero,fnao,nao)
 !
 !   Summarize alpha Natural Atomic Orbital Energies
 !
-      locao= 0
-      jao  = 0
-      do iatom= 1,datamol%natom
-        do iang= 0,maxang
-          numshell= infobasis(1,iang,iatom)
-!
-          do ishell= 1,numshell
-            faverage= zero
-            do iao= 1,2*iang+1
-              fdiag((ishell-1)*(2*iang+1)+iao)= fnao(locao+iao,locao+iao)
-              pdiag((ishell-1)*(2*iang+1)+iao)= pnao(locao+iao,locao+iao)
-              faverage= faverage+fnao(locao+iao,locao+iao)
-            enddo
-            fshell(ishell)= faverage/dble(2*iang+1)
-            list(ishell)= ishell-1
-            locao= locao+2*iang+1
-          enddo
-!
-          do ii= 1,numshell-1
-            do jj= ii+1, numshell
-              if(fshell(ii) > fshell(jj)) then
-                tmp= fshell(ii)
-                fshell(ii)= fshell(jj)
-                fshell(jj)= tmp
-                itmp= list(ii)
-                list(ii)= list(jj)
-                list(jj)= itmp
-              endif
-            enddo
-          enddo
-!
-          do ishell= 1,numshell
-            if(ishell <= infonmb(1,iang,iatom)) then
-              if(ishell <= infonmb(2,iang,iatom)) then
-                imo= 1
-              else
-                imo= 2
-              endif
-            else
-              imo= 3
-            endif
-            do iao= 1,2*iang+1
-              jao= jao+1
-              write(datacomp%iout,'(i6,i5,1x,a3,1x,i2,a3,4x,a3,f13.6,f16.6)') &
-&                   jao, iatom, table(datamol%numatomic(iatom)), &
-&                   ishell+infonmb(3,iang,iatom)+iang, anglabel(13*iang+iao), motype(imo),  &
-&                   pdiag(list(ishell)*(2*iang+1)+iao), fdiag(list(ishell)*(2*iang+1)+iao)
-              chargenpaa(imo,iang,iatom)= chargenpaa(imo,iang,iatom) &
-&                                       +pdiag(list(ishell)*(2*iang+1)+iao)
-              worka(jao)= pdiag(list(ishell)*(2*iang+1)+iao)
-            enddo
-          enddo
-        enddo
-      enddo
-!
-      write(datacomp%iout, &
-&       '(" -----------------------------------------------------------",/, &
-&         " ----------------------------------------------------------------------------",/, &
-&         "      Natural Population Analysis (Atoms, Alpha)",/, &
-&         "     Atom       Charge     Pop(Total)     Core        Valence      Rydberg",/, &
-&         " ----------------------------------------------------------------------------")')
-      do iatom= 1,datamol%natom
-        do imo= 1,3
+        locao= 0
+        jao  = 0
+        do iatom= 1,datamol%natom
           do iang= 0,maxang
-            atomnpaa(imo,iatom)= atomnpaa(imo,iatom)+chargenpaa(imo,iang,iatom)
+            numshell= infobasis(1,iang,iatom)
+!
+            do ishell= 1,numshell
+              faverage= zero
+              do iao= 1,2*iang+1
+                fdiag((ishell-1)*(2*iang+1)+iao)= fnao(locao+iao,locao+iao)
+                pdiag((ishell-1)*(2*iang+1)+iao)= pnao(locao+iao,locao+iao)
+                faverage= faverage+fnao(locao+iao,locao+iao)
+              enddo
+              fshell(ishell)= faverage/dble(2*iang+1)
+              list(ishell)= ishell-1
+              locao= locao+2*iang+1
+            enddo
+!
+            do ii= 1,numshell-1
+              do jj= ii+1, numshell
+                if(fshell(ii) > fshell(jj)) then
+                  tmp= fshell(ii)
+                  fshell(ii)= fshell(jj)
+                  fshell(jj)= tmp
+                  itmp= list(ii)
+                  list(ii)= list(jj)
+                  list(jj)= itmp
+                endif
+              enddo
+            enddo
+!
+            do ishell= 1,numshell
+              if(ishell <= infonmb(1,iang,iatom)) then
+                if(ishell <= infonmb(2,iang,iatom)) then
+                  imo= 1
+                else
+                  imo= 2
+                endif
+              else
+                imo= 3
+              endif
+              do iao= 1,2*iang+1
+                jao= jao+1
+                write(datacomp%iout,'(i6,i5,1x,a3,1x,i2,a3,4x,a3,f13.6,f16.6)') &
+&                     jao, iatom, table(datamol%numatomic(iatom)), &
+&                     ishell+infonmb(3,iang,iatom)+iang, anglabel(13*iang+iao), motype(imo),  &
+&                     pdiag(list(ishell)*(2*iang+1)+iao), fdiag(list(ishell)*(2*iang+1)+iao)
+                chargenpaa(imo,iang,iatom)= chargenpaa(imo,iang,iatom) &
+&                                         +pdiag(list(ishell)*(2*iang+1)+iao)
+                worka(jao)= pdiag(list(ishell)*(2*iang+1)+iao)
+              enddo
+            enddo
           enddo
         enddo
-        atomnpaa(0,iatom)= atomnpaa(1,iatom)+atomnpaa(2,iatom)+atomnpaa(3,iatom)
-        atomnpaa(0,0)= atomnpaa(0,0)+atomnpaa(0,iatom)
-        atomnpaa(1,0)= atomnpaa(1,0)+atomnpaa(1,iatom)
-        atomnpaa(2,0)= atomnpaa(2,0)+atomnpaa(2,iatom)
-        atomnpaa(3,0)= atomnpaa(3,0)+atomnpaa(3,iatom)
-        totalchargea= totalchargea+datamol%znuc(iatom)*half-atomnpaa(0,iatom)
-        write(datacomp%iout,'(i6,1x,a3,5f13.6)') &
-&             iatom, table(datamol%numatomic(iatom)), datamol%znuc(iatom)*half-atomnpaa(0,iatom), &
-&             atomnpaa(0:3,iatom)
-      enddo
-      write(datacomp%iout, &
-&       '(" ----------------------------------------------------------------------------",/, &
-&         "    Total ",5f13.6,/, &
-&         " ----------------------------------------------------------------------------",/)') &
-&         totalchargea, atomnpaa(0:3,0)
+!
+        write(datacomp%iout, &
+&         '(" -----------------------------------------------------------",/, &
+&           " ----------------------------------------------------------------------------",/, &
+&           "      Natural Population Analysis (Atoms, Alpha)",/, &
+&           "     Atom       Charge     Pop(Total)      Core       Valence      Rydberg",/, &
+&           " ----------------------------------------------------------------------------")')
+        do iatom= 1,datamol%natom
+          do imo= 1,3
+            do iang= 0,maxang
+              atomnpaa(imo,iatom)= atomnpaa(imo,iatom)+chargenpaa(imo,iang,iatom)
+            enddo
+          enddo
+          atomnpaa(0,iatom)= atomnpaa(1,iatom)+atomnpaa(2,iatom)+atomnpaa(3,iatom)
+          atomnpaa(0,0)= atomnpaa(0,0)+atomnpaa(0,iatom)
+          atomnpaa(1,0)= atomnpaa(1,0)+atomnpaa(1,iatom)
+          atomnpaa(2,0)= atomnpaa(2,0)+atomnpaa(2,iatom)
+          atomnpaa(3,0)= atomnpaa(3,0)+atomnpaa(3,iatom)
+          totalchargea= totalchargea+datamol%znuc(iatom)*half-atomnpaa(0,iatom)
+          write(datacomp%iout,'(i6,1x,a3,5f13.6)') &
+&               iatom, table(datamol%numatomic(iatom)), datamol%znuc(iatom)*half-atomnpaa(0,iatom), &
+&               atomnpaa(0:3,iatom)
+        enddo
+        write(datacomp%iout, &
+&         '(" ----------------------------------------------------------------------------",/, &
+&           "    Total ",5f13.6,/, &
+&           " ----------------------------------------------------------------------------",/)') &
+&           totalchargea, atomnpaa(0:3,0)
 !
 ! Beta electrons
 !
-      if(datacomp%master) then
         write(datacomp%iout, &
 &         '(" -----------------------------------------------------------",/ &
 &           "      Natural Population Analysis (Orbitals, Beta)",/ &
 &           "    NAO   Atom   nlm    Type    Occupancy        Energy",/ &
 &           " -----------------------------------------------------------")')
-      endif
 !
 !   Transform beta Fock matrix to Natural Atomic Orbital basis
 !
-      call expand(dmtrxb,pnao,nao)
-      call expand2(overlap,fnao,nao)
-      call dsymm('L','U',nao,nao,one,pnao,nao,fnao,nao,zero,workb,nao)
-      call dsymm('L','U',nao,nao,one,fnao,nao,workb,nao,zero,pnao,nao)
-      call dsymm('L','U',nao,nao,one,pnao,nao,trans,nao,zero,workb,nao)
-      call dgemm('T','N',nao,nao,nao,one,trans,nao,workb,nao,zero,pnao,nao)
-      call expand(fockb,fnao,nao)
-      call dsymm('L','U',nao,nao,one,fnao,nao,trans,nao,zero,workb,nao)
-      call dgemm('T','N',nao,nao,nao,one,trans,nao,workb,nao,zero,fnao,nao)
+        call expand(dmtrxb,pnao,nao)
+        call expand2(overlap,fnao,nao)
+        call dsymm('L','U',nao,nao,one,pnao,nao,fnao,nao,zero,workb,nao)
+        call dsymm('L','U',nao,nao,one,fnao,nao,workb,nao,zero,pnao,nao)
+        call dsymm('L','U',nao,nao,one,pnao,nao,trans,nao,zero,workb,nao)
+        call dgemm('T','N',nao,nao,nao,one,trans,nao,workb,nao,zero,pnao,nao)
+        call expand(fockb,fnao,nao)
+        call dsymm('L','U',nao,nao,one,fnao,nao,trans,nao,zero,workb,nao)
+        call dgemm('T','N',nao,nao,nao,one,trans,nao,workb,nao,zero,fnao,nao)
 !
 !   Summarize beta Natural Atomic Orbital Energies
 !
-      locao= 0
-      jao  = 0
-      do iatom= 1,datamol%natom
-        do iang= 0,maxang
-          numshell= infobasis(1,iang,iatom)
-!
-          do ishell= 1,numshell
-            faverage= zero
-            do iao= 1,2*iang+1
-              fdiag((ishell-1)*(2*iang+1)+iao)= fnao(locao+iao,locao+iao)
-              pdiag((ishell-1)*(2*iang+1)+iao)= pnao(locao+iao,locao+iao)
-              faverage= faverage+fnao(locao+iao,locao+iao)
-            enddo
-            fshell(ishell)= faverage/dble(2*iang+1)
-            list(ishell)= ishell-1
-            locao= locao+2*iang+1
-          enddo
-!
-          do ii= 1,numshell-1
-            do jj= ii+1, numshell
-              if(fshell(ii) > fshell(jj)) then
-                tmp= fshell(ii)
-                fshell(ii)= fshell(jj)
-                fshell(jj)= tmp
-                itmp= list(ii)
-                list(ii)= list(jj)
-                list(jj)= itmp
-              endif
-            enddo
-          enddo
-!
-          do ishell= 1,numshell
-            if(ishell <= infonmb(1,iang,iatom)) then
-              if(ishell <= infonmb(2,iang,iatom)) then
-                imo= 1
-              else
-                imo= 2
-              endif
-            else
-              imo= 3
-            endif
-            do iao= 1,2*iang+1
-              jao= jao+1
-              write(datacomp%iout,'(i6,i5,1x,a3,1x,i2,a3,4x,a3,f13.6,f16.6)') &
-&                   jao, iatom, table(datamol%numatomic(iatom)), &
-&                   ishell+infonmb(3,iang,iatom)+iang, anglabel(13*iang+iao), motype(imo),  &
-&                   pdiag(list(ishell)*(2*iang+1)+iao), fdiag(list(ishell)*(2*iang+1)+iao)
-              chargenpab(imo,iang,iatom)= chargenpab(imo,iang,iatom) &
-&                                       +pdiag(list(ishell)*(2*iang+1)+iao)
-              workb(jao)= pdiag(list(ishell)*(2*iang+1)+iao)
-            enddo
-          enddo
-        enddo
-      enddo
-!
-      write(datacomp%iout, &
-&       '(" -----------------------------------------------------------",/, &
-&         " ----------------------------------------------------------------------------",/, &
-&         "      Natural Population Analysis (Atoms, Beta)",/, &
-&         "     Atom       Charge     Pop(Total)     Core        Valence      Rydberg",/, &
-&         " ----------------------------------------------------------------------------")')
-      do iatom= 1,datamol%natom
-        do imo= 1,3
+        locao= 0
+        jao  = 0
+        do iatom= 1,datamol%natom
           do iang= 0,maxang
-            atomnpab(imo,iatom)= atomnpab(imo,iatom)+chargenpab(imo,iang,iatom)
+            numshell= infobasis(1,iang,iatom)
+!
+            do ishell= 1,numshell
+              faverage= zero
+              do iao= 1,2*iang+1
+                fdiag((ishell-1)*(2*iang+1)+iao)= fnao(locao+iao,locao+iao)
+                pdiag((ishell-1)*(2*iang+1)+iao)= pnao(locao+iao,locao+iao)
+                faverage= faverage+fnao(locao+iao,locao+iao)
+              enddo
+              fshell(ishell)= faverage/dble(2*iang+1)
+              list(ishell)= ishell-1
+              locao= locao+2*iang+1
+            enddo
+!
+            do ii= 1,numshell-1
+              do jj= ii+1, numshell
+                if(fshell(ii) > fshell(jj)) then
+                  tmp= fshell(ii)
+                  fshell(ii)= fshell(jj)
+                  fshell(jj)= tmp
+                  itmp= list(ii)
+                  list(ii)= list(jj)
+                  list(jj)= itmp
+                endif
+              enddo
+            enddo
+!
+            do ishell= 1,numshell
+              if(ishell <= infonmb(1,iang,iatom)) then
+                if(ishell <= infonmb(2,iang,iatom)) then
+                  imo= 1
+                else
+                  imo= 2
+                endif
+              else
+                imo= 3
+              endif
+              do iao= 1,2*iang+1
+                jao= jao+1
+                write(datacomp%iout,'(i6,i5,1x,a3,1x,i2,a3,4x,a3,f13.6,f16.6)') &
+&                     jao, iatom, table(datamol%numatomic(iatom)), &
+&                     ishell+infonmb(3,iang,iatom)+iang, anglabel(13*iang+iao), motype(imo),  &
+&                     pdiag(list(ishell)*(2*iang+1)+iao), fdiag(list(ishell)*(2*iang+1)+iao)
+                chargenpab(imo,iang,iatom)= chargenpab(imo,iang,iatom) &
+&                                         +pdiag(list(ishell)*(2*iang+1)+iao)
+                workb(jao)= pdiag(list(ishell)*(2*iang+1)+iao)
+              enddo
+            enddo
           enddo
         enddo
-        atomnpab(0,iatom)= atomnpab(1,iatom)+atomnpab(2,iatom)+atomnpab(3,iatom)
-        atomnpab(0,0)= atomnpab(0,0)+atomnpab(0,iatom)
-        atomnpab(1,0)= atomnpab(1,0)+atomnpab(1,iatom)
-        atomnpab(2,0)= atomnpab(2,0)+atomnpab(2,iatom)
-        atomnpab(3,0)= atomnpab(3,0)+atomnpab(3,iatom)
-        totalchargeb= totalchargeb+datamol%znuc(iatom)*half-atomnpab(0,iatom)
-        write(datacomp%iout,'(i6,1x,a3,5f13.6)') &
-&             iatom, table(datamol%numatomic(iatom)), datamol%znuc(iatom)*half-atomnpab(0,iatom), &
-&             atomnpab(0:3,iatom)
-      enddo
-      write(datacomp%iout, &
-&       '(" ----------------------------------------------------------------------------",/, &
-&         "    Total ",5f13.6,/, &
-&         " ----------------------------------------------------------------------------",/)') &
-&         totalchargeb, atomnpab(0:3,0)
+!
+        write(datacomp%iout, &
+&         '(" -----------------------------------------------------------",/, &
+&           " ----------------------------------------------------------------------------",/, &
+&           "      Natural Population Analysis (Atoms, Beta)",/, &
+&           "     Atom       Charge     Pop(Total)      Core       Valence      Rydberg",/, &
+&           " ----------------------------------------------------------------------------")')
+        do iatom= 1,datamol%natom
+          do imo= 1,3
+            do iang= 0,maxang
+              atomnpab(imo,iatom)= atomnpab(imo,iatom)+chargenpab(imo,iang,iatom)
+            enddo
+          enddo
+          atomnpab(0,iatom)= atomnpab(1,iatom)+atomnpab(2,iatom)+atomnpab(3,iatom)
+          atomnpab(0,0)= atomnpab(0,0)+atomnpab(0,iatom)
+          atomnpab(1,0)= atomnpab(1,0)+atomnpab(1,iatom)
+          atomnpab(2,0)= atomnpab(2,0)+atomnpab(2,iatom)
+          atomnpab(3,0)= atomnpab(3,0)+atomnpab(3,iatom)
+          totalchargeb= totalchargeb+datamol%znuc(iatom)*half-atomnpab(0,iatom)
+          write(datacomp%iout,'(i6,1x,a3,5f13.6)') &
+&               iatom, table(datamol%numatomic(iatom)), datamol%znuc(iatom)*half-atomnpab(0,iatom), &
+&               atomnpab(0:3,iatom)
+        enddo
+        write(datacomp%iout, &
+&         '(" ----------------------------------------------------------------------------",/, &
+&           "    Total ",5f13.6,/, &
+&           " ----------------------------------------------------------------------------",/)') &
+&           totalchargeb, atomnpab(0:3,0)
 !
 ! Alpha + Beta electrons
 !
-      if(datacomp%master) then
         write(datacomp%iout, &
 &         '(" -----------------------------------------------------------",/ &
 &           "      Natural Population Analysis (Orbitals, Alpha+Beta)",/ &
 &           "    NAO   Atom   nlm    Type    Occupancy",/ &
 &           " -----------------------------------------------------------")')
-      endif
 !
-      jao  = 0
-      do iatom= 1,datamol%natom
-        do iang= 0,maxang
-          numshell= infobasis(1,iang,iatom)
-          do ishell= 1,numshell
-            if(ishell <= infonmb(1,iang,iatom)) then
-              if(ishell <= infonmb(2,iang,iatom)) then
-                imo= 1
+        jao  = 0
+        do iatom= 1,datamol%natom
+          do iang= 0,maxang
+            numshell= infobasis(1,iang,iatom)
+            do ishell= 1,numshell
+              if(ishell <= infonmb(1,iang,iatom)) then
+                if(ishell <= infonmb(2,iang,iatom)) then
+                  imo= 1
+                else
+                  imo= 2
+                endif
               else
-                imo= 2
+                imo= 3
               endif
-            else
-              imo= 3
-            endif
-            do iao= 1,2*iang+1
-              jao= jao+1
-              write(datacomp%iout,'(i6,i5,1x,a3,1x,i2,a3,4x,a3,f13.6)') &
-&                   jao, iatom, table(datamol%numatomic(iatom)), &
-&                   ishell+infonmb(3,iang,iatom)+iang, anglabel(13*iang+iao), motype(imo),  &
-&                   worka(jao)+workb(jao)
+              do iao= 1,2*iang+1
+                jao= jao+1
+                write(datacomp%iout,'(i6,i5,1x,a3,1x,i2,a3,4x,a3,f13.6)') &
+&                     jao, iatom, table(datamol%numatomic(iatom)), &
+&                     ishell+infonmb(3,iang,iatom)+iang, anglabel(13*iang+iao), motype(imo),  &
+&                     worka(jao)+workb(jao)
+              enddo
             enddo
           enddo
         enddo
-      enddo
 !
-      write(datacomp%iout, &
-&       '(" -----------------------------------------------------------",/, &
-&         " ----------------------------------------------------------------------------",/, &
-&         "      Natural Population Analysis (Atoms, Alpha+Beta)",/, &
-&         "     Atom       Charge     Pop(Total)     Core        Valence      Rydberg",/, &
-&         " ----------------------------------------------------------------------------")')
-      do iatom= 1,datamol%natom
-        write(datacomp%iout,'(i6,1x,a3,5f13.6)') &
-&             iatom, table(datamol%numatomic(iatom)), &
-&             datamol%znuc(iatom)-atomnpaa(0,iatom)-atomnpab(0,iatom), &
-&             atomnpaa(0:3,iatom)+atomnpab(0:3,iatom)
-      enddo
-      write(datacomp%iout, &
-&       '(" ----------------------------------------------------------------------------",/, &
-&         "    Total ",5f13.6,/, &
-&         " ----------------------------------------------------------------------------",/)') &
-&         totalchargea+totalchargeb, atomnpaa(0:3,0)+atomnpab(0:3,0)
-!
+        write(datacomp%iout, &
+&         '(" -----------------------------------------------------------",/, &
+&           " ----------------------------------------------------------------------------",/, &
+&           "      Natural Population Analysis (Atoms, Alpha+Beta)",/, &
+&           "     Atom       Charge     Pop(Total)      Core       Valence      Rydberg",/, &
+&           " ----------------------------------------------------------------------------")')
+        do iatom= 1,datamol%natom
+          write(datacomp%iout,'(i6,1x,a3,5f13.6)') &
+&               iatom, table(datamol%numatomic(iatom)), &
+&               datamol%znuc(iatom)-atomnpaa(0,iatom)-atomnpab(0,iatom), &
+&               atomnpaa(0:3,iatom)+atomnpab(0:3,iatom)
+        enddo
+        write(datacomp%iout, &
+&         '(" ----------------------------------------------------------------------------",/, &
+&           "    Total ",5f13.6,/, &
+&           " ----------------------------------------------------------------------------",/)') &
+&           totalchargea+totalchargeb, atomnpaa(0:3,0)+atomnpab(0:3,0)
+      endif
 !
       return
 end
