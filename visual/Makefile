@@ -1,6 +1,6 @@
 PROG= vtk-generator cube-generator
 F90 = ifort
-OPT = -openmp -i8 -xHOST
+OPT = -qopenmp -i8 -xHOST
 
 all : $(PROG)
 

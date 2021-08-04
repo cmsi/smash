@@ -205,7 +205,7 @@ end module
                 xx= minxyz(1)+(ii-1)*space
                 call calcorbital(orbital,cmoa,coord,xx,yy,zz,monum)
                 if(abs(orbital) < thresh) orbital= zero
-                write(20,'(e16.10)')orbital
+                write(20,'(e16.9)')orbital
               enddo
             enddo
           enddo
@@ -218,7 +218,7 @@ end module
                 xx= minxyz(1)+(ii-1)*space
                 call calcorbital(orbital,cmob,coord,xx,yy,zz,monum)
                 if(abs(orbital) < thresh) orbital= zero
-                write(20,'(e16.10)')orbital
+                write(20,'(e16.9)')orbital
               enddo
             enddo
           enddo
@@ -233,7 +233,7 @@ end module
                 xx= minxyz(1)+(ii-1)*space
                 call calcorbital2(orbital,cmoa,coord,xx,yy,zz,monum)
                 if(abs(orbital) < thresh) orbital= zero
-                write(20,'(e16.10)')orbital
+                write(20,'(e16.9)')orbital
               enddo
             enddo
           enddo
@@ -246,7 +246,7 @@ end module
                 xx= minxyz(1)+(ii-1)*space
                 call calcorbital2(orbital,cmob,coord,xx,yy,zz,monum)
                 if(abs(orbital) < thresh) orbital= zero
-                write(20,'(e16.10)')orbital
+                write(20,'(e16.9)')orbital
               enddo
             enddo
           enddo
