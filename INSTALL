@@ -6,8 +6,8 @@
   (optional) libraries are required.
   If your machine is not a x86-64/Linux system or does not include
   an MPI library, choose an appropriate Makefile. Make sure that
-  the compiler and library (F90, LIB, OPT) in the Makefile are
-  correct, and then type the following command to build SMASH.
+  the compiler and library setting (F90, LIB, OPT) in the Makefile
+  are correct, and then type the following command to build SMASH.
 
     (x86-64 with MPI)
       $ make
