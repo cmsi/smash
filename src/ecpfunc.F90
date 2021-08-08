@@ -805,12 +805,12 @@ end
 ! Set Cs - La, Hf - Bi ECP functions
 !
         case(55:57,72:83)
-          if(numatomic(iatom) <= 55) then
+          if(numatomic(iatom) <= 57) then
             databasis%maxangecp(iatom)= 3
           else
             databasis%maxangecp(iatom)= 4
           endif
-          if(numatomic(iatom) <= 55) then
+          if(numatomic(iatom) <= 57) then
             databasis%izcore(iatom)= 46
           elseif(numatomic(iatom) <= 79) then
             databasis%izcore(iatom)= 60
