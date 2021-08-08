@@ -253,7 +253,13 @@ end
         endif
 !
         select case(datajob%pop)
-          case('MULLIKEN','NPA','NBO','NONE','')
+          case('MULLIKEN','NONE','')
+          case('NPA','NBO')
+            if(datajob%method == 'MP2') then
+              write(datacomp%iout,'(" Error! This program does not support MP2 ",a3," calculation.")') &
+&                   datajob%pop
+              call iabort(datacomp)
+            endif
           case default
             write(datacomp%iout,'(" Error! This program does not support pop= ", a16,".")') datajob%pop
             call iabort(datacomp)
