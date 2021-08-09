@@ -35,6 +35,7 @@
   
    7. Use module variables only for parameters, thresholds, and input data.
   
-   8. Call "iabort" subroutine with error messages to stop the program .
+   8. Call "iabort" subroutine with error messages to stop the program
+      except for integral subroutines.
   
    9. Write subroutines which read input and checkpoint files in fileio.F90.
