@@ -1286,7 +1286,7 @@ end
 !$OMP end parallel do
         qcnorm= sqrt(qcnorm)
 !
-        if(datacomp%master)  &
+        if(datacomp%master.and.(datajob%iprint >= 2)) &
 &         write(datacomp%iout,'(5x,"QC Cycle ",i2," : Norm = ",1p,e10.3)') itdav-1, qcnorm
 !
 ! Check convergence
@@ -1642,7 +1642,7 @@ end
 !$OMP end parallel do
         qcnorm= sqrt(qcnorm)
 !
-        if(datacomp%master) &
+        if(datacomp%master.and.(datajob%iprint >= 2)) &
 &         write(datacomp%iout,'(5x,"QC Cycle ",i2," : Norm = ",1p,e10.3)') itdav-1, qcnorm
 !
 ! Check convergence
