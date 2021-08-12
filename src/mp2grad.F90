@@ -1511,7 +1511,7 @@ end
 !$OMP end parallel do
 !
         deltapai= sqrt(deltapai/(nocc*nvir))
-        if(datacomp%master) &
+        if(datacomp%master.and.(datajob%iprint >=2)) &
 &         write(datacomp%iout,'(6x,"Cycle",i3,3x,"Z-Vector error=",1p,e11.3)')iter,deltapai
         if(deltapai < datajob%threshmp2cphf) exit
 !
