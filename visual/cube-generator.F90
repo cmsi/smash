@@ -55,8 +55,8 @@ end module
       real(8) :: coord(3,mxatom), znuc(mxatom), charge, orbital(mxgridz)
       real(8) :: cutoff=20.0D+00
       real(8),allocatable :: cmoa(:,:), cmob(:,:), dmtrxa(:), dmtrxb(:)
-      character(len=64) :: filecheck, filecube, viewtype, moarg
-      character(len=16) :: checkversion, scftype, method, runtype
+      character(len=128) :: filecheck, filecube, viewtype, moarg
+      character(len=32) :: checkversion, scftype, method, runtype
 !
       call getarg(1,filecheck)
       call getarg(2,filecube)
@@ -256,8 +256,8 @@ end
 !
       implicit none
       integer :: ilen, ii, inum
-      character(len=64),intent(inout) :: line
-      character(len=64) :: linecopy
+      character(len=128),intent(inout) :: line
+      character(len=128) :: linecopy
       character(len=26) :: upper='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
       character(len=26) :: lower='abcdefghijklmnopqrstuvwxyz'
 !
