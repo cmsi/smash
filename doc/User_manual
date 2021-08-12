@@ -209,7 +209,6 @@
                             in every opt cycle
 
       iprint                controls output format.
-                            Keyword "output" overrides "iprint" if both are set.
               = 1           Minimum output without MO coefficients
               = 2           Compact output with MO coefficients of HOMO-9 to LUMO+9
               = 3           Normal output with MO coefficients of HOMO-9 to LUMO+9 (default)

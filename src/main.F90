@@ -327,23 +327,26 @@ end
           call iabort(datacomp)
       end select
 !
-      select case(datajob%print)
-        case('MINIMUM')
-          datajob%iprint= 1
-        case('COMPACT')
-          datajob%iprint= 2
-        case('NORMAL')
-          datajob%iprint= 3
-        case('FULLMO')
-          datajob%iprint= 4
-        case('VERBOSE')
-          datajob%iprint= 5
-        case('')
-        case default
-          if(datacomp%master) write(datacomp%iout,'(" Error! This program does not support print= ", &
-&                                                    a16,".")') datajob%print
-          call iabort(datacomp)
-      end select
+      if(datajob%iprint == 0) then
+        select case(datajob%print)
+          case('MINIMUM')
+            datajob%iprint= 1
+          case('COMPACT')
+            datajob%iprint= 2
+          case('NORMAL')
+            datajob%iprint= 3
+          case('FULLMO')
+            datajob%iprint= 4
+          case('VERBOSE')
+            datajob%iprint= 5
+          case('')
+            datajob%iprint= 3
+          case default
+            if(datacomp%master) write(datacomp%iout,'(" Error! This program does not support print= ", &
+&                                                      a16,".")') datajob%print
+            call iabort(datacomp)
+        end select
+      endif
 !
       return
 end
