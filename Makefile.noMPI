@@ -4,7 +4,7 @@ LIB = -mkl=parallel
 OPT = -qopenmp -i8 -xHOST
 #gfortran  F90 = gfortran -DnoMPI
 #gfortran  LIB = -llapack -lblas    # high performance libraries are recommended
-#gfortran  OPT = -fopenmp -fdefault-integer-8 -O3  # -fallow-argument-mismatch  # for gfortran 10
+#gfortran  OPT = -fopenmp -fdefault-integer-8 -O3  # -fallow-argument-mismatch is needed for gfortran 10
 #nvfortran F90  = nvfortran -DnoMPI
 #nvfortran LIB  = -llapack -lblas
 #nvfortran OPT  = -mp -i8 -O3
