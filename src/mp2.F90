@@ -37,6 +37,7 @@
       real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(datamol%nmo)
       real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
       real(8) :: emp2st(2), emp2stsum(2)
+      character(len=5) cncore, cnvfz
 !
       nao= databasis%nao
       nshell= databasis%nshell
@@ -46,18 +47,20 @@
       noac= datamol%neleca-datajob%ncore
       nvac= datamol%nmo-datamol%neleca-datajob%nvfz
       noac3= noac*(noac+1)/2
+      write(cncore,'(i0)') datajob%ncore
+      write(cnvfz ,'(i0)') datajob%nvfz
 !
       if(datacomp%master) then
-        write(datacomp%iout,'(" ==============================================")')
+        write(datacomp%iout,'(" ================================================")')
         write(datacomp%iout,'("   MP2 calculation ")')
-        write(datacomp%iout,'(" ==============================================")')
-        write(datacomp%iout,'("     Ncore=",i4,",   Nvfz=",i4)') datajob%ncore, datajob%nvfz
-        write(datacomp%iout,'(" ----------------------------------------------")')
+        write(datacomp%iout,'(" ================================================")')
+        write(datacomp%iout,'("     Ncore = ",a5,",  Nvfz = ",a5)') cncore, cnvfz
+        write(datacomp%iout,'(" ------------------------------------------------")')
         write(datacomp%iout,'("     Number of basis functions         =",i5)')nao
         write(datacomp%iout,'("     Number of basis shells            =",i5)')nshell
         write(datacomp%iout,'("     Number of correlated occupied MOs =",i5)')noac
         write(datacomp%iout,'("     Number of active virtual MOs      =",i5)')nvac
-        write(datacomp%iout,'(" ----------------------------------------------")')
+        write(datacomp%iout,'(" ------------------------------------------------")')
       endif
 !
       icount= 0

@@ -52,6 +52,7 @@
 &       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
 &       'Sg ','Bh ','Hs ','Mt ','Ds ','Rg ','Cn '/)
+      character(len=5) cncore, cnvfz, cmaxmp2diis, cmaxmp2iter
       data maxfunc/1,3,6,10,15,21,28,36/
 !
       nao= databasis%nao
@@ -67,18 +68,24 @@
       nvir= datamol%nmo-datamol%neleca
       noac= nocc-datajob%ncore
       nvac= nvir-datajob%nvfz
+      write(cncore,'(i0)') datajob%ncore
+      write(cnvfz ,'(i0)') datajob%nvfz
+      write(cmaxmp2diis,'(i0)') datajob%maxmp2diis
+      write(cmaxmp2iter,'(i0)') datajob%maxmp2iter
 !
       if(datacomp%master) then
-        write(datacomp%iout,'(" ==============================================")')
+        write(datacomp%iout,'(" ================================================")')
         write(datacomp%iout,'("   MP2 energy gradient calculation ")')
-        write(datacomp%iout,'(" ==============================================")')
-        write(datacomp%iout,'("     Ncore=",i4,",   Nvfz=",i4)') datajob%ncore, datajob%nvfz
-        write(datacomp%iout,'(" ----------------------------------------------")')
+        write(datacomp%iout,'(" ================================================")')
+        write(datacomp%iout,'("     Ncore        = ",a5,"   ,  Nvfz       = ",a5)') cncore, cnvfz
+        write(datacomp%iout,'("     MaxMP2DIIS   = ",a5,"   ,  MaxMP2Iter = ",a5)') cmaxmp2diis, cmaxmp2iter
+        write(datacomp%iout,'("     ThreshMP2CPHF=",1p,e9.2)') datajob%threshmp2cphf
+        write(datacomp%iout,'(" ------------------------------------------------")')
         write(datacomp%iout,'("     Number of basis functions         =",i5)')nao
         write(datacomp%iout,'("     Number of basis shells            =",i5)')nshell
         write(datacomp%iout,'("     Number of correlated occupied MOs =",i5)')noac
         write(datacomp%iout,'("     Number of active virtual MOs      =",i5)')nvac
-        write(datacomp%iout,'(" ----------------------------------------------")')
+        write(datacomp%iout,'(" ------------------------------------------------")')
       endif
 !
       icount= 0
