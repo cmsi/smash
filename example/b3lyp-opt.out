@@ -5,7 +5,7 @@
            written by K. ISHIMURA
  *******************************************
 
- The job started at Sun Aug  1 23:56:04 2021
+ The job started at Thu Aug 12 14:04:32 2021
  Master node is smash.jp
  Number of processes =     2
  Number of threads   =    12
@@ -251,8 +251,8 @@
        unlimit
        setenv OMP_STACKSIZE 1G
 
- Step CPU :       0.5, Total CPU :       0.5 of Master process
- Step Wall :      0.1, Total Wall :      0.1 at Sun Aug  1 23:56:04 2021
+ Step CPU :       0.7, Total CPU :       0.7 of Master process
+ Step Wall :      0.1, Total Wall :      0.1 at Thu Aug 12 14:04:32 2021
 
  ==========================================================================
    Restricted Hartree-Fock calculation for guess orbitals of DFT
@@ -270,8 +270,8 @@
     SCF Converged.
  --------------------
 
- Step CPU :      31.1, Total CPU :      31.6 of Master process
- Step Wall :      2.6, Total Wall :      2.6 at Sun Aug  1 23:56:07 2021
+ Step CPU :      31.0, Total CPU :      31.7 of Master process
+ Step Wall :      2.6, Total Wall :      2.6 at Thu Aug 12 14:04:35 2021
 
  ==========================================================================
    Restricted DFT calculation
@@ -1582,8 +1582,8 @@
   299   26 H   Py        -0.002831   -0.000606    0.001703    0.003888    0.000848
   300   26 H   Pz         0.000071    0.001162   -0.000090   -0.000568    0.002605
  
- Step CPU :     133.6, Total CPU :     165.3 of Master process
- Step Wall :     11.1, Total Wall :     13.8 at Sun Aug  1 23:56:18 2021
+ Step CPU :     133.3, Total CPU :     165.0 of Master process
+ Step Wall :     11.1, Total Wall :     13.8 at Thu Aug 12 14:04:46 2021
 
  ===================================
    DFT energy gradient calculation
@@ -1627,8 +1627,8 @@
      Maximum gradient  =  0.047760
      RMS gradient      =  0.014255
  -----------------------------------
- Step CPU :      78.2, Total CPU :     243.5 of Master process
- Step Wall :      6.5, Total Wall :     20.3 at Sun Aug  1 23:56:25 2021
+ Step CPU :      78.1, Total CPU :     243.1 of Master process
+ Step Wall :      6.5, Total Wall :     20.3 at Thu Aug 12 14:04:53 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -1840,13 +1840,13 @@
    H          4.2125686     1.6418151    -0.0474480
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :     243.6 of Master process
- Step Wall :      0.0, Total Wall :     20.3 at Sun Aug  1 23:56:25 2021
+ Step CPU :       0.1, Total CPU :     243.2 of Master process
+ Step Wall :      0.0, Total Wall :     20.3 at Thu Aug 12 14:04:53 2021
 
  Nuclear repulsion energy =    1462.999484962 Hartree
 
- Step CPU :       0.1, Total CPU :     243.7 of Master process
- Step Wall :      0.0, Total Wall :     20.3 at Sun Aug  1 23:56:25 2021
+ Step CPU :       0.1, Total CPU :     243.2 of Master process
+ Step Wall :      0.0, Total Wall :     20.3 at Thu Aug 12 14:04:53 2021
 
  ==========================================================================
    Restricted DFT calculation
@@ -1941,8 +1941,8 @@
    Alpha Virtual :      3.15491     3.15895     3.28223     3.41005     3.46645
    Alpha Virtual :      3.48246     3.67514     3.74725
  --------------------------------------------------------------------------------
- Step CPU :     122.3, Total CPU :     365.9 of Master process
- Step Wall :     10.2, Total Wall :     30.5 at Sun Aug  1 23:56:35 2021
+ Step CPU :     122.1, Total CPU :     365.3 of Master process
+ Step Wall :     10.2, Total Wall :     30.5 at Thu Aug 12 14:05:03 2021
 
  ===================================
    DFT energy gradient calculation
@@ -1986,8 +1986,8 @@
      Maximum gradient  =  0.012889
      RMS gradient      =  0.004273
  -----------------------------------
- Step CPU :      77.8, Total CPU :     443.7 of Master process
- Step Wall :      6.5, Total Wall :     37.0 at Sun Aug  1 23:56:41 2021
+ Step CPU :      77.9, Total CPU :     443.2 of Master process
+ Step Wall :      6.5, Total Wall :     36.9 at Thu Aug 12 14:05:09 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -2199,13 +2199,13 @@
    H          4.1939159     1.6261832    -0.1450040
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :     443.8 of Master process
- Step Wall :      0.0, Total Wall :     37.0 at Sun Aug  1 23:56:41 2021
+ Step CPU :       0.1, Total CPU :     443.3 of Master process
+ Step Wall :      0.0, Total Wall :     37.0 at Thu Aug 12 14:05:09 2021
 
- Nuclear repulsion energy =    1460.592929382 Hartree
+ Nuclear repulsion energy =    1460.592929384 Hartree
 
- Step CPU :       0.1, Total CPU :     443.9 of Master process
- Step Wall :      0.0, Total Wall :     37.0 at Sun Aug  1 23:56:41 2021
+ Step CPU :       0.1, Total CPU :     443.4 of Master process
+ Step Wall :      0.0, Total Wall :     37.0 at Thu Aug 12 14:05:09 2021
 
  ==========================================================================
    Restricted DFT calculation
@@ -2300,8 +2300,8 @@
    Alpha Virtual :      3.15883     3.16340     3.28360     3.42456     3.46768
    Alpha Virtual :      3.49285     3.67178     3.74817
  --------------------------------------------------------------------------------
- Step CPU :     119.5, Total CPU :     563.4 of Master process
- Step Wall :     10.0, Total Wall :     47.0 at Sun Aug  1 23:56:51 2021
+ Step CPU :     119.2, Total CPU :     562.6 of Master process
+ Step Wall :      9.9, Total Wall :     46.9 at Thu Aug 12 14:05:19 2021
 
  ===================================
    DFT energy gradient calculation
@@ -2345,8 +2345,8 @@
      Maximum gradient  =  0.003628
      RMS gradient      =  0.001193
  -----------------------------------
- Step CPU :      77.8, Total CPU :     641.2 of Master process
- Step Wall :      6.5, Total Wall :     53.4 at Sun Aug  1 23:56:58 2021
+ Step CPU :      77.6, Total CPU :     640.2 of Master process
+ Step Wall :      6.5, Total Wall :     53.4 at Thu Aug 12 14:05:26 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -2558,13 +2558,13 @@
    H          4.1338185     1.6117414    -0.2821144
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :     641.3 of Master process
- Step Wall :      0.0, Total Wall :     53.5 at Sun Aug  1 23:56:58 2021
+ Step CPU :       0.1, Total CPU :     640.3 of Master process
+ Step Wall :      0.0, Total Wall :     53.4 at Thu Aug 12 14:05:26 2021
 
- Nuclear repulsion energy =    1460.160861989 Hartree
+ Nuclear repulsion energy =    1460.160861993 Hartree
 
- Step CPU :       0.1, Total CPU :     641.3 of Master process
- Step Wall :      0.0, Total Wall :     53.5 at Sun Aug  1 23:56:58 2021
+ Step CPU :       0.1, Total CPU :     640.4 of Master process
+ Step Wall :      0.0, Total Wall :     53.4 at Thu Aug 12 14:05:26 2021
 
  ==========================================================================
    Restricted DFT calculation
@@ -2658,8 +2658,8 @@
    Alpha Virtual :      3.15999     3.16546     3.28250     3.42286     3.46673
    Alpha Virtual :      3.49329     3.67510     3.74774
  --------------------------------------------------------------------------------
- Step CPU :     109.7, Total CPU :     751.0 of Master process
- Step Wall :      9.1, Total Wall :     62.6 at Sun Aug  1 23:57:07 2021
+ Step CPU :     109.5, Total CPU :     749.9 of Master process
+ Step Wall :      9.1, Total Wall :     62.5 at Thu Aug 12 14:05:35 2021
 
  ===================================
    DFT energy gradient calculation
@@ -2703,8 +2703,8 @@
      Maximum gradient  =  0.005778
      RMS gradient      =  0.001136
  -----------------------------------
- Step CPU :      77.6, Total CPU :     828.6 of Master process
- Step Wall :      6.5, Total Wall :     69.1 at Sun Aug  1 23:57:13 2021
+ Step CPU :      77.7, Total CPU :     827.7 of Master process
+ Step Wall :      6.5, Total Wall :     69.0 at Thu Aug 12 14:05:41 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -2916,13 +2916,13 @@
    H          4.0239342     1.5498967    -0.5042770
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :     828.7 of Master process
- Step Wall :      0.0, Total Wall :     69.1 at Sun Aug  1 23:57:13 2021
+ Step CPU :       0.1, Total CPU :     827.8 of Master process
+ Step Wall :      0.0, Total Wall :     69.0 at Thu Aug 12 14:05:41 2021
 
- Nuclear repulsion energy =    1458.458503877 Hartree
+ Nuclear repulsion energy =    1458.458503878 Hartree
 
- Step CPU :       0.1, Total CPU :     828.8 of Master process
- Step Wall :      0.0, Total Wall :     69.1 at Sun Aug  1 23:57:13 2021
+ Step CPU :       0.1, Total CPU :     827.9 of Master process
+ Step Wall :      0.0, Total Wall :     69.0 at Thu Aug 12 14:05:41 2021
 
  ==========================================================================
    Restricted DFT calculation
@@ -3017,8 +3017,8 @@
    Alpha Virtual :      3.16004     3.16723     3.28088     3.41736     3.46545
    Alpha Virtual :      3.49022     3.68050     3.74694
  --------------------------------------------------------------------------------
- Step CPU :     121.3, Total CPU :     950.1 of Master process
- Step Wall :     10.1, Total Wall :     79.2 at Sun Aug  1 23:57:23 2021
+ Step CPU :     121.0, Total CPU :     948.9 of Master process
+ Step Wall :     10.1, Total Wall :     79.1 at Thu Aug 12 14:05:51 2021
 
  ===================================
    DFT energy gradient calculation
@@ -3062,8 +3062,8 @@
      Maximum gradient  =  0.009098
      RMS gradient      =  0.002351
  -----------------------------------
- Step CPU :      78.0, Total CPU :    1028.1 of Master process
- Step Wall :      6.5, Total Wall :     85.7 at Sun Aug  1 23:57:30 2021
+ Step CPU :      77.8, Total CPU :    1026.7 of Master process
+ Step Wall :      6.5, Total Wall :     85.6 at Thu Aug 12 14:05:58 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -3275,13 +3275,13 @@
    H          4.0108400     1.5546754    -0.5280747
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :    1028.2 of Master process
- Step Wall :      0.0, Total Wall :     85.7 at Sun Aug  1 23:57:30 2021
+ Step CPU :       0.1, Total CPU :    1026.8 of Master process
+ Step Wall :      0.0, Total Wall :     85.6 at Thu Aug 12 14:05:58 2021
 
- Nuclear repulsion energy =    1458.348881185 Hartree
+ Nuclear repulsion energy =    1458.348881184 Hartree
 
- Step CPU :       0.1, Total CPU :    1028.3 of Master process
- Step Wall :      0.0, Total Wall :     85.7 at Sun Aug  1 23:57:30 2021
+ Step CPU :       0.1, Total CPU :    1026.9 of Master process
+ Step Wall :      0.0, Total Wall :     85.6 at Thu Aug 12 14:05:58 2021
 
  ==========================================================================
    Restricted DFT calculation
@@ -3375,8 +3375,8 @@
    Alpha Virtual :      3.15983     3.16765     3.28154     3.41980     3.46564
    Alpha Virtual :      3.49134     3.67940     3.74681
  --------------------------------------------------------------------------------
- Step CPU :     106.1, Total CPU :    1134.3 of Master process
- Step Wall :      8.8, Total Wall :     94.5 at Sun Aug  1 23:57:39 2021
+ Step CPU :     105.8, Total CPU :    1132.7 of Master process
+ Step Wall :      8.8, Total Wall :     94.4 at Thu Aug 12 14:06:07 2021
 
  ===================================
    DFT energy gradient calculation
@@ -3420,8 +3420,8 @@
      Maximum gradient  =  0.003071
      RMS gradient      =  0.000859
  -----------------------------------
- Step CPU :      77.9, Total CPU :    1212.2 of Master process
- Step Wall :      6.5, Total Wall :    101.0 at Sun Aug  1 23:57:45 2021
+ Step CPU :      78.0, Total CPU :    1210.7 of Master process
+ Step Wall :      6.5, Total Wall :    100.9 at Thu Aug 12 14:06:13 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -3588,7 +3588,7 @@
    C         -0.0053757     0.0023443    -0.0382129
    S          0.0031801     0.0055918    -0.0166815
    H          0.0159807    -0.0160781    -0.0845399
-   H          0.0084314    -0.0131367    -0.0384369
+   H          0.0084314    -0.0131366    -0.0384369
    O         -0.0094745     0.0029003     0.0399395
    H         -0.0161427     0.0099585     0.0695533
    H         -0.0206990     0.0164399     0.0711541
@@ -3598,7 +3598,7 @@
    H          0.0246900    -0.0217035     0.0841201
    H         -0.0340486     0.0324802     0.0068522
    H          0.0134719     0.0115828    -0.0613663
-   H         -0.0182276    -0.0161211    -0.0470574
+   H         -0.0182276    -0.0161211    -0.0470573
  ----------------------------------------------------
 
  ----------------------------------------------------
@@ -3633,13 +3633,13 @@
    H          3.9926124     1.5385543    -0.5751320
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :    1212.3 of Master process
- Step Wall :      0.0, Total Wall :    101.0 at Sun Aug  1 23:57:45 2021
+ Step CPU :       0.1, Total CPU :    1210.8 of Master process
+ Step Wall :      0.0, Total Wall :    100.9 at Thu Aug 12 14:06:13 2021
 
- Nuclear repulsion energy =    1458.126908911 Hartree
+ Nuclear repulsion energy =    1458.126908914 Hartree
 
- Step CPU :       0.1, Total CPU :    1212.4 of Master process
- Step Wall :      0.0, Total Wall :    101.0 at Sun Aug  1 23:57:45 2021
+ Step CPU :       0.1, Total CPU :    1210.9 of Master process
+ Step Wall :      0.0, Total Wall :    100.9 at Thu Aug 12 14:06:13 2021
 
  ==========================================================================
    Restricted DFT calculation
@@ -3733,8 +3733,8 @@
    Alpha Virtual :      3.15985     3.16811     3.28207     3.42102     3.46587
    Alpha Virtual :      3.49205     3.67945     3.74683
  --------------------------------------------------------------------------------
- Step CPU :     106.7, Total CPU :    1319.1 of Master process
- Step Wall :      8.9, Total Wall :    109.9 at Sun Aug  1 23:57:54 2021
+ Step CPU :     106.5, Total CPU :    1317.4 of Master process
+ Step Wall :      8.9, Total Wall :    109.8 at Thu Aug 12 14:06:22 2021
 
  ===================================
    DFT energy gradient calculation
@@ -3778,8 +3778,8 @@
      Maximum gradient  =  0.000966
      RMS gradient      =  0.000359
  -----------------------------------
- Step CPU :      78.2, Total CPU :    1397.3 of Master process
- Step Wall :      6.5, Total Wall :    116.5 at Sun Aug  1 23:58:01 2021
+ Step CPU :      78.0, Total CPU :    1395.4 of Master process
+ Step Wall :      6.5, Total Wall :    116.3 at Thu Aug 12 14:06:29 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -3991,13 +3991,13 @@
    H          3.9689343     1.5213442    -0.6220482
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :    1397.4 of Master process
- Step Wall :      0.0, Total Wall :    116.5 at Sun Aug  1 23:58:01 2021
+ Step CPU :       0.1, Total CPU :    1395.5 of Master process
+ Step Wall :      0.0, Total Wall :    116.3 at Thu Aug 12 14:06:29 2021
 
- Nuclear repulsion energy =    1457.894840794 Hartree
+ Nuclear repulsion energy =    1457.894840784 Hartree
 
- Step CPU :       0.1, Total CPU :    1397.5 of Master process
- Step Wall :      0.0, Total Wall :    116.5 at Sun Aug  1 23:58:01 2021
+ Step CPU :       0.1, Total CPU :    1395.6 of Master process
+ Step Wall :      0.0, Total Wall :    116.3 at Thu Aug 12 14:06:29 2021
 
  ==========================================================================
    Restricted DFT calculation
@@ -4009,8 +4009,8 @@
    MaxDIIS    = 20      ,  ThreshDIIS = 6.00E-01
  --------------------------------------------------------------------------
  Iter SubIt   Total Energy       Delta Energy     Delta Density     DIIS Error
-   1    1   -1555.633440023   -1555.633440023      0.012913816      0.021638766
-   2    2   -1555.636046134      -0.002606111      0.002553051      0.001052671
+   1    1   -1555.633440023   -1555.633440023      0.012913817      0.021638767
+   2    2   -1555.636046134      -0.002606111      0.002553052      0.001052671
    3    3   -1555.636084592      -0.000038459      0.001635565      0.000922763
    4    4   -1555.636103921      -0.000019329      0.000783830      0.000363383
    5    5   -1555.636108525      -0.000004604      0.000413798      0.000157547
@@ -4091,8 +4091,8 @@
    Alpha Virtual :      3.15971     3.16803     3.28202     3.42057     3.46605
    Alpha Virtual :      3.49182     3.67990     3.74681
  --------------------------------------------------------------------------------
- Step CPU :     105.1, Total CPU :    1502.6 of Master process
- Step Wall :      8.8, Total Wall :    125.2 at Sun Aug  1 23:58:09 2021
+ Step CPU :     104.9, Total CPU :    1500.4 of Master process
+ Step Wall :      8.7, Total Wall :    125.1 at Thu Aug 12 14:06:37 2021
 
  ===================================
    DFT energy gradient calculation
@@ -4136,8 +4136,8 @@
      Maximum gradient  =  0.000656
      RMS gradient      =  0.000222
  -----------------------------------
- Step CPU :      77.9, Total CPU :    1580.5 of Master process
- Step Wall :      6.5, Total Wall :    131.7 at Sun Aug  1 23:58:16 2021
+ Step CPU :      78.1, Total CPU :    1578.6 of Master process
+ Step Wall :      6.5, Total Wall :    131.6 at Thu Aug 12 14:06:44 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -4349,13 +4349,13 @@
    H          3.9746540     1.5251182    -0.6103776
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :    1580.6 of Master process
- Step Wall :      0.0, Total Wall :    131.7 at Sun Aug  1 23:58:16 2021
+ Step CPU :       0.1, Total CPU :    1578.6 of Master process
+ Step Wall :      0.0, Total Wall :    131.6 at Thu Aug 12 14:06:44 2021
 
- Nuclear repulsion energy =    1457.848331751 Hartree
+ Nuclear repulsion energy =    1457.848331744 Hartree
 
- Step CPU :       0.1, Total CPU :    1580.6 of Master process
- Step Wall :      0.0, Total Wall :    131.7 at Sun Aug  1 23:58:16 2021
+ Step CPU :       0.1, Total CPU :    1578.7 of Master process
+ Step Wall :      0.0, Total Wall :    131.6 at Thu Aug 12 14:06:44 2021
 
  ==========================================================================
    Restricted DFT calculation
@@ -4369,7 +4369,7 @@
  Iter SubIt   Total Energy       Delta Energy     Delta Density     DIIS Error
    1    1   -1555.635071176   -1555.635071176      0.002461211      0.004018386
    2    2   -1555.636117674      -0.001046498      0.000569919      0.000185714
-   3    3   -1555.636119242      -0.000001568      0.000431927      0.000145517
+   3    3   -1555.636119242      -0.000001568      0.000431928      0.000145517
    4    4   -1555.636120345      -0.000001103      0.000158163      0.000069112
    5    5   -1555.636120560      -0.000000214      0.000076804      0.000039965
    6    6   -1555.636120589      -0.000000030      0.000024846      0.000015264
@@ -4447,8 +4447,8 @@
    Alpha Virtual :      3.15969     3.16776     3.28195     3.42052     3.46614
    Alpha Virtual :      3.49172     3.67973     3.74686
  --------------------------------------------------------------------------------
- Step CPU :      83.2, Total CPU :    1663.9 of Master process
- Step Wall :      6.9, Total Wall :    138.7 at Sun Aug  1 23:58:23 2021
+ Step CPU :      82.9, Total CPU :    1661.6 of Master process
+ Step Wall :      6.9, Total Wall :    138.5 at Thu Aug 12 14:06:51 2021
 
  ===================================
    DFT energy gradient calculation
@@ -4492,8 +4492,8 @@
      Maximum gradient  =  0.000275
      RMS gradient      =  0.000068
  -----------------------------------
- Step CPU :      78.2, Total CPU :    1742.1 of Master process
- Step Wall :      6.5, Total Wall :    145.2 at Sun Aug  1 23:58:29 2021
+ Step CPU :      78.0, Total CPU :    1739.6 of Master process
+ Step Wall :      6.5, Total Wall :    145.0 at Thu Aug 12 14:06:57 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -4705,13 +4705,13 @@
    H          3.9748604     1.5248174    -0.6101002
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :    1742.2 of Master process
- Step Wall :      0.0, Total Wall :    145.2 at Sun Aug  1 23:58:29 2021
+ Step CPU :       0.1, Total CPU :    1739.7 of Master process
+ Step Wall :      0.0, Total Wall :    145.0 at Thu Aug 12 14:06:57 2021
 
- Nuclear repulsion energy =    1457.866389330 Hartree
+ Nuclear repulsion energy =    1457.866389332 Hartree
 
- Step CPU :       0.1, Total CPU :    1742.2 of Master process
- Step Wall :      0.0, Total Wall :    145.2 at Sun Aug  1 23:58:29 2021
+ Step CPU :       0.1, Total CPU :    1739.8 of Master process
+ Step Wall :      0.0, Total Wall :    145.0 at Thu Aug 12 14:06:57 2021
 
  ==========================================================================
    Restricted DFT calculation
@@ -4802,8 +4802,8 @@
    Alpha Virtual :      3.15972     3.16777     3.28198     3.42062     3.46612
    Alpha Virtual :      3.49182     3.67972     3.74688
  --------------------------------------------------------------------------------
- Step CPU :      70.7, Total CPU :    1812.9 of Master process
- Step Wall :      5.9, Total Wall :    151.1 at Sun Aug  1 23:58:35 2021
+ Step CPU :      70.4, Total CPU :    1810.2 of Master process
+ Step Wall :      5.9, Total Wall :    150.9 at Thu Aug 12 14:07:03 2021
 
  ===================================
    DFT energy gradient calculation
@@ -4847,8 +4847,8 @@
      Maximum gradient  =  0.000144
      RMS gradient      =  0.000032
  -----------------------------------
- Step CPU :      78.0, Total CPU :    1890.9 of Master process
- Step Wall :      6.5, Total Wall :    157.6 at Sun Aug  1 23:58:42 2021
+ Step CPU :      78.1, Total CPU :    1888.3 of Master process
+ Step Wall :      6.5, Total Wall :    157.4 at Thu Aug 12 14:07:10 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -5060,13 +5060,13 @@
    H          3.9740139     1.5242198    -0.6111916
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :    1890.9 of Master process
- Step Wall :      0.0, Total Wall :    157.6 at Sun Aug  1 23:58:42 2021
+ Step CPU :       0.1, Total CPU :    1888.4 of Master process
+ Step Wall :      0.0, Total Wall :    157.4 at Thu Aug 12 14:07:10 2021
 
  Nuclear repulsion energy =    1457.866305093 Hartree
 
- Step CPU :       0.1, Total CPU :    1891.0 of Master process
- Step Wall :      0.0, Total Wall :    157.6 at Sun Aug  1 23:58:42 2021
+ Step CPU :       0.1, Total CPU :    1888.5 of Master process
+ Step Wall :      0.0, Total Wall :    157.4 at Thu Aug 12 14:07:10 2021
 
  ==========================================================================
    Restricted DFT calculation
@@ -5157,8 +5157,8 @@
    Alpha Virtual :      3.15971     3.16776     3.28196     3.42064     3.46611
    Alpha Virtual :      3.49185     3.67970     3.74687
  --------------------------------------------------------------------------------
- Step CPU :      70.7, Total CPU :    1961.8 of Master process
- Step Wall :      5.9, Total Wall :    163.5 at Sun Aug  1 23:58:48 2021
+ Step CPU :      70.6, Total CPU :    1959.1 of Master process
+ Step Wall :      5.9, Total Wall :    163.3 at Thu Aug 12 14:07:16 2021
 
  ===================================
    DFT energy gradient calculation
@@ -5206,8 +5206,8 @@
    ==== Geometry converged ====
    ============================
 
- Step CPU :      78.2, Total CPU :    2040.0 of Master process
- Step Wall :      6.5, Total Wall :    170.0 at Sun Aug  1 23:58:54 2021
+ Step CPU :      78.1, Total CPU :    2037.1 of Master process
+ Step Wall :      6.5, Total Wall :    169.8 at Thu Aug 12 14:07:22 2021
 
  --------------------------------------------------------------------------------
    Orbital Energies (Hartree)
@@ -6249,7 +6249,7 @@
    59    5 C   S         -0.003880   -0.187854   -0.237898    0.006240    0.004056
    60    5 C   Px         0.017826    0.023771    0.016649    0.002112    0.004712
    61    5 C   Py        -0.027944   -0.015585   -0.041620   -0.009985   -0.020394
-   62    5 C   Pz        -0.131120    0.017412    0.009525   -0.039673   -0.112200
+   62    5 C   Pz        -0.131120    0.017413    0.009525   -0.039673   -0.112200
    63    5 C   Px         0.016537    0.003872   -0.053421   -0.005541   -0.006376
    64    5 C   Py        -0.044831    0.035606   -0.100027   -0.020114   -0.020391
    65    5 C   Pz        -0.173540    0.014159    0.009423   -0.056325   -0.161388
@@ -6570,12 +6570,12 @@
    H          3.9740139     1.5242198    -0.6111916
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :    2040.1 of Master process
- Step Wall :      0.0, Total Wall :    170.0 at Sun Aug  1 23:58:54 2021
+ Step CPU :       0.1, Total CPU :    2037.2 of Master process
+ Step Wall :      0.0, Total Wall :    169.8 at Thu Aug 12 14:07:22 2021
 
- Total CPU time :     2040.1 seconds
- Total Wall time:      170.0 seconds
-                 ( 0 days  0 hours  2 minutes 50.0 seconds)
- The job finished at Sun Aug  1 23:58:54 2021
+ Total CPU time :     2037.3 seconds
+ Total Wall time:      169.8 seconds
+                 ( 0 days  0 hours  2 minutes 49.8 seconds)
+ The job finished at Thu Aug 12 14:07:22 2021
  Used memory :      27 MB
  Your calculation finished successfully with  0 warning.

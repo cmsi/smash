@@ -5,7 +5,7 @@
            written by K. ISHIMURA
  *******************************************
 
- The job started at Mon Aug  2 00:00:07 2021
+ The job started at Thu Aug 12 14:08:36 2021
  Master node is smash.jp
  Number of processes =     2
  Number of threads   =    12
@@ -161,8 +161,8 @@
        unlimit
        setenv OMP_STACKSIZE 1G
 
- Step CPU :       0.5, Total CPU :       0.5 of Master process
- Step Wall :      0.1, Total Wall :      0.1 at Mon Aug  2 00:00:08 2021
+ Step CPU :       0.4, Total CPU :       0.4 of Master process
+ Step Wall :      0.0, Total Wall :      0.0 at Thu Aug 12 14:08:36 2021
 
  ==========================================================================
    Restricted Hartree-Fock calculation
@@ -657,19 +657,21 @@
   105   25 H   S         -0.053996    0.030947    0.044952    0.050211    0.016386
   106   26 H   S          0.006958    0.044032    0.004893    0.043265    0.046609
  
- Step CPU :       7.0, Total CPU :       7.5 of Master process
- Step Wall :      0.6, Total Wall :      0.6 at Mon Aug  2 00:00:08 2021
+ Step CPU :       6.9, Total CPU :       7.3 of Master process
+ Step Wall :      0.6, Total Wall :      0.6 at Thu Aug 12 14:08:36 2021
 
- ==============================================
+ ================================================
    MP2 energy gradient calculation 
- ==============================================
-     Ncore=  26,   Nvfz=   0
- ----------------------------------------------
+ ================================================
+     Ncore        = 26      ,  Nvfz       = 0    
+     MaxMP2DIIS   = 20      ,  MaxMP2Iter = 100  
+     ThreshMP2CPHF= 1.00E-10
+ ------------------------------------------------
      Number of basis functions         =  106
      Number of basis shells            =   66
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
- ----------------------------------------------
+ ------------------------------------------------
  == Single pass calculation ==
     Start Pass    1
       Cycle  1   Z-Vector error=  2.443E-03
@@ -693,7 +695,7 @@
       Cycle 19   Z-Vector error=  1.678E-10
       Cycle 20   Z-Vector error=  6.345E-11
  -------------------------------------------------
-               Energy (Hartree)
+   Energy (Hartree)
  -------------------------------------------------
    HF Energy                  =  -1531.470157977
    MP2 Correlation Energy     =     -0.944443274
@@ -740,8 +742,8 @@
      Maximum gradient  =  0.078085
      RMS gradient      =  0.025109
  -----------------------------------
- Step CPU :      39.5, Total CPU :      47.0 of Master process
- Step Wall :      3.3, Total Wall :      3.9 at Mon Aug  2 00:00:11 2021
+ Step CPU :      39.5, Total CPU :      46.7 of Master process
+ Step Wall :      3.3, Total Wall :      3.9 at Thu Aug 12 14:08:39 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -953,13 +955,13 @@
    H          4.2593865     1.6768441    -0.0180791
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :      47.1 of Master process
- Step Wall :      0.0, Total Wall :      3.9 at Mon Aug  2 00:00:11 2021
+ Step CPU :       0.1, Total CPU :      46.8 of Master process
+ Step Wall :      0.0, Total Wall :      3.9 at Thu Aug 12 14:08:39 2021
 
  Nuclear repulsion energy =    1429.954089627 Hartree
 
- Step CPU :       0.0, Total CPU :      47.1 of Master process
- Step Wall :      0.0, Total Wall :      3.9 at Mon Aug  2 00:00:11 2021
+ Step CPU :       0.0, Total CPU :      46.8 of Master process
+ Step Wall :      0.0, Total Wall :      3.9 at Thu Aug 12 14:08:39 2021
 
  ==========================================================================
    Restricted Hartree-Fock calculation
@@ -1014,19 +1016,21 @@
    Alpha Virtual :      0.78668     0.80279     0.85327     0.86040     0.87082
    Alpha Virtual :      0.91721     0.93896     1.03407     1.07203
  --------------------------------------------------------------------------------
- Step CPU :       4.9, Total CPU :      52.0 of Master process
- Step Wall :      0.4, Total Wall :      4.3 at Mon Aug  2 00:00:12 2021
+ Step CPU :       5.0, Total CPU :      51.8 of Master process
+ Step Wall :      0.4, Total Wall :      4.3 at Thu Aug 12 14:08:40 2021
 
- ==============================================
+ ================================================
    MP2 energy gradient calculation 
- ==============================================
-     Ncore=  26,   Nvfz=   0
- ----------------------------------------------
+ ================================================
+     Ncore        = 26      ,  Nvfz       = 0    
+     MaxMP2DIIS   = 20      ,  MaxMP2Iter = 100  
+     ThreshMP2CPHF= 1.00E-10
+ ------------------------------------------------
      Number of basis functions         =  106
      Number of basis shells            =   66
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
- ----------------------------------------------
+ ------------------------------------------------
  == Single pass calculation ==
     Start Pass    1
       Cycle  1   Z-Vector error=  2.714E-03
@@ -1051,7 +1055,7 @@
       Cycle 20   Z-Vector error=  1.196E-10
       Cycle 21   Z-Vector error=  5.554E-11
  -------------------------------------------------
-               Energy (Hartree)
+   Energy (Hartree)
  -------------------------------------------------
    HF Energy                  =  -1531.464091439
    MP2 Correlation Energy     =     -0.992908400
@@ -1098,8 +1102,8 @@
      Maximum gradient  =  0.015832
      RMS gradient      =  0.006175
  -----------------------------------
- Step CPU :      37.8, Total CPU :      89.8 of Master process
- Step Wall :      3.2, Total Wall :      7.5 at Mon Aug  2 00:00:15 2021
+ Step CPU :      38.0, Total CPU :      89.8 of Master process
+ Step Wall :      3.2, Total Wall :      7.5 at Thu Aug 12 14:08:43 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -1312,12 +1316,12 @@
  ----------------------------------------------------
 
  Step CPU :       0.1, Total CPU :      89.9 of Master process
- Step Wall :      0.0, Total Wall :      7.5 at Mon Aug  2 00:00:15 2021
+ Step Wall :      0.0, Total Wall :      7.5 at Thu Aug 12 14:08:43 2021
 
- Nuclear repulsion energy =    1429.206978836 Hartree
+ Nuclear repulsion energy =    1429.206978843 Hartree
 
  Step CPU :       0.0, Total CPU :      89.9 of Master process
- Step Wall :      0.0, Total Wall :      7.5 at Mon Aug  2 00:00:15 2021
+ Step Wall :      0.0, Total Wall :      7.5 at Thu Aug 12 14:08:43 2021
 
  ==========================================================================
    Restricted Hartree-Fock calculation
@@ -1327,12 +1331,12 @@
    MaxDIIS    = 20      ,  ThreshDIIS = 6.00E-01
  --------------------------------------------------------------------------
  Iter SubIt   Total Energy       Delta Energy     Delta Density     DIIS Error
-   1    1   -1531.413321649   -1531.413321649      0.034557379      0.033219752
+   1    1   -1531.413321649   -1531.413321649      0.034557378      0.033219752
    2    2   -1531.460682479      -0.047360830      0.013344816      0.009604570
    3    3   -1531.461668383      -0.000985905      0.009985323      0.004125043
    4    4   -1531.461851657      -0.000183274      0.005047879      0.002207091
    5    5   -1531.461911590      -0.000059933      0.002578861      0.001227553
-   6    6   -1531.461920720      -0.000009131      0.002636024      0.000778516
+   6    6   -1531.461920720      -0.000009130      0.002636024      0.000778516
    7    7   -1531.461925096      -0.000004376      0.000808218      0.000338421
    8    8   -1531.461925824      -0.000000727      0.000712904      0.000167618
    9    9   -1531.461926050      -0.000000227      0.000131264      0.000044490
@@ -1371,19 +1375,21 @@
    Alpha Virtual :      0.77909     0.79611     0.85219     0.85864     0.86687
    Alpha Virtual :      0.91648     0.93533     1.03569     1.07417
  --------------------------------------------------------------------------------
- Step CPU :       4.5, Total CPU :      94.4 of Master process
- Step Wall :      0.4, Total Wall :      7.9 at Mon Aug  2 00:00:15 2021
+ Step CPU :       4.6, Total CPU :      94.5 of Master process
+ Step Wall :      0.4, Total Wall :      7.9 at Thu Aug 12 14:08:43 2021
 
- ==============================================
+ ================================================
    MP2 energy gradient calculation 
- ==============================================
-     Ncore=  26,   Nvfz=   0
- ----------------------------------------------
+ ================================================
+     Ncore        = 26      ,  Nvfz       = 0    
+     MaxMP2DIIS   = 20      ,  MaxMP2Iter = 100  
+     ThreshMP2CPHF= 1.00E-10
+ ------------------------------------------------
      Number of basis functions         =  106
      Number of basis shells            =   66
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
- ----------------------------------------------
+ ------------------------------------------------
  == Single pass calculation ==
     Start Pass    1
       Cycle  1   Z-Vector error=  2.729E-03
@@ -1408,7 +1414,7 @@
       Cycle 20   Z-Vector error=  1.170E-10
       Cycle 21   Z-Vector error=  5.406E-11
  -------------------------------------------------
-               Energy (Hartree)
+   Energy (Hartree)
  -------------------------------------------------
    HF Energy                  =  -1531.461926069
    MP2 Correlation Energy     =     -0.997364876
@@ -1455,8 +1461,8 @@
      Maximum gradient  =  0.006592
      RMS gradient      =  0.001801
  -----------------------------------
- Step CPU :      36.8, Total CPU :     131.3 of Master process
- Step Wall :      3.1, Total Wall :     11.0 at Mon Aug  2 00:00:18 2021
+ Step CPU :      36.7, Total CPU :     131.2 of Master process
+ Step Wall :      3.1, Total Wall :     10.9 at Thu Aug 12 14:08:46 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -1668,13 +1674,13 @@
    H          4.2757711     1.6351831    -0.1243257
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :     131.4 of Master process
- Step Wall :      0.0, Total Wall :     11.0 at Mon Aug  2 00:00:18 2021
+ Step CPU :       0.1, Total CPU :     131.3 of Master process
+ Step Wall :      0.0, Total Wall :     11.0 at Thu Aug 12 14:08:46 2021
 
- Nuclear repulsion energy =    1428.043964596 Hartree
+ Nuclear repulsion energy =    1428.043964595 Hartree
 
- Step CPU :       0.0, Total CPU :     131.4 of Master process
- Step Wall :      0.0, Total Wall :     11.0 at Mon Aug  2 00:00:18 2021
+ Step CPU :       0.0, Total CPU :     131.3 of Master process
+ Step Wall :      0.0, Total Wall :     11.0 at Thu Aug 12 14:08:46 2021
 
  ==========================================================================
    Restricted Hartree-Fock calculation
@@ -1728,19 +1734,21 @@
    Alpha Virtual :      0.77576     0.79382     0.85070     0.85837     0.86476
    Alpha Virtual :      0.91761     0.93596     1.03605     1.07495
  --------------------------------------------------------------------------------
- Step CPU :       4.6, Total CPU :     136.0 of Master process
- Step Wall :      0.4, Total Wall :     11.4 at Mon Aug  2 00:00:19 2021
+ Step CPU :       4.5, Total CPU :     135.8 of Master process
+ Step Wall :      0.4, Total Wall :     11.3 at Thu Aug 12 14:08:47 2021
 
- ==============================================
+ ================================================
    MP2 energy gradient calculation 
- ==============================================
-     Ncore=  26,   Nvfz=   0
- ----------------------------------------------
+ ================================================
+     Ncore        = 26      ,  Nvfz       = 0    
+     MaxMP2DIIS   = 20      ,  MaxMP2Iter = 100  
+     ThreshMP2CPHF= 1.00E-10
+ ------------------------------------------------
      Number of basis functions         =  106
      Number of basis shells            =   66
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
- ----------------------------------------------
+ ------------------------------------------------
  == Single pass calculation ==
     Start Pass    1
       Cycle  1   Z-Vector error=  2.723E-03
@@ -1765,7 +1773,7 @@
       Cycle 20   Z-Vector error=  1.155E-10
       Cycle 21   Z-Vector error=  5.358E-11
  -------------------------------------------------
-               Energy (Hartree)
+   Energy (Hartree)
  -------------------------------------------------
    HF Energy                  =  -1531.461172506
    MP2 Correlation Energy     =     -0.998524581
@@ -1786,7 +1794,7 @@
    C          0.0005237    -0.0004458     0.0003359
    C         -0.0017274    -0.0020789     0.0008817
    S          0.0006939     0.0009653    -0.0011892
-   C          0.0015761    -0.0003589     0.0001160
+   C          0.0015761    -0.0003589     0.0001159
    N         -0.0006939    -0.0003169    -0.0013075
    C          0.0015750     0.0007196     0.0023922
    C         -0.0000802     0.0007749    -0.0001059
@@ -1812,8 +1820,8 @@
      Maximum gradient  =  0.005040
      RMS gradient      =  0.001133
  -----------------------------------
- Step CPU :      37.3, Total CPU :     173.4 of Master process
- Step Wall :      3.1, Total Wall :     14.5 at Mon Aug  2 00:00:22 2021
+ Step CPU :      37.3, Total CPU :     173.2 of Master process
+ Step Wall :      3.1, Total Wall :     14.4 at Thu Aug 12 14:08:50 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -2025,13 +2033,13 @@
    H          4.2814340     1.6297984    -0.1966979
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :     173.4 of Master process
- Step Wall :      0.0, Total Wall :     14.5 at Mon Aug  2 00:00:22 2021
+ Step CPU :       0.1, Total CPU :     173.2 of Master process
+ Step Wall :      0.0, Total Wall :     14.4 at Thu Aug 12 14:08:50 2021
 
- Nuclear repulsion energy =    1428.639069482 Hartree
+ Nuclear repulsion energy =    1428.639069477 Hartree
 
- Step CPU :       0.0, Total CPU :     173.4 of Master process
- Step Wall :      0.0, Total Wall :     14.5 at Mon Aug  2 00:00:22 2021
+ Step CPU :       0.0, Total CPU :     173.2 of Master process
+ Step Wall :      0.0, Total Wall :     14.4 at Thu Aug 12 14:08:50 2021
 
  ==========================================================================
    Restricted Hartree-Fock calculation
@@ -2045,7 +2053,7 @@
    2    2   -1531.457637763      -0.023806171      0.025831349      0.020955655
    3    3   -1531.460435991      -0.002798228      0.014262763      0.009035015
    4    4   -1531.460935984      -0.000499993      0.004386434      0.002727188
-   5    5   -1531.461017226      -0.000081241      0.003439259      0.001559477
+   5    5   -1531.461017226      -0.000081242      0.003439259      0.001559477
    6    6   -1531.461038126      -0.000020900      0.002200228      0.000861114
    7    7   -1531.461043531      -0.000005405      0.001117039      0.000447500
    8    8   -1531.461044902      -0.000001371      0.000744696      0.000202524
@@ -2085,19 +2093,21 @@
    Alpha Virtual :      0.77344     0.79241     0.84943     0.85781     0.86364
    Alpha Virtual :      0.91886     0.93734     1.03569     1.07496
  --------------------------------------------------------------------------------
- Step CPU :       4.5, Total CPU :     178.0 of Master process
- Step Wall :      0.4, Total Wall :     14.9 at Mon Aug  2 00:00:22 2021
+ Step CPU :       4.6, Total CPU :     177.8 of Master process
+ Step Wall :      0.4, Total Wall :     14.8 at Thu Aug 12 14:08:50 2021
 
- ==============================================
+ ================================================
    MP2 energy gradient calculation 
- ==============================================
-     Ncore=  26,   Nvfz=   0
- ----------------------------------------------
+ ================================================
+     Ncore        = 26      ,  Nvfz       = 0    
+     MaxMP2DIIS   = 20      ,  MaxMP2Iter = 100  
+     ThreshMP2CPHF= 1.00E-10
+ ------------------------------------------------
      Number of basis functions         =  106
      Number of basis shells            =   66
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
- ----------------------------------------------
+ ------------------------------------------------
  == Single pass calculation ==
     Start Pass    1
       Cycle  1   Z-Vector error=  2.717E-03
@@ -2122,7 +2132,7 @@
       Cycle 20   Z-Vector error=  1.188E-10
       Cycle 21   Z-Vector error=  5.434E-11
  -------------------------------------------------
-               Energy (Hartree)
+   Energy (Hartree)
  -------------------------------------------------
    HF Energy                  =  -1531.461045258
    MP2 Correlation Energy     =     -0.998780600
@@ -2169,8 +2179,8 @@
      Maximum gradient  =  0.006693
      RMS gradient      =  0.001800
  -----------------------------------
- Step CPU :      36.7, Total CPU :     214.7 of Master process
- Step Wall :      3.1, Total Wall :     17.9 at Mon Aug  2 00:00:25 2021
+ Step CPU :      36.8, Total CPU :     214.6 of Master process
+ Step Wall :      3.1, Total Wall :     17.9 at Thu Aug 12 14:08:53 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -2382,13 +2392,13 @@
    H          4.2694785     1.6212924    -0.2361316
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :     214.8 of Master process
- Step Wall :      0.0, Total Wall :     17.9 at Mon Aug  2 00:00:25 2021
+ Step CPU :       0.1, Total CPU :     214.7 of Master process
+ Step Wall :      0.0, Total Wall :     17.9 at Thu Aug 12 14:08:53 2021
 
  Nuclear repulsion energy =    1429.160477563 Hartree
 
- Step CPU :       0.0, Total CPU :     214.8 of Master process
- Step Wall :      0.0, Total Wall :     17.9 at Mon Aug  2 00:00:25 2021
+ Step CPU :       0.0, Total CPU :     214.7 of Master process
+ Step Wall :      0.0, Total Wall :     17.9 at Thu Aug 12 14:08:53 2021
 
  ==========================================================================
    Restricted Hartree-Fock calculation
@@ -2442,19 +2452,21 @@
    Alpha Virtual :      0.77327     0.79260     0.84988     0.85689     0.86427
    Alpha Virtual :      0.91961     0.93756     1.03507     1.07414
  --------------------------------------------------------------------------------
- Step CPU :       4.3, Total CPU :     219.2 of Master process
- Step Wall :      0.4, Total Wall :     18.3 at Mon Aug  2 00:00:26 2021
+ Step CPU :       4.4, Total CPU :     219.1 of Master process
+ Step Wall :      0.4, Total Wall :     18.3 at Thu Aug 12 14:08:54 2021
 
- ==============================================
+ ================================================
    MP2 energy gradient calculation 
- ==============================================
-     Ncore=  26,   Nvfz=   0
- ----------------------------------------------
+ ================================================
+     Ncore        = 26      ,  Nvfz       = 0    
+     MaxMP2DIIS   = 20      ,  MaxMP2Iter = 100  
+     ThreshMP2CPHF= 1.00E-10
+ ------------------------------------------------
      Number of basis functions         =  106
      Number of basis shells            =   66
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
- ----------------------------------------------
+ ------------------------------------------------
  == Single pass calculation ==
     Start Pass    1
       Cycle  1   Z-Vector error=  2.720E-03
@@ -2479,7 +2491,7 @@
       Cycle 20   Z-Vector error=  1.169E-10
       Cycle 21   Z-Vector error=  5.368E-11
  -------------------------------------------------
-               Energy (Hartree)
+   Energy (Hartree)
  -------------------------------------------------
    HF Energy                  =  -1531.461733196
    MP2 Correlation Energy     =     -0.998516441
@@ -2526,8 +2538,8 @@
      Maximum gradient  =  0.002426
      RMS gradient      =  0.000816
  -----------------------------------
- Step CPU :      37.4, Total CPU :     256.5 of Master process
- Step Wall :      3.1, Total Wall :     21.4 at Mon Aug  2 00:00:29 2021
+ Step CPU :      36.8, Total CPU :     256.0 of Master process
+ Step Wall :      3.1, Total Wall :     21.3 at Thu Aug 12 14:08:57 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -2714,7 +2726,7 @@
    C         -0.1545213     0.1636880     0.2655074
    N         -0.7744391    -1.0050042     0.5968065
    C         -2.1954074    -0.8051580     0.3165464
-   C         -3.2039514    -1.8048493     0.5313538
+   C         -3.2039514    -1.8048493     0.5313539
    C         -4.5358641    -1.5069457     0.2304755
    C         -4.9021192    -0.2082910    -0.2905664
    C         -3.9211808     0.7847508    -0.5058823
@@ -2739,13 +2751,13 @@
    H          4.2654469     1.5993605    -0.3031413
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :     256.6 of Master process
- Step Wall :      0.0, Total Wall :     21.4 at Mon Aug  2 00:00:29 2021
+ Step CPU :       0.1, Total CPU :     256.0 of Master process
+ Step Wall :      0.0, Total Wall :     21.3 at Thu Aug 12 14:08:57 2021
 
- Nuclear repulsion energy =    1429.963771725 Hartree
+ Nuclear repulsion energy =    1429.963771724 Hartree
 
- Step CPU :       0.0, Total CPU :     256.6 of Master process
- Step Wall :      0.0, Total Wall :     21.4 at Mon Aug  2 00:00:29 2021
+ Step CPU :       0.0, Total CPU :     256.0 of Master process
+ Step Wall :      0.0, Total Wall :     21.3 at Thu Aug 12 14:08:57 2021
 
  ==========================================================================
    Restricted Hartree-Fock calculation
@@ -2797,19 +2809,21 @@
    Alpha Virtual :      0.77331     0.79300     0.85052     0.85638     0.86521
    Alpha Virtual :      0.92066     0.93849     1.03543     1.07429
  --------------------------------------------------------------------------------
- Step CPU :       3.9, Total CPU :     260.6 of Master process
- Step Wall :      0.3, Total Wall :     21.7 at Mon Aug  2 00:00:29 2021
+ Step CPU :       4.0, Total CPU :     260.0 of Master process
+ Step Wall :      0.3, Total Wall :     21.7 at Thu Aug 12 14:08:57 2021
 
- ==============================================
+ ================================================
    MP2 energy gradient calculation 
- ==============================================
-     Ncore=  26,   Nvfz=   0
- ----------------------------------------------
+ ================================================
+     Ncore        = 26      ,  Nvfz       = 0    
+     MaxMP2DIIS   = 20      ,  MaxMP2Iter = 100  
+     ThreshMP2CPHF= 1.00E-10
+ ------------------------------------------------
      Number of basis functions         =  106
      Number of basis shells            =   66
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
- ----------------------------------------------
+ ------------------------------------------------
  == Single pass calculation ==
     Start Pass    1
       Cycle  1   Z-Vector error=  2.727E-03
@@ -2834,7 +2848,7 @@
       Cycle 20   Z-Vector error=  1.144E-10
       Cycle 21   Z-Vector error=  5.230E-11
  -------------------------------------------------
-               Energy (Hartree)
+   Energy (Hartree)
  -------------------------------------------------
    HF Energy                  =  -1531.462215032
    MP2 Correlation Energy     =     -0.998247861
@@ -2881,8 +2895,8 @@
      Maximum gradient  =  0.001503
      RMS gradient      =  0.000423
  -----------------------------------
- Step CPU :      37.1, Total CPU :     297.7 of Master process
- Step Wall :      3.1, Total Wall :     24.8 at Mon Aug  2 00:00:32 2021
+ Step CPU :      37.2, Total CPU :     297.2 of Master process
+ Step Wall :      3.1, Total Wall :     24.8 at Thu Aug 12 14:09:00 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -3094,13 +3108,13 @@
    H          4.2693365     1.5653515    -0.3990805
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :     297.7 of Master process
- Step Wall :      0.0, Total Wall :     24.8 at Mon Aug  2 00:00:32 2021
+ Step CPU :       0.1, Total CPU :     297.3 of Master process
+ Step Wall :      0.0, Total Wall :     24.8 at Thu Aug 12 14:09:00 2021
 
- Nuclear repulsion energy =    1430.301570408 Hartree
+ Nuclear repulsion energy =    1430.301570402 Hartree
 
- Step CPU :       0.0, Total CPU :     297.7 of Master process
- Step Wall :      0.0, Total Wall :     24.8 at Mon Aug  2 00:00:32 2021
+ Step CPU :       0.0, Total CPU :     297.3 of Master process
+ Step Wall :      0.0, Total Wall :     24.8 at Thu Aug 12 14:09:00 2021
 
  ==========================================================================
    Restricted Hartree-Fock calculation
@@ -3110,8 +3124,8 @@
    MaxDIIS    = 20      ,  ThreshDIIS = 6.00E-01
  --------------------------------------------------------------------------
  Iter SubIt   Total Energy       Delta Energy     Delta Density     DIIS Error
-   1    1   -1531.432842713   -1531.432842713      0.046275023      0.065090163
-   2    2   -1531.459333556      -0.026490843      0.016389903      0.011601907
+   1    1   -1531.432842712   -1531.432842712      0.046275024      0.065090164
+   2    2   -1531.459333556      -0.026490844      0.016389903      0.011601907
    3    3   -1531.461937061      -0.002603504      0.010801595      0.004001685
    4    4   -1531.462343222      -0.000406162      0.002184649      0.001048111
    5    5   -1531.462364876      -0.000021654      0.002476579      0.000532804
@@ -3154,19 +3168,21 @@
    Alpha Virtual :      0.77291     0.79318     0.85063     0.85604     0.86548
    Alpha Virtual :      0.92140     0.93973     1.03565     1.07444
  --------------------------------------------------------------------------------
- Step CPU :       4.5, Total CPU :     302.3 of Master process
- Step Wall :      0.4, Total Wall :     25.2 at Mon Aug  2 00:00:33 2021
+ Step CPU :       4.5, Total CPU :     301.9 of Master process
+ Step Wall :      0.4, Total Wall :     25.2 at Thu Aug 12 14:09:01 2021
 
- ==============================================
+ ================================================
    MP2 energy gradient calculation 
- ==============================================
-     Ncore=  26,   Nvfz=   0
- ----------------------------------------------
+ ================================================
+     Ncore        = 26      ,  Nvfz       = 0    
+     MaxMP2DIIS   = 20      ,  MaxMP2Iter = 100  
+     ThreshMP2CPHF= 1.00E-10
+ ------------------------------------------------
      Number of basis functions         =  106
      Number of basis shells            =   66
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
- ----------------------------------------------
+ ------------------------------------------------
  == Single pass calculation ==
     Start Pass    1
       Cycle  1   Z-Vector error=  2.731E-03
@@ -3191,7 +3207,7 @@
       Cycle 20   Z-Vector error=  1.074E-10
       Cycle 21   Z-Vector error=  4.827E-11
  -------------------------------------------------
-               Energy (Hartree)
+   Energy (Hartree)
  -------------------------------------------------
    HF Energy                  =  -1531.462377090
    MP2 Correlation Energy     =     -0.998228877
@@ -3238,8 +3254,8 @@
      Maximum gradient  =  0.001745
      RMS gradient      =  0.000419
  -----------------------------------
- Step CPU :      36.9, Total CPU :     339.2 of Master process
- Step Wall :      3.1, Total Wall :     28.3 at Mon Aug  2 00:00:36 2021
+ Step CPU :      37.5, Total CPU :     339.4 of Master process
+ Step Wall :      3.1, Total Wall :     28.3 at Thu Aug 12 14:09:04 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -3451,13 +3467,13 @@
    H          4.2824988     1.5461734    -0.4444462
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :     339.3 of Master process
- Step Wall :      0.0, Total Wall :     28.3 at Mon Aug  2 00:00:36 2021
+ Step CPU :       0.1, Total CPU :     339.4 of Master process
+ Step Wall :      0.0, Total Wall :     28.3 at Thu Aug 12 14:09:04 2021
 
- Nuclear repulsion energy =    1430.509812225 Hartree
+ Nuclear repulsion energy =    1430.509812231 Hartree
 
- Step CPU :       0.0, Total CPU :     339.3 of Master process
- Step Wall :      0.0, Total Wall :     28.3 at Mon Aug  2 00:00:36 2021
+ Step CPU :       0.0, Total CPU :     339.4 of Master process
+ Step Wall :      0.0, Total Wall :     28.3 at Thu Aug 12 14:09:04 2021
 
  ==========================================================================
    Restricted Hartree-Fock calculation
@@ -3467,7 +3483,7 @@
    MaxDIIS    = 20      ,  ThreshDIIS = 6.00E-01
  --------------------------------------------------------------------------
  Iter SubIt   Total Energy       Delta Energy     Delta Density     DIIS Error
-   1    1   -1531.447086271   -1531.447086271      0.038317603      0.037459540
+   1    1   -1531.447086272   -1531.447086272      0.038317603      0.037459540
    2    2   -1531.460907714      -0.013821443      0.012656979      0.008145983
    3    3   -1531.462046331      -0.001138617      0.007300692      0.002782748
    4    4   -1531.462224673      -0.000178342      0.001674882      0.000728571
@@ -3509,19 +3525,21 @@
    Alpha Virtual :      0.77242     0.79296     0.85043     0.85589     0.86534
    Alpha Virtual :      0.92156     0.94059     1.03551     1.07426
  --------------------------------------------------------------------------------
- Step CPU :       4.0, Total CPU :     343.3 of Master process
- Step Wall :      0.3, Total Wall :     28.6 at Mon Aug  2 00:00:36 2021
+ Step CPU :       4.0, Total CPU :     343.4 of Master process
+ Step Wall :      0.3, Total Wall :     28.6 at Thu Aug 12 14:09:04 2021
 
- ==============================================
+ ================================================
    MP2 energy gradient calculation 
- ==============================================
-     Ncore=  26,   Nvfz=   0
- ----------------------------------------------
+ ================================================
+     Ncore        = 26      ,  Nvfz       = 0    
+     MaxMP2DIIS   = 20      ,  MaxMP2Iter = 100  
+     ThreshMP2CPHF= 1.00E-10
+ ------------------------------------------------
      Number of basis functions         =  106
      Number of basis shells            =   66
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
- ----------------------------------------------
+ ------------------------------------------------
  == Single pass calculation ==
     Start Pass    1
       Cycle  1   Z-Vector error=  2.736E-03
@@ -3546,7 +3564,7 @@
       Cycle 20   Z-Vector error=  1.031E-10
       Cycle 21   Z-Vector error=  4.538E-11
  -------------------------------------------------
-               Energy (Hartree)
+   Energy (Hartree)
  -------------------------------------------------
    HF Energy                  =  -1531.462240763
    MP2 Correlation Energy     =     -0.998439154
@@ -3593,8 +3611,8 @@
      Maximum gradient  =  0.000799
      RMS gradient      =  0.000269
  -----------------------------------
- Step CPU :      37.0, Total CPU :     380.3 of Master process
- Step Wall :      3.1, Total Wall :     31.7 at Mon Aug  2 00:00:39 2021
+ Step CPU :      37.1, Total CPU :     380.5 of Master process
+ Step Wall :      3.1, Total Wall :     31.7 at Thu Aug 12 14:09:07 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -3771,7 +3789,7 @@
    H         -0.0200261    -0.0256974     0.0615833
    H          0.0112912     0.0407228     0.0163445
    H         -0.0129914     0.0333573    -0.0342274
-   H          0.0216816    -0.0166929    -0.0264062
+   H          0.0216816    -0.0166929    -0.0264063
  ----------------------------------------------------
 
  ----------------------------------------------------
@@ -3806,13 +3824,13 @@
    H          4.3041804     1.5294805    -0.4708525
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :     380.4 of Master process
- Step Wall :      0.0, Total Wall :     31.7 at Mon Aug  2 00:00:39 2021
+ Step CPU :       0.1, Total CPU :     380.6 of Master process
+ Step Wall :      0.0, Total Wall :     31.7 at Thu Aug 12 14:09:07 2021
 
- Nuclear repulsion energy =    1430.926824695 Hartree
+ Nuclear repulsion energy =    1430.926824697 Hartree
 
- Step CPU :       0.0, Total CPU :     380.4 of Master process
- Step Wall :      0.0, Total Wall :     31.7 at Mon Aug  2 00:00:39 2021
+ Step CPU :       0.0, Total CPU :     380.6 of Master process
+ Step Wall :      0.0, Total Wall :     31.7 at Thu Aug 12 14:09:07 2021
 
  ==========================================================================
    Restricted Hartree-Fock calculation
@@ -3822,8 +3840,8 @@
    MaxDIIS    = 20      ,  ThreshDIIS = 6.00E-01
  --------------------------------------------------------------------------
  Iter SubIt   Total Energy       Delta Energy     Delta Density     DIIS Error
-   1    1   -1531.451166572   -1531.451166572      0.036818173      0.030951017
-   2    2   -1531.461176013      -0.010009442      0.011651220      0.006023370
+   1    1   -1531.451166572   -1531.451166572      0.036818173      0.030951018
+   2    2   -1531.461176013      -0.010009442      0.011651221      0.006023370
    3    3   -1531.461997700      -0.000821686      0.006767607      0.002077337
    4    4   -1531.462128584      -0.000130884      0.001529092      0.000530543
    5    5   -1531.462136067      -0.000007483      0.002119409      0.000282513
@@ -3864,19 +3882,21 @@
    Alpha Virtual :      0.77218     0.79269     0.85020     0.85591     0.86523
    Alpha Virtual :      0.92168     0.94145     1.03545     1.07416
  --------------------------------------------------------------------------------
- Step CPU :       3.9, Total CPU :     384.3 of Master process
- Step Wall :      0.3, Total Wall :     32.0 at Mon Aug  2 00:00:40 2021
+ Step CPU :       3.9, Total CPU :     384.5 of Master process
+ Step Wall :      0.3, Total Wall :     32.1 at Thu Aug 12 14:09:08 2021
 
- ==============================================
+ ================================================
    MP2 energy gradient calculation 
- ==============================================
-     Ncore=  26,   Nvfz=   0
- ----------------------------------------------
+ ================================================
+     Ncore        = 26      ,  Nvfz       = 0    
+     MaxMP2DIIS   = 20      ,  MaxMP2Iter = 100  
+     ThreshMP2CPHF= 1.00E-10
+ ------------------------------------------------
      Number of basis functions         =  106
      Number of basis shells            =   66
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
- ----------------------------------------------
+ ------------------------------------------------
  == Single pass calculation ==
     Start Pass    1
       Cycle  1   Z-Vector error=  2.740E-03
@@ -3900,7 +3920,7 @@
       Cycle 19   Z-Vector error=  2.470E-10
       Cycle 20   Z-Vector error=  9.771E-11
  -------------------------------------------------
-               Energy (Hartree)
+   Energy (Hartree)
  -------------------------------------------------
    HF Energy                  =  -1531.462140898
    MP2 Correlation Energy     =     -0.998590712
@@ -3947,8 +3967,8 @@
      Maximum gradient  =  0.000965
      RMS gradient      =  0.000241
  -----------------------------------
- Step CPU :      36.6, Total CPU :     420.9 of Master process
- Step Wall :      3.0, Total Wall :     35.1 at Mon Aug  2 00:00:43 2021
+ Step CPU :      36.6, Total CPU :     421.1 of Master process
+ Step Wall :      3.1, Total Wall :     35.1 at Thu Aug 12 14:09:11 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -4160,13 +4180,13 @@
    H          4.3228410     1.5149928    -0.4909428
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :     421.0 of Master process
- Step Wall :      0.0, Total Wall :     35.1 at Mon Aug  2 00:00:43 2021
+ Step CPU :       0.1, Total CPU :     421.2 of Master process
+ Step Wall :      0.0, Total Wall :     35.1 at Thu Aug 12 14:09:11 2021
 
- Nuclear repulsion energy =    1431.278458823 Hartree
+ Nuclear repulsion energy =    1431.278458818 Hartree
 
- Step CPU :       0.0, Total CPU :     421.0 of Master process
- Step Wall :      0.0, Total Wall :     35.1 at Mon Aug  2 00:00:43 2021
+ Step CPU :       0.0, Total CPU :     421.2 of Master process
+ Step Wall :      0.0, Total Wall :     35.1 at Thu Aug 12 14:09:11 2021
 
  ==========================================================================
    Restricted Hartree-Fock calculation
@@ -4219,19 +4239,21 @@
    Alpha Virtual :      0.77219     0.79252     0.85000     0.85606     0.86504
    Alpha Virtual :      0.92185     0.94204     1.03545     1.07418
  --------------------------------------------------------------------------------
- Step CPU :       4.1, Total CPU :     425.1 of Master process
- Step Wall :      0.3, Total Wall :     35.4 at Mon Aug  2 00:00:43 2021
+ Step CPU :       4.3, Total CPU :     425.5 of Master process
+ Step Wall :      0.4, Total Wall :     35.5 at Thu Aug 12 14:09:11 2021
 
- ==============================================
+ ================================================
    MP2 energy gradient calculation 
- ==============================================
-     Ncore=  26,   Nvfz=   0
- ----------------------------------------------
+ ================================================
+     Ncore        = 26      ,  Nvfz       = 0    
+     MaxMP2DIIS   = 20      ,  MaxMP2Iter = 100  
+     ThreshMP2CPHF= 1.00E-10
+ ------------------------------------------------
      Number of basis functions         =  106
      Number of basis shells            =   66
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
- ----------------------------------------------
+ ------------------------------------------------
  == Single pass calculation ==
     Start Pass    1
       Cycle  1   Z-Vector error=  2.740E-03
@@ -4255,7 +4277,7 @@
       Cycle 19   Z-Vector error=  2.422E-10
       Cycle 20   Z-Vector error=  9.350E-11
  -------------------------------------------------
-               Energy (Hartree)
+   Energy (Hartree)
  -------------------------------------------------
    HF Energy                  =  -1531.462170751
    MP2 Correlation Energy     =     -0.998590096
@@ -4302,8 +4324,8 @@
      Maximum gradient  =  0.000693
      RMS gradient      =  0.000182
  -----------------------------------
- Step CPU :      36.5, Total CPU :     461.6 of Master process
- Step Wall :      3.0, Total Wall :     38.5 at Mon Aug  2 00:00:46 2021
+ Step CPU :      37.1, Total CPU :     462.5 of Master process
+ Step Wall :      3.1, Total Wall :     38.6 at Thu Aug 12 14:09:14 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -4515,13 +4537,13 @@
    H          4.3305178     1.5057982    -0.5072105
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :     461.6 of Master process
- Step Wall :      0.0, Total Wall :     38.5 at Mon Aug  2 00:00:46 2021
+ Step CPU :       0.1, Total CPU :     462.6 of Master process
+ Step Wall :      0.0, Total Wall :     38.6 at Thu Aug 12 14:09:14 2021
 
- Nuclear repulsion energy =    1431.543758394 Hartree
+ Nuclear repulsion energy =    1431.543758391 Hartree
 
- Step CPU :       0.0, Total CPU :     461.6 of Master process
- Step Wall :      0.0, Total Wall :     38.5 at Mon Aug  2 00:00:46 2021
+ Step CPU :       0.0, Total CPU :     462.6 of Master process
+ Step Wall :      0.0, Total Wall :     38.6 at Thu Aug 12 14:09:14 2021
 
  ==========================================================================
    Restricted Hartree-Fock calculation
@@ -4532,7 +4554,7 @@
  --------------------------------------------------------------------------
  Iter SubIt   Total Energy       Delta Energy     Delta Density     DIIS Error
    1    1   -1531.459750823   -1531.459750823      0.017327044      0.017888890
-   2    2   -1531.461939378      -0.002188556      0.005610536      0.003660688
+   2    2   -1531.461939378      -0.002188556      0.005610536      0.003660687
    3    3   -1531.462222424      -0.000283045      0.003500541      0.001257913
    4    4   -1531.462268110      -0.000045687      0.001029846      0.000305733
    5    5   -1531.462270726      -0.000002616      0.000729496      0.000114537
@@ -4573,19 +4595,21 @@
    Alpha Virtual :      0.77220     0.79249     0.85009     0.85602     0.86509
    Alpha Virtual :      0.92198     0.94231     1.03548     1.07419
  --------------------------------------------------------------------------------
- Step CPU :       3.8, Total CPU :     465.5 of Master process
- Step Wall :      0.3, Total Wall :     38.8 at Mon Aug  2 00:00:46 2021
+ Step CPU :       3.8, Total CPU :     466.4 of Master process
+ Step Wall :      0.3, Total Wall :     38.9 at Thu Aug 12 14:09:14 2021
 
- ==============================================
+ ================================================
    MP2 energy gradient calculation 
- ==============================================
-     Ncore=  26,   Nvfz=   0
- ----------------------------------------------
+ ================================================
+     Ncore        = 26      ,  Nvfz       = 0    
+     MaxMP2DIIS   = 20      ,  MaxMP2Iter = 100  
+     ThreshMP2CPHF= 1.00E-10
+ ------------------------------------------------
      Number of basis functions         =  106
      Number of basis shells            =   66
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
- ----------------------------------------------
+ ------------------------------------------------
  == Single pass calculation ==
     Start Pass    1
       Cycle  1   Z-Vector error=  2.739E-03
@@ -4609,7 +4633,7 @@
       Cycle 19   Z-Vector error=  2.393E-10
       Cycle 20   Z-Vector error=  9.163E-11
  -------------------------------------------------
-               Energy (Hartree)
+   Energy (Hartree)
  -------------------------------------------------
    HF Energy                  =  -1531.462271777
    MP2 Correlation Energy     =     -0.998496828
@@ -4656,8 +4680,8 @@
      Maximum gradient  =  0.000235
      RMS gradient      =  0.000086
  -----------------------------------
- Step CPU :      37.2, Total CPU :     502.7 of Master process
- Step Wall :      3.1, Total Wall :     41.9 at Mon Aug  2 00:00:49 2021
+ Step CPU :      36.9, Total CPU :     503.4 of Master process
+ Step Wall :      3.1, Total Wall :     42.0 at Thu Aug 12 14:09:18 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -4869,13 +4893,13 @@
    H          4.3307593     1.5014885    -0.5156314
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :     502.8 of Master process
- Step Wall :      0.0, Total Wall :     41.9 at Mon Aug  2 00:00:49 2021
+ Step CPU :       0.1, Total CPU :     503.4 of Master process
+ Step Wall :      0.0, Total Wall :     42.0 at Thu Aug 12 14:09:18 2021
 
- Nuclear repulsion energy =    1431.623114290 Hartree
+ Nuclear repulsion energy =    1431.623114291 Hartree
 
- Step CPU :       0.0, Total CPU :     502.8 of Master process
- Step Wall :      0.0, Total Wall :     41.9 at Mon Aug  2 00:00:49 2021
+ Step CPU :       0.0, Total CPU :     503.4 of Master process
+ Step Wall :      0.0, Total Wall :     42.0 at Thu Aug 12 14:09:18 2021
 
  ==========================================================================
    Restricted Hartree-Fock calculation
@@ -4926,19 +4950,21 @@
    Alpha Virtual :      0.77226     0.79256     0.85017     0.85599     0.86515
    Alpha Virtual :      0.92200     0.94235     1.03553     1.07423
  --------------------------------------------------------------------------------
- Step CPU :       3.4, Total CPU :     506.2 of Master process
- Step Wall :      0.3, Total Wall :     42.2 at Mon Aug  2 00:00:50 2021
+ Step CPU :       3.4, Total CPU :     506.8 of Master process
+ Step Wall :      0.3, Total Wall :     42.3 at Thu Aug 12 14:09:18 2021
 
- ==============================================
+ ================================================
    MP2 energy gradient calculation 
- ==============================================
-     Ncore=  26,   Nvfz=   0
- ----------------------------------------------
+ ================================================
+     Ncore        = 26      ,  Nvfz       = 0    
+     MaxMP2DIIS   = 20      ,  MaxMP2Iter = 100  
+     ThreshMP2CPHF= 1.00E-10
+ ------------------------------------------------
      Number of basis functions         =  106
      Number of basis shells            =   66
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
- ----------------------------------------------
+ ------------------------------------------------
  == Single pass calculation ==
     Start Pass    1
       Cycle  1   Z-Vector error=  2.739E-03
@@ -4962,7 +4988,7 @@
       Cycle 19   Z-Vector error=  2.385E-10
       Cycle 20   Z-Vector error=  9.107E-11
  -------------------------------------------------
-               Energy (Hartree)
+   Energy (Hartree)
  -------------------------------------------------
    HF Energy                  =  -1531.462303332
    MP2 Correlation Energy     =     -0.998466584
@@ -5009,8 +5035,8 @@
      Maximum gradient  =  0.000105
      RMS gradient      =  0.000035
  -----------------------------------
- Step CPU :      36.6, Total CPU :     542.8 of Master process
- Step Wall :      3.1, Total Wall :     45.3 at Mon Aug  2 00:00:53 2021
+ Step CPU :      37.1, Total CPU :     544.0 of Master process
+ Step Wall :      3.1, Total Wall :     45.3 at Thu Aug 12 14:09:21 2021
 
  ====================================================
    New geometry calculation in redundant coordinate
@@ -5222,13 +5248,13 @@
    H          4.3287248     1.4993459    -0.5213154
  ----------------------------------------------------
 
- Step CPU :       0.1, Total CPU :     542.9 of Master process
- Step Wall :      0.0, Total Wall :     45.3 at Mon Aug  2 00:00:53 2021
+ Step CPU :       0.1, Total CPU :     544.0 of Master process
+ Step Wall :      0.0, Total Wall :     45.4 at Thu Aug 12 14:09:21 2021
 
- Nuclear repulsion energy =    1431.539509113 Hartree
+ Nuclear repulsion energy =    1431.539509116 Hartree
 
- Step CPU :       0.0, Total CPU :     542.9 of Master process
- Step Wall :      0.0, Total Wall :     45.3 at Mon Aug  2 00:00:53 2021
+ Step CPU :       0.0, Total CPU :     544.1 of Master process
+ Step Wall :      0.0, Total Wall :     45.4 at Thu Aug 12 14:09:21 2021
 
  ==========================================================================
    Restricted Hartree-Fock calculation
@@ -5239,7 +5265,7 @@
  --------------------------------------------------------------------------
  Iter SubIt   Total Energy       Delta Energy     Delta Density     DIIS Error
    1    1   -1531.462209508   -1531.462209508      0.002355431      0.003102440
-   2    2   -1531.462295536      -0.000086029      0.000898849      0.000617670
+   2    2   -1531.462295536      -0.000086029      0.000898848      0.000617669
    3    3   -1531.462302327      -0.000006791      0.000602646      0.000211715
    4    4   -1531.462303440      -0.000001113      0.000155608      0.000074041
    5    5   -1531.462303504      -0.000000064      0.000121839      0.000046633
@@ -5278,19 +5304,21 @@
    Alpha Virtual :      0.77225     0.79259     0.85018     0.85596     0.86516
    Alpha Virtual :      0.92200     0.94230     1.03554     1.07422
  --------------------------------------------------------------------------------
- Step CPU :       3.0, Total CPU :     545.9 of Master process
- Step Wall :      0.2, Total Wall :     45.5 at Mon Aug  2 00:00:53 2021
+ Step CPU :       3.0, Total CPU :     547.1 of Master process
+ Step Wall :      0.3, Total Wall :     45.6 at Thu Aug 12 14:09:21 2021
 
- ==============================================
+ ================================================
    MP2 energy gradient calculation 
- ==============================================
-     Ncore=  26,   Nvfz=   0
- ----------------------------------------------
+ ================================================
+     Ncore        = 26      ,  Nvfz       = 0    
+     MaxMP2DIIS   = 20      ,  MaxMP2Iter = 100  
+     ThreshMP2CPHF= 1.00E-10
+ ------------------------------------------------
      Number of basis functions         =  106
      Number of basis shells            =   66
      Number of correlated occupied MOs =   46
      Number of active virtual MOs      =   34
- ----------------------------------------------
+ ------------------------------------------------
  == Single pass calculation ==
     Start Pass    1
       Cycle  1   Z-Vector error=  2.739E-03
@@ -5314,7 +5342,7 @@
       Cycle 19   Z-Vector error=  2.385E-10
       Cycle 20   Z-Vector error=  9.109E-11
  -------------------------------------------------
-               Energy (Hartree)
+   Energy (Hartree)
  -------------------------------------------------
    HF Energy                  =  -1531.462303535
    MP2 Correlation Energy     =     -0.998467177
@@ -5365,8 +5393,8 @@
    ==== Geometry converged ====
    ============================
 
- Step CPU :      36.5, Total CPU :     582.4 of Master process
- Step Wall :      3.0, Total Wall :     48.6 at Mon Aug  2 00:00:56 2021
+ Step CPU :      37.1, Total CPU :     584.2 of Master process
+ Step Wall :      3.1, Total Wall :     48.7 at Thu Aug 12 14:09:24 2021
 
  --------------------------------------------------------------------------------
    Orbital Energies (Hartree)
@@ -5872,12 +5900,12 @@
    H          4.3287248     1.4993459    -0.5213154
  ----------------------------------------------------
 
- Step CPU :       0.0, Total CPU :     582.4 of Master process
- Step Wall :      0.0, Total Wall :     48.6 at Mon Aug  2 00:00:56 2021
+ Step CPU :       0.0, Total CPU :     584.3 of Master process
+ Step Wall :      0.0, Total Wall :     48.7 at Thu Aug 12 14:09:24 2021
 
- Total CPU time :      582.4 seconds
- Total Wall time:       48.6 seconds
-                 ( 0 days  0 hours  0 minutes 48.6 seconds)
- The job finished at Mon Aug  2 00:00:56 2021
+ Total CPU time :      584.3 seconds
+ Total Wall time:       48.7 seconds
+                 ( 0 days  0 hours  0 minutes 48.7 seconds)
+ The job finished at Thu Aug 12 14:09:24 2021
  Used memory :     375 MB
  Your calculation finished successfully with  0 warning.

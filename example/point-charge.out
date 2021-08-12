@@ -5,7 +5,7 @@
            written by K. ISHIMURA
  *******************************************
 
- The job started at Mon Aug  2 00:00:56 2021
+ The job started at Thu Aug 12 14:09:24 2021
  Master node is smash.jp
  Number of processes =     2
  Number of threads   =    12
@@ -126,7 +126,7 @@
        setenv OMP_STACKSIZE 1G
 
  Step CPU :       0.3, Total CPU :       0.3 of Master process
- Step Wall :      0.0, Total Wall :      0.0 at Mon Aug  2 00:00:56 2021
+ Step Wall :      0.0, Total Wall :      0.0 at Thu Aug 12 14:09:24 2021
 
  ==========================================================================
    Restricted Hartree-Fock calculation for guess orbitals of DFT
@@ -143,8 +143,8 @@
     SCF Converged.
  --------------------
 
- Step CPU :       2.4, Total CPU :       2.8 of Master process
- Step Wall :      0.2, Total Wall :      0.2 at Mon Aug  2 00:00:56 2021
+ Step CPU :       2.5, Total CPU :       2.7 of Master process
+ Step Wall :      0.2, Total Wall :      0.2 at Thu Aug 12 14:09:25 2021
 
  ==========================================================================
    Restricted DFT calculation
@@ -669,8 +669,8 @@
   113   12 H   Py         0.000694    0.009052    0.008716    0.000335   -0.001344
   114   12 H   Pz         0.000434    0.000650   -0.000257   -0.020068   -0.002116
  
- Step CPU :       8.7, Total CPU :      11.5 of Master process
- Step Wall :      0.7, Total Wall :      1.0 at Mon Aug  2 00:00:57 2021
+ Step CPU :       8.8, Total CPU :      11.5 of Master process
+ Step Wall :      0.7, Total Wall :      1.0 at Thu Aug 12 14:09:25 2021
 
  ========================
    Property calculation
@@ -705,11 +705,11 @@
  ----------------------------------------------
 
  Step CPU :       0.0, Total CPU :      11.5 of Master process
- Step Wall :      0.0, Total Wall :      1.0 at Mon Aug  2 00:00:57 2021
+ Step Wall :      0.0, Total Wall :      1.0 at Thu Aug 12 14:09:25 2021
 
- Total CPU time :       11.5 seconds
+ Total CPU time :       11.6 seconds
  Total Wall time:        1.0 seconds
                  ( 0 days  0 hours  0 minutes  1.0 seconds)
- The job finished at Mon Aug  2 00:00:57 2021
+ The job finished at Thu Aug 12 14:09:25 2021
  Used memory :       5 MB
  Your calculation finished successfully with  0 warning.
