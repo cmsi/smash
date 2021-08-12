@@ -1616,7 +1616,7 @@ end
                   endif
                 endif
               enddo
-              write(datacomp%iout,'(3x,"MO:",i5,5x,"Energy:",f10.5)') jj, eigen(jj)
+              write(datacomp%iout,'(3x,"MO:",i5,3x,"Energy:",f12.5)') jj, eigen(jj)
               do ll= 1,mocount/2
                 kk = mosave(2*(ll-1)+1)
                 kk2= mosave(2*ll)
