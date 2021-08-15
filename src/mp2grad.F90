@@ -386,7 +386,7 @@ end
 !
 ! mem5
         call memrest(msize,datacomp)
-        mlsize2=(msize-nao*numi-2*nao2)/(nao*(numi+1))
+        mlsize2=(msize-nao*numi*nthread-nao2*(nthread+1))/(nao*(numi+1))
         if(mlsize2 > maxsize) mlsize2= maxsize
         call memset(numi*mlsize2*nao+nao*numi*nthread+nao2*nthread+nao2+nao*mlsize2,datacomp)
         allocate(tisml(numi*mlsize2*nao),xlmi(nao*numi),xlmn(nao2), &
