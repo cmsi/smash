@@ -1,5 +1,6 @@
 # Makefile for Fujitsu compiler
 F90 = mpifrtpx
+CPPFLAGS =
 LIB = -SSL2BLAMP
 OPT = -Kfast,openmp
 SRC =   basis.F90 geom.F90 guess.F90 fileio.F90 int1.F90 machine.F90 main.F90 math.F90 \
@@ -18,11 +19,11 @@ OBJDIR= obj
 smash : $(OBJS)
 	$(F90) -o bin/smash $(OPT) $(OBJS) $(LIB)
 
-smash.a : $(OBJS)
-	ar rv obj/smash.a $(subst obj/start.o,,$(OBJS))
+libsmash.a : $(filter-out $(OBJDIR)/start.o,$(OBJS))
+	$(AR) $(ARFLAGS) $(OBJDIR)/libsmash.a $^
 
 $(OBJDIR)/%.o : src/%.F90
-	$(F90) $(OPT) -M $(OBJDIR) -o $@ -c $<
+	$(F90) $(CPPFLAGS) $(OPT) -I $(OBJDIR) -o $@ -c $<
 
 $(OBJ): $(addprefix src/,$(MOD))
 

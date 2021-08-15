@@ -1,5 +1,6 @@
 # Makefile for non-MPI compiler (ifort, gfortran, nvfortran (pgfortran))
-F90 = ifort -DnoMPI
+F90 = ifort
+CPPFLAGS = -DnoMPI
 LIB = -mkl=parallel
 OPT = -qopenmp -i8 -xHOST
 #gfortran  F90 = gfortran -DnoMPI
@@ -25,12 +26,11 @@ smash : $(OBJS)
 	$(F90) -o bin/smash $(OPT) $(OBJS) $(LIB)
 #gfortran	$(F90) -o bin/smash -I $(OBJDIR) $(OPT) $(OBJS) $(LIB)
 
-smash.a : $(OBJS)
-	ar rv obj/smash.a $(subst obj/start.o,,$(OBJS))
+libsmash.a : $(filter-out $(OBJDIR)/start.o,$(OBJS))
+	$(AR) $(ARFLAGS) $(OBJDIR)/libsmash.a $^
 
 $(OBJDIR)/%.o : src/%.F90
-	$(F90) $(OPT) -module $(OBJDIR) -o $@ -c $<
-#gfortran	$(F90) $(OPT) -J$(OBJDIR) -o $@ -c $<
+	$(F90) $(CPPFLAGS) $(OPT) -I $(OBJDIR) -o $@ -c $<
 
 $(OBJ): $(addprefix src/,$(MOD))
 
