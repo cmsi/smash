@@ -337,6 +337,7 @@ end
       type(typecomp),intent(in) :: datacomp
       character(len=24) :: tdate
 !
+      call sleep(5)
       call fdate(tdate)
       write(datacomp%iout,'(" The job finished at ",a)')tdate
       write(datacomp%iout,'(" ===========================================")')
