@@ -24,6 +24,7 @@
 !       xint    (Exchange integral matrix)
 ! Out : egrad   (MP2 energy gradients)
 !
+!$    use omp_lib
       use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
       type(typejob),intent(in) :: datajob
@@ -36,7 +37,7 @@
       integer :: nocc2, nocc3, nvir2, nao, nshell, nao2, nao3
       integer :: mem1, mem2, mem2i, mem3, mem3i, mem4, mem5
       integer :: mem5i, mem6, memmin345, memmin16, msize, memmin3, memmin4, memmin5
-      integer :: numi3, numi4, numi5, numi, npass, ii, jj
+      integer :: numi3, numi4, numi5, numi, npass, ii, jj, nthread
       real(8),parameter :: zero=0.0D+00, three=3.0D+00, p12=1.2D+00
       real(8),intent(in) :: cmo(databasis%nao,databasis%nao), energymo(databasis%nao)
       real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
@@ -68,6 +69,10 @@
       nvir= datamol%nmo-datamol%neleca
       noac= nocc-datajob%ncore
       nvac= nvir-datajob%nvfz
+      nthread= 1
+!$omp parallel
+!$    nthread= omp_get_num_threads()
+!$omp end parallel
       write(cncore,'(i0)') datajob%ncore
       write(cnvfz ,'(i0)') datajob%nvfz
       write(cmaxmp2diis,'(i0)') datajob%maxmp2diis
@@ -168,8 +173,8 @@
       mem3= nao*noac
       mem3i= maxdim**3+nao*maxdim**2
       mem4= 2*nproc*maxsize+nao2+nocc*nvac+2*numab*noac*numirecv+2*numab
-      mem5= 2*nao2+nao*maxdim**2
-      mem5i= nao*maxdim**2+nao
+      mem5= nao2+nao2*nthread+nao*maxdim**2
+      mem5i= nao*maxdim**2+nao*nthread
       mem6= 2*nocc*nvir+2*nao3+nshell*(nshell+1)/2+2*numov*datajob%maxmp2diis &
 &          +datajob%maxmp2diis*(datajob%maxmp2diis+1)/2+2*nao2
 !
