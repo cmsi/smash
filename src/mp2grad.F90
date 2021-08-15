@@ -389,7 +389,7 @@ end
         mlsize2=(msize-nao*numi-2*nao2)/(nao*(numi+1))
         if(mlsize2 > maxsize) mlsize2= maxsize
         call memset(numi*mlsize2*nao+nao*numi*nthread+nao2*nthread+nao2+nao*mlsize2,datacomp)
-        allocate(tisml(numi*mlsize2*nao),xlmi(nao*numi*nthread),xlmn(nao2*nthread), &
+        allocate(tisml(numi*mlsize2*nao),xlmi(nao*numi),xlmn(nao2), &
 &                work1(nao2),work2(nao*mlsize2))
 !
         if(ipass /= npass) then
