@@ -47,16 +47,16 @@ end module
       use modparam
       use modbasis
       implicit none
-      integer,parameter :: numperang=5
       integer :: ii, jj, kk, ilen, monum, maxxyz(3), minxyz(3), lenxyz(3), numxyz(3)
       integer :: natom, nmo, neleca, nelecb, multi, iatom, numatomic(mxatom)
-      real(8),parameter :: space=0.20D+00, zero=0.0D+00, thresh=1.0D-15
+      real(8),parameter :: space=0.40D+00, zero=0.0D+00
       real(8),parameter :: toang= 0.5291772108D+00
       real(8) :: xyzmax(3), xyzmin(3), xx, yy, zz
       real(8) :: coord(3,mxatom), znuc(mxatom), charge, orbital(mxgridz)
+      real(8) :: cutoff=20.0D+00
       real(8),allocatable :: cmoa(:,:), cmob(:,:), dmtrxa(:), dmtrxb(:)
-      character(len=64) :: filecheck, filecube, viewtype, moarg
-      character(len=16) :: checkversion, scftype, method, runtype
+      character(len=128) :: filecheck, filecube, viewtype, moarg
+      character(len=32) :: checkversion, scftype, method, runtype
 !
       call getarg(1,filecheck)
       call getarg(2,filecube)
@@ -182,7 +182,7 @@ end module
         maxxyz(ii)= nint(xyzmax(ii))+6
         minxyz(ii)= nint(xyzmin(ii))-6
         lenxyz(ii)= maxxyz(ii)-minxyz(ii)
-        numxyz(ii)= lenxyz(ii)*numperang+1
+        numxyz(ii)= lenxyz(ii)/space+1
       enddo
 !
       if(numxyz(3) > mxgridz) then
@@ -212,8 +212,7 @@ end module
             yy= minxyz(2)+(jj-1)*space
             do kk= 1,numxyz(3)
               zz= minxyz(3)+(kk-1)*space
-              call calcorbital2(orbital(kk),cmoa,coord,xx,yy,zz,monum)
-              if(abs(orbital(kk)) < thresh) orbital(kk)= zero
+              call calcorbital2(orbital(kk),cmoa,coord,xx,yy,zz,monum,cutoff)
             enddo
             write(20,'(1p6e13.5)')(orbital(kk),kk=1,numxyz(3))
           enddo
@@ -225,8 +224,7 @@ end module
             yy= minxyz(2)+(jj-1)*space
             do kk= 1,numxyz(3)
               zz= minxyz(3)+(kk-1)*space
-              call calcorbital2(orbital(kk),cmob,coord,xx,yy,zz,monum)
-              if(abs(orbital(kk)) < thresh) orbital(kk)= zero
+              call calcorbital2(orbital(kk),cmob,coord,xx,yy,zz,monum,cutoff)
             enddo
             write(20,'(1p6e13.5)')(orbital(kk),kk=1,numxyz(3))
           enddo
@@ -258,8 +256,8 @@ end
 !
       implicit none
       integer :: ilen, ii, inum
-      character(len=64),intent(inout) :: line
-      character(len=64) :: linecopy
+      character(len=128),intent(inout) :: line
+      character(len=128) :: linecopy
       character(len=26) :: upper='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
       character(len=26) :: lower='abcdefghijklmnopqrstuvwxyz'
 !
@@ -342,9 +340,9 @@ end
 end
 
 
-!---------------------------------------------------------------------
-  subroutine calcorbital2(orbital,cmo,coord,xbohr,ybohr,zbohr,monum)
-!---------------------------------------------------------------------
+!----------------------------------------------------------------------------
+  subroutine calcorbital2(orbital,cmo,coord,xbohr,ybohr,zbohr,monum,cutoff)
+!----------------------------------------------------------------------------
       use modparam
       use modbasis
       implicit none
@@ -369,7 +367,7 @@ end
       real(8),parameter :: facg6=0.18742611911532351D+00 ! 1/sqrt(196/5-24/sqrt(5))
       real(8),parameter :: facg7=1.11803398874989484D+00 ! 1/sqrt(4/5)
       real(8),intent(in) :: cmo(nao,nao), coord(3,mxatom)
-      real(8),intent(in) :: xbohr, ybohr, zbohr
+      real(8),intent(in) :: xbohr, ybohr, zbohr, cutoff
       real(8),intent(out) :: orbital
       real(8) :: rr, xval, yval, zval, valbasis(28), work(28), expval
 !
@@ -380,24 +378,28 @@ end
         numprim= mprim(ish)
         numbf  = mbf(ish)
         ibf    = locbf(ish)
-        rr=(xbohr-coord(1,iatom))**2+(ybohr-coord(2,iatom))**2+(zbohr-coord(3,iatom))**2
         xval= xbohr-coord(1,iatom)
         yval= ybohr-coord(2,iatom)
         zval= zbohr-coord(3,iatom)
+        rr= xval*xval+yval*yval+zval*zval
         select case(numbf)
           case(1)
             valbasis(1)= zero
             do iprim= locprim(ish)+1,locprim(ish)+numprim
-              valbasis(1)= valbasis(1)+exp(-ex(iprim)*rr)*coeff(iprim)
+              if(ex(iprim)*rr < cutoff) then
+                valbasis(1)= valbasis(1)+exp(-ex(iprim)*rr)*coeff(iprim)
+              endif
             enddo
             orbital= orbital+valbasis(1)*cmo(ibf+1,monum)
           case(3)
             valbasis(1:3)= zero
             do iprim= locprim(ish)+1,locprim(ish)+numprim
-              expval= exp(-ex(iprim)*rr)*coeff(iprim)
-              valbasis(1)= valbasis(1)+xval*expval
-              valbasis(2)= valbasis(2)+yval*expval
-              valbasis(3)= valbasis(3)+zval*expval
+              if(ex(iprim)*rr < cutoff) then
+                expval= exp(-ex(iprim)*rr)*coeff(iprim)
+                valbasis(1)= valbasis(1)+xval*expval
+                valbasis(2)= valbasis(2)+yval*expval
+                valbasis(3)= valbasis(3)+zval*expval
+              endif
             enddo
             orbital= orbital+valbasis(1)*cmo(ibf+1,monum)
             orbital= orbital+valbasis(2)*cmo(ibf+2,monum)
@@ -405,13 +407,15 @@ end
           case(5)
             work(1:6)= zero
             do iprim= locprim(ish)+1,locprim(ish)+numprim
-              expval= exp(-ex(iprim)*rr)*coeff(iprim)
-              work(1)= work(1)+xval*xval*expval
-              work(2)= work(2)+xval*yval*expval*sqrt3
-              work(3)= work(3)+xval*zval*expval*sqrt3
-              work(4)= work(4)+yval*yval*expval
-              work(5)= work(5)+yval*zval*expval*sqrt3
-              work(6)= work(6)+zval*zval*expval
+              if(ex(iprim)*rr < cutoff) then
+                expval= exp(-ex(iprim)*rr)*coeff(iprim)
+                work(1)= work(1)+xval*xval*expval
+                work(2)= work(2)+xval*yval*expval*sqrt3
+                work(3)= work(3)+xval*zval*expval*sqrt3
+                work(4)= work(4)+yval*yval*expval
+                work(5)= work(5)+yval*zval*expval*sqrt3
+                work(6)= work(6)+zval*zval*expval
+              endif
             enddo
             valbasis(1)= work(2)
             valbasis(2)= work(5)
@@ -424,13 +428,15 @@ end
           case(6)
             valbasis(1:6)= zero
             do iprim= locprim(ish)+1,locprim(ish)+numprim
-              expval= exp(-ex(iprim)*rr)*coeff(iprim)
-              valbasis(1)= valbasis(1)+xval*xval*expval
-              valbasis(2)= valbasis(2)+xval*yval*expval*sqrt3
-              valbasis(3)= valbasis(3)+xval*zval*expval*sqrt3
-              valbasis(4)= valbasis(4)+yval*yval*expval
-              valbasis(5)= valbasis(5)+yval*zval*expval*sqrt3
-              valbasis(6)= valbasis(6)+zval*zval*expval
+              if(ex(iprim)*rr < cutoff) then
+                expval= exp(-ex(iprim)*rr)*coeff(iprim)
+                valbasis(1)= valbasis(1)+xval*xval*expval
+                valbasis(2)= valbasis(2)+xval*yval*expval*sqrt3
+                valbasis(3)= valbasis(3)+xval*zval*expval*sqrt3
+                valbasis(4)= valbasis(4)+yval*yval*expval
+                valbasis(5)= valbasis(5)+yval*zval*expval*sqrt3
+                valbasis(6)= valbasis(6)+zval*zval*expval
+              endif
             enddo
             do ii= 1,6
               orbital= orbital+valbasis(ii)*cmo(ibf+ii,monum)
@@ -438,17 +444,19 @@ end
           case(7)
             work(1:10)= zero
             do iprim= locprim(ish)+1,locprim(ish)+numprim
-              expval= exp(-ex(iprim)*rr)*coeff(iprim)
-              work( 1)= work( 1)+xval*xval*xval*expval
-              work( 2)= work( 2)+xval*xval*yval*expval*sqrt5
-              work( 3)= work( 3)+xval*xval*zval*expval*sqrt5
-              work( 4)= work( 4)+xval*yval*yval*expval*sqrt5
-              work( 5)= work( 5)+xval*yval*zval*expval*sqrt15
-              work( 6)= work( 6)+xval*zval*zval*expval*sqrt5
-              work( 7)= work( 7)+yval*yval*yval*expval
-              work( 8)= work( 8)+yval*yval*zval*expval*sqrt5
-              work( 9)= work( 9)+yval*zval*zval*expval*sqrt5
-              work(10)= work(10)+zval*zval*zval*expval
+              if(ex(iprim)*rr < cutoff) then
+                expval= exp(-ex(iprim)*rr)*coeff(iprim)
+                work( 1)= work( 1)+xval*xval*xval*expval
+                work( 2)= work( 2)+xval*xval*yval*expval*sqrt5
+                work( 3)= work( 3)+xval*xval*zval*expval*sqrt5
+                work( 4)= work( 4)+xval*yval*yval*expval*sqrt5
+                work( 5)= work( 5)+xval*yval*zval*expval*sqrt15
+                work( 6)= work( 6)+xval*zval*zval*expval*sqrt5
+                work( 7)= work( 7)+yval*yval*yval*expval
+                work( 8)= work( 8)+yval*yval*zval*expval*sqrt5
+                work( 9)= work( 9)+yval*zval*zval*expval*sqrt5
+                work(10)= work(10)+zval*zval*zval*expval
+              endif
             enddo
             valbasis(1)=(-work(7)+work(2)*three                   )*facf1
             valbasis(2)=  work(5)
@@ -463,17 +471,19 @@ end
           case(10)
             valbasis(1:10)= zero
             do iprim= locprim(ish)+1,locprim(ish)+numprim
-              expval= exp(-ex(iprim)*rr)*coeff(iprim)
-              valbasis( 1)= valbasis( 1)+xval*xval*xval*expval
-              valbasis( 2)= valbasis( 2)+xval*xval*yval*expval*sqrt5
-              valbasis( 3)= valbasis( 3)+xval*xval*zval*expval*sqrt5
-              valbasis( 4)= valbasis( 4)+xval*yval*yval*expval*sqrt5
-              valbasis( 5)= valbasis( 5)+xval*yval*zval*expval*sqrt15
-              valbasis( 6)= valbasis( 6)+xval*zval*zval*expval*sqrt5
-              valbasis( 7)= valbasis( 7)+yval*yval*yval*expval
-              valbasis( 8)= valbasis( 8)+yval*yval*zval*expval*sqrt5
-              valbasis( 9)= valbasis( 9)+yval*zval*zval*expval*sqrt5
-              valbasis(10)= valbasis(10)+zval*zval*zval*expval
+              if(ex(iprim)*rr < cutoff) then
+                expval= exp(-ex(iprim)*rr)*coeff(iprim)
+                valbasis( 1)= valbasis( 1)+xval*xval*xval*expval
+                valbasis( 2)= valbasis( 2)+xval*xval*yval*expval*sqrt5
+                valbasis( 3)= valbasis( 3)+xval*xval*zval*expval*sqrt5
+                valbasis( 4)= valbasis( 4)+xval*yval*yval*expval*sqrt5
+                valbasis( 5)= valbasis( 5)+xval*yval*zval*expval*sqrt15
+                valbasis( 6)= valbasis( 6)+xval*zval*zval*expval*sqrt5
+                valbasis( 7)= valbasis( 7)+yval*yval*yval*expval
+                valbasis( 8)= valbasis( 8)+yval*yval*zval*expval*sqrt5
+                valbasis( 9)= valbasis( 9)+yval*zval*zval*expval*sqrt5
+                valbasis(10)= valbasis(10)+zval*zval*zval*expval
+              endif
             enddo
             do ii= 1,10
               orbital= orbital+valbasis(ii)*cmo(ibf+ii,monum)
@@ -481,55 +491,59 @@ end
           case(9)
             work(1:15)= zero
             do iprim= locprim(ish)+1,locprim(ish)+numprim
-              expval= exp(-ex(iprim)*rr)*coeff(iprim)
-              work( 1)= work( 1)+xval*xval*xval*xval*expval
-              work( 2)= work( 2)+xval*xval*xval*yval*expval*sqrt7
-              work( 3)= work( 3)+xval*xval*xval*zval*expval*sqrt7
-              work( 4)= work( 4)+xval*xval*yval*yval*expval*sqrt35third
-              work( 5)= work( 5)+xval*xval*yval*zval*expval*sqrt35
-              work( 6)= work( 6)+xval*xval*zval*zval*expval*sqrt35third
-              work( 7)= work( 7)+xval*yval*yval*yval*expval*sqrt7
-              work( 8)= work( 8)+xval*yval*yval*zval*expval*sqrt35
-              work( 9)= work( 9)+xval*yval*zval*zval*expval*sqrt35
-              work(10)= work(10)+xval*zval*zval*zval*expval*sqrt7
-              work(11)= work(11)+yval*yval*yval*yval*expval
-              work(12)= work(12)+yval*yval*yval*zval*expval*sqrt7
-              work(13)= work(13)+yval*yval*zval*zval*expval*sqrt35third
-              work(14)= work(14)+yval*zval*zval*zval*expval*sqrt7
-              work(15)= work(15)+zval*zval*zval*zval*expval
-              valbasis(1)=(work(2)-work(7))*facg7
-              valbasis(2)=(-work(12)+work(5)*three)*facg2
-              valbasis(3)=(-work(2)-work(7)+work(9)*six)*facg6
-              valbasis(4)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
-              valbasis(5)=(work(1)*three+work(11)*three+work(15)*eight+work(4)*six &
-&                         -work(6)*p24-work(13)*p24)*facg5
-              valbasis(6)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
-              valbasis(7)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg3
-              valbasis(8)=(work(3)-work(8)*three)*facg2
-              valbasis(9)=(work(1)+work(11)-work(4)*six)*facg1
+              if(ex(iprim)*rr < cutoff) then
+                expval= exp(-ex(iprim)*rr)*coeff(iprim)
+                work( 1)= work( 1)+xval*xval*xval*xval*expval
+                work( 2)= work( 2)+xval*xval*xval*yval*expval*sqrt7
+                work( 3)= work( 3)+xval*xval*xval*zval*expval*sqrt7
+                work( 4)= work( 4)+xval*xval*yval*yval*expval*sqrt35third
+                work( 5)= work( 5)+xval*xval*yval*zval*expval*sqrt35
+                work( 6)= work( 6)+xval*xval*zval*zval*expval*sqrt35third
+                work( 7)= work( 7)+xval*yval*yval*yval*expval*sqrt7
+                work( 8)= work( 8)+xval*yval*yval*zval*expval*sqrt35
+                work( 9)= work( 9)+xval*yval*zval*zval*expval*sqrt35
+                work(10)= work(10)+xval*zval*zval*zval*expval*sqrt7
+                work(11)= work(11)+yval*yval*yval*yval*expval
+                work(12)= work(12)+yval*yval*yval*zval*expval*sqrt7
+                work(13)= work(13)+yval*yval*zval*zval*expval*sqrt35third
+                work(14)= work(14)+yval*zval*zval*zval*expval*sqrt7
+                work(15)= work(15)+zval*zval*zval*zval*expval
+              endif
             enddo
+            valbasis(1)=(work(2)-work(7))*facg7
+            valbasis(2)=(-work(12)+work(5)*three)*facg2
+            valbasis(3)=(-work(2)-work(7)+work(9)*six)*facg6
+            valbasis(4)=(-work(12)*three+work(14)*four-work(5)*three)*facg4
+            valbasis(5)=(work(1)*three+work(11)*three+work(15)*eight+work(4)*six &
+&                       -work(6)*p24-work(13)*p24)*facg5
+            valbasis(6)=(-work(3)*three+work(10)*four-work(8)*three)*facg4
+            valbasis(7)=(-work(1)+work(11)+work(6)*six-work(13)*six)*facg3
+            valbasis(8)=(work(3)-work(8)*three)*facg2
+            valbasis(9)=(work(1)+work(11)-work(4)*six)*facg1
             do ii= 1,9
               orbital= orbital+valbasis(ii)*cmo(ibf+ii,monum)
             enddo
           case(15)
             valbasis(1:15)= zero
             do iprim= locprim(ish)+1,locprim(ish)+numprim
-              expval= exp(-ex(iprim)*rr)*coeff(iprim)
-              valbasis( 1)= valbasis( 1)+xval*xval*xval*xval*expval
-              valbasis( 2)= valbasis( 2)+xval*xval*xval*yval*expval*sqrt7
-              valbasis( 3)= valbasis( 3)+xval*xval*xval*zval*expval*sqrt7
-              valbasis( 4)= valbasis( 4)+xval*xval*yval*yval*expval*sqrt35third
-              valbasis( 5)= valbasis( 5)+xval*xval*yval*zval*expval*sqrt35
-              valbasis( 6)= valbasis( 6)+xval*xval*zval*zval*expval*sqrt35third
-              valbasis( 7)= valbasis( 7)+xval*yval*yval*yval*expval*sqrt7
-              valbasis( 8)= valbasis( 8)+xval*yval*yval*zval*expval*sqrt35
-              valbasis( 9)= valbasis( 9)+xval*yval*zval*zval*expval*sqrt35
-              valbasis(10)= valbasis(10)+xval*zval*zval*zval*expval*sqrt7
-              valbasis(11)= valbasis(11)+yval*yval*yval*yval*expval
-              valbasis(12)= valbasis(12)+yval*yval*yval*zval*expval*sqrt7
-              valbasis(13)= valbasis(13)+yval*yval*zval*zval*expval*sqrt35third
-              valbasis(14)= valbasis(14)+yval*zval*zval*zval*expval*sqrt7
-              valbasis(15)= valbasis(15)+zval*zval*zval*zval*expval
+              if(ex(iprim)*rr < cutoff) then
+                expval= exp(-ex(iprim)*rr)*coeff(iprim)
+                valbasis( 1)= valbasis( 1)+xval*xval*xval*xval*expval
+                valbasis( 2)= valbasis( 2)+xval*xval*xval*yval*expval*sqrt7
+                valbasis( 3)= valbasis( 3)+xval*xval*xval*zval*expval*sqrt7
+                valbasis( 4)= valbasis( 4)+xval*xval*yval*yval*expval*sqrt35third
+                valbasis( 5)= valbasis( 5)+xval*xval*yval*zval*expval*sqrt35
+                valbasis( 6)= valbasis( 6)+xval*xval*zval*zval*expval*sqrt35third
+                valbasis( 7)= valbasis( 7)+xval*yval*yval*yval*expval*sqrt7
+                valbasis( 8)= valbasis( 8)+xval*yval*yval*zval*expval*sqrt35
+                valbasis( 9)= valbasis( 9)+xval*yval*zval*zval*expval*sqrt35
+                valbasis(10)= valbasis(10)+xval*zval*zval*zval*expval*sqrt7
+                valbasis(11)= valbasis(11)+yval*yval*yval*yval*expval
+                valbasis(12)= valbasis(12)+yval*yval*yval*zval*expval*sqrt7
+                valbasis(13)= valbasis(13)+yval*yval*zval*zval*expval*sqrt35third
+                valbasis(14)= valbasis(14)+yval*zval*zval*zval*expval*sqrt7
+                valbasis(15)= valbasis(15)+zval*zval*zval*zval*expval
+              endif
             enddo
             do ii= 1,15
               orbital= orbital+valbasis(ii)*cmo(ibf+ii,monum)

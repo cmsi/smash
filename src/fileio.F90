@@ -1,4 +1,4 @@
-! Copyright 2014  Kazuya Ishimura
+! Copyright 2014-2021  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,51 +12,55 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!---------------------------------
-  subroutine readinput(mpi_comm)
-!---------------------------------
+!-----------------------------------------------------------
+  subroutine readinput(datajob,datamol,databasis,datacomp)
+!-----------------------------------------------------------
 !
 ! Read input data and open checkpoint file if necessary
 !
-      use modiofile, only : input, check, maxline
-      use modbasis, only : basis, spher
-      use modmolecule, only : numatomic, natom, coord, znuc, charge, multi
-      use modjob, only : method, runtype, scftype
-      use modmemory, only : memory
-      use modthresh, only : precision, cutint2, threshdiis, threshsoscf, threshqc, threshweight, &
-&                           threshrho, threshdfock, threshdftao, threshover, threshatom, &
-&                           threshmp2cphf
-      use modguess, only : guess
-      use modprint, only : iprint
-      use modscf, only : scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
-      use modopt, only : nopt, optconv, cartesian
-      use modunit, only : bohr
-      use moddft, only : nrad, nleb, bqrad
-      use modecp, only : ecp, flagecp
-      use modmp2, only : ncore, nvfz, maxmp2diis, maxmp2iter
+      use modparam, only : maxline
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
-      integer,intent(in) :: mpi_comm
-      integer :: myrank, ii, llen, intarray(16), info
-      real(8) :: realarray(23)
-      character(len=254) :: line
-      character(len=16) :: chararray(9), mem=''
-      logical :: logarray(4)
-      namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp
-      namelist /control/ precision, cutint2, spher, guess, iprint, bohr, check, threshover, &
-&                        threshatom
+      type(typejob),intent(inout) :: datajob
+      type(typemol),intent(inout) :: datamol
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(inout) :: datacomp
+      integer :: ii, llen, intarray(15), info
+      integer :: maxiter, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
+      integer :: nrad, nleb, ncore, nvfz, maxmp2diis, maxmp2iter, nopt
+      integer :: multi, iprint
+      real(8) :: realarray(24)
+      real(8) :: threshover, threshatom, threshdiis, cutint2, threshsoscf
+      real(8) :: threshqc, threshweight,threshrho, threshdfock, threshdftao, threshmp2cphf
+      real(8) :: dconv, bqrad(9), optconv, fbond
+      real(8) :: charge
+      character(len=256) :: line
+      character(len=32) :: chararray(12)
+      character(len=256) :: check, chk='', xyz, char256array(2)
+      character(len=32) :: method, runtype, scftype, memory, guess, precision, scfconv
+      character(len=32) :: basis, ecp, mem='', print, pop, multipole
+      logical :: bohr, flagecp, cartesian, spher, logarray(4)
+      logical :: writeinput
+      namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp, ncore, nvfz
+      namelist /control/ precision, cutint2, spher, guess, bohr, check, chk, xyz, threshover, &
+&                        threshatom, print, iprint, pop, multipole
       namelist /scf/ scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub, &
 &                    threshdiis, threshsoscf, threshqc
-      namelist /opt/ nopt, optconv, cartesian
+      namelist /opt/ nopt, optconv, cartesian, fbond
       namelist /dft/ nrad, nleb, threshweight, threshrho, threshdfock, threshdftao, bqrad
-      namelist /mp2/ ncore, nvfz, maxmp2diis, maxmp2iter, threshmp2cphf
+      namelist /mp2/ maxmp2diis, maxmp2iter, threshmp2cphf
 !
-      call para_comm_rank(myrank,mpi_comm)
-
-      if(myrank == 0) then
+      if(datacomp%master) then
+        writeinput=.true.
+        write(datacomp%iout,'(" --------------")')
+        write(datacomp%iout,'("   Input data")')
+        write(datacomp%iout,'(" --------------")')
+!
         do ii= 1,maxline
-          read(*,'(a)',end=100) line
+          read(datacomp%inpstd,'(a)',end=100) line
           line=adjustl(line)
           llen=len_trim(line)
+          if(writeinput) write(datacomp%iout,'(a)')"  "//trim(line)
           call low2up(line,llen)
           select case(line(1:3))
             case('JOB')
@@ -72,93 +76,143 @@
               line="&"//trim(line)//" /"
               call addapos(line,'GUESS=',6)
               call addapos(line,'CHECK=',6)
+              call addapos(line,'CHK=',4)
+              call addapos(line,'XYZ=',4)
               call addapos(line,'PRECISION=',10)
+              call addapos(line,'PRINT=',6)
+              call addapos(line,'POP=',4)
+              call addapos(line,'MULTIPOLE=',10)
             case('SCF')
               line="&"//trim(line)//" /"
               call addapos(line,'SCFCONV=',8)
             case('OPT','DFT','MP2')
               line="&"//trim(line)//" /"
+            case('GEO')
+              write(datacomp%iout,'(" --------------",/)')
+              writeinput=.false.
           end select
-          llen=len_trim(line)
-          if(llen > 0) then
-            write(input,'(a)')line(1:llen)
-          else
-            write(input,*)
-          endif
+          write(datacomp%inpcopy,'(a)')trim(line)
           if(ii == maxline) then
-            write(*,'(" Input file is too long in Subroutine readinput!")')
-            call iabort
+            write(datacomp%iout,'(" Error! Input file is too long in Subroutine readinput!")')
+            call iabort(datacomp)
           endif
         enddo
+100     rewind(datacomp%inpcopy)
 !
-100     rewind(input)
-        read(input,nml=job,end=110,iostat=info)
+        method     = datajob%method
+        runtype    = datajob%runtype
+        basis      = databasis%basis
+        scftype    = datajob%scftype
+        memory     = datajob%memory
+        guess      = datajob%guess
+        ecp        = databasis%ecp
+        scfconv    = datajob%scfconv
+        precision  = datajob%precision
+        charge     = datamol%charge
+        cutint2    = datajob%cutint2
+        dconv      = datajob%dconv
+        optconv    = datajob%optconv
+        threshdiis = datajob%threshdiis
+        threshsoscf= datajob%threshsoscf
+        threshqc   = datajob%threshqc
+        bqrad(1:9) = datajob%bqrad(1:9)
+        threshweight=datajob%threshweight
+        threshrho  = datajob%threshrho
+        threshdfock= datajob%threshdfock
+        threshdftao= datajob%threshdftao
+        threshover = datajob%threshover
+        threshatom = datajob%threshatom
+        threshmp2cphf=datajob%threshmp2cphf
+        multi      = datamol%multi
+        maxiter    = datajob%maxiter
+        maxdiis    = datajob%maxdiis
+        maxsoscf   = datajob%maxsoscf
+        maxqc      = datajob%maxqc
+        maxqcdiag  = datajob%maxqcdiag
+        maxqcdiagsub=datajob%maxqcdiagsub
+        nopt       = datajob%nopt
+        nrad       = datajob%nrad
+        nleb       = datajob%nleb
+        ncore      = datajob%ncore
+        nvfz       = datajob%nvfz
+        maxmp2diis = datajob%maxmp2diis
+        maxmp2iter = datajob%maxmp2iter
+        spher      = databasis%spher
+        bohr       = datajob%bohr
+        flagecp    = datajob%flagecp
+        cartesian  = datajob%cartesian
+        check      = datajob%check
+        xyz        = datajob%xyz
+        fbond      = datajob%fbond
+        print      = datajob%print
+        iprint     = datajob%iprint
+        pop        = datajob%pop
+        multipole  = datajob%multipole
+!
+        read(datacomp%inpcopy,nml=job,end=110,iostat=info)
 110     if(info > 0) then
-          write(*,'(" Error was found in job line of input file!")')
-          call iabort
+          write(datacomp%iout,'(" Error was found in job line of input file!")')
+          call iabort(datacomp)
         endif
         if(len_trim(mem) /= 0) memory= mem
 !
-        rewind(input)
-        read(input,nml=control,end=120,iostat=info)
+        rewind(datacomp%inpcopy)
+        read(datacomp%inpcopy,nml=control,end=120,iostat=info)
 120     if(info > 0) then
-          write(*,'(" Error was found in control line of input file!")')
-          call iabort
+          write(datacomp%iout,'(" Error was found in control line of input file!")')
+          call iabort(datacomp)
         endif
+        if(len_trim(chk) /= 0) check = chk
 !
-        rewind(input)
-        read(input,nml=scf,end=130,iostat=info)
+        rewind(datacomp%inpcopy)
+        read(datacomp%inpcopy,nml=scf,end=130,iostat=info)
 130     if(info > 0) then
-          write(*,'(" Error was found in scf line of input file!")')
-          call iabort
+          write(datacomp%iout,'(" Error was found in scf line of input file!")')
+          call iabort(datacomp)
         endif
 !
-        rewind(input)
-        read(input,nml=opt,end=140,iostat=info)
+        rewind(datacomp%inpcopy)
+        read(datacomp%inpcopy,nml=opt,end=140,iostat=info)
 140     if(info > 0) then
-          write(*,'(" Error was found in opt line of input file!")')
-          call iabort
+          write(datacomp%iout,'(" Error was found in opt line of input file!")')
+          call iabort(datacomp)
         endif
 !
-        rewind(input)
-        read(input,nml=dft,end=150,iostat=info)
+        rewind(datacomp%inpcopy)
+        read(datacomp%inpcopy,nml=dft,end=150,iostat=info)
 150     if(info > 0) then
-          write(*,'(" Error was found in dft line of input file!")')
-          call iabort
+          write(datacomp%iout,'(" Error was found in dft line of input file!")')
+          call iabort(datacomp)
         endif
 !
-        rewind(input)
-        read(input,nml=mp2,end=160,iostat=info)
+        rewind(datacomp%inpcopy)
+        read(datacomp%inpcopy,nml=mp2,end=160,iostat=info)
 160     if(info > 0) then
-          write(*,'(" Error was found in mp2 line of input file!")')
-          call iabort
+          write(datacomp%iout,'(" Error was found in mp2 line of input file!")')
+          call iabort(datacomp)
         endif
-!
       endif
 !
-! Open checkpoint file
-!
-      if(check /= '') call opencheckfile
-!
-! Read geometry data
-!
-      call readatom
-!
-      if(runtype == 'OPT') runtype='OPTIMIZE'
-      if(method == 'HF') method='HARTREE-FOCK'
+      if(runtype == 'OPTIMIZE') runtype='OPT'
+      if(method == 'HARTREE-FOCK') method='HF'
       if(ecp =='NONE') ecp = ''
       if(ecp /= '') flagecp=.true.
 !
-      if(myrank == 0) then
-        chararray(1)= method
-        chararray(2)= runtype
-        chararray(3)= basis
-        chararray(4)= scftype
-        chararray(5)= memory
-        chararray(6)= guess
-        chararray(7)= ecp
-        chararray(8)= scfconv
-        chararray(9)= precision
+      if(datacomp%master) then
+        chararray( 1)= method
+        chararray( 2)= runtype
+        chararray( 3)= basis
+        chararray( 4)= scftype
+        chararray( 5)= memory
+        chararray( 6)= guess
+        chararray( 7)= ecp
+        chararray( 8)= scfconv
+        chararray( 9)= precision
+        chararray(10)= print
+        chararray(11)= pop
+        chararray(12)= multipole
+        char256array(1)= check
+        char256array(2)= xyz
         realarray( 1)= charge
         realarray( 2)= cutint2
         realarray( 3)= dconv
@@ -182,106 +236,107 @@
         realarray(21)= threshover
         realarray(22)= threshatom
         realarray(23)= threshmp2cphf
-        intarray( 1)= natom
-        intarray( 2)= multi
-        intarray( 3)= iprint
-        intarray( 4)= maxiter
-        intarray( 5)= maxdiis
-        intarray( 6)= maxsoscf
-        intarray( 7)= maxqc
-        intarray( 8)= maxqcdiag
-        intarray( 9)= maxqcdiagsub
-        intarray(10)= nopt
-        intarray(11)= nrad
-        intarray(12)= nleb
-        intarray(13)= ncore
-        intarray(14)= nvfz
-        intarray(15)= maxmp2diis
-        intarray(16)= maxmp2iter
+        realarray(24)= fbond
+        intarray( 1)= multi
+        intarray( 2)= maxiter
+        intarray( 3)= maxdiis
+        intarray( 4)= maxsoscf
+        intarray( 5)= maxqc
+        intarray( 6)= maxqcdiag
+        intarray( 7)= maxqcdiagsub
+        intarray( 8)= nopt
+        intarray( 9)= nrad
+        intarray(10)= nleb
+        intarray(11)= ncore
+        intarray(12)= nvfz
+        intarray(13)= maxmp2diis
+        intarray(14)= maxmp2iter
+        intarray(15)= iprint
         logarray(1)= spher
         logarray(2)= bohr
         logarray(3)= flagecp
         logarray(4)= cartesian
       endif
 !
-      call para_bcastc(chararray,16*9,0,mpi_comm)
-      call para_bcastc(check,64,0,mpi_comm)
-      call para_bcastr(realarray,23,0,mpi_comm)
-      call para_bcasti(intarray,16,0,mpi_comm)
-      call para_bcastl(logarray,4,0,mpi_comm)
+      call para_bcastc(chararray,32*12,0,datacomp%mpi_comm1)
+      call para_bcastc(char256array,256*2,0,datacomp%mpi_comm1)
+      call para_bcastr(realarray,24,0,datacomp%mpi_comm1)
+      call para_bcasti(intarray,15,0,datacomp%mpi_comm1)
+      call para_bcastl(logarray,4,0,datacomp%mpi_comm1)
 !
-      natom= intarray(1)
-!
-      call para_bcasti(numatomic,natom,0,mpi_comm)
-      call para_bcastr(coord(1,1),natom*3,0,mpi_comm)
-      call para_bcastr(znuc,natom,0,mpi_comm)
-!
-      method  = chararray(1)
-      runtype = chararray(2)
-      basis   = chararray(3)
-      scftype = chararray(4)
-      memory  = chararray(5)
-      guess   = chararray(6)
-      ecp     = chararray(7)
-      scfconv = chararray(8)
-      precision=chararray(9)
-      charge  = realarray( 1)
-      cutint2 = realarray( 2)
-      dconv   = realarray( 3)
-      optconv = realarray( 4)
-      threshdiis = realarray( 5)
-      threshsoscf= realarray( 6)
-      threshqc= realarray( 7)
-      bqrad(1)= realarray( 8)
-      bqrad(2)= realarray( 9)
-      bqrad(3)= realarray(10)
-      bqrad(4)= realarray(11)
-      bqrad(5)= realarray(12)
-      bqrad(6)= realarray(13)
-      bqrad(7)= realarray(14)
-      bqrad(8)= realarray(15)
-      bqrad(9)= realarray(16)
-      threshweight= realarray(17)
-      threshrho   = realarray(18)
-      threshdfock = realarray(19)
-      threshdftao = realarray(20)
-      threshover  = realarray(21)
-      threshatom  = realarray(22)
-      threshmp2cphf=realarray(23)
-      multi   = intarray( 2)
-      iprint  = intarray( 3)
-      maxiter = intarray( 4)
-      maxdiis = intarray( 5)
-      maxsoscf= intarray( 6)
-      maxqc   = intarray( 7)
-      maxqcdiag=intarray( 8)
-      maxqcdiagsub=intarray( 9)
-      nopt    = intarray(10)
-      nrad    = intarray(11)
-      nleb    = intarray(12)
-      ncore   = intarray(13)
-      nvfz    = intarray(14)
-      maxmp2diis= intarray(15)
-      maxmp2iter= intarray(16)
-      spher   = logarray(1)
-      bohr    = logarray(2)
-      flagecp = logarray(3)
-      cartesian=logarray(4)
+      datajob%check       = char256array(1)
+      datajob%xyz         = char256array(2)
+      datajob%method      = chararray( 1)
+      datajob%runtype     = chararray( 2)
+      databasis%basis     = chararray( 3)
+      datajob%scftype     = chararray( 4)
+      datajob%memory      = chararray( 5)
+      datajob%guess       = chararray( 6)
+      databasis%ecp       = chararray( 7)
+      datajob%scfconv     = chararray( 8)
+      datajob%precision   = chararray( 9)
+      datajob%print       = chararray(10)
+      datajob%pop         = chararray(11)
+      datajob%multipole   = chararray(12)
+      datamol%charge      = realarray( 1)
+      datajob%cutint2     = realarray( 2)
+      datajob%dconv       = realarray( 3)
+      datajob%optconv     = realarray( 4)
+      datajob%threshdiis  = realarray( 5)
+      datajob%threshsoscf = realarray( 6)
+      datajob%threshqc    = realarray( 7)
+      datajob%bqrad(1)    = realarray( 8)
+      datajob%bqrad(2)    = realarray( 9)
+      datajob%bqrad(3)    = realarray(10)
+      datajob%bqrad(4)    = realarray(11)
+      datajob%bqrad(5)    = realarray(12)
+      datajob%bqrad(6)    = realarray(13)
+      datajob%bqrad(7)    = realarray(14)
+      datajob%bqrad(8)    = realarray(15)
+      datajob%bqrad(9)    = realarray(16)
+      datajob%threshweight= realarray(17)
+      datajob%threshrho   = realarray(18)
+      datajob%threshdfock = realarray(19)
+      datajob%threshdftao = realarray(20)
+      datajob%threshover  = realarray(21)
+      datajob%threshatom  = realarray(22)
+      datajob%threshmp2cphf=realarray(23)
+      datajob%fbond       = realarray(24)
+      datamol%multi       = intarray( 1)
+      datajob%maxiter     = intarray( 2)
+      datajob%maxdiis     = intarray( 3)
+      datajob%maxsoscf    = intarray( 4)
+      datajob%maxqc       = intarray( 5)
+      datajob%maxqcdiag   = intarray( 6)
+      datajob%maxqcdiagsub= intarray( 7)
+      datajob%nopt        = intarray( 8)
+      datajob%nrad        = intarray( 9)
+      datajob%nleb        = intarray(10)
+      datajob%ncore       = intarray(11)
+      datajob%nvfz        = intarray(12)
+      datajob%maxmp2diis  = intarray(13)
+      datajob%maxmp2iter  = intarray(14)
+      datajob%iprint      = intarray(15)
+      databasis%spher     = logarray(1)
+      datajob%bohr        = logarray(2)
+      datajob%flagecp     = logarray(3)
+      datajob%cartesian   = logarray(4)
 !
       return
 end
 
 
-!-----------------------
-  subroutine writegeom 
-!-----------------------
+!-----------------------------------------
+  subroutine writegeom(datamol,datacomp)
+!-----------------------------------------
 !
 ! Write molecular geometry
 !
-      use modparallel, only : master
-      use modmolecule, only : numatomic, natom, coord
-      use modunit, only : toang
+      use modparam, only : toang
+      use modtype, only : typemol, typecomp
       implicit none
+      type(typemol),intent(in) :: datamol
+      type(typecomp),intent(in) :: datacomp
       integer :: i, j
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
@@ -292,34 +347,74 @@ end
 &       'Pm ','Sm ','Eu ','Gd ','Tb ','Dy ','Ho ','Er ','Tm ','Yb ','Lu ','Hf ','Ta ','W  ','Re ',&
 &       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
-&       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
+&       'Sg ','Bh ','Hs ','Mt ','Ds ','Rg ','Cn '/)
 !
-      if(master) then
-        write(*,'(" ----------------------------------------------------")')
-        write(*,'("          Molecular Geometry (Angstrom)")')
-        write(*,'("  Atom            X             Y             Z")')
-        write(*,'(" ----------------------------------------------------")')
-        do i= 1,natom
-          write(*,'(3x,a3,3x,3f14.7)')table(numatomic(i)),(coord(j,i)*toang,j=1,3)
+      if(datacomp%master) then
+        write(datacomp%iout,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'("          Molecular Geometry (Angstrom)")')
+        write(datacomp%iout,'("  Atom            X             Y             Z")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
+        do i= 1,datamol%natom
+          write(datacomp%iout,'(3x,a3,3x,3f14.7)') &
+&               table(datamol%numatomic(i)),(datamol%coord(j,i)*toang,j=1,3)
         enddo
-        write(*,'(" ----------------------------------------------------",/)')
+        write(datacomp%iout,'(" ----------------------------------------------------",/)')
       endif
       return
 end
 
 
-!------------------------
-  subroutine writebasis
-!------------------------
+!--------------------------------------------
+  subroutine writeoptgeom(datamol,datacomp)
+!--------------------------------------------
+!
+! Write molecular geometry
+!
+      use modparam, only : toang
+      use modtype, only : typemol, typecomp
+      implicit none
+      type(typemol),intent(in) :: datamol
+      type(typecomp),intent(in) :: datacomp
+      integer :: i, j
+      character(len=3) :: table(-9:112)= &
+&     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+&       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
+&       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
+&       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
+&       'Pm ','Sm ','Eu ','Gd ','Tb ','Dy ','Ho ','Er ','Tm ','Yb ','Lu ','Hf ','Ta ','W  ','Re ',&
+&       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
+&       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
+&       'Sg ','Bh ','Hs ','Mt ','Ds ','Rg ','Cn '/)
+!
+      if(datacomp%master) then
+        write(datacomp%iout,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'("       Optimized Molecular Geometry (Angstrom)")')
+        write(datacomp%iout,'("  Atom            X             Y             Z")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
+        do i= 1,datamol%natom
+          write(datacomp%iout,'(3x,a3,3x,3f14.7)') &
+&               table(datamol%numatomic(i)),(datamol%coord(j,i)*toang,j=1,3)
+        enddo
+        write(datacomp%iout,'(" ----------------------------------------------------",/)')
+      endif
+      return
+end
+
+
+!------------------------------------------------------------
+  subroutine writebasis(datajob,datamol,databasis,datacomp)
+!------------------------------------------------------------
 !
 ! Write basis functions
 !
-      use modparallel, only : master
-      use modmolecule, only : numatomic
-      use modbasis, only : nshell, ex, coeffinp, locprim, locatom, mprim, mtype
-      use modprint, only : iprint
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
-      integer :: iatom, ishell, iloc, iprim, jatomcheck(-9:112)=0
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer :: iatom, ishell, iloc, iprim, jatomcheck(-9:112)
       logical :: second
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
@@ -330,61 +425,65 @@ end
 &       'Pm ','Sm ','Eu ','Gd ','Tb ','Dy ','Ho ','Er ','Tm ','Yb ','Lu ','Hf ','Ta ','W  ','Re ',&
 &       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
-&       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
+&       'Sg ','Bh ','Hs ','Mt ','Ds ','Rg ','Cn '/)
+!
+      jatomcheck(-9:112)=0
 !
 ! Write basis functions
 !
       second=.false.
-      if(master.and.(iprint >= 1)) then
+      if(datacomp%master.and.((mod(datajob%iprint,10) >= 3).or.(databasis%basis == "GEN"))) then
         iatom= 0
-        write(*,'(" -------------")')
-        write(*,'("   Basis set")')
-        write(*,'(" -------------")')
-        do ishell= 1, nshell
-          if(iatom /= locatom(ishell)) then
-            if(jatomcheck(numatomic(locatom(ishell))) /= 0)cycle
-            jatomcheck(numatomic(locatom(ishell)))= 1
-            if(second) write(*,'("  ****")')
+        write(datacomp%iout,'(" -------------")')
+        write(datacomp%iout,'("   Basis set")')
+        write(datacomp%iout,'(" -------------")')
+        do ishell= 1, databasis%nshell
+          if(iatom /= databasis%locatom(ishell)) then
+            if(jatomcheck(datamol%numatomic(databasis%locatom(ishell))) /= 0)cycle
+            jatomcheck(datamol%numatomic(databasis%locatom(ishell)))= 1
+            if(second) write(datacomp%iout,'("  ****")')
             second=.true.
-            write(*,'(2x,a3)')table(numatomic(locatom(ishell)))
-            iatom= locatom(ishell)
+            write(datacomp%iout,'(2x,a3)')table(datamol%numatomic(databasis%locatom(ishell)))
+            iatom= databasis%locatom(ishell)
           endif
-          if(mtype(ishell) == 0) write(*,'(4x,"S",i3)') mprim(ishell)
-          if(mtype(ishell) == 1) write(*,'(4x,"P",i3)') mprim(ishell)
-          if(mtype(ishell) == 2) write(*,'(4x,"D",i3)') mprim(ishell)
-          if(mtype(ishell) == 3) write(*,'(4x,"F",i3)') mprim(ishell)
-          if(mtype(ishell) == 4) write(*,'(4x,"G",i3)') mprim(ishell)
-          if(mtype(ishell) == 5) write(*,'(4x,"H",i3)') mprim(ishell)
-          if(mtype(ishell) == 6) write(*,'(4x,"I",i3)') mprim(ishell)
+          if(databasis%mtype(ishell) == 0) write(datacomp%iout,'(4x,"S",i3)')databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 1) write(datacomp%iout,'(4x,"P",i3)')databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 2) write(datacomp%iout,'(4x,"D",i3)')databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 3) write(datacomp%iout,'(4x,"F",i3)')databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 4) write(datacomp%iout,'(4x,"G",i3)')databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 5) write(datacomp%iout,'(4x,"H",i3)')databasis%mprim(ishell)
+          if(databasis%mtype(ishell) == 6) write(datacomp%iout,'(4x,"I",i3)')databasis%mprim(ishell)
 !
-          if(mtype(ishell) >  6) then
-            write(*,'(" Error! The subroutine writebasis supports up to i functions.")')
-            call iabort
+          if(databasis%mtype(ishell) >  6) then
+            write(datacomp%iout,'(" Error! The subroutine writebasis supports up to i functions.")')
+            call iabort(datacomp)
           endif 
 !
-          iloc= locprim(ishell)
-          do iprim= 1,mprim(ishell)
-             write(*,'(3x,f16.7,1x,f15.8)') ex(iloc+iprim), coeffinp(iloc+iprim)
+          iloc= databasis%locprim(ishell)
+          do iprim= 1,databasis%mprim(ishell)
+             write(datacomp%iout,'(3x,f16.7,1x,f15.8)') &
+&                  databasis%ex(iloc+iprim), databasis%coeffinp(iloc+iprim)
           enddo
         enddo
-        write(*,'("  ****")')
+        write(datacomp%iout,'("  ****",/)')
       endif
       return
 end
 
 
-!----------------------
-  subroutine writeecp
-!----------------------
+!----------------------------------------------------------
+  subroutine writeecp(datajob,datamol,databasis,datacomp)
+!----------------------------------------------------------
 !
 ! Write ECP functions
 !
-      use modparallel, only : master
-      use modmolecule, only : numatomic, natom
-      use modecp, only : maxangecp, mtypeecp, locecp, mprimecp, execp, coeffecp, izcore
-      use modprint, only : iprint
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
-      integer :: iatom, ll, jprim, jloc, k, nprim, jatomcheck(-9:112)=0
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer :: iatom, ll, jprim, jloc, k, nprim, jatomcheck(-9:112)
       character(len=7) :: tblecp
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
@@ -395,112 +494,129 @@ end
 &       'Pm ','Sm ','Eu ','Gd ','Tb ','Dy ','Ho ','Er ','Tm ','Yb ','Lu ','Hf ','Ta ','W  ','Re ',&
 &       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
-&       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
+&       'Sg ','Bh ','Hs ','Mt ','Ds ','Rg ','Cn '/)
+!
+      jatomcheck(-9:112)=0
 !
 ! Write ECP functions
 !
-      if(master.and.(iprint >= 1)) then
-        write(*,'(" ----------------")')
-        write(*,'("   ECP function")')
-        write(*,'(" ----------------")')
+      if(datacomp%master.and.((mod(datajob%iprint,10) >= 3).or.(databasis%ecp == "GEN"))) then
+        write(datacomp%iout,'(" ----------------")')
+        write(datacomp%iout,'("   ECP function")')
+        write(datacomp%iout,'(" ----------------")')
 !
-        do iatom= 1,natom
-          if(maxangecp(iatom) /= -1)then
-            if(jatomcheck(numatomic(iatom)) == 0) then
-              jatomcheck(numatomic(iatom))= iatom
-              write(*,'(2x,a3)')table(numatomic(iatom))
-              tblecp=table(numatomic(iatom))
+        do iatom= 1,datamol%natom
+          if(databasis%maxangecp(iatom) /= -1)then
+            if(jatomcheck(datamol%numatomic(iatom)) == 0) then
+              jatomcheck(datamol%numatomic(iatom))= iatom
+              write(datacomp%iout,'(2x,a3)')table(datamol%numatomic(iatom))
+              tblecp=table(datamol%numatomic(iatom))
               ll= len_trim(tblecp)
               tblecp= tblecp(1:ll)//'-ECP'
-              write(*,'(2x,a7,2x,i3,2x,i3)')tblecp, maxangecp(iatom), izcore(iatom)
-              nprim= mprimecp(0,iatom)
-              if(maxangecp(iatom) == 0) write(*,'(2x,"s-ul potential")')
-              if(maxangecp(iatom) == 1) write(*,'(2x,"p-ul potential")')
-              if(maxangecp(iatom) == 2) write(*,'(2x,"d-ul potential")')
-              if(maxangecp(iatom) == 3) write(*,'(2x,"f-ul potential")')
-              if(maxangecp(iatom) == 4) write(*,'(2x,"g-ul potential")')
-              write(*,'(3x,i2)')nprim
+              write(datacomp%iout,'(2x,a7,2x,i3,2x,i3)') &
+&               tblecp, databasis%maxangecp(iatom), databasis%izcore(iatom)
+              nprim= databasis%mprimecp(0,iatom)
+              if(databasis%maxangecp(iatom) == 0) write(datacomp%iout,'(2x,"s-ul potential")')
+              if(databasis%maxangecp(iatom) == 1) write(datacomp%iout,'(2x,"p-ul potential")')
+              if(databasis%maxangecp(iatom) == 2) write(datacomp%iout,'(2x,"d-ul potential")')
+              if(databasis%maxangecp(iatom) == 3) write(datacomp%iout,'(2x,"f-ul potential")')
+              if(databasis%maxangecp(iatom) == 4) write(datacomp%iout,'(2x,"g-ul potential")')
+              write(datacomp%iout,'(3x,i2)')nprim
               do jprim= 1,nprim
-                jloc= jprim+locecp(0,iatom)
-                write(*,'(2x,i1,2f16.7)')mtypeecp(jloc), execp(jloc), coeffecp(jloc)
+                jloc= jprim+databasis%locecp(0,iatom)
+                write(datacomp%iout,'(2x,i1,2f16.7)') &
+&                 databasis%mtypeecp(jloc), databasis%execp(jloc), databasis%coeffecp(jloc)
               enddo
-              do k= 1,maxangecp(iatom)
-                nprim= mprimecp(k,iatom)
-                if(k == 1) write(*,'(2x,"s-ul potential")')
-                if(k == 2) write(*,'(2x,"p-ul potential")')
-                if(k == 3) write(*,'(2x,"d-ul potential")')
-                if(k == 4) write(*,'(2x,"f-ul potential")')
-                write(*,'(3x,i2)')nprim
+              do k= 1,databasis%maxangecp(iatom)
+                nprim= databasis%mprimecp(k,iatom)
+                if(k == 1) write(datacomp%iout,'(2x,"s-ul potential")')
+                if(k == 2) write(datacomp%iout,'(2x,"p-ul potential")')
+                if(k == 3) write(datacomp%iout,'(2x,"d-ul potential")')
+                if(k == 4) write(datacomp%iout,'(2x,"f-ul potential")')
+                write(datacomp%iout,'(3x,i2)')nprim
                 do jprim= 1,nprim
-                  jloc= jprim+locecp(k,iatom)
-                  write(*,'(2x,i1,2f16.7)')mtypeecp(jloc), execp(jloc), coeffecp(jloc)
+                  jloc= jprim+databasis%locecp(k,iatom)
+                  write(datacomp%iout,'(2x,i1,2f16.7)') &
+&                  databasis%mtypeecp(jloc), databasis%execp(jloc), databasis%coeffecp(jloc)
                 enddo
               enddo
             endif
           endif
         enddo
 !
-        write(*,*)
+        write(datacomp%iout,*)
       endif
 !
       return
 end
 
 
-!----------------------------
-  subroutine writecondition
-!----------------------------
+!----------------------------------------------------------------
+  subroutine writecondition(datajob,datamol,databasis,datacomp)
+!----------------------------------------------------------------
 !
 ! Write computational conditions
 !
-      use modparallel, only : master
-      use modiofile, only : check
-      use modmolecule, only : natom, neleca, nelecb, charge, multi
-      use modbasis, only : nshell, nao, nprim, basis, spher
-      use modmemory, only : memmax
-      use modjob, only : method, runtype, scftype
-      use modopt, only : nopt, optconv, cartesian
-      use modunit, only : bohr
-      use modguess, only : guess
-      use modthresh, only : precision
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      character(len=12) :: cmemory, ccharge, cmulti, cnopt, ciprint
 !
-      if(master) then
+      if(datacomp%master) then
 !
 ! Check the numbers of electrons and basis functions
 !
-        if(neleca > nao) then
-          write(*,'(" Error! The number of basis functions is smaller than that of electrons.")')
-          call iabort
+        if(datamol%neleca > databasis%nao) then
+          write(datacomp%iout,'(" Error! The number of basis functions is smaller than that of electrons.")')
+          call iabort(datacomp)
         endif
 !
-        write(*,'(" -------------------------------------------------------------------------")')
-        write(*,'("   Job infomation")')
-        write(*,'(" -------------------------------------------------------------------------")')
-        write(*,'("   Runtype = ",a12,  ",  Method  = ",a12,     " ,  Basis    = ",a12)') &
-&                  runtype, method, basis
-        write(*,'("   Memory  =",i10, "MB ,  SCFtype = ",a12,     " ,  Precision= ",a12)') &
-&                  memmax/125000, scftype, precision
-        write(*,'("   Charge  = ",F11.1," ,  Multi   = ",i12,     " ,  Spher    = ",l1)') &
-&                  charge, multi, spher
-        write(*,'("   Bohr    = ",l1,11x,",  Guess   = ",a12)') bohr, guess
-        if(runtype == 'OPTIMIZE') &
-&       write(*,'("   Nopt    =  ",i10," ,  Optconv = ",1p,D12.1," ,  Cartesian= ",l1)') &
-&                  nopt, optconv, cartesian
-        if(check /= '') &
-        write(*,'("   Check   = ",a64)') check
-        write(*,'(" -------------------------------------------------------------------------")')
+        write(cmemory,'(i0)') datacomp%memmax/125000
+        cmemory= trim(cmemory) // 'MB' 
+        write(ccharge,'(f11.1)') datamol%charge
+        ccharge= adjustl(ccharge)
+        write(cmulti,'(i0)') datamol%multi
+        write(cnopt,'(i0)') datajob%nopt
+        write(ciprint,'(i0)') datajob%iprint
+!
+        write(datacomp%iout,'(1x,73("-"))')
+        write(datacomp%iout,'("   Job information")')
+        write(datacomp%iout,'(1x,73("-"))')
+        write(datacomp%iout,'("   Runtype = ",a12,",  Method  = ",a12," ,  Basis    = ",a12)') &
+&                  datajob%runtype, datajob%method, databasis%basis
+        write(datacomp%iout,'("   Memory  = ",a12,",  SCFtype = ",a12," ,  Precision= ",a12)') &
+&                  cmemory, datajob%scftype, datajob%precision
+        write(datacomp%iout,'("   Charge  = ",a12,",  Multi   = ",a12," ,  Spher    = ",l1)') &
+&                  ccharge, cmulti, databasis%spher
+        write(datacomp%iout,'("   Bohr    = ",l1,11x,",  Guess   = ",a12," ,  Multipole= ",a12)') &
+&                  datajob%bohr, datajob%guess, datajob%multipole
+        write(datacomp%iout,'("   Pop     = ",a12,",  Iprint  = ",a12)') &
+&                  datajob%pop, ciprint
+        if(datajob%runtype == 'OPT') then
+          write(datacomp%iout,'("   Nopt    = ",a12,",  Optconv =",1p,e9.2,5x, &
+&                               ",  Cartesian= ",l1)') cnopt, datajob%optconv, datajob%cartesian
+          write(datacomp%iout,'("   Fbond   =",1p,e9.2)') &
+&                  datajob%fbond
+        endif
+        if(datajob%check /= '') &
+&         write(datacomp%iout,'("   Check   = ",a)') trim(datajob%check)
+        if(datajob%xyz /= '') &
+&         write(datacomp%iout,'("   Xyz     = ",a)') trim(datajob%xyz)
+        write(datacomp%iout,'(1x,73("-"))')
 
-        write(*,'(/," ------------------------------------------------")')
-        write(*,'("   Computational condition")')
-        write(*,'(" ------------------------------------------------")')
-        write(*,'("   Number of atoms                      =",i5)') natom
-        write(*,'("   Number of alpha electrons            =",i5)') neleca
-        write(*,'("   Number of beta electrons             =",i5)') nelecb
-        write(*,'("   Number of basis shells               =",i5)') nshell
-        write(*,'("   Number of basis contracted functions =",i5)') nao
-        write(*,'("   Number of basis primitive functions  =",i5)') nprim
-        write(*,'(" ------------------------------------------------",/)')
+        write(datacomp%iout,'(/," ------------------------------------------------")')
+        write(datacomp%iout,'("   Computational condition")')
+        write(datacomp%iout,'(" ------------------------------------------------")')
+        write(datacomp%iout,'("   Number of atoms                      =",i5)') datamol%natom
+        write(datacomp%iout,'("   Number of alpha electrons            =",i5)') datamol%neleca
+        write(datacomp%iout,'("   Number of beta electrons             =",i5)') datamol%nelecb
+        write(datacomp%iout,'("   Number of basis shells               =",i5)') databasis%nshell
+        write(datacomp%iout,'("   Number of basis contracted functions =",i5)') databasis%nao
+        write(datacomp%iout,'("   Number of basis primitive functions  =",i5)') databasis%nprim
+        write(datacomp%iout,'(" ------------------------------------------------",/)')
       endif
       return
 end
@@ -514,8 +630,8 @@ end
 !
       implicit none
       integer :: llen, ii, inum, ispace
-      character(len=254),intent(inout) :: line
-      character(len=254) :: linecopy
+      character(len=256),intent(inout) :: line
+      character(len=256) :: linecopy
       character(len=26) :: upper='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
       character(len=26) :: lower='abcdefghijklmnopqrstuvwxyz'
 !
@@ -530,29 +646,36 @@ end
         ispace= index(line(inum:),' ')
         line(inum+6:inum+ispace-2)= linecopy(inum+6:inum+ispace-2)
       endif
+      inum= index(line(1:llen),'CHK=')
+      if(inum > 0) then
+        ispace= index(line(inum:),' ')
+        line(inum+4:inum+ispace-2)= linecopy(inum+4:inum+ispace-2)
+      endif
+      inum= index(line(1:llen),'XYZ=')
+      if(inum > 0) then
+        ispace= index(line(inum:),' ')
+        line(inum+4:inum+ispace-2)= linecopy(inum+4:inum+ispace-2)
+      endif
       return
 end
 
 
-!----------------------
-  subroutine readatom
-!----------------------
+!------------------------------------------------
+  subroutine readatom(datajob,datamol,datacomp)
+!------------------------------------------------
 !
 ! Read atomic data
 !
-      use modparallel, only : master
-      use modiofile, only : input, icheck, maxline
-      use modmolecule, only : numatomic, natom, coord, znuc
-      use modunit, only : tobohr, bohr
-      use modparam, only : mxatom
-      use modopt, only : cartesian
-      use modwarn, only : nwarn
-      use modjob, only : runtype
+      use modparam, only : mxatom, tobohr, maxline
+      use modtype, only : typejob, typemol, typecomp
       implicit none
+      type(typejob),intent(inout) :: datajob
+      type(typemol),intent(inout) :: datamol
+      type(typecomp),intent(inout) :: datacomp
       integer :: ii, jj, minatomic
       real(8),parameter :: zero=0.0D+00
-      character(len=16) :: cdummy
-      character(len=254) :: line
+      character(len=32) :: cdummy
+      character(len=256) :: line
       character(len=3) :: atomin(mxatom)
       character(len=3) :: table1(-9:112)= &
 &     (/'BQ9','BQ8','BQ7','BQ6','BQ5','BQ4','BQ3','BQ2','BQ ','X  ',&
@@ -574,59 +697,71 @@ end
 &       '76 ','77 ','78 ','79 ','80 ','81 ','82 ','83 ','84 ','85 ','86 ','87 ','88 ','89 ','90 ',&
 &       '91 ','92 ','93 ','94 ','95 ','96 ','97 ','98 ','99 ','100','101','102','103','104','105',&
 &       '106','107','108','109','110','111','112'/)
+      logical :: checkdummy
 !
-      if(master) then
-        rewind(input)
+      if(datacomp%master) then
+        rewind(datacomp%inpcopy)
         do ii= 1,maxline
-          read(input,'(a)',end=9999)line
+          read(datacomp%inpcopy,'(a)',end=9999)line
           if(line(1:4) == 'GEOM') exit
           if(ii == maxline) then
-            write(*,'(" Error! Molecular geometry is not found.")')
-            call iabort
+            write(datacomp%iout,'(" Error! Molecular geometry is not found.")')
+            call iabort(datacomp)
           endif
         enddo
 !
 ! Read data from input file
 !
         if(index(line,'CHECK') == 0) then
-          natom= 0
+          datamol%natom= 0
+          datamol%ndummyatom= 0
+          checkdummy=.false.
           do ii= 1,mxatom
-            read(input,'(a)',end=100) line
+            read(datacomp%inpcopy,'(a)',end=100) line
             if(len_trim(line) == 0) exit
-            read(line,*,err=9997,end=9997) atomin(ii),(coord(jj,ii),jj=1,3)
-            natom= natom+1
+            read(line,*,err=9997,end=9997) atomin(ii),(datamol%coord(jj,ii),jj=1,3)
+            datamol%natom= datamol%natom+1
             if(ii == mxatom) then
-              write(*,'(" Error! Number of atoms exceeds mxatom=",i6,".")')mxatom
-              write(*,'(" Increase mxatom in src/module.F90 and make again.",/)')
-              call iabort
+              write(datacomp%iout,'(" Error! Number of atoms exceeds mxatom=",i6,".")')mxatom
+              write(datacomp%iout,'(" Increase mxatom in src/module.F90 and make again.",/)')
+              call iabort(datacomp)
             endif
           enddo
 100       continue
-          do ii= 1,natom
+          do ii= 1,datamol%natom
             if(atomin(ii) == 'BQ1') atomin(ii)= 'BQ'
             do jj= -9,112
               if((atomin(ii) == table1(jj)).or.(atomin(ii) == table2(jj))) then
-                numatomic(ii)= jj
+                datamol%numatomic(ii)= jj
                 if(jj > 0) then
-                  znuc(ii)= dble(jj)
+                  datamol%znuc(ii)= dble(jj)
+                  if(checkdummy) then
+                    write(datacomp%iout,'(" Error! Real atom is wriiten after dummy atoms.")')
+                    write(datacomp%iout,'(" Dummy atoms should be wriiten at the bottom of GEOM section.")')
+                    call iabort(datacomp)
+                  endif
+                elseif(jj == 0) then
+                  checkdummy=.true.
+                  datamol%znuc(ii)= zero
+                  datamol%ndummyatom= datamol%ndummyatom+1
                 else
-                  znuc(ii)= zero
+                  datamol%znuc(ii)= zero
                 endif
                 exit
               endif
               if(jj == 112) then
-                write(*,'(" Error! Atom type ",a3," is not supported.")')atomin(ii)
-                call iabort
+                write(datacomp%iout,'(" Error! Atom type ",a3," is not supported.")')atomin(ii)
+                call iabort(datacomp)
               endif
             enddo
           enddo
 !
 ! Change to atomic unit
 !
-          if(.not.bohr) then
-            do ii= 1,natom
+          if(.not.datajob%bohr) then
+            do ii= 1,datamol%natom
               do jj= 1,3
-                coord(jj,ii)= coord(jj,ii)*tobohr
+                datamol%coord(jj,ii)= datamol%coord(jj,ii)*tobohr
               enddo
             enddo
           endif
@@ -634,42 +769,50 @@ end
 ! Read data from checkpoint file
 !
         else
-          rewind(icheck)
-          read(icheck,err=9998)
-          read(icheck) cdummy, natom
-          read(icheck)
-          read(icheck)(numatomic(ii),ii=1,natom)
-          read(icheck)
-          read(icheck)((coord(jj,ii),jj=1,3),ii=1,natom)
-          do ii= 1,natom
-            if(numatomic(ii) > 0) then
-              znuc(ii)= dble(numatomic(ii))
+          rewind(datacomp%icheck)
+          read(datacomp%icheck,err=9998)
+          read(datacomp%icheck) cdummy, datamol%natom
+          read(datacomp%icheck)
+          read(datacomp%icheck)(datamol%numatomic(ii),ii=1,datamol%natom)
+          read(datacomp%icheck)
+          read(datacomp%icheck)((datamol%coord(jj,ii),jj=1,3),ii=1,datamol%natom)
+          do ii= 1,datamol%natom
+            if(datamol%numatomic(ii) > 0) then
+              datamol%znuc(ii)= dble(datamol%numatomic(ii))
             else
-              znuc(ii)= zero
+              datamol%znuc(ii)= zero
             endif
           enddo
-          write(*,'(" Geometry is read from checkpoint file.")')
+          write(datacomp%iout,'(" Geometry is read from checkpoint file.")')
         endif
+      endif
+!
+! Broadcast atomic data
+!
+      call para_bcasti(datamol%natom,1,0,datacomp%mpi_comm1)
+      call para_bcasti(datamol%numatomic,datamol%natom,0,datacomp%mpi_comm1)
+      call para_bcastr(datamol%coord(1,1),datamol%natom*3,0,datacomp%mpi_comm1)
+      call para_bcastr(datamol%znuc,datamol%natom,0,datacomp%mpi_comm1)
 !
 ! Check dummy and ghost atoms
 !
-        if(runtype=='OPTIMIZE') then
-          minatomic= minval(numatomic(1:natom))
-          if((minatomic <= 0).and.(.not.cartesian)) then
-            cartesian=.true.
-            write(*,'(" Warning! Cartesian coordinate is used during geometry optimization.")')
-            nwarn= nwarn+1
-          endif
+      if(datajob%runtype=='OPT') then
+        minatomic= minval(datamol%numatomic(1:datamol%natom))
+        if((minatomic <= 0).and.(.not.datajob%cartesian)) then
+          datajob%cartesian=.true.
+          write(datacomp%iout, &
+&               '(" Warning! Cartesian coordinate is used during geometry optimization.")')
+          datacomp%nwarn= datacomp%nwarn+1
         endif
       endif
       return
 !
-9999  write(*,'(" Error! Keyword GEOM is not found.")')
-      call iabort
-9998  write(*,'(" Error! Geometry cannot be read from checkpoint file.")')
-      call iabort
-9997  write(*,'(" Error! Format of molecular geometry is incorrect.")')
-      call iabort
+9999  write(datacomp%iout,'(" Error! Keyword GEOM is not found.")')
+      call iabort(datacomp)
+9998  write(datacomp%iout,'(" Error! Geometry cannot be read from checkpoint file.")')
+      call iabort(datacomp)
+9997  write(datacomp%iout,'(" Error! Format of molecular geometry is incorrect.")')
+      call iabort(datacomp)
 !
 end
 
@@ -684,8 +827,8 @@ end
       integer,intent(in) :: num
       integer :: ii, next, ispace
       character(len=num),intent(in) :: word
-      character(len=254),intent(inout) :: line
-      character(len=254) :: line2
+      character(len=256),intent(inout) :: line
+      character(len=256) :: line2
 !
       ii= index(line,word(1:num))
       if(ii /= 0) then
@@ -701,22 +844,23 @@ end
 end
 
 
-!-----------------------
-  subroutine readbasis
-!-----------------------
+!------------------------------------------------------------------------------
+  subroutine readbasis(atombasis,locgenshell,ngenshell,datagenbasis,datacomp)
+!------------------------------------------------------------------------------
 !
 ! Read basis set
 !
-      use modparallel, only : master
-      use modparam, only : mxprim, mxshell
-      use modiofile, only : input, maxline
-      use modbasis, only : exgen, coeffgen, locgenprim, mgenprim, mgentype, locgenshell, &
-&                          ngenshell, atombasis
+      use modparam, only : mxprim, mxshell, maxline
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(out) :: datagenbasis
+      type(typecomp),intent(inout) :: datacomp
+      integer,intent(out) :: locgenshell(-9:112), ngenshell(-9:112)
       integer :: ii, jj, iprim, ishell, ll, ielem(-9:112), nelem, kprim, numprim, natomshell
+      character(len=32),intent(out) :: atombasis(-9:112)
       character(len=3) :: element(-9:112)
-      character(len=100) :: line
-      character(len=16) :: symbol
+      character(len=256) :: line
+      character(len=32) :: symbol
       character(len=3) :: table(-9:112)= &
 &     (/'BQ9','BQ8','BQ7','BQ6','BQ5','BQ4','BQ3','BQ2','BQ ','X  ',&
 &       'H  ','HE ','LI ','BE ','B  ','C  ','N  ','O  ','F  ','NE ','NA ','MG ','AL ','SI ','P  ',&
@@ -733,20 +877,20 @@ end
       iprim= 0
       ishell= 0
 !
-      if(master) then
-        rewind(input)
+      if(datacomp%master) then
+        rewind(datacomp%inpcopy)
         do ii= 1,maxline
-          read(input,'(a)',end=9999)line
+          read(datacomp%inpcopy,'(a)',end=9999)line
           if(line(1:5) == "BASIS") exit
           if(ii == maxline) then
-            write(*,'(" Error! Keyword BASIS is not found.")')
-            call iabort
+            write(datacomp%iout,'(" Error! Keyword BASIS is not found.")')
+            call iabort(datacomp)
           endif
         enddo
 !
         do ll= -9,112
           line=''
-          read(input,'(a)',end=300)line
+          read(datacomp%inpcopy,'(a)',end=300)line
           if(len_trim(line) == 0) exit
           element(:)=''
 !
@@ -768,8 +912,8 @@ end
                 exit
               endif
               if(jj == 112) then
-                write(*,'(" Error! This program does not support Atom",a3,".")')element(ii)
-                call iabort
+                write(datacomp%iout,'(" Error! This program does not support Atom",a3,".")')element(ii)
+                call iabort(datacomp)
               endif
             enddo
           enddo
@@ -782,49 +926,51 @@ end
           enddo
           do jj= 1,maxline
             symbol= ''
-            read(input,'(a)',err=200,end=200) line
+            read(datacomp%inpcopy,'(a)',err=200,end=200) line
             read(line,*,end=200,err=9998) symbol, numprim
             ishell= ishell+1
             natomshell= natomshell+1
-            locgenprim(ishell)= iprim
-            mgenprim(ishell)= numprim
+            datagenbasis%locprim(ishell)= iprim
+            datagenbasis%mprim(ishell)= numprim
             select case(symbol)
               case('S')
-                mgentype(ishell)= 0
+                datagenbasis%mtype(ishell)= 0
               case('P')
-                mgentype(ishell)= 1
+                datagenbasis%mtype(ishell)= 1
               case('D')
-                mgentype(ishell)= 2
+                datagenbasis%mtype(ishell)= 2
               case('F')
-                mgentype(ishell)= 3
+                datagenbasis%mtype(ishell)= 3
               case('G')
-                mgentype(ishell)= 4
+                datagenbasis%mtype(ishell)= 4
               case('H')
-                mgentype(ishell)= 5
+                datagenbasis%mtype(ishell)= 5
               case('I')
-                mgentype(ishell)= 6
+                datagenbasis%mtype(ishell)= 6
               case('SP')
-                mgentype(ishell)  = 0
-                mgentype(ishell+1)= 1
+                datagenbasis%mtype(ishell)  = 0
+                datagenbasis%mtype(ishell+1)= 1
               case default
-                write(*,'(" Error! The angular momentum ",a2," is not supported.")') symbol
-                call iabort
+                write(datacomp%iout,'(" Error! The angular momentum ",a2," is not supported.")') symbol
+                call iabort(datacomp)
             end select
             if(symbol /= 'SP') then
               do kprim= 1,numprim 
                 iprim= iprim+1
-                read(input,*,end=9998,err=9998) exgen(iprim), coeffgen(iprim)
+                read(datacomp%inpcopy,*,end=9998,err=9998) &
+&                    datagenbasis%ex(iprim), datagenbasis%coeff(iprim)
               enddo
             else
               do kprim= 1,numprim 
                 iprim= iprim+1
-                read(input,*,end=9998,err=9998) exgen(iprim), coeffgen(iprim), &
-&                                                             coeffgen(iprim+numprim)
-                exgen(iprim+numprim)= exgen(iprim)
+                read(datacomp%inpcopy,*,end=9998,err=9998) &
+&                    datagenbasis%ex(iprim), datagenbasis%coeff(iprim), &
+&                    datagenbasis%coeff(iprim+numprim)
+                datagenbasis%ex(iprim+numprim)= datagenbasis%ex(iprim)
               enddo
               ishell= ishell+1
-              locgenprim(ishell)= iprim
-              mgenprim(ishell)= numprim
+              datagenbasis%locprim(ishell)= iprim
+              datagenbasis%mprim(ishell)= numprim
               iprim= iprim+numprim
               natomshell= natomshell+1
             endif
@@ -836,8 +982,8 @@ end
               enddo
               exit
             elseif(symbol == '') then
-              write(*,'(" Error! End of basis functions is not found.")')
-              call iabort
+              write(datacomp%iout,'(" Error! End of basis functions is not found.")')
+              call iabort(datacomp)
             endif
             do ii= -9,nelem-10
               atombasis(ielem(ii))= symbol
@@ -849,233 +995,238 @@ end
       endif
       return
 !
-9999  write(*,'(" Error! Keyword BASIS is not found.")')
-      call iabort
-9998  write(*,'(" Error! Format of basis functions is incorrect.")')
-      call iabort
+9999  write(datacomp%iout,'(" Error! Keyword BASIS is not found.")')
+      call iabort(datacomp)
+9998  write(datacomp%iout,'(" Error! Format of basis functions is incorrect.")')
+      call iabort(datacomp)
 end
 
 
-!---------------------------
-  subroutine setcheckbasis
-!---------------------------
+!-----------------------------------------------
+  subroutine setcheckbasis(databasis,datacomp)
+!-----------------------------------------------
 !
 ! Read basis set from checkpoint file
 !
-      use modiofile, only : icheck
-      use modbasis, only : nshell, nao, nprim, ex, coeff, locprim, locbf, locatom, &
-&                          mprim, mbf, mtype
       use modparam, only : mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer :: idummy, ii
-      character(len=16) :: checkversion, cdummy
+      character(len=32) :: checkversion, cdummy
 !
-      rewind(icheck)
-      read(icheck,err=9999) checkversion
-      read(icheck) cdummy, idummy, nao, idummy, nshell, nprim
+      rewind(datacomp%icheck)
+      read(datacomp%icheck,err=9999) checkversion
+      read(datacomp%icheck) cdummy, idummy, databasis%nao, idummy, databasis%nshell, databasis%nprim
 !
-      write(*,'(" Basis set is read from checkpoint file.")')
-      if(nshell+1 > mxshell) then
-        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
-        call iabort
+      write(datacomp%iout,'(" Basis set is read from checkpoint file.")')
+      if(databasis%nshell+1 > mxshell) then
+        write(datacomp%iout,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
+        call iabort(datacomp)
       endif
-      if(nprim > mxprim ) then
-        write(*,'(" Error! The number of primitive basis functions exceeds mxprim",i6,".")')mxprim
-        call iabort
+      if(databasis%nprim > mxprim ) then
+        write(datacomp%iout,'(" Error! The number of primitive basis functions exceeds mxprim",i6,".")')mxprim
+        call iabort(datacomp)
       endif
-      if(nao > mxao ) then
-        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
-        call iabort
+      if(databasis%nao > mxao ) then
+        write(datacomp%iout,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
+        call iabort(datacomp)
       endif
 !
-      read(icheck)
-      read(icheck)
-      read(icheck)
-      read(icheck)
+      read(datacomp%icheck)
+      read(datacomp%icheck)
+      read(datacomp%icheck)
+      read(datacomp%icheck)
       if(checkversion(1:2) /= "1.") then
-        read(icheck)
-        read(icheck)
+        read(datacomp%icheck)
+        read(datacomp%icheck)
       endif
-      read(icheck)
-      read(icheck) (ex(ii),ii=1,nprim)
-      read(icheck)
-      read(icheck) (coeff(ii),ii=1,nprim)
-      read(icheck)
-      read(icheck) (locprim(ii),ii=1,nshell)
-      read(icheck)
-      read(icheck) (locbf(ii),ii=1,nshell)
-      read(icheck)
-      read(icheck) (locatom(ii),ii=1,nshell)
-      read(icheck)
-      read(icheck) (mprim(ii),ii=1,nshell)
-      read(icheck)
-      read(icheck) (mbf(ii),ii=1,nshell)
-      read(icheck)
-      read(icheck) (mtype(ii),ii=1,nshell)
+      read(datacomp%icheck)
+      read(datacomp%icheck) (databasis%ex(ii),ii=1,databasis%nprim)
+      read(datacomp%icheck)
+      read(datacomp%icheck) (databasis%coeff(ii),ii=1,databasis%nprim)
+      read(datacomp%icheck)
+      read(datacomp%icheck) (databasis%locprim(ii),ii=1,databasis%nshell)
+      read(datacomp%icheck)
+      read(datacomp%icheck) (databasis%locbf(ii),ii=1,databasis%nshell)
+      read(datacomp%icheck)
+      read(datacomp%icheck) (databasis%locatom(ii),ii=1,databasis%nshell)
+      read(datacomp%icheck)
+      read(datacomp%icheck) (databasis%mprim(ii),ii=1,databasis%nshell)
+      read(datacomp%icheck)
+      read(datacomp%icheck) (databasis%mbf(ii),ii=1,databasis%nshell)
+      read(datacomp%icheck)
+      read(datacomp%icheck) (databasis%mtype(ii),ii=1,databasis%nshell)
 !
-      locbf(nshell+1)= nao
-      locprim(nshell+1)= nprim
+      databasis%locbf(databasis%nshell+1)= databasis%nao
+      databasis%locprim(databasis%nshell+1)= databasis%nprim
 !
       return
-9999  write(*,'(" Error! Basis set cannot be read from checkpoint file.")')
-      call iabort
+9999  write(datacomp%iout,'(" Error! Basis set cannot be read from checkpoint file.")')
+      call iabort(datacomp)
 !
 end
 
 
-!------------------------------------------------------------------------------------
-  subroutine readcheckinfo(scftype_g,charge_g,flagecp_g,neleca_g,nelecb_g,mpi_comm)
-!------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+  subroutine readcheckinfo(scftype_g,charge_g,flagecp_g,neleca_g,nelecb_g,nmo_g,natom, &
+&                          dataguessbs,datacomp)
+!-----------------------------------------------------------------------------------------
 !
 ! Read checkpoint information
 !
-      use modparallel, only : master
-      use modiofile, only : icheck
-      use modguess, only : nao_g, nmo_g, nshell_g, nprim_g
-      use modmolecule, only : natom
+      use modtype, only : typebasis, typecomp
       implicit none
-      integer,intent(in) :: mpi_comm
-      integer,intent(out) :: neleca_g, nelecb_g
+      type(typebasis),intent(out) :: dataguessbs
+      type(typecomp),intent(inout) :: datacomp
+      integer,intent(in) :: natom
+      integer,intent(out) :: neleca_g, nelecb_g, nmo_g
       integer :: intarray(6), natom_g, idummy
       real(8),intent(out) :: charge_g
-      character(len=16),intent(out) :: scftype_g
-      character(len=16) :: cdummy
+      character(len=32),intent(out) :: scftype_g
+      character(len=32) :: cdummy
       logical,intent(out) :: flagecp_g
 !
-      if(master) then
-        rewind(icheck)
-        read(icheck,end=9999)
-        read(icheck,err=9998) scftype_g, natom_g, nao_g, nmo_g, nshell_g, nprim_g, neleca_g, &
-&                             nelecb_g, cdummy, cdummy, charge_g, idummy, flagecp_g
+      if(datacomp%master) then
+        rewind(datacomp%icheck)
+        read(datacomp%icheck,end=9999)
+        read(datacomp%icheck,err=9998) scftype_g, natom_g, dataguessbs%nao, nmo_g,  &
+&                             dataguessbs%nshell,dataguessbs%nprim, neleca_g, nelecb_g, cdummy, &
+&                             cdummy, charge_g, idummy, flagecp_g
         if(natom_g /= natom) then
-          write(*,'(" Error! The numbers of atoms in checkpoint and input files are different.")')
-          call iabort
+          write(datacomp%iout,'(" Error! The numbers of atoms in checkpoint and input files are different.")')
+          call iabort(datacomp)
         endif
-        intarray(1)= nshell_g
+        intarray(1)= dataguessbs%nshell
         intarray(2)= nmo_g
         intarray(3)= neleca_g
         intarray(4)= nelecb_g
-        intarray(5)= nao_g
-        intarray(6)= nprim_g
+        intarray(5)= dataguessbs%nao
+        intarray(6)= dataguessbs%nprim
       endif
-      call para_bcasti(intarray,6,0,mpi_comm)
-      call para_bcastc(scftype_g,16,0,mpi_comm)
-      call para_bcastl(flagecp_g,1,0,mpi_comm)
-      call para_bcastr(charge_g,1,0,mpi_comm)
-      nshell_g= intarray(1)
+      call para_bcasti(intarray,6,0,datacomp%mpi_comm1)
+      call para_bcastc(scftype_g,32,0,datacomp%mpi_comm1)
+      call para_bcastl(flagecp_g,1,0,datacomp%mpi_comm1)
+      call para_bcastr(charge_g,1,0,datacomp%mpi_comm1)
+      dataguessbs%nshell= intarray(1)
       nmo_g   = intarray(2)
       neleca_g= intarray(3)
       nelecb_g= intarray(4)
-      nao_g   = intarray(5)
-      nprim_g = intarray(6)
+      dataguessbs%nao   = intarray(5)
+      dataguessbs%nprim = intarray(6)
 !
       return
 !
- 9999 write(*,'(" Error! Checkpoint file cannot be read in checkguess.")')
-      write(*,'(" Check the checkpoint file name.",/)')
-      call iabort
- 9998 write(*,'(" Error! Checkpoint file cannot be read in checkguess.")')
-      call iabort
+ 9999 write(datacomp%iout,'(" Error! Checkpoint file cannot be read in checkguess.")')
+      write(datacomp%iout,'(" Check the checkpoint file name.",/)')
+      call iabort(datacomp)
+ 9998 write(datacomp%iout,'(" Error! Checkpoint file cannot be read in checkguess.")')
+      call iabort(datacomp)
 end
 
 
-!--------------------------------------------------------------
-  subroutine readcheckguess(cmoa_g,cmob_g,scftype_g,mpi_comm)
-!--------------------------------------------------------------
+!-----------------------------------------------------------------------------------
+  subroutine readcheckguess(scftype,cmoa_g,cmob_g,coord_g,scftype_g,nmo_g,natom, &
+&                           dataguessbs,datacomp)
+!-----------------------------------------------------------------------------------
 !
 ! Read guess basis functions and MOs from checkpoint file
 !
-      use modparallel, only : master
-      use modiofile, only : icheck
-      use modguess, only : locatom_g, locprim_g, locbf_g, mprim_g, mbf_g, mtype_g, &
-&                          ex_g, coeff_g, nao_g, coord_g, nmo_g, nshell_g, nprim_g
-      use modmolecule, only : natom
-      use modjob, only : scftype
+      use modparam, only : mxatom
+      use modtype, only : typebasis, typecomp
       implicit none
-      integer,intent(in) :: mpi_comm
+      type(typebasis),intent(inout) :: dataguessbs
+      type(typecomp),intent(inout) :: datacomp
+      integer,intent(in) :: nmo_g, natom
       integer :: ii, jj
-      real(8),intent(out) :: cmoa_g(nao_g,nao_g), cmob_g(nao_g,nao_g)
-      character(len=16),intent(in) :: scftype_g
-      character(len=16) :: checkversion
+      real(8),intent(out) :: cmoa_g(dataguessbs%nao,dataguessbs%nao)
+      real(8),intent(out) :: cmob_g(dataguessbs%nao,dataguessbs%nao)
+      real(8),intent(out) :: coord_g(3,mxatom)
+      character(len=32),intent(in) :: scftype, scftype_g
+      character(len=32) :: checkversion
 !
-      if(master) then
-        rewind(icheck)
-        read(icheck) checkversion
-        read(icheck)
-        read(icheck)
-        read(icheck)
-        read(icheck)
-        read(icheck) ((coord_g(jj,ii),jj=1,3),ii=1,natom)
+      if(datacomp%master) then
+        rewind(datacomp%icheck)
+        read(datacomp%icheck) checkversion
+        read(datacomp%icheck)
+        read(datacomp%icheck)
+        read(datacomp%icheck)
+        read(datacomp%icheck)
+        read(datacomp%icheck) ((coord_g(jj,ii),jj=1,3),ii=1,natom)
         if(checkversion(1:2) /= "1.") then
-          read(icheck)
-          read(icheck)
+          read(datacomp%icheck)
+          read(datacomp%icheck)
         endif
-        read(icheck)
-        read(icheck) (ex_g(ii),ii=1,nprim_g)
-        read(icheck)
-        read(icheck) (coeff_g(ii),ii=1,nprim_g)
-        read(icheck)
-        read(icheck) (locprim_g(ii),ii=1,nshell_g)
-        read(icheck)
-        read(icheck) (locbf_g(ii),ii=1,nshell_g)
-        read(icheck)
-        read(icheck) (locatom_g(ii),ii=1,nshell_g)
-        read(icheck)
-        read(icheck) (mprim_g(ii),ii=1,nshell_g)
-        read(icheck)
-        read(icheck) (mbf_g(ii),ii=1,nshell_g)
-        read(icheck)
-        read(icheck) (mtype_g(ii),ii=1,nshell_g)
+        read(datacomp%icheck)
+        read(datacomp%icheck) (dataguessbs%ex(ii),ii=1,dataguessbs%nprim)
+        read(datacomp%icheck)
+        read(datacomp%icheck) (dataguessbs%coeff(ii),ii=1,dataguessbs%nprim)
+        read(datacomp%icheck)
+        read(datacomp%icheck) (dataguessbs%locprim(ii),ii=1,dataguessbs%nshell)
+        read(datacomp%icheck)
+        read(datacomp%icheck) (dataguessbs%locbf(ii),ii=1,dataguessbs%nshell)
+        read(datacomp%icheck)
+        read(datacomp%icheck) (dataguessbs%locatom(ii),ii=1,dataguessbs%nshell)
+        read(datacomp%icheck)
+        read(datacomp%icheck) (dataguessbs%mprim(ii),ii=1,dataguessbs%nshell)
+        read(datacomp%icheck)
+        read(datacomp%icheck) (dataguessbs%mbf(ii),ii=1,dataguessbs%nshell)
+        read(datacomp%icheck)
+        read(datacomp%icheck) (dataguessbs%mtype(ii),ii=1,dataguessbs%nshell)
 !
-        read(icheck)
-        read(icheck)((cmoa_g(jj,ii),jj=1,nao_g),ii=1,nmo_g)
+        read(datacomp%icheck)
+        read(datacomp%icheck)((cmoa_g(jj,ii),jj=1,dataguessbs%nao),ii=1,nmo_g)
         if((scftype == 'UHF').and.(scftype_g == 'UHF')) then
-          read(icheck)
-          read(icheck)((cmob_g(jj,ii),jj=1,nao_g),ii=1,nmo_g)
+          read(datacomp%icheck)
+          read(datacomp%icheck)((cmob_g(jj,ii),jj=1,dataguessbs%nao),ii=1,nmo_g)
         endif
 ! Interchange the order of basis functions in cmoa_g and cmob_g
         if(checkversion(1:2) == "1.") then
-          call gcheckreorder(cmoa_g)
-          if((scftype == 'UHF').and.(scftype_g == 'UHF')) call gcheckreorder(cmob_g)
+          call gcheckreorder(cmoa_g,nmo_g,dataguessbs,datacomp)
+          if((scftype == 'UHF').and.(scftype_g == 'UHF')) &
+&           call gcheckreorder(cmob_g,nmo_g,dataguessbs,datacomp)
         endif
       endif
 !
 ! Broadcast guess basis functions and MOs
 !
-      call para_bcasti(locprim_g,nshell_g,0,mpi_comm)
-      call para_bcasti(locbf_g  ,nshell_g,0,mpi_comm)
-      call para_bcasti(locatom_g,nshell_g,0,mpi_comm)
-      call para_bcastr(ex_g   ,nprim_g,0,mpi_comm)
-      call para_bcastr(coeff_g,nprim_g,0,mpi_comm)
-      call para_bcastr(coord_g,natom*3,0,mpi_comm)
-      call para_bcasti(mprim_g,nshell_g,0,mpi_comm)
-      call para_bcasti(mbf_g  ,nshell_g,0,mpi_comm)
-      call para_bcasti(mtype_g,nshell_g,0,mpi_comm)
-      call para_bcastr(cmoa_g,nao_g*nmo_g,0,mpi_comm)
+      call para_bcasti(dataguessbs%locprim,dataguessbs%nshell,0,datacomp%mpi_comm1)
+      call para_bcasti(dataguessbs%locbf  ,dataguessbs%nshell,0,datacomp%mpi_comm1)
+      call para_bcasti(dataguessbs%locatom,dataguessbs%nshell,0,datacomp%mpi_comm1)
+      call para_bcastr(dataguessbs%ex     ,dataguessbs%nprim,0,datacomp%mpi_comm1)
+      call para_bcastr(dataguessbs%coeff  ,dataguessbs%nprim,0,datacomp%mpi_comm1)
+      call para_bcastr(coord_g  ,natom*3,0,datacomp%mpi_comm1)
+      call para_bcasti(dataguessbs%mprim  ,dataguessbs%nshell,0,datacomp%mpi_comm1)
+      call para_bcasti(dataguessbs%mbf    ,dataguessbs%nshell,0,datacomp%mpi_comm1)
+      call para_bcasti(dataguessbs%mtype  ,dataguessbs%nshell,0,datacomp%mpi_comm1)
+      call para_bcastr(cmoa_g,dataguessbs%nao*nmo_g,0,datacomp%mpi_comm1)
       if((scftype == 'UHF').and.(scftype_g == 'UHF')) then
-        call para_bcastr(cmob_g,nao_g*nmo_g,0,mpi_comm)
+        call para_bcastr(cmob_g,dataguessbs%nao*nmo_g,0,datacomp%mpi_comm1)
       endif
 !
       return
 end
 
 
-!---------------------
-  subroutine readecp
-!---------------------
+!-------------------------------------------------------------------------------------------------
+  subroutine readecp(atomecp,locgenecp,mgenprimecp,maxgenangecp,izgencore,datagenbasis,datacomp)
+!-------------------------------------------------------------------------------------------------
 !
 ! Read basis set
 !
-      use modparallel, only : master
-      use modparam, only : mxprim, mxshell
-      use modiofile, only : input, maxline
-      use modecp, only : exgenecp, coeffgenecp, maxgenangecp, izgencore, mgentypeecp, &
-&                        locgenecp, mgenprimecp, atomecp
+      use modparam, only : mxprim, mxshell, maxline
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(out) :: datagenbasis
+      type(typecomp),intent(inout) :: datacomp
+      integer,intent(out) :: locgenecp(0:5,-9:112), mgenprimecp(0:5,-9:112)
+      integer,intent(out) :: maxgenangecp(-9:112), izgencore(-9:112)
       integer :: ii, jj, iprim, ll, ielem(-9:112), nelem, jprim, numprim, lmax, ielec, iang
+      character(len=32),intent(out) :: atomecp(-9:112)
       character(len=3) :: element(-9:112)
-      character(len=100) :: line
-      character(len=16) :: symbol
+      character(len=256) :: line
+      character(len=32) :: symbol
       character(len=3) :: table(-9:112)= &
 &     (/'BQ9','BQ8','BQ7','BQ6','BQ5','BQ4','BQ3','BQ2','BQ ','X  ',&
 &       'H  ','HE ','LI ','BE ','B  ','C  ','N  ','O  ','F  ','NE ','NA ','MG ','AL ','SI ','P  ',&
@@ -1091,20 +1242,20 @@ end
       maxgenangecp(:)= -1
       iprim= 0
 !
-      if(master) then
-        rewind(input)
+      if(datacomp%master) then
+        rewind(datacomp%inpcopy)
         do ii= 1,maxline
-          read(input,*,end=9999)line
+          read(datacomp%inpcopy,*,end=9999)line
           if(line(1:3) == "ECP") exit
           if(ii == maxline) then
-            write(*,'(" Error! Keyword ECP is not found.")')
-            call iabort
+            write(datacomp%iout,'(" Error! Keyword ECP is not found.")')
+            call iabort(datacomp)
           endif
         enddo
 !
         do ll= -9,112
           line=''
-          read(input,'(a)',end=300)line
+          read(datacomp%inpcopy,'(a)',end=300)line
           if(len_trim(line) == 0) exit
           element(:)=''
 !
@@ -1125,35 +1276,36 @@ end
                 exit
               endif
               if(jj == 112) then
-                write(*,'(" Error! This program does not support Atom",a3,".")')element(ii)
-                call iabort
+                write(datacomp%iout,'(" Error! This program does not support Atom",a3,".")')element(ii)
+                call iabort(datacomp)
               endif
             enddo
           enddo
           if(nelem == 0) then
-            write(*,'(" Error! Atom type is not found during reading ECP functions.")')
-            call iabort
+            write(datacomp%iout,'(" Error! Atom type is not found during reading ECP functions.")')
+            call iabort(datacomp)
           endif
 !
 ! Read ECP functions
 !
           symbol= ''
-          read(input,'(a)',err=200,end=200) line
+          read(datacomp%inpcopy,'(a)',err=200,end=200) line
           read(line,*,end=200) symbol,lmax,ielec
           do ii= -9,nelem-10
             maxgenangecp(ielem(ii))= lmax
             izgencore(ielem(ii))= ielec
           enddo
           do iang= 0,lmax
-            read(input,*)line
-            read(input,*,err=9998,end=9998)numprim
+            read(datacomp%inpcopy,*)line
+            read(datacomp%inpcopy,*,err=9998,end=9998)numprim
             do ii= -9,nelem-10
               locgenecp(iang,ielem(ii))= iprim
               mgenprimecp(iang,ielem(ii))= numprim
             enddo
             do jprim=1,numprim
               iprim= iprim+1
-              read(input,*,err=9998,end=9998)mgentypeecp(iprim),exgenecp(iprim),coeffgenecp(iprim)
+              read(datacomp%inpcopy,*,err=9998,end=9998)datagenbasis%mtypeecp(iprim), &
+&                  datagenbasis%execp(iprim),datagenbasis%coeffecp(iprim)
             enddo
           enddo
           cycle
@@ -1164,11 +1316,11 @@ end
             enddo
             cycle
           elseif(symbol == '') then
-            write(*,'(" Error! ECP functions are not found.")')
-            call iabort
+            write(datacomp%iout,'(" Error! ECP functions are not found.")')
+            call iabort(datacomp)
           else
-            write(*,'(" Error! This program does not support ECP function ",a10,".")')symbol
-            call iabort
+            write(datacomp%iout,'(" Error! This program does not support ECP function ",a10,".")')symbol
+            call iabort(datacomp)
           endif
         enddo
 !
@@ -1176,48 +1328,55 @@ end
       endif
       return
 !
-9998  write(*,'(" Error! During reading ECP functions from input file.")')
-      call iabort
-9999  write(*,'(" Error! Keyword ECP is not found.")')
-      call iabort
+9998  write(datacomp%iout,'(" Error! During reading ECP functions from input file.")')
+      call iabort(datacomp)
+9999  write(datacomp%iout,'(" Error! Keyword ECP is not found.")')
+      call iabort(datacomp)
 end
 
 
-!--------------------------------------------------
-  subroutine writeeigenvalue(eigena,eigenb,itype)
-!--------------------------------------------------
+!-------------------------------------------------------------------
+  subroutine writeeigenvalue(eigena,eigenb,itype,datamol,datacomp)
+!-------------------------------------------------------------------
 !
 ! Write eigenvalues
 !
-      use modparallel, only : master
-      use modmolecule, only : nmo, neleca, nelecb
-      use modprint, only : iprint
+      use modtype, only : typejob, typemol, typecomp
+      implicit none
+      type(typemol),intent(in) :: datamol
+      type(typecomp),intent(in) :: datacomp
       integer,intent(in) :: itype
       integer :: imo
-      real(8),intent(in) :: eigena(nmo), eigenb(nmo)
+      real(8),intent(in) :: eigena(datamol%nmo), eigenb(datamol%nmo)
 !
 ! Closed-shell
 !
-      if(master.and.(iprint >= 1)) then
+      if(datacomp%master) then
         if(itype == 1) then
-          write(*,'(1x,80("-"))')
-          write(*,'("   Eigenvalues (Hartree)")')
-          write(*,'(1x,80("-"))')
-          write(*,'("   Alpha Occupied: ",5f12.5)')(eigena(imo),imo=1,neleca)
-          write(*,'("   Alpha Virtual : ",5f12.5)')(eigena(imo),imo=neleca+1,nmo)
-          write(*,'(1x,80("-"))')
+          write(datacomp%iout,'(1x,80("-"))')
+          write(datacomp%iout,'("   Orbital Energies (Hartree)")')
+          write(datacomp%iout,'(1x,80("-"))')
+          write(datacomp%iout,'("   Alpha Occupied: ",5f12.5)') &
+&              (eigena(imo),imo=1,datamol%neleca)
+          write(datacomp%iout,'("   Alpha Virtual : ",5f12.5)') &
+&              (eigena(imo),imo=datamol%neleca+1,datamol%nmo)
+          write(datacomp%iout,'(1x,80("-"))')
 !
 ! Open-shell
 !
         elseif(itype == 2) then
-          write(*,'(1x,80("-"))')
-          write(*,'("   Eigenvalues (Hartree)")')
-          write(*,'(1x,80("-"))')
-          write(*,'("   Alpha Occupied: ",5f12.5)')(eigena(imo),imo=1,neleca)
-          write(*,'("   Alpha Virtual : ",5f12.5)')(eigena(imo),imo=neleca+1,nmo)
-          write(*,'("   Beta  Occupied: ",5f12.5)')(eigenb(imo),imo=1,nelecb)
-          write(*,'("   Beta  Virtual : ",5f12.5)')(eigenb(imo),imo=nelecb+1,nmo)
-          write(*,'(1x,80("-"))')
+          write(datacomp%iout,'(1x,80("-"))')
+          write(datacomp%iout,'("   Orbital Energies (Hartree)")')
+          write(datacomp%iout,'(1x,80("-"))')
+          write(datacomp%iout,'("   Alpha Occupied: ",5f12.5)') &
+&              (eigena(imo),imo=1,datamol%neleca)
+          write(datacomp%iout,'("   Alpha Virtual : ",5f12.5)') &
+&              (eigena(imo),imo=datamol%neleca+1,datamol%nmo)
+          write(datacomp%iout,'("   Beta  Occupied: ",5f12.5)') &
+&              (eigenb(imo),imo=1,datamol%nelecb)
+          write(datacomp%iout,'("   Beta  Virtual : ",5f12.5)') &
+&              (eigenb(imo),imo=datamol%nelecb+1,datamol%nmo)
+          write(datacomp%iout,'(1x,80("-"))')
         endif
       endif
 !
@@ -1225,20 +1384,26 @@ end
 end
 
 
-!-----------------------------------------
-  subroutine writeeigenvector(cmo,eigen)
-!-----------------------------------------
+!----------------------------------------------------------------------------------
+  subroutine writeeigenvector(cmo,eigen,itype,datajob,datamol,databasis,datacomp)
+!----------------------------------------------------------------------------------
 !
 ! Write eigenvalues
 !
-      use modparallel, only : master
-      use modmolecule, only : nmo, neleca, numatomic
-      use modbasis, only : nao, nshell, mtype, spher, locatom
       use modparam, only : mxao
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
-      integer :: minmo, maxmo, imin, imax, ii, jj, kk, iao, iatom
-      real(8),intent(in) :: cmo(nao,nao), eigen(nmo)
-      character(len=8) :: atomlabel(mxao)
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(inout) :: datacomp
+      integer,intent(in) :: itype
+      integer,parameter :: maxprintmo=20
+      integer :: minmo, maxmo, imin, imax, ii, jj, kk, kk2, ll, iao, iatom
+      integer :: mosave(maxprintmo), mocount, momin, idamax
+      real(8),intent(in) :: cmo(databasis%nao,databasis%nao), eigen(datamol%nmo)
+      real(8) :: cmosave(maxprintmo), cmomin
+      character(len=10) :: atomlabel(mxao)
       character(len=7) :: bflabel(mxao)
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
@@ -1249,7 +1414,7 @@ end
 &       'Pm ','Sm ','Eu ','Gd ','Tb ','Dy ','Ho ','Er ','Tm ','Yb ','Lu ','Hf ','Ta ','W  ','Re ',&
 &       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
-&       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
+&       'Sg ','Bh ','Hs ','Mt ','Ds ','Rg ','Cn '/)
 !
       character(len=7) :: anglabel(129)= &
 &     (/'S      ','Px     ','Py     ','Pz     ','Dxx    ','Dxy    ','Dxz    ','Dyy    ', &
@@ -1270,288 +1435,427 @@ end
 &       'I-2    ','I-1    ','I0     ','I+1    ','I+2    ','I+3    ','I+4    ','I+5    ', &
 &       'I+6    '/)
 !
-      if(maxval(mtype(1:nshell)) > 6) then
-        if(master) write(*,'(" Sorry! This program can display MOs of up to i functions.")')
+      if(maxval(databasis%mtype(1:databasis%nshell)) > 6) then
+        if(datacomp%master) &
+&         write(datacomp%iout,'(" Warning! This program can display MOs of up to i functions.")')
+          datacomp%nwarn= datacomp%nwarn+1
         return
       endif
 !
-      atomlabel(1:nao)= ''
+      if(datacomp%master) then
+        if(itype == 1) then
+          write(datacomp%iout,'(" -------------------------")')
+          write(datacomp%iout,'("   Alpha MO coefficients")')
+          write(datacomp%iout,'(" -------------------------")')
+        elseif(itype == 2) then
+          write(datacomp%iout,'(" ------------------------")')
+          write(datacomp%iout,'("   Beta MO coefficients")')
+          write(datacomp%iout,'(" ------------------------")')
+        endif
+      endif
+!
       iao= 1
       iatom= 0
-      do ii= 1,nshell
-        select case(mtype(ii))
+      do ii= 1,databasis%nshell
+        select case(databasis%mtype(ii))
           case(0)
             bflabel(iao)= anglabel(1)
-            if(locatom(ii) /= iatom) then
-              iatom= locatom(ii)
-              write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
-            endif
+            iatom= databasis%locatom(ii)
+            write(atomlabel(iao),'(i5,x,a3,x)') &
+&                 iatom, table(datamol%numatomic(databasis%locatom(ii)))
             iao= iao+1
           case(1)
             bflabel(iao:iao+2)= anglabel(2:4)
-            if(locatom(ii) /= iatom) then
-              iatom= locatom(ii)
-              write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
-            endif
+            iatom= databasis%locatom(ii)
+            do jj= 0,2
+              write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                   iatom, table(datamol%numatomic(databasis%locatom(ii)))
+            enddo
             iao= iao+3
           case(2)
-            if(spher) then
+            if(databasis%spher) then
               bflabel(iao:iao+4)= anglabel(11:15)
-              if(locatom(ii) /= iatom) then
-                iatom= locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
-              endif
+              iatom= databasis%locatom(ii)
+              do jj= 0,4
+                write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                     iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              enddo
               iao= iao+5
             else
               bflabel(iao:iao+5)= anglabel(5:10)
-              if(locatom(ii) /= iatom) then
-                iatom= locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
-              endif
+              iatom= databasis%locatom(ii)
+              do jj= 0,5
+                write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                     iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              enddo
               iao= iao+6
             endif
           case(3)
-            if(spher) then
+            if(databasis%spher) then
               bflabel(iao:iao+6)= anglabel(26:32)
-              if(locatom(ii) /= iatom) then
-                iatom= locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
-              endif
+              iatom= databasis%locatom(ii)
+              do jj= 0,6
+                write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                     iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              enddo
               iao= iao+7
             else
               bflabel(iao:iao+9)= anglabel(16:25)
-              if(locatom(ii) /= iatom) then
-                iatom= locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
-              endif
+              iatom= databasis%locatom(ii)
+              do jj= 0,9
+                write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                     iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              enddo
               iao= iao+10
             endif
           case(4)
-            if(spher) then
+            if(databasis%spher) then
               bflabel(iao:iao+8)= anglabel(48:56)
-              if(locatom(ii) /= iatom) then
-                iatom= locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
-              endif
+              iatom= databasis%locatom(ii)
+              do jj= 0,8
+                write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                     iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              enddo
               iao= iao+9
             else
               bflabel(iao:iao+14)= anglabel(33:47)
-              if(locatom(ii) /= iatom) then
-                iatom= locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
-              endif
+              iatom= databasis%locatom(ii)
+              do jj= 0,14
+                write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                     iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              enddo
               iao= iao+15
             endif
           case(5)
-            if(spher) then
+            if(databasis%spher) then
               bflabel(iao:iao+10)= anglabel(78:88)
-              if(locatom(ii) /= iatom) then
-                iatom= locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
-              endif
+              iatom= databasis%locatom(ii)
+              do jj= 0,10
+                write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                     iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              enddo
               iao= iao+11
             else
               bflabel(iao:iao+20)= anglabel(57:77)
-              if(locatom(ii) /= iatom) then
-                iatom= locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
-              endif
+              iatom= databasis%locatom(ii)
+              do jj= 0,20
+                write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                     iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              enddo
               iao= iao+21
             endif
           case(6)
-            if(spher) then
+            if(databasis%spher) then
               bflabel(iao:iao+12)= anglabel(117:129)
-              if(locatom(ii) /= iatom) then
-                iatom= locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
-              endif
+              iatom= databasis%locatom(ii)
+              do jj= 0,12
+                write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                     iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              enddo
               iao= iao+13
             else
               bflabel(iao:iao+27)= anglabel(89:116)
-              if(locatom(ii) /= iatom) then
-                iatom= locatom(ii)
-                write(atomlabel(iao),'(i4,x,a3)')iatom, table(numatomic(locatom(ii)))
-              endif
+              iatom= databasis%locatom(ii)
+              do jj= 0,27
+                write(atomlabel(iao+jj),'(i5,x,a3,x)') &
+&                     iatom, table(datamol%numatomic(databasis%locatom(ii)))
+              enddo
               iao= iao+28
             endif
         end select
       enddo
 !
-      minmo=max(1,neleca-15)
-      maxmo=min(nmo,neleca+15)
+      select case(mod(datajob%iprint,10))
+        case(2:3)
+          minmo=max(1,datamol%neleca-10)
+          maxmo=min(datamol%nmo,datamol%neleca+10)
+        case(4:)
+          minmo= 1
+          maxmo= datamol%nmo
+      end select
       imin= minmo
       imax= minmo+4
-      if(master) then
-        do ii= 1,(maxmo-minmo-1)/5+1
-          if(imax > maxmo) imax= maxmo
-          write(*,*)
-          write(*,'(20x,5(5x,i4,2x))')(jj,jj=imin,imax)
-          write(*,'(20x,5f11.4)')(eigen(jj),jj=imin,imax)
-          do kk= 1,nao
-            write(*,'(i5,a8,a7,5f11.4)')kk,atomlabel(kk),bflabel(kk),(cmo(kk,jj),jj=imin,imax)
-          enddo
-          imin= imin+5
-          imax= imax+5
-        enddo
-        write(*,*)
+      if(datacomp%master) then
+        select case(mod(datajob%iprint,10))
+          case(3:)
+            do ii= 1,(maxmo-minmo-1)/5+1
+              if(imax > maxmo) imax= maxmo
+              write(datacomp%iout,'(21x,5(5x,i5,2x))')(jj,jj=imin,imax)
+              write(datacomp%iout,'(4x,"Orbital Energy",4x,5f12.5)')(eigen(jj),jj=imin,imax)
+              do kk= 1,databasis%nao
+                write(datacomp%iout,'(i5,a10,a7,5f12.6)') &
+&                     kk,atomlabel(kk),bflabel(kk),(cmo(kk,jj),jj=imin,imax)
+              enddo
+              imin= imin+5
+              imax= imax+5
+              write(datacomp%iout,*)
+            enddo
+          case(2)
+            do jj= minmo,maxmo
+              mocount= 0
+              cmomin = 1.0D+02
+              do kk= 1,databasis%nao
+                if(abs(cmo(kk,jj)) > 1.5D-01) then
+                  if(mocount <  maxprintmo) then
+                    mocount= mocount+1
+                    mosave(mocount) = kk
+                    cmosave(mocount)= abs(cmo(kk,jj))
+                    if(abs(cmo(kk,jj)) < cmomin) then
+                      momin = mocount
+                      cmomin= abs(cmo(kk,jj))
+                    endif
+                  elseif(abs(cmo(kk,jj)) > cmomin) then
+                    do ll= momin+1,maxprintmo
+                      mosave(ll-1) = mosave(ll)
+                      cmosave(ll-1)= cmosave(ll)
+                    enddo
+                    mosave(maxprintmo) = kk
+                    cmosave(maxprintmo)= abs(cmo(kk,jj))
+                    momin= idamax(maxprintmo,cmosave,1)
+                    cmomin= abs(cmosave(momin))
+                  endif
+                endif
+              enddo
+              write(datacomp%iout,'(3x,"MO:",i5,3x,"Energy:",f12.5)') jj, eigen(jj)
+              do ll= 1,mocount/2
+                kk = mosave(2*(ll-1)+1)
+                kk2= mosave(2*ll)
+                write(datacomp%iout,'(i5,a10,a7,f12.6,5x,i5,a10,a7,f12.6)') &
+&                 kk,atomlabel(kk),bflabel(kk),cmo(kk,jj), &
+&                 kk2,atomlabel(kk2),bflabel(kk2),cmo(kk2,jj)
+              enddo
+              if(mod(mocount,2) /= 0) then
+                kk= mosave(mocount)
+                write(datacomp%iout,'(i5,a10,a7,f12.6)')kk,atomlabel(kk),bflabel(kk),cmo(kk,jj)
+              endif
+              write(datacomp%iout,*)
+            enddo
+        end select
       endif
 !
       return
 end
 
 
-!---------------------------------------------------------------------
-  subroutine writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob)
-!---------------------------------------------------------------------
+!------------------------------------------------------------------------------------------------
+  subroutine writecheck(cmoa,cmob,dmtrxa,dmtrxb,energymoa,energymob,focka,fockb,smtrx,h1mtrx, &
+&                       egrad,datajob,datamol,databasis,datacomp)
+!------------------------------------------------------------------------------------------------
 !
 ! Write checkpoint file
 !
-      use modiofile, only : icheck, version
-      use modmolecule, only : numatomic, natom, coord, nmo, neleca, nelecb, charge, multi, znuc
-      use modjob, only : method, runtype, scftype
-      use modbasis, only : nshell, nao, nprim, ex, coeffinp, locprim, locbf, locatom, &
-&                          mprim, mbf, mtype
-      use modecp, only : flagecp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
       integer :: ii, jj
-      real(8),intent(in) :: cmoa(nao,nao), dmtrxa(nao*(nao+1)/2), energymoa(nao)
-      real(8),intent(in) :: cmob(nao,nao), dmtrxb(nao*(nao+1)/2), energymob(nao)
-      character(len=16) :: datatype
+      real(8),intent(in) :: cmoa(databasis%nao,databasis%nao)
+      real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2), energymoa(databasis%nao)
+      real(8),intent(in) :: focka(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: cmob(databasis%nao,databasis%nao)
+      real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2), energymob(databasis%nao)
+      real(8),intent(in) :: fockb(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: smtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: h1mtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: egrad(datamol%natom*3)
+      character(len=32) :: datatype
 !
-      rewind(icheck)
-      write(icheck) version
-      write(icheck) scftype, natom, nao, nmo, nshell, nprim, neleca, nelecb,  &
-&                   method, runtype, charge, multi, flagecp
+      rewind(datacomp%icheck)
+      write(datacomp%icheck) datajob%version
+      write(datacomp%icheck) datajob%scftype, datamol%natom, databasis%nao, datamol%nmo, &
+&                            databasis%nshell, databasis%nprim, datamol%neleca, datamol%nelecb, &
+&                            datajob%method, datajob%runtype, datamol%charge, datamol%multi,  &
+&                            datajob%flagecp, databasis%basis, databasis%ecp, datamol%ndummyatom
 !
       datatype= 'numatomic'
-      write(icheck) datatype
-      write(icheck) (numatomic(ii),ii=1,natom)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (datamol%numatomic(ii),ii=1,datamol%natom)
 !
       datatype= 'coord'
-      write(icheck) datatype
-      write(icheck)((coord(jj,ii),jj=1,3),ii=1,natom)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck)((datamol%coord(jj,ii),jj=1,3),ii=1,datamol%natom)
 !
       datatype= 'znuc'
-      write(icheck) datatype
-      write(icheck)(znuc(ii),ii=1,natom)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck)(datamol%znuc(ii),ii=1,datamol%natom)
 !
       datatype= 'ex'
-      write(icheck) datatype
-      write(icheck) (ex(ii),ii=1,nprim)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (databasis%ex(ii),ii=1,databasis%nprim)
 !
       datatype= 'coeffinp'
-      write(icheck) datatype
-      write(icheck) (coeffinp(ii),ii=1,nprim)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (databasis%coeffinp(ii),ii=1,databasis%nprim)
 !
       datatype= 'locprim'
-      write(icheck) datatype
-      write(icheck) (locprim(ii),ii=1,nshell)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (databasis%locprim(ii),ii=1,databasis%nshell)
 !
       datatype= 'locbf'
-      write(icheck) datatype
-      write(icheck) (locbf(ii),ii=1,nshell)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (databasis%locbf(ii),ii=1,databasis%nshell)
 !
       datatype= 'locatom'
-      write(icheck) datatype
-      write(icheck) (locatom(ii),ii=1,nshell)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (databasis%locatom(ii),ii=1,databasis%nshell)
 !
       datatype= 'mprim'
-      write(icheck) datatype
-      write(icheck) (mprim(ii),ii=1,nshell)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (databasis%mprim(ii),ii=1,databasis%nshell)
 !
       datatype= 'mbf'
-      write(icheck) datatype
-      write(icheck) (mbf(ii),ii=1,nshell)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (databasis%mbf(ii),ii=1,databasis%nshell)
 !
       datatype= 'mtype'
-      write(icheck) datatype
-      write(icheck) (mtype(ii),ii=1,nshell)
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (databasis%mtype(ii),ii=1,databasis%nshell)
 !
-      if(scftype == 'RHF') then
+      if(datajob%scftype == 'RHF') then
         datatype= 'cmo'
-        write(icheck) datatype
-        write(icheck)((cmoa(jj,ii),jj=1,nao),ii=1,nmo)
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck)((cmoa(jj,ii),jj=1,databasis%nao),ii=1,datamol%nmo)
 !
         datatype= 'dmtrx'
-        write(icheck) datatype
-        write(icheck) (dmtrxa(ii),ii=1,nao*(nao+1)/2)
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck) (dmtrxa(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
 !
         datatype= 'energymo'
-        write(icheck) datatype
-        write(icheck) (energymoa(ii),ii=1,nmo)
-      elseif(scftype == 'UHF') then
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck) (energymoa(ii),ii=1,datamol%nmo)
+!
+        datatype= 'fock'
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck) (focka(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
+      elseif(datajob%scftype == 'UHF') then
         datatype= 'cmoa'
-        write(icheck) datatype
-        write(icheck)((cmoa(jj,ii),jj=1,nao),ii=1,nmo)
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck)((cmoa(jj,ii),jj=1,databasis%nao),ii=1,datamol%nmo)
 !
         datatype= 'cmob'
-        write(icheck) datatype
-        write(icheck)((cmob(jj,ii),jj=1,nao),ii=1,nmo)
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck)((cmob(jj,ii),jj=1,databasis%nao),ii=1,datamol%nmo)
 !
         datatype= 'dmtrxa'
-        write(icheck) datatype
-        write(icheck) (dmtrxa(ii),ii=1,nao*(nao+1)/2)
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck) (dmtrxa(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
 !
         datatype= 'dmtrxb'
-        write(icheck) datatype
-        write(icheck) (dmtrxb(ii),ii=1,nao*(nao+1)/2)
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck) (dmtrxb(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
 !
         datatype= 'energymoa'
-        write(icheck) datatype
-        write(icheck) (energymoa(ii),ii=1,nmo)
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck) (energymoa(ii),ii=1,datamol%nmo)
 !
         datatype= 'energymob'
-        write(icheck) datatype
-        write(icheck) (energymob(ii),ii=1,nmo)
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck) (energymob(ii),ii=1,datamol%nmo)
+!
+        datatype= 'focka'
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck) (focka(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
+!
+        datatype= 'fockb'
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck) (fockb(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
+      endif
+!
+      datatype= 'smtrx'
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (smtrx(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
+!
+      datatype= 'h1mtrx'
+      write(datacomp%icheck) datatype
+      write(datacomp%icheck) (h1mtrx(ii),ii=1,databasis%nao*(databasis%nao+1)/2)
+!
+      if((datajob%runtype == 'GRADIENT').or.(datajob%runtype == 'OPT')) then
+        datatype= 'egrad'
+        write(datacomp%icheck) datatype
+        write(datacomp%icheck) (egrad(ii),ii=1,datamol%natom*3)
       endif
 !
       return
 end
 
 
-!---------------------------------
-  subroutine setcharge(mpi_comm)
-!---------------------------------
+!-----------------------------------------
+  subroutine setcharge(datamol,datacomp)
+!-----------------------------------------
 !
 ! Set atom charge
 !
-      use modparallel, only : master
-      use modiofile, only : input, maxline
-      use modmolecule, only : znuc, natom
-      use modparam, only : mxatom
+      use modparam, only : mxatom, maxline
+      use modtype, only : typemol, typecomp
       implicit none
-      integer,intent(in) :: mpi_comm
+      type(typemol),intent(inout) :: datamol
+      type(typecomp),intent(inout) :: datacomp
       integer :: ii, jj, iatom
       real(8) :: znew
-      character(len=254) :: line
+      character(len=256) :: line
 !
-      if(master) then
-        rewind(input)
+      if(datacomp%master) then
+        rewind(datacomp%inpcopy)
         do ii= 1,maxline
-          read(input,'(a)',end=200)line
+          read(datacomp%inpcopy,'(a)',end=200)line
           if(line(1:6) == 'CHARGE') then
-            write(*,'(/," -----------------")')
-            write(*,'(  "   Atomic charge")')
-            write(*,'(  " -----------------")')
-            write(*,'(  "   Atomic charges are set manually.")')
+            write(datacomp%iout,'(/," -----------------")')
+            write(datacomp%iout,'(  "   Atomic charge")')
+            write(datacomp%iout,'(  " -----------------")')
+            write(datacomp%iout,'(  "   Atomic charges are set manually.")')
             do jj= 1,mxatom
-              read(input,'(a)',end=100) line
+              read(datacomp%inpcopy,'(a)',end=100) line
               read(line,*,end=100) iatom, znew
-              znuc(iatom)= znew
-              write(*,'("   Charge of Atom ",i5,"     ",f7.3)')iatom, znew
+              datamol%znuc(iatom)= znew
+              write(datacomp%iout,'("   Charge of Atom ",i5,"     ",f7.3)')iatom, znew
             enddo
           endif
         enddo
- 100    write(*,*)
+ 100    write(datacomp%iout,*)
       endif
  200  continue
 !
-      call para_bcastr(znuc,natom,0,mpi_comm)
+      call para_bcastr(datamol%znuc,datamol%natom,0,datacomp%mpi_comm1)
 !
       return
 end
 
 
-
+!--------------------------------------------
+  subroutine writexyzfile(datamol,datacomp)
+!--------------------------------------------
+!
+! Write xyz data
+!
+      use modparam, only : toang
+      use modtype, only : typemol, typecomp
+      implicit none
+      type(typemol),intent(in) :: datamol
+      type(typecomp),intent(in) :: datacomp
+      integer :: iatom, j
+      character(len=3) :: table(-9:112)= &
+&     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
+&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
+&       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
+&       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
+&       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
+&       'Pm ','Sm ','Eu ','Gd ','Tb ','Dy ','Ho ','Er ','Tm ','Yb ','Lu ','Hf ','Ta ','W  ','Re ',&
+&       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
+&       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
+&       'Sg ','Bh ','Hs ','Mt ','Ds ','Rg ','Cn '/)
+!
+      if(datacomp%master) then
+        write(datacomp%ixyz,'(i0)') datamol%natom
+        write(datacomp%ixyz,'("SMASH data in Angstrom")')
+        do iatom= 1,datamol%natom
+          write(datacomp%ixyz,'(a3,x,3f14.7)') &
+&               table(datamol%numatomic(iatom)),(datamol%coord(j,iatom)*toang,j=1,3)
+        enddo
+      endif
+!
+      return
+end
 
 

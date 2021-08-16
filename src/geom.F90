@@ -1,4 +1,4 @@
-! Copyright 2014  Kazuya Ishimura
+! Copyright 2014-2021  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,41 +12,41 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!-----------------------
-  subroutine nucenergy
-!-----------------------
+!----------------------------------------------------
+  subroutine nucenergy(threshatom,datamol,datacomp)
+!----------------------------------------------------
 !
 ! Calculate nuclear replusion energy
 !
-      use modparallel, only : master
-      use modmolecule, only : natom, coord, znuc
-      use modthresh, only : threshatom
-      use modenergy, only : enuc
-      use modwarn, only : nwarn
+      use modtype, only : typemol, typecomp
       implicit none
+      type(typemol),intent(inout) :: datamol
+      type(typecomp),intent(inout) :: datacomp
       integer :: iatom, jatom
       real(8),parameter :: zero=0.0D+00
+      real(8),intent(in) :: threshatom
       real(8) :: xyz(3), rr, chrgij
 !
-      enuc= zero
+      datamol%enuc= zero
 
-      do iatom= 2,natom
+      do iatom= 2,datamol%natom
         do jatom= 1,iatom-1
-          xyz(1)= coord(1,iatom)-coord(1,jatom)
-          xyz(2)= coord(2,iatom)-coord(2,jatom)
-          xyz(3)= coord(3,iatom)-coord(3,jatom)
+          xyz(1)= datamol%coord(1,iatom)-datamol%coord(1,jatom)
+          xyz(2)= datamol%coord(2,iatom)-datamol%coord(2,jatom)
+          xyz(3)= datamol%coord(3,iatom)-datamol%coord(3,jatom)
           rr= sqrt(xyz(1)*xyz(1)+xyz(2)*xyz(2)+xyz(3)*xyz(3))
-          chrgij= znuc(iatom)*znuc(jatom)
+          chrgij= datamol%znuc(iatom)*datamol%znuc(jatom)
           if(rr /= zero) then
-            enuc= enuc+chrgij/rr
-            if((rr <= threshatom).and.master) then
-              write(*,'("Warning! Distance of Atoms",i4," and",i4," is short!")') iatom, jatom
-              nwarn= nwarn+1
+            datamol%enuc= datamol%enuc+chrgij/rr
+            if((rr <= threshatom).and.datacomp%master) then
+              write(datacomp%iout, &
+&                   '("Warning! Distance of Atoms",i4," and",i4," is short!")') iatom, jatom
+              datacomp%nwarn= datacomp%nwarn+1
             endif       
           else
-            if((chrgij /= zero).and.master) then
-              write(*,'("Error! Atoms",i4," and",i4," are the same position!")') iatom, jatom
-              call iabort
+            if((chrgij /= zero).and.datacomp%master) then
+              write(datacomp%iout,'("Error! Atoms",i4," and",i4," are the same position!")') iatom, jatom
+              call iabort(datacomp)
             endif
           endif
         enddo
@@ -55,27 +55,28 @@
 end
 
 
-!---------------------------------------------
-  subroutine nucgradient(egrad,nproc,myrank)
-!---------------------------------------------
+!-----------------------------------------------------
+  subroutine nucgradient(egrad,nproc,myrank,datamol)
+!-----------------------------------------------------
 !
 ! Calculate gradinet of nuclear replusion energy
 !
-      use modmolecule, only : natom, coord, znuc
+      use modtype, only : typemol
       implicit none
+      type(typemol),intent(in) :: datamol
       integer,intent(in) :: nproc, myrank
       integer :: iatom, jatom, i
-      real(8),intent(inout) :: egrad(3,natom)
+      real(8),intent(inout) :: egrad(3,datamol%natom)
       real(8) :: xyz(3), rr, chrgij
 !
-      do iatom= 2+myrank,natom,nproc
+      do iatom= 2+myrank,datamol%natom,nproc
         do jatom= 1,iatom-1
-          xyz(1)= coord(1,iatom)-coord(1,jatom)
-          xyz(2)= coord(2,iatom)-coord(2,jatom)
-          xyz(3)= coord(3,iatom)-coord(3,jatom)
+          xyz(1)= datamol%coord(1,iatom)-datamol%coord(1,jatom)
+          xyz(2)= datamol%coord(2,iatom)-datamol%coord(2,jatom)
+          xyz(3)= datamol%coord(3,iatom)-datamol%coord(3,jatom)
           rr= xyz(1)*xyz(1)+xyz(2)*xyz(2)+xyz(3)*xyz(3)
           rr= rr*sqrt(rr)
-          chrgij= znuc(iatom)*znuc(jatom)
+          chrgij= datamol%znuc(iatom)*datamol%znuc(jatom)
           do i= 1,3
             egrad(i,iatom)= egrad(i,iatom)-xyz(i)*chrgij/rr
             egrad(i,jatom)= egrad(i,jatom)+xyz(i)*chrgij/rr
@@ -86,22 +87,25 @@ end
 end
 
 
-!-----------------------------------------------------------------------------------
-  subroutine setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed)
-!-----------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------------
+  subroutine setredundantcoord(iredun,isizered,numbond,numangle,numtorsion,exceed, &
+&                              datajob,datamol,datacomp)
+!-------------------------------------------------------------------------------------
 !
 ! Set redundant internal coordinate
 ! Covalent radii (H - Cn): P. Pyykko, M. Atsumi, Chem. Eur. J., 186 (2009) 15.
 !
-      use modparallel, only : master
-      use modmolecule, only : coord, natom, numatomic
-      use modunit, only : tobohr
+      use modparam, only : tobohr
+      use modtype, only : typejob, typemol, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
+      type(typecomp),intent(in) :: datacomp
       integer,parameter :: maxconnect=13
       integer,intent(in) :: isizered
       integer,intent(out) :: iredun(4,isizered/4), numbond, numangle, numtorsion
-      integer :: numredun, maxsize, ijpair(natom,maxconnect), iatom, jatom, katom, icount
-      integer :: ibond, kpair, iangle, jangle, numb, iblock(natom), ib, jb, ijatom(2) 
+      integer :: numredun, maxsize, ijpair(datamol%natom,maxconnect), iatom, jatom, katom, icount
+      integer :: ibond, kpair, iangle, jangle, numb, iblock(datamol%natom), ib, jb, ijatom(2) 
       real(8),parameter :: zero=0.0D+00
       real(8) :: radii(112), rrij, thresh, rrijmin
       logical,intent(out) :: exceed
@@ -128,28 +132,31 @@ end
 ! Set bond strech
 !
       numbond= 0
-      do iatom= 1,natom
-        if(numatomic(iatom) > 112) then
-          if(master) &
-&         write(*,'(" Error! This program supports up to Cn in Subroutine setredundantcoord.")')
-          call iabort
-        elseif(numatomic(iatom) < 1) then
-          if(master) &
-&         write(*,'(" Error! This program does not support dummy and ghost atoms ", &
-&                   "in Subroutine setredundantcoord currently.")')
-          call iabort
+      do iatom= 1,datamol%natom
+        if(datamol%numatomic(iatom) > 112) then
+          if(datacomp%master) &
+&         write(datacomp%iout,'(" Error! This program supports up to Cn in Subroutine setredundantcoord.")')
+          call iabort(datacomp)
+        elseif(datamol%numatomic(iatom) < 1) then
+          if(datacomp%master) &
+&         write(datacomp%iout,'(" Error! This program does not support dummy and ghost atoms ", &
+&                               "in Subroutine setredundantcoord currently.")')
+          call iabort(datacomp)
         endif
         icount= 0
-        do jatom= 1,natom
+        do jatom= 1,datamol%natom
           if(jatom == iatom) cycle
-          thresh=(1.25D+00*tobohr*(radii(numatomic(iatom))+radii(numatomic(jatom))))**2
-          rrij= (coord(1,jatom)-coord(1,iatom))**2+(coord(2,jatom)-coord(2,iatom))**2 &
-&              +(coord(3,jatom)-coord(3,iatom))**2
+          thresh=(datajob%fbond*tobohr &
+&               *(radii(datamol%numatomic(iatom))+radii(datamol%numatomic(jatom))))**2
+          rrij= (datamol%coord(1,jatom)-datamol%coord(1,iatom))**2 &
+&              +(datamol%coord(2,jatom)-datamol%coord(2,iatom))**2 &
+&              +(datamol%coord(3,jatom)-datamol%coord(3,iatom))**2
           if(rrij <= thresh) then
             icount= icount+1
             if(icount > maxconnect) then
-              if(master) write(*,'(" Error! There are too many atoms near Atom",i4,".")')iatom
-              call iabort
+              if(datacomp%master) &
+&               write(datacomp%iout,'(" Error! There are too many atoms near Atom",i4,".")')iatom
+              call iabort(datacomp)
             endif
             ijpair(iatom,icount)= jatom
             if(jatom > iatom) then
@@ -170,19 +177,19 @@ end
 !
       numb= 0
       iblock(:)= 0
- mblock:do iatom= 1,natom
+ mblock:do iatom= 1,datamol%natom
           if(iblock(iatom) /= 0) cycle
           numb= numb+1
           iblock(iatom)= numb
-          call checkbond(iatom,numb,iblock,ijpair,natom,maxconnect)
-          do jatom= iatom+1,natom
+          call checkbond(iatom,numb,iblock,ijpair,datamol%natom,maxconnect)
+          do jatom= iatom+1,datamol%natom
             if(iblock(jatom) == 0) cycle mblock
           enddo
           exit mblock
         enddo mblock
 !
-     if(master.and.(numb /= 1)) then
-       write(*,'(" There are",i3," moleclar blocks in redundant coordinate.")') numb
+     if(datacomp%master.and.(numb /= 1)) then
+       write(datacomp%iout,'(" There are",i3," moleclar blocks in redundant coordinate.")') numb
      endif
 !
 ! Calculate length between molecular fragments
@@ -190,12 +197,13 @@ end
       do ib= 1, numb
         do jb= ib+1,numb
           rrijmin= zero
-          do iatom= 1,natom
+          do iatom= 1,datamol%natom
             if(iblock(iatom) /= ib) cycle
-            do jatom= iatom+1,natom
+            do jatom= iatom+1,datamol%natom
               if(iblock(jatom) /= jb) cycle
-                rrij= (coord(1,jatom)-coord(1,iatom))**2+(coord(2,jatom)-coord(2,iatom))**2 &
-&                    +(coord(3,jatom)-coord(3,iatom))**2
+                rrij= (datamol%coord(1,jatom)-datamol%coord(1,iatom))**2 &
+&                    +(datamol%coord(2,jatom)-datamol%coord(2,iatom))**2 &
+&                    +(datamol%coord(3,jatom)-datamol%coord(3,iatom))**2
               if((rrijmin == zero).or.(rrij < rrijmin)) then
                 rrijmin= rrij
                 ijatom(1)= min(iatom,jatom)
@@ -209,8 +217,9 @@ end
               exit
             endif
             if(icount == maxconnect) then
-              if(master) write(*,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(1)
-              call iabort
+              if(datacomp%master) &
+&               write(datacomp%iout,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(1)
+              call iabort(datacomp)
             endif
           enddo
           do icount= 1,maxconnect
@@ -219,8 +228,9 @@ end
               exit
             endif
             if(icount == maxconnect) then
-              if(master) write(*,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(2)
-              call iabort
+              if(datacomp%master) &
+&               write(datacomp%iout,'(" Error! There are too many atoms near Atom",i4,".")')ijatom(2)
+              call iabort(datacomp)
             endif
           enddo
           numredun= numredun+1
@@ -356,7 +366,7 @@ end
         enddo
       enddo
 !
-      if((natom >= 4).and.(numtorsion == 0)) then
+      if((datamol%natom >= 4).and.(numtorsion == 0)) then
         do iangle= numbond+1,numbond+numangle
           iatom= iredun(1,iangle)
           jatom= iredun(2,iangle)
@@ -409,17 +419,18 @@ end
 
 !------------------------------------------------------------------------------------
   subroutine calcnewcoord(coord,coordold,egrad,egradold,ehess,displc,natom3,iopt, &
-&                         nproc,myrank,mpi_comm)
+&                         datajob,datamol,datacomp)
 !------------------------------------------------------------------------------------
 !
 ! Calculate new Cartesian coordinate with gradient and hessian
 !
-      use modparallel, only : master
-      use modprint, only : iprint
-      use modunit, only : toang
-      use modmolecule, only : numatomic
+      use modparam, only : toang
+      use modtype, only : typejob, typemol, typecomp
       implicit none
-      integer,intent(in) :: natom3, iopt, nproc, myrank, mpi_comm
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
+      type(typecomp),intent(inout) :: datacomp
+      integer,intent(in) :: natom3, iopt
       integer :: i, j, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, third=0.3333333333333333D+00
       real(8),intent(inout) :: egrad(natom3), egradold(natom3), ehess(natom3*(natom3+1)/2)
@@ -436,7 +447,13 @@ end
 &       'Pm ','Sm ','Eu ','Gd ','Tb ','Dy ','Ho ','Er ','Tm ','Yb ','Lu ','Hf ','Ta ','W  ','Re ',&
 &       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
-&       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
+&       'Sg ','Bh ','Hs ','Mt ','Ds ','Rg ','Cn '/)
+!
+      if(datacomp%master) then
+        write(datacomp%iout,'(" ====================================================")')
+        write(datacomp%iout,'("   New geometry calculation in Cartesian coordinate")')
+        write(datacomp%iout,'(" ====================================================")')
+      endif
 !
       if(iopt == 1) then
 !
@@ -459,7 +476,7 @@ end
           work(j,i)=ehess(ii+j)
         enddo
       enddo
-      call diag('V','U',natom3,work,natom3,eigen,nproc,myrank,mpi_comm)
+      call diag('V','U',natom3,work,natom3,eigen,datacomp)
 !
       do i=1,natom3
         eigen(i)= one/eigen(i)
@@ -484,28 +501,28 @@ end
 !
 ! Print delta xyz
 !
-      if(master.and.(iprint >= 2)) then
-        write(*,'(" ----------------------------------------------------")')
-        write(*,'("          Delta xyz (Angstrom)")')
-        write(*,'("  Atom            X             Y             Z")')
-        write(*,'(" ----------------------------------------------------")')
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 3)) then
+        write(datacomp%iout,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'("          Delta xyz (Angstrom)")')
+        write(datacomp%iout,'("  Atom            X             Y             Z")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
         do i= 1,natom3/3
-          write(*,'(3x,a3,3x,3f14.7)')table(numatomic(i)), &
+          write(datacomp%iout,'(3x,a3,3x,3f14.7)')table(datamol%numatomic(i)), &
 &              ((coord((i-1)*3+j)-coordold((i-1)*3+j))*toang,j=1,3)
         enddo
-        write(*,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------------",/)')
       endif
 !
       return
 end
 
 
-!---------------------------------------------------------------------------------------
-  subroutine calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess,work1, &
-&                            work2,work3,work4,workv,iopt,iredun,isizered, &
+!-----------------------------------------------------------------------------------
+  subroutine calcnewcoordred(coord,coordold,coordredun,egrad,egradredun,ehess, &
+&                            work1,work2,work3,work4,workv,iopt,iredun,isizered, &
 &                            maxredun,numbond,numangle,numtorsion,numredun, &
-&                            nproc,myrank,mpi_comm)
-!---------------------------------------------------------------------------------------
+&                            datajob,datamol,datacomp)
+!-----------------------------------------------------------------------------------
 !
 ! Calculate new Cartesian coordinate with gradient, hessian and redundant coordinate
 ! using Rational Function Optimization (RFO) method
@@ -517,21 +534,23 @@ end
 ! Covalent raddi (H - Kr): H. B. Schlegel, Theoret. Chim. Acta, 333 (1984) 66.
 ! Covalent radii (Rb- Cn): P. Pyykko, M. Atsumi, Chem. Eur. J., 186 (2009) 15.
 !
-      use modparallel, only : master
-      use modprint, only : iprint
-      use modunit, only : toang, tobohr
-      use modmolecule, only : numatomic, natom
+      use modparam, only : toang, tobohr
+      use modtype, only : typejob, typemol, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
+      type(typecomp),intent(inout) :: datacomp
       integer,parameter :: maxiterdx=100, maxiterrfo=1000
       integer,intent(in) :: iopt, isizered, maxredun, iredun(4,isizered/4)
-      integer,intent(in) :: numbond, numangle, numtorsion, numredun, nproc, myrank, mpi_comm
+      integer,intent(in) :: numbond, numangle, numtorsion, numredun
       integer :: irow(112)
       integer :: natom3, ii, jj, ij, kk, iatom, jatom, katom, iterrfo, iterdx
       integer :: numdim
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, convl=1.0D-08, convrms=1.0D-06
       real(8),parameter :: rad2deg=5.729577951308232D+01
-      real(8),intent(inout) :: coord(natom*3), coordold(natom*3), coordredun(numredun,2)
-      real(8),intent(inout) :: egrad(natom*3), egradredun(numredun,2)
+      real(8),intent(inout) :: coord(datamol%natom*3), coordold(datamol%natom*3)
+      real(8),intent(inout) :: coordredun(numredun,2)
+      real(8),intent(inout) :: egrad(datamol%natom*3), egradredun(numredun,2)
       real(8),intent(inout) :: ehess(numredun*(numredun+1)/2), work1(maxredun,maxredun)
       real(8),intent(inout) :: work2(maxredun,maxredun), work3(maxredun,maxredun)
       real(8),intent(inout) :: work4(maxredun,maxredun), workv(maxredun,3) 
@@ -547,7 +566,7 @@ end
 &       'Pm ','Sm ','Eu ','Gd ','Tb ','Dy ','Ho ','Er ','Tm ','Yb ','Lu ','Hf ','Ta ','W  ','Re ',&
 &       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
-&       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
+&       'Sg ','Bh ','Hs ','Mt ','Ds ','Rg ','Cn '/)
       data irow/2*1, 8*2, 8*3, 18*4, 18*5, 32*6, 26*7/
       data parambond/ &
 &     -0.2440D+00, 0.3520D+00, 0.6600D+00, 0.7126D+00, 0.8335D+00, 0.9491D+00, 1.0D+00, &
@@ -572,11 +591,17 @@ end
 &     1.67D+00, 1.73D+00, 1.76D+00, 1.61D+00, 1.57D+00, 1.49D+00, 1.43D+00, 1.41D+00, 1.34D+00, &
 &     1.29D+00, 1.28D+00, 1.21D+00, 1.22D+00/
 !
-      natom3= natom*3
+      if(datacomp%master) then
+        write(datacomp%iout,'(" ====================================================")')
+        write(datacomp%iout,'("   New geometry calculation in redundant coordinate")')
+        write(datacomp%iout,'(" ====================================================")')
+      endif
+!
+      natom3= datamol%natom*3
 !
 ! Calculate B-matrix
 !
-      call calcbmatrix(coordredun,coord,work1,iredun,numbond,numangle,numtorsion)
+      call calcbmatrix(coordredun,coord,work1,iredun,numbond,numangle,numtorsion,datamol%natom,datacomp)
 !
 ! Calculate G=B*Bt
 !
@@ -585,7 +610,7 @@ end
 !
 ! Calculate G-inverse and K-matrix
 !
-      call diag('V','U',numredun,work2,maxredun,workv(1,3),nproc,myrank,mpi_comm)
+      call diag('V','U',numredun,work2,maxredun,workv(1,3),datacomp)
       numdim=0
       do ii= 1,numredun
         if(abs(workv(ii,3)) >= 1.0D-5) then
@@ -630,15 +655,15 @@ end
 ! Set initial Hessian
 !
         do ii= 1,numbond
-          iatom= numatomic(iredun(1,ii))
-          jatom= numatomic(iredun(2,ii))
+          iatom= datamol%numatomic(iredun(1,ii))
+          jatom= datamol%numatomic(iredun(2,ii))
           rij= coordredun(ii,1)
           paramb= parambond(irow(iatom),irow(jatom))
           work4(ii,ii)= 1.734D+00/((rij-paramb)*(rij-paramb)*(rij-paramb))
         enddo
         do ii= numbond+1,numbond+numangle
-          iatom= numatomic(iredun(1,ii))
-          katom= numatomic(iredun(3,ii))
+          iatom= datamol%numatomic(iredun(1,ii))
+          katom= datamol%numatomic(iredun(3,ii))
           if((iatom == 1).or.(katom == 1)) then
             work4(ii,ii)= 0.16D+00
           else
@@ -646,8 +671,8 @@ end
           endif
         enddo
         do ii= numbond+numangle+1,numredun
-          jatom= numatomic(iredun(2,ii))
-          katom= numatomic(iredun(3,ii))
+          jatom= datamol%numatomic(iredun(2,ii))
+          katom= datamol%numatomic(iredun(3,ii))
           jj=(iredun(2,ii)-1)*3
           kk=(iredun(3,ii)-1)*3
           rjk=sqrt((coord(jj+1)-coord(kk+1))**2+(coord(jj+2)-coord(kk+2))**2 &
@@ -682,7 +707,7 @@ end
 &                zero,work1,maxredun)
       call dgemm('T','N',numdim,numdim,numredun,one,work2(1,numredun-numdim+1),maxredun, &
 &                work1,maxredun,zero,work4,maxredun)
-      call diag('V','U',numdim,work4,maxredun,workv(1,3),nproc,myrank,mpi_comm)
+      call diag('V','U',numdim,work4,maxredun,workv(1,3),datacomp)
 !
 ! Calculate K*(orthogonal basis)
 !
@@ -701,15 +726,21 @@ end
         do ii= 1,numdim
           suml= suml+workv(ii,1)*workv(ii,1)/(rlambda-workv(ii,3))
         enddo
-        if(master.and.(iprint >= 3)) then
-          write(*,'(" Lambda iteration of RFO",i3,3x,"Lambda=",1p,d15.8,4x,"Sum=",1p,d15.8)') &
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 5)) then
+          write(datacomp%iout, &
+&               '(" Lambda iteration of RFO",i3,3x,"Lambda=",1p,e15.8,4x,"Sum=",1p,e15.8)') &
 &               iterrfo,rlambda,suml
         endif
         if(abs(rlambda-suml) <= convl) exit
         rlambda= suml
         if(iterrfo == maxiterrfo) then
-          if(master) write(*,'(" Error! RFO step in calcnewcoordred dit not converge.")')
-          call iabort
+          if(datacomp%master) then
+            write(datacomp%iout,'(" Lambda iteration of RFO",i3,3x,"Lambda=",1p,e15.8,4x,"Sum=",1p,e15.8)') &
+&                iterrfo,rlambda,suml
+            write(datacomp%iout,'(" Error! RFO step in calcnewcoordred did not converge.")')
+            write(datacomp%iout,'(" Try cartesian=.false. in opt section of input file.")')
+          endif
+          call iabort(datacomp)
         endif
       enddo
 !
@@ -741,9 +772,9 @@ end
 !
         rmsdx= sqrt(ddot(natom3,workv,1,workv,1)/natom3)
         rmsqx= sqrt(ddot(numredun,workv(1,2),1,workv(1,2),1)/numredun)
-        if(master.and.(iprint >= 3)) then
-          write(*,'(" Displacement Iteration",i3,2x,"RMS(Cart)=",1p,d10.3,4x, &
-&                   "RMS(Red)=",1p,d10.3)') iterdx, rmsdx, rmsqx
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 5)) then
+          write(datacomp%iout,'(" Displacement Iteration",i3,2x,"RMS(Cart)=",1p,e10.3,4x, &
+&                   "RMS(Red)=",1p,e10.3)') iterdx, rmsdx, rmsqx
         endif
         if(rmsdx < convrms) exit
 !
@@ -751,7 +782,7 @@ end
 !
 ! delta-q workv(*,3)
 !
-        call calcbmatrix(workv,coord,work1,iredun,numbond,numangle,numtorsion)
+        call calcbmatrix(workv,coord,work1,iredun,numbond,numangle,numtorsion,datamol%natom,datacomp)
         do ii= 1,numredun
           workv(ii,3)= workv(ii,1)-coordredun(ii,1)
         enddo
@@ -775,7 +806,7 @@ end
 !
 !   Calculate G-inverse
 !
-        call diag('V','U',numredun,work2,maxredun,workv(1,1),nproc,myrank,mpi_comm)
+        call diag('V','U',numredun,work2,maxredun,workv(1,1),datacomp)
         numdim=0
         do ii= 1,numredun
           if(abs(workv(ii,1)) >= 1.0D-5) then
@@ -801,71 +832,77 @@ end
         call dgemv('N',natom3,numredun,one,work3,maxredun,workv(1,2),1,zero,workv,1)
 !
         if(iterdx == maxiterdx) then
-          if(master) then
-            write(*,'(" Error! Transformation from redundant to Cartesian did not converge.")')
+          if(datacomp%master) then
+            write(datacomp%iout,'(" Displacement Iteration",i3,2x,"RMS(Cart)=",1p,e10.3,4x, &
+&                                 "RMS(Red)=",1p,e10.3)') iterdx, rmsdx, rmsqx
+            write(datacomp%iout,'(" Error! Transformation from redundant to Cartesian did not converge.")')
+            write(datacomp%iout,'(" Try cartesian=.false. in opt section of input file.")')
           endif
-          call iabort
+          call iabort(datacomp)
         endif
       enddo
-      if(master) then
-        if(iprint >= 3) write(*,*)
-        write(*,'(" ---------------------------------------------------------------")')
-        write(*,'("   Redundant coordinate parameters (Angstrom and Degree)")')
-        write(*,'("                                        New           Old")')
-        write(*,'(" ---------------------------------------------------------------")')
-        do ii= 1,numbond
-          write(chartmp(1:3),'(i5)')ii,iredun(1:2,ii)
-          paramred= trim(trim("Bond"//adjustl(chartmp(1)) //"   ("//adjustl(chartmp(2)))//"," &
-&                                  //adjustl(chartmp(3)))//")"
-          write(*,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*toang, &
-&                                                  coordredun(ii,2)*toang
-        enddo
-        do ii= numbond+1,numbond+numangle
-          write(chartmp(1:4),'(i5)')ii-numbond,iredun(1:3,ii)
-          paramred= trim(trim(trim("Angle"//adjustl(chartmp(1)) //"  ("//adjustl(chartmp(2))) &
-&                                    //","//adjustl(chartmp(3)))//","//adjustl(chartmp(4)))//")"
-          write(*,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*rad2deg, &
-&                                                  coordredun(ii,2)*rad2deg
-        enddo
-        do ii= numbond+numangle+1,numbond+numangle+numtorsion
-          write(chartmp(1:5),'(i5)')ii-numbond-numangle,iredun(1:4,ii)
-          paramred= trim(trim(trim(trim("Torsion"//adjustl(chartmp(1)) //"("// &
-&                   adjustl(chartmp(2)))//","//adjustl(chartmp(3)))//","// &
-&                   adjustl(chartmp(4)))//","//adjustl(chartmp(5)))//")"
-          write(*,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*rad2deg, &
-&                                                  coordredun(ii,2)*rad2deg
-        enddo
-        write(*,'(" ---------------------------------------------------------------")')
+      if(datacomp%master) then
+        if(mod(datajob%iprint,10) >= 3) then
+          write(datacomp%iout,'(" ------------------------------------------------------------")')
+          write(datacomp%iout,'("   Redundant coordinate parameters (Angstrom and Degree)")')
+          write(datacomp%iout,'("                                        New           Old")')
+          write(datacomp%iout,'(" ------------------------------------------------------------")')
+          do ii= 1,numbond
+            write(chartmp(1:3),'(i5)')ii,iredun(1:2,ii)
+            paramred= trim(trim("Bond"//adjustl(chartmp(1)) //"   ("//adjustl(chartmp(2)))//"," &
+&                                    //adjustl(chartmp(3)))//")"
+            write(datacomp%iout,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*toang, &
+&                                                    coordredun(ii,2)*toang
+          enddo
+          do ii= numbond+1,numbond+numangle
+            write(chartmp(1:4),'(i5)')ii-numbond,iredun(1:3,ii)
+            paramred= trim(trim(trim("Angle"//adjustl(chartmp(1)) //"  ("//adjustl(chartmp(2))) &
+&                                      //","//adjustl(chartmp(3)))//","//adjustl(chartmp(4)))//")"
+            write(datacomp%iout,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*rad2deg, &
+&                                                    coordredun(ii,2)*rad2deg
+          enddo
+          do ii= numbond+numangle+1,numbond+numangle+numtorsion
+            write(chartmp(1:5),'(i5)')ii-numbond-numangle,iredun(1:4,ii)
+            paramred= trim(trim(trim(trim("Torsion"//adjustl(chartmp(1)) //"("// &
+&                     adjustl(chartmp(2)))//","//adjustl(chartmp(3)))//","// &
+&                     adjustl(chartmp(4)))//","//adjustl(chartmp(5)))//")"
+            write(datacomp%iout,'(3x,a33,f9.4,5x,f9.4)')paramred,coordredun(ii,1)*rad2deg, &
+&                                                    coordredun(ii,2)*rad2deg
+          enddo
+          write(datacomp%iout,'(" ------------------------------------------------------------")')
+        endif
       endif
 
 !
 ! Print delta xyz
 !
-      if(master.and.(iprint >= 2)) then
-        write(*,'(" ----------------------------------------------------")')
-        write(*,'("          Delta xyz (Angstrom)")')
-        write(*,'("  Atom            X             Y             Z")')
-        write(*,'(" ----------------------------------------------------")')
+      if(datacomp%master.and.(mod(datajob%iprint,10) >= 3)) then
+        write(datacomp%iout,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'("          Delta xyz (Angstrom)")')
+        write(datacomp%iout,'("  Atom            X             Y             Z")')
+        write(datacomp%iout,'(" ----------------------------------------------------")')
         do ii= 1,natom3/3
-          write(*,'(3x,a3,3x,3f14.7)')table(numatomic(ii)), &
+          write(datacomp%iout,'(3x,a3,3x,3f14.7)') table(datamol%numatomic(ii)), &
 &              ((coord((ii-1)*3+jj)-coordold((ii-1)*3+jj))*toang,jj=1,3)
         enddo
-        write(*,'(" ----------------------------------------------------")')
+        write(datacomp%iout,'(" ----------------------------------------------------",/)')
       endif
 !
       return
 end
 
 
-!-----------------------------------------------------------------------------------
-  subroutine calcbmatrix(coordredun,coord,bmat,iredun,numbond,numangle,numtorsion)
-!-----------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------------------
+  subroutine calcbmatrix(coordredun,coord,bmat,iredun,numbond,numangle,numtorsion,natom,datacomp)
+!--------------------------------------------------------------------------------------------------
 !
 ! Calculate transformation matrix(B-matrix) from Cartesian to internal coordinate
 !
-      use modmolecule, only : natom
+      use modtype, only : typecomp
       implicit none
-      integer,intent(in) :: numbond, numangle, numtorsion, iredun(4,numbond+numangle+numtorsion)
+      type(typecomp),intent(inout) :: datacomp
+      integer,intent(in) :: numbond, numangle, numtorsion
+      integer,intent(in) :: iredun(4,numbond+numangle+numtorsion), natom
       integer :: iatom, jatom, katom, latom, ii, jj, kk, ll, mm, ibond, iangle, itorsion
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00, four=4.0D+00
       real(8),intent(in) :: coord(3,natom)
@@ -921,10 +958,10 @@ end
           dotj= dotj+unitji(mm)*unitjk(mm)
         enddo
         if(abs(dotj) >= one) then
-          write(*,'(" Error! During calculation of bond angles in calcbmatrix.")')
-          write(*,'(" Use Cartesian coordinate. The input is")')
-          write(*,'("   opt cartesian=.true.",/)')
-          call iabort
+          write(datacomp%iout,'(" Error! During calculation of bond angles in calcbmatrix.")')
+          write(datacomp%iout,'(" Use Cartesian coordinate. The input is")')
+          write(datacomp%iout,'("   opt cartesian=.true.",/)')
+          call iabort(datacomp)
         endif
         coordredun(iangle)= acos(dotj)
 !
@@ -981,8 +1018,8 @@ end
         cp3(2)= cp1(3)*cp2(1)-cp1(1)*cp2(3)
         cp3(3)= cp1(1)*cp2(2)-cp1(2)*cp2(1)
         if((abs(dotj) >= one).or.(abs(dotk) >= one)) then
-          write(*,'(" Error! During calculation of torsion angles in calcbmatrix.")')
-          call iabort
+          write(datacomp%iout,'(" Error! During calculation of torsion angles in calcbmatrix.")')
+          call iabort(datacomp)
         endif
 !
         sinj= sqrt(one-dotj*dotj)
@@ -1046,10 +1083,3 @@ end
 !
       return
 end
-
-
-
-
-
-
-

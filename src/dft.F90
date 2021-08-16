@@ -1,4 +1,4 @@
-! Copyright 2014  Kazuya Ishimura
+! Copyright 2014-2021  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,11 +12,12 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!---------------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------
   subroutine formrfockexcor(fockdsum,fockd,energy,totalelec,cmo,atomvec,radpt,angpt, &
-&                           rad,ptweight,vao,vmo,xyzpt,rsqrd,transcmo,work,idftex,idftcor, &
-&                           nproc,myrank,mpi_comm)
-!---------------------------------------------------------------------------------------------
+&                           rad,ptweight,vao,vmo,xyzpt,rsqrd,transcmo,work,ndftatom, &
+&                           nproc,myrank,mpi_comm, &
+&                           datajob,datamol,databasis,datacomp)
+!---------------------------------------------------------------------------------------
 !
 ! Driver of DFT Fock matrix formation from exchange-correlation functionals
 !
@@ -32,48 +33,54 @@
 !       totalelec(Number of numerially integrated electrons)
 !       vao,vmo,xyzpt,work (work space)
 !
-      use modmolecule, only : natom, neleca
-      use moddft, only : nrad, nleb
-      use modbasis, only : nao
-      use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
-      integer,intent(in) :: idftex, idftcor, nproc, myrank, mpi_comm
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: ndftatom, nproc, myrank, mpi_comm
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
-      real(8),intent(in) :: cmo(nao,neleca), atomvec(5,natom,natom), radpt(2,nrad)
-      real(8),intent(in) :: angpt(4,nleb), rad(natom), ptweight(nleb,nrad,natom)
-      real(8),intent(out) :: fockdsum(nao*(nao+1)/2), fockd(nao*(nao+1)/2), energy, totalelec
-      real(8),intent(out) :: vao(nao,4), vmo(neleca,4), xyzpt(3,natom), rsqrd(natom)
-      real(8),intent(out) :: transcmo(neleca,nao), work(nao)
+      real(8),intent(in) :: cmo(databasis%nao,datamol%neleca)
+      real(8),intent(in) :: atomvec(5,ndftatom,ndftatom), radpt(2,datajob%nrad)
+      real(8),intent(in) :: angpt(4,datajob%nleb), rad(ndftatom)
+      real(8),intent(in) :: ptweight(datajob%nleb,datajob%nrad,ndftatom)
+      real(8),intent(out) :: fockdsum(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fockd(databasis%nao*(databasis%nao+1)/2), energy, totalelec
+      real(8),intent(out) :: vao(databasis%nao,4), vmo(datamol%neleca,4), xyzpt(3,ndftatom)
+      real(8),intent(out) :: rsqrd(ndftatom)
+      real(8),intent(out) :: transcmo(datamol%neleca,databasis%nao), work(databasis%nao)
       real(8) :: weight, rhoa, grhoa(3), excora(4)
       real(8) :: radpoint, tmp(2,2), wcutoff, rcutoff, fcutoff, aocutoff
+!
 !
       transcmo=transpose(cmo)
       fockd(:)= zero
 !
       energy= zero
       totalelec= zero
-      ngridatom= nrad*nleb
+      ngridatom= datajob%nrad*datajob%nleb
 !
-      wcutoff= threshweight/(natom*ngridatom)
-      rcutoff= threshrho/(natom*ngridatom)
-      fcutoff= threshdfock/(natom*ngridatom)
-      aocutoff=threshdftao/(natom*ngridatom)
+      wcutoff= datajob%threshweight/(ndftatom*ngridatom)
+      rcutoff= datajob%threshrho/(ndftatom*ngridatom)
+      fcutoff= datajob%threshdfock/(ndftatom*ngridatom)
+      aocutoff=datajob%threshdftao/(ndftatom*ngridatom)
 !
 !$OMP parallel do collapse(2) schedule(dynamic,1) private(icount,ilebstart,xyzpt, &
 !$OMP rsqrd,weight,rhoa,grhoa,excora,radpoint,vao,vmo,work) &
 !$OMP reduction(+:energy,fockd,totalelec)
-      do iatom= 1,natom
-        do irad= 1,nrad
-          icount=(iatom-1)*ngridatom+(irad-1)*nleb+1+myrank
+      do iatom= 1,ndftatom
+        do irad= 1,datajob%nrad
+          icount=(iatom-1)*ngridatom+(irad-1)*datajob%nleb+1+myrank
           ilebstart=mod(icount,nproc)+1
           radpoint= rad(iatom)*radpt(1,irad)
-          do ileb= ilebstart,nleb,nproc
+          do ileb= ilebstart,datajob%nleb,nproc
 !
             weight=ptweight(ileb,irad,iatom)
             if(weight < wcutoff) cycle
 !
-            do jatom= 1,natom
+            do jatom= 1,ndftatom
               xyzpt(1,jatom)= atomvec(1,iatom,jatom)+radpoint*angpt(1,ileb)
               xyzpt(2,jatom)= atomvec(2,iatom,jatom)+radpoint*angpt(2,ileb)
               xyzpt(3,jatom)= atomvec(3,iatom,jatom)+radpoint*angpt(3,ileb)
@@ -81,11 +88,12 @@
 &                          +xyzpt(3,jatom)*xyzpt(3,jatom)
             enddo
 !
-            call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff)
+            call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,datajob%threshex,ndftatom, &
+&                          datamol,databasis,datacomp)
 !
             rhoa= zero
             grhoa(1:3)= zero
-            do imo= 1,neleca
+            do imo= 1,datamol%neleca
               rhoa=     rhoa    +vmo(imo,1)*vmo(imo,1)
               grhoa(1)= grhoa(1)+vmo(imo,2)*vmo(imo,1)
               grhoa(2)= grhoa(2)+vmo(imo,3)*vmo(imo,1)
@@ -95,8 +103,9 @@
             grhoa(1)= grhoa(1)*two
             grhoa(2)= grhoa(2)*two
             grhoa(3)= grhoa(3)*two
-            call calcexcor(excora,excora,energy,rhoa,rhoa,grhoa,grhoa,weight,idftex,idftcor,1)
-            call fockexcor(fockd,excora,vao,vao(1,2),work,weight,nao,fcutoff)
+            call calcexcor(excora,excora,energy,rhoa,rhoa,grhoa,grhoa,weight, &
+&                          datajob%idftex,datajob%idftcor,1)
+            call fockexcor(fockd,excora,vao,vao(1,2),work,weight,databasis%nao,fcutoff)
             totalelec=totalelec+weight*rhoa*two
           enddo
         enddo
@@ -105,7 +114,7 @@
 !
       tmp(1,1)= energy
       tmp(2,1)= totalelec
-      call para_allreducer(fockd,fockdsum,nao*(nao+1)/2,mpi_comm)
+      call para_allreducer(fockd,fockdsum,databasis%nao*(databasis%nao+1)/2,mpi_comm)
       call para_allreducer(tmp(1,1),tmp(1,2),2,mpi_comm)
       energy    = tmp(1,2)
       totalelec = tmp(2,2)
@@ -113,9 +122,10 @@
 end
 
 
-!----------------------------------------------------------------------------------------------
-  subroutine calcexcor(excora,excorb,energy,rhoa,rhob,grhoa,grhob,weight,idftex,idftcor,iscf)
-!----------------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------
+  subroutine calcexcor(excora,excorb,energy,rhoa,rhob,grhoa,grhob,weight, &
+&                      idftex,idftcor,iscf)
+!----------------------------------------------------------------------------
 !
 ! Calculate exchange and correlation energy at a grid point
 !
@@ -200,11 +210,13 @@ end
 end
 
 
-!-------------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------
   subroutine formufockexcor(fockd1,fockd2,fockd3,energy,totalelec,cmoa,cmob,atomvec, &
 &                           radpt,angpt,rad,ptweight,vao,vmoa,vmob,xyzpt,rsqrd, &
-&                           transcmoa,transcmob,work,idftex,idftcor,nproc,myrank,mpi_comm)
-!-------------------------------------------------------------------------------------------
+&                           transcmoa,transcmob,work,ndftatom, &
+&                           nproc,myrank,mpi_comm, &
+&                           datajob,datamol,databasis,datacomp)
+!---------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted DFT Fock matrix formation from exchange-correlation functionals
 !
@@ -214,20 +226,28 @@ end
 !       fock2 (Beta Fock matrix)
 !       fock3 (Work space)
 !
-      use modmolecule, only : natom, neleca, nelecb
-      use moddft, only : nrad, nleb
-      use modbasis, only : nao
-      use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
-      integer,intent(in) :: idftex, idftcor, nproc, myrank, mpi_comm
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: ndftatom, nproc, myrank, mpi_comm
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
-      real(8),intent(in) :: cmoa(nao,neleca), cmob(nao,nelecb), atomvec(5,natom,natom)
-      real(8),intent(in) :: radpt(2,nrad), angpt(4,nleb), rad(natom), ptweight(nleb,nrad,natom)
-      real(8),intent(out) :: fockd1(nao*(nao+1)/2), fockd2(nao*(nao+1)/2)
-      real(8),intent(out) :: fockd3(nao*(nao+1)/2), energy, totalelec, vao(nao,4)
-      real(8),intent(out) :: vmoa(neleca,4), vmob(nelecb,4), xyzpt(3,natom), rsqrd(natom)
-      real(8),intent(out) :: transcmoa(neleca,nao), transcmob(nelecb,nao), work(nao*2)
+      real(8),intent(in) :: cmoa(databasis%nao,datamol%neleca), cmob(databasis%nao,datamol%nelecb)
+      real(8),intent(in) :: atomvec(5,ndftatom,ndftatom), radpt(2,datajob%nrad)
+      real(8),intent(in) :: angpt(4,datajob%nleb), rad(ndftatom) 
+      real(8),intent(in) :: ptweight(datajob%nleb,datajob%nrad,ndftatom)
+      real(8),intent(out) :: fockd1(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fockd2(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fockd3(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: energy, totalelec, vao(databasis%nao,4)
+      real(8),intent(out) :: vmoa(datamol%neleca,4), vmob(datamol%nelecb,4)
+      real(8),intent(out) :: xyzpt(3,ndftatom), rsqrd(ndftatom)
+      real(8),intent(out) :: transcmoa(datamol%neleca,databasis%nao)
+      real(8),intent(out) :: transcmob(datamol%nelecb,databasis%nao)
+      real(8),intent(out) :: work(databasis%nao*2)
       real(8) :: weight, rhoa, rhob, grhoa(3), grhob(3), excora(4), excorb(4)
       real(8) :: radpoint, tmp(2,2), wcutoff, rcutoff, fcutoff, aocutoff
 !
@@ -238,26 +258,26 @@ end
 !
       energy= zero
       totalelec= zero
-      ngridatom= nrad*nleb
+      ngridatom= datajob%nrad*datajob%nleb
 !
-      wcutoff= threshweight/(natom*ngridatom)
-      rcutoff= threshrho/(natom*ngridatom)
-      fcutoff= threshdfock/(natom*ngridatom)
-      aocutoff=threshdftao/(natom*ngridatom)
+      wcutoff= datajob%threshweight/(ndftatom*ngridatom)
+      rcutoff= datajob%threshrho/(ndftatom*ngridatom)
+      fcutoff= datajob%threshdfock/(ndftatom*ngridatom)
+      aocutoff=datajob%threshdftao/(ndftatom*ngridatom)
 !
 !$OMP parallel do collapse(2) schedule(dynamic,1) private(icount,ilebstart,xyzpt, &
 !$OMP rsqrd,weight,rhoa,rhob,grhoa,grhob,excora,excorb,radpoint,vao,vmoa,vmob,work) &
 !$OMP reduction(+:energy,fockd2,fockd3,totalelec)
-      do iatom= 1,natom
-        do irad= 1,nrad
-          icount=(iatom-1)*ngridatom+(irad-1)*nleb+1+myrank
+      do iatom= 1,ndftatom
+        do irad= 1,datajob%nrad
+          icount=(iatom-1)*ngridatom+(irad-1)*datajob%nleb+1+myrank
           ilebstart=mod(icount,nproc)+1
           radpoint= rad(iatom)*radpt(1,irad)
-          do ileb= ilebstart,nleb,nproc
+          do ileb= ilebstart,datajob%nleb,nproc
 !
             weight=ptweight(ileb,irad,iatom)
             if(weight < wcutoff) cycle
-            do jatom= 1,natom
+            do jatom= 1,ndftatom
               xyzpt(1,jatom)= atomvec(1,iatom,jatom)+radpoint*angpt(1,ileb)
               xyzpt(2,jatom)= atomvec(2,iatom,jatom)+radpoint*angpt(2,ileb)
               xyzpt(3,jatom)= atomvec(3,iatom,jatom)+radpoint*angpt(3,ileb)
@@ -265,11 +285,12 @@ end
 &                          +xyzpt(3,jatom)*xyzpt(3,jatom)
             enddo
 !
-            call griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff)
+            call griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff, &
+&                          datajob%threshex,ndftatom,datamol,databasis,datacomp)
 !
             rhoa= zero
             grhoa(1:3)= zero
-            do imo= 1,neleca
+            do imo= 1,datamol%neleca
               rhoa=     rhoa    +vmoa(imo,1)*vmoa(imo,1)
               grhoa(1)= grhoa(1)+vmoa(imo,2)*vmoa(imo,1)
               grhoa(2)= grhoa(2)+vmoa(imo,3)*vmoa(imo,1)
@@ -277,7 +298,7 @@ end
             enddo
             rhob= zero
             grhob(1:3)= zero
-            do imo= 1,nelecb
+            do imo= 1,datamol%nelecb
               rhob=     rhob    +vmob(imo,1)*vmob(imo,1)
               grhob(1)= grhob(1)+vmob(imo,2)*vmob(imo,1)
               grhob(2)= grhob(2)+vmob(imo,3)*vmob(imo,1)
@@ -290,8 +311,10 @@ end
             grhob(1)= grhob(1)*two
             grhob(2)= grhob(2)*two
             grhob(3)= grhob(3)*two
-            call calcexcor(excora,excorb,energy,rhoa,rhob,grhoa,grhob,weight,idftex,idftcor,2)
-            call ufockexcor(fockd2,fockd3,excora,excorb,vao,vao(1,2),work,weight,nao,fcutoff)
+            call calcexcor(excora,excorb,energy,rhoa,rhob,grhoa,grhob,weight, &
+&                          datajob%idftex,datajob%idftcor,2)
+            call ufockexcor(fockd2,fockd3,excora,excorb,vao,vao(1,2),work,weight, &
+&                           databasis%nao,fcutoff)
             totalelec=totalelec+weight*(rhoa+rhob)
           enddo
         enddo
@@ -300,8 +323,8 @@ end
 !
       tmp(1,1)= energy
       tmp(2,1)= totalelec
-      call para_allreducer(fockd2,fockd1,nao*(nao+1)/2,mpi_comm)
-      call para_allreducer(fockd3,fockd2,nao*(nao+1)/2,mpi_comm)
+      call para_allreducer(fockd2,fockd1,databasis%nao*(databasis%nao+1)/2,mpi_comm)
+      call para_allreducer(fockd3,fockd2,databasis%nao*(databasis%nao+1)/2,mpi_comm)
       call para_allreducer(tmp(1,1),tmp(1,2),2,mpi_comm)
       energy    = tmp(1,2)
       totalelec = tmp(2,2)
@@ -309,9 +332,10 @@ end
 end
 
 
-!--------------------------------------------------------------------------------------
-  subroutine ufockexcor(fockda,fockdb,excora,excorb,vao,vgao,work,weight,nao,fcutoff)
-!--------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------
+  subroutine ufockexcor(fockda,fockdb,excora,excorb,vao,vgao,work,weight, &
+&                       nao,fcutoff)
+!----------------------------------------------------------------------------
 !
 ! Add exchange-correlation term to unrestricted Fock matrix at a grid point
 !
@@ -352,35 +376,37 @@ end
 end
 
 
-!------------------------------------------
-  subroutine calcatomvec(atomvec,surface)
-!------------------------------------------
+!-----------------------------------------------------------
+  subroutine calcatomvec(atomvec,surface,ndftatom,datamol)
+!-----------------------------------------------------------
 !
 ! Calculate atom vectors and surface shifting parameters
 !
 ! Out : atomvec (atom vector and distance)
 !       surface (surface shifting parameters)
 !
-      use modmolecule, only : natom, coord, numatomic
-      use modatom, only : atomrad
+      use modtype, only : typemol
       implicit none
+      type(typemol),intent(in) :: datamol
+      integer,intent(in) :: ndftatom
       integer :: iatom, jatom, inum, jnum
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
-      real(8),intent(out) :: atomvec(5,natom,natom), surface(natom,natom)
+      real(8),intent(out) :: atomvec(5,ndftatom,ndftatom)
+      real(8),intent(out) :: surface(ndftatom,ndftatom)
       real(8) :: tmp1, tmp2
 !
 ! Calculate atom vectors
 !
 !$OMP parallel do
-      do iatom= 1,natom
+      do iatom= 1,ndftatom
         atomvec(1,iatom,iatom)= zero
         atomvec(2,iatom,iatom)= zero
         atomvec(3,iatom,iatom)= zero
         atomvec(4,iatom,iatom)= zero
         do jatom= 1,iatom-1
-          atomvec(1,jatom,iatom)= coord(1,jatom)-coord(1,iatom)
-          atomvec(2,jatom,iatom)= coord(2,jatom)-coord(2,iatom)
-          atomvec(3,jatom,iatom)= coord(3,jatom)-coord(3,iatom)
+          atomvec(1,jatom,iatom)= datamol%coord(1,jatom)-datamol%coord(1,iatom)
+          atomvec(2,jatom,iatom)= datamol%coord(2,jatom)-datamol%coord(2,iatom)
+          atomvec(3,jatom,iatom)= datamol%coord(3,jatom)-datamol%coord(3,iatom)
           atomvec(4,jatom,iatom)= sqrt(atomvec(1,jatom,iatom)*atomvec(1,jatom,iatom) &
                                       +atomvec(2,jatom,iatom)*atomvec(2,jatom,iatom) &
                                       +atomvec(3,jatom,iatom)*atomvec(3,jatom,iatom))
@@ -397,32 +423,32 @@ end
 ! Calculate surface shifting parameters
 !
 !$OMP parallel do private(inum,jnum,tmp1,tmp2)
-      do iatom= 1,natom
+      do iatom= 1,ndftatom
         surface(iatom,iatom)= zero
-        inum= numatomic(iatom)
+        inum= datamol%numatomic(iatom)
         if(inum == 0) then
           surface(1,iatom)= -one
           cycle
         endif
         do jatom= 1,iatom-1
-          jnum= numatomic(jatom)
+          jnum= datamol%numatomic(jatom)
           if(jnum == 0) then
             surface(jatom,iatom)= one
             cycle
           endif
-          tmp1= atomrad(inum)/atomrad(jnum)
+          tmp1= datamol%atomrad(inum)/datamol%atomrad(jnum)
           tmp2=(tmp1-one)/(tmp1+one)
           surface(jatom,iatom)= tmp2/(tmp2*tmp2-one)
           if(surface(jatom,iatom) > half) surface(jatom,iatom)= half
           if(surface(jatom,iatom) <-half) surface(jatom,iatom)=-half
         enddo
-        do jatom= iatom+1,natom
-          jnum= numatomic(jatom)
+        do jatom= iatom+1,ndftatom
+          jnum= datamol%numatomic(jatom)
           if(jnum == 0) then
             surface(jatom,iatom)= one
             cycle
           endif
-          tmp1= atomrad(inum)/atomrad(jnum)
+          tmp1= datamol%atomrad(inum)/datamol%atomrad(jnum)
           tmp2=(tmp1-one)/(tmp1+one)
           surface(jatom,iatom)= tmp2/(tmp2*tmp2-one)
           if(surface(jatom,iatom) > half) surface(jatom,iatom)= half
@@ -466,9 +492,9 @@ end
 end
 
 
-!-----------------------------------
-  subroutine calclebpt(angpt,nleb)
-!-----------------------------------
+!--------------------------------------------
+  subroutine calclebpt(angpt,nleb,datacomp)
+!--------------------------------------------
 !
 ! Calculate Levedev quadrature points and weights
 !
@@ -476,7 +502,9 @@ end
 ! Out : angpt(1:3,*) (Levedev points)
 !       angpt(4  ,*) (Levedev weights)
 !
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nleb
       integer :: ileb
       real(8),parameter :: pi4=1.256637061435917D+01
@@ -530,8 +558,8 @@ end
         case(1454)
           call lebedev1454(angpt)
         case default
-          write(*,'(" Error! Nleb=",i4," is not supported. ")')nleb
-          call iabort
+          write(datacomp%iout,'(" Error! Nleb=",i4," is not supported. ")')nleb
+          call iabort(datacomp)
       end select
 !
       do ileb= 1,nleb
@@ -541,9 +569,10 @@ end
 end
 
 
-!----------------------------------------------------------------------------------------------
-  subroutine calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work,nproc,myrank)
-!----------------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------------
+  subroutine calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work,nrad,nleb, &
+&                           ndftatom,nproc,myrank)
+!---------------------------------------------------------------------------------------------
 !
 ! Calculate weights of grid points
 !
@@ -555,22 +584,20 @@ end
 ! Out : ptweight  (weight of grid point)
 !       xyzpt, work (work space)
 !
-      use moddft, only : nrad, nleb
-      use modmolecule, only : natom
       implicit none
-      integer,intent(in) :: nproc, myrank
+      integer,intent(in) :: nrad, nleb, ndftatom, nproc, myrank
       integer :: katom, irad, ileb, iatom, jatom, i, icount, ilebstart, ngridatom
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, oneh=1.5D+00
-      real(8),intent(in) :: rad(natom), radpt(2,nrad), angpt(4,nleb), atomvec(5,natom,natom)
-      real(8),intent(in) :: surface(natom,natom)
-      real(8),intent(out) :: ptweight(nleb,nrad,natom), xyzpt(3,natom), work(natom,2)
+      real(8),intent(in) :: rad(ndftatom), radpt(2,nrad), angpt(4,nleb)
+      real(8),intent(in) :: atomvec(5,ndftatom,ndftatom), surface(ndftatom,ndftatom)
+      real(8),intent(out) :: ptweight(nleb,nrad,ndftatom), xyzpt(3,ndftatom), work(ndftatom,2)
       real(8) :: xyzgrid(3), radpoint, radweight, wttot, cutij, cutji, xmuij, zmuij, f4, f2
 !
       ngridatom= nrad*nleb
 !
 !$OMP parallel do collapse(2) private(icount,ilebstart,radpoint,radweight,wttot,xyzpt,&
 !$OMP work,xyzgrid,cutij,cutji,zmuij,xmuij,f4,f2)
-      do katom= 1,natom
+      do katom= 1,ndftatom
         do irad= 1,nrad
           icount=(katom-1)*ngridatom+(irad-1)*nleb+1+myrank
           ilebstart=mod(icount,nproc)+1
@@ -582,7 +609,7 @@ end
             xyzgrid(1)= radpoint*angpt(1,ileb)
             xyzgrid(2)= radpoint*angpt(2,ileb)
             xyzgrid(3)= radpoint*angpt(3,ileb)
-            do iatom= 1,natom
+            do iatom= 1,ndftatom
               xyzpt(1,iatom)= atomvec(1,katom,iatom)+xyzgrid(1)
               xyzpt(2,iatom)= atomvec(2,katom,iatom)+xyzgrid(2)
               xyzpt(3,iatom)= atomvec(3,katom,iatom)+xyzgrid(3)
@@ -591,7 +618,7 @@ end
 &                                +xyzpt(3,iatom)*xyzpt(3,iatom))
             enddo
 !
-            do iatom= 1,natom
+            do iatom= 1,ndftatom
               if(surface(1,iatom) == -one) then
                 work(iatom,1)= zero
                 cycle
@@ -611,7 +638,7 @@ end
                 work(jatom,1)=work(jatom,1)*cutji
               enddo
             enddo
-            do iatom= 1,natom
+            do iatom= 1,ndftatom
               wttot= wttot+work(iatom,1)
             enddo
             ptweight(ileb,irad,katom)= work(katom,1)*radweight*angpt(4,ileb)/wttot
@@ -623,32 +650,37 @@ end
 end
 
 
-!--------------------------------------------------------------
-  subroutine gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff)
-!--------------------------------------------------------------
+!----------------------------------------------------------------------------------
+  subroutine gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,threshex,ndftatom, &
+&                      datamol,databasis,datacomp)
+!----------------------------------------------------------------------------------
 !
 ! Calculate closed-shell AO and MO values for a grid point
 !
-      use modmolecule, only : natom, neleca
-      use modbasis, only : nao
+      use modtype, only : typemol, typebasis, typecomp
       implicit none
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: ndftatom
       integer :: ii, jj
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom), transcmo(neleca,nao), aocutoff
-      real(8),intent(out) :: vao(nao,4), vmo(neleca,4)
+      real(8),intent(in) :: xyzpt(3,ndftatom), rsqrd(ndftatom)
+      real(8),intent(in) :: transcmo(datamol%neleca,databasis%nao), aocutoff, threshex
+      real(8),intent(out) :: vao(databasis%nao,4), vmo(datamol%neleca,4)
 !
 ! Calculate AO values for a grid point
 !
       vao(:,:)= zero
-      call gridao(vao,xyzpt,rsqrd)
+      call gridao(vao,xyzpt,rsqrd,threshex,ndftatom,databasis,datacomp)
 !
 ! Calculate MO values for a grid point
 !
       vmo(:,:)= zero
-      do ii= 1,nao
+      do ii= 1,databasis%nao
         if(abs(vao(ii,1))+abs(vao(ii,2)) &
 &         +abs(vao(ii,3))+abs(vao(ii,4)) > aocutoff) then
-          do jj= 1,neleca
+          do jj= 1,datamol%neleca
             vmo(jj,1)= vmo(jj,1)+vao(ii,1)*transcmo(jj,ii)
             vmo(jj,2)= vmo(jj,2)+vao(ii,2)*transcmo(jj,ii)
             vmo(jj,3)= vmo(jj,3)+vao(ii,3)*transcmo(jj,ii)
@@ -661,37 +693,42 @@ end
 end
 
 
-!-------------------------------------------------------------------------------
-  subroutine griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff)
-!-------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------
+  subroutine griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff, &
+&                      threshex,ndftatom,datamol,databasis,datacomp)
+!---------------------------------------------------------------------------------
 !
 ! Calculate open-shell AO and MO values for a grid point
 !
-      use modmolecule, only : natom, neleca, nelecb
-      use modbasis, only : nao
+      use modtype, only : typemol, typebasis, typecomp
       implicit none
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: ndftatom
       integer :: ii, jj
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom), transcmoa(neleca,nao)
-      real(8),intent(in) :: transcmob(nelecb,nao), aocutoff
-      real(8),intent(out) :: vao(nao,4), vmoa(neleca,4), vmob(nelecb,4)
+      real(8),intent(in) :: xyzpt(3,ndftatom), rsqrd(ndftatom)
+      real(8),intent(in) :: transcmoa(datamol%neleca,databasis%nao)
+      real(8),intent(in) :: transcmob(datamol%nelecb,databasis%nao), aocutoff, threshex
+      real(8),intent(out) :: vao(databasis%nao,4), vmoa(datamol%neleca,4), vmob(datamol%nelecb,4)
 !
       vao(:,:)= zero
 !
-      call gridao(vao,xyzpt,rsqrd)
+      call gridao(vao,xyzpt,rsqrd,threshex,ndftatom,databasis,datacomp)
 !
       vmoa(:,:)= zero
       vmob(:,:)= zero
-      do ii= 1,nao
+      do ii= 1,databasis%nao
         if(abs(vao(ii,1))+abs(vao(ii,2)) &
 &         +abs(vao(ii,3))+abs(vao(ii,4)) > aocutoff) then
-          do jj= 1,neleca
+          do jj= 1,datamol%neleca
             vmoa(jj,1)= vmoa(jj,1)+vao(ii,1)*transcmoa(jj,ii)
             vmoa(jj,2)= vmoa(jj,2)+vao(ii,2)*transcmoa(jj,ii)
             vmoa(jj,3)= vmoa(jj,3)+vao(ii,3)*transcmoa(jj,ii)
             vmoa(jj,4)= vmoa(jj,4)+vao(ii,4)*transcmoa(jj,ii)
           enddo
-          do jj= 1,nelecb
+          do jj= 1,datamol%nelecb
             vmob(jj,1)= vmob(jj,1)+vao(ii,1)*transcmob(jj,ii)
             vmob(jj,2)= vmob(jj,2)+vao(ii,2)*transcmob(jj,ii)
             vmob(jj,3)= vmob(jj,3)+vao(ii,3)*transcmob(jj,ii)
@@ -704,17 +741,17 @@ end
 end
 
 
-!-------------------------------------
-  subroutine gridao(vao,xyzpt,rsqrd)
-!-------------------------------------
+!--------------------------------------------------------------------------
+  subroutine gridao(vao,xyzpt,rsqrd,threshex,ndftatom,databasis,datacomp)
+!--------------------------------------------------------------------------
 !
 ! Calculate AO values for a grid point
 !
-      use modmolecule, only : natom
-      use modbasis, only : ex, coeff, nshell, nao, locbf, locatom, &
-&                          mprim, mbf, mtype
-      use modthresh, only : threshex
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: ndftatom
       integer :: icount, ish, numprim, iatom, iprim, nang, nbf, ilocbf, ii, jj
       real(8),parameter :: half=0.5D+00, one=1.0D+00, two=2.0D+00
       real(8),parameter :: three=3.0D+00, four=4.0D+00, five=5.0D+00, six=6.0D+00
@@ -753,18 +790,18 @@ end
       real(8),parameter :: faci4=0.90571104663683991D+00 ! sqrt(105/2)/8
       real(8),parameter :: faci5=0.45285552331841995D+00 ! sqrt(105/2)/16
       real(8),parameter :: faci6=0.57282196186948000D+00 ! sqrt(21)/8
-      real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom)
-      real(8),intent(inout) :: vao(nao,4)
+      real(8),intent(in) :: xyzpt(3,ndftatom), rsqrd(ndftatom), threshex
+      real(8),intent(inout) :: vao(databasis%nao,4)
       real(8) :: expval, fac, tmp(28,4), xx, yy, zz, xy, xz, yz
       real(8) :: xyz3(10), xyz4(15), xyz5(21), xyz6(28), xyz7(36)
 !
       icount= 0
-      do ish= 1,nshell
-        nang= mtype(ish)
-        numprim= mprim(ish)
-        nbf = mbf(ish)
-        ilocbf= locbf(ish)
-        iatom= locatom(ish)
+      do ish= 1,databasis%nshell
+        nang= databasis%mtype(ish)
+        numprim= databasis%mprim(ish)
+        nbf = databasis%mbf(ish)
+        ilocbf= databasis%locbf(ish)
+        iatom= databasis%locatom(ish)
         select case(nang)
 !
 ! S function
@@ -772,9 +809,9 @@ end
           case(0)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac= ex(icount)*expval*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac= databasis%ex(icount)*expval*two
               vao(ilocbf+1,1)= vao(ilocbf+1,1)+expval
               vao(ilocbf+1,2)= vao(ilocbf+1,2)-fac*xyzpt(1,iatom)
               vao(ilocbf+1,3)= vao(ilocbf+1,3)-fac*xyzpt(2,iatom)
@@ -786,9 +823,9 @@ end
           case(1)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac= ex(icount)*expval*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac= databasis%ex(icount)*expval*two
               vao(ilocbf+1,1)= vao(ilocbf+1,1)+expval*xyzpt(1,iatom)
               vao(ilocbf+2,1)= vao(ilocbf+2,1)+expval*xyzpt(2,iatom)
               vao(ilocbf+3,1)= vao(ilocbf+3,1)+expval*xyzpt(3,iatom)
@@ -814,9 +851,9 @@ end
           case(2)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac= ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac= databasis%ex(icount)*two
               tmp(1,1)= expval*xyzpt(1,iatom)*xyzpt(1,iatom)
               tmp(2,1)= expval*xyzpt(1,iatom)*xyzpt(2,iatom)*sqrt3
               tmp(3,1)= expval*xyzpt(1,iatom)*xyzpt(3,iatom)*sqrt3
@@ -873,9 +910,9 @@ end
           case(3)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac= ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac= databasis%ex(icount)*two
               xx= xyzpt(1,iatom)*xyzpt(1,iatom)
               yy= xyzpt(2,iatom)*xyzpt(2,iatom)
               zz= xyzpt(3,iatom)*xyzpt(3,iatom)
@@ -969,9 +1006,9 @@ end
           case(4)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac= ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac= databasis%ex(icount)*two
               xx= xyzpt(1,iatom)*xyzpt(1,iatom)
               xy= xyzpt(1,iatom)*xyzpt(2,iatom)
               xz= xyzpt(1,iatom)*xyzpt(3,iatom)
@@ -1112,9 +1149,9 @@ end
           case(5)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac= ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac= databasis%ex(icount)*two
               xx= xyzpt(1,iatom)*xyzpt(1,iatom)
               xy= xyzpt(1,iatom)*xyzpt(2,iatom)
               xz= xyzpt(1,iatom)*xyzpt(3,iatom)
@@ -1307,9 +1344,9 @@ end
           case(6)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac= ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac= databasis%ex(icount)*two
               xx= xyzpt(1,iatom)*xyzpt(1,iatom)
               xy= xyzpt(1,iatom)*xyzpt(2,iatom)
               xz= xyzpt(1,iatom)*xyzpt(3,iatom)
@@ -1570,8 +1607,8 @@ end
               endif
             enddo
           case default
-            write(*,'(" Error! Subroutine Gridao supports up to i functions.")')
-            call iabort
+            write(datacomp%iout,'(" Error! Subroutine Gridao supports up to i functions.")')
+            call iabort(datacomp)
         end select
       enddo
 !
@@ -1579,16 +1616,17 @@ end
 end
 
 
-!-----------------------------------------
-  subroutine gridd2ao(vg2ao,xyzpt,rsqrd)
-!-----------------------------------------
+!------------------------------------------------------------------------------
+  subroutine gridd2ao(vg2ao,xyzpt,rsqrd,threshex,ndftatom,databasis,datacomp)
+!------------------------------------------------------------------------------
 !
 ! Calculate second derivatives of AO values for a grid point
 !
-      use modmolecule, only : natom
-      use modbasis, only : ex, coeff, nshell, nao, locbf, locatom, mprim, mbf, mtype
-      use modthresh, only : threshex
+      use modtype, only : typebasis, typecomp
       implicit none
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: ndftatom
       integer :: icount, ish, numprim, iatom, iprim, nang, nbf, iloc, ii, jj
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00, three=3.0D+00
       real(8),parameter :: four=4.0D+00, five=5.0D+00, six=6.0D+00, seven=7.0D+00
@@ -1617,26 +1655,26 @@ end
       real(8),parameter :: fach3=0.52291251658379721D+00 ! sqrt(35/2)/8
       real(8),parameter :: fach4=2.56173769148989959D+00 ! sqrt(105)/4
       real(8),parameter :: fach5=0.48412291827592711D+00 ! sqrt(15)/8
-      real(8),intent(in) :: xyzpt(3,natom), rsqrd(natom)
-      real(8),intent(out) :: vg2ao(nao,6)
+      real(8),intent(in) :: xyzpt(3,ndftatom), rsqrd(ndftatom), threshex
+      real(8),intent(out) :: vg2ao(databasis%nao,6)
       real(8) :: fac, fac2, expval, tmp(21,6), xx, xy, xz, yy, yz, zz
       real(8) :: xyz3(10), xyz4(15), xyz5(21), xyz6(28), xyz7(36)
 !
       vg2ao(:,:)= zero
       icount= 0
-      do ish= 1,nshell
-        nang= mtype(ish)
-        numprim= mprim(ish)
-        nbf = mbf(ish)
-        iloc= locbf(ish)
-        iatom= locatom(ish)
+      do ish= 1,databasis%nshell
+        nang= databasis%mtype(ish)
+        numprim= databasis%mprim(ish)
+        nbf = databasis%mbf(ish)
+        iloc= databasis%locbf(ish)
+        iatom= databasis%locatom(ish)
         select case(nang)
           case(0)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac =-ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac =-databasis%ex(icount)*two
               fac2= fac*fac
               xx= xyzpt(1,iatom)*xyzpt(1,iatom)
               xy= xyzpt(1,iatom)*xyzpt(2,iatom)
@@ -1654,9 +1692,9 @@ end
           case(1)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac =-ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac =-databasis%ex(icount)*two
               fac2= fac*fac
               xyz3( 1)= xyzpt(1,iatom)*xyzpt(1,iatom)*xyzpt(1,iatom)*fac2
               xyz3( 2)= xyzpt(1,iatom)*xyzpt(1,iatom)*xyzpt(2,iatom)*fac2
@@ -1690,9 +1728,9 @@ end
           case(2)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac=-ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac=-databasis%ex(icount)*two
               xx= xyzpt(1,iatom)*xyzpt(1,iatom)*fac
               yy= xyzpt(2,iatom)*xyzpt(2,iatom)*fac
               zz= xyzpt(3,iatom)*xyzpt(3,iatom)*fac
@@ -1769,9 +1807,9 @@ end
           case(3)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac=-ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac=-databasis%ex(icount)*two
               xx= xyzpt(1,iatom)*xyzpt(1,iatom)*fac
               yy= xyzpt(2,iatom)*xyzpt(2,iatom)*fac
               zz= xyzpt(3,iatom)*xyzpt(3,iatom)*fac
@@ -1898,9 +1936,9 @@ end
           case(4)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac=-ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac=-databasis%ex(icount)*two
               xx= xyzpt(1,iatom)*xyzpt(1,iatom)
               yy= xyzpt(2,iatom)*xyzpt(2,iatom)
               zz= xyzpt(3,iatom)*xyzpt(3,iatom)
@@ -2080,9 +2118,9 @@ end
           case(5)
             do iprim= 1,numprim
               icount= icount+1
-              if(ex(icount)*rsqrd(iatom) > threshex) cycle
-              expval= exp(-ex(icount)*rsqrd(iatom))*coeff(icount)
-              fac=-ex(icount)*two
+              if(databasis%ex(icount)*rsqrd(iatom) > threshex) cycle
+              expval= exp(-databasis%ex(icount)*rsqrd(iatom))*databasis%coeff(icount)
+              fac=-databasis%ex(icount)*two
               xx= xyzpt(1,iatom)*xyzpt(1,iatom)*fac
               xy= xyzpt(1,iatom)*xyzpt(2,iatom)*fac
               xz= xyzpt(1,iatom)*xyzpt(3,iatom)*fac
@@ -2339,8 +2377,8 @@ end
               endif
             enddo
           case default
-            write(*,'(" Error! Subroutine Gridgao supports up to h functions.")')
-            call iabort
+            write(datacomp%iout,'(" Error! Subroutine Gridgao supports up to h functions.")')
+            call iabort(datacomp)
         end select
       enddo
 !
@@ -2350,50 +2388,56 @@ end
 
 !-------------------------------------------------------------------------------------------------
   subroutine gradrexcor(egrad,edftgrad,cmo,fulldmtrx,atomvec,surface,radpt,angpt,rad,ptweight, &
-&                       xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,transcmo,idftex,idftcor, &
-&                       nproc,myrank)
+&                       xyzpt,rsqrd,rr,uvec,vao,vmo,dweight,dpa,pa,transcmo,ndftatom,idftex, &
+&                       idftcor,nproc,myrank,datajob,datamol,databasis,datacomp)
 !-------------------------------------------------------------------------------------------------
 !
 ! Driver of derivatives for closed-shell exchange-correlation terms
 !
-      use modbasis, only : nao
-      use modmolecule, only : natom, neleca
-      use moddft, only : nrad, nleb
-      use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
-      integer,intent(in) :: idftex, idftcor, nproc, myrank
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(inout) :: datacomp
+      integer,intent(in) :: ndftatom, idftex, idftcor, nproc, myrank
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
-      real(8),intent(in) :: cmo(nao,neleca), fulldmtrx(nao,nao)
-      real(8),intent(in) :: atomvec(5,natom,natom), surface(natom,natom), radpt(2,nrad)
-      real(8),intent(in) :: angpt(4,nleb), rad(natom), ptweight(nleb,nrad,natom)
-      real(8),intent(out) :: edftgrad(3*natom), xyzpt(3,natom), rsqrd(natom), rr(natom)
-      real(8),intent(out) :: uvec(3,natom), vao(nao,10), vmo(neleca,4), dweight(3*natom)
-      real(8),intent(out) :: dpa(3,natom,natom), pa(natom), transcmo(neleca,nao)
-      real(8),intent(inout) :: egrad(3*natom)
+      real(8),intent(in) :: cmo(databasis%nao,datamol%neleca)
+      real(8),intent(in) :: fulldmtrx(databasis%nao,databasis%nao)
+      real(8),intent(in) :: atomvec(5,ndftatom,ndftatom)
+      real(8),intent(in) :: surface(ndftatom,ndftatom), radpt(2,datajob%nrad)
+      real(8),intent(in) :: angpt(4,datajob%nleb), rad(ndftatom)
+      real(8),intent(in) :: ptweight(datajob%nleb,datajob%nrad,ndftatom)
+      real(8),intent(out) :: edftgrad(3*ndftatom), xyzpt(3,ndftatom)
+      real(8),intent(out) :: rsqrd(ndftatom), rr(ndftatom), uvec(3,ndftatom)
+      real(8),intent(out) :: vao(databasis%nao,10), vmo(datamol%neleca,4), dweight(3*ndftatom)
+      real(8),intent(out) :: dpa(3,ndftatom,ndftatom), pa(ndftatom)
+      real(8),intent(out) :: transcmo(datamol%neleca,databasis%nao)
+      real(8),intent(inout) :: egrad(3*datamol%natom)
       real(8) :: radpoint, radweight, weight, xgrid, ygrid, zgrid, tmp, rhoa, grhoa(3)
       real(8) :: sphweight, excora(4), ptenergy, wcutoff, rcutoff, fcutoff, aocutoff
 !
       transcmo= transpose(cmo)
 !
       edftgrad(:)= zero
-      ngridatom= nrad*nleb
+      ngridatom= datajob%nrad*datajob%nleb
 !
-      wcutoff= threshweight/(natom*ngridatom)
-      rcutoff= threshrho/(natom*ngridatom)
-      fcutoff= threshdfock/(natom*ngridatom)
-      aocutoff=threshdftao/(natom*ngridatom)
+      wcutoff= datajob%threshweight/(ndftatom*ngridatom)
+      rcutoff= datajob%threshrho/(ndftatom*ngridatom)
+      fcutoff= datajob%threshdfock/(ndftatom*ngridatom)
+      aocutoff=datajob%threshdftao/(ndftatom*ngridatom)
 !
 !$OMP parallel do collapse(2) schedule(dynamic,1) private(icount,ilebstart,radpoint,radweight, &
 !$OMP weight,xgrid,ygrid,zgrid,xyzpt,rsqrd,rr,tmp,uvec,vao,vmo,rhoa,grhoa,sphweight, &
 !$OMP dweight,dpa,pa,excora,ptenergy) reduction(+:edftgrad)
-      do iatom= 1,natom
-        do irad= 1,nrad
-          icount=(iatom-1)*ngridatom+(irad-1)*nleb+1+myrank
+      do iatom= 1,ndftatom
+        do irad= 1,datajob%nrad
+          icount=(iatom-1)*ngridatom+(irad-1)*datajob%nleb+1+myrank
           ilebstart=mod(icount,nproc)+1
           radpoint= rad(iatom)*radpt(1,irad)
           radweight= rad(iatom)*rad(iatom)*rad(iatom)*radpt(2,irad)
-          do ileb= ilebstart,nleb,nproc
+          do ileb= ilebstart,datajob%nleb,nproc
 !
             weight=ptweight(ileb,irad,iatom)
             if(weight < wcutoff) cycle
@@ -2401,7 +2445,7 @@ end
             xgrid= radpoint*angpt(1,ileb)
             ygrid= radpoint*angpt(2,ileb)
             zgrid= radpoint*angpt(3,ileb)
-            do jatom= 1,natom
+            do jatom= 1,ndftatom
               xyzpt(1,jatom)= atomvec(1,iatom,jatom)+xgrid
               xyzpt(2,jatom)= atomvec(2,iatom,jatom)+ygrid
               xyzpt(3,jatom)= atomvec(3,iatom,jatom)+zgrid
@@ -2414,11 +2458,12 @@ end
               uvec(3,jatom)= xyzpt(3,jatom)*tmp
             enddo
 !
-            call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff)
+            call gridraomo(vao,vmo,transcmo,xyzpt,rsqrd,aocutoff,datajob%threshex,ndftatom, &
+&                          datamol,databasis,datacomp)
 !
             rhoa= zero
             grhoa(1:3)= zero
-            do imo= 1,neleca
+            do imo= 1,datamol%neleca
               rhoa=     rhoa    +vmo(imo,1)*vmo(imo,1)
               grhoa(1)= grhoa(1)+vmo(imo,2)*vmo(imo,1)
               grhoa(2)= grhoa(2)+vmo(imo,3)*vmo(imo,1)
@@ -2428,24 +2473,26 @@ end
             grhoa(1)= grhoa(1)*two
             grhoa(2)= grhoa(2)*two
             grhoa(3)= grhoa(3)*two
-            call gridd2ao(vao(1,5),xyzpt,rsqrd)
+            call gridd2ao(vao(1,5),xyzpt,rsqrd,datajob%threshex,ndftatom,databasis,datacomp)
 !
 ! Calculate weight derivative
 !
             sphweight=radweight*angpt(4,ileb)
-            call calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom)
+            call calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom, &
+&                                ndftatom,datacomp)
 !
             ptenergy= zero
-            call calcexcor(excora,excora,ptenergy,rhoa,rhoa,grhoa,grhoa,one,idftex,idftcor,1)
+            call calcexcor(excora,excora,ptenergy,rhoa,rhoa,grhoa,grhoa,one, &
+&                          idftex,idftcor,1)
 !
             if(abs(excora(1))*two*weight < fcutoff)cycle
 !
             call formgradexcor(edftgrad,fulldmtrx,fulldmtrx,vao,vao(1,2),vao(1,5), &
-&                              excora,excora,weight,iatom,1)
+&                              excora,excora,weight,iatom,ndftatom,1,databasis)
 !
 ! Add weight derivative contribution
 !
-            do ii= 1,3*natom
+            do ii= 1,3*ndftatom
               edftgrad(ii)= edftgrad(ii)+ptenergy*dweight(ii)
             enddo
           enddo
@@ -2455,7 +2502,7 @@ end
 !
 ! Add derivatives of exchange-correlation terms
 !
-      do ii= 1,3*natom
+      do ii= 1,3*ndftatom
         egrad(ii)= egrad(ii)+edftgrad(ii)
       enddo
 !
@@ -2465,28 +2512,37 @@ end
 
 !------------------------------------------------------------------------------------------------
   subroutine graduexcor(egrad,edftgrad,cmoa,cmob,fulldmtrx1,fulldmtrx2,atomvec,surface,radpt, &
-&                       angpt,rad,ptweight,xyzpt,rsqrd,rr,uvec,vao,vmoa,vmob,dweight, &
-&                       dpa,pa,transcmoa,transcmob,idftex,idftcor,nproc,myrank)
+&                       angpt,rad,ptweight,xyzpt,rsqrd,rr,uvec,vao,vmoa,vmob,dweight,dpa,pa, &
+&                       transcmoa,transcmob,ndftatom,idftex,idftcor, &
+&                       nproc,myrank,datajob,datamol,databasis,datacomp)
 !------------------------------------------------------------------------------------------------
 !
 ! Driver of derivatives for open-shell exchange-correlation terms
 !
-      use modbasis, only : nao
-      use modmolecule, only : natom, neleca, nelecb
-      use moddft, only : nrad, nleb
-      use modthresh, only : threshweight, threshrho, threshdfock, threshdftao
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
-      integer,intent(in) :: idftex, idftcor, nproc, myrank
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(inout) :: datacomp
+      integer,intent(in) :: ndftatom, idftex, idftcor, nproc, myrank
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
       real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
-      real(8),intent(in) :: cmoa(nao,neleca), cmob(nao,nelecb), fulldmtrx1(nao,nao)
-      real(8),intent(in) :: fulldmtrx2(nao,nao), atomvec(5,natom,natom), surface(natom,natom)
-      real(8),intent(in) :: radpt(2,nrad), angpt(4,nleb), rad(natom), ptweight(nleb,nrad,natom)
-      real(8),intent(out) :: edftgrad(3*natom), xyzpt(3,natom), rsqrd(natom), rr(natom)
-      real(8),intent(out) :: uvec(3,natom), vao(nao,10), vmoa(neleca,4)
-      real(8),intent(out) :: vmob(nelecb,4), dweight(3*natom), dpa(3,natom,natom), pa(natom)
-      real(8),intent(out) :: transcmoa(neleca,nao), transcmob(nelecb,nao)
-      real(8),intent(inout) :: egrad(3*natom)
+      real(8),intent(in) :: cmoa(databasis%nao,datamol%neleca), cmob(databasis%nao,datamol%nelecb)
+      real(8),intent(in) :: fulldmtrx1(databasis%nao,databasis%nao)
+      real(8),intent(in) :: fulldmtrx2(databasis%nao,databasis%nao)
+      real(8),intent(in) :: atomvec(5,ndftatom,ndftatom)
+      real(8),intent(in) :: surface(ndftatom,ndftatom)
+      real(8),intent(in) :: radpt(2,datajob%nrad), angpt(4,datajob%nleb), rad(ndftatom)
+      real(8),intent(in) :: ptweight(datajob%nleb,datajob%nrad,ndftatom)
+      real(8),intent(out) :: edftgrad(3*ndftatom), xyzpt(3,ndftatom)
+      real(8),intent(out) :: rsqrd(ndftatom), rr(ndftatom)
+      real(8),intent(out) :: uvec(3,ndftatom), vao(databasis%nao,10), vmoa(datamol%neleca,4)
+      real(8),intent(out) :: vmob(datamol%nelecb,4), dweight(3*ndftatom)
+      real(8),intent(out) :: dpa(3,ndftatom,ndftatom), pa(ndftatom)
+      real(8),intent(out) :: transcmoa(datamol%neleca,databasis%nao)
+      real(8),intent(out) :: transcmob(datamol%nelecb,databasis%nao)
+      real(8),intent(inout) :: egrad(3*datamol%natom)
       real(8) :: radpoint, radweight, weight, xgrid, ygrid, zgrid, tmp, rhoa, rhob
       real(8) :: grhoa(3), grhob(3), sphweight, excora(4), excorb(4), ptenergy
       real(8) :: wcutoff, rcutoff, fcutoff, aocutoff
@@ -2495,23 +2551,23 @@ end
       transcmob= transpose(cmob)
 !
       edftgrad(:)= zero
-      ngridatom= nrad*nleb
+      ngridatom= datajob%nrad*datajob%nleb
 !
-      wcutoff= threshweight/(natom*ngridatom)
-      rcutoff= threshrho/(natom*ngridatom)
-      fcutoff= threshdfock/(natom*ngridatom)
-      aocutoff=threshdftao/(natom*ngridatom)
+      wcutoff= datajob%threshweight/(ndftatom*ngridatom)
+      rcutoff= datajob%threshrho/(ndftatom*ngridatom)
+      fcutoff= datajob%threshdfock/(ndftatom*ngridatom)
+      aocutoff=datajob%threshdftao/(ndftatom*ngridatom)
 !
 !$OMP parallel do collapse(2) schedule(dynamic,1) private(icount,ilebstart,radpoint,radweight, &
 !$OMP weight,xgrid,ygrid,zgrid,xyzpt,rsqrd,rr,tmp,uvec,vao,vmoa,vmob,rhoa,rhob,grhoa, &
 !$OMP grhob,sphweight,dweight,dpa,pa,excora,excorb,ptenergy) reduction(+:edftgrad)
-      do iatom= 1,natom
-        do irad= 1,nrad
-          icount=(iatom-1)*ngridatom+(irad-1)*nleb+1+myrank
+      do iatom= 1,ndftatom
+        do irad= 1,datajob%nrad
+          icount=(iatom-1)*ngridatom+(irad-1)*datajob%nleb+1+myrank
           ilebstart=mod(icount,nproc)+1
           radpoint= rad(iatom)*radpt(1,irad)
           radweight= rad(iatom)*rad(iatom)*rad(iatom)*radpt(2,irad)
-          do ileb= ilebstart,nleb,nproc
+          do ileb= ilebstart,datajob%nleb,nproc
 !
             weight=ptweight(ileb,irad,iatom)
             if(weight < wcutoff) cycle
@@ -2519,7 +2575,7 @@ end
             xgrid= radpoint*angpt(1,ileb)
             ygrid= radpoint*angpt(2,ileb)
             zgrid= radpoint*angpt(3,ileb)
-            do jatom= 1,natom
+            do jatom= 1,ndftatom
               xyzpt(1,jatom)= atomvec(1,iatom,jatom)+xgrid
               xyzpt(2,jatom)= atomvec(2,iatom,jatom)+ygrid
               xyzpt(3,jatom)= atomvec(3,iatom,jatom)+zgrid
@@ -2532,11 +2588,12 @@ end
               uvec(3,jatom)= xyzpt(3,jatom)*tmp
             enddo
 !
-            call griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff)
+            call griduaomo(vao,vmoa,vmob,transcmoa,transcmob,xyzpt,rsqrd,aocutoff, &
+&                          datajob%threshex,ndftatom,datamol,databasis,datacomp)
 !
             rhoa= zero
             grhoa(1:3)= zero
-            do imo= 1,neleca
+            do imo= 1,datamol%neleca
               rhoa=     rhoa    +vmoa(imo,1)*vmoa(imo,1)
               grhoa(1)= grhoa(1)+vmoa(imo,2)*vmoa(imo,1)
               grhoa(2)= grhoa(2)+vmoa(imo,3)*vmoa(imo,1)
@@ -2544,7 +2601,7 @@ end
             enddo
             rhob= zero
             grhob(1:3)= zero
-            do imo= 1,nelecb
+            do imo= 1,datamol%nelecb
               rhob=     rhob    +vmob(imo,1)*vmob(imo,1)
               grhob(1)= grhob(1)+vmob(imo,2)*vmob(imo,1)
               grhob(2)= grhob(2)+vmob(imo,3)*vmob(imo,1)
@@ -2553,24 +2610,26 @@ end
             if((rhoa+rhob) < rcutoff)cycle
             grhoa(1:3)= grhoa(1:3)*two
             grhob(1:3)= grhob(1:3)*two
-            call gridd2ao(vao(1,5),xyzpt,rsqrd)
+            call gridd2ao(vao(1,5),xyzpt,rsqrd,datajob%threshex,ndftatom,databasis,datacomp)
 !
 ! Calculate weight derivative
 !
             sphweight=radweight*angpt(4,ileb)
-            call calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom)
+            call calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom, &
+&                                ndftatom,datacomp)
 !
             ptenergy= zero
-            call calcexcor(excora,excorb,ptenergy,rhoa,rhob,grhoa,grhob,one,idftex,idftcor,2)
+            call calcexcor(excora,excorb,ptenergy,rhoa,rhob,grhoa,grhob,one, &
+&                          idftex,idftcor,2)
 !
             if((abs(excora(1))+abs(excorb(1)))*weight < fcutoff)cycle
 !
             call formgradexcor(edftgrad,fulldmtrx1,fulldmtrx2,vao,vao(1,2),vao(1,5), &
-&                              excora,excorb,weight,iatom,2)
+&                              excora,excorb,weight,iatom,ndftatom,2,databasis)
 !
 ! Add weight derivative contribution
 !
-            do ii= 1,3*natom
+            do ii= 1,3*ndftatom
               edftgrad(ii)= edftgrad(ii)+ptenergy*dweight(ii)
             enddo
           enddo
@@ -2580,7 +2639,7 @@ end
 !
 ! Add derivatives of exchange-correlation terms
 !
-      do ii= 1,3*natom
+      do ii= 1,3*ndftatom
         egrad(ii)= egrad(ii)+edftgrad(ii)
       enddo
 !
@@ -2588,9 +2647,10 @@ end
 end
 
 
-!-------------------------------------------------------------------------------------
-  subroutine calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,katom)
-!-------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------
+  subroutine calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,katom, &
+&                            ndftatom,datacomp)
+!---------------------------------------------------------------------------------------
 !
 ! Calculate weight derivatives of grid points
 !
@@ -2602,17 +2662,17 @@ end
 !       dpa      (work space (gradP))
 !       pa       (work space (P))
 !
-      use modparallel, only : master
-      use modmolecule, only : natom
+      use modtype, only : typecomp
       implicit none
-      integer,intent(in) :: katom
+      type(typecomp),intent(inout) :: datacomp
+      integer,intent(in) :: katom, ndftatom
       integer :: iatom, jatom, ii
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, oneh=1.5D+00, two=2.0D+00
       real(8),parameter :: pdcoeff=-2.53125D+00 !-81/32
       real(8),parameter :: threshcut=1.0D-12, threshg4=1.0D-08
-      real(8),intent(in) :: uvec(3,natom), atomvec(5,natom,natom), surface(natom,natom)
-      real(8),intent(in) :: rr(natom), sphweight
-      real(8),intent(out) :: dweight(3,natom), dpa(3,natom,natom), pa(natom)
+      real(8),intent(in) :: uvec(3,ndftatom), atomvec(5,ndftatom,ndftatom)
+      real(8),intent(in) :: surface(ndftatom,ndftatom), rr(ndftatom), sphweight
+      real(8),intent(out) :: dweight(3,ndftatom), dpa(3,ndftatom,ndftatom), pa(ndftatom)
       real(8) :: cutij, cutji, xmuij, zmuij, f4, g4, f2, tmp1, tmp2, dmuji(3), dcoeff
       real(8) :: dcutij, dcutji, weighta, zz, dzz(3)
 !
@@ -2620,12 +2680,12 @@ end
       dweight(:,:)= zero
       pa(:)= one
 !
-      do iatom= 1,natom
+      do iatom= 1,ndftatom
         if(surface(1,iatom) == -one) then
           pa(iatom)= zero
           cycle
         endif
-        do jatom= 1,natom
+        do jatom= 1,ndftatom
           if(iatom == jatom) cycle
           if(surface(jatom,iatom) == one) cycle
           zmuij=(rr(iatom)-rr(jatom))*atomvec(5,iatom,jatom)
@@ -2657,8 +2717,9 @@ end
             dpa(3,jatom,iatom)= -dcutij*dmuji(3)
           else
             if(abs(g4) > threshg4) then
-              if(master) write(*,'(" Error! The value G4 in calcdergridweight is large.")')
-              call iabort
+              if(datacomp%master) &
+&               write(datacomp%iout,'(" Error! The value G4 in calcdergridweight is large.")')
+              call iabort(datacomp)
             endif
           endif
           if(abs(cutji) > threshcut) then
@@ -2668,8 +2729,9 @@ end
             dpa(3,iatom,iatom)= dpa(3,iatom,iatom)+dcutji*dmuji(3)
           else
             if(abs(g4) > threshg4) then
-              if(master) write(*,'(" Error! The value G4 in calcdergridweight is large.")')
-              call iabort
+              if(datacomp%master) &
+&               write(datacomp%iout,'(" Error! The value G4 in calcdergridweight is large.")')
+              call iabort(datacomp)
             endif
           endif
         enddo
@@ -2678,7 +2740,7 @@ end
 ! Calculate Z(r)
 !
       zz= zero
-      do iatom= 1,natom
+      do iatom= 1,ndftatom
         zz= zz+pa(iatom)           
       enddo
 !
@@ -2689,10 +2751,10 @@ end
 !
 ! Calculate grad_B(omega_A)
 !
-      do iatom= 1,natom
+      do iatom= 1,ndftatom
         if(iatom == katom) cycle
         dzz(1:3)=zero
-        do jatom= 1,natom
+        do jatom= 1,ndftatom
           dzz(1)= dzz(1)+dpa(1,jatom,iatom)*pa(jatom)
           dzz(2)= dzz(2)+dpa(2,jatom,iatom)*pa(jatom)
           dzz(3)= dzz(3)+dpa(3,jatom,iatom)*pa(jatom)
@@ -2710,33 +2772,35 @@ end
 end
 
 
-!-----------------------------------------------------------------------------
+!--------------------------------------------------------------------------------
   subroutine formgradexcor(edftgrad,fulldmtrxa,fulldmtrxb,vao,vgao,vg2ao, &
-&                          excora,excorb,weight,katom,itype)
-!-----------------------------------------------------------------------------
+&                          excora,excorb,weight,katom,ndftatom,itype,databasis)
+!--------------------------------------------------------------------------------
 !
 ! Calculate DFT energy gradient terms
 !
-      use modbasis, only : locatom, mbf, locbf, nao, nshell
-      use modmolecule, only : natom
+      use modtype, only : typebasis
       implicit none
-      integer,intent(in) :: katom, itype
+      type(typebasis),intent(in) :: databasis
+      integer,intent(in) :: katom, ndftatom, itype
       integer :: ish, iatom, nbf, ilocbf, iao, jao
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, two=2.0D+00
-      real(8),intent(in) :: fulldmtrxa(nao,nao), fulldmtrxb(nao,nao), vao(nao)
-      real(8),intent(in) :: vgao(nao,3), vg2ao(nao,6), excora(4), excorb(4), weight
-      real(8),intent(inout) :: edftgrad(3,natom)
+      real(8),intent(in) :: fulldmtrxa(databasis%nao,databasis%nao)
+      real(8),intent(in) :: fulldmtrxb(databasis%nao,databasis%nao), vao(databasis%nao)
+      real(8),intent(in) :: vgao(databasis%nao,3), vg2ao(databasis%nao,6)
+      real(8),intent(in) :: excora(4), excorb(4), weight
+      real(8),intent(inout) :: edftgrad(3,ndftatom)
       real(8) :: dra, drxa, drya, drza, gradx, grady, gradz, gwx, gwy, gwz
       real(8) :: drb, drxb, dryb, drzb, dmtrxa, dmtrxb
 !
 ! Closed-shell
 !
       if(itype == 1) then
-        do ish= 1,nshell
-          iatom= locatom(ish)
+        do ish= 1,databasis%nshell
+          iatom= databasis%locatom(ish)
           if(iatom == katom) cycle
-          nbf = mbf(ish)
-          ilocbf= locbf(ish)
+          nbf = databasis%mbf(ish)
+          ilocbf= databasis%locbf(ish)
           gradx= zero
           grady= zero
           gradz= zero
@@ -2745,7 +2809,7 @@ end
             drxa= zero
             drya= zero
             drza= zero
-            do jao= 1,nao
+            do jao= 1,databasis%nao
               dra = dra +fulldmtrxa(jao,iao)*vao(jao)
               drxa= drxa+fulldmtrxa(jao,iao)*vgao(jao,1)
               drya= drya+fulldmtrxa(jao,iao)*vgao(jao,2)
@@ -2779,11 +2843,11 @@ end
 ! Open-shell
 !
       elseif(itype == 2) then
-        do ish= 1,nshell
-          iatom= locatom(ish)
+        do ish= 1,databasis%nshell
+          iatom= databasis%locatom(ish)
           if(iatom == katom) cycle
-          nbf = mbf(ish)
-          ilocbf= locbf(ish)
+          nbf = databasis%mbf(ish)
+          ilocbf= databasis%locbf(ish)
           gradx= zero
           grady= zero
           gradz= zero
@@ -2796,7 +2860,7 @@ end
             drxb= zero
             dryb= zero
             drzb= zero
-            do jao= 1,nao
+            do jao= 1,databasis%nao
               dmtrxa=(fulldmtrxa(jao,iao)+fulldmtrxb(jao,iao))*half
               dmtrxb=(fulldmtrxa(jao,iao)-fulldmtrxb(jao,iao))*half
               dra = dra +dmtrxa*vao(jao)

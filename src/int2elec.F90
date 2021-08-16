@@ -1,4 +1,4 @@
-! Copyright 2014  Kazuya Ishimura
+! Copyright 2014-2021  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -62,7 +62,11 @@ end
 !----------------------------------------------------------------------------------------
 !
 ! Driver of two-electron integrals from (ss|ss) to (dd|dd)
-! using McMurchie-Davidson and Pople-Hehre mathods
+! using McMurchie-Davidson and Pople-Hehre methods
+!
+! L. E. McMurchie, E. R. Davidson, J. Comput. Phys., 26, 218-231 (1978).
+! J. A. Pople, W. J. Hehre, J. Comput. Phys., 27, 161-168 (1978).
+! K. Ishimura, S. Nagase, Theor. Chem. Account, 120, 185-189 (2008).
 !
 ! In  : exijkl    (Exponents of basis functions)
 !       coijkl    (Coefficients of basis functions)
@@ -105,7 +109,7 @@ end
 !
       if(mxprsh > mxprsh2) then
         write(*,'(" Error! Parameter mxprsh2 in int2phmd is small!")')
-        call exit
+        call abort
       endif
 !
       nangtotal= nangijkl(1)*27+nangijkl(2)*9+nangijkl(3)*3+nangijkl(4)+1
@@ -285,17 +289,17 @@ end
 !
       select case(inttype)
         case (1)
-          call int2ssss(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,work,nijkl)
+          call int2ssss(twoeri,exfac,exfac(1,nijkl(1)+1),xyziq,work,nijkl)
         case (2)
-          call int2psss(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,work,nijkl)
+          call int2psss(twoeri,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,work,nijkl,maxdim,intorder)
         case (3)
-          call int2ppss(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,work,nijkl)
+          call int2ppss(twoeri,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,work,nijkl,maxdim,intorder)
         case (4)
-          call int2psps(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,work,nijkl)
+          call int2psps(twoeri,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,work,nijkl,maxdim,intorder)
         case (5)
-          call int2ppps(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,nijkl)
+          call int2ppps(twoeri,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,nijkl,maxdim,intorder)
         case (6)
-          call int2pppp(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,nijkl)
+          call int2pppp(twoeri,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,nijkl,maxdim,intorder)
         case (7)
           call int2dsss(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,nijkl,nbfijkl2)
         case (8)
@@ -328,88 +332,90 @@ end
           call int2dddd(phmdint,exfac,exfac(1,nijkl(1)+1),xyziq,xzkl,rot,nijkl,nbfijkl2)
       end select
 !
-      select case(intorder)
-        case(1)
+      if(inttype >= 7) then
+        select case(intorder)
+          case(1)
+            do i= 1,nbfijkl2(1)
+              do j= 1,nbfijkl2(2)
+                do k= 1,nbfijkl2(3)
+                  do l= 1,nbfijkl2(4)
+                    twoeri(l,k,j,i)= phmdint(l,k,j,i)
+                  enddo
+                enddo
+              enddo
+            enddo
+          case(2)
+            do j= 1,nbfijkl2(1)
+              do i= 1,nbfijkl2(2)
+                do k= 1,nbfijkl2(3)
+                  do l= 1,nbfijkl2(4)
+                    twoeri(l,k,j,i)= phmdint(l,k,i,j)
+                  enddo
+                enddo
+              enddo
+            enddo
+          case(3)
           do i= 1,nbfijkl2(1)
             do j= 1,nbfijkl2(2)
-              do k= 1,nbfijkl2(3)
-                do l= 1,nbfijkl2(4)
-                  twoeri(l,k,j,i)= phmdint(l,k,j,i)
-                enddo
-              enddo
-            enddo
-          enddo
-        case(2)
-          do j= 1,nbfijkl2(1)
-            do i= 1,nbfijkl2(2)
-              do k= 1,nbfijkl2(3)
-                do l= 1,nbfijkl2(4)
-                  twoeri(l,k,j,i)= phmdint(l,k,i,j)
-                enddo
-              enddo
-            enddo
-          enddo
-        case(3)
-        do i= 1,nbfijkl2(1)
-          do j= 1,nbfijkl2(2)
-            do l= 1,nbfijkl2(3)
-              do k= 1,nbfijkl2(4)
-                  twoeri(l,k,j,i)= phmdint(k,l,j,i)
-                enddo
-              enddo
-            enddo
-          enddo
-        case(4)
-          do k= 1,nbfijkl2(1)
-            do l= 1,nbfijkl2(2)
-              do i= 1,nbfijkl2(3)
-                do j= 1,nbfijkl2(4)
-                  twoeri(l,k,j,i)= phmdint(j,i,l,k)
-                enddo
-              enddo
-            enddo
-          enddo
-        case(5)
-          do j= 1,nbfijkl2(1)
-            do i= 1,nbfijkl2(2)
               do l= 1,nbfijkl2(3)
                 do k= 1,nbfijkl2(4)
-                  twoeri(l,k,j,i)= phmdint(k,l,i,j)
+                    twoeri(l,k,j,i)= phmdint(k,l,j,i)
+                  enddo
                 enddo
               enddo
             enddo
-          enddo
-        case(6)
-          do k= 1,nbfijkl2(1)
-            do l= 1,nbfijkl2(2)
-              do j= 1,nbfijkl2(3)
-                do i= 1,nbfijkl2(4)
-                  twoeri(l,k,j,i)= phmdint(i,j,l,k)
+          case(4)
+            do k= 1,nbfijkl2(1)
+              do l= 1,nbfijkl2(2)
+                do i= 1,nbfijkl2(3)
+                  do j= 1,nbfijkl2(4)
+                    twoeri(l,k,j,i)= phmdint(j,i,l,k)
+                  enddo
                 enddo
               enddo
             enddo
-          enddo
-        case(7)
-          do l= 1,nbfijkl2(1)
-            do k= 1,nbfijkl2(2)
-              do i= 1,nbfijkl2(3)
-                do j= 1,nbfijkl2(4)
-                  twoeri(l,k,j,i)= phmdint(j,i,k,l)
+          case(5)
+            do j= 1,nbfijkl2(1)
+              do i= 1,nbfijkl2(2)
+                do l= 1,nbfijkl2(3)
+                  do k= 1,nbfijkl2(4)
+                    twoeri(l,k,j,i)= phmdint(k,l,i,j)
+                  enddo
                 enddo
               enddo
             enddo
-          enddo
-        case(8)
-          do l= 1,nbfijkl2(1)
-            do k= 1,nbfijkl2(2)
-              do j= 1,nbfijkl2(3)
-                do i= 1,nbfijkl2(4)
-                  twoeri(l,k,j,i)= phmdint(i,j,k,l)
+          case(6)
+            do k= 1,nbfijkl2(1)
+              do l= 1,nbfijkl2(2)
+                do j= 1,nbfijkl2(3)
+                  do i= 1,nbfijkl2(4)
+                    twoeri(l,k,j,i)= phmdint(i,j,l,k)
+                  enddo
                 enddo
               enddo
             enddo
-          enddo
-      end select
+          case(7)
+            do l= 1,nbfijkl2(1)
+              do k= 1,nbfijkl2(2)
+                do i= 1,nbfijkl2(3)
+                  do j= 1,nbfijkl2(4)
+                    twoeri(l,k,j,i)= phmdint(j,i,k,l)
+                  enddo
+                enddo
+              enddo
+            enddo
+          case(8)
+            do l= 1,nbfijkl2(1)
+              do k= 1,nbfijkl2(2)
+                do j= 1,nbfijkl2(3)
+                  do i= 1,nbfijkl2(4)
+                    twoeri(l,k,j,i)= phmdint(i,j,k,l)
+                  enddo
+                enddo
+              enddo
+            enddo
+        end select
+      end if
 !
       return
 end
@@ -421,6 +427,10 @@ end
 !---------------------------------------------------------------------------------------
 !
 ! Calculate two-electron integrals using Rys quadrature
+!
+! H. F. King, M. Dupuis, J. Comput. Phys., 21, 144-165 (1976).
+! M. Dupuis, J. Rys, H. F. King, J. Chem. Phys. 65, 111-116 (1976).
+! J. Rys, M. Dupuis, H. F. King, J. Comput. Chem., 4, 154-157 (1983).
 !
 ! In  : exijkl    (Exponents of basis functions)
 !       coijkl    (Coefficients of basis functions)
@@ -447,10 +457,10 @@ end
 !
       if(mxprsh > mxprsh2) then
         write(*,'(" Error! Parameter mxprsh2 in int2rys is small!")')
-        call exit
+        call abort
       elseif(maxdim > maxdim2) then
         write(*,'(" Error! Parameter maxdim2 in int2rys is small!")')
-        call exit
+        call abort
       endif
 !
       ncartijkl(1)= ncart(nangijkl(1))
@@ -810,7 +820,7 @@ end
         enddo
       endif
 !
-! Adjust coefficients for over d funcions.
+! Adjust coefficients for over d functions.
 !
       if(nbfijkl(1) == 5)then
         do j= 1,ncartijkl(2)

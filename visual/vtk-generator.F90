@@ -54,8 +54,8 @@ end module
       real(8) :: xyzmax(3), xyzmin(3), xx, yy, zz
       real(8) :: coord(3,mxatom), charge, orbital
       real(8),allocatable :: cmoa(:,:), cmob(:,:), dmtrxa(:), dmtrxb(:)
-      character(len=64) :: filecheck, filevtk, viewtype, moarg
-      character(len=16) :: checkversion, scftype, method, runtype
+      character(len=128) :: filecheck, filevtk, viewtype, moarg
+      character(len=32) :: checkversion, scftype, method, runtype
 !
       call getarg(1,filecheck)
       call getarg(2,filevtk)
@@ -205,7 +205,7 @@ end module
                 xx= minxyz(1)+(ii-1)*space
                 call calcorbital(orbital,cmoa,coord,xx,yy,zz,monum)
                 if(abs(orbital) < thresh) orbital= zero
-                write(20,'(e16.10)')orbital
+                write(20,'(e16.9)')orbital
               enddo
             enddo
           enddo
@@ -218,7 +218,7 @@ end module
                 xx= minxyz(1)+(ii-1)*space
                 call calcorbital(orbital,cmob,coord,xx,yy,zz,monum)
                 if(abs(orbital) < thresh) orbital= zero
-                write(20,'(e16.10)')orbital
+                write(20,'(e16.9)')orbital
               enddo
             enddo
           enddo
@@ -233,7 +233,7 @@ end module
                 xx= minxyz(1)+(ii-1)*space
                 call calcorbital2(orbital,cmoa,coord,xx,yy,zz,monum)
                 if(abs(orbital) < thresh) orbital= zero
-                write(20,'(e16.10)')orbital
+                write(20,'(e16.9)')orbital
               enddo
             enddo
           enddo
@@ -246,7 +246,7 @@ end module
                 xx= minxyz(1)+(ii-1)*space
                 call calcorbital2(orbital,cmob,coord,xx,yy,zz,monum)
                 if(abs(orbital) < thresh) orbital= zero
-                write(20,'(e16.10)')orbital
+                write(20,'(e16.9)')orbital
               enddo
             enddo
           enddo
@@ -277,8 +277,8 @@ end
 !
       implicit none
       integer :: ilen, ii, inum
-      character(len=64),intent(inout) :: line
-      character(len=64) :: linecopy
+      character(len=128),intent(inout) :: line
+      character(len=128) :: linecopy
       character(len=26) :: upper='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
       character(len=26) :: lower='abcdefghijklmnopqrstuvwxyz'
 !

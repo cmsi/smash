@@ -1,6 +1,6 @@
   =================================
       SMASH Programmer's manual
-             version 2.2.0
+             version 3.0.0
   =================================
 
   Programming rules in SMASH
@@ -14,7 +14,7 @@
             pgf90 -Minform=inform -Mbounds
   
    3. Use MPI wrappers written in src/parallel.F90 for data communication
-      amoung processes. Do not call MPI routines directly. 
+      among processes. Do not call MPI routines directly.
   
        MPI_bcast(real(8))     : para_bcastr
        MPI_bcast(integer)     : para_bcasti
@@ -28,13 +28,14 @@
    4. Use "noMPI" macro in src/parallel.F90 to compile without MPI.
   
    5. Use implicit none and define all variables starting with the letters
-      i-n as integers and all others as double presision reals.
+      i-n as integers and all others as double precision reals.
   
    6. When you allocate arrays, call "memset" subroutine to count the used
       memory size. When you deallocate them, call "memunset".
   
    7. Use module variables only for parameters, thresholds, and input data.
   
-   8. Call "iabort" subroutine with error messages to stop the program .
+   8. Call "iabort" subroutine with error messages to stop the program
+      except for integral subroutines.
   
    9. Write subroutines which read input and checkpoint files in fileio.F90.

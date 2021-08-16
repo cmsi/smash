@@ -1,4 +1,4 @@
-! Copyright 2014  Kazuya Ishimura
+! Copyright 2014-2021  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,124 +12,147 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!-----------------------
-  subroutine maxmemset
-!-----------------------
+!-----------------------------------------
+  subroutine maxmemset(datajob,datacomp)
+!-----------------------------------------
 !
 ! Set maximum memory size
 !
-      use modmemory, only : memmax, memory
+      use modtype, only : typejob, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
+      type(typecomp),intent(inout) :: datacomp
       integer :: lock, locm, locg, loct, locb
+      integer(selected_int_kind(18)) :: mem64
 !
-      if(len_trim(memory) /= 0) then
-        lock=scan(memory,'K')
-        locm=scan(memory,'M')
-        locg=scan(memory,'G')
-        loct=scan(memory,'T')
-        locb=scan(memory,'B')
+      if(len_trim(datajob%memory) /= 0) then
+        lock=scan(datajob%memory,'K')
+        locm=scan(datajob%memory,'M')
+        locg=scan(datajob%memory,'G')
+        loct=scan(datajob%memory,'T')
+        locb=scan(datajob%memory,'B')
         if(lock /= 0) then
-          read(memory(1:lock-1),*)memmax
-          memmax=memmax*125
+          read(datajob%memory(1:lock-1),*) datacomp%memmax
+          mem64= datacomp%memmax
+          mem64= mem64*125
+          datacomp%memmax= datacomp%memmax*125
         elseif(locm /= 0) then
-          read(memory(1:locm-1),*)memmax
-          memmax=memmax*125000
+          read(datajob%memory(1:locm-1),*) datacomp%memmax
+          mem64= datacomp%memmax
+          mem64= mem64*125000
+          datacomp%memmax= datacomp%memmax*125000
         elseif(locg /= 0) then
-          read(memory(1:locg-1),*)memmax
-          memmax=memmax*125000000
+          read(datajob%memory(1:locg-1),*) datacomp%memmax
+          mem64= datacomp%memmax
+          mem64= mem64*125000000
+          datacomp%memmax= datacomp%memmax*125000000
         elseif(loct /= 0) then
-          read(memory(1:loct-1),*)memmax
-          memmax=memmax*125000000*1000
+          read(datajob%memory(1:loct-1),*) datacomp%memmax
+          mem64= datacomp%memmax
+          mem64= mem64*125000000*1000
+          datacomp%memmax= datacomp%memmax*125000000*1000
         elseif(locb /= 0) then
-          read(memory(1:locb-1),*)memmax
-          memmax=memmax/8
+          read(datajob%memory(1:locb-1),*) datacomp%memmax
+          mem64= datacomp%memmax
+          mem64= mem64/8
+          datacomp%memmax= datacomp%memmax/8
         else
-          read(memory,*)memmax
-          memmax=memmax/8
+          read(datajob%memory,*) datacomp%memmax
+          mem64= datacomp%memmax
+          mem64= mem64/8
+          datacomp%memmax= datacomp%memmax/8
+        endif
+        if(datacomp%memmax /= mem64) then
+          if(datacomp%master) then
+            write(datacomp%iout,'(" Error! Compilation with 32-bit integer supports up to 17.1GB memory.",/, &
+&                                 " Reduce memory size, or compile with 64-bit integer.",/)')
+            call iabort(datacomp)
+          endif
         endif
       endif
       return
 end
 
 
-!---------------------------
-  subroutine memset(msize)
-!---------------------------
+!------------------------------------
+  subroutine memset(msize,datacomp)
+!------------------------------------
 !
 ! Allocate requested memory size, "msize".
 !
-      use modparallel, only : master
-      use modmemory, only : memmax, memused, memusedmax
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: msize
 !
       if(msize < 0) then
-        if(master) write(*,'(" Required memory size is negative!",i6,"MB")')msize/125000
-        call iabort
+        if(datacomp%master) write(datacomp%iout,'(" Required memory size is negative!",i6,"MB")')msize/125000
+        call iabort(datacomp)
       endif
-      memused= memused+msize
-      if(memused > memmax) then
-        if(master) then
-          write(*,'(" Error! Required memory size exceeds.")')
-          write(*,'(" Required:",i6,"MB,  Available:",i6,"MB")')memused/125000, memmax/125000
+      datacomp%memused= datacomp%memused+msize
+      if(datacomp%memused > datacomp%memmax) then
+        if(datacomp%master) then
+          write(datacomp%iout,'(" Error! Required memory size exceeds.")')
+          write(datacomp%iout,'(" Required:",i6,"MB,  Available:",i6,"MB")') &
+&               datacomp%memused/125000, datacomp%memmax/125000
         endif
-        call iabort
+        call iabort(datacomp)
       endif
-      memusedmax=max(memusedmax,memused)
+      datacomp%memusedmax=max(datacomp%memusedmax,datacomp%memused)
       return
 end
 
 
-!-----------------------------
-  subroutine memunset(msize)
-!-----------------------------
+!--------------------------------------
+  subroutine memunset(msize,datacomp)
+!--------------------------------------
 !
 ! Deallocate requested memory size, "msize".
 !
-      use modparallel, only : master
-      use modmemory, only : memused
-      use modwarn, only : nwarn
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: msize
 !
-      memused= memused-msize
-      if(memused < 0) then
-        nwarn= nwarn+1
-        if(master) write(*,'(" Warning! Msize in memunset is less than 0.")')
+      datacomp%memused= datacomp%memused-msize
+      if(datacomp%memused < 0) then
+        datacomp%nwarn= datacomp%nwarn+1
+        if(datacomp%master) write(datacomp%iout,'(" Warning! Msize in memunset is less than 0.")')
       endif
       return
 end
 
 
-!----------------------
-  subroutine memcheck
-!----------------------
+!--------------------------------
+  subroutine memcheck(datacomp)
+!--------------------------------
 !
 ! Check memory deallocation
 !
-      use modmemory, only : memused
-      use modparallel, only : master
-      use modwarn, only : nwarn
+      use modtype, only : typecomp
+      implicit none
+      type(typecomp),intent(inout) :: datacomp
 !
-      if(memused /= 0) then
-        nwarn= nwarn+1
-        if(master) write(*,'(" Warning! Memory deallocation is not completed.")')
+      if(datacomp%memused /= 0) then
+        datacomp%nwarn= datacomp%nwarn+1
+        if(datacomp%master) write(datacomp%iout,'(" Warning! Memory deallocation is not completed.")')
       endif
       return
 end
 
 
-!----------------------------
-  subroutine memrest(msize)
-!----------------------------
+!-------------------------------------
+  subroutine memrest(msize,datacomp)
+!-------------------------------------
 !
 ! Check available memory size
 !
-      use modmemory, only : memmax, memused
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(out) :: msize
 !
-      msize= memmax-memused
+      msize= datacomp%memmax-datacomp%memused
       return
 end
 

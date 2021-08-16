@@ -1,4 +1,4 @@
-! Copyright 2014  Kazuya Ishimura
+! Copyright 2014-2021  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,44 +12,45 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!--------------------------------------------
-  subroutine oneeiecp(hstmat2,nproc,myrank)
-!--------------------------------------------
+!--------------------------------------------------------------
+  subroutine oneeiecp(hstmat2,nproc,myrank,datamol,databasis)
+!--------------------------------------------------------------
 !
 ! Calculate ECP integrals and add them into Hamiltonian matrix
 !
 ! Out  : hstmat2 (one electron Hamiltonian matrix)
 !
-      use modecp, only : nterm1, nterm2, maxangecp
-      use modbasis, only : nao, mtype, nshell
-      use modmolecule, only : natom
+      use modecp, only : nterm1, nterm2
+      use modtype, only : typemol, typebasis
       implicit none
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nproc, myrank
       integer :: maxfunc(0:6)=(/1,3,6,10,15,21,28/)
       integer :: maxbasis, numtbasis, maxdim, llmax, maxecpdim, nsizecp1, nsizecp2, ish, jsh
-      integer,allocatable :: label1ecp(:), num1ecp(:), label2ecp(:), num2ecp(:)
-      real(8),intent(inout) :: hstmat2((nao*(nao+1))/2)
-      real(8),allocatable :: term1ecp(:), term2ecp(:), term0ecp(:), xyzintecp(:)
+      integer :: label1ecp(nterm1*9), num1ecp(1597), label2ecp(nterm2*6), num2ecp(897)
+      real(8),intent(inout) :: hstmat2((databasis%nao*(databasis%nao+1))/2)
+      real(8) :: term1ecp(nterm1), term2ecp(nterm2), term0ecp(897), xyzintecp(25*25*25)
 !
-      maxbasis= maxval(mtype(1:nshell))
+      maxbasis= maxval(databasis%mtype(1:databasis%nshell))
       maxdim= maxfunc(maxbasis)
-      llmax= maxval(maxangecp(1:natom))
+      llmax= maxval(databasis%maxangecp(1:datamol%natom))
       if(maxbasis >= 6) then
         write(*,'(" Error! This program supports up to h function in ecp calculation.")')
-        call exit
+        call abort
       endif
       if(llmax >= 5) then
         write(*,'(" Error! This program supports up to SPDFG core potentials.")')
-        call exit
+        call abort
       endif
       maxecpdim= max(maxbasis,llmax-1)
       numtbasis=(maxecpdim+1)*(maxecpdim+2)*(maxecpdim+3)/6
       nsizecp1=(numtbasis*numtbasis+numtbasis)/2+1
       nsizecp2= llmax*llmax*numtbasis+1
 !
-      call memset(nterm1*10+nterm2*7+nsizecp1+nsizecp2*2+25*25*25)
-      allocate(term1ecp(nterm1),term2ecp(nterm2),term0ecp(nsizecp2),xyzintecp(25*25*25), &
-&              label1ecp(nterm1*9),label2ecp(nterm2*6),num1ecp(nsizecp1),num2ecp(nsizecp2))
+!      call memset(nterm1*10+nterm2*7+nsizecp1+nsizecp2*2+25*25*25)
+!      allocate(term1ecp(nterm1),term2ecp(nterm2),term0ecp(nsizecp2),xyzintecp(25*25*25), &
+!&              label1ecp(nterm1*9),label2ecp(nterm2*6),num1ecp(nsizecp1),num2ecp(nsizecp2))
 !
 ! Prepare intermediate integrals for ECP
 !
@@ -57,19 +58,19 @@
 &                  num1ecp,num2ecp,maxecpdim,llmax,numtbasis)
 !
 !$OMP parallel
-      do ish= nshell-myrank,1,-nproc
+      do ish= databasis%nshell-myrank,1,-nproc
 !$OMP do
         do jsh= 1,ish
           call calcintecp(hstmat2,term1ecp,term2ecp,term0ecp,xyzintecp,label1ecp,label2ecp, &
-&                         num1ecp,num2ecp,numtbasis,ish,jsh,maxdim)
+&                         num1ecp,num2ecp,numtbasis,ish,jsh,maxdim,datamol,databasis)
         enddo
 !$OMP enddo
       enddo
 !$OMP end parallel
 !
-      deallocate(term1ecp,term2ecp,term0ecp,xyzintecp, &
-&                label1ecp,label2ecp,num1ecp,num2ecp)
-      call memunset(nterm1*10+nterm2*7+nsizecp1+nsizecp2*2+25*25*25)
+!      deallocate(term1ecp,term2ecp,term0ecp,xyzintecp, &
+!&                label1ecp,label2ecp,num1ecp,num2ecp)
+!      call memunset(nterm1*10+nterm2*7+nsizecp1+nsizecp2*2+25*25*25)
 !
       return
 end
@@ -103,17 +104,18 @@ end
 
 !-----------------------------------------------------------------------------------------
   subroutine calcintecp(hmat,term1ecp,term2ecp,term0ecp,xyzintecp,label1ecp,label2ecp, &
-&                       num1ecp,num2ecp,numtbasis,ish,jsh,len1)
+&                       num1ecp,num2ecp,numtbasis,ish,jsh,len1,datamol,databasis)
 !-----------------------------------------------------------------------------------------
 !
 ! Driver of effective core potential integrals
 !   (j|Uecp|i)
 !
       use modparam, only : mxprsh
-      use modmolecule, only : natom, coord
-      use modbasis, only : locatom, locprim, locbf, mprim, mbf, mtype, ex, coeff, nao
-      use modecp, only : maxangecp, mtypeecp, locecp, mprimecp, execp, coeffecp, nterm1, nterm2
+      use modecp, only : nterm1, nterm2
+      use modtype, only : typemol, typebasis
       implicit none
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: label1ecp(nterm1*9), label2ecp(nterm2*6), num1ecp(*), num2ecp(*)
       integer,intent(in) :: numtbasis, ish, jsh, len1
       integer :: nangij(2), nprimij(2), nbfij(2), iatom, jatom, katom
@@ -121,59 +123,59 @@ end
       integer :: ijkatom(3), nangkecp(mxprsh,6), nprimkecp(6), lmaxecp
       real(8),parameter :: zero=0.0D+00
       real(8),intent(in) :: term1ecp(nterm1), term2ecp(nterm2), term0ecp(*), xyzintecp(25*25*25)
-      real(8),intent(inout) :: hmat((nao*(nao+1))/2)
+      real(8),intent(inout) :: hmat((databasis%nao*(databasis%nao+1))/2)
       real(8) :: exij(mxprsh,2), coij(mxprsh,2), coordijk(3,3), ecpint(len1,len1)
       real(8) :: exkecp(mxprsh,6), cokecp(mxprsh,6), ecpintsum(len1,len1)
       logical :: iandj
 !
       iandj=(ish == jsh)
-      nangij(1)= mtype(ish)
-      nangij(2)= mtype(jsh)
-      nprimij(1)= mprim(ish)
-      nprimij(2)= mprim(jsh)
-      nbfij(1)  = mbf(ish)
-      nbfij(2)  = mbf(jsh)
-      iatom = locatom(ish)
-      iloc  = locprim(ish)
-      ilocbf= locbf(ish)
-      jatom = locatom(jsh)
-      jloc  = locprim(jsh)
-      jlocbf= locbf(jsh)
+      nangij(1)= databasis%mtype(ish)
+      nangij(2)= databasis%mtype(jsh)
+      nprimij(1)= databasis%mprim(ish)
+      nprimij(2)= databasis%mprim(jsh)
+      nbfij(1)  = databasis%mbf(ish)
+      nbfij(2)  = databasis%mbf(jsh)
+      iatom = databasis%locatom(ish)
+      iloc  = databasis%locprim(ish)
+      ilocbf= databasis%locbf(ish)
+      jatom = databasis%locatom(jsh)
+      jloc  = databasis%locprim(jsh)
+      jlocbf= databasis%locbf(jsh)
 !
       if((nangij(1) > 6).or.(nangij(2) > 6))then
         write(*,'(" Error! This program supports up to i function in calcintecp")')
-        call exit
+        call abort
       endif
 !
       do i= 1,3
-        coordijk(i,1)= coord(i,iatom)
-        coordijk(i,2)= coord(i,jatom)
+        coordijk(i,1)= datamol%coord(i,iatom)
+        coordijk(i,2)= datamol%coord(i,jatom)
       enddo
       do iprim= 1,nprimij(1)
-        exij(iprim,1)= ex(iloc+iprim)
-        coij(iprim,1)= coeff(iloc+iprim)
+        exij(iprim,1)= databasis%ex(iloc+iprim)
+        coij(iprim,1)= databasis%coeff(iloc+iprim)
       enddo
       do jprim= 1,nprimij(2)
-        exij(jprim,2)= ex(jloc+jprim)
-        coij(jprim,2)= coeff(jloc+jprim)
+        exij(jprim,2)= databasis%ex(jloc+jprim)
+        coij(jprim,2)= databasis%coeff(jloc+jprim)
       enddo
       ijkatom(1)= iatom
       ijkatom(2)= jatom
 !
       ecpintsum(1:nbfij(2),1:nbfij(1))= zero
-      do katom= 1,natom
-        if(maxangecp(katom) == -1) cycle
+      do katom= 1,datamol%natom
+        if(databasis%maxangecp(katom) == -1) cycle
         do i= 1,3
-          coordijk(i,3)= coord(i,katom)
+          coordijk(i,3)= datamol%coord(i,katom)
         enddo
         ijkatom(3)= katom
-        lmaxecp= maxangecp(katom)
-        do i= 1,maxangecp(katom)+1
-          nprimkecp(i)= mprimecp(i-1,katom)
+        lmaxecp= databasis%maxangecp(katom)
+        do i= 1,databasis%maxangecp(katom)+1
+          nprimkecp(i)= databasis%mprimecp(i-1,katom)
           do j= 1,nprimkecp(i)
-            exkecp(j,i)= execp(locecp(i-1,katom)+j)
-            cokecp(j,i)= coeffecp(locecp(i-1,katom)+j)
-            nangkecp(j,i)= mtypeecp(locecp(i-1,katom)+j)
+            exkecp(j,i)= databasis%execp(databasis%locecp(i-1,katom)+j)
+            cokecp(j,i)= databasis%coeffecp(databasis%locecp(i-1,katom)+j)
+            nangkecp(j,i)= databasis%mtypeecp(databasis%locecp(i-1,katom)+j)
           enddo
         enddo
         call intecp(ecpint,exij,coij,coordijk,nprimij,nangij,nbfij, &
@@ -3072,7 +3074,7 @@ end
 !
       if(maxdim > 24) then
         write(*,'(" Error! This program supports up to i function in Subroutine ecpxyz!")')
-        call exit
+        call abort
       endif
 !
       denom= three
@@ -3194,7 +3196,7 @@ end
       enddo
       if(icount > nterm1) then
         write(*,'(" Error! Icount exceeds",i8," in Subroutine ecpangint1!")')nterm1
-        call exit
+        call abort
       endif
 !
       return
@@ -3276,7 +3278,7 @@ end
       enddo
       if(icount > nterm2) then
         write(*,'(" Error! Icount exceeds",i8," in Subroutine ecpangint2!")')nterm2
-        call exit
+        call abort
       endif
 !
       return
@@ -3823,7 +3825,7 @@ end
         enddo
       else
         write(*,'(" Error! Lmax is too big in calczspher,",i3,".")') lmax
-        call exit
+        call abort
       endif
 !
       return
@@ -4133,7 +4135,7 @@ end
           enddo
         case default
           write(*,*)"lmax=",lmax
-          call exit
+          call abort
       end select
 !
       return
@@ -4326,7 +4328,7 @@ end
         denomab2= denomab*denomab
         if(lemax > 6) then
           write(*,'(" Error! Lemax is too big, lemax=",i3)')lemax
-          call exit
+          call abort
         endif
         do ii= 1,15
           rho(ii)= zero
@@ -4393,11 +4395,11 @@ end
         if(alpha*beta > abthresh) then
           if(nangecp > 2) then
             write(*,'(" Error! Nangecp is too big,",i3,", lemax=",i3,".")')nangecp,lemax
-            call exit
+            call abort
           endif
         endif
       elseif(lemax > 6) then
-        call exit
+        call abort
       endif
 !
       nn= nangecp

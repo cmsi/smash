@@ -1,4 +1,4 @@
-! Copyright 2014  Kazuya Ishimura
+! Copyright 2014-2021  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -100,9 +100,10 @@ end
 end
 
 
-!-----------------------------------------------------------------
-  subroutine calcrdmax(dmtrx,dmax,dmaxtmp,nproc,myrank,mpi_comm)
-!-----------------------------------------------------------------
+!-------------------------------------------------------------------
+  subroutine calcrdmax(dmtrx,dmax,dmaxtmp,nproc,myrank,mpi_comm, &
+&                      databasis)
+!-------------------------------------------------------------------
 !
 ! Calculate maximum density matrix element for each shell
 !
@@ -110,26 +111,28 @@ end
 ! Out : dmax    (Maximum density matrix elements)
 !       dmaxtmp (Work array)
 !
-      use modbasis, only : nshell, nao, mbf, locbf
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh, ijsh, locbfi, locbfj, nbfi, nbfj
       integer :: jnbf, i, j, ii, ij
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: dmtrx(nao*(nao+1)/2)
-      real(8),intent(out) :: dmax(nshell*(nshell+1)/2), dmaxtmp(nshell*(nshell+1)/2)
+      real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: dmax(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(out) :: dmaxtmp(databasis%nshell*(databasis%nshell+1)/2)
       real(8) :: dtmp
 !
       dmaxtmp(:)= zero
 !
 !$OMP parallel private(locbfi,locbfj,nbfi,nbfj,jsh,ijsh,dtmp,i,j,ii,ij,jnbf)
-      do ish= nshell-myrank,1,-nproc
-        locbfi= locbf(ish)
-        nbfi  = mbf(ish)
+      do ish= databasis%nshell-myrank,1,-nproc
+        locbfi= databasis%locbf(ish)
+        nbfi  = databasis%mbf(ish)
 !$OMP do
         do jsh= 1,ish
-          locbfj= locbf(jsh)
-          nbfj  = mbf(jsh)
+          locbfj= databasis%locbf(jsh)
+          nbfj  = databasis%mbf(jsh)
           ijsh= ish*(ish-1)/2+jsh
           dtmp= zero
           do i= 1,nbfi
@@ -147,14 +150,15 @@ end
       enddo
 !$OMP end parallel
 !
-      call para_allreducer(dmaxtmp,dmax,nshell*(nshell+1)/2,mpi_comm)
+      call para_allreducer(dmaxtmp,dmax,databasis%nshell*(databasis%nshell+1)/2,mpi_comm)
       return
 end
 
 
-!-------------------------------------------------------------------------
-  subroutine calcudmax(dmtrxa,dmtrxb,dmax,dmaxtmp,nproc,myrank,mpi_comm)
-!-------------------------------------------------------------------------
+!------------------------------------------------------------------
+  subroutine calcudmax(dmtrxa,dmtrxb,dmax,dmaxtmp,nproc,myrank, &
+&                      mpi_comm,databasis)
+!------------------------------------------------------------------
 !
 ! Calculate maximum unrestricted density matrix element for each shell
 !
@@ -163,26 +167,29 @@ end
 ! Out : dmax    (Maximum density matrix elements)
 !       dmaxtmp (Work array)
 !
-      use modbasis, only : nshell, nao, mbf, locbf
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nproc, myrank, mpi_comm
       integer :: ish, jsh, ijsh, locbfi, locbfj, nbfi, nbfj
       integer :: jnbf, i, j, ii, ij
       real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
-      real(8),intent(out) :: dmax(nshell*(nshell+1)/2), dmaxtmp(nshell*(nshell+1)/2)
+      real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: dmax(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(out) :: dmaxtmp(databasis%nshell*(databasis%nshell+1)/2)
       real(8) :: dtmp
 !
       dmaxtmp(:)= zero
 !
 !$OMP parallel private(locbfi,locbfj,nbfi,nbfj,jsh,ijsh,dtmp,i,j,ii,ij,jnbf)
-      do ish= nshell-myrank,1,-nproc
-        locbfi= locbf(ish)
-        nbfi  = mbf(ish)
+      do ish= databasis%nshell-myrank,1,-nproc
+        locbfi= databasis%locbf(ish)
+        nbfi  = databasis%mbf(ish)
 !$OMP do
         do jsh= 1,ish
-          locbfj= locbf(jsh)
-          nbfj  = mbf(jsh)
+          locbfj= databasis%locbf(jsh)
+          nbfj  = databasis%mbf(jsh)
           ijsh= ish*(ish-1)/2+jsh
           dtmp= zero
           do i= 1,nbfi
@@ -201,7 +208,7 @@ end
       enddo
 !$OMP end parallel
 !
-      call para_allreducer(dmaxtmp,dmax,nshell*(nshell+1)/2,mpi_comm)
+      call para_allreducer(dmaxtmp,dmax,databasis%nshell*(databasis%nshell+1)/2,mpi_comm)
       return
 end
 
@@ -264,7 +271,7 @@ end
 
 !-------------------------------------------------------------------------------
   subroutine fockextrap(fock,fockwork,work1,work2,work3,itextra,nao,maxdiis, &
-&                       idis,nproc,myrank,mpi_comm)
+&                       idis,nproc,myrank,mpi_comm,datacomp)
 !-------------------------------------------------------------------------------
 !
 ! Extrapolate Fock matrix
@@ -273,8 +280,9 @@ end
 ! InOut : fock    (Fock matrix)
 !         fockwork(Previous Fock and work matrix)
 !
-      use modparallel, only : master
+      use modtype, only : typecomp
       implicit none
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nao, maxdiis, nproc, myrank, mpi_comm, idis(nproc,14) 
       integer,intent(inout) :: itextra
       integer :: num, istart, i, iskip, nao3
@@ -288,9 +296,9 @@ end
       real(8) :: xyz(3), xy1, xy2, xy3, xy4
 !
       if(maxdiis < 6) then
-        if(master) then
-          write(*,'(" Set Maxdiis for more than 6.")')
-          call iabort
+        if(datacomp%master) then
+          write(datacomp%iout,'(" Error! Set Maxdiis for more than 6.")')
+          call iabort(datacomp)
         endif
       endif
 !
@@ -605,7 +613,7 @@ end
 ! Calculate orbital gradient <occ|F|vir>
 !
 ! In  : work      (Fock matrix (filled in upper triangle))
-!       cmo       (MO coeffient matrix)
+!       cmo       (MO coefficient matrix)
 !       itype     (1:Alpha electron, 2:Beta electron)
 ! Out : sograd    (SOSCF gradient matrix)
 !       sogradmax (Maximum SOSCF gradient
@@ -686,7 +694,7 @@ end
   subroutine soscfnewh(hstart,sograd,sodisp,sovecy,nocc,nvir,itsoscf,maxsoscf,sodispmax)
 !-----------------------------------------------------------------------------------------
 !
-! Update inverse Hessian matrix for approximated SOSCF method
+! Update inverse Hessian matrix for approximate SOSCF method
 !
       implicit none
       integer,intent(in) :: nocc, nvir, itsoscf, maxsoscf
@@ -785,7 +793,7 @@ end
 &                       nocca,noccb,nvira,nvirb,itsoscf,maxsoscf,sodispmax)
 !-------------------------------------------------------------------------------------------
 !
-! Update inverse Hessian matrix for approximated SOSCF method (unrestricted version)
+! Update inverse Hessian matrix for approximate SOSCF method (unrestricted version)
 !
       implicit none
       integer,intent(in) :: nocca, noccb, nvira, nvirb, itsoscf, maxsoscf
@@ -945,10 +953,11 @@ end
 
 !-----------------------------------------------------------------------------
   subroutine soscfupdate(cmo,sodisp,work,work2,nocc,nvir,itsoscf,maxsoscf, &
-&                        nao,nmo,sodispmax,idis,nproc,myrank,mpi_comm)
+&                        nao,nmo,sodispmax,idis, &
+&                        nproc,myrank,mpi_comm)
 !-----------------------------------------------------------------------------
 !
-! Update molecular orbitals using approximated SOSCF method
+! Update molecular orbitals using approximate SOSCF method
 !
       implicit none
       integer,intent(in) :: nocc, nvir, itsoscf, maxsoscf, nao, nmo, nproc, myrank, mpi_comm
@@ -1005,10 +1014,10 @@ end
 end
 
 
-!----------------------------------------------------------------------------------------
-  subroutine calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,neleca,nelecb,nao, &
-&                     idis,nproc,myrank,mpi_comm)
-!----------------------------------------------------------------------------------------
+!------------------------------------------------------------------------------------
+  subroutine calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,neleca,nelecb, &
+&                     nao,idis,nproc,myrank,mpi_comm)
+!------------------------------------------------------------------------------------
 !
 ! Calculate spin expectation values, sz and S^2
 !
@@ -1022,7 +1031,7 @@ end
       call expand(dmtrxa,work,nao)
       call expand2(overlap,work2,nao)
 !
-! Calcualte S*Da*S
+! Calculate S*Da*S
 !
       num=idis(myrank+1,1)
       istart=idis(myrank+1,2)+1
@@ -1050,280 +1059,6 @@ end
 !
       sz= half*(neleca-nelecb)
       s2= sz*sz+half*(neleca+nelecb)-s2
-!
-      return
-end
-
-
-!------------------------------------------
-  subroutine calcrmulliken(dmtrx,overlap)
-!------------------------------------------
-!
-! Execute Mulliken population analysis for closed-shell
-!
-      use modparallel, only : master
-      use modmolecule, only : natom, znuc, numatomic
-      use modbasis, only : locatom, nao, nshell, locbf, mbf
-      implicit none
-      integer :: ii, jj, ij, ish, iatom, locbfi
-      real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: dmtrx(nao*(nao+1)/2), overlap(nao*(nao+1)/2)
-      real(8) :: grossorb(nao), grossatom(natom), totalgross
-      character(len=3) :: table(-9:112)= &
-&     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
-&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
-&       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
-&       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
-&       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
-&       'Pm ','Sm ','Eu ','Gd ','Tb ','Dy ','Ho ','Er ','Tm ','Yb ','Lu ','Hf ','Ta ','W  ','Re ',&
-&       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
-&       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
-&       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
-!
-      totalgross= zero
-      grossorb(:)= zero
-      grossatom(:)= zero
-!
-! Calculate Gross orbital population
-!
-!$OMP parallel do schedule(static,1) private(ij) reduction(+:grossorb)
-      do ii= 1,nao
-        ij= ii*(ii-1)/2
-        do jj= 1,ii-1
-          ij= ij+1
-          grossorb(ii)= grossorb(ii)+dmtrx(ij)*overlap(ij)
-          grossorb(jj)= grossorb(jj)+dmtrx(ij)*overlap(ij)
-        enddo
-        ij= ij+1
-        grossorb(ii)= grossorb(ii)+dmtrx(ij)*overlap(ij)
-      enddo
-!$OMP end parallel do
-!
-! Calculate Gross atom population
-!
-      do ish= 1,nshell
-        iatom= locatom(ish)
-        locbfi= locbf(ish)
-        do ii= 1,mbf(ish)
-          grossatom(iatom)= grossatom(iatom)+grossorb(locbfi+ii)
-        enddo
-      enddo
-      do iatom= 1,natom
-        totalgross= totalgross+znuc(iatom)-grossatom(iatom)
-      enddo
-!
-      if(master) then
-        write(*,'(" -------------------------------------")')
-        write(*,'("      Mulliken Population Analysis")')
-        write(*,'("     Atom     Population     Charge")')
-        write(*,'(" -------------------------------------")')
-        do iatom= 1,natom
-          write(*,'(1x,i4,2x,a3,2f13.6)')iatom,table(numatomic(iatom)), &
-&                                        grossatom(iatom),znuc(iatom)-grossatom(iatom)
-        enddo
-        write(*,'(" -------------------------------------")')
-        write(*,'("     Total",13x,f13.6)')totalgross
-        write(*,'(" -------------------------------------")')
-        write(*,*)
-      endif
-!
-      return
-end
-
-
-!--------------------------------------------------
-  subroutine calcumulliken(dmtrxa,dmtrxb,overlap)
-!--------------------------------------------------
-!
-! Execute Mulliken population analysis for open-shell
-!
-      use modparallel, only : master
-      use modmolecule, only : natom, znuc, numatomic
-      use modbasis, only : locatom, nao, nshell, locbf, mbf
-      implicit none
-      integer :: ii, jj, ij, ish, iatom, locbfi
-      real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2), overlap(nao*(nao+1)/2)
-      real(8) :: grossorb(nao), grossatom(natom), totalgross
-      character(len=3) :: table(-9:112)= &
-&     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
-&       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
-&       'S  ','Cl ','Ar ','K  ','Ca ','Sc ','Ti ','V  ','Cr ','Mn ','Fe ','Co ','Ni ','Cu ','Zn ',&
-&       'Ga ','Ge ','As ','Se ','Br ','Kr ','Rb ','Sr ','Y  ','Zr ','Nb ','Mo ','Tc ','Ru ','Rh ',&
-&       'Pd ','Ag ','Cd ','In ','Sn ','Sb ','Te ','I  ','Xe ','Cs ','Ba ','La ','Ce ','Pr ','Nd ',&
-&       'Pm ','Sm ','Eu ','Gd ','Tb ','Dy ','Ho ','Er ','Tm ','Yb ','Lu ','Hf ','Ta ','W  ','Re ',&
-&       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
-&       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
-&       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
-!
-      totalgross= zero
-      grossorb(:)= zero
-      grossatom(:)= zero
-!
-! Calculate Gross orbital population
-!
-!$OMP parallel do schedule(static,1) private(ij) reduction(+:grossorb)
-      do ii= 1,nao
-        ij= ii*(ii-1)/2
-        do jj= 1,ii-1
-          ij= ij+1
-          grossorb(ii)= grossorb(ii)+(dmtrxa(ij)+dmtrxb(ij))*overlap(ij)
-          grossorb(jj)= grossorb(jj)+(dmtrxa(ij)+dmtrxb(ij))*overlap(ij)
-        enddo
-        ij= ij+1
-        grossorb(ii)= grossorb(ii)+(dmtrxa(ij)+dmtrxb(ij))*overlap(ij)
-      enddo
-!$OMP end parallel do
-!
-! Calculate Gross atom population
-!
-      do ish= 1,nshell
-        iatom= locatom(ish)
-        locbfi= locbf(ish)
-        do ii= 1,mbf(ish)
-          grossatom(iatom)= grossatom(iatom)+grossorb(locbfi+ii)
-        enddo
-      enddo
-      do iatom= 1,natom
-        totalgross= totalgross+znuc(iatom)-grossatom(iatom)
-      enddo
-!
-      if(master) then
-        write(*,'(" -------------------------------------")')
-        write(*,'("      Mulliken Population Analysis")')
-        write(*,'("     Atom     Population     Charge")')
-        write(*,'(" -------------------------------------")')
-        do iatom= 1,natom
-          write(*,'(1x,i4,2x,a3,2f13.6)')iatom,table(numatomic(iatom)), &
-&                                        grossatom(iatom),znuc(iatom)-grossatom(iatom)
-        enddo
-        write(*,'(" -------------------------------------")')
-        write(*,'("     Total",13x,f13.6)')totalgross
-        write(*,'(" -------------------------------------")')
-        write(*,*)
-      endif
-!
-      return
-end
-
-
-!------------------------------------------------------------------
-  subroutine calcrdipole(dipmat,work,dmtrx,nproc,myrank,mpi_comm)
-!------------------------------------------------------------------
-!
-! Driver of dipole moment calculation for closed-shell
-!
-      use modparallel, only : master
-      use modbasis, only : nao
-      use modunit, only : todebye
-      use modmolecule, only : natom, coord, znuc
-      implicit none
-      integer,intent(in) :: nproc, myrank, mpi_comm
-      integer :: iatom
-      real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: dmtrx((nao*(nao+1))/2)
-      real(8),intent(out) :: dipmat((nao*(nao+1))/2,3), work((nao*(nao+1))/2,3)
-      real(8) :: dipcenter(3), xdip, ydip, zdip, totaldip, tridot
-      real(8) :: xdipplus, ydipplus, zdipplus, xdipminus, ydipminus, zdipminus
-!
-! Nuclear part
-!
-      xdipplus= zero
-      ydipplus= zero
-      zdipplus= zero
-!
-      do iatom= 1,natom
-        xdipplus= xdipplus+coord(1,iatom)*znuc(iatom)
-        ydipplus= ydipplus+coord(2,iatom)*znuc(iatom)
-        zdipplus= zdipplus+coord(3,iatom)*znuc(iatom)
-      enddo
-!
-! Electron part
-!
-      dipcenter(:)= zero
-!
-      call calcmatdipole(dipmat,work,dipcenter,nproc,myrank,mpi_comm)
-!
-      xdipminus=-tridot(dmtrx,dipmat(1,1),nao)
-      ydipminus=-tridot(dmtrx,dipmat(1,2),nao)
-      zdipminus=-tridot(dmtrx,dipmat(1,3),nao)
-!
-! Sum Nuclear and Electron parts
-!
-      xdip=(xdipplus+xdipminus)*todebye
-      ydip=(ydipplus+ydipminus)*todebye
-      zdip=(zdipplus+zdipminus)*todebye
-      totaldip= sqrt(xdip*xdip+ydip*ydip+zdip*zdip)
-!
-      if(master) then
-        write(*,'("  ----------------------------------------------")')
-        write(*,'("                   Dipole Momemt")')
-        write(*,'("         X          Y          Z       Total")')
-        write(*,'("  ----------------------------------------------")')
-        write(*,'(2x,4f11.4)')xdip, ydip, zdip, totaldip
-        write(*,'("  ----------------------------------------------",/)')
-      endif
-!
-      return
-end
-
-
-!--------------------------------------------------------------------------
-  subroutine calcudipole(dipmat,work,dmtrxa,dmtrxb,nproc,myrank,mpi_comm)
-!--------------------------------------------------------------------------
-!
-! Driver of dipole moment calculation for open-shell
-!
-      use modparallel, only : master
-      use modbasis, only : nao
-      use modunit, only : todebye
-      use modmolecule, only : natom, coord, znuc
-      implicit none
-      integer,intent(in) :: nproc, myrank, mpi_comm
-      integer :: iatom
-      real(8),parameter :: zero=0.0D+00
-      real(8),intent(in) :: dmtrxa((nao*(nao+1))/2), dmtrxb((nao*(nao+1))/2)
-      real(8),intent(out) :: dipmat((nao*(nao+1))/2,3), work((nao*(nao+1))/2,3)
-      real(8) :: dipcenter(3), xdip, ydip, zdip, totaldip, tridot
-      real(8) :: xdipplus, ydipplus, zdipplus, xdipminus, ydipminus, zdipminus
-!
-! Nuclear part
-!
-      xdipplus= zero
-      ydipplus= zero
-      zdipplus= zero
-!
-      do iatom= 1,natom
-        xdipplus= xdipplus+coord(1,iatom)*znuc(iatom)
-        ydipplus= ydipplus+coord(2,iatom)*znuc(iatom)
-        zdipplus= zdipplus+coord(3,iatom)*znuc(iatom)
-      enddo
-!
-! Electron part
-!
-      dipcenter(:)= zero
-!
-      call calcmatdipole(dipmat,work,dipcenter,nproc,myrank,mpi_comm)
-!
-      xdipminus=-tridot(dmtrxa,dipmat(1,1),nao)-tridot(dmtrxb,dipmat(1,1),nao)
-      ydipminus=-tridot(dmtrxa,dipmat(1,2),nao)-tridot(dmtrxb,dipmat(1,2),nao)
-      zdipminus=-tridot(dmtrxa,dipmat(1,3),nao)-tridot(dmtrxb,dipmat(1,3),nao)
-!
-! Sum Nuclear and Electron parts
-!
-      xdip=(xdipplus+xdipminus)*todebye
-      ydip=(ydipplus+ydipminus)*todebye
-      zdip=(zdipplus+zdipminus)*todebye
-      totaldip= sqrt(xdip*xdip+ydip*ydip+zdip*zdip)
-!
-      if(master) then
-        write(*,'("  ----------------------------------------------")')
-        write(*,'("                   Dipole Momemt")')
-        write(*,'("         X          Y          Z       Total")')
-        write(*,'("  ----------------------------------------------")')
-        write(*,'(2x,4f11.4)')xdip, ydip, zdip, totaldip
-        write(*,'("  ----------------------------------------------",/)')
-      endif
 !
       return
 end
@@ -1406,28 +1141,31 @@ end
 end
 
 
-!--------------------------------------------------------------------------------------------
-  subroutine rhfqc(fock,cmo,qcrmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
-&                  qcwork,work,hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,maxqcdiag, &
-&                  maxqcdiagsub,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
-!--------------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------
+  subroutine rhfqc(fock,cmo,qcrmax,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
+&                  qcwork,work1,work2,cutint2,hfexchange,nao,nmo, &
+&                  nocc,nvir,nshell,maxdim,maxqcdiag,maxqcdiagsub,threshqc, &
+&                  datajob,datamol,databasis,datacomp)
+!---------------------------------------------------------------------------------------
 !
 ! Driver of Davidson diagonalization for quadratically convergent of RHF
 !
-      use modparallel, only : master
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nao, nmo, nocc, nvir, nshell, maxdim, maxqcdiag, maxqcdiagsub
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
       integer :: itdav, itqcdiag, ii, ij, jj, kk, ia, ib, istart, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: overlap(nao*(nao+1)/2), xint(nshell*(nshell+1)/2)
-      real(8),intent(in) :: hfexchange, threshqc
+      real(8),intent(in) :: cutint2, hfexchange, threshqc
       real(8),intent(out) :: qcvec(nocc*nvir+1,maxqcdiagsub+1,2), qcrmax(nshell*(nshell+1)/2)
       real(8),intent(out) :: qcwork(nao,nao), qcmat(maxqcdiagsub,maxqcdiagsub)
       real(8),intent(out) :: qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2), qceigen(maxqcdiagsub)
-      real(8),intent(out) :: work(nao,nao)
-      real(8),intent(inout) :: fock(nao,nao), cmo(nao,nao)
-      real(8),intent(inout) :: qcgmn(nao*(nao+1)/2)
+      real(8),intent(out) :: work1(nao,nao), work2(nao,nao)
+      real(8),intent(inout) :: fock(nao*(nao+1)/2), cmo(nao,nao)
       real(8) :: tmp, qcnorm, ddot, rotqc
 !
       qcmatsave(:)= zero
@@ -1435,8 +1173,8 @@ end
 ! Calculate Fock matrix in MO basis
 !
       call expand(fock,qcwork,nao)
-      call dsymm('L','U',nao,nocc+nvir,one,qcwork,nao,cmo,nao,zero,work,nao)
-      call dgemm('T','N',nocc+nvir,nocc+nvir,nao,one,cmo,nao,work,nao,zero,fock,nao)
+      call dsymm('L','U',nao,nocc+nvir,one,qcwork,nao,cmo,nao,zero,work1,nao)
+      call dgemm('T','N',nocc+nvir,nocc+nvir,nao,one,cmo,nao,work1,nao,zero,work2,nao)
 !
 ! Calculate initial (first and second) qc vector
 !
@@ -1450,9 +1188,9 @@ end
       do ii= 1,nvir
         ij=(ii-1)*nocc+1
         do jj= 1,nocc
-          qcvec(ij+jj,1,2)= fock(jj,ii+nocc)
-          qcvec(ij+jj,2,1)= fock(jj,ii+nocc)
-          qcnorm= qcnorm+fock(jj,ii+nocc)*fock(jj,ii+nocc)
+          qcvec(ij+jj,1,2)= work2(jj,ii+nocc)
+          qcvec(ij+jj,2,1)= work2(jj,ii+nocc)
+          qcnorm= qcnorm+work2(jj,ii+nocc)*work2(jj,ii+nocc)
         enddo
       enddo
 !$OMP end parallel do
@@ -1470,16 +1208,18 @@ end
 !
 ! Calculate Gmn
 !
-        call calcqcrmn(qcwork,qcvec,cmo,work,nao,nocc,nvir,itdav,maxqcdiagsub)
-        call calcrdmax(qcwork,qcrmax,work,nproc2,myrank2,mpi_comm2)
-        call formrdftfock(qcgmn,work,qcwork,qcrmax,xint,maxdim,hfexchange, &
-&                         nproc1,myrank1,mpi_comm1)
+        call calcqcrmn(qcwork,qcvec,cmo,work1,nao,nocc,nvir,itdav,maxqcdiagsub)
+        call calcrdmax(qcwork,qcrmax,work1,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
+&                      databasis)
+        call formrdftfock(fock,work1,qcwork,qcrmax,xint,maxdim,cutint2,hfexchange, &
+&                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                         datajob,datamol,databasis)
 !
 ! Add two-electron integral contribution
 !
-        call expand(qcgmn,qcwork,nao)
-        call dsymm('L','U',nao,nvir,one,qcwork,nao,cmo(1,nocc+1),nao,zero,work,nao)
-        call dgemm('T','N',nocc,nvir,nao,one,cmo,nao,work,nao,zero,qcvec(2,itdav,2),nocc)
+        call expand(fock,qcwork,nao)
+        call dsymm('L','U',nao,nvir,one,qcwork,nao,cmo(1,nocc+1),nao,zero,work1,nao)
+        call dgemm('T','N',nocc,nvir,nao,one,cmo,nao,work1,nao,zero,qcvec(2,itdav,2),nocc)
 !
 ! Add Fock matrix element contribution
 !
@@ -1488,14 +1228,14 @@ end
         do ia= 1,nvir
           do ii= 1,nocc
             kk= (ia-1)*nocc+ii+1
-            tmp= tmp+fock(ii,ia+nocc)*qcvec(kk,itdav,1)
-            qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+fock(ii,ia+nocc)*qcvec(1,itdav,1)
+            tmp= tmp+work2(ii,ia+nocc)*qcvec(kk,itdav,1)
+            qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+work2(ii,ia+nocc)*qcvec(1,itdav,1)
             do ib= 1,nvir
-              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+fock(ib+nocc,ia+nocc) &
+              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+work2(ib+nocc,ia+nocc) &
 &                                                 *qcvec((ib-1)*nocc+ii+1,itdav,1)
             enddo
             do ij= 1,nocc
-              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)-fock(ij,ii)*qcvec((ia-1)*nocc+ij+1,itdav,1)
+              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)-work2(ij,ii)*qcvec((ia-1)*nocc+ij+1,itdav,1)
             enddo
           enddo
         enddo
@@ -1529,7 +1269,7 @@ end
 !
 ! Diagonalize small matrix
 !
-        call diag('V','U',itdav,qcmat,maxqcdiagsub,qceigen,nproc2,myrank2,mpi_comm2)
+        call diag('V','U',itdav,qcmat,maxqcdiagsub,qceigen,datacomp)
 !
 ! Form correction vector
 !
@@ -1546,7 +1286,8 @@ end
 !$OMP end parallel do
         qcnorm= sqrt(qcnorm)
 !
-        if(master) write(*,'(5x,"QC Cycle ",i2," : Norm = ",1p,d10.3)') itdav-1, qcnorm
+        if(datacomp%master.and.(datajob%iprint >= 2)) &
+&         write(datacomp%iout,'(5x,"QC Cycle ",i2," : Norm = ",1p,e10.3)') itdav-1, qcnorm
 !
 ! Check convergence
 !
@@ -1558,7 +1299,7 @@ end
           ij=(ii-1)*nocc+1
           do jj= 1,nocc
             qcvec(ij+jj,itdav+1,1)= qcvec(ij+jj,itdav+1,1)/ &
-&                                  (fock(ii+nocc,ii+nocc)-fock(jj,jj)-qceigen(1))
+&                                  (work2(ii+nocc,ii+nocc)-work2(jj,jj)-qceigen(1))
           enddo
         enddo
 !$OMP end parallel do
@@ -1600,12 +1341,12 @@ end
         endif
 !
         if(itqcdiag ==(maxqcdiag)) then
-          if(master) then
-            write(*,'(" Error! Number of iteration for Quadratically convergent ",&
+          if(datacomp%master) then
+            write(datacomp%iout,'(" Error! Number of iteration for Quadratically convergent ",&
 &                     "method exceeds maxqcdiag=",i3,".")') maxqcdiag
-            write(*,'(" Set larger value for maxqcdiag in scf section.")')
+            write(datacomp%iout,'(" Set larger value for maxqcdiag in scf section.")')
           endif
-          call iabort
+          call iabort(datacomp)
         endif
 !
         qcnorm= one/qcnorm
@@ -1663,8 +1404,8 @@ end
       do ii= 1,nao
         ij= ii*(ii-1)/2
         do jj= 1,ii
-          work(jj,ii)= overlap(ij+jj)
-          work(ii,jj)= overlap(ij+jj)
+          work1(jj,ii)= overlap(ij+jj)
+          work1(ii,jj)= overlap(ij+jj)
         enddo
       enddo
 !$OMP end do
@@ -1674,7 +1415,7 @@ end
         do jj= 1,nao
           qcwork(jj,1)= zero
           do kk= 1,nao
-            qcwork(jj,1)= qcwork(jj,1)+work(kk,jj)*cmo(kk,ii)
+            qcwork(jj,1)= qcwork(jj,1)+work1(kk,jj)*cmo(kk,ii)
           enddo
         enddo
 !$OMP end do
@@ -1710,32 +1451,37 @@ end
 end
 
 
-!---------------------------------------------------------------------------------------------
-  subroutine uhfqc(focka,fockb,cmoa,cmob,qcrmax,qcgmna,qcgmnb,qcvec, &
+!-----------------------------------------------------------------------
+  subroutine uhfqc(focka,fockb,cmoa,cmob,qcrmax,qcvec, &
 &                  qcmat,qcmatsave,qceigen,overlap,xint, &
-&                  qcworka,qcworkb,work,hfexchange,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
-&                  maxdim,maxqcdiag,maxqcdiagsub,threshqc, &
-&                  nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
-!---------------------------------------------------------------------------------------------
+&                  qcworka,qcworkb,work,worka,workb,cutint2, &
+&                  hfexchange,nao,nmo,nocca,noccb, &
+&                  nvira,nvirb,nshell,maxdim,maxqcdiag,maxqcdiagsub, &
+&                  threshqc,datajob,datamol,databasis,datacomp)
+!-----------------------------------------------------------------------
 !
 ! Driver of Davidson diagonalization for quadratically convergent of UHF
 !
-      use modparallel, only : master
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nao, nmo, nocca, noccb, nvira, nvirb, nshell, maxdim, maxqcdiag
-      integer,intent(in) :: maxqcdiagsub, nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
+      integer,intent(in) :: maxqcdiagsub
       integer :: itdav, itqcdiag, ii, ij, jj, kk, ia, ib, istart, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: overlap(nao*(nao+1)/2), xint(nshell*(nshell+1)/2)
-      real(8),intent(in) :: hfexchange, threshqc
+      real(8),intent(in) :: cutint2, hfexchange, threshqc
       real(8),intent(inout) :: qcrmax(nshell*(nshell+1)/2)
-      real(8),intent(inout) :: qcgmna(nao*(nao+1)/2), qcgmnb(nao*(nao+1)/2)
       real(8),intent(inout) :: qcvec(nocca*nvira+noccb*nvirb+1,maxqcdiagsub+1,2)
       real(8),intent(inout) :: qcmat(maxqcdiagsub,maxqcdiagsub)
       real(8),intent(inout) :: qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2)
       real(8),intent(inout) :: qceigen(maxqcdiagsub)
       real(8),intent(inout) :: qcworka(nao,nao), qcworkb(nao,nao), work(nao,nao)
-      real(8),intent(inout) :: focka(nao,nao),fockb(nao,nao), cmoa(nao,nao), cmob(nao,nao)
+      real(8),intent(inout) :: worka(nao,nao), workb(nao,nao), focka(nao*(nao+1)/2)
+      real(8),intent(inout) :: fockb(nao*(nao+1)/2), cmoa(nao,nao), cmob(nao,nao)
       real(8) :: tmp, tmpa, tmpb, qcnorm, ddot, rotqc
 !
       qcmatsave(:)= zero
@@ -1744,10 +1490,10 @@ end
 !
       call expand(focka,qcworka,nao)
       call dsymm('L','U',nao,nmo,one,qcworka,nao,cmoa,nao,zero,work,nao)
-      call dgemm('T','N',nmo,nmo,nao,one,cmoa,nao,work,nao,zero,focka,nao)
+      call dgemm('T','N',nmo,nmo,nao,one,cmoa,nao,work,nao,zero,worka,nao)
       call expand(fockb,qcworka,nao)
       call dsymm('L','U',nao,nmo,one,qcworka,nao,cmob,nao,zero,work,nao)
-      call dgemm('T','N',nmo,nmo,nao,one,cmob,nao,work,nao,zero,fockb,nao)
+      call dgemm('T','N',nmo,nmo,nao,one,cmob,nao,work,nao,zero,workb,nao)
 !
 ! Calculate initial (first and second) qc vector
 !
@@ -1762,9 +1508,9 @@ end
       do ii= 1,nvira
         ij=(ii-1)*nocca+1
         do jj= 1,nocca
-          qcvec(ij+jj,1,2)= focka(jj,ii+nocca)
-          qcvec(ij+jj,2,1)= focka(jj,ii+nocca)
-          qcnorm= qcnorm+focka(jj,ii+nocca)*focka(jj,ii+nocca)
+          qcvec(ij+jj,1,2)= worka(jj,ii+nocca)
+          qcvec(ij+jj,2,1)= worka(jj,ii+nocca)
+          qcnorm= qcnorm+worka(jj,ii+nocca)*worka(jj,ii+nocca)
         enddo
       enddo
 !$OMP end do
@@ -1772,9 +1518,9 @@ end
       do ii= 1,nvirb
         ij=(ii-1)*noccb+nocca*nvira+1
         do jj= 1,noccb
-          qcvec(ij+jj,1,2)= fockb(jj,ii+noccb)
-          qcvec(ij+jj,2,1)= fockb(jj,ii+noccb)
-          qcnorm= qcnorm+fockb(jj,ii+noccb)*fockb(jj,ii+noccb)
+          qcvec(ij+jj,1,2)= workb(jj,ii+noccb)
+          qcvec(ij+jj,2,1)= workb(jj,ii+noccb)
+          qcnorm= qcnorm+workb(jj,ii+noccb)*workb(jj,ii+noccb)
         enddo
       enddo
 !$OMP end do
@@ -1796,16 +1542,18 @@ end
 !
         call calcqcurmn(qcworka,qcworkb,qcvec,cmoa,cmob,work,nao,nocca,noccb,nvira,nvirb, &
 &                       itdav,maxqcdiagsub)
-        call calcudmax(qcworka,qcworkb,qcrmax,work,nproc2,myrank2,mpi_comm2)
-        call calcqcugmn(qcgmna,qcgmnb,work,qcworka,qcworkb,qcrmax,xint,hfexchange,maxdim, &
-&                       nao,nshell,nproc1,myrank1,mpi_comm1)
+        call calcudmax(qcworka,qcworkb,qcrmax,work,datacomp%nproc2,datacomp%myrank2, &
+&                      datacomp%mpi_comm2,databasis)
+        call calcqcugmn(focka,fockb,work,qcworka,qcworkb,qcrmax,xint,cutint2,hfexchange,maxdim, &
+&                       nao,nshell,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                       datajob,datamol,databasis)
 !
 ! Add two-electron integral contribution
 !
-        call expand(qcgmna,qcworka,nao)
+        call expand(focka,qcworka,nao)
         call dsymm('L','U',nao,nvira,one,qcworka,nao,cmoa(1,nocca+1),nao,zero,work,nao)
         call dgemm('T','N',nocca,nvira,nao,one,cmoa,nao,work,nao,zero,qcvec(2,itdav,2),nocca)
-        call expand(qcgmnb,qcworka,nao)
+        call expand(fockb,qcworka,nao)
         call dsymm('L','U',nao,nvirb,one,qcworka,nao,cmob(1,noccb+1),nao,zero,work,nao)
         call dgemm('T','N',noccb,nvirb,nao,one,cmob,nao,work,nao,zero, &
 &                  qcvec(nocca*nvira+2,itdav,2),noccb)
@@ -1818,14 +1566,14 @@ end
         do ia= 1,nvira
           do ii= 1,nocca
             kk= (ia-1)*nocca+ii+1
-            tmp= tmp+focka(ii,ia+nocca)*qcvec(kk,itdav,1)
-            qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+focka(ii,ia+nocca)*qcvec(1,itdav,1)
+            tmp= tmp+worka(ii,ia+nocca)*qcvec(kk,itdav,1)
+            qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+worka(ii,ia+nocca)*qcvec(1,itdav,1)
             do ib= 1,nvira
-              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+focka(ib+nocca,ia+nocca) &
+              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+worka(ib+nocca,ia+nocca) &
 &                                                 *qcvec((ib-1)*nocca+ii+1,itdav,1)
             enddo
             do ij= 1,nocca
-              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)-focka(ij,ii)*qcvec((ia-1)*nocca+ij+1,itdav,1)
+              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)-worka(ij,ii)*qcvec((ia-1)*nocca+ij+1,itdav,1)
             enddo
           enddo
         enddo
@@ -1834,14 +1582,14 @@ end
         do ia= 1,nvirb
           do ii= 1,noccb
             kk= (ia-1)*noccb+ii+nocca*nvira+1
-            tmp= tmp+fockb(ii,ia+noccb)*qcvec(kk,itdav,1)
-            qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+fockb(ii,ia+noccb)*qcvec(1,itdav,1)
+            tmp= tmp+workb(ii,ia+noccb)*qcvec(kk,itdav,1)
+            qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+workb(ii,ia+noccb)*qcvec(1,itdav,1)
             do ib= 1,nvirb
-              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+fockb(ib+noccb,ia+noccb) &
+              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)+workb(ib+noccb,ia+noccb) &
 &                                                 *qcvec((ib-1)*noccb+ii+nocca*nvira+1,itdav,1)
             enddo
             do ij= 1,noccb
-              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)-fockb(ij,ii) &
+              qcvec(kk,itdav,2)= qcvec(kk,itdav,2)-workb(ij,ii) &
 &                                                 *qcvec((ia-1)*noccb+ij+nocca*nvira+1,itdav,1)
             enddo
           enddo
@@ -1877,7 +1625,7 @@ end
 !
 ! Diagonalize small matrix
 !
-        call diag('V','U',itdav,qcmat,maxqcdiagsub,qceigen,nproc2,myrank2,mpi_comm2)
+        call diag('V','U',itdav,qcmat,maxqcdiagsub,qceigen,datacomp)
 !
 ! Form correction vector
 !
@@ -1894,7 +1642,8 @@ end
 !$OMP end parallel do
         qcnorm= sqrt(qcnorm)
 !
-        if(master) write(*,'(5x,"QC Cycle ",i2," : Norm = ",1p,d10.3)') itdav-1, qcnorm
+        if(datacomp%master.and.(datajob%iprint >= 2)) &
+&         write(datacomp%iout,'(5x,"QC Cycle ",i2," : Norm = ",1p,e10.3)') itdav-1, qcnorm
 !
 ! Check convergence
 !
@@ -1907,7 +1656,7 @@ end
           ij=(ii-1)*nocca+1
           do jj= 1,nocca
             qcvec(ij+jj,itdav+1,1)= qcvec(ij+jj,itdav+1,1)/ &
-&                                  (focka(ii+nocca,ii+nocca)-focka(jj,jj)-qceigen(1))
+&                                  (worka(ii+nocca,ii+nocca)-worka(jj,jj)-qceigen(1))
           enddo
         enddo
 !$OMP end do
@@ -1916,7 +1665,7 @@ end
           ij=(ii-1)*noccb+nocca*nvira+1
           do jj= 1,noccb
             qcvec(ij+jj,itdav+1,1)= qcvec(ij+jj,itdav+1,1)/ &
-&                                  (fockb(ii+noccb,ii+noccb)-fockb(jj,jj)-qceigen(1))
+&                                  (workb(ii+noccb,ii+noccb)-workb(jj,jj)-qceigen(1))
           enddo
         enddo
 !$OMP end do
@@ -1943,12 +1692,12 @@ end
         if(qcnorm < threshqc) exit
 !
         if(itqcdiag ==(maxqcdiag)) then
-          if(master) then
-            write(*,'(" Error! Number of iteration for Quadratically convergent ",&
+          if(datacomp%master) then
+            write(datacomp%iout,'(" Error! Number of iteration for Quadratically convergent ",&
 &                     "method exceeds maxqcdiag=",i3,".")') maxqcdiag
-            write(*,'(" Set larger value for maxqcdiag in scf section.")')
+            write(datacomp%iout,'(" Set larger value for maxqcdiag in scf section.")')
           endif
-          call iabort
+          call iabort(datacomp)
         endif
 !
 ! Reset Davidson diagonalization
@@ -2089,15 +1838,19 @@ end
 end
 
 
-!---------------------------------------------------------------------------------
-  subroutine calcqcugmn(gmn1,gmn2,gmn3,rmna,rmnb,rmtrx,xint,hfexchange,maxdim, &
-&                       nao,nshell,nproc,myrank,mpi_comm)
-!---------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+  subroutine calcqcugmn(gmn1,gmn2,gmn3,rmna,rmnb,rmtrx,xint,cutint2,hfexchange,maxdim, &
+&                       nao,nshell,nproc,myrank,mpi_comm, &
+&                       datajob,datamol,databasis)
+!-----------------------------------------------------------------------------------------
 !
 ! Driver of Gmn matrix formation from two-electron intgrals
 !
-      use modthresh, only : cutint2
+      use modtype, only : typejob, typemol, typebasis
       implicit none
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: nshell, nao, maxdim, nproc, myrank, mpi_comm
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart, ishcheck
@@ -2105,7 +1858,7 @@ end
       real(8),parameter :: zero=0.0D+00, two=2.0D+00
       real(8),intent(in) :: rmna(nao*(nao+1)/2), rmnb(nao*(nao+1)/2)
       real(8),intent(in) :: rmtrx(nshell*(nshell+1)/2), xint(nshell*(nshell+1)/2)
-      real(8),intent(in) :: hfexchange
+      real(8),intent(in) :: cutint2, hfexchange
       real(8),intent(out) :: gmn1(nao*(nao+1)/2), gmn2(nao*(nao+1)/2), gmn3(nao*(nao+1)/2)
       real(8) :: xijkl, rmax, twoeri(maxdim**4), rmax1
       integer :: last, ltmp(nshell), lnum, ll
@@ -2173,8 +1926,9 @@ end
             endif
           enddo
           do lsh= 1,lnum
-            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
-            call ugmneri(gmn2,gmn3,rmna,rmnb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,hfexchange)
+            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,datajob%threshex,datamol,databasis)
+            call ugmneri(gmn2,gmn3,rmna,rmnb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,cutint2, &
+&                        hfexchange,databasis)
           enddo
         enddo
       enddo
@@ -2191,35 +1945,39 @@ end
 end
 
 
-!-----------------------------------------------------------------------------------
-  subroutine ugmneri(gmna,gmnb,rmna,rmnb,twoeri,ish,jsh,ksh,lsh,maxdim,hfexchange)
-!-----------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------
+  subroutine ugmneri(gmna,gmnb,rmna,rmnb,twoeri,ish,jsh,ksh,lsh,maxdim,cutint2, &
+&                    hfexchange,databasis)
+!----------------------------------------------------------------------------------
 !
 ! Form Gmn matrix from two-electron intgrals
 !
-      use modbasis, only : nao, mbf, locbf
-      use modthresh, only : cutint2
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nbfi, nbfj, nbfk, nbfl
       integer :: locbfi, locbfj, locbfk, locbfl, jmax, lmax, i, j, k, l, ij, kl
       integer :: nij, nkl, nik, nil, njk, njl
       integer :: iloc, jloc, kloc, lloc, iloc2, jloc2, kloc2, lloc2, kloc0, jloc0
       real(8),parameter :: half=0.5D+00, two=2.0D+00
-      real(8),intent(in) :: rmna(nao*(nao+1)/2), rmnb(nao*(nao+1)/2)
-      real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim), hfexchange
-      real(8),intent(inout) :: gmna(nao*(nao+1)/2), gmnb(nao*(nao+1)/2)
+      real(8),intent(in) :: rmna(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: rmnb(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim)
+      real(8),intent(in) :: cutint2, hfexchange
+      real(8),intent(inout) :: gmna(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(inout) :: gmnb(databasis%nao*(databasis%nao+1)/2)
       real(8) :: val, val2
       logical :: ieqj, keql, ieqk, jeql, ikandjl, ijorkl
 !
-      nbfi = mbf(ish)
-      nbfj = mbf(jsh)
-      nbfk = mbf(ksh)
-      nbfl = mbf(lsh)
-      locbfi= locbf(ish)
-      locbfj= locbf(jsh)
-      locbfk= locbf(ksh)
-      locbfl= locbf(lsh)
+      nbfi = databasis%mbf(ish)
+      nbfj = databasis%mbf(jsh)
+      nbfk = databasis%mbf(ksh)
+      nbfl = databasis%mbf(lsh)
+      locbfi= databasis%locbf(ish)
+      locbfj= databasis%locbf(jsh)
+      locbfk= databasis%locbf(ksh)
+      locbfl= databasis%locbf(lsh)
 !
       ieqj= ish.eq.jsh
       keql= ksh.eq.lsh
@@ -2350,4 +2108,3 @@ end
 !
       return
 end
-

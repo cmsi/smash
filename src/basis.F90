@@ -1,4 +1,4 @@
-! Copyright 2014  Kazuya Ishimura
+! Copyright 2014-2021  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,142 +12,193 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!--------------------------------
-  subroutine setbasis(mpi_comm)
-!--------------------------------
+!----------------------------------------------------------
+  subroutine setbasis(datajob,datamol,databasis,datacomp)
+!----------------------------------------------------------
 !
 ! Driver of setting basis functions
 !
-      use modparallel, only : master
-      use modmolecule, only : natom, numatomic
-      use modbasis, only : basis, locprim, locbf, locatom, mprim, mbf, mtype, &
-&                          nshell, nao, nprim, ex, coeff, coeffinp
-      use modecp, only : flagecp
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
-      integer,intent(in) :: mpi_comm
+      type(typejob),intent(inout) :: datajob
+      type(typemol),intent(inout) :: datamol
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(inout) :: datacomp
+      type(typebasis) :: datagenbasis
+      integer :: locgenshell(-9:112), ngenshell(-9:112)
       integer :: ishell, iatom, i
+      character(len=32) :: atombasis(-9:112)
 !
-      if(master) then
-        locprim(1)=0
-        locbf(1)=0
+      if(datacomp%master) then
+        databasis%locprim(1)=0
+        databasis%locbf(1)=0
         ishell= 0
 !
-        select case(basis)
+        select case(databasis%basis)
           case('STO-3G')
-            do iatom= 1, natom
-              call bssto3g(iatom,ishell)
+            do iatom= 1, datamol%natom
+              call bssto3g(iatom,ishell,datamol%numatomic,databasis,datacomp)
             enddo
           case('3-21G')
-            do iatom= 1, natom
-              call bs321g(iatom,ishell)
+            do iatom= 1, datamol%natom
+              call bs321g(iatom,ishell,datamol%numatomic,databasis,datacomp)
             enddo
           case('6-31G')
-            do iatom= 1, natom
-              call bs631g(iatom,ishell)
+            do iatom= 1, datamol%natom
+              call bs631g(iatom,ishell,datamol%numatomic,databasis,datacomp)
             enddo
           case('6-31G(D)','6-31G*')
-            do iatom= 1, natom
-              call bs631gd(iatom,ishell)
+            do iatom= 1, datamol%natom
+              call bs631gd(iatom,ishell,datamol%numatomic,databasis,datacomp)
             enddo
           case('6-31G(D,P)','6-31G**')
-            do iatom= 1, natom
-              call bs631gdp(iatom,ishell)
+            do iatom= 1, datamol%natom
+              call bs631gdp(iatom,ishell,datamol%numatomic,databasis,datacomp)
+            enddo
+          case('6-31+G')
+            do iatom= 1, datamol%natom
+              call bs631pg(iatom,ishell,datamol%numatomic,databasis,datacomp)
+            enddo
+          case('6-31+G(D)','6-31+G*')
+            do iatom= 1, datamol%natom
+              call bs631pgd(iatom,ishell,datamol%numatomic,databasis,datacomp)
+            enddo
+          case('6-31+G(D,P)','6-31+G**')
+            do iatom= 1, datamol%natom
+              call bs631pgdp(iatom,ishell,datamol%numatomic,databasis,datacomp)
+            enddo
+          case('6-31++G')
+            do iatom= 1, datamol%natom
+              call bs631ppg(iatom,ishell,datamol%numatomic,databasis,datacomp)
+            enddo
+          case('6-31++G(D)','6-31++G*')
+            do iatom= 1, datamol%natom
+              call bs631ppgd(iatom,ishell,datamol%numatomic,databasis,datacomp)
+            enddo
+          case('6-31++G(D,P)','6-31++G**')
+            do iatom= 1, datamol%natom
+              call bs631ppgdp(iatom,ishell,datamol%numatomic,databasis,datacomp)
             enddo
           case('6-311G')
-            do iatom= 1, natom
-              call bs6311g(iatom,ishell)
+            do iatom= 1, datamol%natom
+              call bs6311g(iatom,ishell,datamol%numatomic,databasis,datacomp)
             enddo
           case('6-311G(D)','6-311G*')
-            do iatom= 1, natom
-              call bs6311gd(iatom,ishell)
+            do iatom= 1, datamol%natom
+              call bs6311gd(iatom,ishell,datamol%numatomic,databasis,datacomp)
             enddo
           case('6-311G(D,P)','6-311G**')
-            do iatom= 1, natom
-              call bs6311gdp(iatom,ishell)
+            do iatom= 1, datamol%natom
+              call bs6311gdp(iatom,ishell,datamol%numatomic,databasis,datacomp)
+            enddo
+          case('6-311+G')
+            do iatom= 1, datamol%natom
+              call bs6311pg(iatom,ishell,datamol%numatomic,databasis,datacomp)
+            enddo
+          case('6-311+G(D)','6-311+G*')
+            do iatom= 1, datamol%natom
+              call bs6311pgd(iatom,ishell,datamol%numatomic,databasis,datacomp)
+            enddo
+          case('6-311+G(D,P)','6-311+G**')
+            do iatom= 1, datamol%natom
+              call bs6311pgdp(iatom,ishell,datamol%numatomic,databasis,datacomp)
+            enddo
+          case('6-311++G')
+            do iatom= 1, datamol%natom
+              call bs6311ppg(iatom,ishell,datamol%numatomic,databasis,datacomp)
+            enddo
+          case('6-311++G(D)','6-311++G*')
+            do iatom= 1, datamol%natom
+              call bs6311ppgd(iatom,ishell,datamol%numatomic,databasis,datacomp)
+            enddo
+          case('6-311++G(D,P)','6-311++G**')
+            do iatom= 1, datamol%natom
+              call bs6311ppgdp(iatom,ishell,datamol%numatomic,databasis,datacomp)
             enddo
           case('CC-PVDZ')
-            do iatom= 1, natom
-              call bsccpvdz(iatom,ishell)
+            do iatom= 1, datamol%natom
+              call bsccpvdz(iatom,ishell,datamol%numatomic,databasis,datacomp)
             enddo
           case('CC-PVTZ')
-            do iatom= 1, natom
-              call bsccpvtz(iatom,ishell)
+            do iatom= 1, datamol%natom
+              call bsccpvtz(iatom,ishell,datamol%numatomic,databasis,datacomp)
             enddo
           case('CC-PVQZ')
-            do iatom= 1, natom
-              call bsccpvqz(iatom,ishell)
+            do iatom= 1, datamol%natom
+              call bsccpvqz(iatom,ishell,datamol%numatomic,databasis,datacomp)
             enddo
           case('D95V')
-            do iatom= 1, natom
-              call bsd95v(iatom,ishell)
+            do iatom= 1, datamol%natom
+              call bsd95v(iatom,ishell,datamol%numatomic,databasis,datacomp)
             enddo
           case('LANL2DZ')
-            if(.not.flagecp) then
-              if(master) write(*,'(" Error! ECP is not set!.")')
-              call iabort
+            if(.not.datajob%flagecp) then
+              if(datacomp%master) write(datacomp%iout,'(" Error! ECP is not set!.")')
+              call iabort(datacomp)
             endif
-            do iatom= 1, natom
-              if(numatomic(iatom) < 11) then
-                call bsd95v(iatom,ishell)
+            do iatom= 1, datamol%natom
+              if(datamol%numatomic(iatom) < 11) then
+                call bsd95v(iatom,ishell,datamol%numatomic,databasis,datacomp)
               else
-                call bslanl2dz(iatom,ishell)
+                call bslanl2dz(iatom,ishell,datamol%numatomic,databasis,datacomp)
               endif
             enddo
           case('GEN')
-            call readbasis
-            call setgenbasis(ishell)
+            call readbasis(atombasis,locgenshell,ngenshell,datagenbasis,datacomp)
+            call setgenbasis(atombasis,locgenshell,ngenshell,ishell,datajob%flagecp, &
+&                            datamol,databasis,datagenbasis,datacomp)
           case('CHECK')
-            call setcheckbasis
-            ishell= nshell
+            call setcheckbasis(databasis,datacomp)
+            ishell= databasis%nshell
           case default
-            write(*,'(" Error! Basis set ",a16,"is not supported.")') basis
-            call iabort
+            write(datacomp%iout,'(" Error! Basis set ",a16,"is not supported.")') databasis%basis
+            call iabort(datacomp)
         end select
 !
-        nshell= ishell
+        databasis%nshell= ishell
       endif
 !
-      call para_bcasti(nshell,1,0,mpi_comm)
-      call para_bcasti(locprim,nshell+1,0,mpi_comm)
-      call para_bcasti(locbf  ,nshell+1,0,mpi_comm)
-      call para_bcasti(locatom,nshell  ,0,mpi_comm)
+      call para_bcasti(databasis%nshell,1,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%locprim,databasis%nshell+1,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%locbf  ,databasis%nshell+1,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%locatom,databasis%nshell  ,0,datacomp%mpi_comm1)
 !
-      nao= locbf(nshell+1)
-      nprim= locprim(nshell+1)
+      databasis%nao= databasis%locbf(databasis%nshell+1)
+      databasis%nprim= databasis%locprim(databasis%nshell+1)
 !
-      call para_bcastr(ex   ,nprim,0,mpi_comm)
-      call para_bcastr(coeff,nprim,0,mpi_comm)
-      call para_bcasti(mprim,nshell,0,mpi_comm)
-      call para_bcasti(mbf  ,nshell,0,mpi_comm)
-      call para_bcasti(mtype,nshell,0,mpi_comm)
+      call para_bcastr(databasis%ex   ,databasis%nprim,0,datacomp%mpi_comm1)
+      call para_bcastr(databasis%coeff,databasis%nprim,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%mprim,databasis%nshell,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%mbf  ,databasis%nshell,0,datacomp%mpi_comm1)
+      call para_bcasti(databasis%mtype,databasis%nshell,0,datacomp%mpi_comm1)
 !
-      do i= 1,nprim
-        coeffinp(i)= coeff(i)
+      do i= 1,databasis%nprim
+        databasis%coeffinp(i)= databasis%coeff(i)
       enddo
-!
-      call bsnrmlz
+      call bsnrmlz(databasis)
       return
 end
 
 
-!---------------------
-  subroutine bsnrmlz
-!---------------------
+!--------------------------------
+  subroutine bsnrmlz(databasis)
+!--------------------------------
 !
 ! Normalize basis functions
 !
-      use modbasis, only : nshell, mtype, ex, coeff, locprim, mprim
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(inout) :: databasis
       integer :: ishell
 !
 !$OMP parallel do
-      do ishell= 1,nshell
-        call bsnor(ishell,ex,coeff,locprim,mprim,mtype)
+      do ishell= 1,databasis%nshell
+        call bsnor(ishell,databasis%ex,databasis%coeff,databasis%locprim, &
+&                  databasis%mprim,databasis%mtype)
       enddo
 !$OMP end parallel do
       return
 end
-
 
 !--------------------------------------------------------
   subroutine bsnor(ishell,ex,coeff,locprim,mprim,mtype)
@@ -198,61 +249,119 @@ end
       return
 end
 
-
-!-----------------------
-  subroutine bsnrmlz_g
-!-----------------------
+!-----------------------------------------------------------------------
+  subroutine basisparam(ishell,mtype,numprim,iatom,databasis,datacomp)
+!-----------------------------------------------------------------------
 !
-! Normalize basis functions for guess calculation
+! Set basis set parameters
 !
-      use modguess, only : nshell_g, mtype_g, ex_g, coeff_g, locprim_g, mprim_g
+      use modtype, only : typebasis, typecomp
+      use modparam, only : mxprim, mxshell, mxao
       implicit none
-      integer :: ishell
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: ishell, mtype, numprim, iatom
 !
-!$OMP parallel do
-      do ishell= 1,nshell_g
-        call bsnor(ishell,ex_g,coeff_g,locprim_g,mprim_g,mtype_g)
-      enddo
-!$OMP end parallel do
+      databasis%mtype(ishell)= mtype
+      databasis%mprim(ishell)= numprim
+      databasis%locprim(ishell+1)= databasis%locprim(ishell)+numprim
+      databasis%locatom(ishell)= iatom
+      select case(mtype)
+! S function
+        case(0)
+          databasis%mbf(ishell)= 1
+          databasis%locbf(ishell+1) = databasis%locbf(ishell)+1
+! P function
+        case(1)
+          databasis%mbf(ishell)= 3
+          databasis%locbf(ishell+1) = databasis%locbf(ishell)+3
+! D function
+        case(2)
+          if(databasis%spher) then
+            databasis%mbf(ishell)= 5
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+5
+          else
+            databasis%mbf(ishell)= 6
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+6
+          endif
+! F function
+        case(3)
+          if(databasis%spher) then
+            databasis%mbf(ishell)= 7
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+7
+          else
+            databasis%mbf(ishell)= 10
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+10
+          endif
+! G function
+        case(4)
+          if(databasis%spher) then
+            databasis%mbf(ishell)= 9
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+9
+          else
+            databasis%mbf(ishell)= 15
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+15
+          endif
+! H function
+        case(5)
+          if(databasis%spher) then
+            databasis%mbf(ishell)= 11
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+11
+          else
+            databasis%mbf(ishell)= 21
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+21
+          endif
+! I function
+        case(6)
+          if(databasis%spher) then
+            databasis%mbf(ishell)= 13
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+13
+          else
+            databasis%mbf(ishell)= 28
+            databasis%locbf(ishell+1)= databasis%locbf(ishell)+28
+          endif
+        case default
+          write(datacomp%iout,'(" Error! This program supports up to i function.")')
+          call iabort(datacomp)
+      end select
+!
+      if(ishell > mxshell) then
+        write(datacomp%iout,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
+        write(datacomp%iout,'(" Change mxshell in module.F90 and re-build SMASH.")')
+        call iabort(datacomp)
+      endif
+      if(databasis%locprim(ishell+1) > mxprim ) then
+        write(datacomp%iout,'(" Error! The number of primitive basis functions exceeds mxprim", &
+&                            i6,".")')mxprim
+        write(datacomp%iout,'(" Change mxprim in module.F90 and re-build SMASH.")')
+        call iabort(datacomp)
+      endif
+      if(databasis%locbf(ishell+1) > mxao ) then
+        write(datacomp%iout,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
+        write(datacomp%iout,'(" Change mxao in module.F90 and re-build SMASH.")')
+        call iabort(datacomp)
+      endif
       return
 end
 
-
-!---------------------------
-  subroutine bsnrmlz_gcore
-!---------------------------
-!
-! Normalize basis functions for guess calculation of core orbitals
-!
-      use modguess, only : nshell_gcore, mtype_gcore, ex_gcore, coeff_gcore, &
-&                          locprim_gcore, mprim_gcore
-      implicit none
-      integer :: ishell
-!
-!$OMP parallel do
-      do ishell= 1,nshell_gcore
-        call bsnor(ishell,ex_gcore,coeff_gcore,locprim_gcore,mprim_gcore,mtype_gcore)
-      enddo
-!$OMP end parallel do
-      return
-end
-
-
-!---------------------------------
-  subroutine setgenbasis(ishell)
-!---------------------------------
+!---------------------------------------------------------------------------
+  subroutine setgenbasis(atombasis,locgenshell,ngenshell,ishell,flagecp, &
+&                        datamol,databasis,datagenbasis,datacomp)
+!---------------------------------------------------------------------------
 !
 ! Driver of setting basis functions from input file
 ! This routine must be called only from master node.
 !
-      use modmolecule, only : natom, numatomic
-      use modbasis, only : locprim, locbf, locatom, mprim, mbf, mtype, &
-&                          ex, coeff, locgenprim, mgenprim, mgentype, &
-&                          locgenshell, ngenshell, exgen, coeffgen, atombasis, spher
-      use modecp, only : flagecp
+      use modtype, only : typemol, typebasis, typecomp
       implicit none
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(inout) :: databasis
+      type(typebasis),intent(in) :: datagenbasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: locgenshell(-9:112), ngenshell(-9:112)
       integer,intent(out) :: ishell
       integer :: iatom, nn, ii, jj, ll, lprim
+      character(len=32),intent(in) :: atombasis(-9:112)
       character(len=3) :: table(-9:112)= &
 &     (/'Bq9','Bq8','Bq7','Bq6','Bq5','Bq4','Bq3','Bq2','Bq ','X  ',&
 &       'H  ','He ','Li ','Be ','B  ','C  ','N  ','O  ','F  ','Ne ','Na ','Mg ','Al ','Si ','P  ',&
@@ -262,124 +371,93 @@ end
 &       'Pm ','Sm ','Eu ','Gd ','Tb ','Dy ','Ho ','Er ','Tm ','Yb ','Lu ','Hf ','Ta ','W  ','Re ',&
 &       'Os ','Ir ','Pt ','Au ','Hg ','Tl ','Pb ','Bi ','Po ','At ','Rn ','Fr ','Ra ','Ac ','Th ',&
 &       'Pa ','U  ','Np ','Pu ','Am ','Cm ','Bk ','Cf ','Es ','Fm ','Md ','No ','Lr ','Rf ','Db ',&
-&       'Sg ','Bh ','Hs ','Mt ','Uun','Uuu','Uub'/)
+&       'Sg ','Bh ','Hs ','Mt ','Ds ','Rg ','Cn '/)
+      logical,intent(in) :: flagecp
 !
-      locprim(1)=0
-      locbf(1)=0
-      ishell= 0
-!
-      do iatom= 1,natom
-        nn= numatomic(iatom)
+      do iatom= 1,datamol%natom
+        nn= datamol%numatomic(iatom)
         select case(atombasis(nn))
           case('STO-3G')
-            call bssto3g(iatom,ishell)
+            call bssto3g(iatom,ishell,datamol%numatomic,databasis,datacomp)
           case('3-21G')
-            call bs321g(iatom,ishell)
+            call bs321g(iatom,ishell,datamol%numatomic,databasis,datacomp)
           case('6-31G')
-            call bs631g(iatom,ishell)
+            call bs631g(iatom,ishell,datamol%numatomic,databasis,datacomp)
           case('6-31G(D)','6-31G*')
-            call bs631gd(iatom,ishell)
+            call bs631gd(iatom,ishell,datamol%numatomic,databasis,datacomp)
           case('6-31G(D,P)','6-31G**')
-            call bs631gdp(iatom,ishell)
+            call bs631gdp(iatom,ishell,datamol%numatomic,databasis,datacomp)
+          case('6-31+G')
+            call bs631pg(iatom,ishell,datamol%numatomic,databasis,datacomp)
+          case('6-31+G(D)','6-31+G*')
+            call bs631pgd(iatom,ishell,datamol%numatomic,databasis,datacomp)
+          case('6-31+G(D,P)','6-31+G**')
+            call bs631pgdp(iatom,ishell,datamol%numatomic,databasis,datacomp)
+          case('6-31++G')
+            call bs631ppg(iatom,ishell,datamol%numatomic,databasis,datacomp)
+          case('6-31++G(D)','6-31++G*')
+            call bs631ppgd(iatom,ishell,datamol%numatomic,databasis,datacomp)
+          case('6-31++G(D,P)','6-31++G**')
+            call bs631ppgdp(iatom,ishell,datamol%numatomic,databasis,datacomp)
           case('6-311G')
-            call bs6311g(iatom,ishell)
+            call bs6311g(iatom,ishell,datamol%numatomic,databasis,datacomp)
           case('6-311G(D)','6-311G*')
-            call bs6311gd(iatom,ishell)
+            call bs6311gd(iatom,ishell,datamol%numatomic,databasis,datacomp)
           case('6-311G(D,P)','6-311G**')
-            call bs6311gdp(iatom,ishell)
+            call bs6311gdp(iatom,ishell,datamol%numatomic,databasis,datacomp)
+          case('6-311+G')
+            call bs6311pg(iatom,ishell,datamol%numatomic,databasis,datacomp)
+          case('6-311+G(D)','6-311+G*')
+            call bs6311pgd(iatom,ishell,datamol%numatomic,databasis,datacomp)
+          case('6-311+G(D,P)','6-311+G**')
+            call bs6311pgdp(iatom,ishell,datamol%numatomic,databasis,datacomp)
+          case('6-311++G')
+            call bs6311ppg(iatom,ishell,datamol%numatomic,databasis,datacomp)
+          case('6-311++G(D)','6-311++G*')
+            call bs6311ppgd(iatom,ishell,datamol%numatomic,databasis,datacomp)
+          case('6-311++G(D,P)','6-311++G**')
+            call bs6311ppgdp(iatom,ishell,datamol%numatomic,databasis,datacomp)
           case('CC-PVDZ')
-            call bsccpvdz(iatom,ishell)
+            call bsccpvdz(iatom,ishell,datamol%numatomic,databasis,datacomp)
           case('CC-PVTZ')
-            call bsccpvtz(iatom,ishell)
+            call bsccpvtz(iatom,ishell,datamol%numatomic,databasis,datacomp)
           case('CC-PVQZ')
-            call bsccpvqz(iatom,ishell)
+            call bsccpvqz(iatom,ishell,datamol%numatomic,databasis,datacomp)
           case('D95V')
-            call bsd95v(iatom,ishell)
+            call bsd95v(iatom,ishell,datamol%numatomic,databasis,datacomp)
           case('LANL2DZ')
             if(.not.flagecp) then
-              write(*,'(" Error! ECP is not set!.")')
-              call iabort
+              write(datacomp%iout,'(" Error! ECP is not set!.")')
+              call iabort(datacomp)
             endif
             if(nn > 0) then
               if(nn < 11) then
-                call bsd95v(iatom,ishell)
+                call bsd95v(iatom,ishell,datamol%numatomic,databasis,datacomp)
               else
-                call bslanl2dz(iatom,ishell)
+                call bslanl2dz(iatom,ishell,datamol%numatomic,databasis,datacomp)
               endif
             endif
           case('')
             if((nn > 0).and.(ngenshell(nn) == 0)) then
-              write(*,'(" Error! Basis set for ",a3,"is not set.")')table(nn)
-              call iabort
+              write(datacomp%iout,'(" Error! Basis set for ",a3,"is not set.")')table(nn)
+              call iabort(datacomp)
             endif
           case default
-            write(*,'(" Error! This program is not support the basis set, ",a12,".")')atombasis(nn)
-            call iabort
+            write(datacomp%iout,'(" Error! This program is not support the basis set, ",a12,".")') &
+&                 atombasis(nn)
+            call iabort(datacomp)
         end select
 !
         ll= locgenshell(nn)
         do ii= 1,ngenshell(nn)
           ishell= ishell+1 
-          lprim= locgenprim(ll+ii)
-          do jj= 1,mgenprim(ll+ii)
-            ex(locprim(ishell)+jj)= exgen(lprim+jj)
-            coeff(locprim(ishell)+jj)= coeffgen(lprim+jj)
+          lprim= datagenbasis%locprim(ll+ii)
+          do jj= 1,datagenbasis%mprim(ll+ii)
+            databasis%ex(databasis%locprim(ishell)+jj)= datagenbasis%ex(lprim+jj)
+            databasis%coeff(databasis%locprim(ishell)+jj)= datagenbasis%coeff(lprim+jj)
           enddo
-          mprim(ishell)= mgenprim(ll+ii)
-          mtype(ishell)= mgentype(ll+ii)
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+mgenprim(ll+ii)
-          select case(mgentype(ll+ii))
-            case(0)
-              mbf(ishell)= 1
-              locbf(ishell+1)= locbf(ishell)+1
-            case(1)
-              mbf(ishell)= 3
-              locbf(ishell+1)= locbf(ishell)+3
-            case(2)
-              if(spher) then
-                mbf(ishell)= 5
-                locbf(ishell+1)= locbf(ishell)+5
-              else
-                mbf(ishell)= 6
-                locbf(ishell+1)= locbf(ishell)+6
-              endif
-            case(3)
-              if(spher) then
-                mbf(ishell)= 7
-                locbf(ishell+1)= locbf(ishell)+7
-              else
-                mbf(ishell)= 10
-                locbf(ishell+1)= locbf(ishell)+10
-              endif
-            case(4)
-              if(spher) then
-                mbf(ishell)= 9
-                locbf(ishell+1)= locbf(ishell)+9
-              else
-                mbf(ishell)= 15
-                locbf(ishell+1)= locbf(ishell)+15
-              endif
-            case(5)
-              if(spher) then
-                mbf(ishell)= 11
-                locbf(ishell+1)= locbf(ishell)+11
-              else
-                mbf(ishell)= 21
-                locbf(ishell+1)= locbf(ishell)+21
-              endif
-            case(6)
-              if(spher) then
-                mbf(ishell)= 13
-                locbf(ishell+1)= locbf(ishell)+13
-              else
-                mbf(ishell)= 28
-                locbf(ishell+1)= locbf(ishell)+28
-              endif
-            case default
-              write(*,'(" Error! This program supports up to i function.")')
-              call iabort
-          end select
+          call basisparam(ishell,datagenbasis%mtype(ll+ii),datagenbasis%mprim(ll+ii),iatom, &
+&                         databasis,datacomp)
         enddo
       enddo
 !
@@ -387,17 +465,18 @@ end
 end
 
 
-!-----------------------------------
-  subroutine bssto3g(iatom,ishell)
-!-----------------------------------
+!----------------------------------------------------------------
+  subroutine bssto3g(iatom,ishell,numatomic,databasis,datacomp)
+!----------------------------------------------------------------
 !
 ! Set basis functions of STO-3G
 !
-      use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mbf, mtype, spher
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
       implicit none
-      integer,intent(in) :: iatom
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       integer :: j
       integer :: is(54)=(/0,3, 6,12,18,24,30,36,42,48, 54,63,72,81,90,99,108,117, &
@@ -811,8 +890,8 @@ end
 &        0.6555473627D+00, 0.2865732590D+00, 0.1250662138D+00, 0.6686785577D+00, 0.3052468245D+00/)
 !
       if(numatomic(iatom) > 54) then
-        write(*,'(" Error! This program supports H - Xe STO-3G basis set.")')
-        call iabort
+        write(datacomp%iout,'(" Error! This program supports H - Xe STO-3G basis set.")')
+        call iabort(datacomp)
       elseif(numatomic(iatom) <= 0) then
         return
       endif
@@ -821,15 +900,10 @@ end
 !
       ishell= ishell+1
       do j= 1,3
-        ex(locprim(ishell)+j)= exsto(is(numatomic(iatom))+j)
-        coeff(locprim(ishell)+j)= cssto(is(numatomic(iatom))+j)
+        databasis%ex(databasis%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j)
+        databasis%coeff(databasis%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j)
       enddo
-      mprim(ishell)= 3
-      mbf(ishell)= 1
-      mtype(ishell)= 0
-      locatom(ishell)= iatom
-      locprim(ishell+1)= locprim(ishell)+3
-      locbf(ishell+1) = locbf(ishell)+1
+      call basisparam(ishell,0,3,iatom,databasis,datacomp)
 !
 ! Set 2SP functions
 !
@@ -837,27 +911,17 @@ end
 ! S function
         ishell= ishell+1
         do j= 1,3
-          ex(locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
-          coeff(locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+3)
+          databasis%ex(databasis%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
+          databasis%coeff(databasis%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+3)
         enddo
-        mprim(ishell)= 3
-        mbf(ishell)= 1
-        mtype(ishell)= 0
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+3
-        locbf(ishell+1) = locbf(ishell)+1
+        call basisparam(ishell,0,3,iatom,databasis,datacomp)
 ! P function
         ishell= ishell+1
         do j= 1,3
-          ex(locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
-          coeff(locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j)
+          databasis%ex(databasis%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
+          databasis%coeff(databasis%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j)
         enddo
-        mprim(ishell)= 3
-        mbf(ishell)= 3
-        mtype(ishell)= 1
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+3
-        locbf(ishell+1) = locbf(ishell)+3
+        call basisparam(ishell,1,3,iatom,databasis,datacomp)
       endif
 !
 ! Set 3SP functions
@@ -866,27 +930,17 @@ end
 ! S function
         ishell= ishell+1
         do j= 1,3
-          ex(locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
-          coeff(locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+6)
+          databasis%ex(databasis%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
+          databasis%coeff(databasis%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+6)
         enddo
-        mprim(ishell)= 3
-        mbf(ishell)= 1
-        mtype(ishell)= 0
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+3
-        locbf(ishell+1) = locbf(ishell)+1
+        call basisparam(ishell,0,3,iatom,databasis,datacomp)
 ! P function
         ishell= ishell+1
         do j= 1,3
-          ex(locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
-          coeff(locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+3)
+          databasis%ex(databasis%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
+          databasis%coeff(databasis%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+3)
         enddo
-        mprim(ishell)= 3
-        mbf(ishell)= 3
-        mtype(ishell)= 1
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+3
-        locbf(ishell+1) = locbf(ishell)+3
+        call basisparam(ishell,1,3,iatom,databasis,datacomp)
       endif
 !
 ! Set 4SP functions
@@ -895,27 +949,17 @@ end
 ! S function
         ishell= ishell+1
         do j= 1,3
-          ex(locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
-          coeff(locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+9)
+          databasis%ex(databasis%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
+          databasis%coeff(databasis%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+9)
         enddo
-        mprim(ishell)= 3
-        mbf(ishell)= 1
-        mtype(ishell)= 0
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+3
-        locbf(ishell+1) = locbf(ishell)+1
+        call basisparam(ishell,0,3,iatom,databasis,datacomp)
 ! P function
         ishell= ishell+1
         do j= 1,3
-          ex(locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
-          coeff(locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+6)
+          databasis%ex(databasis%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
+          databasis%coeff(databasis%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+6)
         enddo
-        mprim(ishell)= 3
-        mbf(ishell)= 3
-        mtype(ishell)= 1
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+3
-        locbf(ishell+1) = locbf(ishell)+3
+        call basisparam(ishell,1,3,iatom,databasis,datacomp)
       endif
 !
 ! Set 3D functions
@@ -924,20 +968,10 @@ end
 ! D function
         ishell= ishell+1
         do j= 1,3
-          ex(locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j)
-          coeff(locprim(ishell)+j)= cdsto(id(numatomic(iatom))+j)
+          databasis%ex(databasis%locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j)
+          databasis%coeff(databasis%locprim(ishell)+j)= cdsto(id(numatomic(iatom))+j)
         enddo
-        mprim(ishell)= 3
-        mtype(ishell)= 2
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+3
-        if(spher) then
-          mbf(ishell)= 5
-          locbf(ishell+1) = locbf(ishell)+5
-        else
-          mbf(ishell)= 6
-          locbf(ishell+1) = locbf(ishell)+6
-        endif
+        call basisparam(ishell,2,3,iatom,databasis,datacomp)
       endif
 !
 ! Set 5SP functions
@@ -946,27 +980,17 @@ end
 ! S function
         ishell= ishell+1
         do j= 1,3
-          ex(locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+12)
-          coeff(locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+12)
+          databasis%ex(databasis%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+12)
+          databasis%coeff(databasis%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+12)
         enddo
-        mprim(ishell)= 3
-        mbf(ishell)= 1
-        mtype(ishell)= 0
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+3
-        locbf(ishell+1) = locbf(ishell)+1
+        call basisparam(ishell,0,3,iatom,databasis,datacomp)
 ! P function
         ishell= ishell+1
         do j= 1,3
-          ex(locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+12)
-          coeff(locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+9)
+          databasis%ex(databasis%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+12)
+          databasis%coeff(databasis%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+9)
         enddo
-        mprim(ishell)= 3
-        mbf(ishell)= 3
-        mtype(ishell)= 1
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+3
-        locbf(ishell+1) = locbf(ishell)+3
+        call basisparam(ishell,1,3,iatom,databasis,datacomp)
       endif
 !
 ! Set 3D functions
@@ -975,52 +999,33 @@ end
 ! D function
         ishell= ishell+1
         do j= 1,3
-          ex(locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j+3)
-          coeff(locprim(ishell)+j)= cdsto(id(numatomic(iatom))+j+3)
+          databasis%ex(databasis%locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j+3)
+          databasis%coeff(databasis%locprim(ishell)+j)= cdsto(id(numatomic(iatom))+j+3)
         enddo
-        mprim(ishell)= 3
-        mtype(ishell)= 2
-        locatom(ishell)= iatom
-        locprim(ishell+1)= locprim(ishell)+3
-        if(spher) then
-          mbf(ishell)= 5
-          locbf(ishell+1) = locbf(ishell)+5
-        else
-          mbf(ishell)= 6
-          locbf(ishell+1) = locbf(ishell)+6
-        endif
+        call basisparam(ishell,2,3,iatom,databasis,datacomp)
       endif
 !
-      if(ishell > mxshell) then
-        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
-        call iabort
-      endif
-      if(locprim(ishell+1) > mxprim ) then
-        write(*,'(" Error! The number of primitive basis functions exceeds mxprim",i6,".")')mxprim
-        call iabort
-      endif
-      if(locbf(ishell+1) > mxao ) then
-        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
-        call iabort
-      endif
       return
 end
 
 
-!-------------------------------
-  subroutine setbasis_g(itype)
-!-------------------------------
+!---------------------------------------------------------------------------------------------
+  subroutine setbasis_g(nao_v,nshell_v,itype,datajob,datamol,databasis,dataguessbs,datacomp)
+!---------------------------------------------------------------------------------------------
 !
 ! Driver of setting basis functions for guess calculations
 !
 ! In : itype =1 (For normal extended Huckel calculation)
 !            =2 (For extended Huckel calculation of only core orbitals)
 !
-      use modmolecule, only : natom, numatomic
-      use modguess, only : locprim_g, locbf_g, nshell_v, nao_v, nprim_v, nshell_g, &
-&                          nao_g, nprim_g, nao_c, &
-&                          locprim_gcore, locbf_gcore, nao_gcore, nprim_gcore, nshell_gcore
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
+      type(typebasis),intent(inout) :: dataguessbs
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(out) :: nao_v, nshell_v
       integer,intent(in) :: itype
       integer :: ishell, iatom
 !
@@ -1030,77 +1035,100 @@ end
 !
         case(1)
           ishell= 0
-          locprim_g(1)=0
-          locbf_g(1)=0
+          dataguessbs%locprim(1)=0
+          dataguessbs%locbf(1)=0
 !
 ! Set valence basis functions
 !
-          do iatom= 1,natom
-            if((numatomic(iatom) >= 1).and.(numatomic(iatom) <= 54)) then
-              call bssto3g_g(iatom,ishell,1)
-            elseif(numatomic(iatom) >= 55) then
-              call bshuzmini6_g(iatom,ishell,1)
-            endif
+          do iatom= 1,datamol%natom
+            select case(datamol%numatomic(iatom))
+              case(1:20)
+                call bsscaledmini_g(iatom,ishell,1,datajob%flagecp,datamol%numatomic, &
+&                                   databasis,dataguessbs,datacomp)
+              case(21:36)
+                call bshuzmini4_g(iatom,ishell,1,datajob%flagecp,datamol%numatomic, &
+&                                 databasis,dataguessbs,datacomp)
+              case(37:54)
+                call bshuzmini5_g(iatom,ishell,1,datajob%flagecp,datamol%numatomic, &
+&                                 databasis,dataguessbs,datacomp)
+              case(55:)
+                call bshuzmini6_g(iatom,ishell,1,datajob%flagecp,datamol%numatomic, &
+&                                 databasis,dataguessbs,datacomp)
+            end select
           enddo
           nshell_v= ishell
-          nao_v   = locbf_g(ishell+1)
-          nprim_v = locprim_g(ishell+1)
+          nao_v   = dataguessbs%locbf(ishell+1)
 !
 ! Set core basis functions
 !
-          do iatom= 1,natom
-            if((numatomic(iatom) >= 1).and.(numatomic(iatom) <= 54)) then
-              call bssto3g_g(iatom,ishell,2)
-            elseif(numatomic(iatom) >= 55) then
-              call bshuzmini6_g(iatom,ishell,2)
-            endif
+          do iatom= 1,datamol%natom
+            select case(datamol%numatomic(iatom))
+              case(1:20)
+                call bsscaledmini_g(iatom,ishell,2,datajob%flagecp,datamol%numatomic, &
+&                                   databasis,dataguessbs,datacomp)
+              case(21:36)
+                call bshuzmini4_g(iatom,ishell,2,datajob%flagecp,datamol%numatomic, &
+&                                 databasis,dataguessbs,datacomp)
+              case(37:54)
+                call bshuzmini5_g(iatom,ishell,2,datajob%flagecp,datamol%numatomic, &
+&                                 databasis,dataguessbs,datacomp)
+              case(55:)
+                call bshuzmini6_g(iatom,ishell,2,datajob%flagecp,datamol%numatomic, &
+&                               databasis,dataguessbs,datacomp)
+            end select
           enddo
-          nshell_g= ishell
-          nao_g   = locbf_g(ishell+1)
-          nao_c   = nao_g-nao_v
-          nprim_g = locprim_g(ishell+1)
-          call bsnrmlz_g
+          dataguessbs%nshell= ishell
+          dataguessbs%nao   = dataguessbs%locbf(ishell+1)
+          dataguessbs%nprim = dataguessbs%locprim(ishell+1)
+          call bsnrmlz(dataguessbs)
 !
 ! For extended Huckel calculation of only core orbitals
 !
         case(2)
           ishell= 0
-          locprim_gcore(1)=0
-          locbf_gcore(1)=0
-          do iatom= 1,natom
-            if((numatomic(iatom) >= 1).and.(numatomic(iatom) <= 54)) then
-              call bssto3g_g(iatom,ishell,3)
-            elseif(numatomic(iatom) >= 55) then
-              call bshuzmini6_g(iatom,ishell,3)
-            endif
+          dataguessbs%locprim(1)=0
+          dataguessbs%locbf(1)=0
+          do iatom= 1,datamol%natom
+            select case(datamol%numatomic(iatom))
+              case(1:20)
+                call bsscaledmini_g(iatom,ishell,3,datajob%flagecp,datamol%numatomic, &
+&                                   databasis,dataguessbs,datacomp)
+              case(21:36)
+                call bshuzmini4_g(iatom,ishell,3,datajob%flagecp,datamol%numatomic, &
+&                                 databasis,dataguessbs,datacomp)
+              case(37:54)
+                call bshuzmini5_g(iatom,ishell,3,datajob%flagecp,datamol%numatomic, &
+&                                 databasis,dataguessbs,datacomp)
+              case(55:)
+                call bshuzmini6_g(iatom,ishell,3,datajob%flagecp,datamol%numatomic, &
+&                               databasis,dataguessbs,datacomp)
+            end select
           enddo
-          nshell_gcore= ishell
-          nao_gcore   = locbf_gcore(ishell+1)
-          nprim_gcore = locprim_gcore(ishell+1)
-          call bsnrmlz_gcore
+          dataguessbs%nshell= ishell
+          dataguessbs%nao   = dataguessbs%locbf(ishell+1)
+          call bsnrmlz(dataguessbs)
       end select
 !
       return
 end
 
 
-!-------------------------------------------
-  subroutine bssto3g_g(iatom,ishell,itype)
-!-------------------------------------------
+!--------------------------------------------------------------------------------------------
+  subroutine bssto3g_g(iatom,ishell,itype,flagecp,numatomic,databasis,dataguessbs,datacomp)
+!--------------------------------------------------------------------------------------------
 !
 ! Set basis functions of STO-3G for guess calculation
 ! itype = 1 : valence functions
 !       = 2 : core functions
 !       = 3 : core functions for core calculation
 !
-      use modmolecule, only : numatomic
-      use modguess, only : ex_g, coeff_g, locprim_g, locbf_g, locatom_g, mprim_g, mbf_g, &
-&                          mtype_g, spher_g, ex_gcore, coeff_gcore, locprim_gcore, &
-&                          locbf_gcore, locatom_gcore, mprim_gcore, mbf_gcore, mtype_gcore
-      use modparam, only : mxao, mxshell, mxprim
-      use modecp, only : flagecp, izcore
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
       implicit none
-      integer,intent(in) :: iatom, itype
+      type(typebasis),intent(in) :: databasis
+      type(typebasis),intent(inout) :: dataguessbs
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, itype, numatomic(mxatom)
       integer,intent(inout):: ishell
       integer :: j
       integer :: is(54)=(/0,3, 6,12,18,24,30,36,42,48, 54,63,72,81,90,99,108,117, &
@@ -1512,6 +1540,7 @@ end
 &        0.1250662138D+00, 0.6686785577D+00, 0.3052468245D+00, 0.2197679508D+00, 0.6555473627D+00,&
 &        0.2865732590D+00, 0.1250662138D+00, 0.6686785577D+00, 0.3052468245D+00, 0.2197679508D+00,&
 &        0.6555473627D+00, 0.2865732590D+00, 0.1250662138D+00, 0.6686785577D+00, 0.3052468245D+00/)
+      logical,intent(in) :: flagecp
 !
 ! Set valence basis functions
 !
@@ -1521,160 +1550,95 @@ end
           case(1:2)
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j)
-              coeff_g(locprim_g(ishell)+j)= cssto(is(numatomic(iatom))+j)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j)
             enddo
-            mprim_g(ishell)= 3
-            mbf_g(ishell)= 1
-            mtype_g(ishell)= 0
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            locbf_g(ishell+1) = locbf_g(ishell)+1
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
 ! Li-Ne
           case(3:10)
 !   S function
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
-              coeff_g(locprim_g(ishell)+j)= cssto(is(numatomic(iatom))+j+3)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+3)
             enddo
-            mprim_g(ishell)= 3
-            mbf_g(ishell)= 1
-            mtype_g(ishell)= 0
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            locbf_g(ishell+1) = locbf_g(ishell)+1
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
 !   P function
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
-              coeff_g(locprim_g(ishell)+j)= cpsto(ip(numatomic(iatom))+j)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j)
             enddo
-            mprim_g(ishell)= 3
-            mbf_g(ishell)= 3
-            mtype_g(ishell)= 1
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            locbf_g(ishell+1) = locbf_g(ishell)+3
+            call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
 ! Na-Ar
           case(11:18)
 !   S function
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
-              coeff_g(locprim_g(ishell)+j)= cssto(is(numatomic(iatom))+j+6)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+6)
             enddo
-            mprim_g(ishell)= 3
-            mbf_g(ishell)= 1
-            mtype_g(ishell)= 0
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            locbf_g(ishell+1) = locbf_g(ishell)+1
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
 !   P function
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
-              coeff_g(locprim_g(ishell)+j)= cpsto(ip(numatomic(iatom))+j+3)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+3)
             enddo
-            mprim_g(ishell)= 3
-            mbf_g(ishell)= 3
-            mtype_g(ishell)= 1
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            locbf_g(ishell+1) = locbf_g(ishell)+3
+            call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
 ! K -Kr
           case(19:36)
 !   S function
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
-              coeff_g(locprim_g(ishell)+j)= cssto(is(numatomic(iatom))+j+9)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+9)
             enddo
-            mprim_g(ishell)= 3
-            mbf_g(ishell)= 1
-            mtype_g(ishell)= 0
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            locbf_g(ishell+1) = locbf_g(ishell)+1
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
 !   P function
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
-              coeff_g(locprim_g(ishell)+j)= cpsto(ip(numatomic(iatom))+j+6)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+6)
             enddo
-            mprim_g(ishell)= 3
-            mbf_g(ishell)= 3
-            mtype_g(ishell)= 1
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            locbf_g(ishell+1) = locbf_g(ishell)+3
+            call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
 !   D function
             if((numatomic(iatom) >= 21).and.(numatomic(iatom) <= 30)) then
               ishell= ishell+1
               do j= 1,3
-                ex_g(locprim_g(ishell)+j)= exdsto(id(numatomic(iatom))+j)
-                coeff_g(locprim_g(ishell)+j)= cdsto(id(numatomic(iatom))+j)
+                dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j)
+                dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cdsto(id(numatomic(iatom))+j)
               enddo
-              mprim_g(ishell)= 3
-              mtype_g(ishell)= 2
-              locatom_g(ishell)= iatom
-              locprim_g(ishell+1)= locprim_g(ishell)+3
-              if(spher_g) then
-                mbf_g(ishell)= 5
-                locbf_g(ishell+1) = locbf_g(ishell)+5
-              else
-                mbf_g(ishell)= 6
-                locbf_g(ishell+1) = locbf_g(ishell)+6
-              endif
+              call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
             endif
 ! Rb-Xe
           case(37:54)
 !   S function
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+12)
-              coeff_g(locprim_g(ishell)+j)= cssto(is(numatomic(iatom))+j+12)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+12)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+12)
             enddo
-            mprim_g(ishell)= 3
-            mbf_g(ishell)= 1
-            mtype_g(ishell)= 0
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            locbf_g(ishell+1) = locbf_g(ishell)+1
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
 !   P function
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+12)
-              coeff_g(locprim_g(ishell)+j)= cpsto(ip(numatomic(iatom))+j+9)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+12)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+9)
             enddo
-            mprim_g(ishell)= 3
-            mbf_g(ishell)= 3
-            mtype_g(ishell)= 1
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            locbf_g(ishell+1) = locbf_g(ishell)+3
+            call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
 !   D function
             if((numatomic(iatom) >= 39).and.(numatomic(iatom) <= 48)) then
               ishell= ishell+1
               do j= 1,3
-                ex_g(locprim_g(ishell)+j)= exdsto(id(numatomic(iatom))+j+3)
-                coeff_g(locprim_g(ishell)+j)= cdsto(id(numatomic(iatom))+j+3)
+                dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j+3)
+                dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cdsto(id(numatomic(iatom))+j+3)
               enddo
-              mprim_g(ishell)= 3
-              mtype_g(ishell)= 2
-              locatom_g(ishell)= iatom
-              locprim_g(ishell+1)= locprim_g(ishell)+3
-              if(spher_g) then
-                mbf_g(ishell)= 5
-                locbf_g(ishell+1) = locbf_g(ishell)+5
-              else
-                mbf_g(ishell)= 6
-                locbf_g(ishell+1) = locbf_g(ishell)+6
-              endif
+              call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
             endif
           case default
-            write(*,'(" Error! This program supports H - Xe basis set in subroutine bssto3g_g.")')
-            call iabort
+            write(datacomp%iout,'(" Error! This program supports H - Xe basis set in subroutine bssto3g_g.")')
+            call iabort(datacomp)
         endselect
 !
 ! Set core basis functions
@@ -1682,147 +1646,92 @@ end
       elseif(itype == 2) then
 ! Set 1S functions
         if(numatomic(iatom) >= 3) then
-          if(.not.flagecp.or.(izcore(iatom) < 2))then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 2))then
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j)
-              coeff_g(locprim_g(ishell)+j)= cssto(is(numatomic(iatom))+j)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j)
             enddo
-            mprim_g(ishell)= 3
-            mbf_g(ishell)= 1
-            mtype_g(ishell)= 0
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            locbf_g(ishell+1) = locbf_g(ishell)+1
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
           endif
         endif
 ! Set 2SP functions
         if(numatomic(iatom) >= 11) then
-          if(.not.flagecp.or.(izcore(iatom) < 10))then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 10))then
 !   S function
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
-              coeff_g(locprim_g(ishell)+j)= cssto(is(numatomic(iatom))+j+3)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+3)
             enddo
-            mprim_g(ishell)= 3
-            mbf_g(ishell)= 1
-            mtype_g(ishell)= 0
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            locbf_g(ishell+1) = locbf_g(ishell)+1
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
 !   P function
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
-              coeff_g(locprim_g(ishell)+j)= cpsto(ip(numatomic(iatom))+j)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j)
             enddo
-            mprim_g(ishell)= 3
-            mbf_g(ishell)= 3
-            mtype_g(ishell)= 1
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            locbf_g(ishell+1) = locbf_g(ishell)+3
+            call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
           endif
         endif
 ! Set 3SPD functions
         if(numatomic(iatom) >= 19) then
-          if(.not.flagecp.or.(izcore(iatom) < 18))then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 18))then
 !   S function
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
-              coeff_g(locprim_g(ishell)+j)= cssto(is(numatomic(iatom))+j+6)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+6)
             enddo
-            mprim_g(ishell)= 3
-            mbf_g(ishell)= 1
-            mtype_g(ishell)= 0
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            locbf_g(ishell+1) = locbf_g(ishell)+1
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
 !   P function
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
-              coeff_g(locprim_g(ishell)+j)= cpsto(ip(numatomic(iatom))+j+3)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+3)
             enddo
-            mprim_g(ishell)= 3
-            mbf_g(ishell)= 3
-            mtype_g(ishell)= 1
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            locbf_g(ishell+1) = locbf_g(ishell)+3
+            call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
           endif
         endif
 !   D function
         if(numatomic(iatom) >= 31) then
-          if(.not.flagecp.or.(izcore(iatom) < 28))then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 28))then
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= exdsto(id(numatomic(iatom))+j)
-              coeff_g(locprim_g(ishell)+j)= cdsto(id(numatomic(iatom))+j)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cdsto(id(numatomic(iatom))+j)
             enddo
-            mprim_g(ishell)= 3
-            mtype_g(ishell)= 2
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            if(spher_g) then
-              mbf_g(ishell)= 5
-              locbf_g(ishell+1) = locbf_g(ishell)+5
-            else
-              mbf_g(ishell)= 6
-              locbf_g(ishell+1) = locbf_g(ishell)+6
-            endif
+            call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
           endif
         endif
 ! Set 4SPD functions
         if(numatomic(iatom) >= 37) then
-          if(.not.flagecp.or.(izcore(iatom) < 36))then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 36))then
 !   S function
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
-              coeff_g(locprim_g(ishell)+j)= cssto(is(numatomic(iatom))+j+9)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+9)
             enddo
-            mprim_g(ishell)= 3
-            mbf_g(ishell)= 1
-            mtype_g(ishell)= 0
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            locbf_g(ishell+1) = locbf_g(ishell)+1
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
 !   P function
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
-              coeff_g(locprim_g(ishell)+j)= cpsto(ip(numatomic(iatom))+j+6)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+6)
             enddo
-            mprim_g(ishell)= 3
-            mbf_g(ishell)= 3
-            mtype_g(ishell)= 1
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            locbf_g(ishell+1) = locbf_g(ishell)+3
+            call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
           endif
         endif
 !   D function
         if(numatomic(iatom) >= 49) then
-          if(.not.flagecp.or.(izcore(iatom) < 46))then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 46))then
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= exdsto(id(numatomic(iatom))+j+3)
-              coeff_g(locprim_g(ishell)+j)= cdsto(id(numatomic(iatom))+j+3)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cdsto(id(numatomic(iatom))+j+3)
             enddo
-            mprim_g(ishell)= 3
-            mtype_g(ishell)= 2
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            if(spher_g) then
-              mbf_g(ishell)= 5
-              locbf_g(ishell+1) = locbf_g(ishell)+5
-            else
-              mbf_g(ishell)= 6
-              locbf_g(ishell+1) = locbf_g(ishell)+6
-            endif
+            call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
           endif
         endif
 !
@@ -1831,184 +1740,115 @@ end
       elseif(itype == 3) then
 ! Set 1S functions
         if(numatomic(iatom) >= 3) then
-          if(izcore(iatom) >= 2)then
+          if(databasis%izcore(iatom) >= 2)then
             ishell= ishell+1
             do j= 1,3
-              ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j)
-              coeff_gcore(locprim_gcore(ishell)+j)= cssto(is(numatomic(iatom))+j)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j)
             enddo
-            mprim_gcore(ishell)= 3
-            mbf_gcore(ishell)= 1
-            mtype_gcore(ishell)= 0
-            locatom_gcore(ishell)= iatom
-            locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
-            locbf_gcore(ishell+1) = locbf_gcore(ishell)+1
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
           endif
         endif
 ! Set 2SP functions
         if(numatomic(iatom) >= 11) then
-          if(izcore(iatom) >= 10)then
+          if(databasis%izcore(iatom) >= 10)then
 !   S function
             ishell= ishell+1
             do j= 1,3
-              ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
-              coeff_gcore(locprim_gcore(ishell)+j)= cssto(is(numatomic(iatom))+j+3)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+3)
             enddo
-            mprim_gcore(ishell)= 3
-            mbf_gcore(ishell)= 1
-            mtype_gcore(ishell)= 0
-            locatom_gcore(ishell)= iatom
-            locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
-            locbf_gcore(ishell+1) = locbf_gcore(ishell)+1
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
 !   P function
             ishell= ishell+1
             do j= 1,3
-              ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
-              coeff_gcore(locprim_gcore(ishell)+j)= cpsto(ip(numatomic(iatom))+j)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j)
             enddo
-            mprim_gcore(ishell)= 3
-            mbf_gcore(ishell)= 3
-            mtype_gcore(ishell)= 1
-            locatom_gcore(ishell)= iatom
-            locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
-            locbf_gcore(ishell+1) = locbf_gcore(ishell)+3
+            call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
           endif
         endif
 ! Set 3SPD functions
         if(numatomic(iatom) >= 19) then
-          if(izcore(iatom) >= 18)then
+          if(databasis%izcore(iatom) >= 18)then
 !   S function
             ishell= ishell+1
             do j= 1,3
-              ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
-              coeff_gcore(locprim_gcore(ishell)+j)= cssto(is(numatomic(iatom))+j+6)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+6)
             enddo
-            mprim_gcore(ishell)= 3
-            mbf_gcore(ishell)= 1
-            mtype_gcore(ishell)= 0
-            locatom_gcore(ishell)= iatom
-            locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
-            locbf_gcore(ishell+1) = locbf_gcore(ishell)+1
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
 !   P function
             ishell= ishell+1
             do j= 1,3
-              ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
-              coeff_gcore(locprim_gcore(ishell)+j)= cpsto(ip(numatomic(iatom))+j+3)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+6)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+3)
             enddo
-            mprim_gcore(ishell)= 3
-            mbf_gcore(ishell)= 3
-            mtype_gcore(ishell)= 1
-            locatom_gcore(ishell)= iatom
-            locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
-            locbf_gcore(ishell+1) = locbf_gcore(ishell)+3
+            call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
           endif
         endif
 !   D function
         if(numatomic(iatom) >= 31) then
-          if(izcore(iatom) >= 28)then
+          if(databasis%izcore(iatom) >= 28)then
             ishell= ishell+1
             do j= 1,3
-              ex_gcore(locprim_gcore(ishell)+j)= exdsto(id(numatomic(iatom))+j)
-              coeff_gcore(locprim_gcore(ishell)+j)= cdsto(id(numatomic(iatom))+j)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cdsto(id(numatomic(iatom))+j)
             enddo
-            mprim_gcore(ishell)= 3
-            mtype_gcore(ishell)= 2
-            locatom_gcore(ishell)= iatom
-            locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
-            mbf_gcore(ishell)= 5
-            locbf_gcore(ishell+1) = locbf_gcore(ishell)+5
+            call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
           endif
         endif
 ! Set 4SPD functions
         if(numatomic(iatom) >= 37) then
-          if(izcore(iatom) >= 36)then
+          if(databasis%izcore(iatom) >= 36)then
 !   S function
             ishell= ishell+1
             do j= 1,3
-              ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
-              coeff_gcore(locprim_gcore(ishell)+j)= cssto(is(numatomic(iatom))+j+9)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cssto(is(numatomic(iatom))+j+9)
             enddo
-            mprim_gcore(ishell)= 3
-            mbf_gcore(ishell)= 1
-            mtype_gcore(ishell)= 0
-            locatom_gcore(ishell)= iatom
-            locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
-            locbf_gcore(ishell+1) = locbf_gcore(ishell)+1
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
 !   P function
             ishell= ishell+1
             do j= 1,3
-              ex_gcore(locprim_gcore(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
-              coeff_gcore(locprim_gcore(ishell)+j)= cpsto(ip(numatomic(iatom))+j+6)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exsto(is(numatomic(iatom))+j+9)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cpsto(ip(numatomic(iatom))+j+6)
             enddo
-            mprim_gcore(ishell)= 3
-            mbf_gcore(ishell)= 3
-            mtype_gcore(ishell)= 1
-            locatom_gcore(ishell)= iatom
-            locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
-            locbf_gcore(ishell+1) = locbf_gcore(ishell)+3
+            call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
           endif
         endif
 !   D function
         if(numatomic(iatom) >= 49) then
-          if(izcore(iatom) >= 46)then
+          if(databasis%izcore(iatom) >= 46)then
             ishell= ishell+1
             do j= 1,3
-              ex_gcore(locprim_gcore(ishell)+j)= exdsto(id(numatomic(iatom))+j+3)
-              coeff_gcore(locprim_gcore(ishell)+j)= cdsto(id(numatomic(iatom))+j+3)
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exdsto(id(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= cdsto(id(numatomic(iatom))+j+3)
             enddo
-            mprim_gcore(ishell)= 3
-            mtype_gcore(ishell)= 2
-            locatom_gcore(ishell)= iatom
-            locprim_gcore(ishell+1)= locprim_gcore(ishell)+3
-            mbf_gcore(ishell)= 5
-            locbf_gcore(ishell+1) = locbf_gcore(ishell)+5
+            call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
           endif
         endif
       endif
 !
-      if(ishell > mxshell) then
-        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
-        call iabort
-      endif
-      if(itype <= 2) then
-        if(locprim_g(ishell+1) > mxprim ) then
-          write(*,'(" Error! The number of primitive basis functions exceeds mxprim",&
-&               i6,".")')mxprim
-          call iabort
-        endif
-        if(locbf_g(ishell+1) > mxao ) then
-          write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
-          call iabort
-        endif
-      elseif(itype == 3) then
-        if(locprim_gcore(ishell+1) > mxprim ) then
-          write(*,'(" Error! The number of primitive basis functions exceeds mxprim",&
-&               i6,".")')mxprim
-          call iabort
-        endif
-        if(locbf_gcore(ishell+1) > mxao ) then
-          write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
-          call iabort
-        endif
-      endif
       return
 end
 
 
-!-----------------------------------
-  subroutine bs321g(iatom,ishell)
-!-----------------------------------
+!---------------------------------------------------------------
+  subroutine bs321g(iatom,ishell,numatomic,databasis,datacomp)
+!---------------------------------------------------------------
 !
 ! Set basis functions of 3-21G
 !
-      use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mbf, mtype, spher
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
       implicit none
-      integer,intent(in) :: iatom
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       integer :: j
-      integer :: is1(2)= (/0,6/)
+      integer :: is1(2)= (/0,3/)
       integer :: is2(3:10)= (/0,6,12,18,24,30,36,42/)
       integer :: ip2(3:10)= (/0,3,6,9,12,15,18,21/)
       integer :: is3(11:18)=(/0,9,18,27,36,45,54,63/)
@@ -2449,25 +2289,15 @@ end
 ! 1S
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= exs1(is1(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs1(is1(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exs1(is1(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs1(is1(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,2,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs1(is1(numatomic(iatom))+3)
-          coeff(locprim(ishell)+1)= coeffs1(is1(numatomic(iatom))+3)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= exs1(is1(numatomic(iatom))+3)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffs1(is1(numatomic(iatom))+3)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
 ! Set functions for Li - Ne
 !
@@ -2475,59 +2305,34 @@ end
 ! 1S
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exs2(is2(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs2(is2(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exs2(is2(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs2(is2(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 ! 2SP
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= exs2(is2(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffs2(is2(numatomic(iatom))+j+3)
+            databasis%ex(databasis%locprim(ishell)+j)= exs2(is2(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs2(is2(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,2,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= exs2(is2(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffp2(ip2(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exs2(is2(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp2(ip2(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,2,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs2(is2(numatomic(iatom))+6)
-          coeff(locprim(ishell)+1)= coeffs2(is2(numatomic(iatom))+6)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= exs2(is2(numatomic(iatom))+6)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffs2(is2(numatomic(iatom))+6)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs2(is2(numatomic(iatom))+6)
-          coeff(locprim(ishell)+1)= coeffp2(ip2(numatomic(iatom))+3)
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          databasis%ex(databasis%locprim(ishell)+1)= exs2(is2(numatomic(iatom))+6)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffp2(ip2(numatomic(iatom))+3)
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
 ! Set functions for Na - Ar
 !
@@ -2535,83 +2340,48 @@ end
 ! 1S
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exs3(is3(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs3(is3(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exs3(is3(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs3(is3(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 ! 2SP
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exs3(is3(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffs3(is3(numatomic(iatom))+j+3)
+            databasis%ex(databasis%locprim(ishell)+j)= exs3(is3(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs3(is3(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exs3(is3(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffp3(ip3(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exs3(is3(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp3(ip3(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis,datacomp)
 ! 3SP
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= exs3(is3(numatomic(iatom))+j+6)
-            coeff(locprim(ishell)+j)= coeffs3(is3(numatomic(iatom))+j+6)
+            databasis%ex(databasis%locprim(ishell)+j)= exs3(is3(numatomic(iatom))+j+6)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs3(is3(numatomic(iatom))+j+6)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,2,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= exs3(is3(numatomic(iatom))+j+6)
-            coeff(locprim(ishell)+j)= coeffp3(ip3(numatomic(iatom))+j+3)
+            databasis%ex(databasis%locprim(ishell)+j)= exs3(is3(numatomic(iatom))+j+6)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp3(ip3(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,2,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs3(is3(numatomic(iatom))+9)
-          coeff(locprim(ishell)+1)= coeffs3(is3(numatomic(iatom))+9)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= exs3(is3(numatomic(iatom))+9)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffs3(is3(numatomic(iatom))+9)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs3(is3(numatomic(iatom))+9)
-          coeff(locprim(ishell)+1)= coeffp3(ip3(numatomic(iatom))+6)
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          databasis%ex(databasis%locprim(ishell)+1)= exs3(is3(numatomic(iatom))+9)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffp3(ip3(numatomic(iatom))+6)
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
 ! Set functions for K - Kr
 !
@@ -2619,159 +2389,84 @@ end
 ! 1S
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exs4(is4(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs4(is4(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exs4(is4(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(is4(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 ! 2SP
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exs4(is4(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffs4(is4(numatomic(iatom))+j+3)
+            databasis%ex(databasis%locprim(ishell)+j)= exs4(is4(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(is4(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exs4(is4(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffp4(ip4(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exs4(is4(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ip4(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis,datacomp)
 ! 3SP
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exs4(is4(numatomic(iatom))+j+6)
-            coeff(locprim(ishell)+j)= coeffs4(is4(numatomic(iatom))+j+6)
+            databasis%ex(databasis%locprim(ishell)+j)= exs4(is4(numatomic(iatom))+j+6)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(is4(numatomic(iatom))+j+6)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exs4(is4(numatomic(iatom))+j+6)
-            coeff(locprim(ishell)+j)= coeffp4(ip4(numatomic(iatom))+j+3)
+            databasis%ex(databasis%locprim(ishell)+j)= exs4(is4(numatomic(iatom))+j+6)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ip4(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis,datacomp)
 ! 4SP
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= exs4(is4(numatomic(iatom))+j+9)
-            coeff(locprim(ishell)+j)= coeffs4(is4(numatomic(iatom))+j+9)
+            databasis%ex(databasis%locprim(ishell)+j)= exs4(is4(numatomic(iatom))+j+9)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(is4(numatomic(iatom))+j+9)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,2,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= exs4(is4(numatomic(iatom))+j+9)
-            coeff(locprim(ishell)+j)= coeffp4(ip4(numatomic(iatom))+j+6)
+            databasis%ex(databasis%locprim(ishell)+j)= exs4(is4(numatomic(iatom))+j+9)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ip4(numatomic(iatom))+j+6)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,2,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs4(is4(numatomic(iatom))+12)
-          coeff(locprim(ishell)+1)= coeffs4(is4(numatomic(iatom))+12)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= exs4(is4(numatomic(iatom))+12)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffs4(is4(numatomic(iatom))+12)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs4(is4(numatomic(iatom))+12)
-          coeff(locprim(ishell)+1)= coeffp4(ip4(numatomic(iatom))+9)
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          databasis%ex(databasis%locprim(ishell)+1)= exs4(is4(numatomic(iatom))+12)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffp4(ip4(numatomic(iatom))+9)
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 ! 3D
           select case(numatomic(iatom))
             case(21:30)
               ishell= ishell+1
               do j= 1,2
-                ex(locprim(ishell)+j)= exd4(id4(numatomic(iatom))+j)
-                coeff(locprim(ishell)+j)= coeffd4(id4(numatomic(iatom))+j)
+                databasis%ex(databasis%locprim(ishell)+j)= exd4(id4(numatomic(iatom))+j)
+                databasis%coeff(databasis%locprim(ishell)+j)= coeffd4(id4(numatomic(iatom))+j)
               enddo
-              mprim(ishell)= 2
-              mtype(ishell)= 2
-              locatom(ishell)= iatom
-              locprim(ishell+1)= locprim(ishell)+2
-              if(spher) then
-                mbf(ishell)= 5
-                locbf(ishell+1)= locbf(ishell)+5
-              else
-                mbf(ishell)= 6
-                locbf(ishell+1)= locbf(ishell)+6
-              endif
+              call basisparam(ishell,2,2,iatom,databasis,datacomp)
 !
               ishell= ishell+1
-              ex(locprim(ishell)+1)= exd4(id4(numatomic(iatom))+3)
-              coeff(locprim(ishell)+1)= coeffd4(id4(numatomic(iatom))+3)
-              mprim(ishell)= 1
-              mtype(ishell)= 2
-              locatom(ishell)= iatom
-              locprim(ishell+1)= locprim(ishell)+1
-              if(spher) then
-                mbf(ishell)= 5
-                locbf(ishell+1)= locbf(ishell)+5
-              else
-                mbf(ishell)= 6
-                locbf(ishell+1)= locbf(ishell)+6
-              endif
+              databasis%ex(databasis%locprim(ishell)+1)= exd4(id4(numatomic(iatom))+3)
+              databasis%coeff(databasis%locprim(ishell)+1)= coeffd4(id4(numatomic(iatom))+3)
+              call basisparam(ishell,2,1,iatom,databasis,datacomp)
 !
             case(31:36)
               ishell= ishell+1
               do j= 1,3
-                ex(locprim(ishell)+j)= exd4(id4(numatomic(iatom))+j)
-                coeff(locprim(ishell)+j)= coeffd4(id4(numatomic(iatom))+j)
+                databasis%ex(databasis%locprim(ishell)+j)= exd4(id4(numatomic(iatom))+j)
+                databasis%coeff(databasis%locprim(ishell)+j)= coeffd4(id4(numatomic(iatom))+j)
               enddo
-              mprim(ishell)= 3
-              mtype(ishell)= 2
-              locatom(ishell)= iatom
-              locprim(ishell+1)= locprim(ishell)+3
-              if(spher) then
-                mbf(ishell)= 5
-                locbf(ishell+1)= locbf(ishell)+5
-              else
-                mbf(ishell)= 6
-                locbf(ishell+1)= locbf(ishell)+6
-              endif
+              call basisparam(ishell,2,3,iatom,databasis,datacomp)
           end select
 !
 ! Set functions for Rb - Xe
@@ -2780,244 +2475,136 @@ end
 ! 1S
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exs5(is5(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs5(is5(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exs5(is5(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs5(is5(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 ! 2SP
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exs5(is5(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffs5(is5(numatomic(iatom))+j+3)
+            databasis%ex(databasis%locprim(ishell)+j)= exs5(is5(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs5(is5(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exs5(is5(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffp5(ip5(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exs5(is5(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp5(ip5(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis,datacomp)
 ! 3SP
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exs5(is5(numatomic(iatom))+j+6)
-            coeff(locprim(ishell)+j)= coeffs5(is5(numatomic(iatom))+j+6)
+            databasis%ex(databasis%locprim(ishell)+j)= exs5(is5(numatomic(iatom))+j+6)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs5(is5(numatomic(iatom))+j+6)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exs5(is5(numatomic(iatom))+j+6)
-            coeff(locprim(ishell)+j)= coeffp5(ip5(numatomic(iatom))+j+3)
+            databasis%ex(databasis%locprim(ishell)+j)= exs5(is5(numatomic(iatom))+j+6)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp5(ip5(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis,datacomp)
 ! 4SP
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exs5(is5(numatomic(iatom))+j+9)
-            coeff(locprim(ishell)+j)= coeffs5(is5(numatomic(iatom))+j+9)
+            databasis%ex(databasis%locprim(ishell)+j)= exs5(is5(numatomic(iatom))+j+9)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs5(is5(numatomic(iatom))+j+9)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exs5(is5(numatomic(iatom))+j+9)
-            coeff(locprim(ishell)+j)= coeffp5(ip5(numatomic(iatom))+j+6)
+            databasis%ex(databasis%locprim(ishell)+j)= exs5(is5(numatomic(iatom))+j+9)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp5(ip5(numatomic(iatom))+j+6)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis,datacomp)
 ! 5SP
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= exs5(is5(numatomic(iatom))+j+12)
-            coeff(locprim(ishell)+j)= coeffs5(is5(numatomic(iatom))+j+12)
+            databasis%ex(databasis%locprim(ishell)+j)= exs5(is5(numatomic(iatom))+j+12)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs5(is5(numatomic(iatom))+j+12)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,2,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= exs5(is5(numatomic(iatom))+j+12)
-            coeff(locprim(ishell)+j)= coeffp5(ip5(numatomic(iatom))+j+9)
+            databasis%ex(databasis%locprim(ishell)+j)= exs5(is5(numatomic(iatom))+j+12)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp5(ip5(numatomic(iatom))+j+9)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,2,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs5(is5(numatomic(iatom))+15)
-          coeff(locprim(ishell)+1)= coeffs5(is5(numatomic(iatom))+15)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= exs5(is5(numatomic(iatom))+15)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffs5(is5(numatomic(iatom))+15)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs5(is5(numatomic(iatom))+15)
-          coeff(locprim(ishell)+1)= coeffp5(ip5(numatomic(iatom))+12)
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          databasis%ex(databasis%locprim(ishell)+1)= exs5(is5(numatomic(iatom))+15)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffp5(ip5(numatomic(iatom))+12)
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 ! 3D
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exd5(id5(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffd5(id5(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exd5(id5(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffd5(id5(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1)= locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1)= locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,3,iatom,databasis,datacomp)
 ! 4D
           select case(numatomic(iatom))
             case(39:48)
               ishell= ishell+1
               do j= 1,2
-                ex(locprim(ishell)+j)= exd5(id5(numatomic(iatom))+j+3)
-                coeff(locprim(ishell)+j)= coeffd5(id5(numatomic(iatom))+j+3)
+                databasis%ex(databasis%locprim(ishell)+j)= exd5(id5(numatomic(iatom))+j+3)
+                databasis%coeff(databasis%locprim(ishell)+j)= coeffd5(id5(numatomic(iatom))+j+3)
               enddo
-              mprim(ishell)= 2
-              mtype(ishell)= 2
-              locatom(ishell)= iatom
-              locprim(ishell+1)= locprim(ishell)+2
-              if(spher) then
-                mbf(ishell)= 5
-                locbf(ishell+1)= locbf(ishell)+5
-              else
-                mbf(ishell)= 6
-                locbf(ishell+1)= locbf(ishell)+6
-              endif
+              call basisparam(ishell,2,2,iatom,databasis,datacomp)
 !
               ishell= ishell+1
-              ex(locprim(ishell)+1)= exd5(id5(numatomic(iatom))+6)
-              coeff(locprim(ishell)+1)= coeffd5(id5(numatomic(iatom))+6)
-              mprim(ishell)= 1
-              mtype(ishell)= 2
-              locatom(ishell)= iatom
-              locprim(ishell+1)= locprim(ishell)+1
-              if(spher) then
-                mbf(ishell)= 5
-                locbf(ishell+1)= locbf(ishell)+5
-              else
-                mbf(ishell)= 6
-                locbf(ishell+1)= locbf(ishell)+6
-              endif
+              databasis%ex(databasis%locprim(ishell)+1)= exd5(id5(numatomic(iatom))+6)
+              databasis%coeff(databasis%locprim(ishell)+1)= coeffd5(id5(numatomic(iatom))+6)
+              call basisparam(ishell,2,1,iatom,databasis,datacomp)
 !
             case(49:54)
               ishell= ishell+1
               do j= 1,3
-                ex(locprim(ishell)+j)= exd5(id5(numatomic(iatom))+j+3)
-                coeff(locprim(ishell)+j)= coeffd5(id5(numatomic(iatom))+j+3)
+                databasis%ex(databasis%locprim(ishell)+j)= exd5(id5(numatomic(iatom))+j+3)
+                databasis%coeff(databasis%locprim(ishell)+j)= coeffd5(id5(numatomic(iatom))+j+3)
               enddo
-              mprim(ishell)= 3
-              mtype(ishell)= 2
-              locatom(ishell)= iatom
-              locprim(ishell+1)= locprim(ishell)+3
-              if(spher) then
-                mbf(ishell)= 5
-                locbf(ishell+1)= locbf(ishell)+5
-              else
-                mbf(ishell)= 6
-                locbf(ishell+1)= locbf(ishell)+6
-              endif
+              call basisparam(ishell,2,3,iatom,databasis,datacomp)
           end select
         case (:0)
         case default
-          write(*,'(" Error! This program supports H - Xe 3-21G basis set.")')
-          call iabort
+          write(datacomp%iout,'(" Error! This program supports H - Xe 3-21G basis set.")')
+          call iabort(datacomp)
       end select
-!
-      if(ishell > mxshell) then
-        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
-        call iabort
-      endif
-      if(locprim(ishell+1) > mxprim ) then
-        write(*,'(" Error! The number of primitive basis functions exceeds mxprim", &
-&             i6,".")')mxprim
-        call iabort
-      endif
-      if(locbf(ishell+1) > mxao ) then
-        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
-        call iabort
-      endif
 !
       return
 end
 
 
-!-----------------------------------
-  subroutine bs631g(iatom,ishell)
-!-----------------------------------
+!---------------------------------------------------------------
+  subroutine bs631g(iatom,ishell,numatomic,databasis,datacomp)
+!---------------------------------------------------------------
 !
 ! Set basis functions of 6-31G
 !
-      use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mbf, mtype, spher
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
       implicit none
-      integer,intent(in) :: iatom
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       integer :: j
-      integer :: is(30)= (/0,4,8,18,28,38,48,58,68,78,88,104,120,136,152,168,184,200, &
-&                          216,238,260,282,304,326,348,370,392,414,436,458/)
-      integer :: ip(30)= (/0,0,0,4,8,12,16,20,24,28,32,42,52,62,72,82,92,102, &
-&                          112,128,144,160,176,192,208,224,240,256,272,288/)
-      integer :: id(21:30)= (/0,4,8,12,16,20,24,28,32,36/)
-      real(8) :: ex631g(480)= &
+      integer :: is(36)=(/0,4,8,18,28,38,48,58,68,78,88,104,120,136,152,168,184,200, &
+&                         216,238,260,282,304,326,348,370,392,414,436,458,480,502,524,546,568,590/)
+      integer :: ip(36)=(/0,0,0,4,8,12,16,20,24,28,32,42,52,62,72,82,92,102, &
+&                         112,128,144,160,176,192,208,224,240,256,272,288,304,320,336,352,368,384/)
+      integer :: id(19:36)=(/0,4,8,12,16,20,24,28,32,36,40,44,48,52,56,60,64,68/)
+      real(8) :: ex631g(612)= &
 &     (/1.873113696D+01,2.825394365D+00,6.401216923D-01,1.612777588D-01,3.842163400D+01, &
 &       5.778030000D+00,1.241774000D+00,2.979640000D-01,6.424189150D+02,9.679851530D+01, &
 &       2.209112120D+01,6.201070250D+00,1.935117680D+00,6.367357890D-01,2.324918408D+00, &
@@ -3113,8 +2700,35 @@ end
 &       2.818351000D+03,7.945717000D+02,2.547232000D+02,8.713880000D+01,1.732569000D+03, &
 &       4.127149000D+02,1.336780000D+02,5.038585000D+01,2.058358000D+01,8.505940000D+00, &
 &       6.936492000D+01,2.362082000D+01,1.018471000D+01,4.334082000D+00,1.810918000D+00, &
-&       7.148410000D-01,2.823842000D+00,1.039543000D+00,1.432640000D-01,4.929600000D-02/)
-      real(8) :: cs631g(480)= &
+&       7.148410000D-01,2.823842000D+00,1.039543000D+00,1.432640000D-01,4.929600000D-02, &
+&       8.828461D+04, 1.325606D+04, 3.019649D+03, 8.514222D+02, 2.729997D+02, &
+&       9.342593D+01, 1.877680D+03, 4.474374D+02, 1.451401D+02, 5.484977D+01, &
+&       2.244351D+01, 9.286622D+00, 8.005681D+01, 2.757856D+01, 1.171717D+01, &
+&       5.054113D+00, 2.172525D+00, 9.041840D-01, 1.112438D+00, 3.287220D-01, &
+&       1.305520D-01, 4.758900D-02, 9.428132D+04, 1.415642D+04, 3.224935D+03, &
+&       9.094821D+02, 2.917149D+02, 9.989074D+01, 2.016629D+03, 4.806599D+02, &
+&       1.560616D+02, 5.907914D+01, 2.422346D+01, 1.004418D+01, 8.728112D+01, &
+&       3.028230D+01, 1.285367D+01, 5.587437D+00, 2.438461D+00, 1.040324D+00, &
+&       1.344960D+00, 4.436620D-01, 1.760820D-01, 6.466500D-02, 1.005955D+05, &
+&       1.510482D+04, 3.440884D+03, 9.703961D+02, 3.112852D+02, 1.066284D+02, &
+&       2.166679D+03, 5.165414D+02, 1.678674D+02, 6.364638D+01, 2.613673D+01, &
+&       1.085439D+01, 9.506989D+01, 3.318087D+01, 1.406773D+01, 6.153288D+00, &
+&       2.721712D+00, 1.185334D+00, 1.615315D+00, 5.513300D-01, 2.227620D-01, &
+&       8.292300D-02, 1.070273D+05, 1.607076D+04, 3.661226D+03, 1.032673D+03, &
+&       3.313339D+02, 1.135470D+02, 2.313540D+03, 5.516849D+02, 1.794401D+02, &
+&       6.813044D+01, 2.803062D+01, 1.166572D+01, 1.015754D+02, 3.561545D+01, &
+&       1.513135D+01, 6.646923D+00, 2.972805D+00, 1.316707D+00, 1.846991D+00, &
+&       6.471590D-01, 2.579870D-01, 9.410700D-02, 1.137182D+05, 1.707444D+04, &
+&       3.889576D+03, 1.097096D+03, 3.520624D+02, 1.207002D+02, 2.471138D+03, &
+&       5.893838D+02, 1.918738D+02, 7.295339D+01, 3.005839D+01, 1.252927D+01, &
+&       1.096411D+02, 3.858948D+01, 1.637818D+01, 7.221836D+00, 3.263697D+00, &
+&       1.465499D+00, 2.103651D+00, 7.547050D-01, 3.005140D-01, 1.090710D-01, &
+&       1.205524D+05, 1.810225D+04, 4.124126D+03, 1.163472D+03, 3.734612D+02, &
+&       1.280897D+02, 2.634681D+03, 6.284533D+02, 2.047081D+02, 7.790827D+01, &
+&       3.213816D+01, 1.341845D+01, 1.175107D+02, 4.152553D+01, 1.765290D+01, &
+&       7.818313D+00, 3.571775D+00, 1.623750D+00, 2.374560D+00, 8.691930D-01, &
+&       3.474730D-01, 1.264790D-01/)
+      real(8) :: cs631g(612)= &
 &     (/ 3.349460434D-02, 2.347269535D-01, 8.137573262D-01, 1.000000000D+00, 2.376600000D-02, &
 &        1.546790000D-01, 4.696300000D-01, 1.000000000D+00, 2.142607810D-03, 1.620887150D-02, &
 &        7.731557250D-02, 2.457860520D-01, 4.701890040D-01, 3.454708450D-01,-3.509174590D-02, &
@@ -3210,8 +2824,35 @@ end
 &        6.594365000D-02, 2.294151000D-01, 4.785453000D-01, 3.537753000D-01, 2.361459000D-03, &
 &        3.150177000D-02, 1.272774000D-01,-2.145928000D-02,-6.197652000D-01,-4.590180000D-01, &
 &       -4.440098000D-03, 7.505253000D-02, 2.533111000D-01,-2.881897000D-01,-7.267052000D-01, &
-&       -2.133439000D-01, 4.898543000D-02, 2.592793000D-01,-1.115711000D+00, 1.000000000D+00/)
-      real(8) :: cp631g(304)= &
+&       -2.133439000D-01, 4.898543000D-02, 2.592793000D-01,-1.115711000D+00, 1.000000000D+00, &
+&        1.736921D-03, 1.331136D-02, 6.571709D-02, 2.287932D-01, 4.781507D-01, &
+&        3.549154D-01, 2.316733D-03, 3.090570D-02, 1.264173D-01,-1.429714D-02, &
+&       -6.132855D-01,-4.703598D-01,-5.056378D-03, 6.117037D-02, 2.575692D-01, &
+&       -2.150754D-01,-7.213703D-01,-2.785244D-01, 1.970334D-01,-2.497645D-01, &
+&       -8.749447D-01, 1.000000D+00, 1.732993D-03, 1.328181D-02, 6.557319D-02, &
+&        2.283712D-01, 4.778104D-01, 3.557135D-01, 2.299186D-03, 3.068823D-02, &
+&        1.262906D-01,-1.105405D-02,-6.103659D-01,-4.755387D-01,-5.330845D-03, &
+&        5.874495D-02, 2.598349D-01,-1.926917D-01,-7.190570D-01,-2.995181D-01, &
+&        2.338815D-01,-2.189617D-01,-9.242006D-01, 1.000000D+00, 1.726750D-03, &
+&        1.323462D-02, 6.535848D-02, 2.278042D-01, 4.774525D-01, 3.567619D-01, &
+&        2.271761D-03, 3.033475D-02, 1.259057D-01,-6.687172D-03,-6.065306D-01, &
+&       -4.823144D-01,-5.587423D-03, 5.632506D-02, 2.625835D-01,-1.718349D-01, &
+&       -7.175645D-01,-3.184598D-01, 2.645372D-01,-1.952737D-01,-9.595400D-01, &
+&        1.000000D+00, 1.722646D-03, 1.320324D-02, 6.520494D-02, 2.273787D-01, &
+&        4.771451D-01, 3.575553D-01, 2.261924D-03, 3.019493D-02, 1.258828D-01, &
+&       -4.373809D-03,-6.043277D-01,-4.861200D-01,-5.752618D-03, 5.675608D-02, &
+&        2.651243D-01,-1.670582D-01,-7.188737D-01,-3.221907D-01, 2.823156D-01, &
+&       -2.129616D-01,-9.545384D-01, 1.000000D+00, 1.717696D-03, 1.316744D-02, &
+&        6.504553D-02, 2.269505D-01, 4.768357D-01, 3.583677D-01, 2.243687D-03, &
+&        2.994853D-02, 1.256009D-01,-9.832786D-04,-6.013141D-01,-4.913983D-01, &
+&       -5.975683D-03, 5.542122D-02, 2.681200D-01,-1.543606D-01,-7.206306D-01, &
+&       -3.316437D-01, 3.029029D-01,-2.152659D-01,-9.633941D-01, 1.000000D+00, &
+&        1.714050D-03, 1.313805D-02, 6.490006D-02, 2.265185D-01, 4.764961D-01, &
+&        3.591952D-01, 2.225111D-03, 2.971122D-02, 1.253926D-01, 1.947058D-03, &
+&       -5.987388D-01,-4.958972D-01,-6.157662D-03, 5.464841D-02, 2.706994D-01, &
+&       -1.426136D-01,-7.216781D-01,-3.412008D-01, 3.251184D-01,-2.141533D-01, &
+&       -9.755083D-01, 1.000000D+00/)
+      real(8) :: cp631g(400)= &
 &     (/ 8.941508040D-03, 1.410094640D-01, 9.453636950D-01, 1.000000000D+00, 5.598019980D-02, &
 &        2.615506110D-01, 7.939723390D-01, 1.000000000D+00, 7.459757990D-02, 3.078466770D-01, &
 &        7.434568340D-01, 1.000000000D+00, 6.899906660D-02, 3.164239610D-01, 7.443082910D-01, &
@@ -3272,25 +2913,58 @@ end
 &        9.310133000D-02, 9.814336000D-01, 1.000000000D+00, 3.963125000D-03, 3.113411000D-02, &
 &        1.363931000D-01, 3.501266000D-01, 4.623179000D-01, 2.004995000D-01,-7.689262000D-03, &
 &       -2.997982000D-02, 7.082411000D-02, 4.046141000D-01, 4.882325000D-01, 1.751970000D-01, &
-&       -1.586763000D-01, 8.379327000D-02, 9.840547000D-01, 1.000000000D+00/)
-      real(8) :: exd631g(40)= &
-&     (/1.114701000D+01,2.821043000D+00,8.196200000D-01,2.214680000D-01,1.369085000D+01, &
-&       3.513154000D+00,1.040434000D+00,2.869620000D-01,1.605025000D+01,4.160063000D+00, &
-&       1.243265000D+00,3.442770000D-01,1.841930000D+01,4.812661000D+00,1.446447000D+00, &
-&       4.004130000D-01,2.094355000D+01,5.510486000D+00,1.665038000D+00,4.617330000D-01, &
-&       2.314994000D+01,6.122368000D+00,1.846601000D+00,5.043610000D-01,2.559306000D+01, &
-&       6.800990000D+00,2.051647000D+00,5.556710000D-01,2.819147000D+01,7.523584000D+00, &
-&       2.271228000D+00,6.116030000D-01,3.085341000D+01,8.264985000D+00,2.495332000D+00, &
-&       6.676580000D-01,3.370764000D+01,9.061106000D+00,2.738383000D+00,7.302940000D-01/)
-      real(8) :: cd631g(40)= &
-&     (/ 8.747672000D-02, 3.795635000D-01, 7.180393000D-01, 1.000000000D+00, 8.589418000D-02, &
-&        3.784671000D-01, 7.161239000D-01, 1.000000000D+00, 8.599899000D-02, 3.802996000D-01, &
-&        7.127659000D-01, 1.000000000D+00, 8.650816000D-02, 3.826699000D-01, 7.093772000D-01, &
-&        1.000000000D+00, 8.672702000D-02, 3.841883000D-01, 7.069071000D-01, 1.000000000D+00, &
-&        8.876935000D-02, 3.896319000D-01, 7.014816000D-01, 1.000000000D+00, 9.004748000D-02, &
-&        3.931703000D-01, 6.976844000D-01, 1.000000000D+00, 9.098881000D-02, 3.958208000D-01, &
-&        6.947154000D-01, 1.000000000D+00, 9.199905000D-02, 3.985021000D-01, 6.917897000D-01, &
-&        1.000000000D+00, 9.262648000D-02, 4.002980000D-01, 6.896608000D-01, 1.000000000D+00/)
+&       -1.586763000D-01, 8.379327000D-02, 9.840547000D-01, 1.000000000D+00, 3.896102D-03, &
+&        3.066136D-02, 1.344509D-01, 3.470761D-01, 4.635435D-01, 2.039435D-01, &
+&       -6.947816D-03,-2.938902D-02, 5.377307D-02, 3.764511D-01, 4.923913D-01, &
+&        2.073613D-01,-9.151867D-03, 3.111786D-01, 7.436549D-01, 1.000000D+00, &
+&        3.872605D-03, 3.051218D-02, 1.338971D-01, 3.462496D-01, 4.635741D-01, &
+&        2.047879D-01,-6.893957D-03,-2.954252D-02, 5.042291D-02, 3.699366D-01, &
+&        4.933147D-01, 2.116445D-01,-1.976804D-02, 3.028906D-01, 7.562828D-01, &
+&        1.000000D+00, 3.832156D-03, 3.023558D-02, 1.328632D-01, 3.447648D-01, &
+&        4.640368D-01, 2.064824D-01,-6.816583D-03,-2.970303D-02, 4.704335D-02, &
+&        3.645042D-01, 4.945157D-01, 2.149830D-01,-2.574061D-02, 3.072764D-01, &
+&        7.537368D-01, 1.000000D+00, 3.818409D-03, 3.015145D-02, 1.325614D-01, &
+&        3.443419D-01, 4.639237D-01, 2.068198D-01,-6.942389D-03,-3.014441D-02, &
+&        4.776411D-02, 3.663827D-01, 4.940086D-01, 2.100109D-01,-2.653920D-02, &
+&        3.357291D-01, 7.301815D-01, 1.000000D+00, 3.790182D-03, 2.995979D-02, &
+&        1.318228D-01, 3.432708D-01, 4.642345D-01, 2.079387D-01,-6.907483D-03, &
+&       -3.041432D-02, 4.602725D-02, 3.650689D-01, 4.949232D-01, 2.090394D-01, &
+&       -2.826714D-02, 3.503065D-01, 7.182446D-01, 1.000000D+00, 3.761911D-03, &
+&        2.977531D-02, 1.311878D-01, 3.425019D-01, 4.644938D-01, 2.087284D-01, &
+&       -6.922855D-03,-3.069239D-02, 4.480260D-02, 3.636775D-01, 4.952412D-01, &
+&        2.086340D-01,-3.009554D-02, 3.598893D-01, 7.103098D-01, 1.000000D+00/)
+      real(8) :: exd631g(72)= &
+&     (/9.029078D+00, 2.285045D+00, 6.638920D-01, 1.793890D-01, 1.011067D+01, &
+&       2.558769D+00, 7.434200D-01, 2.008780D-01, 1.114701D+01, 2.821043D+00, &
+&       8.196200D-01, 2.214680D-01, 1.369085D+01, 3.513154D+00, 1.040434D+00, &
+&       2.869620D-01, 1.605025D+01, 4.160063D+00, 1.243265D+00, 3.442770D-01, &
+&       1.841930D+01, 4.812661D+00, 1.446447D+00, 4.004130D-01, 2.094355D+01, &
+&       5.510486D+00, 1.665038D+00, 4.617330D-01, 2.314994D+01, 6.122368D+00, &
+&       1.846601D+00, 5.043610D-01, 2.559306D+01, 6.800990D+00, 2.051647D+00, &
+&       5.556710D-01, 2.819147D+01, 7.523584D+00, 2.271228D+00, 6.116030D-01, &
+&       3.085341D+01, 8.264985D+00, 2.495332D+00, 6.676580D-01, 3.370764D+01, &
+&       9.061106D+00, 2.738383D+00, 7.302940D-01, 3.911406D+01, 1.061218D+01, &
+&       3.273033D+00, 9.156600D-01, 4.463105D+01, 1.220184D+01, 3.823423D+00, &
+&       1.108831D+00, 5.030227D+01, 1.384166D+01, 4.393458D+00, 1.310755D+00, &
+&       5.618544D+01, 1.554808D+01, 4.989394D+00, 1.523844D+00, 6.225514D+01, &
+&       1.731284D+01, 5.607915D+00, 1.746486D+00, 6.853888D+01, 1.914333D+01, &
+&       6.251213D+00, 1.979236D+00/)
+      real(8) :: cd631g(72)= &
+&     (/ 8.747672D-02, 3.795635D-01, 7.180393D-01, 1.000000D+00, 8.747672D-02, &
+&        3.795635D-01, 7.180393D-01, 1.000000D+00, 8.747672D-02, 3.795635D-01, &
+&        7.180393D-01, 1.000000D+00, 8.589418D-02, 3.784671D-01, 7.161239D-01, &
+&        1.000000D+00, 8.599899D-02, 3.802996D-01, 7.127659D-01, 1.000000D+00, &
+&        8.650816D-02, 3.826699D-01, 7.093772D-01, 1.000000D+00, 8.672702D-02, &
+&        3.841883D-01, 7.069071D-01, 1.000000D+00, 8.876935D-02, 3.896319D-01, &
+&        7.014816D-01, 1.000000D+00, 9.004748D-02, 3.931703D-01, 6.976844D-01, &
+&        1.000000D+00, 9.098881D-02, 3.958208D-01, 6.947154D-01, 1.000000D+00, &
+&        9.199905D-02, 3.985021D-01, 6.917897D-01, 1.000000D+00, 9.262648D-02, &
+&        4.002980D-01, 6.896608D-01, 1.000000D+00, 8.790043D-02, 3.915600D-01, &
+&        6.956990D-01, 1.000000D+00, 8.431036D-02, 3.847726D-01, 7.003323D-01, &
+&        1.000000D+00, 8.144711D-02, 3.792908D-01, 7.040401D-01, 1.000000D+00, &
+&        7.904963D-02, 3.746449D-01, 7.071645D-01, 1.000000D+00, 7.704229D-02, &
+&        3.707384D-01, 7.097628D-01, 1.000000D+00, 7.530705D-02, 3.673551D-01, &
+&        7.120146D-01, 1.000000D+00/)
 !
 ! Set  functions for H - He
 !
@@ -3299,25 +2973,15 @@ end
 ! 1S
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= ex631g(is(numatomic(iatom))+4)
-          coeff(locprim(ishell)+1)= cs631g(is(numatomic(iatom))+4)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= ex631g(is(numatomic(iatom))+4)
+          databasis%coeff(databasis%locprim(ishell)+1)= cs631g(is(numatomic(iatom))+4)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
 ! Set  functions for Li - Ne
 !
@@ -3325,59 +2989,34 @@ end
 ! 1S
           ishell= ishell+1
           do j= 1,6
-            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 6
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+6
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,6,iatom,databasis,datacomp)
 ! 2SP
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
-            coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+6)
+            databasis%ex(databasis%locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
+            databasis%coeff(databasis%locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+6)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
-            coeff(locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
+            databasis%coeff(databasis%locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= ex631g(is(numatomic(iatom))+10)
-          coeff(locprim(ishell)+1)= cs631g(is(numatomic(iatom))+10)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
-
+          databasis%ex(databasis%locprim(ishell)+1)= ex631g(is(numatomic(iatom))+10)
+          databasis%coeff(databasis%locprim(ishell)+1)= cs631g(is(numatomic(iatom))+10)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
+!
           ishell= ishell+1
-          ex(locprim(ishell)+1)= ex631g(is(numatomic(iatom))+10)
-          coeff(locprim(ishell)+1)= cp631g(ip(numatomic(iatom))+4)
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          databasis%ex(databasis%locprim(ishell)+1)= ex631g(is(numatomic(iatom))+10)
+          databasis%coeff(databasis%locprim(ishell)+1)= cp631g(ip(numatomic(iatom))+4)
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
 ! Set  functions for Na - Ar
 !
@@ -3385,418 +3024,500 @@ end
 ! 1S
           ishell= ishell+1
           do j= 1,6
-            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 6
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+6
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,6,iatom,databasis,datacomp)
 ! 2SP
           ishell= ishell+1
           do j= 1,6
-            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
-            coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+6)
+            databasis%ex(databasis%locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
+            databasis%coeff(databasis%locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+6)
           enddo
-          mprim(ishell)= 6
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+6
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,6,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,6
-            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
-            coeff(locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
+            databasis%coeff(databasis%locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 6
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+6
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,6,iatom,databasis,datacomp)
 ! 3SP
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+12)
-            coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+12)
+            databasis%ex(databasis%locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+12)
+            databasis%coeff(databasis%locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+12)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+12)
-            coeff(locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j+6)
+            databasis%ex(databasis%locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+12)
+            databasis%coeff(databasis%locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j+6)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= ex631g(is(numatomic(iatom))+16)
-          coeff(locprim(ishell)+1)= cs631g(is(numatomic(iatom))+16)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= ex631g(is(numatomic(iatom))+16)
+          databasis%coeff(databasis%locprim(ishell)+1)= cs631g(is(numatomic(iatom))+16)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= ex631g(is(numatomic(iatom))+16)
-          coeff(locprim(ishell)+1)= cp631g(ip(numatomic(iatom))+10)
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          databasis%ex(databasis%locprim(ishell)+1)= ex631g(is(numatomic(iatom))+16)
+          databasis%coeff(databasis%locprim(ishell)+1)= cp631g(ip(numatomic(iatom))+10)
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
-! Set  functions for Na - Ar
+! Set  functions for K - Kr
 !
-        case(19:30)
+        case(19:36)
 ! 1S
           ishell= ishell+1
           do j= 1,6
-            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 6
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+6
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,6,iatom,databasis,datacomp)
 ! 2SP  
           ishell= ishell+1
           do j= 1,6
-            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
-            coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+6)
+            databasis%ex(databasis%locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
+            databasis%coeff(databasis%locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+6)
           enddo
-          mprim(ishell)= 6
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+6
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,6,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,6
-            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
-            coeff(locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+6)
+            databasis%coeff(databasis%locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 6
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+6
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,6,iatom,databasis,datacomp)
 ! 3SP
           ishell= ishell+1
           do j= 1,6
-            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+12)
-            coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+12)
+            databasis%ex(databasis%locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+12)
+            databasis%coeff(databasis%locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+12)
           enddo
-          mprim(ishell)= 6
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+6
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,6,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,6
-            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+12)
-            coeff(locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j+6)
+            databasis%ex(databasis%locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+12)
+            databasis%coeff(databasis%locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j+6)
           enddo
-          mprim(ishell)= 6
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+6
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,6,iatom,databasis,datacomp)
 ! 4SP
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+18)
-            coeff(locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+18)
+            databasis%ex(databasis%locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+18)
+            databasis%coeff(databasis%locprim(ishell)+j)= cs631g(is(numatomic(iatom))+j+18)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+18)
-            coeff(locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j+12)
+            databasis%ex(databasis%locprim(ishell)+j)= ex631g(is(numatomic(iatom))+j+18)
+            databasis%coeff(databasis%locprim(ishell)+j)= cp631g(ip(numatomic(iatom))+j+12)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= ex631g(is(numatomic(iatom))+22)
-          coeff(locprim(ishell)+1)= cs631g(is(numatomic(iatom))+22)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= ex631g(is(numatomic(iatom))+22)
+          databasis%coeff(databasis%locprim(ishell)+1)= cs631g(is(numatomic(iatom))+22)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= ex631g(is(numatomic(iatom))+22)
-          coeff(locprim(ishell)+1)= cp631g(ip(numatomic(iatom))+16)
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          databasis%ex(databasis%locprim(ishell)+1)= ex631g(is(numatomic(iatom))+22)
+          databasis%coeff(databasis%locprim(ishell)+1)= cp631g(ip(numatomic(iatom))+16)
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 ! 3D
-          if(numatomic(iatom) >= 21) then
-            ishell= ishell+1
-            do j= 1,3
-              ex(locprim(ishell)+j)= exd631g(id(numatomic(iatom))+j)
-              coeff(locprim(ishell)+j)= cd631g(id(numatomic(iatom))+j)
-            enddo
-            mprim(ishell)= 3
-            mtype(ishell)= 2
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+3
-            if(spher) then
-              mbf(ishell)= 5
-              locbf(ishell+1) = locbf(ishell)+5
-            else
-              mbf(ishell)= 6
-              locbf(ishell+1) = locbf(ishell)+6
-            endif
+          ishell= ishell+1
+          do j= 1,3
+            databasis%ex(databasis%locprim(ishell)+j)= exd631g(id(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= cd631g(id(numatomic(iatom))+j)
+          enddo
+          call basisparam(ishell,2,3,iatom,databasis,datacomp)
 !
-            ishell= ishell+1
-            ex(locprim(ishell)+1)= exd631g(id(numatomic(iatom))+4)
-            coeff(locprim(ishell)+1)= cd631g(id(numatomic(iatom))+4)
-            mprim(ishell)= 1
-            mtype(ishell)= 2
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+1
-            if(spher) then
-              mbf(ishell)= 5
-              locbf(ishell+1) = locbf(ishell)+5
-            else
-              mbf(ishell)= 6
-              locbf(ishell+1) = locbf(ishell)+6
-            endif
-          endif
+          ishell= ishell+1
+          databasis%ex(databasis%locprim(ishell)+1)= exd631g(id(numatomic(iatom))+4)
+          databasis%coeff(databasis%locprim(ishell)+1)= cd631g(id(numatomic(iatom))+4)
+          call basisparam(ishell,2,1,iatom,databasis,datacomp)
         case (:0)
         case default
-          write(*,'(" Error! This program supports H - Zn 6-31G basis set.")')
-          call iabort
+          write(datacomp%iout,'(" Error! This program supports H - Kr 6-31G basis set.")')
+          call iabort(datacomp)
       end select
 !
-      if(ishell > mxshell) then
-        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
-        call iabort
-      endif
-      if(locprim(ishell+1) > mxprim ) then
-        write(*,'(" Error! The number of primitive basis functions exceeds mxprim", &
-&             i6,".")')mxprim
-        call iabort
-      endif
-      if(locbf(ishell+1) > mxao ) then
-        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
-        call iabort
-      endif
       return
 end
 
 
-!-----------------------------------
-  subroutine bs631gd(iatom,ishell)
-!-----------------------------------
+!----------------------------------------------------------------
+  subroutine bs631gd(iatom,ishell,numatomic,databasis,datacomp)
+!----------------------------------------------------------------
 !
-! Set basis functions of 6-31G(d)
+! Set basis functions of 6-31G*
 !
+      use modparam, only : mxatom
+      use modtype, only : typebasis, typecomp
       implicit none
-      integer,intent(in) :: iatom
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
-!
-      call bs631g(iatom,ishell)
-!
-      call bs631gs(iatom,ishell)
-!
-      return
-end
-
-
-!------------------------------------
-  subroutine bs631gdp(iatom,ishell)
-!------------------------------------
-!
-! Set basis functions of 6-31G(d,p)
-!
-      use modmolecule, only : numatomic
-      implicit none
-      integer,intent(in) :: iatom
-      integer,intent(inout) :: ishell
-!
-      call bs631g(iatom,ishell)
 !
       select case(numatomic(iatom))
         case(1:2)
-          call bs631gss(iatom,ishell)
-        case(3:)
-          call bs631gs(iatom,ishell)
+          call bs631g(iatom,ishell,numatomic,databasis,datacomp)
+        case(3:36)
+          call bs631g(iatom,ishell,numatomic,databasis,datacomp)
+          call bs631gs(iatom,ishell,numatomic,databasis,datacomp)
+        case (:0)
+        case default
+          write(datacomp%iout,'(" Error! This program supports H - Kr 6-31G* basis set.")')
+          call iabort(datacomp)
       end select
 !
       return
 end
 
 
-!-----------------------------------
-  subroutine bs631gs(iatom,ishell)
-!-----------------------------------
+!-----------------------------------------------------------------
+  subroutine bs631gdp(iatom,ishell,numatomic,databasis,datacomp)
+!-----------------------------------------------------------------
 !
-! Set basis polarization function of 6-31G(d)
+! Set basis functions of 6-31G**
 !
-      use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mtype, mbf, spher
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom
+      use modtype, only : typebasis, typecomp
       implicit none
-      integer,intent(in) :: iatom
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs631g(iatom,ishell,numatomic,databasis,datacomp)
+          call bs631gss(iatom,ishell,numatomic,databasis,datacomp)
+        case(3:36)
+          call bs631g(iatom,ishell,numatomic,databasis,datacomp)
+          call bs631gs(iatom,ishell,numatomic,databasis,datacomp)
+        case (:0)
+        case default
+          write(datacomp%iout,'(" Error! This program supports H - Kr 6-31G** basis set.")')
+          call iabort(datacomp)
+      end select
+!
+      return
+end
+
+
+!----------------------------------------------------------------
+  subroutine bs631pg(iatom,ishell,numatomic,databasis,datacomp)
+!----------------------------------------------------------------
+!
+! Set basis functions of 6-31+G
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs631g(iatom,ishell,numatomic,databasis,datacomp)
+        case(3:20)
+          call bs631g(iatom,ishell,numatomic,databasis,datacomp)
+          call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
+        case (:0)
+        case default
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-31+G basis set.")')
+          call iabort(datacomp)
+      end select
+!
+      return
+end
+
+!-----------------------------------------------------------------
+  subroutine bs631pgd(iatom,ishell,numatomic,databasis,datacomp)
+!-----------------------------------------------------------------
+!
+! Set basis functions of 6-31+G*
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs631g(iatom,ishell,numatomic,databasis,datacomp)
+        case(3:20)
+          call bs631g(iatom,ishell,numatomic,databasis,datacomp)
+          call bs631gs(iatom,ishell,numatomic,databasis,datacomp)
+          call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
+        case (:0)
+        case default
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-31+G* basis set.")')
+          call iabort(datacomp)
+      end select
+!
+      return
+end
+
+
+!------------------------------------------------------------------
+  subroutine bs631pgdp(iatom,ishell,numatomic,databasis,datacomp)
+!------------------------------------------------------------------
+!
+! Set basis functions of 6-31+G**
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs631g(iatom,ishell,numatomic,databasis,datacomp)
+          call bs631gss(iatom,ishell,numatomic,databasis,datacomp)
+        case(3:20)
+          call bs631g(iatom,ishell,numatomic,databasis,datacomp)
+          call bs631gs(iatom,ishell,numatomic,databasis,datacomp)
+          call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
+        case (:0)
+        case default
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-31+G** basis set.")')
+          call iabort(datacomp)
+      end select
+!
+      return
+end
+
+
+!-----------------------------------------------------------------
+  subroutine bs631ppg(iatom,ishell,numatomic,databasis,datacomp)
+!-----------------------------------------------------------------
+!
+! Set basis functions of 6-31++G
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs631g(iatom,ishell,numatomic,databasis,datacomp)
+          call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
+        case(3:20)
+          call bs631g(iatom,ishell,numatomic,databasis,datacomp)
+          call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
+        case (:0)
+        case default
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-31++G basis set.")')
+          call iabort(datacomp)
+      end select
+!
+      return
+end
+
+
+!------------------------------------------------------------------
+  subroutine bs631ppgd(iatom,ishell,numatomic,databasis,datacomp)
+!------------------------------------------------------------------
+!
+! Set basis functions of 6-31++G*
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs631g(iatom,ishell,numatomic,databasis,datacomp)
+          call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
+        case(3:20)
+          call bs631g(iatom,ishell,numatomic,databasis,datacomp)
+          call bs631gs(iatom,ishell,numatomic,databasis,datacomp)
+          call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
+        case (:0)
+        case default
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-31++G* basis set.")')
+          call iabort(datacomp)
+      end select
+!
+      return
+end
+
+
+!-------------------------------------------------------------------
+  subroutine bs631ppgdp(iatom,ishell,numatomic,databasis,datacomp)
+!-------------------------------------------------------------------
+!
+! Set basis functions of 6-31++G**
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs631g(iatom,ishell,numatomic,databasis,datacomp)
+          call bs631gss(iatom,ishell,numatomic,databasis,datacomp)
+          call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
+        case(3:20)
+          call bs631g(iatom,ishell,numatomic,databasis,datacomp)
+          call bs631gs(iatom,ishell,numatomic,databasis,datacomp)
+          call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
+        case (:0)
+        case default
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-31++G** basis set.")')
+          call iabort(datacomp)
+      end select
+!
+      return
+end
+
+
+!----------------------------------------------------------------
+  subroutine bs631gs(iatom,ishell,numatomic,databasis,datacomp)
+!----------------------------------------------------------------
+!
+! Set polarization function of 6-31G*
+!
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       real(8),parameter :: one=1.0D+00
-      real(8) :: ex631gs(3:30)= &
-&     (/2.00D-01,4.00D-01,6.00D-01,8.00D-01,8.00D-01,8.00D-01,8.00D-01,8.00D-01, &
-&       1.75D-01,1.75D-01,3.25D-01,4.50D-01,5.50D-01,6.50D-01,7.50D-01,8.50D-01, &
-&       2.00D-01,2.00D-01,8.00D-01,8.00D-01,8.00D-01,8.00D-01,8.00D-01,8.00D-01, &
-&       8.00D-01,8.00D-01,8.00D-01,8.00D-01/)
+      real(8) :: ex631gs(3:36)= &
+&     (/ 2.00D-01, 4.00D-01, 6.00D-01, 8.00D-01, 8.00D-01, 8.00D-01, 8.00D-01, 8.00D-01, &
+&        1.75D-01, 1.75D-01, 3.25D-01, 4.50D-01, 5.50D-01, 6.50D-01, 7.50D-01, 8.50D-01, &
+&       4.485D-02, 5.02D-02, 8.00D-01, 8.00D-01, 8.00D-01, 8.00D-01, 8.00D-01, 8.00D-01, &
+&        8.00D-01, 8.00D-01, 8.00D-01, 8.00D-01,2.289D-01,2.772D-01,3.277D-01,3.810D-01, &
+&       4.366D-01,4.948D-01/)
 !
       select case (numatomic(iatom))
-        case(:2)
-        case(3:20)
+        case(3:20, 31:36)
           ishell= ishell+1
-          ex(locprim(ishell)+1)= ex631gs(numatomic(iatom))
-          coeff(locprim(ishell)+1)= one
-          mprim(ishell)= 1
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1)= locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1)= locbf(ishell)+6
-          endif
+          databasis%ex(databasis%locprim(ishell)+1)= ex631gs(numatomic(iatom))
+          databasis%coeff(databasis%locprim(ishell)+1)= one
+          call basisparam(ishell,2,1,iatom,databasis,datacomp)
         case(21:30)
           ishell= ishell+1
-          ex(locprim(ishell)+1)= ex631gs(numatomic(iatom))
-          coeff(locprim(ishell)+1)= one
-          mprim(ishell)= 1
-          mtype(ishell)= 3
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 7
-            locbf(ishell+1)= locbf(ishell)+7
-          else
-            mbf(ishell)= 10
-            locbf(ishell+1)= locbf(ishell)+10
-          endif
-        case default
-          write(*,'(" Error! This program supports Li - Zn 6-31G* basis set.")')
-          call iabort
+          databasis%ex(databasis%locprim(ishell)+1)= ex631gs(numatomic(iatom))
+          databasis%coeff(databasis%locprim(ishell)+1)= one
+          call basisparam(ishell,3,1,iatom,databasis,datacomp)
       end select
 !
-      if(ishell > mxshell) then
-        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
-        call iabort
-      endif
-      if(locprim(ishell+1) > mxprim ) then
-        write(*,'(" Error! The number of primitive basis functions exceeds mxprim", &
-&             i6,".")')mxprim
-        call iabort
-      endif
-      if(locbf(ishell+1) > mxao ) then
-        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
-        call iabort
-      endif
       return
 end
 
 
-!------------------------------------
-  subroutine bs631gss(iatom,ishell)
-!------------------------------------
+!-----------------------------------------------------------------
+  subroutine bs631gss(iatom,ishell,numatomic,databasis,datacomp)
+!-----------------------------------------------------------------
 !
-! Set basis polarization function of Hydrogen 6-31G(d,p)
+! Set polarization function of Hydrogen 6-31G**
 !
-      use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mtype, mbf
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
       implicit none
-      integer,intent(in) :: iatom
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       real(8),parameter :: one=1.0D+00, ex631gss=1.1D+00 
 !
       select case (numatomic(iatom))
         case(1:2)
           ishell= ishell+1
-          ex(locprim(ishell)+1)= ex631gss
-          coeff(locprim(ishell)+1)= one
-          mprim(ishell)= 1
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          mbf(ishell)= 3
-          locbf(ishell+1) = locbf(ishell)+3
+          databasis%ex(databasis%locprim(ishell)+1)= ex631gss
+          databasis%coeff(databasis%locprim(ishell)+1)= one
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
       end select
 !
-      if(ishell > mxshell) then
-        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
-        call iabort
-      endif
-      if(locprim(ishell+1) > mxprim ) then
-        write(*,'(" Error! The number of primitive basis functions exceeds mxprim", &
-&             i6,".")')mxprim
-        call iabort
-      endif
-      if(locbf(ishell+1) > mxao ) then
-        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
-        call iabort
-      endif
       return
 end
 
 
-!-----------------------------------
-  subroutine bs6311g(iatom,ishell)
-!-----------------------------------
+!------------------------------------------------------------------
+  subroutine bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
+!------------------------------------------------------------------
+!
+! Set diffuse function of 6-31++G and 6-311++G series
+!
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+      real(8),parameter :: one=1.0D+00
+      real(8) :: exdiffuse(20)= &
+&     (/ 3.600D-02, 8.600D-02, 7.400D-03, 2.070D-02, 3.150D-02, &
+&        4.380D-02, 6.390D-02, 8.450D-02, 1.076D-01, 1.300D-01, &
+&        7.600D-03, 1.460D-02, 3.180D-02, 3.310D-02, 3.480D-02, &
+&        4.050D-02, 4.830D-02, 6.000D-02, 4.700D-03, 7.100D-03/)
+!
+      select case (numatomic(iatom))
+        case(1:2)
+          ishell= ishell+1
+          databasis%ex(databasis%locprim(ishell)+1)= exdiffuse(numatomic(iatom))
+          databasis%coeff(databasis%locprim(ishell)+1)= one
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
+        case(3:20)
+          ishell= ishell+1
+          databasis%ex(databasis%locprim(ishell)+1)= exdiffuse(numatomic(iatom))
+          databasis%coeff(databasis%locprim(ishell)+1)= one
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
+          ishell= ishell+1
+          databasis%ex(databasis%locprim(ishell)+1)= exdiffuse(numatomic(iatom))
+          databasis%coeff(databasis%locprim(ishell)+1)= one
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
+      end select
+!
+      return
+end
+
+
+!----------------------------------------------------------------
+  subroutine bs6311g(iatom,ishell,numatomic,databasis,datacomp)
+!----------------------------------------------------------------
 !
 ! Set basis functions of 6-311G
 !
-      use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mbf, mtype, spher
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
       implicit none
-      integer,intent(in) :: iatom
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       integer :: j, num
       integer :: is1(2), is2(3:10), ip2(3:10), is3(11:18), ip3(11:18)
@@ -4059,35 +3780,20 @@ end
 ! 1S
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exs1(is1(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs1(is1(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exs1(is1(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs1(is1(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs1(is1(numatomic(iatom))+4)
-          coeff(locprim(ishell)+1)= coeffs1(is1(numatomic(iatom))+4)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= exs1(is1(numatomic(iatom))+4)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffs1(is1(numatomic(iatom))+4)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs1(is1(numatomic(iatom))+5)
-          coeff(locprim(ishell)+1)= coeffs1(is1(numatomic(iatom))+5)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= exs1(is1(numatomic(iatom))+5)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffs1(is1(numatomic(iatom))+5)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
 ! Set functions for Li - Ne
 !
@@ -4095,483 +3801,493 @@ end
 ! 1S
           ishell= ishell+1
           do j= 1,6
-            ex(locprim(ishell)+j)= exs2(is2(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs2(is2(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exs2(is2(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs2(is2(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 6
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+6
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,6,iatom,databasis,datacomp)
 ! 2SP
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exs2(is2(numatomic(iatom))+j+6)
-            coeff(locprim(ishell)+j)= coeffs2(is2(numatomic(iatom))+j+6)
+            databasis%ex(databasis%locprim(ishell)+j)= exs2(is2(numatomic(iatom))+j+6)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs2(is2(numatomic(iatom))+j+6)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exs2(is2(numatomic(iatom))+j+6)
-            coeff(locprim(ishell)+j)= coeffp2(ip2(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exs2(is2(numatomic(iatom))+j+6)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp2(ip2(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs2(is2(numatomic(iatom))+10)
-          coeff(locprim(ishell)+1)= coeffs2(is2(numatomic(iatom))+10)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= exs2(is2(numatomic(iatom))+10)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffs2(is2(numatomic(iatom))+10)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs2(is2(numatomic(iatom))+10)
-          coeff(locprim(ishell)+1)= coeffp2(ip2(numatomic(iatom))+4)
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          databasis%ex(databasis%locprim(ishell)+1)= exs2(is2(numatomic(iatom))+10)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffp2(ip2(numatomic(iatom))+4)
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs2(is2(numatomic(iatom))+11)
-          coeff(locprim(ishell)+1)= coeffs2(is2(numatomic(iatom))+11)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= exs2(is2(numatomic(iatom))+11)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffs2(is2(numatomic(iatom))+11)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs2(is2(numatomic(iatom))+11)
-          coeff(locprim(ishell)+1)= coeffp2(ip2(numatomic(iatom))+5)
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          databasis%ex(databasis%locprim(ishell)+1)= exs2(is2(numatomic(iatom))+11)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffp2(ip2(numatomic(iatom))+5)
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
-! Set  functions for Na - Ar
+! Set functions for Na - Ar
 !
         case(11:18)
 ! S functions
           ishell= ishell+1
           do j= 1,6
-            ex(locprim(ishell)+j)= exs3(is3(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs3(is3(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exs3(is3(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs3(is3(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 6
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+6
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,6,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exs3(is3(numatomic(iatom))+j+6)
-            coeff(locprim(ishell)+j)= coeffs3(is3(numatomic(iatom))+j+6)
+            databasis%ex(databasis%locprim(ishell)+j)= exs3(is3(numatomic(iatom))+j+6)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs3(is3(numatomic(iatom))+j+6)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs3(is3(numatomic(iatom))+10)
-          coeff(locprim(ishell)+1)= coeffs3(is3(numatomic(iatom))+10)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= exs3(is3(numatomic(iatom))+10)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffs3(is3(numatomic(iatom))+10)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs3(is3(numatomic(iatom))+11)
-          coeff(locprim(ishell)+1)= coeffs3(is3(numatomic(iatom))+11)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= exs3(is3(numatomic(iatom))+11)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffs3(is3(numatomic(iatom))+11)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs3(is3(numatomic(iatom))+12)
-          coeff(locprim(ishell)+1)= coeffs3(is3(numatomic(iatom))+12)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= exs3(is3(numatomic(iatom))+12)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffs3(is3(numatomic(iatom))+12)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs3(is3(numatomic(iatom))+13)
-          coeff(locprim(ishell)+1)= coeffs3(is3(numatomic(iatom))+13)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= exs3(is3(numatomic(iatom))+13)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffs3(is3(numatomic(iatom))+13)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 ! P functions
           ishell= ishell+1
           num= 4
           if(numatomic(iatom) >= 17) num= 5
           do j= 1,num
-            ex(locprim(ishell)+j)= exp3(ip3(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp3(ip3(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exp3(ip3(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp3(ip3(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= num
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+num
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,num,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= exp3(ip3(numatomic(iatom))+j+num)
-            coeff(locprim(ishell)+j)= coeffp3(ip3(numatomic(iatom))+j+num)
+            databasis%ex(databasis%locprim(ishell)+j)= exp3(ip3(numatomic(iatom))+j+num)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp3(ip3(numatomic(iatom))+j+num)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,2,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exp3(ip3(numatomic(iatom))+num+3)
-          coeff(locprim(ishell)+1)= coeffp3(ip3(numatomic(iatom))+num+3)
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          databasis%ex(databasis%locprim(ishell)+1)= exp3(ip3(numatomic(iatom))+num+3)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffp3(ip3(numatomic(iatom))+num+3)
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exp3(ip3(numatomic(iatom))+num+4)
-          coeff(locprim(ishell)+1)= coeffp3(ip3(numatomic(iatom))+num+4)
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          databasis%ex(databasis%locprim(ishell)+1)= exp3(ip3(numatomic(iatom))+num+4)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffp3(ip3(numatomic(iatom))+num+4)
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exp3(ip3(numatomic(iatom))+num+5)
-          coeff(locprim(ishell)+1)= coeffp3(ip3(numatomic(iatom))+num+5)
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          databasis%ex(databasis%locprim(ishell)+1)= exp3(ip3(numatomic(iatom))+num+5)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffp3(ip3(numatomic(iatom))+num+5)
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
-! Set  functions for K, Ca, Ga - Kr 
+! Set functions for K, Ca, Ga - Kr 
 !
         case(19:20,31:36)
 ! S functions
           ishell= ishell+1
           do j= 1,6
-            ex(locprim(ishell)+j)= exs4(is4(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs4(is4(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exs4(is4(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(is4(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 6
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+6
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,6,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           num= 2
           if(numatomic(iatom) >= 31) num= 3
           do j= 1,num
-            ex(locprim(ishell)+j)= exs4(is4(numatomic(iatom))+j+6)
-            coeff(locprim(ishell)+j)= coeffs4(is4(numatomic(iatom))+j+6)
+            databasis%ex(databasis%locprim(ishell)+j)= exs4(is4(numatomic(iatom))+j+6)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(is4(numatomic(iatom))+j+6)
           enddo
-          mprim(ishell)= num
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+num
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,num,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs4(is4(numatomic(iatom))+num+7)
-          coeff(locprim(ishell)+1)= coeffs4(is4(numatomic(iatom))+num+7)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= exs4(is4(numatomic(iatom))+num+7)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffs4(is4(numatomic(iatom))+num+7)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs4(is4(numatomic(iatom))+num+8)
-          coeff(locprim(ishell)+1)= coeffs4(is4(numatomic(iatom))+num+8)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= exs4(is4(numatomic(iatom))+num+8)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffs4(is4(numatomic(iatom))+num+8)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs4(is4(numatomic(iatom))+num+9)
-          coeff(locprim(ishell)+1)= coeffs4(is4(numatomic(iatom))+num+9)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= exs4(is4(numatomic(iatom))+num+9)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffs4(is4(numatomic(iatom))+num+9)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs4(is4(numatomic(iatom))+num+10)
-          coeff(locprim(ishell)+1)= coeffs4(is4(numatomic(iatom))+num+10)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= exs4(is4(numatomic(iatom))+num+10)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffs4(is4(numatomic(iatom))+num+10)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs4(is4(numatomic(iatom))+num+11)
-          coeff(locprim(ishell)+1)= coeffs4(is4(numatomic(iatom))+num+11)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= exs4(is4(numatomic(iatom))+num+11)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffs4(is4(numatomic(iatom))+num+11)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exs4(is4(numatomic(iatom))+num+12)
-          coeff(locprim(ishell)+1)= coeffs4(is4(numatomic(iatom))+num+12)
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          databasis%ex(databasis%locprim(ishell)+1)= exs4(is4(numatomic(iatom))+num+12)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffs4(is4(numatomic(iatom))+num+12)
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 ! P functions
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exp4(ip4(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp4(ip4(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exp4(ip4(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ip4(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exp4(ip4(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffp4(ip4(numatomic(iatom))+j+3)
+            databasis%ex(databasis%locprim(ishell)+j)= exp4(ip4(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ip4(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           num= 1
           if(numatomic(iatom) >= 31) num= 3
           do j= 1,num
-            ex(locprim(ishell)+j)= exp4(ip4(numatomic(iatom))+j+6)
-            coeff(locprim(ishell)+j)= coeffp4(ip4(numatomic(iatom))+j+6)
+            databasis%ex(databasis%locprim(ishell)+j)= exp4(ip4(numatomic(iatom))+j+6)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ip4(numatomic(iatom))+j+6)
           enddo
-          mprim(ishell)= num
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+num
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,num,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exp4(ip4(numatomic(iatom))+num+7)
-          coeff(locprim(ishell)+1)= coeffp4(ip4(numatomic(iatom))+num+7)
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          databasis%ex(databasis%locprim(ishell)+1)= exp4(ip4(numatomic(iatom))+num+7)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffp4(ip4(numatomic(iatom))+num+7)
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exp4(ip4(numatomic(iatom))+num+8)
-          coeff(locprim(ishell)+1)= coeffp4(ip4(numatomic(iatom))+num+8)
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          databasis%ex(databasis%locprim(ishell)+1)= exp4(ip4(numatomic(iatom))+num+8)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffp4(ip4(numatomic(iatom))+num+8)
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exp4(ip4(numatomic(iatom))+num+9)
-          coeff(locprim(ishell)+1)= coeffp4(ip4(numatomic(iatom))+num+9)
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          databasis%ex(databasis%locprim(ishell)+1)= exp4(ip4(numatomic(iatom))+num+9)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffp4(ip4(numatomic(iatom))+num+9)
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
-          ex(locprim(ishell)+1)= exp4(ip4(numatomic(iatom))+num+10)
-          coeff(locprim(ishell)+1)= coeffp4(ip4(numatomic(iatom))+num+10)
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          databasis%ex(databasis%locprim(ishell)+1)= exp4(ip4(numatomic(iatom))+num+10)
+          databasis%coeff(databasis%locprim(ishell)+1)= coeffp4(ip4(numatomic(iatom))+num+10)
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 ! D functions
           ishell= ishell+1
           num= 3
           if(numatomic(iatom) >= 31) num= 4
           do j= 1,num
-            ex(locprim(ishell)+j)= exd4(id4(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffd4(id4(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exd4(id4(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffd4(id4(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= num
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+num
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1)= locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1)= locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,num,iatom,databasis,datacomp)
           if(numatomic(iatom) >= 31) then
             ishell= ishell+1
-            ex(locprim(ishell)+1)= exd4(id4(numatomic(iatom))+num+1)
-            coeff(locprim(ishell)+1)= coeffd4(id4(numatomic(iatom))+num+1)
-            mprim(ishell)= 1
-            mtype(ishell)= 2
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+1
-            if(spher) then
-              mbf(ishell)= 5
-              locbf(ishell+1)= locbf(ishell)+5
-            else
-              mbf(ishell)= 6
-              locbf(ishell+1)= locbf(ishell)+6
-            endif
+            databasis%ex(databasis%locprim(ishell)+1)= exd4(id4(numatomic(iatom))+num+1)
+            databasis%coeff(databasis%locprim(ishell)+1)= coeffd4(id4(numatomic(iatom))+num+1)
+          call basisparam(ishell,2,1,iatom,databasis,datacomp)
           endif
         case(:0)
         case default
-          write(*,'(" Error! This program supports H - Ca, Ga - Kr 6-311G basis set.")')
-          call iabort
+          write(datacomp%iout,'(" Error! This program supports H - Ca, Ga - Kr 6-311G basis set.")')
+          call iabort(datacomp)
       end select
 !
-      if(ishell > mxshell) then
-        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
-        call iabort
-      endif
-      if(locprim(ishell+1) > mxprim ) then
-        write(*,'(" Error! The number of primitive basis functions exceeds mxprim", &
-&             i6,".")')mxprim
-        call iabort
-      endif
-      if(locbf(ishell+1) > mxao ) then
-        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
-        call iabort
-      endif
-!
       return
 end
 
 
-!-----------------------------------
-  subroutine bs6311gd(iatom,ishell)
-!-----------------------------------
+!-----------------------------------------------------------------
+  subroutine bs6311gd(iatom,ishell,numatomic,databasis,datacomp)
+!-----------------------------------------------------------------
 !
-! Set basis functions of 6-311G(d)
+! Set basis functions of 6-311G*
 !
+      use modparam, only : mxatom
+      use modtype, only : typebasis, typecomp
       implicit none
-      integer,intent(in) :: iatom
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
-!
-      call bs6311g(iatom,ishell)
-!
-      call bs6311gs(iatom,ishell)
-!
-      return
-end
-
-
-!------------------------------------
-  subroutine bs6311gdp(iatom,ishell)
-!------------------------------------
-!
-! Set basis functions of 6-311G(d,p)
-!
-      use modmolecule, only : numatomic
-      implicit none
-      integer,intent(in) :: iatom
-      integer,intent(inout) :: ishell
-!
-      call bs6311g(iatom,ishell)
 !
       select case(numatomic(iatom))
         case(1:2)
-          call bs6311gss(iatom,ishell)
-        case(3:)
-        call bs6311gs(iatom,ishell)
+          call bs6311g(iatom,ishell,numatomic,databasis,datacomp)
+        case(3:20,31:36)
+          call bs6311g(iatom,ishell,numatomic,databasis,datacomp)
+          call bs6311gs(iatom,ishell,numatomic,databasis,datacomp)
+        case(:0)
+        case default
+          write(datacomp%iout,'(" Error! This program supports H - Ca, Ga - Kr 6-311G* basis set.")')
+          call iabort(datacomp)
       end select
 !
       return
 end
 
 
-!-----------------------------------
-  subroutine bs6311gs(iatom,ishell)
-!-----------------------------------
+!------------------------------------------------------------------
+  subroutine bs6311gdp(iatom,ishell,numatomic,databasis,datacomp)
+!------------------------------------------------------------------
 !
-! Set basis polarization function of 6-311G(d)
+! Set basis functions of 6-311G**
 !
-      use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mtype, mbf, spher
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom
+      use modtype, only : typebasis, typecomp
       implicit none
-      integer,intent(in) :: iatom
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs6311g(iatom,ishell,numatomic,databasis,datacomp)
+          call bs6311gss(iatom,ishell,numatomic,databasis,datacomp)
+        case(3:20,31:36)
+          call bs6311g(iatom,ishell,numatomic,databasis,datacomp)
+          call bs6311gs(iatom,ishell,numatomic,databasis,datacomp)
+        case(:0)
+        case default
+          write(datacomp%iout,'(" Error! This program supports H - Ca, Ga - Kr 6-311G** basis set.")')
+          call iabort(datacomp)
+      end select
+!
+      return
+end
+
+
+!-----------------------------------------------------------------
+  subroutine bs6311pg(iatom,ishell,numatomic,databasis,datacomp)
+!-----------------------------------------------------------------
+!
+! Set basis functions of 6-311+G
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs6311g(iatom,ishell,numatomic,databasis,datacomp)
+        case(3:20)
+          call bs6311g(iatom,ishell,numatomic,databasis,datacomp)
+          call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
+        case(:0)
+        case default
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-311+G basis set.")')
+          call iabort(datacomp)
+      end select
+!
+      return
+end
+
+
+!------------------------------------------------------------------
+  subroutine bs6311pgd(iatom,ishell,numatomic,databasis,datacomp)
+!------------------------------------------------------------------
+!
+! Set basis functions of 6-311+G*
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs6311g(iatom,ishell,numatomic,databasis,datacomp)
+        case(3:20)
+          call bs6311g(iatom,ishell,numatomic,databasis,datacomp)
+          call bs6311gs(iatom,ishell,numatomic,databasis,datacomp)
+          call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
+        case(:0)
+        case default
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-311+G* basis set.")')
+          call iabort(datacomp)
+      end select
+!
+      return
+end
+
+
+!-------------------------------------------------------------------
+  subroutine bs6311pgdp(iatom,ishell,numatomic,databasis,datacomp)
+!-------------------------------------------------------------------
+!
+! Set basis functions of 6-311+G**
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs6311g(iatom,ishell,numatomic,databasis,datacomp)
+          call bs6311gss(iatom,ishell,numatomic,databasis,datacomp)
+        case(3:20)
+          call bs6311g(iatom,ishell,numatomic,databasis,datacomp)
+          call bs6311gs(iatom,ishell,numatomic,databasis,datacomp)
+          call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
+        case(:0)
+        case default
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-311+G** basis set.")')
+          call iabort(datacomp)
+      end select
+!
+      return
+end
+
+
+!------------------------------------------------------------------
+  subroutine bs6311ppg(iatom,ishell,numatomic,databasis,datacomp)
+!------------------------------------------------------------------
+!
+! Set basis functions of 6-311++G
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs6311g(iatom,ishell,numatomic,databasis,datacomp)
+          call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
+        case(3:20)
+          call bs6311g(iatom,ishell,numatomic,databasis,datacomp)
+          call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
+        case(:0)
+        case default
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-311++G basis set.")')
+          call iabort(datacomp)
+      end select
+!
+      return
+end
+
+
+!-------------------------------------------------------------------
+  subroutine bs6311ppgd(iatom,ishell,numatomic,databasis,datacomp)
+!-------------------------------------------------------------------
+!
+! Set basis functions of 6-311++G*
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs6311g(iatom,ishell,numatomic,databasis,datacomp)
+          call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
+        case(3:20)
+          call bs6311g(iatom,ishell,numatomic,databasis,datacomp)
+          call bs6311gs(iatom,ishell,numatomic,databasis,datacomp)
+          call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
+        case(:0)
+        case default
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-311++G* basis set.")')
+          call iabort(datacomp)
+      end select
+!
+      return
+end
+
+
+!--------------------------------------------------------------------
+  subroutine bs6311ppgdp(iatom,ishell,numatomic,databasis,datacomp)
+!--------------------------------------------------------------------
+!
+! Set basis functions of 6-311++G**
+!
+      use modparam, only : mxatom
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+!
+      select case(numatomic(iatom))
+        case(1:2)
+          call bs6311g(iatom,ishell,numatomic,databasis,datacomp)
+          call bs6311gss(iatom,ishell,numatomic,databasis,datacomp)
+          call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
+        case(3:20)
+          call bs6311g(iatom,ishell,numatomic,databasis,datacomp)
+          call bs6311gs(iatom,ishell,numatomic,databasis,datacomp)
+          call bsdiffuse(iatom,ishell,numatomic,databasis,datacomp)
+        case(:0)
+        case default
+          write(datacomp%iout,'(" Error! This program supports H - Ca 6-311++G** basis set.")')
+          call iabort(datacomp)
+      end select
+!
+      return
+end
+
+
+!-----------------------------------------------------------------
+  subroutine bs6311gs(iatom,ishell,numatomic,databasis,datacomp)
+!-----------------------------------------------------------------
+!
+! Set basis polarization function of 6-311G*
+!
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       real(8),parameter :: one=1.0D+00
       real(8) :: ex6311gs(3:36)
@@ -4583,99 +4299,56 @@ end
 &      /1.690D-01,2.280D-01,2.640D-01,3.050D-01,4.510D-01,3.950D-01/
 !
       select case (numatomic(iatom))
-        case(:2)
         case(3:20,31:36)
           ishell= ishell+1
-          ex(locprim(ishell)+1)= ex6311gs(numatomic(iatom))
-          coeff(locprim(ishell)+1)= one
-          mprim(ishell)= 1
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1)= locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1)= locbf(ishell)+6
-          endif
-        case default
-          write(*,'(" Error! This program supports Li - Ca, Ga - Kr 6-311G* basis set.")')
-          call iabort
+          databasis%ex(databasis%locprim(ishell)+1)= ex6311gs(numatomic(iatom))
+          databasis%coeff(databasis%locprim(ishell)+1)= one
+          call basisparam(ishell,2,1,iatom,databasis,datacomp)
       end select
 !
-      if(ishell > mxshell) then
-        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
-        call iabort
-      endif
-      if(locprim(ishell+1) > mxprim ) then
-        write(*,'(" Error! The number of primitive basis functions exceeds mxprim", &
-&             i6,".")')mxprim
-        call iabort
-      endif
-      if(locbf(ishell+1) > mxao ) then
-        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
-        call iabort
-      endif
       return
 end
 
 
-!------------------------------------
-  subroutine bs6311gss(iatom,ishell)
-!------------------------------------
+!------------------------------------------------------------------
+  subroutine bs6311gss(iatom,ishell,numatomic,databasis,datacomp)
+!------------------------------------------------------------------
 !
-! Set basis polarization function of Hydrogen 6-311G(d,p)
+! Set basis polarization function of Hydrogen 6-311G**
 !
-      use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mtype, mbf
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
       implicit none
-      integer,intent(in) :: iatom
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       real(8),parameter :: one=1.0D+00, ex6311gss=0.75D+00
 !
       select case (numatomic(iatom))
         case(1:2)
           ishell= ishell+1
-          ex(locprim(ishell)+1)= ex6311gss
-          coeff(locprim(ishell)+1)= one
-          mprim(ishell)= 1
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          mbf(ishell)= 3
-          locbf(ishell+1) = locbf(ishell)+3
+          databasis%ex(databasis%locprim(ishell)+1)= ex6311gss
+          databasis%coeff(databasis%locprim(ishell)+1)= one
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
       end select
 !
-      if(ishell > mxshell) then
-        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
-        call iabort
-      endif
-      if(locprim(ishell+1) > mxprim ) then
-        write(*,'(" Error! The number of primitive basis functions exceeds mxprim", &
-&             i6,".")')mxprim
-        call iabort
-      endif
-      if(locbf(ishell+1) > mxao ) then
-        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
-        call iabort
-      endif
       return
 end
 
 
-!-----------------------------------
-  subroutine bsccpvdz(iatom,ishell)
-!-----------------------------------
+!-----------------------------------------------------------------
+  subroutine bsccpvdz(iatom,ishell,numatomic,databasis,datacomp)
+!-----------------------------------------------------------------
 !
 ! Set basis functions of cc-pVDZ
 !
-      use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mbf, mtype, spher
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
       implicit none
-      integer,intent(in) :: iatom
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       integer :: j, num
       integer :: ise(36)=(/0,4,8,17,26,35,44,53,62,71,80,92,104,116,128,140,152,164, 176,176, &
@@ -5493,119 +5166,69 @@ end
         case(1:2)
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+3)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
 ! Set Li - Ne functions
 !
         case(3:10)
           ishell= ishell+1
           do j= 1,8
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 8
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+8
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,8,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,8
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+8)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+8)
           enddo
-          mprim(ishell)= 8
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+8
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,8,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+8)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+16)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+8)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+16)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+3)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= one
+            databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= one
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1) = locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1) = locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,1,iatom,databasis,datacomp)
 !
 ! Set Na - Ar functions
 !
@@ -5613,104 +5236,59 @@ end
 ! S functions
           ishell= ishell+1
           do j= 1,11
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 11
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+11
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,11,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,11
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+11)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+11)
           enddo
-          mprim(ishell)= 11
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+11
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,11,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,11
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+22)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+22)
           enddo
-          mprim(ishell)= 11
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+11
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,11,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+11)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+33)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+11)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+33)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 ! P functions
           ishell= ishell+1
           do j= 1,7
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 7
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+7
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,7,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,7
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+7)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+7)
           enddo
-          mprim(ishell)= 7
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+7
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,7,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+7)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+14)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+7)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+14)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 ! D functions
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= one
+            databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= one
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1) = locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1) = locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,1,iatom,databasis,datacomp)
 !
 ! Set Ca, Ga - Kr functions
 !
@@ -5718,147 +5296,82 @@ end
 ! S functions
           ishell= ishell+1
           do j= 1,13
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 13
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+13
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,13,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,13
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+13)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+13)
           enddo
-          mprim(ishell)= 13
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+13
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,13,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,13
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+26)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+26)
           enddo
-          mprim(ishell)= 13
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+13
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,13,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,13
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+39)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+39)
           enddo
-          mprim(ishell)= 13
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+13
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,13,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+13)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+52)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+13)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+52)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 ! P functions
           ishell= ishell+1
           do j= 1,10
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 10
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+10
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,10,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,10
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+10)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+10)
           enddo
-          mprim(ishell)= 10
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+10
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,10,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,10
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+20)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+20)
           enddo
-          mprim(ishell)= 10
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+10
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,10,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+10)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+30)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+10)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+30)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 ! D functions
           ishell= ishell+1
           num= 4
           if(numatomic(iatom) >= 31) num= 5
           do j= 1,num
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= num
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+num
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1) = locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1) = locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,num,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j+num)
-            coeff(locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j+num)
+            databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j+num)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j+num)
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1) = locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1) = locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,1,iatom,databasis,datacomp)
 !
 ! Set Sc - Zn functions
 !
@@ -5866,237 +5379,130 @@ end
 ! S functions
           ishell= ishell+1
           do j= 1,19
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 19
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+19
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,19,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,19
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+19)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+19)
           enddo
-          mprim(ishell)= 19
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+19
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,19,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,19
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+38)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+38)
           enddo
-          mprim(ishell)= 19
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+19
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,19,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,19
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+57)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+57)
           enddo
-          mprim(ishell)= 19
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+19
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,19,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,19
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+76)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+76)
           enddo
-          mprim(ishell)= 19
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+19
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,19,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+19)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+95)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+19)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+95)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 ! P functions
           ishell= ishell+1
           do j= 1,15
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 15
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+15
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,15,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,15
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+15)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+15)
           enddo
-          mprim(ishell)= 15
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+15
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,15,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,15
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+30)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+30)
           enddo
-          mprim(ishell)= 15
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+15
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,15,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,15
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+45)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+45)
           enddo
-          mprim(ishell)= 15
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+15
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,15,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+15)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+60)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+15)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+60)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 ! D functions
           ishell= ishell+1
           do j= 1,7
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 7
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+7
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1)= locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1)= locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,7,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,7
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j+7)
+            databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j+7)
           enddo
-          mprim(ishell)= 7
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+7
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1)= locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1)= locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,7,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j+7)
-            coeff(locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j+14)
+            databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j+7)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j+14)
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1)= locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1)= locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,1,iatom,databasis,datacomp)
 ! F functions
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= expf(ife(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coefff(ifc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expf(ife(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coefff(ifc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 2
-          mtype(ishell)= 3
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          if(spher) then
-            mbf(ishell)= 7
-            locbf(ishell+1)= locbf(ishell)+7
-          else
-            mbf(ishell)= 10
-            locbf(ishell+1)= locbf(ishell)+10
-          endif
+          call basisparam(ishell,3,2,iatom,databasis,datacomp)
         case(:0)
         case default
-          write(*,'(" Error! This program supports H - Ar, Ca - Kr cc-PVDZ basis set.")')
-          call iabort
+          write(datacomp%iout,'(" Error! This program supports H - Ar, Ca - Kr cc-PVDZ basis set.")')
+          call iabort(datacomp)
       endselect
 !
-      if(ishell > mxshell) then
-        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
-        call iabort
-      endif
-      if(locprim(ishell+1) > mxprim ) then
-        write(*,'(" Error! The number of primitive basis functions exceeds mxprim", &
-&             i6,".")')mxprim
-        call iabort
-      endif
-      if(locbf(ishell+1) > mxao ) then
-        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
-        call iabort
-      endif
       return
 end
 
 
-!------------------------------------
-  subroutine bsccpvtz(iatom,ishell)
-!------------------------------------
+!-----------------------------------------------------------------
+  subroutine bsccpvtz(iatom,ishell,numatomic,databasis,datacomp)
+!-----------------------------------------------------------------
 !
 ! Set basis functions of cc-pVTZ
 !
-      use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mbf, mtype, spher
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
       implicit none
-      integer,intent(in) :: iatom
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       integer :: j, k, num
       integer :: ise(36)=(/0,5, 11,22,33,43,53,63,73,83, 93,109,124,139,154,169,184,199, 214,214,&
@@ -7091,80 +6497,45 @@ end
           num=4
           if(numatomic(iatom) == 1) num=3
           do j= 1,num
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= num
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+num
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,num,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+num)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+num)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+num)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+num)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+num+1)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+num+1)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+num+1)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+num+1)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !  P function
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+1)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+1)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+1)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+1)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !  D function
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= one
+            databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= one
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1) = locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1) = locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,1,iatom,databasis,datacomp)
 !
 ! Set Li - Ne functions
 !
@@ -7174,138 +6545,73 @@ end
           num= 8
           if(numatomic(iatom) < 5) num= 9
           do j= 1,num
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= num
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+num
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,num,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,num
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+num)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+num)
           enddo
-          mprim(ishell)= num
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+num
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,num,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+num)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+num*2)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+num)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+num*2)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+num+1)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+num*2+1)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+num+1)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+num*2+1)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !  P function
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+3)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+4)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+4)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+4)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+4)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !  D function
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= one
+            databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= one
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1) = locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1) = locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j+1)
-            coeff(locprim(ishell)+j)= one
+            databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j+1)
+            databasis%coeff(databasis%locprim(ishell)+j)= one
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1) = locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1) = locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,1,iatom,databasis,datacomp)
 !  F function
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expf(ife(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= one
+            databasis%ex(databasis%locprim(ishell)+j)= expf(ife(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= one
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 3
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 7
-            locbf(ishell+1) = locbf(ishell)+7
-          else
-            mbf(ishell)= 10
-            locbf(ishell+1) = locbf(ishell)+10
-          endif
+          call basisparam(ishell,3,1,iatom,databasis,datacomp)
 !
 ! Set Na - Ar functions
 !
@@ -7315,164 +6621,89 @@ end
           num= 13
           if(numatomic(iatom) == 11) num= 14
           do j= 1,num
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= num
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+num
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,num,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,num
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+num)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+num)
           enddo
-          mprim(ishell)= num
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+num
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,num,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,num
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+num*2)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+num*2)
           enddo
-          mprim(ishell)= num
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+num
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,num,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+num)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+num*3)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+num)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+num*3)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+num+1)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+num*3+1)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+num+1)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+num*3+1)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !  P function
           ishell= ishell+1
           num= 7
           if(numatomic(iatom) < 13) num= 8
           do j= 1,num
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= num
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+num
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,num,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,num
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+num)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+num)
           enddo
-          mprim(ishell)= num
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+num
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,num,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+num)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+num*2)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+num)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+num*2)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+num+1)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+num*2+1)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+num+1)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+num*2+1)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !  D function
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= one
+            databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= one
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1) = locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1) = locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j+1)
-            coeff(locprim(ishell)+j)= one
+            databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j+1)
+            databasis%coeff(databasis%locprim(ishell)+j)= one
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1) = locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1) = locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,1,iatom,databasis,datacomp)
 !  F function
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expf(ife(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= one
+            databasis%ex(databasis%locprim(ishell)+j)= expf(ife(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= one
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 3
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 7
-            locbf(ishell+1) = locbf(ishell)+7
-          else
-            mbf(ishell)= 10
-            locbf(ishell+1) = locbf(ishell)+10
-          endif
+          call basisparam(ishell,3,1,iatom,databasis,datacomp)
 !
 ! Set Ca, Ga - Kr functions
 !
@@ -7481,150 +6712,80 @@ end
           do k= 0,3
             ishell= ishell+1
             do j= 1,18
-              ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-              coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+18*k)
+              databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+              databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+18*k)
             enddo
-            mprim(ishell)= 18
-            mbf(ishell)= 1
-            mtype(ishell)= 0
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+18
-            locbf(ishell+1) = locbf(ishell)+1
+            call basisparam(ishell,0,18,iatom,databasis,datacomp)
           enddo
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+18)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+72)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+18)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+72)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+19)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+73)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+19)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+73)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !  P function
           num= 12
           if(numatomic(iatom) >= 31) num= 11
           do k=0,2
             ishell= ishell+1
             do j= 1,num
-              ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-              coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+num*k)
+              databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
+              databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+num*k)
             enddo
-            mprim(ishell)= num
-            mbf(ishell)= 3
-            mtype(ishell)= 1
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+num
-            locbf(ishell+1) = locbf(ishell)+3
+            call basisparam(ishell,1,num,iatom,databasis,datacomp)
           enddo
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+num)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+num*3)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+num)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+num*3)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+num+1)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+num*3+1)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+num+1)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+num*3+1)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !  D function
           ishell= ishell+1
           num= 4
           if(numatomic(iatom) >= 31) num= 7
           do j= 1,num
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= num
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+num
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1)= locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1)= locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,num,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j+num)
-            coeff(locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j+num)
+            databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j+num)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j+num)
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1)= locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1)= locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j+num+1)
-            coeff(locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j+num+1)
+            databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j+num+1)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j+num+1)
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1)= locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1)= locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,1,iatom,databasis,datacomp)
 !  F function
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expf(ife(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= one
+            databasis%ex(databasis%locprim(ishell)+j)= expf(ife(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= one
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 3
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 7
-            locbf(ishell+1)= locbf(ishell)+7
-          else
-            mbf(ishell)= 10
-            locbf(ishell+1)= locbf(ishell)+10
-          endif
+          call basisparam(ishell,3,1,iatom,databasis,datacomp)
 !
 ! Set Sc - Zn functions
 !
@@ -7633,175 +6794,93 @@ end
           do k= 0,5
             ishell= ishell+1
             do j= 1,19
-              ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-              coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+19*k)
+              databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+              databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+19*k)
             enddo
-            mprim(ishell)= 19
-            mbf(ishell)= 1
-            mtype(ishell)= 0
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+19
-            locbf(ishell+1) = locbf(ishell)+1
+            call basisparam(ishell,0,19,iatom,databasis,datacomp)
           enddo
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+19)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+114)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+19)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+114)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !  P function
           do k=0,4
             ishell= ishell+1
             do j= 1,15
-              ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-              coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+15*k)
+              databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
+              databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+15*k)
             enddo
-            mprim(ishell)= 15
-            mbf(ishell)= 3
-            mtype(ishell)= 1
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+15
-            locbf(ishell+1) = locbf(ishell)+3
+            call basisparam(ishell,1,15,iatom,databasis,datacomp)
           enddo
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+15)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+75)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+15)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+75)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !  D function
           do k=0,2
             ishell= ishell+1
             do j= 1,7
-              ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
-              coeff(locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j+7*k)
+              databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j)
+              databasis%coeff(databasis%locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j+7*k)
             enddo
-            mprim(ishell)= 7
-            mtype(ishell)= 2
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+7
-            if(spher) then
-              mbf(ishell)= 5
-              locbf(ishell+1)= locbf(ishell)+5
-            else
-              mbf(ishell)= 6
-              locbf(ishell+1)= locbf(ishell)+6
-            endif
+            call basisparam(ishell,2,7,iatom,databasis,datacomp)
           enddo
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expd(ide(numatomic(iatom))+j+7)
-            coeff(locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j+21)
+            databasis%ex(databasis%locprim(ishell)+j)= expd(ide(numatomic(iatom))+j+7)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffd(idc(numatomic(iatom))+j+21)
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1)= locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1)= locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,1,iatom,databasis,datacomp)
 !  F function
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expf(ife(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= one
+            databasis%ex(databasis%locprim(ishell)+j)= expf(ife(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= one
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 3
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 7
-            locbf(ishell+1)= locbf(ishell)+7
-          else
-            mbf(ishell)= 10
-            locbf(ishell+1)= locbf(ishell)+10
-          endif
+          call basisparam(ishell,3,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expf(ife(numatomic(iatom))+j+1)
-            coeff(locprim(ishell)+j)= one
+            databasis%ex(databasis%locprim(ishell)+j)= expf(ife(numatomic(iatom))+j+1)
+            databasis%coeff(databasis%locprim(ishell)+j)= one
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 3
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 7
-            locbf(ishell+1)= locbf(ishell)+7
-          else
-            mbf(ishell)= 10
-            locbf(ishell+1)= locbf(ishell)+10
-          endif
+          call basisparam(ishell,3,1,iatom,databasis,datacomp)
 ! G function
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expg(ige(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= one
+            databasis%ex(databasis%locprim(ishell)+j)= expg(ige(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= one
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 4
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 9
-            locbf(ishell+1)= locbf(ishell)+9
-          else
-            mbf(ishell)= 15
-            locbf(ishell+1)= locbf(ishell)+15
-          endif
+          call basisparam(ishell,4,1,iatom,databasis,datacomp)
         case(:0)
         case default
-          write(*,'(" Error! This program supports H - Ar, Ca - Kr cc-PVTZ basis set.")')
-          call iabort
+          write(datacomp%iout,'(" Error! This program supports H - Ar, Ca - Kr cc-PVTZ basis set.")')
+          call iabort(datacomp)
       endselect
 !
-      if(ishell > mxshell) then
-        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
-        call iabort
-      endif
-      if(locprim(ishell+1) > mxprim ) then
-        write(*,'(" Error! The number of primitive basis functions exceeds mxprim", &
-&             i6,".")')mxprim
-        call iabort
-      endif
-      if(locbf(ishell+1) > mxao ) then
-        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
-        call iabort
-      endif
       return
 end
 
 
-!------------------------------------
-  subroutine bsccpvqz(iatom,ishell)
-!------------------------------------
+!-----------------------------------------------------------------
+  subroutine bsccpvqz(iatom,ishell,numatomic,databasis,datacomp)
+!-----------------------------------------------------------------
 !
 ! Set basis functions of cc-pVQZ
 !
-      use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mbf, mtype, spher
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
       implicit none
-      integer,intent(in) :: iatom
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       integer :: j, k, nprim
       integer :: ise(18)=(/0,6, 13,25,37,49,61,73,85,97, 109,128,144,160,176,192,208,224/)
@@ -8068,8 +7147,8 @@ end
 &        0.1007000D+01/)
 !
       if(numatomic(iatom) > 18) then
-        write(*,'(" Error! This program supports H - Ar cc-PVQZ basis set.")')
-        call iabort
+        write(datacomp%iout,'(" Error! This program supports H - Ar cc-PVQZ basis set.")')
+        call iabort(datacomp)
       endif
 !
       select case(numatomic(iatom))
@@ -8082,72 +7161,37 @@ end
           nprim=4
           if(numatomic(iatom) == 1) nprim=3
           do j= 1,nprim
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= nprim
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+nprim
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,nprim,iatom,databasis,datacomp)
 !
           do k= nprim,nprim+2
             ishell= ishell+1
-            ex(locprim(ishell)+1)= exps(ise(numatomic(iatom))+1+k)
-            coeff(locprim(ishell)+1)= coeffs(isc(numatomic(iatom))+1+k)
-            mprim(ishell)= 1
-            mbf(ishell)= 1
-            mtype(ishell)= 0
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+1
-            locbf(ishell+1) = locbf(ishell)+1
+            databasis%ex(databasis%locprim(ishell)+1)= exps(ise(numatomic(iatom))+1+k)
+            databasis%coeff(databasis%locprim(ishell)+1)= coeffs(isc(numatomic(iatom))+1+k)
+            call basisparam(ishell,0,1,iatom,databasis,datacomp)
           enddo
 !  P function
           do k= 0,2
             ishell= ishell+1
-            ex(locprim(ishell)+1)= expp(ipe(numatomic(iatom))+1+k)
-            coeff(locprim(ishell)+1)= coeffp(ipc(numatomic(iatom))+1+k)
-            mprim(ishell)= 1
-            mbf(ishell)= 3
-            mtype(ishell)= 1
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+1
-            locbf(ishell+1) = locbf(ishell)+3
+            databasis%ex(databasis%locprim(ishell)+1)= expp(ipe(numatomic(iatom))+1+k)
+            databasis%coeff(databasis%locprim(ishell)+1)= coeffp(ipc(numatomic(iatom))+1+k)
+            call basisparam(ishell,1,1,iatom,databasis,datacomp)
           enddo
 !
 !  D function
           do k= 0,1
             ishell= ishell+1
-            ex(locprim(ishell)+1)= expd(ide(numatomic(iatom))+1+k)
-            coeff(locprim(ishell)+1)= one
-            mprim(ishell)= 1
-            mtype(ishell)= 2
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+1
-            if(spher) then
-              mbf(ishell)= 5
-              locbf(ishell+1) = locbf(ishell)+5
-            else
-              mbf(ishell)= 6
-              locbf(ishell+1) = locbf(ishell)+6
-            endif
+            databasis%ex(databasis%locprim(ishell)+1)= expd(ide(numatomic(iatom))+1+k)
+            databasis%coeff(databasis%locprim(ishell)+1)= one
+            call basisparam(ishell,2,1,iatom,databasis,datacomp)
           enddo
 !  F function
           ishell= ishell+1
-          ex(locprim(ishell)+1)= expf(ife(numatomic(iatom))+1)
-          coeff(locprim(ishell)+1)= one
-          mprim(ishell)= 1
-          mtype(ishell)= 3
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 7
-            locbf(ishell+1) = locbf(ishell)+7
-          else
-            mbf(ishell)= 10
-            locbf(ishell+1) = locbf(ishell)+10
-          endif
+          databasis%ex(databasis%locprim(ishell)+1)= expf(ife(numatomic(iatom))+1)
+          databasis%coeff(databasis%locprim(ishell)+1)= one
+          call basisparam(ishell,3,1,iatom,databasis,datacomp)
 !
 ! Set Li - Ne functions
 !
@@ -8156,101 +7200,51 @@ end
           do k= 0,1
             ishell= ishell+1
             do j= 1,9
-              ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-              coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+k*9)
+              databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+              databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+k*9)
             enddo
-            mprim(ishell)= 9
-            mbf(ishell)= 1
-            mtype(ishell)= 0
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+9
-            locbf(ishell+1) = locbf(ishell)+1
+            call basisparam(ishell,0,9,iatom,databasis,datacomp)
           enddo
 !
           do k= 0,2
             ishell= ishell+1
-            ex(locprim(ishell)+1)= exps(ise(numatomic(iatom))+10+k)
-            coeff(locprim(ishell)+1)= coeffs(isc(numatomic(iatom))+19+k)
-            mprim(ishell)= 1
-            mbf(ishell)= 1
-            mtype(ishell)= 0
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+1
-            locbf(ishell+1) = locbf(ishell)+1
+            databasis%ex(databasis%locprim(ishell)+1)= exps(ise(numatomic(iatom))+10+k)
+            databasis%coeff(databasis%locprim(ishell)+1)= coeffs(isc(numatomic(iatom))+19+k)
+            call basisparam(ishell,0,1,iatom,databasis,datacomp)
           enddo
 !  P function
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis,datacomp)
 !
           do k= 0,2
             ishell= ishell+1
-            ex(locprim(ishell)+1)= expp(ipe(numatomic(iatom))+4+k)
-            coeff(locprim(ishell)+1)= coeffp(ipc(numatomic(iatom))+4+k)
-            mprim(ishell)= 1
-            mbf(ishell)= 3
-            mtype(ishell)= 1
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+1
-            locbf(ishell+1) = locbf(ishell)+3
+            databasis%ex(databasis%locprim(ishell)+1)= expp(ipe(numatomic(iatom))+4+k)
+            databasis%coeff(databasis%locprim(ishell)+1)= coeffp(ipc(numatomic(iatom))+4+k)
+            call basisparam(ishell,1,1,iatom,databasis,datacomp)
           enddo
 !  D function
           do k= 0,2
             ishell= ishell+1
-            ex(locprim(ishell)+1)= expd(ide(numatomic(iatom))+1+k)
-            coeff(locprim(ishell)+1)= one
-            mprim(ishell)= 1
-            mtype(ishell)= 2
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+1
-            if(spher) then
-              mbf(ishell)= 5
-              locbf(ishell+1) = locbf(ishell)+5
-            else
-              mbf(ishell)= 6
-              locbf(ishell+1) = locbf(ishell)+6
-            endif
+            databasis%ex(databasis%locprim(ishell)+1)= expd(ide(numatomic(iatom))+1+k)
+            databasis%coeff(databasis%locprim(ishell)+1)= one
+            call basisparam(ishell,2,1,iatom,databasis,datacomp)
           enddo
 !  F function
           do k= 0,1
             ishell= ishell+1
-            ex(locprim(ishell)+1)= expf(ife(numatomic(iatom))+1+k)
-            coeff(locprim(ishell)+1)= one
-            mprim(ishell)= 1
-            mtype(ishell)= 3
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+1
-            if(spher) then
-              mbf(ishell)= 7
-              locbf(ishell+1) = locbf(ishell)+7
-            else
-              mbf(ishell)= 10
-              locbf(ishell+1) = locbf(ishell)+10
-            endif
+            databasis%ex(databasis%locprim(ishell)+1)= expf(ife(numatomic(iatom))+1+k)
+            databasis%coeff(databasis%locprim(ishell)+1)= one
+            call basisparam(ishell,3,1,iatom,databasis,datacomp)
           enddo
 !  G function
           ishell= ishell+1
-          ex(locprim(ishell)+1)= expg(ige(numatomic(iatom))+1)
-          coeff(locprim(ishell)+1)= one
-          mprim(ishell)= 1
-          mtype(ishell)= 4
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 9
-            locbf(ishell+1) = locbf(ishell)+9
-          else
-            mbf(ishell)= 15
-            locbf(ishell+1) = locbf(ishell)+15
-          endif
+          databasis%ex(databasis%locprim(ishell)+1)= expg(ige(numatomic(iatom))+1)
+          databasis%coeff(databasis%locprim(ishell)+1)= one
+          call basisparam(ishell,4,1,iatom,databasis,datacomp)
 !
 ! Set Na - Ar functions
 !
@@ -8261,27 +7255,17 @@ end
             nprim= 13
             if(numatomic(iatom) == 11) nprim= 16
             do j= 1,nprim
-              ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-              coeff(locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+k*nprim)
+              databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+              databasis%coeff(databasis%locprim(ishell)+j)= coeffs(isc(numatomic(iatom))+j+k*nprim)
             enddo
-            mprim(ishell)= nprim
-            mbf(ishell)= 1
-            mtype(ishell)= 0
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+nprim
-            locbf(ishell+1) = locbf(ishell)+1
+            call basisparam(ishell,0,nprim,iatom,databasis,datacomp)
           enddo
 !
           do k= 0,2
             ishell= ishell+1
-            ex(locprim(ishell)+1)= exps(ise(numatomic(iatom))+1+nprim+k)
-            coeff(locprim(ishell)+1)= coeffs(isc(numatomic(iatom))+1+nprim*3+k)
-            mprim(ishell)= 1
-            mbf(ishell)= 1
-            mtype(ishell)= 0
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+1
-            locbf(ishell+1) = locbf(ishell)+1
+            databasis%ex(databasis%locprim(ishell)+1)= exps(ise(numatomic(iatom))+1+nprim+k)
+            databasis%coeff(databasis%locprim(ishell)+1)= coeffs(isc(numatomic(iatom))+1+nprim*3+k)
+            call basisparam(ishell,0,1,iatom,databasis,datacomp)
           enddo
 !  P function
           do k= 0,1
@@ -8289,107 +7273,55 @@ end
             nprim= 8
             if(numatomic(iatom) < 13) nprim= 9
             do j= 1,nprim
-              ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-              coeff(locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+k*nprim)
+              databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
+              databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipc(numatomic(iatom))+j+k*nprim)
             enddo
-            mprim(ishell)= nprim
-            mbf(ishell)= 3
-            mtype(ishell)= 1
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+nprim
-            locbf(ishell+1) = locbf(ishell)+3
+            call basisparam(ishell,1,nprim,iatom,databasis,datacomp)
           enddo
 !
           do k= 0,2
             ishell= ishell+1
-            ex(locprim(ishell)+1)= expp(ipe(numatomic(iatom))+1+nprim+k)
-            coeff(locprim(ishell)+1)= coeffp(ipc(numatomic(iatom))+1+nprim*2+k)
-            mprim(ishell)= 1
-            mbf(ishell)= 3
-            mtype(ishell)= 1
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+1
-            locbf(ishell+1) = locbf(ishell)+3
+            databasis%ex(databasis%locprim(ishell)+1)= expp(ipe(numatomic(iatom))+1+nprim+k)
+            databasis%coeff(databasis%locprim(ishell)+1)= coeffp(ipc(numatomic(iatom))+1+nprim*2+k)
+            call basisparam(ishell,1,1,iatom,databasis,datacomp)
           enddo
 !  D function
           do k= 0,2
             ishell= ishell+1
-            ex(locprim(ishell)+1)= expd(ide(numatomic(iatom))+1+k)
-            coeff(locprim(ishell)+1)= one
-            mprim(ishell)= 1
-            mtype(ishell)= 2
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+1
-            if(spher) then
-              mbf(ishell)= 5
-              locbf(ishell+1) = locbf(ishell)+5
-            else
-              mbf(ishell)= 6
-              locbf(ishell+1) = locbf(ishell)+6
-            endif
+            databasis%ex(databasis%locprim(ishell)+1)= expd(ide(numatomic(iatom))+1+k)
+            databasis%coeff(databasis%locprim(ishell)+1)= one
+            call basisparam(ishell,2,1,iatom,databasis,datacomp)
           enddo
 !  F function
           do k= 0,1
             ishell= ishell+1
-            ex(locprim(ishell)+1)= expf(ife(numatomic(iatom))+1+k)
-            coeff(locprim(ishell)+1)= one
-            mprim(ishell)= 1
-            mtype(ishell)= 3
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+1
-            if(spher) then
-              mbf(ishell)= 7
-              locbf(ishell+1) = locbf(ishell)+7
-            else
-              mbf(ishell)= 10
-              locbf(ishell+1) = locbf(ishell)+10
-            endif
+            databasis%ex(databasis%locprim(ishell)+1)= expf(ife(numatomic(iatom))+1+k)
+            databasis%coeff(databasis%locprim(ishell)+1)= one
+            call basisparam(ishell,3,1,iatom,databasis,datacomp)
           enddo
 !  G function
           ishell= ishell+1
-          ex(locprim(ishell)+1)= expg(ige(numatomic(iatom))+1)
-          coeff(locprim(ishell)+1)= one
-          mprim(ishell)= 1
-          mtype(ishell)= 4
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 9
-            locbf(ishell+1) = locbf(ishell)+9
-          else
-            mbf(ishell)= 15
-            locbf(ishell+1) = locbf(ishell)+15
-          endif
+          databasis%ex(databasis%locprim(ishell)+1)= expg(ige(numatomic(iatom))+1)
+          databasis%coeff(databasis%locprim(ishell)+1)= one
+          call basisparam(ishell,4,1,iatom,databasis,datacomp)
       endselect
 !
-      if(ishell > mxshell) then
-        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
-        call iabort
-      endif
-      if(locprim(ishell+1) > mxprim ) then
-        write(*,'(" Error! The number of primitive basis functions exceeds mxprim", &
-&             i6,".")')mxprim
-        call iabort
-      endif
-      if(locbf(ishell+1) > mxao ) then
-        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
-        call iabort
-      endif
       return
 end
 
 
-!----------------------------------
-  subroutine bsd95v(iatom,ishell)
-!----------------------------------
+!---------------------------------------------------------------
+  subroutine bsd95v(iatom,ishell,numatomic,databasis,datacomp)
+!---------------------------------------------------------------
 !
 ! Set basis functions of D95V
 !
-      use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mbf, mtype
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
       implicit none
-      integer,intent(in) :: iatom
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       integer :: j, nump
       integer :: ise(10)=(/0,0,4,14,24,34,44,54,64,74/)
@@ -8450,8 +7382,8 @@ end
 &        0.1300320D+00, 0.3956790D+00, 0.6214500D+00, 0.1000000D+01/)
 !
       if((numatomic(iatom) >= 11).or.(numatomic(iatom) == 2)) then
-        write(*,'(" Error! This program supports H - Ne D95V basis set.")')
-        call iabort
+        write(datacomp%iout,'(" Error! This program supports H, Li - Ne D95V basis set.")')
+        call iabort(datacomp)
       endif
 !
       select case(numatomic(iatom))
@@ -8461,123 +7393,76 @@ end
         case(1)
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(ise(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(ise(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffs(ise(numatomic(iatom))+j+3)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(ise(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
 ! Set Li - Ne functions
 !
         case(3:10)
           ishell= ishell+1
           do j= 1,7
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs(ise(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(ise(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 7
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+7
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,7,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+7)
-            coeff(locprim(ishell)+j)= coeffs(ise(numatomic(iatom))+j+7)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+7)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(ise(numatomic(iatom))+j+7)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,2,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+9)
-            coeff(locprim(ishell)+j)= coeffs(ise(numatomic(iatom))+j+9)
+            databasis%ex(databasis%locprim(ishell)+j)= exps(ise(numatomic(iatom))+j+9)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs(ise(numatomic(iatom))+j+9)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 !
           nump= 4
-          if(numatomic(iatom) == 4) nump= 3
+          if(numatomic(iatom) == 3) nump= 3
           ishell= ishell+1
           do j= 1,nump
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp(ipe(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipe(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= nump
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+nump
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,nump,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+nump)
-            coeff(locprim(ishell)+j)= coeffp(ipe(numatomic(iatom))+j+nump)
+            databasis%ex(databasis%locprim(ishell)+j)= expp(ipe(numatomic(iatom))+j+nump)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp(ipe(numatomic(iatom))+j+nump)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
       endselect
 !
-      if(ishell > mxshell) then
-        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
-        call iabort
-      endif
-      if(locprim(ishell+1) > mxprim ) then
-        write(*,'(" Error! The number of primitive basis functions exceeds mxprim", &
-&             i6,".")')mxprim
-        call iabort
-      endif
-      if(locbf(ishell+1) > mxao ) then
-        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
-        call iabort
-      endif
       return
 end
 
 
-!-------------------------------------
-  subroutine bslanl2dz(iatom,ishell)
-!-------------------------------------
+!------------------------------------------------------------------
+  subroutine bslanl2dz(iatom,ishell,numatomic,databasis,datacomp)
+!------------------------------------------------------------------
 !
 ! Set basis functions of LanL2DZ
 !
-      use modmolecule, only : numatomic
-      use modbasis, only : ex, coeff, locprim, locbf, locatom, mprim, mbf, mtype, spher
-      use modparam, only : mxao, mxshell, mxprim
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
       implicit none
-      integer,intent(in) :: iatom
+      type(typebasis),intent(inout) :: databasis
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, numatomic(mxatom)
       integer,intent(inout) :: ishell
       integer :: j, nump
       integer :: ise3(11:18)=(/0,3,6,9,12,15,18,21/)
@@ -8922,51 +7807,31 @@ end
 ! S function
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= exps3(ise3(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs3(ise3(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exps3(ise3(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs3(ise3(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,2,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps3(ise3(numatomic(iatom))+j+2)
-            coeff(locprim(ishell)+j)= coeffs3(ise3(numatomic(iatom))+j+2)
+            databasis%ex(databasis%locprim(ishell)+j)= exps3(ise3(numatomic(iatom))+j+2)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs3(ise3(numatomic(iatom))+j+2)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 ! P function
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= expp3(ise3(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp3(ise3(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expp3(ise3(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp3(ise3(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,2,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp3(ise3(numatomic(iatom))+j+2)
-            coeff(locprim(ishell)+j)= coeffp3(ise3(numatomic(iatom))+j+2)
+            databasis%ex(databasis%locprim(ishell)+j)= expp3(ise3(numatomic(iatom))+j+2)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp3(ise3(numatomic(iatom))+j+2)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
 ! Set K  - Ca functions
 !
@@ -8974,75 +7839,45 @@ end
 ! S function
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,4
-            ex(locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j+3)
+            databasis%ex(databasis%locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 4
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+4
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,4,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j+7)
-            coeff(locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j+7)
+            databasis%ex(databasis%locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j+7)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j+7)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 ! P function
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j+3)
+            databasis%ex(databasis%locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j+4)
-            coeff(locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j+4)
+            databasis%ex(databasis%locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j+4)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j+4)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
 ! Set Sc - Cu functions
 !
@@ -9050,109 +7885,59 @@ end
 ! S function
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,4
-            ex(locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j+3)
+            databasis%ex(databasis%locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 4
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+4
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,4,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j+7)
-            coeff(locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j+7)
+            databasis%ex(databasis%locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j+7)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j+7)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 ! P function
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j+3)
+            databasis%ex(databasis%locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j+4)
-            coeff(locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j+4)
+            databasis%ex(databasis%locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j+4)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j+4)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 ! D function
           ishell= ishell+1
           do j= 1,4
-            ex(locprim(ishell)+j)= expd4(ide4(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffd4(ide4(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expd4(ide4(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffd4(ide4(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 4
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+4
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1) = locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1) = locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,4,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expd4(ide4(numatomic(iatom))+j+4)
-            coeff(locprim(ishell)+j)= coeffd4(ide4(numatomic(iatom))+j+4)
+            databasis%ex(databasis%locprim(ishell)+j)= expd4(ide4(numatomic(iatom))+j+4)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffd4(ide4(numatomic(iatom))+j+4)
           enddo
-          mprim(ishell)= 1
-          mtype(ishell)= 2
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          if(spher) then
-            mbf(ishell)= 5
-            locbf(ishell+1) = locbf(ishell)+5
-          else
-            mbf(ishell)= 6
-            locbf(ishell+1) = locbf(ishell)+6
-          endif
+          call basisparam(ishell,2,1,iatom,databasis,datacomp)
 !
 ! Set Zn  - Kr functions
 !
@@ -9160,88 +7945,48 @@ end
 ! S function
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,2,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j+2)
-            coeff(locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j+2)
+            databasis%ex(databasis%locprim(ishell)+j)= exps4(ise4(numatomic(iatom))+j+2)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs4(ise4(numatomic(iatom))+j+2)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 ! P function
           nump= 2
           if(numatomic(iatom) == 30) nump= 1
           ishell= ishell+1
           do j= 1,nump
-            ex(locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= nump
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+nump
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,nump,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j+nump)
-            coeff(locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j+nump)
+            databasis%ex(databasis%locprim(ishell)+j)= expp4(ipe4(numatomic(iatom))+j+nump)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp4(ipe4(numatomic(iatom))+j+nump)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 ! D function
           if(numatomic(iatom) == 30) then
             ishell= ishell+1
             do j= 1,4
-              ex(locprim(ishell)+j)= expd4(ide4(numatomic(iatom))+j)
-              coeff(locprim(ishell)+j)= coeffd4(ide4(numatomic(iatom))+j)
+              databasis%ex(databasis%locprim(ishell)+j)= expd4(ide4(numatomic(iatom))+j)
+              databasis%coeff(databasis%locprim(ishell)+j)= coeffd4(ide4(numatomic(iatom))+j)
             enddo
-            mprim(ishell)= 4
-            mtype(ishell)= 2
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+4
-            if(spher) then
-              mbf(ishell)= 5
-              locbf(ishell+1) = locbf(ishell)+5
-            else
-              mbf(ishell)= 6
-              locbf(ishell+1) = locbf(ishell)+6
-            endif
+            call basisparam(ishell,2,4,iatom,databasis,datacomp)
 !
             ishell= ishell+1
             do j= 1,1
-              ex(locprim(ishell)+j)= expd4(ide4(numatomic(iatom))+j+4)
-              coeff(locprim(ishell)+j)= coeffd4(ide4(numatomic(iatom))+j+4)
+              databasis%ex(databasis%locprim(ishell)+j)= expd4(ide4(numatomic(iatom))+j+4)
+              databasis%coeff(databasis%locprim(ishell)+j)= coeffd4(ide4(numatomic(iatom))+j+4)
             enddo
-            mprim(ishell)= 1
-            mtype(ishell)= 2
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+1
-            if(spher) then
-              mbf(ishell)= 5
-              locbf(ishell+1) = locbf(ishell)+5
-            else
-              mbf(ishell)= 6
-              locbf(ishell+1) = locbf(ishell)+6
-            endif
+            call basisparam(ishell,2,1,iatom,databasis,datacomp)
           endif
 !
 ! Set Rb - Ag functions
@@ -9250,110 +7995,60 @@ end
 ! S function
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exps5(ise5(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs5(ise5(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exps5(ise5(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs5(ise5(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,4
-            ex(locprim(ishell)+j)= exps5(ise5(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffs5(ise5(numatomic(iatom))+j+3)
+            databasis%ex(databasis%locprim(ishell)+j)= exps5(ise5(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs5(ise5(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 4
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+4
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,4,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps5(ise5(numatomic(iatom))+j+7)
-            coeff(locprim(ishell)+j)= coeffs5(ise5(numatomic(iatom))+j+7)
+            databasis%ex(databasis%locprim(ishell)+j)= exps5(ise5(numatomic(iatom))+j+7)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs5(ise5(numatomic(iatom))+j+7)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 ! P function
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= expp5(ipe5(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp5(ipe5(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expp5(ipe5(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp5(ipe5(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= expp5(ipe5(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffp5(ipe5(numatomic(iatom))+j+3)
+            databasis%ex(databasis%locprim(ishell)+j)= expp5(ipe5(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp5(ipe5(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,2,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp5(ipe5(numatomic(iatom))+j+5)
-            coeff(locprim(ishell)+j)= coeffp5(ipe5(numatomic(iatom))+j+5)
+            databasis%ex(databasis%locprim(ishell)+j)= expp5(ipe5(numatomic(iatom))+j+5)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp5(ipe5(numatomic(iatom))+j+5)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 ! D function
           if(numatomic(iatom) >= 39) then
             ishell= ishell+1
             do j= 1,3
-              ex(locprim(ishell)+j)= expd5(ide5(numatomic(iatom))+j)
-              coeff(locprim(ishell)+j)= coeffd5(ide5(numatomic(iatom))+j)
+              databasis%ex(databasis%locprim(ishell)+j)= expd5(ide5(numatomic(iatom))+j)
+              databasis%coeff(databasis%locprim(ishell)+j)= coeffd5(ide5(numatomic(iatom))+j)
             enddo
-            mprim(ishell)= 3
-            mtype(ishell)= 2
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+3
-            if(spher) then
-              mbf(ishell)= 5
-              locbf(ishell+1) = locbf(ishell)+5
-            else
-              mbf(ishell)= 6
-              locbf(ishell+1) = locbf(ishell)+6
-            endif
+            call basisparam(ishell,2,3,iatom,databasis,datacomp)
 !
             ishell= ishell+1
             do j= 1,1
-              ex(locprim(ishell)+j)= expd5(ide5(numatomic(iatom))+j+3)
-              coeff(locprim(ishell)+j)= coeffd5(ide5(numatomic(iatom))+j+3)
+              databasis%ex(databasis%locprim(ishell)+j)= expd5(ide5(numatomic(iatom))+j+3)
+              databasis%coeff(databasis%locprim(ishell)+j)= coeffd5(ide5(numatomic(iatom))+j+3)
             enddo
-            mprim(ishell)= 1
-            mtype(ishell)= 2
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+1
-            if(spher) then
-              mbf(ishell)= 5
-              locbf(ishell+1) = locbf(ishell)+5
-            else
-              mbf(ishell)= 6
-              locbf(ishell+1) = locbf(ishell)+6
-            endif
+            call basisparam(ishell,2,1,iatom,databasis,datacomp)
           endif
 !
 ! Set Cd - Xe functions
@@ -9362,86 +8057,46 @@ end
 ! S function
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= exps5(ise5(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs5(ise5(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exps5(ise5(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs5(ise5(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,2,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps5(ise5(numatomic(iatom))+j+2)
-            coeff(locprim(ishell)+j)= coeffs5(ise5(numatomic(iatom))+j+2)
+            databasis%ex(databasis%locprim(ishell)+j)= exps5(ise5(numatomic(iatom))+j+2)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs5(ise5(numatomic(iatom))+j+2)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 ! P function
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= expp5(ipe5(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp5(ipe5(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expp5(ipe5(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp5(ipe5(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,2,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp5(ipe5(numatomic(iatom))+j+2)
-            coeff(locprim(ishell)+j)= coeffp5(ipe5(numatomic(iatom))+j+2)
+            databasis%ex(databasis%locprim(ishell)+j)= expp5(ipe5(numatomic(iatom))+j+2)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp5(ipe5(numatomic(iatom))+j+2)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 ! D function
           if(numatomic(iatom) == 48) then
             ishell= ishell+1
             do j= 1,3
-              ex(locprim(ishell)+j)= expd5(ide5(numatomic(iatom))+j)
-              coeff(locprim(ishell)+j)= coeffd5(ide5(numatomic(iatom))+j)
+              databasis%ex(databasis%locprim(ishell)+j)= expd5(ide5(numatomic(iatom))+j)
+              databasis%coeff(databasis%locprim(ishell)+j)= coeffd5(ide5(numatomic(iatom))+j)
             enddo
-            mprim(ishell)= 3
-            mtype(ishell)= 2
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+3
-            if(spher) then
-              mbf(ishell)= 5
-              locbf(ishell+1) = locbf(ishell)+5
-            else
-              mbf(ishell)= 6
-              locbf(ishell+1) = locbf(ishell)+6
-            endif
+            call basisparam(ishell,2,3,iatom,databasis,datacomp)
 !
             ishell= ishell+1
             do j= 1,1
-              ex(locprim(ishell)+j)= expd5(ide5(numatomic(iatom))+j+3)
-              coeff(locprim(ishell)+j)= coeffd5(ide5(numatomic(iatom))+j+3)
+              databasis%ex(databasis%locprim(ishell)+j)= expd5(ide5(numatomic(iatom))+j+3)
+              databasis%coeff(databasis%locprim(ishell)+j)= coeffd5(ide5(numatomic(iatom))+j+3)
             enddo
-            mprim(ishell)= 1
-            mtype(ishell)= 2
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+1
-            if(spher) then
-              mbf(ishell)= 5
-              locbf(ishell+1) = locbf(ishell)+5
-            else
-              mbf(ishell)= 6
-              locbf(ishell+1) = locbf(ishell)+6
-            endif
+            call basisparam(ishell,2,1,iatom,databasis,datacomp)
           endif
 !
 ! Set Cs - La, Hf - Au  functions
@@ -9450,110 +8105,60 @@ end
 ! S function
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= exps6(ise6(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs6(ise6(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exps6(ise6(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs6(ise6(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,4
-            ex(locprim(ishell)+j)= exps6(ise6(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffs6(ise6(numatomic(iatom))+j+3)
+            databasis%ex(databasis%locprim(ishell)+j)= exps6(ise6(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs6(ise6(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 4
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+4
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,4,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps6(ise6(numatomic(iatom))+j+7)
-            coeff(locprim(ishell)+j)= coeffs6(ise6(numatomic(iatom))+j+7)
+            databasis%ex(databasis%locprim(ishell)+j)= exps6(ise6(numatomic(iatom))+j+7)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs6(ise6(numatomic(iatom))+j+7)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 ! P function
           ishell= ishell+1
           do j= 1,3
-            ex(locprim(ishell)+j)= expp6(ipe6(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp6(ipe6(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expp6(ipe6(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp6(ipe6(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 3
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+3
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,3,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= expp6(ipe6(numatomic(iatom))+j+3)
-            coeff(locprim(ishell)+j)= coeffp6(ipe6(numatomic(iatom))+j+3)
+            databasis%ex(databasis%locprim(ishell)+j)= expp6(ipe6(numatomic(iatom))+j+3)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp6(ipe6(numatomic(iatom))+j+3)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,2,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp6(ipe6(numatomic(iatom))+j+5)
-            coeff(locprim(ishell)+j)= coeffp6(ipe6(numatomic(iatom))+j+5)
+            databasis%ex(databasis%locprim(ishell)+j)= expp6(ipe6(numatomic(iatom))+j+5)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp6(ipe6(numatomic(iatom))+j+5)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
 ! D function
           if(numatomic(iatom) >= 57) then
             ishell= ishell+1
             do j= 1,2
-              ex(locprim(ishell)+j)= expd6(ide6(numatomic(iatom))+j)
-              coeff(locprim(ishell)+j)= coeffd6(ide6(numatomic(iatom))+j)
+              databasis%ex(databasis%locprim(ishell)+j)= expd6(ide6(numatomic(iatom))+j)
+              databasis%coeff(databasis%locprim(ishell)+j)= coeffd6(ide6(numatomic(iatom))+j)
             enddo
-            mprim(ishell)= 2
-            mtype(ishell)= 2
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+2
-            if(spher) then
-              mbf(ishell)= 5
-              locbf(ishell+1) = locbf(ishell)+5
-            else
-              mbf(ishell)= 6
-              locbf(ishell+1) = locbf(ishell)+6
-            endif
+            call basisparam(ishell,2,2,iatom,databasis,datacomp)
 !
             ishell= ishell+1
             do j= 1,1
-              ex(locprim(ishell)+j)= expd6(ide6(numatomic(iatom))+j+2)
-              coeff(locprim(ishell)+j)= coeffd6(ide6(numatomic(iatom))+j+2)
+              databasis%ex(databasis%locprim(ishell)+j)= expd6(ide6(numatomic(iatom))+j+2)
+              databasis%coeff(databasis%locprim(ishell)+j)= coeffd6(ide6(numatomic(iatom))+j+2)
             enddo
-            mprim(ishell)= 1
-            mtype(ishell)= 2
-            locatom(ishell)= iatom
-            locprim(ishell+1)= locprim(ishell)+1
-            if(spher) then
-              mbf(ishell)= 5
-              locbf(ishell+1) = locbf(ishell)+5
-            else
-              mbf(ishell)= 6
-              locbf(ishell+1) = locbf(ishell)+6
-            endif
+            call basisparam(ishell,2,1,iatom,databasis,datacomp)
           endif
 !
 ! Set Hg - Bi functions
@@ -9562,95 +8167,79 @@ end
 ! S function
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= exps6(ise6(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffs6(ise6(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= exps6(ise6(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs6(ise6(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,2,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= exps6(ise6(numatomic(iatom))+j+2)
-            coeff(locprim(ishell)+j)= coeffs6(ise6(numatomic(iatom))+j+2)
+            databasis%ex(databasis%locprim(ishell)+j)= exps6(ise6(numatomic(iatom))+j+2)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffs6(ise6(numatomic(iatom))+j+2)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 1
-          mtype(ishell)= 0
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+1
+          call basisparam(ishell,0,1,iatom,databasis,datacomp)
 ! P function
           ishell= ishell+1
           do j= 1,2
-            ex(locprim(ishell)+j)= expp6(ipe6(numatomic(iatom))+j)
-            coeff(locprim(ishell)+j)= coeffp6(ipe6(numatomic(iatom))+j)
+            databasis%ex(databasis%locprim(ishell)+j)= expp6(ipe6(numatomic(iatom))+j)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp6(ipe6(numatomic(iatom))+j)
           enddo
-          mprim(ishell)= 2
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+2
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,2,iatom,databasis,datacomp)
 !
           ishell= ishell+1
           do j= 1,1
-            ex(locprim(ishell)+j)= expp6(ipe6(numatomic(iatom))+j+2)
-            coeff(locprim(ishell)+j)= coeffp6(ipe6(numatomic(iatom))+j+2)
+            databasis%ex(databasis%locprim(ishell)+j)= expp6(ipe6(numatomic(iatom))+j+2)
+            databasis%coeff(databasis%locprim(ishell)+j)= coeffp6(ipe6(numatomic(iatom))+j+2)
           enddo
-          mprim(ishell)= 1
-          mbf(ishell)= 3
-          mtype(ishell)= 1
-          locatom(ishell)= iatom
-          locprim(ishell+1)= locprim(ishell)+1
-          locbf(ishell+1) = locbf(ishell)+3
+          call basisparam(ishell,1,1,iatom,databasis,datacomp)
+          if(numatomic(iatom) <= 81) then
+            ishell= ishell+1
+            do j= 1,2
+              databasis%ex(databasis%locprim(ishell)+j)= expd6(ide6(numatomic(iatom))+j)
+              databasis%coeff(databasis%locprim(ishell)+j)= coeffd6(ide6(numatomic(iatom))+j)
+            enddo
+            call basisparam(ishell,2,2,iatom,databasis,datacomp)
+!
+            ishell= ishell+1
+            do j= 1,1
+              databasis%ex(databasis%locprim(ishell)+j)= expd6(ide6(numatomic(iatom))+j+2)
+              databasis%coeff(databasis%locprim(ishell)+j)= coeffd6(ide6(numatomic(iatom))+j+2)
+            enddo
+            call basisparam(ishell,2,1,iatom,databasis,datacomp)
+          endif
         case default
-          write(*,'(" Error! This program supports Na - La, Hf - Bi Lanl2dz basis set.")')
-          call iabort
+          write(datacomp%iout,'(" Error! This program supports Na - La, Hf - Bi Lanl2dz basis set.")')
+          call iabort(datacomp)
       endselect
 !
-      if(ishell > mxshell) then
-        write(*,'(" Error! The number of basis shells exceeds mxshell",i6,".")')mxshell
-        call iabort
-      endif
-      if(locprim(ishell+1) > mxprim ) then
-        write(*,'(" Error! The number of primitive basis functions exceeds mxprim", &
-&             i6,".")')mxprim
-        call iabort
-      endif
-      if(locbf(ishell+1) > mxao ) then
-        write(*,'(" Error! The number of basis functions exceeds mxao",i6,".")')mxao
-        call iabort
-      endif
       return
 end
 
 
-!----------------------------------------------
-  subroutine bshuzmini6_g(iatom,ishell,itype)
-!----------------------------------------------
+!------------------------------------------------------------------
+  subroutine bshuzmini6_g(iatom,ishell,itype,flagecp,numatomic, &
+&                         databasis,dataguessbs,datacomp)
+!------------------------------------------------------------------
 !
 ! Set 6th row basis functions of minimal Huzinaga set for guess calculation
 ! itype = 1 : valence functions
 !       = 2 : core functions
+!       = 3 : core functions for core calculation
 !
-      use modmolecule, only : numatomic
-      use modguess, only : ex_g, coeff_g, locprim_g, locbf_g, locatom_g, mprim_g, mbf_g, &
-&                          mtype_g, spher_g
-      use modparam, only : mxao, mxshell, mxprim
-      use modecp, only : flagecp, izcore
-!
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
       implicit none
-      integer,intent(in) :: iatom, itype
+      type(typebasis),intent(in) :: databasis
+      type(typebasis),intent(inout) :: dataguessbs
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, itype, numatomic(mxatom)
       integer,intent(inout) :: ishell
       integer :: j
       real(8) :: exps(3,6,55:86), expp(3,2:6,55:86), expd(3,2:5,55:86)
       real(8) :: expf1(4,57:70), expf2(3,71:86)
       real(8) :: coeffs(3,6,55:86), coeffp(3,2:6,55:86), coeffd(3,2:5,55:86)
       real(8) :: coefff1(4,57:70), coefff2(3,71:86)
+      logical,intent(in) :: flagecp
       data exps/ &
 &       1.5525866D+04,2.3490055D+03,5.1623555D+02,6.8750505D+02,6.7191157D+01,2.7992003D+01,&
 &       6.0168188D+01,1.0868694D+01,4.7407047D+00,9.8871626D+00,2.3693425D+00,1.1416761D+00,&
@@ -10109,8 +8698,8 @@ end
 &       1.670327D-01, 5.357835D-01, 5.445086D-01, 1.637813D-01, 5.341357D-01, 5.469714D-01/
 !
       if((numatomic(iatom) > 86).or.(numatomic(iatom) < 55)) then
-        write(*,'(" Error! This program supports only 6th row elements in bshuzmini6_g.")')
-        call iabort
+        write(datacomp%iout,'(" Error! Subroutine bshuzmini6_g supports only 6th row elements.")')
+        call iabort(datacomp)
       endif
 !
 ! Set valence basis functions
@@ -10119,15 +8708,10 @@ end
 !   6S function
         ishell= ishell+1
         do j= 1,3
-          ex_g(locprim_g(ishell)+j)= exps(j,6,numatomic(iatom))
-          coeff_g(locprim_g(ishell)+j)= coeffs(j,6,numatomic(iatom))
+          dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,6,numatomic(iatom))
+          dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,6,numatomic(iatom))
         enddo
-        mprim_g(ishell)= 3
-        mbf_g(ishell)= 1
-        mtype_g(ishell)= 0
-        locatom_g(ishell)= iatom
-        locprim_g(ishell+1)= locprim_g(ishell)+3
-        locbf_g(ishell+1) = locbf_g(ishell)+1
+        call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
 !
         select case(numatomic(iatom))
 !
@@ -10137,45 +8721,10 @@ end
 !   4F function
             ishell= ishell+1
             do j= 1,4
-              ex_g(locprim_g(ishell)+j)= expf1(j,numatomic(iatom))
-              coeff_g(locprim_g(ishell)+j)= coefff1(j,numatomic(iatom))
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expf1(j,numatomic(iatom))
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coefff1(j,numatomic(iatom))
             enddo
-            mprim_g(ishell)= 4
-            mtype_g(ishell)= 3
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+4
-            if(spher_g) then
-              mbf_g(ishell)= 7
-              locbf_g(ishell+1) = locbf_g(ishell)+7
-            else
-              mbf_g(ishell)= 10
-              locbf_g(ishell+1) = locbf_g(ishell)+10
-            endif
-!ishi
-   if(numatomic(iatom)==58)then
-        ishell= ishell+1
-            do j= 1,1
-              ex_g(locprim_g(ishell)+j)= 0.05D0
-              coeff_g(locprim_g(ishell)+j)= 1.0D0
-            enddo
-            mprim_g(ishell)= 1
-            mtype_g(ishell)= 1
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+1
-              mbf_g(ishell)= 3
-              locbf_g(ishell+1) = locbf_g(ishell)+3
-        ishell= ishell+1
-            do j= 1,1
-              ex_g(locprim_g(ishell)+j)= 0.3D0
-              coeff_g(locprim_g(ishell)+j)= 1.0D0
-            enddo
-            mprim_g(ishell)= 1
-            mtype_g(ishell)= 2
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+1
-              mbf_g(ishell)= 5
-              locbf_g(ishell+1) = locbf_g(ishell)+5
-    endif   
+            call basisparam(ishell,3,4,iatom,dataguessbs,datacomp)
 !
 ! Set Lu - Hg functions
 !
@@ -10183,20 +8732,10 @@ end
 !   5D function
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= expd(j,5,numatomic(iatom))
-              coeff_g(locprim_g(ishell)+j)= coeffd(j,5,numatomic(iatom))
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd(j,5,numatomic(iatom))
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd(j,5,numatomic(iatom))
             enddo
-            mprim_g(ishell)= 3
-            mtype_g(ishell)= 2
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            if(spher_g) then
-              mbf_g(ishell)= 5
-              locbf_g(ishell+1) = locbf_g(ishell)+5
-            else
-              mbf_g(ishell)= 6
-              locbf_g(ishell+1) = locbf_g(ishell)+6
-            endif
+            call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
 !
 ! Set Tl - Rn functions
 !
@@ -10204,220 +8743,1277 @@ end
 !   6P function
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= expp(j,6,numatomic(iatom))
-              coeff_g(locprim_g(ishell)+j)= coeffp(j,6,numatomic(iatom))
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(j,6,numatomic(iatom))
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(j,6,numatomic(iatom))
             enddo
-            mprim_g(ishell)= 3
-            mbf_g(ishell)= 3
-            mtype_g(ishell)= 1
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            locbf_g(ishell+1) = locbf_g(ishell)+3
+            call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
         end select
 !
 ! Set valence basis functions
 !
-      else
+      elseif(itype == 2) then
 ! Set 1S functions
-        if(.not.flagecp.or.(izcore(iatom) < 2)) then
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 2)) then
           ishell= ishell+1
           do j= 1,3
-            ex_g(locprim_g(ishell)+j)= exps(j,1,numatomic(iatom))
-            coeff_g(locprim_g(ishell)+j)= coeffs(j,1,numatomic(iatom))
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,1,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,1,numatomic(iatom))
           enddo
-          mprim_g(ishell)= 3
-          mbf_g(ishell)= 1
-          mtype_g(ishell)= 0
-          locatom_g(ishell)= iatom
-          locprim_g(ishell+1)= locprim_g(ishell)+3
-          locbf_g(ishell+1) = locbf_g(ishell)+1
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
         endif
 ! Set 2SP functions
-        if(.not.flagecp.or.(izcore(iatom) < 10)) then
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 10)) then
 !   S function
           ishell= ishell+1
           do j= 1,3
-            ex_g(locprim_g(ishell)+j)= exps(j,2,numatomic(iatom))
-            coeff_g(locprim_g(ishell)+j)= coeffs(j,2,numatomic(iatom))
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,2,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,2,numatomic(iatom))
           enddo
-          mprim_g(ishell)= 3
-          mbf_g(ishell)= 1
-          mtype_g(ishell)= 0
-          locatom_g(ishell)= iatom
-          locprim_g(ishell+1)= locprim_g(ishell)+3
-          locbf_g(ishell+1) = locbf_g(ishell)+1
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
 !   P function
           ishell= ishell+1
           do j= 1,3
-            ex_g(locprim_g(ishell)+j)= expp(j,2,numatomic(iatom))
-            coeff_g(locprim_g(ishell)+j)= coeffp(j,2,numatomic(iatom))
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(j,2,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(j,2,numatomic(iatom))
           enddo
-          mprim_g(ishell)= 3
-          mbf_g(ishell)= 3
-          mtype_g(ishell)= 1
-          locatom_g(ishell)= iatom
-          locprim_g(ishell+1)= locprim_g(ishell)+3
-          locbf_g(ishell+1) = locbf_g(ishell)+3
+          call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
         endif
 ! Set 3SPD functions
-        if(.not.flagecp.or.(izcore(iatom) < 18)) then
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 18)) then
 !   S function
           ishell= ishell+1
           do j= 1,3
-            ex_g(locprim_g(ishell)+j)= exps(j,3,numatomic(iatom))
-            coeff_g(locprim_g(ishell)+j)= coeffs(j,3,numatomic(iatom))
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,3,numatomic(iatom))
           enddo
-          mprim_g(ishell)= 3
-          mbf_g(ishell)= 1
-          mtype_g(ishell)= 0
-          locatom_g(ishell)= iatom
-          locprim_g(ishell+1)= locprim_g(ishell)+3
-          locbf_g(ishell+1) = locbf_g(ishell)+1
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
 !   P function
           ishell= ishell+1
           do j= 1,3
-            ex_g(locprim_g(ishell)+j)= expp(j,3,numatomic(iatom))
-            coeff_g(locprim_g(ishell)+j)= coeffp(j,3,numatomic(iatom))
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(j,3,numatomic(iatom))
           enddo
-          mprim_g(ishell)= 3
-          mbf_g(ishell)= 3
-          mtype_g(ishell)= 1
-          locatom_g(ishell)= iatom
-          locprim_g(ishell+1)= locprim_g(ishell)+3
-          locbf_g(ishell+1) = locbf_g(ishell)+3
+          call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
         endif
-        if(.not.flagecp.or.(izcore(iatom) < 28)) then
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 28)) then
 !   D function
           ishell= ishell+1
           do j= 1,3
-            ex_g(locprim_g(ishell)+j)= expd(j,3,numatomic(iatom))
-            coeff_g(locprim_g(ishell)+j)= coeffd(j,3,numatomic(iatom))
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd(j,3,numatomic(iatom))
           enddo
-          mprim_g(ishell)= 3
-          mtype_g(ishell)= 2
-          locatom_g(ishell)= iatom
-          locprim_g(ishell+1)= locprim_g(ishell)+3
-          if(spher_g) then
-            mbf_g(ishell)= 5
-            locbf_g(ishell+1) = locbf_g(ishell)+5
-          else
-            mbf_g(ishell)= 6
-            locbf_g(ishell+1) = locbf_g(ishell)+6
-          endif
+          call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
         endif
 ! Set 4SPDF functions
-        if(.not.flagecp.or.(izcore(iatom) < 36)) then
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 36)) then
 !   S function
           ishell= ishell+1
           do j= 1,3
-            ex_g(locprim_g(ishell)+j)= exps(j,4,numatomic(iatom))
-            coeff_g(locprim_g(ishell)+j)= coeffs(j,4,numatomic(iatom))
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,4,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,4,numatomic(iatom))
           enddo
-          mprim_g(ishell)= 3
-          mbf_g(ishell)= 1
-          mtype_g(ishell)= 0
-          locatom_g(ishell)= iatom
-          locprim_g(ishell+1)= locprim_g(ishell)+3
-          locbf_g(ishell+1) = locbf_g(ishell)+1
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
 !   P function
           ishell= ishell+1
           do j= 1,3
-            ex_g(locprim_g(ishell)+j)= expp(j,4,numatomic(iatom))
-            coeff_g(locprim_g(ishell)+j)= coeffp(j,4,numatomic(iatom))
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(j,4,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(j,4,numatomic(iatom))
           enddo
-          mprim_g(ishell)= 3
-          mbf_g(ishell)= 3
-          mtype_g(ishell)= 1
-          locatom_g(ishell)= iatom
-          locprim_g(ishell+1)= locprim_g(ishell)+3
-          locbf_g(ishell+1) = locbf_g(ishell)+3
+          call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
         endif
 !   D function
-        if(.not.flagecp.or.(izcore(iatom) < 46)) then
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 46)) then
           ishell= ishell+1
           do j= 1,3
-            ex_g(locprim_g(ishell)+j)= expd(j,4,numatomic(iatom))
-            coeff_g(locprim_g(ishell)+j)= coeffd(j,4,numatomic(iatom))
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd(j,4,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd(j,4,numatomic(iatom))
           enddo
-          mprim_g(ishell)= 3
-          mtype_g(ishell)= 2
-          locatom_g(ishell)= iatom
-          locprim_g(ishell+1)= locprim_g(ishell)+3
-          if(spher_g) then
-            mbf_g(ishell)= 5
-            locbf_g(ishell+1) = locbf_g(ishell)+5
-          else
-            mbf_g(ishell)= 6
-            locbf_g(ishell+1) = locbf_g(ishell)+6
-          endif
+          call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
         endif
 !   F function
         if(numatomic(iatom) >= 71) then
-          if(.not.flagecp.or.(izcore(iatom) < 60)) then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 60)) then
               ishell= ishell+1
               do j= 1,3
-                ex_g(locprim_g(ishell)+j)= expf2(j,numatomic(iatom))
-                coeff_g(locprim_g(ishell)+j)= coefff2(j,numatomic(iatom))
+                dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expf2(j,numatomic(iatom))
+                dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coefff2(j,numatomic(iatom))
               enddo
-              mprim_g(ishell)= 3
-              mtype_g(ishell)= 3
-              locatom_g(ishell)= iatom
-              locprim_g(ishell+1)= locprim_g(ishell)+3
-              if(spher_g) then
-                mbf_g(ishell)= 7
-                locbf_g(ishell+1) = locbf_g(ishell)+7
-              else
-                mbf_g(ishell)= 10
-                locbf_g(ishell+1) = locbf_g(ishell)+10
-              endif
+              call basisparam(ishell,3,3,iatom,dataguessbs,datacomp)
             endif
           endif
 ! Set 5SPD functions
-        if(.not.flagecp.or.((izcore(iatom) /= 54).and.(izcore(iatom) < 68))) then
+        if(.not.flagecp.or. &
+&          ((databasis%izcore(iatom) /= 54).and.(databasis%izcore(iatom) < 68))) then
 !   S function
           ishell= ishell+1
           do j= 1,3
-            ex_g(locprim_g(ishell)+j)= exps(j,5,numatomic(iatom))
-            coeff_g(locprim_g(ishell)+j)= coeffs(j,5,numatomic(iatom))
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,5,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,5,numatomic(iatom))
           enddo
-          mprim_g(ishell)= 3
-          mbf_g(ishell)= 1
-          mtype_g(ishell)= 0
-          locatom_g(ishell)= iatom
-          locprim_g(ishell+1)= locprim_g(ishell)+3
-          locbf_g(ishell+1) = locbf_g(ishell)+1
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
 !   P function
           ishell= ishell+1
           do j= 1,3
-            ex_g(locprim_g(ishell)+j)= expp(j,5,numatomic(iatom))
-            coeff_g(locprim_g(ishell)+j)= coeffp(j,5,numatomic(iatom))
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(j,5,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(j,5,numatomic(iatom))
           enddo
-          mprim_g(ishell)= 3
-          mbf_g(ishell)= 3
-          mtype_g(ishell)= 1
-          locatom_g(ishell)= iatom
-          locprim_g(ishell+1)= locprim_g(ishell)+3
-          locbf_g(ishell+1) = locbf_g(ishell)+3
+          call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
         endif
 !   D function
         if(numatomic(iatom) >= 81) then
-          if(.not.flagecp.or.(izcore(iatom) < 78)) then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 78)) then
             ishell= ishell+1
             do j= 1,3
-              ex_g(locprim_g(ishell)+j)= expd(j,5,numatomic(iatom))
-              coeff_g(locprim_g(ishell)+j)= coeffd(j,5,numatomic(iatom))
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd(j,5,numatomic(iatom))
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd(j,5,numatomic(iatom))
             enddo
-            mprim_g(ishell)= 3
-            mtype_g(ishell)= 2
-            locatom_g(ishell)= iatom
-            locprim_g(ishell+1)= locprim_g(ishell)+3
-            if(spher_g) then
-              mbf_g(ishell)= 5
-              locbf_g(ishell+1) = locbf_g(ishell)+5
-            else
-              mbf_g(ishell)= 6
-              locbf_g(ishell+1) = locbf_g(ishell)+6
+            call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
+          endif
+        endif
+!
+! Set core basis functions for core orbital calculation
+!
+      elseif(itype == 3) then
+! Set 1S functions
+        if(databasis%izcore(iatom) >= 2) then
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,1,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,1,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+        endif
+! Set 2SP functions
+        if(databasis%izcore(iatom) >= 10) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,2,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,2,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(j,2,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(j,2,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+        endif
+! Set 3SPD functions
+        if(databasis%izcore(iatom) >= 18) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+        endif
+!   D function
+        if(databasis%izcore(iatom) >= 28) then
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
+        endif
+! Set 4SPDF functions
+        if(databasis%izcore(iatom) >= 36) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,4,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,4,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(j,4,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(j,4,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+        endif
+!   D function
+        if(databasis%izcore(iatom) >= 46) then
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd(j,4,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd(j,4,numatomic(iatom))
+          enddo
+          call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
+        endif
+!   F function
+        if(numatomic(iatom) >= 71) then
+          if(databasis%izcore(iatom) >= 60) then
+              ishell= ishell+1
+              do j= 1,3
+                dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expf2(j,numatomic(iatom))
+                dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coefff2(j,numatomic(iatom))
+              enddo
+              call basisparam(ishell,3,3,iatom,dataguessbs,datacomp)
             endif
+          endif
+! Set 5SPD functions
+        if((databasis%izcore(iatom) == 54).or.(databasis%izcore(iatom) >= 68)) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(j,5,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(j,5,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(j,5,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(j,5,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+        endif
+!   D function
+        if(numatomic(iatom) >= 81) then
+          if(databasis%izcore(iatom) >= 78) then
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd(j,5,numatomic(iatom))
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd(j,5,numatomic(iatom))
+            enddo
+            call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
+          endif
+        endif
+      endif
+!
+      return
+end
+
+
+!--------------------------------------------------------------------
+  subroutine bsscaledmini_g(iatom,ishell,itype,flagecp,numatomic, &
+&                           databasis,dataguessbs,datacomp)
+!--------------------------------------------------------------------
+!
+! Set basis functions of scaled-MINI for guess calculation
+! itype = 1 : valence functions
+!       = 2 : core functions
+!       = 3 : core functions for core calculation
+!
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(in) :: databasis
+      type(typebasis),intent(inout) :: dataguessbs
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, itype, numatomic(mxatom)
+      integer,intent(inout):: ishell
+      integer :: j
+      integer :: is(20)=(/0,3, 6,12,18,24,30,36,42,48, 54,63,72,81,90,99,108,117, 126,138/)
+      integer :: ip(20)=(/0,0, 0, 0, 0, 3, 6, 9,12,15, 18,21,24,30,36,42,48,54, 60,66/)
+      real(8) :: exps(150)= &
+&     (/ 0.703406D+01, 0.106476D+01, 0.236559D+00, 0.136267D+02, 0.199935D+01, 0.382993D+00, &
+&        0.350461D+02, 0.520169D+01, 0.105624D+01, 0.851253D+00, 0.839510D-01, 0.325540D-01, &
+&        0.669535D+02, 0.993929D+01, 0.205713D+01, 0.233486D+01, 0.196976D+00, 0.674490D-01, &
+&        0.108437D+03, 0.161206D+02, 0.337343D+01, 0.445785D+01, 0.369315D+00, 0.122555D+00, &
+&        0.153172D+03, 0.230730D+02, 0.492329D+01, 0.661661D+01, 0.525856D+00, 0.169958D+00, &
+&        0.218364D+03, 0.325989D+02, 0.691739D+01, 0.891943D+01, 0.706141D+00, 0.225054D+00, &
+&        0.281867D+03, 0.424160D+02, 0.909562D+01, 0.117893D+02, 0.912894D+00, 0.286661D+00, &
+&        0.368371D+03, 0.550611D+02, 0.117477D+02, 0.153647D+02, 0.116755D+01, 0.363141D+00, &
+&        0.456953D+03, 0.683654D+02, 0.146198D+02, 0.193272D+02, 0.144182D+01, 0.444080D+00, &
+&        0.542761D+03, 0.819595D+02, 0.177238D+02, 0.232804D+02, 0.186834D+01, 0.623250D+00, &
+&        0.617611D+00, 0.652190D-01, 0.253510D-01, 0.650643D+03, 0.983708D+02, 0.213225D+02, &
+&        0.279774D+02, 0.232652D+01, 0.818080D+00, 0.108475D+01, 0.118314D+00, 0.431240D-01, &
+&        0.777443D+03, 0.117232D+03, 0.253763D+02, 0.333563D+02, 0.280132D+01, 0.102273D+01, &
+&        0.168525D+01, 0.204969D+00, 0.747900D-01, 0.909235D+03, 0.137125D+03, 0.297148D+02, &
+&        0.391294D+02, 0.333598D+01, 0.125126D+01, 0.219765D+01, 0.275927D+00, 0.100425D+00, &
+&        0.105327D+04, 0.158790D+03, 0.344244D+02, 0.454504D+02, 0.389993D+01, 0.148851D+01, &
+&        0.246948D+01, 0.320872D+00, 0.116832D+00, 0.120146D+04, 0.181392D+03, 0.394048D+02, &
+&        0.521390D+02, 0.452880D+01, 0.175494D+01, 0.292053D+01, 0.392187D+00, 0.142699D+00, &
+&        0.136202D+04, 0.205811D+03, 0.447722D+02, 0.592257D+02, 0.521390D+01, 0.204735D+01, &
+&        0.344712D+01, 0.473785D+00, 0.171321D+00, 0.153693D+04, 0.232178D+03, 0.505217D+02, &
+&        0.669339D+02, 0.591855D+01, 0.233934D+01, 0.404531D+01, 0.565701D+00, 0.204065D+00, &
+&        0.172118D+04, 0.260016D+03, 0.566246D+02, 0.750556D+02, 0.669116D+01, 0.266717D+01, &
+&        0.466894D+01, 0.700013D+00, 0.275334D+00, 0.322747D+00, 0.481360D-01, 0.207460D-01, &
+&        0.191543D+04, 0.289533D+03, 0.631064D+02, 0.836333D+02, 0.751184D+01, 0.301458D+01, &
+&        0.537075D+01, 0.838380D+00, 0.346226D+00, 0.506834D+00, 0.733270D-01, 0.294240D-01/)
+      real(8) :: coeffs(150)= &
+&     (/ 0.704520D-01, 0.407826D+00, 0.647752D+00, 0.802410D-01, 0.409143D+00, 0.657278D+00, &
+&        0.737600D-01, 0.397471D+00, 0.665092D+00,-0.939700D-01, 0.570100D+00, 0.499750D+00, &
+&        0.702000D-01, 0.391910D+00, 0.669970D+00,-0.828200D-01, 0.557553D+00, 0.516043D+00, &
+&        0.686510D-01, 0.389933D+00, 0.671395D+00,-0.824190D-01, 0.559064D+00, 0.516795D+00, &
+&        0.707400D-01, 0.395380D+00, 0.663311D+00,-0.813800D-01, 0.574853D+00, 0.502413D+00, &
+&        0.678700D-01, 0.390202D+00, 0.670083D+00,-0.808900D-01, 0.567202D+00, 0.511092D+00, &
+&        0.690600D-01, 0.393159D+00, 0.665669D+00,-0.808200D-01, 0.582090D+00, 0.497160D+00, &
+&        0.670400D-01, 0.389249D+00, 0.670788D+00,-0.805500D-01, 0.587729D+00, 0.491979D+00, &
+&        0.669100D-01, 0.389349D+00, 0.670518D+00,-0.802500D-01, 0.595298D+00, 0.484868D+00, &
+&        0.684100D-01, 0.392092D+00, 0.666084D+00,-0.838010D-01, 0.582794D+00, 0.492474D+00, &
+&       -0.115762D+00, 0.695863D+00, 0.381047D+00, 0.680300D-01, 0.390738D+00, 0.667267D+00, &
+&       -0.867200D-01, 0.585697D+00, 0.486497D+00,-0.127651D+00, 0.650773D+00, 0.436272D+00, &
+&        0.668870D-01, 0.387768D+00, 0.670703D+00,-0.889560D-01, 0.601061D+00, 0.468786D+00, &
+&       -0.151389D+00, 0.659386D+00, 0.438693D+00, 0.664050D-01, 0.386222D+00, 0.672240D+00, &
+&       -0.909990D-01, 0.611615D+00, 0.456860D+00,-0.168733D+00, 0.675453D+00, 0.429419D+00, &
+&        0.658650D-01, 0.384578D+00, 0.673963D+00,-0.926550D-01, 0.626513D+00, 0.441039D+00, &
+&       -0.180549D+00, 0.680952D+00, 0.429142D+00, 0.657650D-01, 0.383948D+00, 0.674372D+00, &
+&       -0.942320D-01, 0.635468D+00, 0.431506D+00, 0.190042D+00,-0.685527D+00,-0.429272D+00, &
+&        0.655440D-01, 0.382987D+00, 0.675210D+00,-0.956200D-01, 0.641426D+00, 0.425153D+00, &
+&        0.196401D+00,-0.692360D+00,-0.426193D+00, 0.651590D-01, 0.381807D+00, 0.676446D+00, &
+&       -0.967400D-01, 0.652749D+00, 0.413573D+00, 0.200736D+00,-0.696268D+00,-0.424843D+00, &
+&        0.648750D-01, 0.380859D+00, 0.677368D+00,-0.978730D-01, 0.659560D+00, 0.406529D+00, &
+&       -0.212930D+00, 0.689249D+00, 0.433925D+00,-0.152980D+00, 0.681728D+00, 0.414483D+00, &
+&        0.646240D-01, 0.379838D+00, 0.678329D+00,-0.988820D-01, 0.666027D+00, 0.399912D+00, &
+&       -0.223531D+00, 0.702886D+00, 0.423552D+00,-0.179310D+00, 0.672879D+00, 0.435666D+00/)
+      real(8) :: expp(72)= &
+&     (/ 0.321489D+01, 0.646136D+00, 0.153916D+00, 0.491292D+01, 0.997616D+00, 0.232685D+00, &
+&        0.655627D+01, 0.134908D+01, 0.312209D+00, 0.827414D+01, 0.171546D+01, 0.383013D+00, &
+&        0.107257D+02, 0.222582D+01, 0.486105D+00, 0.133525D+02, 0.277947D+01, 0.600970D+00, &
+&        0.178364D+02, 0.379569D+01, 0.877510D+00, 0.232166D+02, 0.500222D+01, 0.120465D+01, &
+&        0.305696D+02, 0.664470D+01, 0.165440D+01, 0.379920D+00, 0.146881D+00, 0.566130D-01, &
+&        0.378818D+02, 0.830460D+01, 0.212079D+01, 0.545789D+00, 0.208220D+00, 0.760070D-01, &
+&        0.461000D+02, 0.101651D+02, 0.264479D+01, 0.679059D+00, 0.257826D+00, 0.927830D-01, &
+&        0.546441D+02, 0.121229D+02, 0.320650D+01, 0.887615D+00, 0.327100D+00, 0.111743D+00, &
+&        0.641000D+02, 0.142871D+02, 0.382814D+01, 0.110390D+01, 0.399178D+00, 0.133236D+00, &
+&        0.743529D+02, 0.166313D+02, 0.450393D+01, 0.135709D+01, 0.488113D+00, 0.162126D+00, &
+&        0.857898D+02, 0.192548D+02, 0.526862D+01, 0.168314D+01, 0.625809D+00, 0.223898D+00, &
+&        0.979746D+02, 0.220674D+02, 0.609388D+01, 0.201789D+01, 0.766651D+00, 0.284319D+00/)
+      real(8) :: coeffp(72)= &
+&     (/ 0.105900D+00, 0.457180D+00, 0.631861D+00, 0.109931D+00, 0.462713D+00, 0.627514D+00, &
+&        0.115919D+00, 0.469958D+00, 0.618448D+00, 0.124271D+00, 0.476594D+00, 0.613044D+00, &
+&        0.126270D+00, 0.477948D+00, 0.614008D+00, 0.128840D+00, 0.480441D+00, 0.611672D+00, &
+&        0.125710D+00, 0.480461D+00, 0.602281D+00, 0.121460D+00, 0.479291D+00, 0.598942D+00, &
+&        0.112353D+00, 0.467467D+00, 0.609782D+00, 0.226433D+00, 0.500586D+00, 0.396470D+00, &
+&        0.108753D+00, 0.463515D+00, 0.611334D+00, 0.238913D+00, 0.542295D+00, 0.345453D+00, &
+&        0.105388D+00, 0.459712D+00, 0.613714D+00, 0.235885D+00, 0.554160D+00, 0.336530D+00, &
+&        0.103673D+00, 0.458190D+00, 0.613400D+00, 0.229436D+00, 0.552960D+00, 0.353700D+00, &
+&        0.101789D+00, 0.456107D+00, 0.614282D+00, 0.235903D+00, 0.558066D+00, 0.346600D+00, &
+&        0.100079D+00, 0.454226D+00, 0.615259D+00, 0.237276D+00, 0.558360D+00, 0.346165D+00, &
+&        0.980350D-01, 0.451041D+00, 0.617708D+00, 0.238636D+00, 0.571057D+00, 0.316536D+00, &
+&        0.963160D-01, 0.448108D+00, 0.619921D+00, 0.245029D+00, 0.584385D+00, 0.287666D+00/)
+      logical,intent(in) :: flagecp
+!
+! Set valence basis functions
+!
+      if(itype == 1) then
+        select case(numatomic(iatom))
+! H-He
+          case(1:2)
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(is(numatomic(iatom))+j)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(is(numatomic(iatom))+j)
+            enddo
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+! Li-Ne
+          case(3:10)
+!   S function
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(is(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(is(numatomic(iatom))+j+3)
+            enddo
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!   P function
+            if(numatomic(iatom) >= 5) then
+              ishell= ishell+1
+              do j= 1,3
+                dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(ip(numatomic(iatom))+j)
+                dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(ip(numatomic(iatom))+j)
+              enddo
+              call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+            endif
+! Na-Ar
+          case(11:18)
+!   S function
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(is(numatomic(iatom))+j+6)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(is(numatomic(iatom))+j+6)
+            enddo
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!   P function
+            if(numatomic(iatom) >= 13) then
+              ishell= ishell+1
+              do j= 1,3
+                dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(ip(numatomic(iatom))+j+3)
+                dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(ip(numatomic(iatom))+j+3)
+              enddo
+              call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+            endif
+! K -Ca
+          case(19:20)
+!   S function
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(is(numatomic(iatom))+j+9)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(is(numatomic(iatom))+j+9)
+            enddo
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+          case default
+            write(datacomp%iout,'(" Error! This program supports H - Ca basis set", &
+&                                 " in subroutine bsscaledmini_g.")')
+            call iabort(datacomp)
+        endselect
+!
+! Set core basis functions
+!
+      elseif(itype == 2) then
+! Set 1S functions
+        if(numatomic(iatom) >= 3) then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 2))then
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(is(numatomic(iatom))+j)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(is(numatomic(iatom))+j)
+            enddo
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+          endif
+        endif
+! Set 2SP functions
+        if(numatomic(iatom) >= 11) then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 10))then
+!   S function
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(is(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(is(numatomic(iatom))+j+3)
+            enddo
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!   P function
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(ip(numatomic(iatom))+j)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(ip(numatomic(iatom))+j)
+            enddo
+            call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+          endif
+        endif
+! Set 3SP functions
+        if(numatomic(iatom) >= 19) then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 18))then
+!   S function
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(is(numatomic(iatom))+j+6)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(is(numatomic(iatom))+j+6)
+            enddo
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!   P function
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(ip(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(ip(numatomic(iatom))+j+3)
+            enddo
+            call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+          endif
+        endif
+!
+! Set core basis functions for core orbital calculation
+!
+      elseif(itype == 3) then
+! Set 1S functions
+        if(numatomic(iatom) >= 3) then
+          if(databasis%izcore(iatom) >= 2)then
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(is(numatomic(iatom))+j)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(is(numatomic(iatom))+j)
+            enddo
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+          endif
+        endif
+! Set 2SP functions
+        if(numatomic(iatom) >= 11) then
+          if(databasis%izcore(iatom) >= 10)then
+!   S function
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(is(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(is(numatomic(iatom))+j+3)
+            enddo
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!   P function
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(ip(numatomic(iatom))+j)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(ip(numatomic(iatom))+j)
+            enddo
+            call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+          endif
+        endif
+! Set 3S functions
+        if(numatomic(iatom) >= 19) then
+          if(databasis%izcore(iatom) >= 18)then
+!   S function
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps(is(numatomic(iatom))+j+6)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs(is(numatomic(iatom))+j+6)
+            enddo
+            call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!   P function
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp(ip(numatomic(iatom))+j+3)
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp(ip(numatomic(iatom))+j+3)
+            enddo
+            call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+          endif
+        endif
+      endif
+!
+      return
+end
+
+
+!------------------------------------------------------------------
+  subroutine bshuzmini4_g(iatom,ishell,itype,flagecp,numatomic, &
+&                         databasis,dataguessbs,datacomp)
+!------------------------------------------------------------------
+!
+! Set 4th row basis functions of minimal Huzinaga set for guess calculation
+! itype = 1 : valence functions
+!       = 2 : core functions
+!       = 3 : core functions for core calculation
+!
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(in) :: databasis
+      type(typebasis),intent(inout) :: dataguessbs
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, itype, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+      integer :: j
+      real(8) :: exps4(3,4,21:36), expp4(3,2:4,21:36), expd4(3,21:36)
+      real(8) :: coeffs4(3,4,21:36), coeffp4(3,2:4,21:36), coeffd4(3,21:36)
+      logical,intent(in) :: flagecp
+      data exps4/ &
+&       0.2121115D+04, 0.3205201D+03, 0.6989573D+02, 0.9282779D+02, 0.8366195D+01, 0.3361969D+01, &
+&       0.6173221D+01, 0.9557466D+00, 0.3793419D+00, 0.4525457D+00, 0.5968487D-01, 0.2352408D-01, &
+&       0.2336715D+04, 0.3531533D+03, 0.7705981D+02, 0.1024571D+03, 0.9276936D+01, 0.3736856D+01, &
+&       0.7000876D+01, 0.1087512D+01, 0.4269774D+00, 0.5414802D+00, 0.6648139D-01, 0.2576476D-01, &
+&       0.2563439D+04, 0.3874618D+03, 0.8457762D+02, 0.1125769D+03, 0.1024291D+02, 0.4134658D+01, &
+&       0.7877004D+01, 0.1226624D+01, 0.4775770D+00, 0.6158319D+00, 0.7247550D-01, 0.2753023D-01, &
+&       0.2799710D+04, 0.4232182D+03, 0.9243435D+02, 0.1232263D+03, 0.1124663D+02, 0.4537255D+01, &
+&       0.8780485D+01, 0.1379360D+01, 0.5350232D+00, 0.7265588D+00, 0.7639020D-01, 0.2860476D-01, &
+&       0.3044338D+04, 0.4603284D+03, 0.1006095D+03, 0.1340481D+03, 0.1235565D+02, 0.5011833D+01, &
+&       0.9742834D+01, 0.1537515D+01, 0.5940809D+00, 0.7626146D+00, 0.7836474D-01, 0.2930169D-01, &
+&       0.3302030D+04, 0.4993254D+03, 0.1091723D+03, 0.1456161D+03, 0.1346808D+02, 0.5462484D+01, &
+&       0.1073627D+02, 0.1700958D+01, 0.6536460D+00, 0.8119493D+00, 0.7967335D-01, 0.2982454D-01, &
+&       0.3569102D+04, 0.5397506D+03, 0.1180674D+03, 0.1576090D+03, 0.1463314D+02, 0.5935409D+01, &
+&       0.1179040D+02, 0.1869073D+01, 0.7145106D+00, 0.8308550D+00, 0.8093542D-01, 0.3021553D-01, &
+&       0.3849242D+04, 0.5820818D+03, 0.1273568D+03, 0.1701136D+03, 0.1585270D+02, 0.6434295D+01, &
+&       0.1288965D+02, 0.2046139D+01, 0.7792339D+00, 0.8433975D+00, 0.8247463D-01, 0.3073497D-01, &
+&       0.4137563D+04, 0.6257329D+03, 0.1369597D+03, 0.1831051D+03, 0.1712242D+02, 0.6949175D+01, &
+&       0.1399994D+02, 0.2243123D+01, 0.8531059D+00, 0.8304054D+00, 0.8540467D-01, 0.3181982D-01, &
+&       0.4432288D+04, 0.6706601D+03, 0.1469024D+03, 0.1964891D+03, 0.1844166D+02, 0.7492969D+01, &
+&       0.1518086D+02, 0.2446793D+01, 0.9529351D+00, 0.1121037D+01, 0.1251838D+00, 0.4406728D-01, &
+&       0.4751898D+04, 0.7189205D+03, 0.1574459D+03, 0.2105383D+03, 0.1979481D+02, 0.8049796D+01, &
+&       0.1642493D+02, 0.2657653D+01, 0.1060987D+01, 0.1353315D+01, 0.1761581D+00, 0.6371947D-01, &
+&       0.5073750D+04, 0.7677242D+03, 0.1681888D+03, 0.2249837D+03, 0.2118766D+02, 0.8625637D+01, &
+&       0.1776431D+02, 0.2855150D+01, 0.1158583D+01, 0.1585949D+01, 0.2269241D+00, 0.8372494D-01, &
+&       0.5407614D+04, 0.8181744D+03, 0.1792657D+03, 0.2398546D+03, 0.2264906D+02, 0.9228004D+01, &
+&       0.1905843D+02, 0.3085413D+01, 0.1272735D+01, 0.1819863D+01, 0.2788305D+00, 0.1037293D+00, &
+&       0.5751322D+04, 0.8702572D+03, 0.1907295D+03, 0.2551880D+03, 0.2415539D+02, 0.9852539D+01, &
+&       0.2046348D+02, 0.3312592D+01, 0.1379155D+01, 0.2049275D+01, 0.3364116D+00, 0.1261269D+00, &
+&       0.6103290D+04, 0.9236974D+03, 0.2025203D+03, 0.2709965D+03, 0.2570640D+02, 0.1050117D+02, &
+&       0.2185951D+02, 0.3568159D+01, 0.1509006D+01, 0.2340428D+01, 0.3882541D+00, 0.1459899D+00, &
+&       0.6446631D+04, 0.9768757D+03, 0.2144795D+03, 0.2870116D+03, 0.2732867D+02, 0.1117444D+02, &
+&       0.2333134D+02, 0.3813308D+01, 0.1613494D+01, 0.2596493D+01, 0.4490900D+00, 0.1701236D+00/
+      data expp4/ &
+&       0.1101602D+03, 0.2488619D+02, 0.6922119D+01, 0.2390368D+01, 0.9024823D+00, 0.3247557D+00, &
+&       0.0000000D+00, 0.0000000D+00, 0.0000000D+00, 0.1233327D+03, 0.2792622D+02, 0.7813216D+01, &
+&       0.2752280D+01, 0.1039458D+01, 0.3729828D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.1369200D+03, 0.3108121D+02, 0.8744839D+01, 0.3131071D+01, 0.1182248D+01, 0.4235238D+00, &
+&       0.0000000D+00, 0.0000000D+00, 0.0000000D+00, 0.1512898D+03, 0.3441031D+02, 0.9725858D+01, &
+&       0.3477658D+01, 0.1307940D+01, 0.4675323D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.1667318D+03, 0.3797742D+02, 0.1077433D+02, 0.3973101D+01, 0.1501446D+01, 0.5368059D+00, &
+&       0.0000000D+00, 0.0000000D+00, 0.0000000D+00, 0.1825577D+03, 0.4164782D+02, 0.1185781D+02, &
+&       0.4405168D+01, 0.1660936D+01, 0.5933038D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.1988511D+03, 0.4544391D+02, 0.1298453D+02, 0.4883587D+01, 0.1840737D+01, 0.6568753D+00, &
+&       0.0000000D+00, 0.0000000D+00, 0.0000000D+00, 0.2160132D+03, 0.4943382D+02, 0.1416619D+02, &
+&       0.5386199D+01, 0.2032305D+01, 0.7255676D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.2336235D+03, 0.5354557D+02, 0.1538804D+02, 0.5873278D+01, 0.2208413D+01, 0.7864834D+00, &
+&       0.0000000D+00, 0.0000000D+00, 0.0000000D+00, 0.2524778D+03, 0.5793482D+02, 0.1668967D+02, &
+&       0.6341080D+01, 0.2388050D+01, 0.8730783D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.2736458D+03, 0.6281515D+02, 0.1813422D+02, 0.6838714D+01, 0.2595867D+01, 0.9838937D+00, &
+&       0.3156885D+00, 0.1096194D+00, 0.3994387D-01, 0.2937317D+03, 0.6755255D+02, 0.1956863D+02, &
+&       0.7432617D+01, 0.2842684D+01, 0.1104117D+01, 0.3822414D+00, 0.1414730D+00, 0.5262765D-01, &
+&       0.3150225D+03, 0.7255790D+02, 0.2107985D+02, 0.8104417D+01, 0.3128202D+01, 0.1239119D+01, &
+&       0.4526011D+00, 0.1720440D+00, 0.6573731D-01, 0.3370875D+03, 0.7774828D+02, 0.2265040D+02, &
+&       0.8691400D+01, 0.3366879D+01, 0.1354653D+01, 0.5425845D+00, 0.2066296D+00, 0.7760208D-01, &
+&       0.3604997D+03, 0.8324459D+02, 0.2431184D+02, 0.9422183D+01, 0.3677184D+01, 0.1493578D+01, &
+&       0.6345467D+00, 0.2425280D+00, 0.9053005D-01, 0.3843795D+03, 0.8886816D+02, 0.2601970D+02, &
+&       0.1018479D+02, 0.4009436D+01, 0.1645966D+01, 0.7296257D+00, 0.2806056D+00, 0.1052139D+00/
+      data expd4/ &
+&       0.4526837D+01, 0.1039415D+01, 0.2185077D+00, 0.5941888D+01, 0.1396389D+01, 0.3060236D+00, &
+&       0.7269847D+01, 0.1731443D+01, 0.3867525D+00, 0.8626210D+01, 0.2075472D+01, 0.4705874D+00, &
+&       0.9865616D+01, 0.2386605D+01, 0.5381795D+00, 0.1119838D+02, 0.2723555D+01, 0.6139552D+00, &
+&       0.1263420D+02, 0.3084777D+01, 0.6947316D+00, 0.1408782D+02, 0.3453519D+01, 0.7778239D+00, &
+&       0.1558649D+02, 0.3835578D+01, 0.8650425D+00, 0.1836820D+02, 0.4591304D+01, 0.1090203D+01, &
+&       0.2129253D+02, 0.5393166D+01, 0.1333883D+01, 0.2432142D+02, 0.6223814D+01, 0.1588737D+01, &
+&       0.2743721D+02, 0.7084044D+01, 0.1855823D+01, 0.3062746D+02, 0.7971276D+01, 0.2134810D+01, &
+&       0.3396510D+02, 0.8900831D+01, 0.2428436D+01, 0.3736810D+02, 0.9854313D+01, 0.2732795D+01/
+      data coeffs4/ &
+&       0.6438110D-01, 0.3791356D+00, 0.6790384D+00,-0.9976680D-01, 0.6751087D+00, 0.3908713D+00, &
+&      -0.2224250D+00, 0.7139400D+00, 0.4142398D+00,-0.1502541D+00, 0.6510970D+00, 0.4444372D+00, &
+&       0.6417080D-01, 0.3783819D+00, 0.6797627D+00,-0.1005637D+00, 0.6815896D+00, 0.3844102D+00, &
+&      -0.2231174D+00, 0.7199595D+00, 0.4094673D+00,-0.1434300D+00, 0.6030041D+00, 0.4881755D+00, &
+&       0.6395780D-01, 0.3776589D+00, 0.6804836D+00,-0.1013124D+00, 0.6865452D+00, 0.3795191D+00, &
+&      -0.2233367D+00, 0.7226660D+00, 0.4075932D+00,-0.1329102D+00, 0.5794076D+00, 0.5081949D+00, &
+&       0.6379160D-01, 0.3770772D+00, 0.6810364D+00,-0.1019598D+00, 0.6925012D+00, 0.3737091D+00, &
+&      -0.2235841D+00, 0.7175520D+00, 0.4136269D+00,-0.1294804D+00, 0.5711774D+00, 0.5126118D+00, &
+&       0.6368570D-01, 0.3766602D+00, 0.6813959D+00,-0.1026805D+00, 0.6915740D+00, 0.3747452D+00, &
+&      -0.2239616D+00, 0.7171970D+00, 0.4146924D+00,-0.1159459D+00, 0.5638312D+00, 0.5157105D+00, &
+&       0.6352830D-01, 0.3761252D+00, 0.6819206D+00,-0.1032386D+00, 0.6955826D+00, 0.3708869D+00, &
+&      -0.2241245D+00, 0.7177415D+00, 0.4148646D+00,-0.1083327D+00, 0.5566047D+00, 0.5194924D+00, &
+&       0.6340720D-01, 0.3757053D+00, 0.6823127D+00,-0.1037551D+00, 0.6988574D+00, 0.3677667D+00, &
+&      -0.2238506D+00, 0.7186408D+00, 0.4142824D+00,-0.9997440D-01, 0.5545757D+00, 0.5193358D+00, &
+&       0.6324620D-01, 0.3751737D+00, 0.6828494D+00,-0.1042343D+00, 0.7012328D+00, 0.3655163D+00, &
+&      -0.2236128D+00, 0.7180189D+00, 0.4151786D+00,-0.9385900D-01, 0.5512875D+00, 0.5211700D+00, &
+&       0.6313650D-01, 0.3747929D+00, 0.6832095D+00,-0.1046861D+00, 0.7034840D+00, 0.3634281D+00, &
+&      -0.2239634D+00, 0.7113033D+00, 0.4227015D+00,-0.8904940D-01, 0.5338648D+00, 0.5380713D+00, &
+&       0.6309280D-01, 0.3745038D+00, 0.6834160D+00,-0.1050863D+00, 0.7049994D+00, 0.3620077D+00, &
+&      -0.2254217D+00, 0.7096746D+00, 0.4236169D+00,-0.1166693D+00, 0.5950219D+00, 0.4923302D+00, &
+&       0.6283960D-01, 0.3736112D+00, 0.6843626D+00,-0.1054027D+00, 0.7070778D+00, 0.3599497D+00, &
+&       0.2270732D+00,-0.7111408D+00,-0.4213859D+00,-0.1507084D+00, 0.6413441D+00, 0.4600643D+00, &
+&       0.6272490D-01, 0.3731671D+00, 0.6847867D+00,-0.1057096D+00, 0.7094592D+00, 0.3575586D+00, &
+&      -0.2280577D+00, 0.7250544D+00, 0.4064506D+00,-0.1769108D+00, 0.6604420D+00, 0.4525469D+00, &
+&       0.6260110D-01, 0.3727790D+00, 0.6851842D+00,-0.1060438D+00, 0.7107219D+00, 0.3563753D+00, &
+&      -0.2308017D+00, 0.7325742D+00, 0.3994769D+00,-0.1983584D+00, 0.6759512D+00, 0.4476004D+00, &
+&       0.6249340D-01, 0.3723683D+00, 0.6855799D+00,-0.1063403D+00, 0.7120577D+00, 0.3550792D+00, &
+&      -0.2326525D+00, 0.7465053D+00, 0.3857492D+00,-0.2169517D+00, 0.6852937D+00, 0.4486601D+00, &
+&       0.6241750D-01, 0.3720414D+00, 0.6858728D+00,-0.1066146D+00, 0.7133792D+00, 0.3537553D+00, &
+&      -0.2354458D+00, 0.7528340D+00, 0.3801608D+00,-0.2363212D+00, 0.7085531D+00, 0.4329347D+00, &
+&       0.6253980D-01, 0.3721075D+00, 0.6856107D+00,-0.1068933D+00, 0.7139493D+00, 0.3532914D+00, &
+&      -0.2376841D+00, 0.7698488D+00, 0.3641119D+00,-0.2498594D+00, 0.7128783D+00, 0.4361011D+00/
+      data coeffp4/ &
+&       0.9576080D-01, 0.4482512D+00, 0.6189104D+00, 0.2403846D+00, 0.5797456D+00, 0.3020693D+00, &
+&       0.0000000D+00, 0.0000000D+00, 0.0000000D+00, 0.9495690D-01, 0.4477326D+00, 0.6188790D+00, &
+&       0.2438232D+00, 0.5781427D+00, 0.3010109D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.9452110D-01, 0.4477583D+00, 0.6181758D+00, 0.2473272D+00, 0.5762748D+00, 0.3001113D+00, &
+&       0.0000000D+00, 0.0000000D+00, 0.0000000D+00, 0.9406010D-01, 0.4477828D+00, 0.6176532D+00, &
+&       0.2581111D+00, 0.5757324D+00, 0.2908906D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.9337980D-01, 0.4472796D+00, 0.6178799D+00, 0.2500751D+00, 0.5725861D+00, 0.3020932D+00, &
+&       0.0000000D+00, 0.0000000D+00, 0.0000000D+00, 0.9299560D-01, 0.4473347D+00, 0.6174492D+00, &
+&       0.2543695D+00, 0.5722388D+00, 0.2986741D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.9279240D-01, 0.4476071D+00, 0.6167211D+00, 0.2550456D+00, 0.5708333D+00, 0.2998891D+00, &
+&       0.0000000D+00, 0.0000000D+00, 0.0000000D+00, 0.9250380D-01, 0.4477120D+00, 0.6162927D+00, &
+&       0.2552417D+00, 0.5684974D+00, 0.3023861D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.9236430D-01, 0.4480449D+00, 0.6155840D+00, 0.2593135D+00, 0.5687950D+00, 0.2987106D+00, &
+&       0.0000000D+00, 0.0000000D+00, 0.0000000D+00, 0.9194910D-01, 0.4476288D+00, 0.6158034D+00, &
+&       0.2675452D+00, 0.5701029D+00, 0.2856214D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.9089560D-01, 0.4456493D+00, 0.6179026D+00, 0.2739015D+00, 0.5689512D+00, 0.2756075D+00, &
+&       0.2062964D+00, 0.5563565D+00, 0.3670988D+00, 0.9069750D-01, 0.4451940D+00, 0.6178940D+00, &
+&       0.2751638D+00, 0.5703353D+00, 0.2690321D+00, 0.2627754D+00, 0.5701236D+00, 0.2901737D+00, &
+&       0.9032370D-01, 0.4443841D+00, 0.6183953D+00, 0.2728475D+00, 0.5717222D+00, 0.2664488D+00, &
+&       0.3086721D+00, 0.5671752D+00, 0.2410732D+00, 0.8996270D-01, 0.4435785D+00, 0.6189101D+00, &
+&       0.2789803D+00, 0.5760239D+00, 0.2529785D+00, 0.3286253D+00, 0.5489677D+00, 0.2444426D+00, &
+&       0.8942810D-01, 0.4423065D+00, 0.6200053D+00, 0.2767522D+00, 0.5795347D+00, 0.2491162D+00, &
+&       0.3466285D+00, 0.5413298D+00, 0.2347667D+00, 0.8902880D-01, 0.4413316D+00, 0.6207416D+00, &
+&       0.2745449D+00, 0.5813334D+00, 0.2470820D+00, 0.3620055D+00, 0.5352020D+00, 0.2242007D+00/
+      data coeffd4/ &
+&       0.1644737D+00, 0.4787843D+00, 0.6556389D+00, 0.1638319D+00, 0.4905779D+00, 0.6362293D+00, &
+&       0.1642244D+00, 0.4967508D+00, 0.6258979D+00, 0.1647178D+00, 0.5011371D+00, 0.6180587D+00, &
+&       0.1674847D+00, 0.5041187D+00, 0.6143492D+00, 0.1694177D+00, 0.5066518D+00, 0.6105528D+00, &
+&       0.1704471D+00, 0.5085159D+00, 0.6080700D+00, 0.1719093D+00, 0.5102939D+00, 0.6052430D+00, &
+&       0.1734535D+00, 0.5121846D+00, 0.6020146D+00, 0.1672532D+00, 0.5122790D+00, 0.5948177D+00, &
+&       0.1619895D+00, 0.5116739D+00, 0.5898732D+00, 0.1577985D+00, 0.5114922D+00, 0.5857703D+00, &
+&       0.1544952D+00, 0.5114318D+00, 0.5821935D+00, 0.1519858D+00, 0.5116403D+00, 0.5786936D+00, &
+&       0.1496666D+00, 0.5117475D+00, 0.5759148D+00, 0.1479466D+00, 0.5121719D+00, 0.5729498D+00/
+!
+      if((numatomic(iatom) > 36).or.(numatomic(iatom) < 21)) then
+        write(datacomp%iout,'(" Error! Subroutine bshuzmini4_g supports only Sc - Kr elements.")')
+        call iabort(datacomp)
+      endif
+!
+! Set valence basis functions
+!
+      if(itype == 1) then
+!   4S function
+        ishell= ishell+1
+        do j= 1,3
+          dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps4(j,4,numatomic(iatom))
+          dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs4(j,4,numatomic(iatom))
+        enddo
+        call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!
+        select case(numatomic(iatom))
+! Set Sc - Zn functions
+          case(21:30)
+!   3D function
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd4(j,numatomic(iatom))
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd4(j,numatomic(iatom))
+            enddo
+            call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
+! Set Ga - Kr functions
+          case(31:36)
+!   4P function
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp4(j,4,numatomic(iatom))
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp4(j,4,numatomic(iatom))
+            enddo
+            call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+        end select
+!
+! Set valence basis functions
+!
+      elseif(itype == 2) then
+! Set 1S functions
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 2)) then
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps4(j,1,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs4(j,1,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+        endif
+! Set 2SP functions
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 10)) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps4(j,2,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs4(j,2,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp4(j,2,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp4(j,2,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+        endif
+! Set 3SPD functions
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 18)) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps4(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs4(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp4(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp4(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+        endif
+!   D function
+        if(numatomic(iatom) >= 31) then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 28)) then
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd4(j,numatomic(iatom))
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd4(j,numatomic(iatom))
+            enddo
+            call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
+          endif
+        endif
+!
+! Set core basis functions for core orbital calculation
+!
+      elseif(itype == 3) then
+! Set 1S functions
+        if(databasis%izcore(iatom) >= 2) then
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps4(j,1,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs4(j,1,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+        endif
+! Set 2SP functions
+        if(databasis%izcore(iatom) >= 10) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps4(j,2,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs4(j,2,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp4(j,2,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp4(j,2,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+        endif
+! Set 3SPD functions
+        if(databasis%izcore(iatom) >= 18) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps4(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs4(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp4(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp4(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+        endif
+!   D function
+        if(databasis%izcore(iatom) >= 28) then
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd4(j,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd4(j,numatomic(iatom))
+          enddo
+          call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
+        endif
+      endif
+!
+      return
+end
+
+
+!------------------------------------------------------------------
+  subroutine bshuzmini5_g(iatom,ishell,itype,flagecp,numatomic, &
+&                         databasis,dataguessbs,datacomp)
+!------------------------------------------------------------------
+!
+! Set 5th row basis functions of minimal Huzinaga set for guess calculation
+! itype = 1 : valence functions
+!       = 2 : core functions
+!       = 3 : core functions for core calculation
+!
+      use modparam, only : mxatom, mxao, mxshell, mxprim
+      use modtype, only : typebasis, typecomp
+      implicit none
+      type(typebasis),intent(in) :: databasis
+      type(typebasis),intent(inout) :: dataguessbs
+      type(typecomp),intent(in) :: datacomp
+      integer,intent(in) :: iatom, itype, numatomic(mxatom)
+      integer,intent(inout) :: ishell
+      integer :: j
+      real(8) :: exps5(3,5,37:54), expp5(3,2:5,37:54), expd5(3,3:4,37:54)
+      real(8) :: coeffs5(3,5,37:54), coeffp5(3,2:5,37:54), coeffd5(3,3:4,37:54)
+      logical,intent(in) :: flagecp
+      data exps5/ &
+&       0.6816722D+04, 0.1033001D+04, 0.2269086D+03, 0.3028363D+03, 0.2920147D+02, 0.1208285D+02, &
+&       0.2469261D+02, 0.4201651D+01, 0.1852260D+01, 0.2935988D+01, 0.5254264D+00, 0.2191689D+00, &
+&       0.1916679D+00, 0.3343655D-01, 0.1473352D-01, 0.7215474D+04, 0.1092852D+04, 0.2399818D+03, &
+&       0.3204609D+03, 0.3074278D+02, 0.1261208D+02, 0.2623412D+02, 0.4459950D+01, 0.1983925D+01, &
+&       0.3196205D+01, 0.6083665D+00, 0.2657352D+00, 0.3342018D+00, 0.5169948D-01, 0.2174977D-01, &
+&       0.7647693D+04, 0.1157002D+04, 0.2537570D+03, 0.3391036D+03, 0.3240326D+02, 0.1328189D+02, &
+&       0.2799626D+02, 0.4682921D+01, 0.2056616D+01, 0.3486430D+01, 0.6674451D+00, 0.2795970D+00, &
+&       0.4686723D+00, 0.4978055D-01, 0.2040820D-01, 0.8074544D+04, 0.1220530D+04, 0.2675475D+03, &
+&       0.3576811D+03, 0.3414257D+02, 0.1394757D+02, 0.2961052D+02, 0.4980939D+01, 0.2185038D+01, &
+&       0.3839990D+01, 0.7397870D+00, 0.3096192D+00, 0.5550213D+00, 0.5532887D-01, 0.2137166D-01, &
+&       0.8465087D+04, 0.1281116D+04, 0.2812116D+03, 0.3758503D+03, 0.3605337D+02, 0.1481664D+02, &
+&       0.3136551D+02, 0.5271893D+01, 0.2307086D+01, 0.4167790D+01, 0.8215584D+00, 0.3432495D+00, &
+&       0.5871670D+00, 0.6616704D-01, 0.2593466D-01, 0.8898975D+04, 0.1346693D+04, 0.2956288D+03, &
+&       0.3950816D+03, 0.3796458D+02, 0.1560890D+02, 0.3308523D+02, 0.5618035D+01, 0.2482532D+01, &
+&       0.4500009D+01, 0.9059394D+00, 0.3777734D+00, 0.6541946D+00, 0.7258102D-01, 0.2797177D-01, &
+&       0.9331866D+04, 0.1412744D+04, 0.3102829D+03, 0.4145663D+03, 0.3994490D+02, 0.1645170D+02, &
+&       0.3488784D+02, 0.5947051D+01, 0.2624042D+01, 0.4854129D+01, 0.9879252D+00, 0.4109310D+00, &
+&       0.7102329D+00, 0.7580316D-01, 0.2868756D-01, 0.9786143D+04, 0.1481471D+04, 0.3254026D+03, &
+&       0.4347953D+03, 0.4191878D+02, 0.1725780D+02, 0.3673518D+02, 0.6278044D+01, 0.2751976D+01, &
+&       0.5217388D+01, 0.1075951D+01, 0.4471085D+00, 0.7934362D+00, 0.7742209D-01, 0.2934842D-01, &
+&       0.1022525D+05, 0.1549139D+04, 0.3405685D+03, 0.4551797D+03, 0.4398695D+02, 0.1813296D+02, &
+&       0.3875188D+02, 0.6603779D+01, 0.2895271D+01, 0.5615291D+01, 0.1161391D+01, 0.4802013D+00, &
+&       0.8545143D+00, 0.7947300D-01, 0.3009295D-01, 0.1073227D+05, 0.1624256D+04, 0.3567744D+03, &
+&       0.4764598D+03, 0.4608908D+02, 0.1901146D+02, 0.4050182D+02, 0.7031718D+01, 0.3110288D+01, &
+&       0.5953554D+01, 0.1273778D+01, 0.5293206D+00, 0.9168060D+00, 0.8014658D-01, 0.3033468D-01, &
+&       0.1119539D+05, 0.1695611D+04, 0.3727156D+03, 0.4980879D+03, 0.4818927D+02, 0.1987923D+02, &
+&       0.4261730D+02, 0.7354984D+01, 0.3219366D+01, 0.6447184D+01, 0.1340634D+01, 0.5508249D+00, &
+&       0.8960240D+00, 0.7873945D-01, 0.2942569D-01, 0.1168609D+05, 0.1770111D+04, 0.3892090D+03, &
+&       0.5199111D+03, 0.5039799D+02, 0.2083427D+02, 0.4465253D+02, 0.7750672D+01, 0.3381808D+01, &
+&       0.6789700D+01, 0.1466414D+01, 0.6180606D+00, 0.9177348D+00, 0.1120234D+00, 0.4082857D-01, &
+&       0.1221455D+05, 0.1848914D+04, 0.4063683D+03, 0.5413424D+03, 0.5301838D+02, 0.2219028D+02, &
+&       0.4641445D+02, 0.8353166D+01, 0.3864909D+01, 0.7177594D+01, 0.1621446D+01, 0.7199692D+00, &
+&       0.1065487D+01, 0.1443150D+00, 0.5458735D-01, 0.1274167D+05, 0.1928469D+04, 0.4238080D+03, &
+&       0.5646822D+03, 0.5524183D+02, 0.2312142D+02, 0.4849310D+02, 0.8770315D+01, 0.4037810D+01, &
+&       0.7615495D+01, 0.1729893D+01, 0.7718881D+00, 0.1197655D+01, 0.1730368D+00, 0.6695953D-01, &
+&       0.1328938D+05, 0.2010522D+04, 0.4416981D+03, 0.5883879D+03, 0.5752319D+02, 0.2403669D+02, &
+&       0.5078774D+02, 0.9147331D+01, 0.4172370D+01, 0.7999600D+01, 0.1838119D+01, 0.8312633D+00, &
+&       0.1344526D+01, 0.2114684D+00, 0.8689142D-01, 0.1379656D+05, 0.2088880D+04, 0.4593932D+03, &
+&       0.6115844D+03, 0.6022119D+02, 0.2549137D+02, 0.5304233D+02, 0.9663203D+01, 0.4418858D+01, &
+&       0.8458281D+01, 0.1975393D+01, 0.9081833D+00, 0.1427026D+01, 0.2388022D+00, 0.9319910D-01, &
+&       0.1435119D+05, 0.2173074D+04, 0.4778721D+03, 0.6362830D+03, 0.6236894D+02, 0.2603556D+02, &
+&       0.5513558D+02, 0.1012645D+02, 0.4592863D+01, 0.8904979D+01, 0.2092569D+01, 0.9735899D+00, &
+&       0.1553999D+01, 0.2748809D+00, 0.1082667D+00, 0.1490224D+05, 0.2256538D+04, 0.4963732D+03, &
+&       0.6609495D+03, 0.6486304D+02, 0.2711140D+02, 0.5751526D+02, 0.1053608D+02, 0.4704271D+01, &
+&       0.9378608D+01, 0.2240118D+01, 0.1061597D+01, 0.1695808D+01, 0.3065118D+00, 0.1204935D+00/
+      data expp5/ &
+&       0.4078684D+03, 0.9445549D+02, 0.2774551D+02, 0.1071505D+02, 0.4231163D+01, 0.1743470D+01, &
+&       0.8499190D+00, 0.3435337D+00, 0.1394105D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.4345691D+03, 0.1007036D+03, 0.2962503D+02, 0.1157209D+02, 0.4593745D+01, 0.1906081D+01, &
+&       0.9550617D+00, 0.3945392D+00, 0.1575933D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.4646239D+03, 0.1075481D+03, 0.3165041D+02, 0.1244391D+02, 0.4993456D+01, 0.2103387D+01, &
+&       0.1094792D+01, 0.4607263D+00, 0.1842897D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.4916220D+03, 0.1139304D+03, 0.3360551D+02, 0.1324729D+02, 0.5338991D+01, 0.2252502D+01, &
+&       0.1231475D+01, 0.5297885D+00, 0.2140876D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.5192875D+03, 0.1204590D+03, 0.3560811D+02, 0.1397658D+02, 0.5638861D+01, 0.2371227D+01, &
+&       0.1345522D+01, 0.5684675D+00, 0.2269623D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.5488639D+03, 0.1273927D+03, 0.3771284D+02, 0.1474459D+02, 0.5960035D+01, 0.2493753D+01, &
+&       0.1462155D+01, 0.6082758D+00, 0.2391247D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.5809436D+03, 0.1353604D+03, 0.3988994D+02, 0.8734719D+02, 0.1328789D+02, 0.4909056D+01, &
+&       0.1925852D+01, 0.8438556D+00, 0.3361854D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.6132351D+03, 0.1428949D+03, 0.4213671D+02, 0.9124369D+02, 0.1413810D+02, 0.5256848D+01, &
+&       0.2054238D+01, 0.8848989D+00, 0.3500592D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.6442321D+03, 0.1502801D+03, 0.4438451D+02, 0.9583330D+02, 0.1496330D+02, 0.5601316D+01, &
+&       0.2151308D+01, 0.9093210D+00, 0.3584824D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.6761655D+03, 0.1578524D+03, 0.4669913D+02, 0.1012561D+03, 0.1576033D+02, 0.5941637D+01, &
+&       0.2308244D+01, 0.9707511D+00, 0.3829481D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.7097935D+03, 0.1657507D+03, 0.4907937D+02, 0.1059019D+03, 0.1674607D+02, 0.6343350D+01, &
+&       0.2511517D+01, 0.1056080D+01, 0.4159573D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.7451048D+03, 0.1740470D+03, 0.5155244D+02, 0.1062784D+03, 0.1792499D+02, 0.6790410D+01, &
+&       0.2579247D+01, 0.1057390D+01, 0.4066846D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.7818692D+03, 0.1827982D+03, 0.5421114D+02, 0.1140363D+03, 0.1871313D+02, 0.7166048D+01, &
+&       0.2796378D+01, 0.1184122D+01, 0.4877346D+00, 0.2299340D+00, 0.8355539D-01, 0.3249889D-01, &
+&       0.8167732D+03, 0.1911277D+03, 0.5677159D+02, 0.1212449D+03, 0.1957790D+02, 0.7571713D+01, &
+&       0.3047403D+01, 0.1302218D+01, 0.5446291D+00, 0.2675286D+00, 0.1041825D+00, 0.4162604D-01, &
+&       0.8600807D+03, 0.2010142D+03, 0.5965760D+02, 0.1222711D+03, 0.2092966D+02, 0.8098035D+01, &
+&       0.3300369D+01, 0.1428774D+01, 0.5950513D+00, 0.3280185D+00, 0.1366129D+00, 0.5411368D-01, &
+&       0.8950750D+03, 0.2095786D+03, 0.6240521D+02, 0.1314480D+03, 0.2166318D+02, 0.8466730D+01, &
+&       0.3428100D+01, 0.1494340D+01, 0.6384852D+00, 0.3661446D+00, 0.1488787D+00, 0.5976329D-01, &
+&       0.9334828D+03, 0.2185056D+03, 0.6532578D+02, 0.1584829D+03, 0.2121514D+02, 0.8462315D+01, &
+&       0.3629560D+01, 0.1613374D+01, 0.7073388D+00, 0.4230758D+00, 0.1712839D+00, 0.6847909D-01, &
+&       0.9719885D+03, 0.2277224D+03, 0.6816256D+02, 0.1645382D+03, 0.2221048D+02, 0.8900006D+01, &
+&       0.3764923D+01, 0.1652238D+01, 0.6764963D+00, 0.4784285D+00, 0.1978129D+00, 0.7915387D-01/
+      data expd5/ &
+&       0.4086603D+02, 0.1084089D+02, 0.3050834D+01, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.4456612D+02, 0.1188149D+02, 0.3387558D+01, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.5034862D+02, 0.1349709D+02, 0.3916624D+01, 0.1404617D+01, 0.4520259D+00, 0.1249728D+00, &
+&       0.5471607D+02, 0.1474389D+02, 0.4333320D+01, 0.1685906D+01, 0.5374352D+00, 0.1502210D+00, &
+&       0.5903580D+02, 0.1599712D+02, 0.4757480D+01, 0.1979268D+01, 0.6292619D+00, 0.1775229D+00, &
+&       0.6379205D+02, 0.1735642D+02, 0.5210952D+01, 0.2286143D+01, 0.7293195D+00, 0.2094156D+00, &
+&       0.6901682D+02, 0.1883011D+02, 0.5692529D+01, 0.2636093D+01, 0.8401953D+00, 0.2396514D+00, &
+&       0.7408853D+02, 0.2028372D+02, 0.6177856D+01, 0.2898340D+01, 0.9273541D+00, 0.2661899D+00, &
+&       0.7928488D+02, 0.2177763D+02, 0.6678629D+01, 0.3222521D+01, 0.1034905D+01, 0.2982145D+00, &
+&       0.8445690D+02, 0.2327798D+02, 0.7186966D+01, 0.3488655D+01, 0.1126621D+01, 0.3267044D+00, &
+&       0.9002298D+02, 0.2487571D+02, 0.7722491D+01, 0.3785432D+01, 0.1227856D+01, 0.3590246D+00, &
+&       0.9547274D+02, 0.2648196D+02, 0.8282886D+01, 0.4082141D+01, 0.1357279D+01, 0.4208308D+00, &
+&       0.1021736D+03, 0.2839463D+02, 0.8924805D+01, 0.4535364D+01, 0.1537148D+01, 0.4994923D+00, &
+&       0.1080563D+03, 0.3013158D+02, 0.9530036D+01, 0.4962610D+01, 0.1712083D+01, 0.5771945D+00, &
+&       0.1158096D+03, 0.3230584D+02, 0.1025033D+02, 0.5486210D+01, 0.1921620D+01, 0.6660626D+00, &
+&       0.1214083D+03, 0.3401522D+02, 0.1086914D+02, 0.5803111D+01, 0.2058066D+01, 0.7328302D+00, &
+&       0.1280903D+03, 0.3598238D+02, 0.1155112D+02, 0.6146152D+01, 0.2220937D+01, 0.8099120D+00, &
+&       0.1349133D+03, 0.3795639D+02, 0.1222748D+02, 0.6600493D+01, 0.2398051D+01, 0.8864824D+00/
+      data coeffs5/ &
+&       0.6249620D-01, 0.3719500D+00, 0.6857293D+00,-0.1074004D+00, 0.7049410D+00, 0.3622692D+00, &
+&      -0.2430518D+00, 0.7375963D+00, 0.3988455D+00,-0.2806358D+00, 0.7159840D+00, 0.4402934D+00, &
+&       0.1580968D+00,-0.6855144D+00,-0.4191493D+00, 0.6228180D-01, 0.3713101D+00, 0.6864439D+00, &
+&      -0.1074604D+00, 0.7140333D+00, 0.3533614D+00,-0.2455863D+00, 0.7556468D+00, 0.3814041D+00, &
+&      -0.2974230D+00, 0.7364992D+00, 0.4298103D+00, 0.1961392D+00,-0.6888851D+00,-0.4263861D+00, &
+&       0.6188180D-01, 0.3701570D+00, 0.6878017D+00,-0.1075786D+00, 0.7181663D+00, 0.3490842D+00, &
+&      -0.2457049D+00, 0.7878323D+00, 0.3488907D+00,-0.3000605D+00, 0.7858715D+00, 0.3857544D+00, &
+&      -0.2438980D+00, 0.7576396D+00, 0.3475036D+00, 0.6166060D-01, 0.3696140D+00, 0.6884549D+00, &
+&      -0.1077339D+00, 0.7216851D+00, 0.3456921D+00,-0.2483862D+00, 0.8005982D+00, 0.3376774D+00, &
+&      -0.3104305D+00, 0.8022937D+00, 0.3741656D+00,-0.2288857D+00, 0.7817074D+00, 0.3195193D+00, &
+&       0.6181440D-01, 0.3698298D+00, 0.6880474D+00,-0.1080131D+00, 0.7199938D+00, 0.3472657D+00, &
+&      -0.2499774D+00, 0.8156328D+00, 0.3232937D+00,-0.3163261D+00, 0.8073422D+00, 0.3740729D+00, &
+&      -0.2224673D+00, 0.7048521D+00, 0.4026700D+00, 0.6171060D-01, 0.3694639D+00, 0.6884201D+00, &
+&      -0.1082198D+00, 0.7205080D+00, 0.3468176D+00,-0.2526233D+00, 0.8177164D+00, 0.3225675D+00, &
+&      -0.3206422D+00, 0.8092539D+00, 0.3763588D+00,-0.2116815D+00, 0.6864946D+00, 0.4187549D+00, &
+&       0.6169470D-01, 0.3693039D+00, 0.6885214D+00,-0.1084438D+00, 0.7206125D+00, 0.3467395D+00, &
+&      -0.2545651D+00, 0.8276066D+00, 0.3138042D+00,-0.3241571D+00, 0.8151655D+00, 0.3733329D+00, &
+&      -0.1967391D+00, 0.6579450D+00, 0.4429358D+00, 0.6160490D-01, 0.3689840D+00, 0.6888455D+00, &
+&      -0.1086056D+00, 0.7222292D+00, 0.3451630D+00,-0.2564513D+00, 0.8399185D+00, 0.3027171D+00, &
+&      -0.3265667D+00, 0.8168014D+00, 0.3742870D+00,-0.1864361D+00, 0.6339363D+00, 0.4599697D+00, &
+&       0.6168460D-01, 0.3690559D+00, 0.6886519D+00,-0.1088006D+00, 0.7224507D+00, 0.3449743D+00, &
+&      -0.2573715D+00, 0.8517085D+00, 0.2909376D+00,-0.3266525D+00, 0.8214561D+00, 0.3704174D+00, &
+&      -0.1758253D+00, 0.6050953D+00, 0.4842742D+00, 0.6140910D-01, 0.3683372D+00, 0.6895216D+00, &
+&      -0.1089646D+00, 0.7229184D+00, 0.3445285D+00,-0.2610873D+00, 0.8473020D+00, 0.2980309D+00, &
+&      -0.3315604D+00, 0.8065730D+00, 0.3906202D+00,-0.1665563D+00, 0.5960441D+00, 0.4889716D+00, &
+&       0.6146520D-01, 0.3683407D+00, 0.6894170D+00,-0.1090984D+00, 0.7248356D+00, 0.3425905D+00, &
+&      -0.2616127D+00, 0.8638930D+00, 0.2814949D+00,-0.3264484D+00, 0.8244194D+00, 0.3684570D+00, &
+&      -0.1464338D+00, 0.6078123D+00, 0.4745780D+00, 0.6142650D-01, 0.3681567D+00, 0.6895722D+00, &
+&      -0.1092676D+00, 0.7250389D+00, 0.3423508D+00,-0.2634441D+00, 0.8694815D+00, 0.2772414D+00, &
+&      -0.3343146D+00, 0.8177517D+00, 0.3812846D+00,-0.1509803D+00, 0.6086784D+00, 0.4891503D+00, &
+&       0.6124760D-01, 0.3676754D+00, 0.6901359D+00,-0.1096575D+00, 0.7156786D+00, 0.3516058D+00, &
+&      -0.2690027D+00, 0.8333355D+00, 0.3162081D+00,-0.3439307D+00, 0.7769627D+00, 0.4273271D+00, &
+&      -0.2008092D+00, 0.6599925D+00, 0.4553545D+00, 0.6113530D-01, 0.3672929D+00, 0.6905447D+00, &
+&      -0.1097488D+00, 0.7181120D+00, 0.3490973D+00,-0.2708984D+00, 0.8409064D+00, 0.3101030D+00, &
+&      -0.3475656D+00, 0.7937583D+00, 0.4132006D+00,-0.2385589D+00, 0.7059861D+00, 0.4236124D+00, &
+&       0.6098430D-01, 0.3668487D+00, 0.6910501D+00,-0.1098365D+00, 0.7203891D+00, 0.3468674D+00, &
+&      -0.2714342D+00, 0.8547971D+00, 0.2964847D+00,-0.3512204D+00, 0.8121005D+00, 0.3980049D+00, &
+&      -0.2714728D+00, 0.6682413D+00, 0.4725305D+00, 0.6108620D-01, 0.3669629D+00, 0.6907944D+00, &
+&      -0.1101441D+00, 0.7134762D+00, 0.3534463D+00,-0.2728363D+00, 0.8475640D+00, 0.3052385D+00, &
+&      -0.3587862D+00, 0.8112858D+00, 0.4033116D+00,-0.2806370D+00, 0.7509597D+00, 0.4038957D+00, &
+&       0.6100280D-01, 0.3666398D+00, 0.6911306D+00,-0.1100819D+00, 0.7219464D+00, 0.3454775D+00, &
+&      -0.2754113D+00, 0.8543504D+00, 0.3006473D+00,-0.3630477D+00, 0.8279763D+00, 0.3894209D+00, &
+&       0.2967653D+00,-0.7583335D+00,-0.4067087D+00, 0.6099690D-01, 0.3666290D+00, 0.6911155D+00, &
+&      -0.1102247D+00, 0.7225832D+00, 0.3448171D+00,-0.2761463D+00, 0.8678121D+00, 0.2879474D+00, &
+&      -0.3673742D+00, 0.8242752D+00, 0.3963011D+00,-0.3127449D+00, 0.7841594D+00, 0.3890762D+00/
+      data coeffp5/ &
+&       0.8900530D-01, 0.4411370D+00, 0.6204330D+00, 0.2867814D+00, 0.5863660D+00, 0.2277478D+00, &
+&       0.3796538D+00, 0.5370593D+00, 0.1869077D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8827720D-01, 0.4395651D+00, 0.6220621D+00, 0.2829866D+00, 0.5896899D+00, 0.2263017D+00, &
+&       0.4130687D+00, 0.5407330D+00, 0.1403073D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8700020D-01, 0.4370123D+00, 0.6250957D+00, 0.2788493D+00, 0.5885743D+00, 0.2292208D+00, &
+&       0.4060140D+00, 0.5320897D+00, 0.1575146D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8674090D-01, 0.4362728D+00, 0.6255724D+00, 0.2803844D+00, 0.5922702D+00, 0.2225147D+00, &
+&       0.4058518D+00, 0.5246687D+00, 0.1633953D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8652380D-01, 0.4357148D+00, 0.6258786D+00, 0.2867436D+00, 0.5975733D+00, 0.2096306D+00, &
+&       0.4308749D+00, 0.5215640D+00, 0.1404843D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8606650D-01, 0.4346698D+00, 0.6268737D+00, 0.2917026D+00, 0.6020321D+00, 0.1991546D+00, &
+&       0.4518315D+00, 0.5172613D+00, 0.1232182D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8453260D-01, 0.4321914D+00, 0.6304900D+00,-0.2955230D-01, 0.4201419D+00, 0.6547726D+00, &
+&       0.3011680D+00, 0.5688683D+00, 0.2252629D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8393060D-01, 0.4310037D+00, 0.6318141D+00,-0.2984900D-01, 0.4184301D+00, 0.6558081D+00, &
+&       0.3259420D+00, 0.5693077D+00, 0.2001975D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8373500D-01, 0.4304508D+00, 0.6321828D+00,-0.3009170D-01, 0.4189458D+00, 0.6546474D+00, &
+&       0.3612858D+00, 0.5622628D+00, 0.1716521D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8353990D-01, 0.4299341D+00, 0.6325113D+00,-0.3035930D-01, 0.4214283D+00, 0.6515363D+00, &
+&       0.3727721D+00, 0.5581097D+00, 0.1642278D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8320160D-01, 0.4292951D+00, 0.6331456D+00,-0.3055490D-01, 0.4170359D+00, 0.6552444D+00, &
+&       0.3678284D+00, 0.5598336D+00, 0.1679555D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8273470D-01, 0.4283685D+00, 0.6341921D+00,-0.3056390D-01, 0.4096720D+00, 0.6626091D+00, &
+&       0.4155160D+00, 0.5559935D+00, 0.1202681D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.8218860D-01, 0.4267795D+00, 0.6357629D+00,-0.3114070D-01, 0.4133453D+00, 0.6578615D+00, &
+&       0.4068683D+00, 0.5479905D+00, 0.1323252D+00, 0.2630070D+00, 0.5733118D+00, 0.2829178D+00, &
+&       0.8207290D-01, 0.4264331D+00, 0.6359016D+00,-0.3156430D-01, 0.4151667D+00, 0.6549931D+00, &
+&       0.3982670D+00, 0.5557792D+00, 0.1301395D+00, 0.3210906D+00, 0.5659043D+00, 0.2218115D+00, &
+&       0.8097580D-01, 0.4241487D+00, 0.6387257D+00,-0.3181120D-01, 0.4045588D+00, 0.6653749D+00, &
+&       0.3889519D+00, 0.5640495D+00, 0.1289287D+00, 0.3110910D+00, 0.5652580D+00, 0.2257358D+00, &
+&       0.8110990D-01, 0.4236824D+00, 0.6386030D+00,-0.3202100D-01, 0.4119187D+00, 0.6571079D+00, &
+&       0.4159312D+00, 0.5489605D+00, 0.1133174D+00, 0.3690254D+00, 0.5355049D+00, 0.2011813D+00, &
+&       0.8109280D-01, 0.4231510D+00, 0.6385674D+00,-0.2834650D-01, 0.4622270D+00, 0.6046503D+00, &
+&       0.4210620D+00, 0.5427157D+00, 0.1108784D+00, 0.3814674D+00, 0.5321926D+00, 0.1922032D+00, &
+&       0.8095620D-01, 0.4227290D+00, 0.6388428D+00,-0.2851550D-01, 0.4626758D+00, 0.6037699D+00, &
+&       0.4503453D+00, 0.5400257D+00, 0.8283500D-01,-0.3900001D+00,-0.5233464D+00,-0.1906046D+00/
+      data coeffd5/ &
+&       0.1466037D+00, 0.5127252D+00, 0.5699804D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.1451271D+00, 0.5130677D+00, 0.5676640D+00, 0.0000000D+00, 0.0000000D+00, 0.0000000D+00, &
+&       0.1367063D+00, 0.5029592D+00, 0.5788425D+00, 0.1778019D+00, 0.4652198D+00, 0.5916440D+00, &
+&       0.1347642D+00, 0.5014995D+00, 0.5786696D+00, 0.1925337D+00, 0.5052917D+00, 0.5385693D+00, &
+&       0.1335596D+00, 0.5006254D+00, 0.5776791D+00, 0.2015902D+00, 0.5271681D+00, 0.5065745D+00, &
+&       0.1316317D+00, 0.4990747D+00, 0.5782636D+00, 0.2072519D+00, 0.5396099D+00, 0.4846239D+00, &
+&       0.1290297D+00, 0.4966878D+00, 0.5805887D+00, 0.2078727D+00, 0.5439701D+00, 0.4804963D+00, &
+&       0.1274352D+00, 0.4953767D+00, 0.5811668D+00, 0.2189550D+00, 0.5502884D+00, 0.4631699D+00, &
+&       0.1260477D+00, 0.4942743D+00, 0.5815451D+00, 0.2230469D+00, 0.5533923D+00, 0.4551932D+00, &
+&       0.1251206D+00, 0.4936143D+00, 0.5812637D+00, 0.2326503D+00, 0.5566155D+00, 0.4419046D+00, &
+&       0.1237838D+00, 0.4925467D+00, 0.5818767D+00, 0.2395459D+00, 0.5591501D+00, 0.4311417D+00, &
+&       0.1230828D+00, 0.4916768D+00, 0.5815408D+00, 0.2516043D+00, 0.5652168D+00, 0.3995299D+00, &
+&       0.1205559D+00, 0.4884976D+00, 0.5850190D+00, 0.2508574D+00, 0.5693113D+00, 0.3840635D+00, &
+&       0.1198237D+00, 0.4875910D+00, 0.5849874D+00, 0.2529487D+00, 0.5727612D+00, 0.3690387D+00, &
+&       0.1166279D+00, 0.4834363D+00, 0.5901395D+00, 0.2483656D+00, 0.5743154D+00, 0.3643044D+00, &
+&       0.1169136D+00, 0.4835555D+00, 0.5883864D+00, 0.2601939D+00, 0.5797758D+00, 0.3405580D+00, &
+&       0.1158636D+00, 0.4820494D+00, 0.5894448D+00, 0.2681817D+00, 0.5800614D+00, 0.3262263D+00, &
+&       0.1150105D+00, 0.4815952D+00, 0.5896133D+00, 0.2718844D+00, 0.5855569D+00, 0.3127456D+00/
+!
+      if((numatomic(iatom) > 54).or.(numatomic(iatom) < 36)) then
+        write(datacomp%iout,'(" Error! Subroutine bshuzmini5_g supports only 5th row elements.")')
+        call iabort(datacomp)
+      endif
+!
+! Set valence basis functions
+!
+      if(itype == 1) then
+!   5S function
+        ishell= ishell+1
+        do j= 1,3
+          dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps5(j,5,numatomic(iatom))
+          dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs5(j,5,numatomic(iatom))
+        enddo
+        call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!
+        select case(numatomic(iatom))
+! Set Y - Cd functions
+          case(39:48)
+!   4D function
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd5(j,4,numatomic(iatom))
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd5(j,4,numatomic(iatom))
+            enddo
+            call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
+! Set Lu - Hg functions
+          case(49:54)
+!   5P function
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp5(j,5,numatomic(iatom))
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp5(j,5,numatomic(iatom))
+            enddo
+            call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+        end select
+!
+! Set valence basis functions
+!
+      elseif(itype == 2) then
+! Set 1S functions
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 2)) then
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps5(j,1,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs5(j,1,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+        endif
+! Set 2SP functions
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 10)) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps5(j,2,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs5(j,2,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp5(j,2,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp5(j,2,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+        endif
+! Set 3SPD functions
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 18)) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps5(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs5(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp5(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp5(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+        endif
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 28)) then
+!   D function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd5(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd5(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
+        endif
+! Set 4SPD functions
+        if(.not.flagecp.or.(databasis%izcore(iatom) < 36)) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps5(j,4,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs5(j,4,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp5(j,4,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp5(j,4,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+        endif
+!   D function
+        if(numatomic(iatom) >= 49) then
+          if(.not.flagecp.or.(databasis%izcore(iatom) < 46)) then
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd5(j,4,numatomic(iatom))
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd5(j,4,numatomic(iatom))
+            enddo
+            call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
+          endif
+        endif
+!
+! Set core basis functions for core orbital calculation
+!
+      elseif(itype == 3) then
+! Set 1S functions
+        if(databasis%izcore(iatom) >= 2) then
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps5(j,1,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs5(j,1,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+        endif
+! Set 2SP functions
+        if(databasis%izcore(iatom) >= 10) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps5(j,2,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs5(j,2,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp5(j,2,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp5(j,2,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+        endif
+! Set 3SPD functions
+        if(databasis%izcore(iatom) >= 18) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps5(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs5(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp5(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp5(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+        endif
+!   D function
+        if(databasis%izcore(iatom) >= 28) then
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd5(j,3,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd5(j,3,numatomic(iatom))
+          enddo
+          call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
+        endif
+! Set 4SPD functions
+        if(databasis%izcore(iatom) >= 36) then
+!   S function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= exps5(j,4,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffs5(j,4,numatomic(iatom))
+          enddo
+          call basisparam(ishell,0,3,iatom,dataguessbs,datacomp)
+!   P function
+          ishell= ishell+1
+          do j= 1,3
+            dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expp5(j,4,numatomic(iatom))
+            dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffp5(j,4,numatomic(iatom))
+          enddo
+          call basisparam(ishell,1,3,iatom,dataguessbs,datacomp)
+        endif
+!   D function
+        if(numatomic(iatom) >= 49) then
+          if(databasis%izcore(iatom) >= 46) then
+            ishell= ishell+1
+            do j= 1,3
+              dataguessbs%ex(dataguessbs%locprim(ishell)+j)= expd5(j,4,numatomic(iatom))
+              dataguessbs%coeff(dataguessbs%locprim(ishell)+j)= coeffd5(j,4,numatomic(iatom))
+            enddo
+            call basisparam(ishell,2,3,iatom,dataguessbs,datacomp)
           endif
         endif
       endif

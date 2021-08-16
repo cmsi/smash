@@ -1,4 +1,4 @@
-! Copyright 2014  Kazuya Ishimura
+! Copyright 2014-2021  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -36,17 +36,19 @@
 end
 
 
-!-----------------------------------------------------------------------------------------
-  subroutine mtrxcanon(ortho,overlap,eigen,ndim,newdim,threshover,nproc,myrank,mpi_comm)
-!-----------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------
+  subroutine mtrxcanon(ortho,overlap,eigen,ndim,newdim,threshover,datacomp)
+!----------------------------------------------------------------------------
 !
-! Calculate canonicalization matrix
+! Calculate canonical transformation matrix
 !
 ! The ortho matrix satisfiles (Ortho)-daggar * S * (Ortho) = I
 ! where S is the overlap matrix.
 !
+      use modtype, only : typecomp
       implicit none
-      integer,intent(in) :: ndim, nproc, myrank, mpi_comm
+      type(typecomp),intent(inout) :: datacomp
+      integer,intent(in) :: ndim
       integer,intent(out) :: newdim
       integer :: i, j, icount
       real(8),parameter :: one=1.0D+00
@@ -57,7 +59,7 @@ end
 !
 ! Diagonalize ortho matrix
 !
-      call diag('V','U',ndim,overlap,ndim,eigen,nproc,myrank,mpi_comm)
+      call diag('V','U',ndim,overlap,ndim,eigen,datacomp)
 !
 ! Eliminate eigenvectors with small eigenvalues
 !
@@ -172,69 +174,117 @@ end
 end
 
 
-!-------------------------------------------------------------------------
-  subroutine diag(jobz,uplo,ndim,vector,lda,eigen,nproc,myrank,mpi_comm)
-!-------------------------------------------------------------------------
+!------------------------------------------------------------
+  subroutine diag(jobz,uplo,ndim,vector,lda,eigen,datacomp)
+!------------------------------------------------------------
 !
-! Diagonalize matrix
+! Diagonalize symmetric matrix using divide and conquer algorithm
 !
-      use modparallel, only : master
+      use modtype, only : typecomp
       implicit none
-      integer,intent(in) :: ndim, lda, nproc, myrank, mpi_comm
-      integer :: info
+      type(typecomp),intent(inout) :: datacomp
+      integer,intent(in) :: ndim, lda
+      integer :: itmp, lwork, liwork, info
       integer, allocatable :: iwork(:)
       real(8),intent(out) :: eigen(lda)
       real(8),intent(inout) :: vector(*)
       real(8), allocatable :: work(:)
+      real(8) :: tmp
       character(len=1),intent(in) :: jobz, uplo
 !
-      info= 0
-!     call memset(ndim*ndim)
-!     allocate(work(ndim*ndim))
-!     call dsyev(jobz,uplo,ndim,vector,lda,eigen,work,ndim*ndim,info)
-!     deallocate(work)
-!     call memunset(ndim*ndim)
-      call memset(3*ndim*ndim+45*ndim)
-      allocate(iwork(10*ndim),work(3*ndim*ndim+35*ndim))
-      call dsyevd(jobz,uplo,ndim,vector,lda,eigen,work,3*ndim*ndim+35*ndim,iwork,10*ndim,info)
-      deallocate(iwork,work)
-      call memunset(3*ndim*ndim+45*ndim)
+! Get optimal sizes of work and iwork arrays
 !
+      tmp=0.0D+00
+      itmp=0
+      call dsyevd(jobz,uplo,ndim,vector,lda,eigen,tmp,-1,itmp,-1,info)
+      lwork= nint(tmp)
+      liwork= itmp
+      call memset(lwork+liwork,datacomp)
+      allocate(work(lwork),iwork(liwork))
+      info= 0
+!
+! Call LAPACK routine
+!
+      call dsyevd(jobz,uplo,ndim,vector,lda,eigen,work,lwork,iwork,liwork,info)
+!
+      deallocate(iwork,work)
+      call memunset(lwork+liwork,datacomp)
       if(info /= 0) then
-        if(master)write(*,'(" Error! Diagonalization failed, info =",i5)')info
-        call iabort
+        if(datacomp%master)write(datacomp%iout,'(" Error! Diagonalization in diag failed, info =",i5)')info
+        call iabort(datacomp)
       endif
       return
 end
 
 
-!----------------------------------------------------------------------------------------------
-  subroutine mtrxcanoninv(ortho,overinv,overlap,ndim,newdim,threshover,nproc,myrank,mpi_comm)
-!----------------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------
+  subroutine gendiag(itype,jobz,uplo,ndim,vector,lda,bmatrix,ldb,eigen,datacomp)
+!---------------------------------------------------------------------------------
 !
-! Calculate canonicalization matrix and inverse matrix of overlap
+! Solve real generalized symmetric-difinite eigenproblem (Ax=lBx, ABx=lx, BAx=lx)
+!
+      use modtype, only : typecomp
+      implicit none
+      type(typecomp),intent(inout) :: datacomp
+      integer,intent(in) :: itype, ndim, lda, ldb
+      integer :: itmp, lwork, liwork, info
+      integer, allocatable :: iwork(:)
+      real(8),intent(out) :: eigen(lda)
+      real(8),intent(inout) :: vector(*), bmatrix(*)
+      real(8), allocatable :: work(:)
+      real(8) :: tmp
+      character(len=1),intent(in) :: jobz, uplo
+!
+! Get optimal sizes of work and iwork arrays
+!
+      tmp= 0.0D+00
+      itmp= 0
+      call dsygvd(itype,jobz,uplo,ndim,vector,lda,bmatrix,ldb,eigen,tmp,-1,itmp,-1,info)
+      lwork= nint(tmp)
+      liwork= itmp
+      call memset(lwork+liwork,datacomp)
+      allocate(work(lwork),iwork(liwork))
+      info= 0
+!
+! Call LAPACK routine
+!
+      call dsygvd(itype,jobz,uplo,ndim,vector,lda,bmatrix,ldb,eigen,work,lwork,iwork,liwork,info)
+!
+      deallocate(work,iwork)
+      call memunset(lwork+liwork,datacomp)
+      if(info /= 0) then
+        if(datacomp%master)write(datacomp%iout,'(" Error! Diagonalization in gendiag failed, info =",i5)')info
+        call iabort(datacomp)
+      endif
+!
+      return
+end
+
+
+!---------------------------------------------------------------------------------
+  subroutine mtrxcanoninv(ortho,overinv,overlap,ndim,newdim,threshover,datacomp)
+!---------------------------------------------------------------------------------
+!
+! Calculate canonical transformation matrix and inverse matrix of overlap
 !
 ! The ortho matrix satisfiles (Ortho)-daggar * S * (Ortho) = I
 ! where S is the overlap matrix.
 !
+      use modtype, only : typecomp
       implicit none
-      integer,intent(in) :: ndim, nproc, myrank, mpi_comm
+      type(typecomp),intent(inout) :: datacomp
+      integer,intent(in) :: ndim
       integer,intent(out) :: newdim
       integer :: i, j, icount
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: threshover
       real(8),intent(out) :: ortho(ndim,ndim), overinv(ndim,ndim)
       real(8),intent(inout) :: overlap(ndim,ndim)
-      real(8),allocatable :: eigen(:), ecanon(:)
-!
-! Set arrays
-!
-      call memset(ndim*2)
-      allocate(eigen(ndim),ecanon(ndim))
+      real(8) :: eigen(ndim), ecanon(ndim)
 !
 ! Diagonalize ortho matrix
 !
-      call diag('V','U',ndim,overlap,ndim,eigen,nproc,myrank,mpi_comm)
+      call diag('V','U',ndim,overlap,ndim,eigen,datacomp)
 !
 ! Eliminate eigenvectors with small eigenvalues
 !
@@ -276,10 +326,6 @@ end
 !$OMP enddo
 !$OMP end parallel
 !
-! Unset arrays
-!
-      call memunset(ndim*2)
-      deallocate(eigen,ecanon)
       return
 end
 
@@ -339,9 +385,9 @@ end
 end
 
 
-!----------------------------------------
+!-----------------------------------------
   subroutine expand2(array1,array2,ndim)
-!----------------------------------------
+!-----------------------------------------
 !
 ! Expand upper-triangle matrix to full matrix
 !
@@ -437,9 +483,9 @@ end
 end
 
 
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
   subroutine hessianbfgs(ehess,coord,coordold,egrad,egradold,vec,ndim)
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
 ! Update hessian matrix using BFGS method
 !

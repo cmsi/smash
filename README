@@ -1,32 +1,30 @@
   ===========================
-      SMASH version 2.2.0
+      SMASH version 3.0.0
   ===========================
 
   About SMASH
   -----------
-  Scalable Molecular Analysis Solver for High-performance computing systems
-  (SMASH) is open-source software for massively parallel quantum
-  chemistry calculations. It is currently capable of energy, analytical
-  gradient, and geometry optimization calculations of Hartree-Fock
-  theory, Density Functional Theory (DFT), and Second-order 
-  Moller-Plesset (MP2) perturbation theory. DFT calculations can be 
-  performed on 100,000 CPU cores of K Computer with high parallel efficiency.
-  The Fortran 90/95 language is used with MPI and OpenMP for
+  Scalable Molecular Analysis Solver for High-performance computing systems 
+  (SMASH) is massively parallel open-source software for quantum chemistry.
+  It is currently capable of energy, analytical gradient, and geometry
+  optimization calculations of Hartree-Fock theory, Density Functional
+  Theory (DFT), and Second-order Moller-Plesset (MP2) perturbation theory.
+  DFT calculations can be performed on 100,000 CPU cores with high parallel
+  efficiency. The Fortran 90/95 language is used with MPI and OpenMP for
   inter-node and intra-node parallelization, respectively. Supported
-  platforms are x86-64/Linux with Intel or GNU compilers, and K Computer
-  and FX10 with Fujitsu compiler. SMASH is developed and distributed
-  under the Apache License 2.0.
+  platforms are x86-64/Linux with Intel, NVIDIA HPC SDK (ex-PGI), or GNU
+  compilers, and Supercomputer Fugaku and FX1000/700 with Fujitsu compiler.
 
   Documentation
   -------------
-  User's and programmer's manuals are included in the doc/ directory.
-  A user's manual written in Japanese is also available.
-  You can also download the document from the following site:
+  User and programmer manuals are included in the doc directory.
+  The user manual written in Japanese can be downloaded from the
+  following site:
   https://sourceforge.net/projects/smash-qc/files/
 
   Installation
   ------------
-  Please see the file called INSTALL.
+  Please see the file INSTALL.
 
   Sample input and output
   -----------------------
@@ -34,7 +32,7 @@
 
   Licensing
   ---------
-  Please see the file called LICENSE.
+  Please see the file LICENSE.
 
   Visualization
   -------------
@@ -43,4 +41,4 @@
   Contact
   -------
   If you have questions or find bugs, please contact the developer via e-mail.
-    ishimura.smash@gmail.com (Kazuya Ishimura, Institute for Molecular Science)
+    ishimura.smash@gmail.com (Kazuya Ishimura)

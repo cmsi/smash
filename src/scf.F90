@@ -1,4 +1,4 @@
-! Copyright 2014  Kazuya Ishimura
+! Copyright 2014-2021  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -12,10 +12,10 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !
-!------------------------------------------------------------------------
-  subroutine calcrhf(h1mtrx,cmo,ortho,overlap,dmtrx,xint,eigen, &
-&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
-!------------------------------------------------------------------------
+!-----------------------------------------------------------------------
+  subroutine calcrhf(h1mtrx,cmo,fock,ortho,overlap,dmtrx,xint,eigen, &
+&                    datajob,datamol,databasis,datacomp)
+!-----------------------------------------------------------------------
 !
 ! Driver of restricted Hartree-Fock calculation
 !
@@ -27,73 +27,85 @@
 !       eigen   (MO energy)
 ! Inout : cmo   (MO coefficient matrix)
 !
-      use modparallel, only : master
-      use modbasis, only : nshell, nao, mtype
-      use modmolecule, only : neleca, nmo
-      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
-&                        maxqcdiagsub, scfconv, extrap
-      use modenergy, only : enuc, escf, escfe
-      use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis
-      use modprint, only : iprint
-      use modwarn, only : nwarn
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
-      integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(inout) :: datamol
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(inout) :: datacomp
+      integer :: maxdiis, maxsoscf, maxqcdiagsub
+      integer :: nao, nmo, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
       integer :: itextra, itsoscf, itqc, nocc, nvir
-      integer :: idis(nproc2,14), isize1, isize2, isize3
+      integer :: idis(datacomp%nproc2,14), isize1, isize2, isize3
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
       real(8),parameter :: small=1.0D-10
-      real(8),intent(in) :: h1mtrx(nao*(nao+1)/2), ortho(nao*nao), overlap(nao*(nao+1)/2)
-      real(8),intent(out) :: dmtrx(nao*(nao+1)/2), xint(nshell*(nshell+1)/2), eigen(nao)
-      real(8),intent(inout) :: cmo(nao*nao)
-      real(8),allocatable :: fock(:), fockprev(:), dmtrxprev(:), dmax(:), work(:)
+      real(8),intent(in) :: h1mtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: ortho(databasis%nao*databasis%nao)
+      real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fock(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: xint(databasis%nshell*(databasis%nshell+1)/2), eigen(databasis%nao)
+      real(8),intent(inout) :: cmo(databasis%nao*databasis%nao)
+      real(8),allocatable :: fockprev(:), dmtrxprev(:), dmax(:), work(:)
       real(8),allocatable :: fockdiis(:), errdiis(:), diismtrx(:), work2(:)
       real(8),allocatable :: hstart(:), sograd(:,:), sodisp(:), sovecy(:)
-      real(8),allocatable :: qcvec(:), qcmat(:), qcmatsave(:), qceigen(:), qcgmn(:)
+      real(8),allocatable :: qcvec(:), qcmat(:), qcmatsave(:), qceigen(:)
       real(8) :: escfprev, diffmax, tridot, deltae, errmax, sogradmax, sodispmax
       real(8) :: time1, time2, time3, time4
       logical :: convsoscf, convqc
+      character(len=32) :: scfconv
+      character(len=8) :: cmaxiter, cmaxdiis, cmaxsoscf, cmaxqc, cmaxqcdiag, cmaxqcdiagsub
       data maxfunc/1,3,6,10,15,21,28/
 !
+      datacomp%convergedscf=.false.
+!
+      maxdiis= datajob%maxdiis
+      maxsoscf= datajob%maxsoscf
+      maxqcdiagsub= datajob%maxqcdiagsub
+      scfconv= datajob%scfconv
+!
+      nao= databasis%nao
+      nmo= datamol%nmo
       nao2= nao*nao
       nao3= nao*(nao+1)/2
+      nshell= databasis%nshell
       nshell3= nshell*(nshell+1)/2
-      nocc= neleca
-      nvir= nmo-neleca
-      maxdim=maxfunc(maxval(mtype(1:nshell)))
+      nocc= datamol%neleca
+      nvir= nmo-datamol%neleca
+      maxdim=maxfunc(maxval(databasis%mtype(1:nshell)))
 !
 ! Distribute fock and error arrays for DIIS
 !
-      call distarray(idis,nmo,nao,nao3,nocc,nvir,nocc,nvir,nproc2)
+      call distarray(idis,nmo,nao,nao3,nocc,nvir,nocc,nvir,datacomp%nproc2)
 !
 ! Set arrays
 !
-      isize1= max(idis(myrank2+1,3),idis(myrank2+1,7)*nao,maxdiis)
-      isize2= idis(myrank2+1,3)
-      isize3= idis(myrank2+1,5)
+      isize1= max(idis(datacomp%myrank2+1,3),idis(datacomp%myrank2+1,7)*nao,maxdiis)
+      isize2= idis(datacomp%myrank2+1,3)
+      isize3= idis(datacomp%myrank2+1,5)
       select case(scfconv)
         case('DIIS')
-          call memset(nao2+nao3*3+nshell3+isize3*maxdiis+isize1+isize2*maxdiis &
-&                    +maxdiis*(maxdiis+1)/2)
-          allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
+          call memset(nao2+nao3*2+nshell3+isize3*maxdiis+isize1+isize2*maxdiis &
+&                    +maxdiis*(maxdiis+1)/2,datacomp)
+          allocate(fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
 &                  fockdiis(isize3*maxdiis), errdiis(isize2*maxdiis), &
 &                  diismtrx(maxdiis*(maxdiis+1)/2),work2(isize1))
         case('SOSCF')
-          call memset(nao2+nao3*3+nshell3+nocc*nvir*3*maxsoscf+isize1)
-          allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
-                   hstart(nocc*nvir),sograd(nocc*nvir,maxsoscf),sodisp(nocc*nvir*maxsoscf), &
+          call memset(nao2+nao3*2+nshell3+nocc*nvir*3*maxsoscf+isize1,datacomp)
+          allocate(fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
+&                  hstart(nocc*nvir),sograd(nocc*nvir,maxsoscf),sodisp(nocc*nvir*maxsoscf), &
 &                  sovecy(nocc*nvir*(maxsoscf-1)),work2(isize1))
         case('QC')
-          call memset(nao2*2+nao3*2+nshell3+(nocc*nvir+1)*(maxqcdiagsub+1)*2+maxqcdiagsub**2 &
-&                    +maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub)
-          allocate(fock(nao2),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
+          call memset(nao2*3+nao3*2+nshell3+(nocc*nvir+1)*(maxqcdiagsub+1)*2+maxqcdiagsub**2 &
+&                    +maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub,datacomp)
+          allocate(fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
                    qcvec((nocc*nvir+1)*(maxqcdiagsub+1)*2),qcmat(maxqcdiagsub**2), &
 &                  qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2),qceigen(maxqcdiagsub), &
-&                  qcgmn(nao3),work2(nao2))
+&                  work2(nao2*2))
         case default
-          if(master) then
-            write(*,'(" SCFConv=",a12,"is not supported.")') 
-            call iabort
+          if(datacomp%master) then
+            write(datacomp%iout,'(" Error! SCFConv=",a12,"is not supported.")') 
+            call iabort(datacomp)
           endif
       end select
 !
@@ -107,7 +119,7 @@
 !
 ! Calculate initial density matrix
 !
-      call calcdmtrx(cmo,dmtrx,work,nao,neleca)
+      call calcdmtrx(cmo,dmtrx,work,nao,datamol%neleca)
 !
 ! Set 1-electron Hamiltonian
 !
@@ -116,64 +128,77 @@
 !
 ! Calculate (ij|ij) integrals
 !
-      call calcschwarzeri(xint,work,maxdim,nproc2,myrank2,mpi_comm2)
+      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
+&                         datajob,datamol,databasis)
 !
-      if(master) then
-        write(*,'(1x,74("-"))')
-        write(*,'("   Restricted Hartree-Fock calculation")')
-        write(*,'(1x,74("-"))')
-        write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter    =",i9)') &
-&                    scfconv, dconv, maxiter
-        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver =",d9.2)') &
-&                    cutint2, threshex, threshover
+      if(datacomp%master) then
+        write(cmaxiter,'(i0)') datajob%maxiter
+        write(datacomp%iout,'(1x,74("="))')
+        if((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
+          write(datacomp%iout, &
+&               '("   Restricted Hartree-Fock calculation for guess orbitals of DFT")')
+        else
+          write(datacomp%iout,'("   Restricted Hartree-Fock calculation")')
+        endif
+        write(datacomp%iout,'(1x,74("="))')
+        write(datacomp%iout,'("   SCFConv    = ",a8,",  Dconv      =",1p,e9.2, &
+&                             ",  MaxIter     = ",a8)') scfconv, datajob%dconv, cmaxiter
+        write(datacomp%iout,'("   Cutint2    =",1p,e9.2,",  ThreshEx   =",e9.2, &
+&                             ",  ThreshOver  =",e9.2)') &
+&                             datajob%cutint2, datajob%threshex, datajob%threshover
         select case(scfconv)
           case('DIIS')
-            write(*,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
-&                    maxdiis, threshdiis
+            write(cmaxdiis,'(i0)') maxdiis
+            write(datacomp%iout,'("   MaxDIIS    = ",a8,",  ThreshDIIS =",1p,e9.2)') &
+&                    cmaxdiis, datajob%threshdiis
           case('SOSCF')
-            write(*,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
-&                    maxdiis, threshdiis
+            write(cmaxsoscf,'(i0)') maxsoscf
+            write(datacomp%iout,'("   MaxSOSCF   = ",a8,",  ThreshSOSCF=",1p,e9.2)') &
+&                    cmaxsoscf, datajob%threshsoscf
           case('QC')
-            write(*,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
-&                    maxqc, threshqc, maxqcdiag
-            write(*,'("   MaxQCDiagSub=",i8)') &
-&                    maxqcdiagsub
+            write(cmaxqc,'(i0)') datajob%maxqc
+            write(cmaxqcdiag,'(i0)') datajob%maxqcdiag
+            write(cmaxqcdiagsub,'(i0)') datajob%maxqcdiagsub
+            write(datacomp%iout,'("   MaxQC      = ",a8,",  ThreshQC   =",1p,e9.2, &
+&                                 ",  MaxQCDiag   = ",a8)') cmaxqc, datajob%threshqc, cmaxqcdiag
+            write(datacomp%iout,'("   MaxQCDiagSub=",a8)') &
+&                    cmaxqcdiagsub
         end select
-        write(*,'(1x,74("-"))')
+        write(datacomp%iout,'(1x,74("-"))')
 !
-        if((nao /= nmo).and.master) then
-          write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
-          nwarn= nwarn+1
+        if((nao /= nmo).and.datacomp%master) then
+          write(datacomp%iout, &
+&               '(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
+          datacomp%nwarn= datacomp%nwarn+1
         endif
 !
-        write(*,'(" ====================")')
-        write(*,'("    SCF Iteration")')
-        write(*,'(" ====================")')
         select case(scfconv)
           case('DIIS')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density     DIIS Error")')
           case('SOSCF')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density    Orbital Grad")')
           case('QC')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density")')
         end select
       endif
 !
 ! Start SCF iteration
 !
-      do iter= 1,maxiter
+      do iter= 1,datajob%maxiter
 !
 ! Calculate maximum density matrix elements
 !
-        call calcrdmax(dmtrx,dmax,work,nproc2,myrank2,mpi_comm2)
+        call calcrdmax(dmtrx,dmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
+&                      databasis)
 !
 ! Calculate two-electron integrals and Fock matrix
 !
         call cpu_time(time1)
-        call formrfock(fock,work,dmtrx,dmax,xint,maxdim,nproc1,myrank1,mpi_comm1)
+        call formrfock(fock,work,dmtrx,dmax,xint,maxdim,datajob%cutint2,datacomp%nproc1, &
+&                      datacomp%myrank1,datacomp%mpi_comm1,datajob,datamol,databasis)
         call dscal(nao3,half,fock,1)
         call cpu_time(time2)
 !
@@ -183,10 +208,10 @@
 !
 ! Calculate SCF ENERGY
 !
-        escfe=(tridot(dmtrxprev,fock,nao)+tridot(dmtrxprev,h1mtrx,nao))*half
-        escf = escfe+enuc
-        deltae = escf-escfprev
-        escfprev= escf
+        datamol%escfe=(tridot(dmtrxprev,fock,nao)+tridot(dmtrxprev,h1mtrx,nao))*half
+        datamol%escf = datamol%escfe+datamol%enuc
+        deltae = datamol%escf-escfprev
+        escfprev= datamol%escf
 !
         select case(scfconv)
 !
@@ -194,42 +219,46 @@
 !
           case('DIIS')
             call calcdiiserr(fock,dmtrxprev,overlap,ortho,cmo,work,work2,errmax,nao,nmo, &
-&                            idis,nproc2,myrank2,mpi_comm2)
-            if(((itdiis /= 0).or.(errmax <= threshdiis)).and.(errmax > small))then
+&                            idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+            if(((itdiis /= 0).or.(errmax <= datajob%threshdiis)).and.(errmax > small))then
               itdiis= itdiis+1
               call calcrdiis(fock,errdiis,fockdiis,diismtrx,cmo,work2,itdiis,nao,maxdiis, &
-&                            idis,nproc2,myrank2,mpi_comm2)
+&                            idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
             endif
 !
 ! Extrapolate Fock matrix
 !
-            if(extrap.and.itdiis == 0) &
+            if(datajob%extrap.and.itdiis == 0) &
 &             call fockextrap(fock,fockdiis,work,cmo,dmtrx,itextra,nao,maxdiis, &
-&                             idis,nproc2,myrank2,mpi_comm2)
+&                             idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
 !
 ! Diagonalize Fock matrix
 !
-            call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+            call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                         datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
 !
-! Approximated Second-order SCF method
+! Approximate Second-order SCF method
 !
           case('SOSCF')
             if((itsoscf == 0).or.(convsoscf)) then
-              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               sogradmax= zero
               itsoscf= itsoscf+1
             else
               call expand(fock,work,nao)
               call soscfgrad(work,work2,sograd(1,itsoscf),cmo,nocc,nvir,sogradmax,nao, &
-&                            idis,nproc2,myrank2,mpi_comm2,1)
-              if(sogradmax <= threshsoscf) then
+&                            idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,1)
+              if(sogradmax <= datajob%threshsoscf) then
                 if(itsoscf == 1) call soscfinith(hstart,eigen,nocc,nvir,nao)
                 call soscfnewh(hstart,sograd,sodisp,sovecy,nocc,nvir,itsoscf,maxsoscf,sodispmax)
                 call soscfupdate(cmo,sodisp,work,work2,nocc,nvir,itsoscf,maxsoscf, &
-&                                nao,nmo,sodispmax,idis,nproc2,myrank2,mpi_comm2)
+&                                nao,nmo,sodispmax,idis, &
+&                                datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
                 itsoscf= itsoscf+1
               else
-                call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+                call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                             datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               endif
             endif
 !
@@ -237,15 +266,18 @@
 !
           case('QC')
             if((itqc == 0).or.(convqc)) then
-              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= itqc+1
-            elseif(itqc == maxqc) then
-              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+            elseif(itqc == datajob%maxqc) then
+              call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= 1
             else
-              call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
-&                        work,work2,one,nao,nmo,nocc,nvir,nshell,maxdim,maxqcdiag, &
-&                        maxqcdiagsub,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+              call rhfqc(fock,cmo,dmax,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
+&                        work,work2(1),work2(nao2+1),datajob%cutint2,one,nao,nmo, &
+&                        nocc,nvir,nshell,maxdim,datajob%maxqcdiag,maxqcdiagsub,datajob%threshqc, &
+&                        datajob,datamol,databasis,datacomp)
               itqc= itqc+1
             endif
         end select
@@ -253,98 +285,118 @@
 !
 ! Copy previous density matrix and calculate new density matrix
 !
-        call calcdmtrx(cmo,dmtrx,work,nao,neleca)
+        call calcdmtrx(cmo,dmtrx,work,nao,datamol%neleca)
         call ddiff(dmtrx,dmtrxprev,work,nao3,diffmax)
 !
         select case(scfconv)
           case('DIIS')
-            if(extrap.and.(itdiis==0)) then
+            if(datajob%extrap.and.(itdiis==0)) then
               itsub= itextra
             else
               itsub= itdiis
             endif
-            if(master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,errmax
+            if(datacomp%master) &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,2f17.9)') &
+&             iter,itsub,datamol%escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
-            if(master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,sogradmax
+            if(datacomp%master) &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,2f17.9)') &
+&             iter,itsub,datamol%escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
-            if(master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,escf,deltae,diffmax
+            if(datacomp%master) &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,1f17.9)') &
+&             iter,itsub,datamol%escf,deltae,diffmax
         end select
 !
 ! Check SCF convergence
 !
         select case(scfconv)
           case('DIIS')
-            if(diffmax < dconv) exit
+            if(diffmax < datajob%dconv) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
             if(itdiis >= maxdiis) itdiis= 0
           case('SOSCF')
-            if((diffmax < dconv).and.(convsoscf)) exit
-            if((diffmax < dconv).and.(itsoscf == 1)) exit
-            if((diffmax < dconv).and.(.not.convsoscf)) convsoscf=.true.
+            if((diffmax < datajob%dconv).and.((convsoscf).or.(itsoscf == 1))) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
+            if((diffmax < datajob%dconv).and.(.not.convsoscf)) convsoscf=.true.
             if(itsoscf >= maxsoscf) itsoscf= 0
           case('QC')
-            if((diffmax < dconv).and.(convqc)) exit
-            if((diffmax < dconv).and.(itqc == 1)) exit
-            if((diffmax < dconv).and.(.not.convqc)) convqc=.true.
-            if((diffmax >= dconv).and.(convqc)) then
+            if((diffmax < datajob%dconv).and.((convqc).or.(itqc == 1))) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
+            if((diffmax < datajob%dconv).and.(.not.convqc)) convqc=.true.
+            if((diffmax >= datajob%dconv).and.(convqc)) then
               itqc= 0
               convqc=.false.
             endif
         end select
 !
-        if(iter == maxiter) then
-          if(master) then
-            write(*,'(" SCF did not converge.")')
-            call iabort
+        if(iter == datajob%maxiter) then
+          if(datacomp%master) then
+            write(datacomp%iout,'(" -------------------------")')
+            write(datacomp%iout,'("   SCF did not converge.")')
+            write(datacomp%iout,'(" -------------------------"/)')
           endif
+          exit
         endif
         call dcopy(nao3,dmtrx,1,dmtrxprev,1)
         call dcopy(nao3,work,1,dmtrx,1)
         call cpu_time(time4)
-        if(master.and.(iprint >= 3)) write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 5)) &
+&         write(datacomp%iout,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
-      if(master) then
-        write(*,'(" -----------------------------------------")')
-        write(*,'("    SCF Converged.")')
-        write(*,'("    RHF Energy = ",f17.9," a.u.")')escf
-        write(*,'(" -----------------------------------------"/)')
+      if((datacomp%master).and.(datacomp%convergedscf))then
+        if((datajob%idftex == 0).and.(datajob%idftcor == 0)) then
+          write(datacomp%iout,'(" --------------------------------------------")')
+          write(datacomp%iout,'("    SCF Converged.")')
+          write(datacomp%iout,'("    RHF Energy =",f18.9," Hartree")') datamol%escf
+          write(datacomp%iout,'(" --------------------------------------------",/)')
+        else
+          write(datacomp%iout,'(" --------------------")')
+          write(datacomp%iout,'("    SCF Converged.")')
+          write(datacomp%iout,'(" --------------------",/)')
+        endif
       endif
 !
 ! Unset arrays
 !
       select case(scfconv)
         case('DIIS')
-          call memunset(nao2+nao3*3+nshell3+isize3*maxdiis+isize1+isize2*maxdiis+ &
-&                       maxdiis*(maxdiis+1)/2)
-          deallocate(fock,fockprev,dmtrxprev,dmax,work, &
+          call memunset(nao2+nao3*2+nshell3+isize3*maxdiis+isize1+isize2*maxdiis+ &
+&                       maxdiis*(maxdiis+1)/2,datacomp)
+          deallocate(fockprev,dmtrxprev,dmax,work, &
 &                    fockdiis,errdiis, &
 &                    diismtrx,work2)
         case('SOSCF')
-          call memunset(nao2+nao3*3+nshell3+nocc*nvir*3*maxsoscf+isize1)
-          deallocate(fock,fockprev,dmtrxprev,dmax,work, &
-                     hstart,sograd,sodisp, &
+          call memunset(nao2+nao3*2+nshell3+nocc*nvir*3*maxsoscf+isize1,datacomp)
+          deallocate(fockprev,dmtrxprev,dmax,work, &
+&                    hstart,sograd,sodisp, &
 &                    sovecy,work2)
         case('QC')
-          call memunset(nao2*2+nao3*2+nshell3+(nocc*nvir+1)*(maxqcdiagsub+1)*2+maxqcdiagsub**2 &
-&                      +maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub)
-          deallocate(fock,fockprev,dmtrxprev,dmax,work, &
+          call memunset(nao2*3+nao3*2+nshell3+(nocc*nvir+1)*(maxqcdiagsub+1)*2+maxqcdiagsub**2 &
+&                      +maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub,datacomp)
+          deallocate(fockprev,dmtrxprev,dmax,work, &
 &                    qcvec,qcmat, &
 &                    qcmatsave,qceigen, &
-&                    qcgmn,work2)
+&                    work2)
       end select
 !
       return
 end
 
 
-!----------------------------------------------------------------------------------
-  subroutine diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc,myrank,mpi_comm)
-!----------------------------------------------------------------------------------
+!----------------------------------------------------------------------
+  subroutine diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                     nproc,myrank,mpi_comm,datacomp)
+!----------------------------------------------------------------------
 !
 ! Driver of Fock matrix diagonalization
 !
@@ -353,10 +405,10 @@ end
 ! Out : cmo   (Canonical MO matrx)
 !       work, work2, eigen (work space)
 !
-      use modbasis, only : nao
-      use modmolecule, only : nmo
+      use modtype, only : typecomp
       implicit none
-      integer,intent(in) :: nproc, myrank, mpi_comm, idis(nproc,14)
+      type(typecomp),intent(inout) :: datacomp
+      integer,intent(in) :: nao, nmo, nproc, myrank, mpi_comm, idis(nproc,14)
       real(8),parameter :: zero=0.0D+00, one=1.0D+00
       real(8),intent(in) :: fock(nao*(nao+1)/2), ortho(nao,nao)
       real(8),intent(out) :: work(nao,nao), cmo(nao*nao), work2(*), eigen(nao)
@@ -368,7 +420,7 @@ end
 !
 ! Diagonalize canonicalized matrix
 !
-        call diag('V','U',nmo,work,nao,eigen,nproc,myrank,mpi_comm)
+        call diag('V','U',nmo,work,nao,eigen,datacomp)
 !
 ! Backtransform to AO basis
 !
@@ -381,26 +433,34 @@ end
 end
 
 
-!------------------------------------------------------------------------------------
-  subroutine formrfock(focktotal,fock,dmtrx,dmax,xint,maxdim,nproc,myrank,mpi_comm)
-!------------------------------------------------------------------------------------
+!------------------------------------------------------------------------------
+  subroutine formrfock(focktotal,fock,dmtrx,dmax,xint,maxdim,cutint2,nproc, &
+&                      myrank,mpi_comm,datajob,datamol,databasis)
+!------------------------------------------------------------------------------
 !
 ! Driver of Fock matrix formation from two-electron intgrals
 !
-      use modbasis, only : nshell, nao
-      use modthresh, only : cutint2
+      use modtype, only : typejob, typemol, typebasis
       implicit none
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart, ishcheck
-      integer(8) :: ncount, icount(nshell)
+      integer(8) :: ncount, icount(databasis%nshell)
       real(8),parameter :: zero=0.0D+00, two=2.0D+00, four=4.0D+00
-      real(8),intent(in) :: dmtrx(nao*(nao+1)/2), dmax(nshell*(nshell+1)/2)
-      real(8),intent(in) :: xint(nshell*(nshell+1)/2)
-      real(8),intent(out) :: focktotal(nao*(nao+1)/2), fock(nao*(nao+1)/2)
+      real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: dmax(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: cutint2
+      real(8),intent(out) :: focktotal(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8) :: xijkl, denmax, twoeri(maxdim**4), denmax1
-      integer :: last, ltmp(nshell), lnum, ll
+      integer :: nao, nshell, last, ltmp(databasis%nshell), lnum, ll
 !
+      nao= databasis%nao
+      nshell= databasis%nshell
       fock(:)= zero
 !
       ncount= 0
@@ -463,8 +523,8 @@ end
             endif
           enddo
           do lsh= 1,lnum
-            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
-            call rfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
+            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,datajob%threshex,datamol,databasis)
+            call rfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,cutint2,databasis)
           enddo
         enddo
       enddo
@@ -479,34 +539,36 @@ end
 end
 
 
-!----------------------------------------------------------------
-  subroutine rfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,lsh,maxdim)
-!----------------------------------------------------------------
+!----------------------------------------------------------------------------------
+  subroutine rfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,lsh,maxdim,cutint2,databasis)
+!----------------------------------------------------------------------------------
 !
 ! Form Fock matrix from two-electron intgrals
 !
-      use modbasis, only : nao, mbf, locbf
-      use modthresh, only : cutint2
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nbfi, nbfj, nbfk, nbfl
       integer :: locbfi, locbfj, locbfk, locbfl, jmax, lmax, i, j, k, l, ij, kl
       integer :: nij, nkl, nik, nil, njk, njl
       integer :: iloc, jloc, kloc, lloc, iloc2, jloc2, kloc2, lloc2, kloc0, jloc0
       real(8),parameter :: half=0.5D+00, four=4.0D+00
-      real(8),intent(in) :: dmtrx(nao*(nao+1)/2), twoeri(maxdim,maxdim,maxdim,maxdim)
-      real(8),intent(inout) :: fock(nao*(nao+1)/2)
+      real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim)
+      real(8),intent(in) :: cutint2
+      real(8),intent(inout) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8) :: val, val4
       logical :: ieqj, keql, ieqk, jeql, ikandjl, ijorkl
 !
-      nbfi = mbf(ish)
-      nbfj = mbf(jsh)
-      nbfk = mbf(ksh)
-      nbfl = mbf(lsh)
-      locbfi= locbf(ish)
-      locbfj= locbf(jsh)
-      locbfk= locbf(ksh)
-      locbfl= locbf(lsh)
+      nbfi = databasis%mbf(ish)
+      nbfj = databasis%mbf(jsh)
+      nbfk = databasis%mbf(ksh)
+      nbfl = databasis%mbf(lsh)
+      locbfi= databasis%locbf(ish)
+      locbfj= databasis%locbf(jsh)
+      locbfk= databasis%locbf(ksh)
+      locbfl= databasis%locbf(lsh)
 !
       ieqj= ish.eq.jsh
       keql= ksh.eq.lsh
@@ -626,27 +688,35 @@ end
 end
 
 
-!------------------------------------------------------------------------------
-  subroutine formrdftfock(focktotal,fock,dmtrx,dmax,xint,maxdim,hfexchange, &
-&                         nproc,myrank,mpi_comm)
-!------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------
+  subroutine formrdftfock(focktotal,fock,dmtrx,dmax,xint,maxdim,cutint2,hfexchange, &
+&                         nproc,myrank,mpi_comm, &
+&                         datajob,datamol,databasis)
+!--------------------------------------------------------------------------------------
 !
 ! Driver of DFT Fock matrix formation from two-electron intgrals
 !
-      use modbasis, only : nshell, nao
-      use modthresh, only : cutint2
+      use modtype, only : typejob, typemol, typebasis
       implicit none
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart, ishcheck
-      integer(8) :: ncount, icount(nshell)
+      integer(8) :: ncount, icount(databasis%nshell)
       real(8),parameter :: zero=0.0D+00, two=2.0D+00, four=4.0D+00
-      real(8),intent(in) :: dmtrx(nao*(nao+1)/2), dmax(nshell*(nshell+1)/2)
-      real(8),intent(in) :: xint(nshell*(nshell+1)/2), hfexchange
-      real(8),intent(out) :: focktotal(nao*(nao+1)/2), fock(nao*(nao+1)/2)
+      real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: dmax(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: cutint2, hfexchange
+      real(8),intent(out) :: focktotal(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8) :: xijkl, denmax, twoeri(maxdim**4), denmax1
-      integer :: last, ltmp(nshell), lnum, ll
+      integer :: nao, nshell, last, ltmp(databasis%nshell), lnum, ll
 !
+      nao= databasis%nao
+      nshell= databasis%nshell
       fock(:)= zero
 !
       ncount= 0
@@ -709,8 +779,9 @@ end
             endif
           enddo
           do lsh= 1,lnum
-            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
-            call rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,hfexchange)
+            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,datajob%threshex,datamol,databasis)
+            call rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,cutint2,hfexchange, &
+&                            databasis)
           enddo
         enddo
       enddo
@@ -725,35 +796,37 @@ end
 end
 
 
-!------------------------------------------------------------------------------
-  subroutine rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,lsh,maxdim,hfexchange)
-!------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
+  subroutine rdftfockeri(fock,dmtrx,twoeri,ish,jsh,ksh,lsh,maxdim,cutint2,hfexchange, &
+&                        databasis)
+!----------------------------------------------------------------------------------------
 !
 ! Form DFT Fock matrix from two-electron intgrals
 !
-      use modbasis, only : nao, mbf, locbf
-      use modthresh, only : cutint2
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nbfi, nbfj, nbfk, nbfl
       integer :: locbfi, locbfj, locbfk, locbfl, jmax, lmax, i, j, k, l, ij, kl
       integer :: nij, nkl, nik, nil, njk, njl
       integer :: iloc, jloc, kloc, lloc, iloc2, jloc2, kloc2, lloc2, jloc0, kloc0
       real(8),parameter :: half=0.5D+00, four=4.0D+00
-      real(8),intent(in) :: dmtrx(nao*(nao+1)/2), twoeri(maxdim,maxdim,maxdim,maxdim)
-      real(8),intent(in) :: hfexchange
-      real(8),intent(inout) :: fock(nao*(nao+1)/2)
+      real(8),intent(in) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim)
+      real(8),intent(in) :: cutint2, hfexchange
+      real(8),intent(inout) :: fock(databasis%nao*(databasis%nao+1)/2)
       real(8) :: val, val4
       logical :: ieqj, keql, ieqk, jeql, ikandjl, ijorkl
 !
-      nbfi = mbf(ish)
-      nbfj = mbf(jsh)
-      nbfk = mbf(ksh)
-      nbfl = mbf(lsh)
-      locbfi= locbf(ish)
-      locbfj= locbf(jsh)
-      locbfk= locbf(ksh)
-      locbfl= locbf(lsh)
+      nbfi = databasis%mbf(ish)
+      nbfj = databasis%mbf(jsh)
+      nbfk = databasis%mbf(ksh)
+      nbfl = databasis%mbf(lsh)
+      locbfi= databasis%locbf(ish)
+      locbfj= databasis%locbf(jsh)
+      locbfk= databasis%locbf(ksh)
+      locbfl= databasis%locbf(lsh)
 !
       ieqj= ish.eq.jsh
       keql= ksh.eq.lsh
@@ -874,10 +947,10 @@ end
 end
 
 
-!-------------------------------------------------------------------------
-  subroutine calcrdft(h1mtrx,cmo,ortho,overlap,dmtrx,xint,eigen, &
-&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
-!-------------------------------------------------------------------------
+!-------------------------------------------------------------------
+  subroutine calcrdft(h1mtrx,cmo,fock,ortho,overlap,dmtrx,xint,eigen, &
+&                     datajob,datamol,databasis,datacomp)
+!-------------------------------------------------------------------
 !
 ! Driver of restricted DFT calculation
 !
@@ -889,90 +962,104 @@ end
 !       eigen   (MO energy)
 ! Inout : cmo   (MO coefficient matrix)
 !
-      use modparallel, only : master
-      use moddft, only : idftex, idftcor, nrad, nleb, hfexchange
-      use modatom, only : atomrad
-      use modbasis, only : nshell, nao, mtype
-      use modmolecule, only : neleca, nmo, natom, numatomic
-      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
-                         maxqcdiagsub, scfconv, extrap
-      use modenergy, only : enuc, escf, escfe
-      use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
-&                           threshweight, threshrho, threshdfock, threshdftao
-      use modprint, only : iprint
-      use modunit, only : tobohr
-      use modwarn, only : nwarn
+      use modparam, only : tobohr
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
-      integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
-      integer :: itextra, itsoscf, itqc, nocc, nvir
-      integer :: idis(nproc2,14), isize1, isize2, isize3, iatom
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(inout) :: datamol
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(inout) :: datacomp
+      integer :: maxdiis, maxsoscf, maxqcdiagsub, nrad, nleb
+      integer :: nao, nmo, ndftatom, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), iter, itsub
+      integer :: itdiis, itextra, itsoscf, itqc, nocc, nvir
+      integer :: idis(datacomp%nproc2,14), isize1, isize2, isize3, iatom
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
       real(8),parameter :: small=1.0D-10
-      real(8),intent(in) :: h1mtrx(nao*(nao+1)/2), ortho(nao*nao), overlap(nao*(nao+1)/2)
-      real(8),intent(out) :: dmtrx(nao*(nao+1)/2), xint(nshell*(nshell+1)/2), eigen(nao)
-      real(8),intent(inout) :: cmo(nao*nao)
-      real(8),allocatable :: fock(:), fockprev(:), dmtrxprev(:), dmax(:), work(:)
+      real(8),intent(in) :: h1mtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: ortho(databasis%nao*databasis%nao)
+      real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fock(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: dmtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: xint(databasis%nshell*(databasis%nshell+1)/2), eigen(databasis%nao)
+      real(8),intent(inout) :: cmo(databasis%nao*databasis%nao)
+      real(8),allocatable :: fockprev(:), dmtrxprev(:), dmax(:), work(:)
       real(8),allocatable :: fockdiis(:), errdiis(:), diismtrx(:), work2(:)
       real(8),allocatable :: hstart(:), sograd(:,:), sodisp(:), sovecy(:)
       real(8),allocatable :: fockd(:), rad(:), atomvec(:), surface(:),  radpt(:), angpt(:)
       real(8),allocatable :: ptweight(:), xyzpt(:), rsqrd(:), vao(:), vmo(:)
-      real(8),allocatable :: qcvec(:), qcmat(:), qcmatsave(:), qceigen(:), qcgmn(:)
+      real(8),allocatable :: qcvec(:), qcmat(:), qcmatsave(:), qceigen(:)
       real(8) :: escfprev, diffmax, tridot, deltae, errmax, sogradmax, sodispmax
       real(8) :: edft, totalelec
       real(8) :: time1, time2, time3, time4
       logical :: convsoscf, convqc
+      character(len=32) :: scfconv
+      character(len=8) :: cmaxiter, cnrad, cnleb, cmaxdiis, cmaxsoscf
+      character(len=8) :: cmaxqc, cmaxqcdiag, cmaxqcdiagsub
       data maxfunc/1,3,6,10,15,21,28/
 !
+      datacomp%convergedscf=.false.
+!
+      maxdiis= datajob%maxdiis
+      maxsoscf= datajob%maxsoscf
+      maxqcdiagsub= datajob%maxqcdiagsub
+      scfconv= datajob%scfconv
+      nrad= datajob%nrad
+      nleb= datajob%nleb
+!
+      nao= databasis%nao
+      nmo= datamol%nmo
+      ndftatom= datamol%natom-datamol%ndummyatom
       nao2= nao*nao
       nao3= nao*(nao+1)/2
+      nshell= databasis%nshell
       nshell3= nshell*(nshell+1)/2
-      nocc= neleca
-      nvir= nmo-neleca
-      maxdim=maxfunc(maxval(mtype(1:nshell)))
+      nocc= datamol%neleca
+      nvir= nmo-datamol%neleca
+      maxdim=maxfunc(maxval(databasis%mtype(1:nshell)))
 !
 ! Distribute fock and error arrays for DIIS
 !
-      call distarray(idis,nmo,nao,nao3,nocc,nvir,nocc,nvir,nproc2)
+      call distarray(idis,nmo,nao,nao3,nocc,nvir,nocc,nvir,datacomp%nproc2)
 !
 ! Set arrays
 !
-      isize1= max(idis(myrank2+1,3),idis(myrank2+1,7)*nao,3*natom,nao,maxdiis)
-      isize2= idis(myrank2+1,3)
-      isize3=idis(myrank2+1,5)
+      isize1= max(idis(datacomp%myrank2+1,3),idis(datacomp%myrank2+1,7)*nao,3*ndftatom,nao,maxdiis)
+      isize2= idis(datacomp%myrank2+1,3)
+      isize3=idis(datacomp%myrank2+1,5)
       select case(scfconv)
         case('DIIS')
-          call memset(nao2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
-&                    +nao*4+nocc*4+isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2)
-          allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
-&                  fockd(nao3),rad(natom),atomvec(5*natom*natom),surface(natom*natom), &
-&                  radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb),xyzpt(3*natom), &
-&                  rsqrd(natom),vao(4*nao),vmo(4*nocc),fockdiis(isize3*maxdiis), &
+          call memset(nao2+nao3*3+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+&                    +ndftatom*nrad*nleb+nao*4+nocc*4+isize3*maxdiis+isize1+isize2*maxdiis &
+&                    +maxdiis*(maxdiis+1)/2, datacomp)
+          allocate(fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2),fockd(nao3), &
+&                  rad(ndftatom),atomvec(5*ndftatom*ndftatom),surface(ndftatom*ndftatom), &
+&                  radpt(2*nrad),angpt(4*nleb),ptweight(ndftatom*nrad*nleb),xyzpt(3*ndftatom), &
+&                  rsqrd(ndftatom),vao(4*nao),vmo(4*nocc),fockdiis(isize3*maxdiis), &
 &                  errdiis(isize2*maxdiis),diismtrx(maxdiis*(maxdiis+1)/2),work2(isize1))
         case('SOSCF')
-          call memset(nao2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
-&                    +nao*4+nocc*4+isize1+nocc*nvir*3*maxsoscf)
-          allocate(fock(nao3),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
-&                  fockd(nao3),rad(natom),atomvec(5*natom*natom),surface(natom*natom), &
-&                  radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb),xyzpt(3*natom), &
-&                  rsqrd(natom),vao(4*nao),vmo(4*nocc),work2(isize1), &
+          call memset(nao2+nao3*3+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+&                    +ndftatom*nrad*nleb+nao*4+nocc*4+isize1+nocc*nvir*3*maxsoscf,datacomp)
+          allocate(fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2),fockd(nao3), &
+&                  rad(ndftatom),atomvec(5*ndftatom*ndftatom),surface(ndftatom*ndftatom), &
+&                  radpt(2*nrad),angpt(4*nleb),ptweight(ndftatom*nrad*nleb),xyzpt(3*ndftatom), &
+&                  rsqrd(ndftatom),vao(4*nao),vmo(4*nocc),work2(isize1), &
 &                  hstart(nocc*nvir),sograd(nocc*nvir,maxsoscf),sodisp(nocc*nvir*maxsoscf), &
 &                  sovecy(nocc*nvir*(maxsoscf-1)))
         case ('QC')
-          isize1= max(isize1,nao2)
-          call memset(nao2*2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
-&                    +nao*4+nocc*4+isize1+(nocc*nvir+1)*(maxqcdiagsub+1)*2 &
-&                    +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub)
-          allocate(fock(nao2),fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2), &
-&                  fockd(nao3),rad(natom),atomvec(5*natom*natom),surface(natom*natom), &
-&                  radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb),xyzpt(3*natom), &
-&                  rsqrd(natom),vao(4*nao),vmo(4*nocc),work2(isize1), &
+          isize1= max(isize1,nao2*2)
+          call memset(nao2+nao3*3+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+&                    +ndftatom*nrad*nleb+nao*4+nocc*4+isize1+(nocc*nvir+1)*(maxqcdiagsub+1)*2 &
+&                    +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub,datacomp)
+          allocate(fockprev(nao3),dmtrxprev(nao3),dmax(nshell3),work(nao2),fockd(nao3), &
+&                  rad(ndftatom),atomvec(5*ndftatom*ndftatom),surface(ndftatom*ndftatom), &
+&                  radpt(2*nrad),angpt(4*nleb),ptweight(ndftatom*nrad*nleb),xyzpt(3*ndftatom), &
+&                  rsqrd(ndftatom),vao(4*nao),vmo(4*nocc),work2(isize1), &
 &                  qcvec((nocc*nvir+1)*(maxqcdiagsub+1)*2),qcmat(maxqcdiagsub*maxqcdiagsub), &
-&                  qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2),qceigen(maxqcdiagsub),qcgmn(nao3))
+&                  qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2),qceigen(maxqcdiagsub))
         case default
-          if(master) then
-            write(*,'(" SCFConv=",a12,"is not supported.")')
-            call iabort
+          if(datacomp%master) then
+            write(datacomp%iout,'(" Error! SCFConv=",a12,"is not supported.")')
+            call iabort(datacomp)
           endif
       end select
 !
@@ -986,17 +1073,18 @@ end
 !
 ! Calculate DFT information
 !
-      call calcatomvec(atomvec,surface)
+      call calcatomvec(atomvec,surface,ndftatom,datamol)
       call calcradpt(radpt,nrad)
-      call calclebpt(angpt,nleb)
-      do iatom= 1,natom
-        rad(iatom)= atomrad(numatomic(iatom))*tobohr
+      call calclebpt(angpt,nleb,datacomp)
+      do iatom= 1,ndftatom
+        rad(iatom)= datamol%atomrad(datamol%numatomic(iatom))*tobohr
       enddo
-      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2,nproc1,myrank1)
+      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2,nrad,nleb, &
+&                         ndftatom,datacomp%nproc1,datacomp%myrank1)
 !
 ! Calculate initial density matrix
 !
-      call calcdmtrx(cmo,dmtrx,work,nao,neleca)
+      call calcdmtrx(cmo,dmtrx,work,nao,datamol%neleca)
 !
 ! Set 1-electron Hamiltonian
 !
@@ -1005,75 +1093,87 @@ end
 !
 ! Calculate (ij|ij) integrals
 !
-      call calcschwarzeri(xint,work,maxdim,nproc2,myrank2,mpi_comm2)
+      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
+&                         datajob,datamol,databasis)
 !
-      if(master) then
-        write(*,'(1x,74("-"))')
-        write(*,'("   Restricted DFT calculation")')
-        write(*,'(1x,74("-"))')
-        write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter    =",i9)') &
-&                    scfconv, dconv, maxiter
-        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver =",d9.2)') &
-&                    cutint2, threshex, threshover
-        write(*,'("   Nrad       =",i9  ,",  Nleb       =",i9  ,",  ThreshRho  =",1p,d9.2)') &
-&                    nrad, nleb, threshrho
-        write(*,'("   ThreshDfock=",1p,d9.2,",  Threshdftao=",d9.2,",  ThreshWeight=",d8.2)') &
-&                    threshdfock, threshdftao, threshweight
+      if(datacomp%master) then
+        write(cmaxiter,'(i0)') datajob%maxiter
+        write(cnrad,'(i0)') nrad
+        write(cnleb,'(i0)') nleb
+        write(datacomp%iout,'(1x,74("="))')
+        write(datacomp%iout,'("   Restricted DFT calculation")')
+        write(datacomp%iout,'(1x,74("="))')
+        write(datacomp%iout,'("   SCFConv    = ",a8,",  Dconv      =",1p,e9.2, &
+&                             ",  MaxIter     = ",a8)') scfconv, datajob%dconv, cmaxiter
+        write(datacomp%iout,'("   Cutint2    =",1p,e9.2,",  ThreshEx   =",e9.2, &
+&                             ",  ThreshOver  =",e9.2)') &
+&                             datajob%cutint2, datajob%threshex, datajob%threshover
+        write(datacomp%iout,'("   Nrad       = ",a8  ,",  Nleb       = ",a8  , &
+&                             ",  ThreshRho   =",1p,e9.2)') cnrad, cnleb, datajob%threshrho
+        write(datacomp%iout,'("   ThreshDfock=",1p,e9.2,",  Threshdftao=",e9.2, &
+&                             ",  ThreshWeight=",e9.2)') &
+&                             datajob%threshdfock, datajob%threshdftao, datajob%threshweight
         select case(scfconv)
           case('DIIS')
-            write(*,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
-&                    maxdiis, threshdiis
+            write(cmaxdiis,'(i0)') maxdiis
+            write(datacomp%iout,'("   MaxDIIS    = ",a8,",  ThreshDIIS =",1p,e9.2)') &
+&                    cmaxdiis, datajob%threshdiis
           case('SOSCF')
-            write(*,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
-&                    maxdiis, threshdiis
+            write(cmaxsoscf,'(i0)') maxsoscf
+            write(datacomp%iout,'("   MaxSOSCF   = ",a8,",  ThreshSOSCF=",1p,e9.2)') &
+&                    cmaxsoscf, datajob%threshsoscf
           case('QC')
-            write(*,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
-&                    maxqc, threshqc, maxqcdiag
-            write(*,'("   MaxQCDiagSub=",i8)') &
-&                    maxqcdiagsub
+            write(cmaxqc,'(i0)') datajob%maxqc
+            write(cmaxqcdiag,'(i0)') datajob%maxqcdiag
+            write(cmaxqcdiagsub,'(i0)') datajob%maxqcdiagsub
+            write(datacomp%iout,'("   MaxQC      = ",a8,",  ThreshQC   =",1p,e9.2, &
+&                                 ",  MaxQCDiag   = ",a8)') cmaxqc, datajob%threshqc, cmaxqcdiag
+            write(datacomp%iout,'("   MaxQCDiagSub=",a8)') &
+&                    cmaxqcdiagsub
         end select
-        write(*,'(1x,74("-"))')
+        write(datacomp%iout,'(1x,74("-"))')
 !
-        if((nao /= nmo).and.master) then
-          write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
-          nwarn= nwarn+1
+        if((nao /= nmo).and.datacomp%master) then
+          write(datacomp%iout, &
+&               '(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
+          datacomp%nwarn= datacomp%nwarn+1
         endif
 !
-        write(*,'(" ====================")')
-        write(*,'("    SCF Iteration")')
-        write(*,'(" ====================")')
         select case(scfconv)
           case('DIIS')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density     DIIS Error")')
           case('SOSCF')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density    Orbital Grad")')
           case('QC')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density")')
         end select
       endif
 !
 ! Start SCF iteration
 !
-      do iter= 1,maxiter
+      do iter= 1,datajob%maxiter
 !
 ! Calculate maximum density matrix elements
 !
-        call calcrdmax(dmtrx,dmax,work,nproc2,myrank2,mpi_comm2)
+        call calcrdmax(dmtrx,dmax,work,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
+&                      databasis)
         call cpu_time(time1)
 !
 ! Calculate exchange-correlation terms
 !
         call formrfockexcor(fockd,fock,edft,totalelec,cmo,atomvec,radpt,angpt, &
-&                           rad,ptweight,vao,vmo,xyzpt,rsqrd,work,work2,idftex,idftcor, &
-&                           nproc1,myrank1,mpi_comm1)
+&                           rad,ptweight,vao,vmo,xyzpt,rsqrd,work,work2,ndftatom, &
+&                           datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                           datajob,datamol,databasis,datacomp)
 !
 ! Calculate two-electron integrals
 !
-        call formrdftfock(fock,work,dmtrx,dmax,xint,maxdim,hfexchange, &
-&                         nproc1,myrank1,mpi_comm1)
+        call formrdftfock(fock,work,dmtrx,dmax,xint,maxdim,datajob%cutint2,datajob%hfexchange, &
+&                         datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                         datajob,datamol,databasis)
         call dscal(nao3,half,fock,1)
         call cpu_time(time2)
 !
@@ -1083,10 +1183,10 @@ end
 !
 ! Calculate DFT ENERGY
 !
-        escfe=(tridot(dmtrxprev,fock,nao)+tridot(dmtrxprev,h1mtrx,nao))*half+edft
-        escf = escfe+enuc
-        deltae = escf-escfprev
-        escfprev= escf
+        datamol%escfe=(tridot(dmtrxprev,fock,nao)+tridot(dmtrxprev,h1mtrx,nao))*half+edft
+        datamol%escf = datamol%escfe+datamol%enuc
+        deltae = datamol%escf-escfprev
+        escfprev= datamol%escf
 !
 ! Form full Fock matrix
 !
@@ -1098,42 +1198,46 @@ end
 !
           case('DIIS')
             call calcdiiserr(fock,dmtrxprev,overlap,ortho,cmo,work,work2,errmax,nao,nmo, &
-&                            idis,nproc2,myrank2,mpi_comm2)
-            if(((itdiis /= 0).or.(errmax <= threshdiis)).and.(errmax > small))then
+&                            idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
+            if(((itdiis /= 0).or.(errmax <= datajob%threshdiis)).and.(errmax > small))then
               itdiis= itdiis+1
               call calcrdiis(fock,errdiis,fockdiis,diismtrx,cmo,work2,itdiis,nao,maxdiis, &
-&                            idis,nproc2,myrank2,mpi_comm2)
+&                            idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
             endif
 !
 ! Extrapolate Fock matrix
 !
-            if(extrap.and.itdiis == 0) &
+            if(datajob%extrap.and.itdiis == 0) &
 &             call fockextrap(fock,fockdiis,work,cmo,dmtrx,itextra,nao,maxdiis, &
-&                             idis,nproc2,myrank2,mpi_comm2)
+&                             idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
 !
 ! Diagonalize Fock matrix
 !
-            call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+            call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                         datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
 !
-! Approximated Second-order SCF method
+! Approximate Second-order SCF method
 !
           case('SOSCF')
             if((itsoscf == 0).or.(convsoscf)) then
-              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               sogradmax= zero
               itsoscf= itsoscf+1
             else
               call expand(fock,work,nao)
               call soscfgrad(work,work2,sograd(1,itsoscf),cmo,nocc,nvir,sogradmax,nao, &
-&                            idis,nproc2,myrank2,mpi_comm2,1)
-              if(sogradmax <= threshsoscf) then
+&                            idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,1)
+              if(sogradmax <= datajob%threshsoscf) then
                 if(itsoscf == 1) call soscfinith(hstart,eigen,nocc,nvir,nao)
                 call soscfnewh(hstart,sograd,sodisp,sovecy,nocc,nvir,itsoscf,maxsoscf,sodispmax)
                 call soscfupdate(cmo,sodisp,work,work2,nocc,nvir,itsoscf,maxsoscf, &
-&                                nao,nmo,sodispmax,idis,nproc2,myrank2,mpi_comm2)
+&                                nao,nmo,sodispmax,idis, &
+&                                datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
                 itsoscf= itsoscf+1
               else
-                call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+                call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                             datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               endif
             endif
 !
@@ -1141,15 +1245,18 @@ end
 !
           case('QC')
             if((itqc == 0).or.(convqc)) then
-              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= itqc+1
-            elseif((itqc == maxqc)) then
-              call diagfock(fock,work,ortho,cmo,work2,eigen,idis,nproc2,myrank2,mpi_comm2)
+            elseif(itqc == datajob%maxqc) then
+              call diagfock(fock,work,ortho,cmo,work2,eigen,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= 1
             else
-              call rhfqc(fock,cmo,dmax,qcgmn,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
-&                        work,work2,hfexchange,nao,nmo,nocc,nvir,nshell,maxdim,maxqcdiag, &
-&                        maxqcdiagsub,threshqc,nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+              call rhfqc(fock,cmo,dmax,qcvec,qcmat,qcmatsave,qceigen,overlap,xint, &
+&                        work,work2(1),work2(nao2+1),datajob%cutint2,datajob%hfexchange,nao,nmo, &
+&                        nocc,nvir,nshell,maxdim,datajob%maxqcdiag,maxqcdiagsub,datajob%threshqc, &
+&                        datajob,datamol,databasis,datacomp)
               itqc= itqc+1
             endif
         end select
@@ -1157,110 +1264,124 @@ end
 !
 ! Copy previous density matrix and calculate new density matrix
 !
-        call calcdmtrx(cmo,dmtrx,work,nao,neleca)
+        call calcdmtrx(cmo,dmtrx,work,nao,datamol%neleca)
         call ddiff(dmtrx,dmtrxprev,work,nao3,diffmax)
 !
         select case(scfconv)
           case('DIIS')
-            if(extrap.and.(itdiis==0)) then
+            if(datajob%extrap.and.(itdiis==0)) then
               itsub= itextra
             else
               itsub= itdiis
             endif
-            if(master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,errmax
+            if(datacomp%master) &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,2f17.9)') &
+&             iter,itsub,datamol%escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
-            if(master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,sogradmax
+            if(datacomp%master) &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,2f17.9)') &
+&             iter,itsub,datamol%escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
-            if(master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,escf,deltae,diffmax
+            if(datacomp%master) &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,1f17.9)') &
+&             iter,itsub,datamol%escf,deltae,diffmax
         end select
 !
 ! Check SCF convergence
 !
         select case(scfconv)
           case('DIIS')
-            if(diffmax < dconv) exit
+            if(diffmax < datajob%dconv) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
             if(itdiis >= maxdiis) itdiis= 0
           case('SOSCF')
-            if((diffmax < dconv).and.(convsoscf)) exit
-            if((diffmax < dconv).and.(itsoscf == 1)) exit
-            if((diffmax < dconv).and.(.not.convsoscf)) convsoscf=.true.
+            if((diffmax < datajob%dconv).and.((convsoscf).or.(itsoscf == 1))) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
+            if((diffmax < datajob%dconv).and.(.not.convsoscf)) convsoscf=.true.
             if(itsoscf >= maxsoscf) itsoscf= 0
           case('QC')
-            if((diffmax < dconv).and.(convqc)) exit
-            if((diffmax < dconv).and.(itqc == 1)) exit
-            if((diffmax < dconv).and.(.not.convqc)) convqc=.true.
-            if((diffmax >= dconv).and.(convqc)) then
+            if((diffmax < datajob%dconv).and.((convqc).or.(itqc == 1))) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
+            if((diffmax < datajob%dconv).and.(.not.convqc)) convqc=.true.
+            if((diffmax >= datajob%dconv).and.(convqc)) then
               itqc= 0
               convqc=.false.
             endif
         end select
 !
-        if(iter == maxiter) then
-          if(master) then
-            write(*,'(" SCF did not converge.")')
-            call iabort
+        if(iter == datajob%maxiter) then
+          if(datacomp%master) then
+            write(datacomp%iout,'(" -------------------------")')
+            write(datacomp%iout,'("   SCF did not converge.")')
+            write(datacomp%iout,'(" -------------------------"/)')
           endif
+          exit
         endif
         call dcopy(nao3,dmtrx,1,dmtrxprev,1)
         call dcopy(nao3,work,1,dmtrx,1)
         call cpu_time(time4)
-        if(master.and.(iprint >= 3)) write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 5)) &
+&         write(datacomp%iout,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
-      if(master) then
-        write(*,'(" -----------------------------------------------------------")')
-        write(*,'("    SCF Converged.")')
-        write(*,'("    DFT Energy = ",f17.9," a.u.")')escf
-        write(*,'("    Exchange + Correlation energy = ",f17.9," a.u.")')edft
-        write(*,'("    Number of electrons           = ",f17.9)')totalelec
-        write(*,'(" -----------------------------------------------------------"/)')
+      if(datacomp%master.and.datacomp%convergedscf) then
+        write(datacomp%iout,'(" ---------------------------------------------------------------")')
+        write(datacomp%iout,'("    SCF Converged.")')
+        write(datacomp%iout,'("    DFT Energy =",f18.9," Hartree")') datamol%escf
+        write(datacomp%iout,'("    Exchange + Correlation energy =",f18.9," Hartree")') edft
+        write(datacomp%iout,'("    Number of electrons           =",f18.9)') totalelec
+        write(datacomp%iout,'(" ---------------------------------------------------------------"/)')
       endif
 !
 ! Unset arrays
 !
       select case(scfconv)
         case('DIIS')
-          deallocate(fock,fockprev,dmtrxprev,dmax,work, &
-&                    fockd,rad,atomvec,surface, &
+          deallocate(fockprev,dmtrxprev,dmax,work,fockd, &
+&                    rad,atomvec,surface, &
 &                    radpt,angpt,ptweight,xyzpt, &
 &                    rsqrd,vao,vmo,fockdiis, &
 &                    errdiis,diismtrx,work2)
-          call memunset(nao2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
-&                      +nao*4+nocc*4+isize3*maxdiis+isize1+isize2*maxdiis+maxdiis*(maxdiis+1)/2)
+          call memunset(nao2+nao3*3+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+&                      +ndftatom*nrad*nleb+nao*4+nocc*4+isize3*maxdiis+isize1+isize2*maxdiis &
+&                      +maxdiis*(maxdiis+1)/2, datacomp)
         case('SOSCF')
-          deallocate(fock,fockprev,dmtrxprev,dmax,work, &
-&                    fockd,rad,atomvec,surface, &
+          deallocate(fockprev,dmtrxprev,dmax,work,fockd, &
+&                    rad,atomvec,surface, &
 &                    radpt,angpt,ptweight,xyzpt, &
 &                    rsqrd,vao,vmo,work2, &
 &                    hstart,sograd,sodisp, &
 &                    sovecy)
-          call memunset(nao2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
-&                      +nao*4+nocc*4+isize1+nocc*nvir*3*maxsoscf)
+          call memunset(nao2+nao3*3+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+&                      +ndftatom*nrad*nleb+nao*4+nocc*4+isize1+nocc*nvir*3*maxsoscf,datacomp)
         case('QC')
-          deallocate(fock,fockprev,dmtrxprev,dmax,work, &
-&                    fockd,rad,atomvec,surface, &
+          deallocate(fockprev,dmtrxprev,dmax,work,fockd, &
+&                    rad,atomvec,surface, &
 &                    radpt,angpt,ptweight,xyzpt, &
 &                    rsqrd,vao,vmo,work2, &
 &                    qcvec,qcmat, &
-&                    qcmatsave,qceigen,qcgmn)
-          call memunset(nao2*2+nao3*4+nshell3+natom*5+natom*natom*6+nrad*2+nleb*4+natom*nrad*nleb &
-&                      +nao*4+nocc*4+isize1+(nocc*nvir+1)*(maxqcdiagsub+1)*2 &
-&                      +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub)
+&                    qcmatsave,qceigen)
+          call memunset(nao2+nao3*3+nshell3+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+&                      +ndftatom*nrad*nleb+nao*4+nocc*4+isize1+(nocc*nvir+1)*(maxqcdiagsub+1)*2 &
+&                      +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub,datacomp)
       end select
 !
       return
 end
 
 
-!----------------------------------------------------------------------------------------
-  subroutine calcuhf(h1mtrx,cmoa,cmob,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb, &
-&                    nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
-!----------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------------
+  subroutine calcuhf(h1mtrx,cmoa,cmob,focka,fockb,ortho,overlap,dmtrxa,dmtrxb,xint,eigena, &
+&                    eigenb,datajob,datamol,databasis,datacomp)
+!---------------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted Hartree-Fock calculation
 !
@@ -1275,72 +1396,86 @@ end
 ! Inout : cmoa  (Alpha MO coefficient matrix)
 !         cmob  (Beta MO coefficient matrix)
 !
-      use modparallel, only : master
-      use modbasis, only : nshell, nao, mtype
-      use modmolecule, only : neleca, nelecb, nmo
-      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
-&                        maxqcdiagsub, scfconv, extrap
-      use modenergy, only : enuc, escf, escfe
-      use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis
-      use modprint, only : iprint
-      use modwarn, only : nwarn
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
-      integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(inout) :: datamol
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(inout) :: datacomp
+      integer :: maxdiis, maxsoscf, maxqcdiagsub
+      integer :: nao, nmo, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), iter, itsub, itdiis
       integer :: itextra, itsoscf, itqc, nocca, nvira, noccb, nvirb
-      integer :: idis(nproc2,14), isize1, isize2, isize3
+      integer :: idis(datacomp%nproc2,14), isize1, isize2, isize3
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
       real(8),parameter :: small=1.0D-10
-      real(8),intent(in) :: h1mtrx(nao*(nao+1)/2), ortho(nao*nao), overlap(nao*(nao+1)/2)
-      real(8),intent(out) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
-      real(8),intent(out) :: xint(nshell*(nshell+1)/2), eigena(nao), eigenb(nao)
-      real(8),intent(inout) :: cmoa(nao*nao), cmob(nao*nao)
-      real(8),allocatable :: focka(:), fockb(:), fockpreva(:), fockprevb(:) 
+      real(8),intent(in) :: h1mtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: ortho(databasis%nao*databasis%nao)
+      real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: focka(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fockb(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: xint(databasis%nshell*(databasis%nshell+1)/2), eigena(databasis%nao)
+      real(8),intent(out) :: eigenb(databasis%nao)
+      real(8),intent(inout) :: cmoa(databasis%nao*databasis%nao)
+      real(8),intent(inout) ::cmob(databasis%nao*databasis%nao)
+      real(8),allocatable :: fockpreva(:), fockprevb(:) 
       real(8),allocatable :: dmtrxpreva(:), dmtrxprevb(:), dmax(:), work(:)
       real(8),allocatable :: fockdiisa(:), fockdiisb(:), errdiisa(:), errdiisb(:)
       real(8),allocatable :: diismtrx(:), work2(:), work3(:)
       real(8),allocatable :: hstarta(:), hstartb(:), sograda(:,:), sogradb(:,:)
       real(8),allocatable :: sodispa(:), sodispb(:), sovecya(:), sovecyb(:)
       real(8),allocatable :: qcvec(:), qcmat(:), qcmatsave(:), qceigen(:)
-      real(8),allocatable :: qcgmna(:), qcgmnb(:)
       real(8) :: escfprev, diffmax, diffmaxa, diffmaxb, tridot, deltae
       real(8) :: errmax, errmaxa, errmaxb, sogradmax, sogradmaxa, sogradmaxb, sodispmax
       real(8) :: s2, sz
       real(8) :: time1, time2, time3, time4
       logical :: convsoscf, convqc
+      character(len=32) :: scfconv
+      character(len=8) :: cmaxiter, cmaxdiis, cmaxsoscf, cmaxqc, cmaxqcdiag, cmaxqcdiagsub
       data maxfunc/1,3,6,10,15,21,28/
 !
+      datacomp%convergedscf=.false.
+!
+      maxdiis= datajob%maxdiis
+      maxsoscf= datajob%maxsoscf
+      maxqcdiagsub= datajob%maxqcdiagsub
+      scfconv= datajob%scfconv
+!
+      nao= databasis%nao
+      nmo= datamol%nmo
       nao2= nao*nao
       nao3= nao*(nao+1)/2
+      nshell= databasis%nshell
       nshell3= nshell*(nshell+1)/2
-      nocca= neleca
-      nvira= nmo-neleca
-      noccb= nelecb
-      nvirb= nmo-nelecb
-      maxdim=maxfunc(maxval(mtype(1:nshell)))
+      nocca= datamol%neleca
+      nvira= nmo-datamol%neleca
+      noccb= datamol%nelecb
+      nvirb= nmo-datamol%nelecb
+      maxdim=maxfunc(maxval(databasis%mtype(1:nshell)))
 !
 ! Distribute fock and error arrays for DIIS
 !
-      call distarray(idis,nmo,nao,nao3,nocca,nvira,noccb,nvirb,nproc2)
+      call distarray(idis,nmo,nao,nao3,nocca,nvira,noccb,nvirb,datacomp%nproc2)
 !
 ! Set arrays
 !
       isize1= max(nao2,maxdiis)
-      isize2=idis(myrank2+1,3)
-      isize3=idis(myrank2+1,5)
+      isize2=idis(datacomp%myrank2+1,3)
+      isize3=idis(datacomp%myrank2+1,5)
       select case(scfconv)
         case('DIIS')
-          call memset(nao3*8+nshell3+isize3*maxdiis*2+isize1+isize2*maxdiis*2 &
-&                    +maxdiis*(maxdiis+1)/2+isize2)
-          allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
+          call memset(nao3*6+nshell3+isize3*maxdiis*2+isize1+isize2*maxdiis*2 &
+&                    +maxdiis*(maxdiis+1)/2+isize2,datacomp)
+          allocate(fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3), &
 &                  fockdiisa(isize3*maxdiis),fockdiisb(isize3*maxdiis),errdiisa(isize2*maxdiis),&
 &                  errdiisb(isize2*maxdiis),diismtrx(maxdiis*(maxdiis+1)/2), &
 &                  work(nao3*2),work2(isize1),work3(isize2))
         case('SOSCF')
-          call memset(nao3*8+nshell3+nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf &
-&                    +isize1+isize2)
-          allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
+          call memset(nao3*6+nshell3+nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf &
+&                    +isize1+isize2,datacomp)
+          allocate(fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3), &
 &                  hstarta(nocca*nvira),hstartb(noccb*nvirb), &
 &                  sograda(nocca*nvira,maxsoscf),sogradb(noccb*nvirb,maxsoscf), &
@@ -1348,18 +1483,18 @@ end
 &                  sovecya(nocca*nvira*(maxsoscf-1)),sovecyb(noccb*nvirb*(maxsoscf-1)), &
 &                  work(nao3*2),work2(isize1),work3(isize2))
         case('QC')
-          call memset(nao2*4+nao3*8+(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
-&                    +maxqcdiagsub**2+maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub)
-          allocate(focka(nao2),fockb(nao2),fockpreva(nao3),fockprevb(nao3), &
+          call memset(nao2*4+nao3*6+(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
+&                    +maxqcdiagsub**2+maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub,datacomp)
+          allocate(fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3), &
 &                  qcvec((nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2), &
 &                  qcmat(maxqcdiagsub**2),qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2), &
-&                  qceigen(maxqcdiagsub),qcgmna(nao3),qcgmnb(nao3), &
-&                  work(nao3*2),work2(nao2),work3(nao2))
+&                  qceigen(maxqcdiagsub), &
+&                  work(nao3*2),work2(nao2),work3(nao2*3))
         case default
-          if(master) then
-            write(*,'(" SCFConv=",a12,"is not supported.")')
-            call iabort
+          if(datacomp%master) then
+            write(datacomp%iout,'(" Error! SCFConv=",a12,"is not supported.")')
+            call iabort(datacomp)
           endif
       end select
 !
@@ -1373,7 +1508,7 @@ end
 !
 ! Calculate initial density matrix
 !
-      call calcudmtrx(cmoa,cmob,dmtrxa,dmtrxb,work,nao,neleca,nelecb)
+      call calcudmtrx(cmoa,cmob,dmtrxa,dmtrxb,work,nao,datamol%neleca,datamol%nelecb)
 !
 ! Set 1-electron Hamiltonian
 !
@@ -1384,64 +1519,78 @@ end
 !
 ! Calculate (ij|ij) integrals
 !
-      call calcschwarzeri(xint,work,maxdim,nproc2,myrank2,mpi_comm2)
+      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
+&                         datajob,datamol,databasis)
 !
-      if(master) then
-        write(*,'(1x,74("-"))')
-        write(*,'("   Unrestricted Hartree-Fock calculation")')
-        write(*,'(1x,74("-"))')
-        write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter    =",i9)') &
-&                    scfconv, dconv, maxiter
-        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver =",d9.2)') &
-&                    cutint2, threshex, threshover
+      if(datacomp%master) then
+        write(cmaxiter,'(i0)') datajob%maxiter
+        write(datacomp%iout,'(1x,74("="))')
+        if((datajob%idftex >= 1).or.(datajob%idftcor >= 1)) then
+          write(datacomp%iout, &
+&               '("   Unrestricted Hartree-Fock calculation for guess orbitals of DFT")')
+        else
+          write(datacomp%iout,'("   Unrestricted Hartree-Fock calculation")')
+        endif
+        write(datacomp%iout,'(1x,74("="))')
+        write(datacomp%iout,'("   SCFConv    = ",a8,",  Dconv      =",1p,e9.2, &
+&                             ",  MaxIter     = ",a8)') scfconv, datajob%dconv, cmaxiter
+        write(datacomp%iout,'("   Cutint2    =",1p,e9.2,",  ThreshEx   =",e9.2, &
+&                             ",  ThreshOver  =",e9.2)') &
+&                             datajob%cutint2, datajob%threshex, datajob%threshover
         select case(scfconv)
           case('DIIS')
-            write(*,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
-&                    maxdiis, threshdiis
+            write(cmaxdiis,'(i0)') maxdiis
+            write(datacomp%iout,'("   MaxDIIS    = ",a8,",  ThreshDIIS =",1p,e9.2)') &
+&                    cmaxdiis, datajob%threshdiis
           case('SOSCF')
-            write(*,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
-&                    maxdiis, threshdiis
+            write(cmaxsoscf,'(i0)') maxsoscf
+            write(datacomp%iout,'("   MaxSOSCF   = ",a8,",  ThreshSOSCF=",1p,e9.2)') &
+&                    cmaxsoscf, datajob%threshsoscf
           case('QC')
-            write(*,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
-&                    maxqc, threshqc, maxqcdiag
-            write(*,'("   MaxQCDiagSub=",i8)') &
-&                    maxqcdiagsub
+            write(cmaxqc,'(i0)') datajob%maxqc
+            write(cmaxqcdiag,'(i0)') datajob%maxqcdiag
+            write(cmaxqcdiagsub,'(i0)') datajob%maxqcdiagsub
+            write(datacomp%iout,'("   MaxQC      = ",a8,",  ThreshQC   =",1p,e9.2, &
+&                                 ",  MaxQCDiag   = ",a8)') cmaxqc, datajob%threshqc, cmaxqcdiag
+            write(datacomp%iout,'("   MaxQCDiagSub=",a8)') &
+&                    cmaxqcdiagsub
         end select
-        write(*,'(1x,74("-"))')
+        write(datacomp%iout,'(1x,74("-"))')
 !
-        if((nao /= nmo).and.master) then
-          write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
-          nwarn= nwarn+1
+        if((nao /= nmo).and.datacomp%master) then
+          write(datacomp%iout, &
+&               '(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
+          datacomp%nwarn= datacomp%nwarn+1
         endif
 !
-        write(*,'(" ====================")')
-        write(*,'("    SCF Iteration")')
-        write(*,'(" ====================")')
         select case(scfconv)
           case('DIIS')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density     DIIS Error")')
           case('SOSCF')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density    Orbital Grad")')
           case('QC')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density")')
         end select
       endif
 !
 ! Start SCF iteration
 !
-      do iter= 1,maxiter
+      do iter= 1,datajob%maxiter
 !
 ! Calculate maximum density matrix elements
 !
-        call calcudmax(dmtrxa,dmtrxb,dmax,work,nproc2,myrank2,mpi_comm2)
+        call calcudmax(dmtrxa,dmtrxb,dmax,work,datacomp%nproc2,datacomp%myrank2, &
+&                      datacomp%mpi_comm2,databasis)
 !
 ! Calculate two-electron integrals and Fock matrix
 !
         call cpu_time(time1)
-        call formufock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,nproc1,myrank1,mpi_comm1)
+        call formufock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,datajob%cutint2, &
+&                      datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                      datajob,datamol,databasis)
         call dscal(nao3,half,focka,1)
         call dscal(nao3,half,fockb,1)
         call cpu_time(time2)
@@ -1453,11 +1602,11 @@ end
 !
 ! Calculate SCF ENERGY
 !
-        escfe=(tridot(dmtrxpreva,focka,nao)+tridot(dmtrxpreva,h1mtrx,nao))*half &
-&            +(tridot(dmtrxprevb,fockb,nao)+tridot(dmtrxprevb,h1mtrx,nao))*half
-        escf = escfe+enuc
-        deltae = escf-escfprev
-        escfprev= escf
+        datamol%escfe=(tridot(dmtrxpreva,focka,nao)+tridot(dmtrxpreva,h1mtrx,nao))*half &
+&                    +(tridot(dmtrxprevb,fockb,nao)+tridot(dmtrxprevb,h1mtrx,nao))*half
+        datamol%escf = datamol%escfe+datamol%enuc
+        deltae  = datamol%escf-escfprev
+        escfprev= datamol%escf
 !
         select case(scfconv)
 !
@@ -1465,52 +1614,56 @@ end
 !
           case('DIIS')
             call calcdiiserr(focka,dmtrxpreva,overlap,ortho,cmoa,work,work2,errmaxa,nao,nmo, &
-&                            idis,nproc2,myrank2,mpi_comm2)
+&                            idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
             call calcdiiserr(fockb,dmtrxprevb,overlap,ortho,cmob,work,work2,errmaxb,nao,nmo, &
-&                            idis,nproc2,myrank2,mpi_comm2)
+&                            idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
             errmax= max(errmaxa,errmaxb)
-            if(((itdiis /= 0).or.(errmax <= threshdiis)).and.(errmax > small))then
+            if(((itdiis /= 0).or.(errmax <= datajob%threshdiis)).and.(errmax > small))then
               itdiis= itdiis+1
               call calcudiis(focka,fockb,errdiisa,errdiisb,fockdiisa,fockdiisb, &
 &                            diismtrx,cmoa,cmob,work2,itdiis,nao,maxdiis, &
-&                            idis,nproc2,myrank2,mpi_comm2)
+&                            idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
             endif
 !
 ! Extrapolate Fock matrix
 !
-            if(extrap.and.itdiis == 0) then
+            if(datajob%extrap.and.itdiis == 0) then
               call fockextrap(focka,fockdiisa,work,cmoa,dmtrxa,itextra,nao,maxdiis, &
-&                             idis,nproc2,myrank2,mpi_comm2)
+&                             idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               call fockextrap(fockb,fockdiisb,work,cmob,dmtrxb,itextra,nao,maxdiis, &
-&                             idis,nproc2,myrank2,mpi_comm2)
+&                             idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
             endif
 !
 ! Diagonalize Fock matrix
 !
-            call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
-            call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+            call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis, &
+&                         datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+            call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
+&                         datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
 !
-! Approximated Second-order SCF method
+! Approximate Second-order SCF method
 !
           case('SOSCF')
             if((itsoscf == 0).or.(convsoscf)) then
-              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
-              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               sogradmax= zero
               itsoscf= itsoscf+1
             else
               call expand(focka,work,nao)
               call soscfgrad(work,work2,sograda(1,itsoscf),cmoa,nocca,nvira,sogradmaxa,nao, &
-&                            idis,nproc2,myrank2,mpi_comm2,1)
+&                            idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,1)
               if(noccb /= 0) then
                 call expand(fockb,work,nao)
                 call soscfgrad(work,work2,sogradb(1,itsoscf),cmob,noccb,nvirb,sogradmaxb,nao, &
-&                              idis,nproc2,myrank2,mpi_comm2,2)
+&                              idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,2)
               else
                 sogradmaxb= zero
               endif
               sogradmax= max(sogradmaxa,sogradmaxb)
-              if(sogradmax <= threshsoscf) then
+              if(sogradmax <= datajob%threshsoscf) then
                 if(itsoscf == 1) then
                   call soscfinith(hstarta,eigena,nocca,nvira,nao)
                   if(noccb /= 0) call soscfinith(hstartb,eigenb,noccb,nvirb,nao)
@@ -1518,14 +1671,18 @@ end
                 call soscfunewh(hstarta,hstartb,sograda,sogradb,sodispa,sodispb,sovecya,sovecyb, &
 &                               nocca,noccb,nvira,nvirb,itsoscf,maxsoscf,sodispmax)
                 call soscfupdate(cmoa,sodispa,work,work2,nocca,nvira,itsoscf,maxsoscf, &
-&                                nao,nmo,sodispmax,idis,nproc2,myrank2,mpi_comm2)
+&                                nao,nmo,sodispmax,idis, &
+&                                datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
                 if(noccb /= 0 ) &
 &                 call soscfupdate(cmob,sodispb,work,work2,noccb,nvirb,itsoscf,maxsoscf, &
-&                                  nao,nmo,sodispmax,idis,nproc2,myrank2,mpi_comm2)
+&                                  nao,nmo,sodispmax,idis, &
+&                                  datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
                 itsoscf= itsoscf+1
               else
-                call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
-                call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+                call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis, &
+&                             datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+                call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
+&                             datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               endif
             endif
 !
@@ -1533,19 +1690,24 @@ end
 !
           case('QC')
             if((itqc == 0).or.(convqc)) then
-              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
-              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= itqc+1
-            elseif((itqc == maxqc)) then
-              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
-              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+            elseif((itqc == datajob%maxqc)) then
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= 1
             else
-              call uhfqc(focka,fockb,cmoa,cmob,dmax,qcgmna,qcgmnb,qcvec, &
+              call uhfqc(focka,fockb,cmoa,cmob,dmax,qcvec, &
 &                        qcmat,qcmatsave,qceigen,overlap,xint, &
-&                        work,work2,work3,one,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
-&                        maxdim,maxqcdiag,maxqcdiagsub,threshqc, &
-&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                        work,work2,work3(1),work3(nao2+1),work3(nao2*2+1),datajob%cutint2, &
+&                        one,nao,nmo,nocca,noccb, &
+&                        nvira,nvirb,nshell,maxdim,datajob%maxqcdiag,maxqcdiagsub, &
+&                        datajob%threshqc,datajob,datamol,databasis,datacomp)
               itqc= itqc+1
             endif
         end select
@@ -1553,123 +1715,148 @@ end
 !
 ! Copy previous density matrix and calculate new density matrix
 !
-        call calcudmtrx(cmoa,cmob,dmtrxa,dmtrxb,work,nao,neleca,nelecb)
+        call calcudmtrx(cmoa,cmob,dmtrxa,dmtrxb,work,nao,datamol%neleca,datamol%nelecb)
         call ddiff(dmtrxa,dmtrxpreva,work(1),nao3,diffmaxa)
         call ddiff(dmtrxb,dmtrxprevb,work(nao3+1),nao3,diffmaxb)
         diffmax= diffmaxa+diffmaxb
 !
         select case(scfconv)
           case('DIIS')
-            if(extrap.and.(itdiis==0)) then
+            if(datajob%extrap.and.(itdiis==0)) then
               itsub= itextra
             else
               itsub= itdiis
             endif
-            if(master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,errmax
+            if(datacomp%master) &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,2f17.9)') &
+&             iter,itsub,datamol%escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
-            if(master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,sogradmax
+            if(datacomp%master) &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,2f17.9)') &
+&             iter,itsub,datamol%escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
-            if(master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,escf,deltae,diffmax
+            if(datacomp%master) &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,1f17.9)') &
+&             iter,itsub,datamol%escf,deltae,diffmax
         end select
 !
 ! Check SCF convergence
 !
         select case(scfconv)
           case('DIIS')
-            if(diffmax.lt.dconv) exit
+            if(diffmax < datajob%dconv) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
             if(itdiis >= maxdiis) itdiis= 0
           case('SOSCF')
-            if((diffmax.lt.dconv).and.(convsoscf)) exit
-            if((diffmax.lt.dconv).and.(itsoscf==1)) exit
-            if((diffmax.lt.dconv).and.(.not.convsoscf)) convsoscf=.true.
+            if((diffmax < datajob%dconv).and.((convsoscf).or.(itsoscf == 1))) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
+            if((diffmax < datajob%dconv).and.(.not.convsoscf)) convsoscf=.true.
             if(itsoscf >= maxsoscf) itsoscf= 0
           case('QC')
-            if((diffmax < dconv).and.(convqc)) exit
-            if((diffmax < dconv).and.(itqc == 1)) exit
-            if((diffmax < dconv).and.(.not.convqc)) convqc=.true.
-            if((diffmax >= dconv).and.(convqc)) then
+            if((diffmax < datajob%dconv).and.((convqc).or.(itqc == 1))) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
+            if((diffmax < datajob%dconv).and.(.not.convqc)) convqc=.true.
+            if((diffmax >= datajob%dconv).and.(convqc)) then
               itqc= 0
               convqc=.false.
             endif
         end select
 !
-        if(iter == maxiter) then
-          if(master) then
-            write(*,'(" SCF did not converge.")')
-            call iabort
+        if(iter == datajob%maxiter) then
+          if(datacomp%master) then
+            write(datacomp%iout,'(" -------------------------")')
+            write(datacomp%iout,'("   SCF did not converge.")')
+            write(datacomp%iout,'(" -------------------------"/)')
           endif
+          exit
         endif
         call dcopy(nao3,dmtrxa,1,dmtrxpreva,1)
         call dcopy(nao3,dmtrxb,1,dmtrxprevb,1)
         call dcopy(nao3,work(1),1,dmtrxa,1)
         call dcopy(nao3,work(nao3+1),1,dmtrxb,1)
         call cpu_time(time4)
-        if(master.and.(iprint >= 3)) write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 5)) &
+&         write(datacomp%iout,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
-      if(master) then
-        write(*,'(" -----------------------------------------")')
-        write(*,'("    SCF Converged.")')
-        write(*,'("    UHF Energy = ",f17.9," a.u.")')escf
-        write(*,'(" -----------------------------------------"/)')
-      endif
+      if(datacomp%convergedscf) then
+        if((datajob%idftex == 0).and.(datajob%idftcor == 0)) then
+          if(datacomp%master) then
+            write(datacomp%iout,'(" --------------------------------------------")')
+            write(datacomp%iout,'("    SCF Converged.")')
+            write(datacomp%iout,'("    UHF Energy =",f18.9," Hartree")') datamol%escf
+            write(datacomp%iout,'(" --------------------------------------------"/)')
+          endif
 !
 ! Calculate spin expectation values
 !
-      call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,neleca,nelecb,nao, &
-&                   idis,nproc2,myrank2,mpi_comm2)
+          call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,datamol%neleca,datamol%nelecb,&
+&                       nao,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
 !
-      if(master) then
-        write(*,'(" -------------------------------")')
-        write(*,'("    Sz =",f7.3)')sz
-        write(*,'("    S-squared =",f7.3)')s2
-        write(*,'(" -------------------------------"/)')
+          if(datacomp%master) then
+            write(datacomp%iout,'(" -------------------------------")')
+            write(datacomp%iout,'("    Sz =",f7.3)')sz
+            write(datacomp%iout,'("    S-squared =",f7.3)')s2
+            write(datacomp%iout,'(" -------------------------------"/)')
+          endif
+        else
+          if(datacomp%master) then
+            write(datacomp%iout,'(" --------------------")')
+            write(datacomp%iout,'("    SCF Converged.")')
+            write(datacomp%iout,'(" --------------------",/)')
+          endif
+        endif
       endif
 !
 ! Unset arrays
 !
       select case(scfconv)
         case('DIIS')
-          deallocate(focka,fockb,fockpreva,fockprevb, &
+          deallocate(fockpreva,fockprevb, &
 &                    dmtrxpreva,dmtrxprevb,dmax, &
 &                    fockdiisa,fockdiisb,errdiisa,&
 &                    errdiisb,diismtrx, &
 &                    work,work2,work3)
-          call memunset(nao3*8+nshell3+isize3*maxdiis*2+isize1+isize2*maxdiis*2 &
-&                      +maxdiis*(maxdiis+1)/2+isize2)
+          call memunset(nao3*6+nshell3+isize3*maxdiis*2+isize1+isize2*maxdiis*2 &
+&                      +maxdiis*(maxdiis+1)/2+isize2,datacomp)
         case('SOSCF')
-          deallocate(focka,fockb,fockpreva,fockprevb, &
+          deallocate(fockpreva,fockprevb, &
 &                    dmtrxpreva,dmtrxprevb,dmax, &
 &                    hstarta,hstartb, &
 &                    sograda,sogradb, &
 &                    sodispa,sodispb, &
 &                    sovecya,sovecyb, &
 &                    work,work2,work3)
-          call memunset(nao3*8+nshell3+nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf &
-&                      +isize1+isize2)
+          call memunset(nao3*6+nshell3+nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf &
+&                      +isize1+isize2,datacomp)
         case('QC')
-          deallocate(focka,fockb,fockpreva,fockprevb, &
+          deallocate(fockpreva,fockprevb, &
 &                    dmtrxpreva,dmtrxprevb,dmax, &
 &                    qcvec, &
 &                    qcmat,qcmatsave, &
-&                    qceigen,qcgmna,qcgmnb, &
+&                    qceigen, &
 &                    work,work2,work3)
-          call memunset(nao2*4+nao3*8+(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
-&                      +maxqcdiagsub**2+maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub)
+          call memunset(nao2*4+nao3*6+(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
+&                      +maxqcdiagsub**2+maxqcdiagsub*(maxqcdiagsub+1)/2+maxqcdiagsub,datacomp)
       end select
 !
       return
 end
 
 
-!-----------------------------------------------------------------------------------------------
-  subroutine formufock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,nproc,myrank,mpi_comm)
-!-----------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------
+  subroutine formufock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,cutint2, &
+&                      nproc,myrank,mpi_comm, &
+&                      datajob,datamol,databasis)
+!-----------------------------------------------------------------------------------
 !
 ! Driver of Fock matrix formation from two-electron intgrals
 !
@@ -1679,20 +1866,29 @@ end
 !       fock2  (Beta Fock matrix)
 !       fock3  (Work space)
 !
-      use modbasis, only : nshell, nao
-      use modthresh, only : cutint2
+      use modtype, only : typejob, typemol, typebasis
       implicit none
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart, ishcheck
-      integer(8) :: ncount, icount(nshell)
+      integer(8) :: ncount, icount(databasis%nshell)
       real(8),parameter :: zero=0.0D+00, two=2.0D+00, four=4.0D+00
-      real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
-      real(8),intent(in) :: dmax(nshell*(nshell+1)/2), xint(nshell*(nshell+1)/2)
-      real(8),intent(out) :: fock1(nao*(nao+1)/2), fock2(nao*(nao+1)/2), fock3(nao*(nao+1)/2)
+      real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: dmax(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: cutint2
+      real(8),intent(out) :: fock1(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fock2(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fock3(databasis%nao*(databasis%nao+1)/2)
       real(8) :: xijkl, denmax, twoeri(maxdim**4), denmax1
-      integer :: last, ltmp(nshell), lnum, ll
+      integer :: nao, nshell, last, ltmp(databasis%nshell), lnum, ll
 !
+      nao= databasis%nao
+      nshell= databasis%nshell
       fock2(:)= zero
       fock3(:)= zero
 !
@@ -1756,8 +1952,9 @@ end
             endif
           enddo
           do lsh= 1,lnum
-            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
-            call ufockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
+            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,datajob%threshex,datamol,databasis)
+            call ufockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,cutint2, &
+&                         databasis)
           enddo
         enddo
       enddo
@@ -1774,35 +1971,39 @@ end
 end
 
 
-!-------------------------------------------------------------------------------
-  subroutine ufockeri(focka,fockb,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,lsh,maxdim)
-!-------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+  subroutine ufockeri(focka,fockb,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,lsh,maxdim,cutint2, &
+&                     databasis)
+!-----------------------------------------------------------------------------------------
 !
 ! Form unrestricted Fock matrix from two-electron intgrals
 !
-      use modbasis, only : nao, mbf, locbf
-      use modthresh, only : cutint2
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nbfi, nbfj, nbfk, nbfl
       integer :: locbfi, locbfj, locbfk, locbfl, jmax, lmax, i, j, k, l, ij, kl
       integer :: nij, nkl, nik, nil, njk, njl
       integer :: iloc, jloc, kloc, lloc, iloc2, jloc2, kloc2, lloc2, jloc0, kloc0
       real(8),parameter :: half=0.5D+00, two=2.0D+00, four=4.0D+00
-      real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
+      real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
       real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim)
-      real(8),intent(inout) :: focka(nao*(nao+1)/2), fockb(nao*(nao+1)/2)
+      real(8),intent(in) :: cutint2
+      real(8),intent(inout) :: focka(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(inout) :: fockb(databasis%nao*(databasis%nao+1)/2)
       real(8) :: val, val2, val4
       logical :: ieqj, keql, ieqk, jeql, ikandjl, ijorkl
 !
-      nbfi = mbf(ish)
-      nbfj = mbf(jsh)
-      nbfk = mbf(ksh)
-      nbfl = mbf(lsh)
-      locbfi= locbf(ish)
-      locbfj= locbf(jsh)
-      locbfk= locbf(ksh)
-      locbfl= locbf(lsh)
+      nbfi = databasis%mbf(ish)
+      nbfj = databasis%mbf(jsh)
+      nbfk = databasis%mbf(ksh)
+      nbfl = databasis%mbf(lsh)
+      locbfi= databasis%locbf(ish)
+      locbfj= databasis%locbf(jsh)
+      locbfk= databasis%locbf(ksh)
+      locbfl= databasis%locbf(lsh)
 !
       ieqj= ish.eq.jsh
       keql= ksh.eq.lsh
@@ -1941,10 +2142,10 @@ end
 end
 
 
-!-----------------------------------------------------------------------------------------
-  subroutine calcudft(h1mtrx,cmoa,cmob,ortho,overlap,dmtrxa,dmtrxb,xint,eigena,eigenb, &
-&                     nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
-!-----------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------------
+  subroutine calcudft(h1mtrx,cmoa,cmob,focka,fockb,ortho,overlap,dmtrxa,dmtrxb,xint,eigena, &
+&                     eigenb,datajob,datamol,databasis,datacomp)
+!----------------------------------------------------------------------------------------------
 !
 ! Driver of unrestricted DFT calculation
 !
@@ -1959,31 +2160,31 @@ end
 ! Inout : cmoa  (Alpha MO coefficient matrix)
 !         cmob  (Beta MO coefficient matrix)
 !
-      use modparallel, only : master
-      use moddft, only : idftex, idftcor, nrad, nleb, hfexchange
-      use modatom, only : atomrad
-      use modbasis, only : nshell, nao, mtype
-      use modmolecule, only : neleca, nelecb, nmo, natom, numatomic
-      use modscf, only : maxiter, fdiff, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, &
-&                        maxqcdiagsub, scfconv, extrap
-      use modenergy, only : enuc, escf, escfe
-      use modthresh, only : threshsoscf, threshqc, cutint2, threshex, threshover, threshdiis, &
-&                           threshweight, threshrho, threshdfock, threshdftao
-      use modprint, only : iprint
-      use modunit, only : tobohr
-      use modwarn, only : nwarn
+      use modparam, only : tobohr
+      use modtype, only : typejob, typemol, typebasis, typecomp
       implicit none
-      integer,intent(in) :: nproc1, nproc2, myrank1, myrank2, mpi_comm1, mpi_comm2
-      integer :: nao2, nao3, nshell3, maxdim, maxfunc(0:6), numwork, iter, itsub, itdiis
-      integer :: itextra, itsoscf, itqc, nocca, nvira, noccb, nvirb
-      integer :: idis(nproc2,14), isize1, isize2, isize3, iatom
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(inout) :: datamol
+      type(typebasis),intent(in) :: databasis
+      type(typecomp),intent(inout) :: datacomp
+      integer :: maxdiis, maxsoscf, maxqcdiagsub, nrad, nleb
+      integer :: nao, nmo, ndftatom, nao2, nao3, nshell, nshell3, maxdim, maxfunc(0:6), numwork
+      integer :: iter, itsub, itdiis, itextra, itsoscf, itqc, nocca, nvira, noccb, nvirb
+      integer :: idis(datacomp%nproc2,14), isize1, isize2, isize3, iatom
       real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
       real(8),parameter :: small=1.0D-10
-      real(8),intent(in) :: h1mtrx(nao*(nao+1)/2), ortho(nao*nao), overlap(nao*(nao+1)/2)
-      real(8),intent(out) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
-      real(8),intent(out) :: xint(nshell*(nshell+1)/2), eigena(nao), eigenb(nao)
-      real(8),intent(inout) :: cmoa(nao*nao), cmob(nao*nao)
-      real(8),allocatable :: focka(:), fockb(:), fockpreva(:), fockprevb(:)
+      real(8),intent(in) :: h1mtrx(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: ortho(databasis%nao*databasis%nao)
+      real(8),intent(in) :: overlap(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: focka(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fockb(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(out) :: eigena(databasis%nao), eigenb(databasis%nao)
+      real(8),intent(inout) :: cmoa(databasis%nao*databasis%nao)
+      real(8),intent(inout) :: cmob(databasis%nao*databasis%nao)
+      real(8),allocatable :: fockpreva(:), fockprevb(:)
       real(8),allocatable :: dmtrxpreva(:), dmtrxprevb(:), dmax(:), work(:)
       real(8),allocatable :: fockdiisa(:), fockdiisb(:), errdiisa(:), errdiisb(:)
       real(8),allocatable :: diismtrx(:), work2(:), work3(:)
@@ -1993,79 +2194,95 @@ end
       real(8),allocatable :: radpt(:), angpt(:), ptweight(:), xyzpt(:), rsqrd(:)
       real(8),allocatable :: vao(:), vmoa(:), vmob(:)
       real(8),allocatable :: qcvec(:), qcmat(:), qcmatsave(:), qceigen(:)
-      real(8),allocatable :: qcgmna(:), qcgmnb(:)
       real(8) :: escfprev, diffmax, diffmaxa, diffmaxb, tridot, deltae
       real(8) :: errmax, errmaxa, errmaxb, sogradmax, sogradmaxa, sogradmaxb, sodispmax
       real(8) :: s2, sz, edft, totalelec
       real(8) :: time1, time2, time3, time4
       logical :: convsoscf, convqc
+      character(len=32) :: scfconv
+      character(len=8) :: cmaxiter, cnrad, cnleb, cmaxdiis, cmaxsoscf
+      character(len=8) :: cmaxqc, cmaxqcdiag, cmaxqcdiagsub
       data maxfunc/1,3,6,10,15,21,28/
 !
+      datacomp%convergedscf=.false.
+!
+      maxdiis= datajob%maxdiis
+      maxsoscf= datajob%maxsoscf
+      maxqcdiagsub= datajob%maxqcdiagsub
+      scfconv= datajob%scfconv
+      nrad= datajob%nrad
+      nleb= datajob%nleb
+!
+      nao= databasis%nao
+      nmo= datamol%nmo
+      ndftatom= datamol%natom-datamol%ndummyatom
       nao2= nao*nao
       nao3= nao*(nao+1)/2
+      nshell= databasis%nshell
       nshell3= nshell*(nshell+1)/2
-      nocca= neleca
-      nvira= nmo-neleca
-      noccb= nelecb
-      nvirb= nmo-nelecb
-      maxdim=maxfunc(maxval(mtype(1:nshell)))
-      numwork= max(nao3*2,(neleca+nelecb)*nao)
+      nocca= datamol%neleca
+      nvira= nmo-datamol%neleca
+      noccb= datamol%nelecb
+      nvirb= nmo-datamol%nelecb
+      maxdim=maxfunc(maxval(databasis%mtype(1:nshell)))
+      numwork= max(nao3*2,(datamol%neleca+datamol%nelecb)*nao)
 !
 ! Distribute fock and error arrays for DIIS
 !
-      call distarray(idis,nmo,nao,nao3,nocca,nvira,noccb,nvirb,nproc2)
+      call distarray(idis,nmo,nao,nao3,nocca,nvira,noccb,nvirb,datacomp%nproc2)
 !
 ! Set arrays
 !
-      isize1= max(nao2,idis(myrank2+1,3),idis(myrank2+1,7)*nao,idis(myrank2+1,11)*nao, &
-&                 natom*3,nao*2,maxdiis)
-      isize2=idis(myrank2+1,3)
-      isize3=idis(myrank2+1,5)
+      isize1= max(nao2,idis(datacomp%myrank2+1,3),idis(datacomp%myrank2+1,7)*nao, &
+&                 idis(datacomp%myrank2+1,11)*nao,ndftatom*3,nao*2,maxdiis)
+      isize2=idis(datacomp%myrank2+1,3)
+      isize3=idis(datacomp%myrank2+1,5)
       select case(scfconv)
         case('DIIS')
-          call memset(nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
-&                    +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize3*maxdiis*2+isize1 &
-&                    +isize2*maxdiis*2+maxdiis*(maxdiis+1)/2+idis(myrank2+1,3))
-          allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
+          call memset(nao3*6+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+&                    +ndftatom*nrad*nleb+nao*4+nocca*4+noccb*4+isize3*maxdiis*2+isize1 &
+&                    +isize2*maxdiis*2+maxdiis*(maxdiis+1)/2+idis(datacomp%myrank2+1,3),datacomp)
+          allocate(fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(numwork), &
-&                  fockda(nao3),fockdb(nao3),rad(natom),atomvec(5*natom*natom), &
-&                  surface(natom*natom),radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb), &
-&                  xyzpt(3*natom),rsqrd(natom),vao(4*nao),vmoa(4*nocca),vmob(4*noccb), &
-&                  fockdiisa(isize3*maxdiis),fockdiisb(isize3*maxdiis),errdiisa(isize2*maxdiis), &
-&                  errdiisb(isize2*maxdiis),diismtrx(maxdiis*(maxdiis+1)/2),work2(isize1), &
-&                  work3(idis(myrank2+1,3)))
+&                  fockda(nao3),fockdb(nao3),rad(ndftatom),atomvec(5*ndftatom*ndftatom), &
+&                  surface(ndftatom*ndftatom),radpt(2*nrad),angpt(4*nleb), &
+&                  ptweight(ndftatom*nrad*nleb),xyzpt(3*ndftatom),rsqrd(ndftatom),vao(4*nao), &
+&                  vmoa(4*nocca),vmob(4*noccb),fockdiisa(isize3*maxdiis), &
+&                  fockdiisb(isize3*maxdiis),errdiisa(isize2*maxdiis),errdiisb(isize2*maxdiis), &
+&                  diismtrx(maxdiis*(maxdiis+1)/2),work2(isize1),work3(idis(datacomp%myrank2+1,3)))
         case('SOSCF')
-          call memset(nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
-&                    +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1+idis(myrank2+1,3) &
-&                    +nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf)
-          allocate(focka(nao3),fockb(nao3),fockpreva(nao3),fockprevb(nao3), &
+          call memset(nao3*6+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+&                    +ndftatom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1+idis(datacomp%myrank2+1,3) &
+&                    +nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf,datacomp)
+          allocate(fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(numwork), &
-&                  fockda(nao3),fockdb(nao3),rad(natom),atomvec(5*natom*natom), &
-&                  surface(natom*natom),radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb), &
-&                  xyzpt(3*natom),rsqrd(natom),vao(4*nao),vmoa(4*nocca),vmob(4*noccb), &
-&                  work2(isize1),work3(idis(myrank2+1,3)), &
+&                  fockda(nao3),fockdb(nao3),rad(ndftatom),atomvec(5*ndftatom*ndftatom), &
+&                  surface(ndftatom*ndftatom),radpt(2*nrad),angpt(4*nleb), &
+&                  ptweight(ndftatom*nrad*nleb),xyzpt(3*ndftatom),rsqrd(ndftatom),vao(4*nao), &
+&                  vmoa(4*nocca),vmob(4*noccb),work2(isize1),work3(idis(datacomp%myrank2+1,3)), &
 &                  hstarta(nocca*nvira),hstartb(noccb*nvirb), &
 &                  sograda(nocca*nvira,maxsoscf),sogradb(noccb*nvirb,maxsoscf), &
 &                  sodispa(nocca*nvira*maxsoscf),sodispb(noccb*nvirb*maxsoscf), &
 &                  sovecya(nocca*nvira*(maxsoscf-1)),sovecyb(noccb*nvirb*(maxsoscf-1)))
         case('QC')
           isize1= max(isize1,nao2)
-          call memset(nao2*3+nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
-&                    +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1 &
+          call memset(nao2*3+nao3*6+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+&                    +ndftatom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1 &
 &                    +(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
-&                    +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub)
-          allocate(focka(nao2),fockb(nao2),fockpreva(nao3),fockprevb(nao3), &
+&                    +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub,datacomp)
+          allocate(fockpreva(nao3),fockprevb(nao3), &
 &                  dmtrxpreva(nao3),dmtrxprevb(nao3),dmax(nshell3),work(numwork), &
-&                  fockda(nao3),fockdb(nao3),rad(natom),atomvec(5*natom*natom), &
-&                  surface(natom*natom),radpt(2*nrad),angpt(4*nleb),ptweight(natom*nrad*nleb), &
-&                  xyzpt(3*natom),rsqrd(natom),vao(4*nao),vmoa(4*nocca),vmob(4*noccb), &
+&                  fockda(nao3),fockdb(nao3),rad(ndftatom),atomvec(5*ndftatom*ndftatom), &
+&                  surface(ndftatom*ndftatom),radpt(2*nrad),angpt(4*nleb), &
+&                  ptweight(ndftatom*nrad*nleb),xyzpt(3*ndftatom),rsqrd(ndftatom),vao(4*nao), &
+&                  vmoa(4*nocca),vmob(4*noccb), &
 &                  qcvec((nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2), &
 &                  qcmat(maxqcdiagsub**2),qcmatsave(maxqcdiagsub*(maxqcdiagsub+1)/2), &
-&                  qceigen(maxqcdiagsub),qcgmna(nao3),qcgmnb(nao3),work2(isize1),work3(nao2))
+&                  qceigen(maxqcdiagsub),work2(isize1),work3(nao2*3))
         case default
-          if(master) then
-            write(*,'(" SCFConv=",a12,"is not supported.")')
-            call iabort
+          if(datacomp%master) then
+            write(datacomp%iout,'(" Error! SCFConv=",a12,"is not supported.")')
+            call iabort(datacomp)
           endif
       end select
 !
@@ -2079,17 +2296,18 @@ end
 !
 ! Calculate DFT information
 !
-      call calcatomvec(atomvec,surface)
+      call calcatomvec(atomvec,surface,ndftatom,datamol)
       call calcradpt(radpt,nrad)
-      call calclebpt(angpt,nleb)
-      do iatom= 1,natom
-        rad(iatom)= atomrad(numatomic(iatom))*tobohr
+      call calclebpt(angpt,nleb,datacomp)
+      do iatom= 1,ndftatom
+        rad(iatom)= datamol%atomrad(datamol%numatomic(iatom))*tobohr
       enddo
-      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2,nproc1,myrank1)
+      call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2,nrad,nleb, &
+&                         ndftatom,datacomp%nproc1,datacomp%myrank1)
 !
 ! Calculate initial density matrix
 !
-      call calcudmtrx(cmoa,cmob,dmtrxa,dmtrxb,work,nao,neleca,nelecb)
+      call calcudmtrx(cmoa,cmob,dmtrxa,dmtrxb,work,nao,datamol%neleca,datamol%nelecb)
 !
 ! Set 1-electron Hamiltonian
 !
@@ -2100,75 +2318,89 @@ end
 !
 ! Calculate (ij|ij) integrals
 !
-      call calcschwarzeri(xint,work,maxdim,nproc2,myrank2,mpi_comm2)
+      call calcschwarzeri(xint,work,maxdim,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2, &
+&                         datajob,datamol,databasis)
 !
-      if(master) then
-        write(*,'(1x,74("-"))')
-        write(*,'("   Unrestricted DFT calculation")')
-        write(*,'(1x,74("-"))')
-        write(*,'("   SCFConv    = ",a8,",  Dconv      =",1p,d9.2,",  MaxIter    =",i9)') &
-&                    scfconv, dconv, maxiter
-        write(*,'("   Cutint2    =",1p,d9.2,",  ThreshEx   =",d9.2,",  ThreshOver =",d9.2)') &
-&                    cutint2, threshex, threshover
-        write(*,'("   Nrad       =",i9  ,",  Nleb       =",i9  ,",  ThreshRho  =",1p,d9.2)') &
-&                    nrad, nleb, threshrho
-        write(*,'("   ThreshDfock=",1p,d9.2,",  Threshdftao=",d9.2,",  ThreshWeight=",d8.2)') &
-&                    threshdfock, threshdftao, threshweight
+      if(datacomp%master) then
+        write(cmaxiter,'(i0)') datajob%maxiter
+        write(cnrad,'(i0)') nrad
+        write(cnleb,'(i0)') nleb
+        write(datacomp%iout,'(1x,74("="))')
+        write(datacomp%iout,'("   Unrestricted DFT calculation")')
+        write(datacomp%iout,'(1x,74("="))')
+        write(datacomp%iout,'("   SCFConv    = ",a8,",  Dconv      =",1p,e9.2, &
+&                             ",  MaxIter     = ",a8)') scfconv, datajob%dconv, cmaxiter
+        write(datacomp%iout,'("   Cutint2    =",1p,e9.2,",  ThreshEx   =",e9.2, &
+&                             ",  ThreshOver  =",e9.2)') &
+&                             datajob%cutint2, datajob%threshex, datajob%threshover
+        write(datacomp%iout,'("   Nrad       = ",a8  ,",  Nleb       = ",a8  , &
+&                             ",  ThreshRho   =",1p,e9.2)') cnrad, cnleb, datajob%threshrho
+        write(datacomp%iout,'("   ThreshDfock=",1p,e9.2,",  Threshdftao=",e9.2, &
+&                             ",  ThreshWeight=",e9.2)') &
+&                             datajob%threshdfock, datajob%threshdftao, datajob%threshweight
         select case(scfconv)
           case('DIIS')
-            write(*,'("   MaxDIIS    =",i9,",  ThreshDIIS =",1p,d9.2)') &
-&                    maxdiis, threshdiis
+            write(cmaxdiis,'(i0)') maxdiis
+            write(datacomp%iout,'("   MaxDIIS    = ",a8,",  ThreshDIIS =",1p,e9.2)') &
+&                    cmaxdiis, datajob%threshdiis
           case('SOSCF')
-            write(*,'("   MaxSOSCF   =",i9,",  ThreshSOSCF=",1p,d9.2)') &
-&                    maxdiis, threshdiis
+            write(cmaxsoscf,'(i0)') maxsoscf
+            write(datacomp%iout,'("   MaxSOSCF   = ",a8,",  ThreshSOSCF=",1p,e9.2)') &
+&                    cmaxsoscf, datajob%threshsoscf
           case('QC')
-            write(*,'("   MaxQC      =",i9,",  ThreshQC   =",1p,d9.2,",  MaxQCDiag  =",i9)') &
-&                    maxqc, threshqc, maxqcdiag
-            write(*,'("   MaxQCDiagSub=",i8)') &
-&                    maxqcdiagsub
+            write(cmaxqc,'(i0)') datajob%maxqc
+            write(cmaxqcdiag,'(i0)') datajob%maxqcdiag
+            write(cmaxqcdiagsub,'(i0)') datajob%maxqcdiagsub
+            write(datacomp%iout, &
+&                 '("   MaxQC      = ",a8,",  ThreshQC   =",1p,e9.2,",  MaxQCDiag   = ",a8)') &
+&                    cmaxqc, datajob%threshqc, cmaxqcdiag
+            write(datacomp%iout,'("   MaxQCDiagSub=",a8)') &
+&                    cmaxqcdiagsub
         end select
-        write(*,'(1x,74("-"))')
+        write(datacomp%iout,'(1x,74("-"))')
 !
-        if((nao /= nmo).and.master) then
-          write(*,'(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
-          nwarn= nwarn+1
+        if((nao /= nmo).and.datacomp%master) then
+          write(datacomp%iout, &
+&               '(/," Warning! Number of MOs is reduced from",i5," to",i5,/)') nao, nmo
+          datacomp%nwarn= datacomp%nwarn+1
         endif
 !
-        write(*,'(" ====================")')
-        write(*,'("    SCF Iteration")')
-        write(*,'(" ====================")')
         select case(scfconv)
           case('DIIS')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density     DIIS Error")')
           case('SOSCF')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density    Orbital Grad")')
           case('QC')
-            write(*,'(" Iter SubIt   Total Energy      Delta Energy      ", &
+            write(datacomp%iout,'(" Iter SubIt   Total Energy       Delta Energy     ", &
 &                     "Delta Density")')
         end select
       endif
 !
 ! Start SCF iteration
 !
-      do iter= 1,maxiter
+      do iter= 1,datajob%maxiter
 !
 ! Calculate maximum density matrix elements
 !
-        call calcudmax(dmtrxa,dmtrxb,dmax,work,nproc2,myrank2,mpi_comm2)
+        call calcudmax(dmtrxa,dmtrxb,dmax,work,datacomp%nproc2,datacomp%myrank2, &
+&                      datacomp%mpi_comm2,databasis)
         call cpu_time(time1)
 !
 ! Calculate exchange-correlation terms
 !
         call formufockexcor(fockda,fockdb,focka,edft,totalelec,cmoa,cmob,atomvec,&
 &                           radpt,angpt,rad,ptweight,vao,vmoa,vmob,xyzpt,rsqrd, &
-&                           work,work(neleca*nao+1),work2,idftex,idftcor,nproc1,myrank1,mpi_comm1)
+&                           work,work(datamol%neleca*nao+1),work2,ndftatom, &
+&                           datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                           datajob,datamol,databasis,datacomp)
 !
 ! Calculate two-electron integrals
 !
-        call formudftfock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,hfexchange, &
-&                         nproc1,myrank1,mpi_comm1)
+        call formudftfock(focka,fockb,work,dmtrxa,dmtrxb,dmax,xint,maxdim,datajob%cutint2, &
+&                         datajob%hfexchange,datacomp%nproc1,datacomp%myrank1,datacomp%mpi_comm1, &
+&                         datajob,datamol,databasis)
         call dscal(nao3,half,focka,1)
         call dscal(nao3,half,fockb,1)
         call cpu_time(time2)
@@ -2180,11 +2412,11 @@ end
 !
 ! Calculate DFT ENERGY
 !
-        escfe=(tridot(dmtrxpreva,focka,nao)+tridot(dmtrxpreva,h1mtrx,nao))*half &
+        datamol%escfe=(tridot(dmtrxpreva,focka,nao)+tridot(dmtrxpreva,h1mtrx,nao))*half &
 &            +(tridot(dmtrxprevb,fockb,nao)+tridot(dmtrxprevb,h1mtrx,nao))*half+ edft
-        escf = escfe+enuc
-        deltae = escf-escfprev
-        escfprev= escf
+        datamol%escf = datamol%escfe+datamol%enuc
+        deltae = datamol%escf-escfprev
+        escfprev= datamol%escf
 !
 ! Form full Fock matrix
 !
@@ -2197,52 +2429,56 @@ end
 !
           case('DIIS')
             call calcdiiserr(focka,dmtrxpreva,overlap,ortho,cmoa,work,work2,errmaxa,nao,nmo, &
-&                            idis,nproc2,myrank2,mpi_comm2)
+&                            idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
             call calcdiiserr(fockb,dmtrxprevb,overlap,ortho,cmob,work,work2,errmaxb,nao,nmo, &
-&                            idis,nproc2,myrank2,mpi_comm2)
+&                            idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
             errmax= max(errmaxa,errmaxb)
-            if(((itdiis /= 0).or.(errmax <= threshdiis)).and.(errmax > small))then
+            if(((itdiis /= 0).or.(errmax <= datajob%threshdiis)).and.(errmax > small))then
               itdiis= itdiis+1
               call calcudiis(focka,fockb,errdiisa,errdiisb,fockdiisa,fockdiisb, &
 &                            diismtrx,cmoa,cmob,work2,itdiis,nao,maxdiis, &
-&                            idis,nproc2,myrank2,mpi_comm2)
+&                            idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
             endif
 !
 ! Extrapolate Fock matrix
 !
-            if(extrap.and.itdiis == 0) then
+            if(datajob%extrap.and.itdiis == 0) then
               call fockextrap(focka,fockdiisa,work,cmoa,dmtrxa,itextra,nao,maxdiis, &
-&                             idis,nproc2,myrank2,mpi_comm2)
+&                             idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               call fockextrap(fockb,fockdiisb,work,cmob,dmtrxb,itextra,nao,maxdiis, &
-&                             idis,nproc2,myrank2,mpi_comm2)
+&                             idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
             endif
 !
 ! Diagonalize Fock matrix
 !
-            call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
-            call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+            call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis, &
+&                         datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+            call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
+&                         datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
 !
-! Approximated Second-order SCF method
+! Approximate Second-order SCF method
 !
           case('SOSCF')
             if((itsoscf == 0).or.(convsoscf)) then
-              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
-              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               sogradmax= zero
               itsoscf= itsoscf+1
             else
               call expand(focka,work,nao)
               call soscfgrad(work,work2,sograda(1,itsoscf),cmoa,nocca,nvira,sogradmaxa,nao, &
-&                            idis,nproc2,myrank2,mpi_comm2,1)
+&                            idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,1)
               if(noccb /= 0) then
                 call expand(fockb,work,nao)
                 call soscfgrad(work,work2,sogradb(1,itsoscf),cmob,noccb,nvirb,sogradmaxb,nao, &
-&                              idis,nproc2,myrank2,mpi_comm2,2)
+&                              idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,2)
               else
                 sogradmaxb= zero
               endif
               sogradmax= max(sogradmaxa,sogradmaxb)
-              if(sogradmax <= threshsoscf) then
+              if(sogradmax <= datajob%threshsoscf) then
                 if(itsoscf == 1) then
                   call soscfinith(hstarta,eigena,nocca,nvira,nao)
                   if(noccb /= 0) call soscfinith(hstartb,eigenb,noccb,nvirb,nao)
@@ -2250,14 +2486,18 @@ end
                 call soscfunewh(hstarta,hstartb,sograda,sogradb,sodispa,sodispb,sovecya,sovecyb, &
 &                               nocca,noccb,nvira,nvirb,itsoscf,maxsoscf,sodispmax)
                 call soscfupdate(cmoa,sodispa,work,work2,nocca,nvira,itsoscf,maxsoscf, &
-&                                nao,nmo,sodispmax,idis,nproc2,myrank2,mpi_comm2)
+&                                nao,nmo,sodispmax,idis, &
+&                                datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
                 if(noccb /= 0 ) &
 &                 call soscfupdate(cmob,sodispb,work,work2,noccb,nvirb,itsoscf,maxsoscf, &
-&                                  nao,nmo,sodispmax,idis,nproc2,myrank2,mpi_comm2)
+&                                  nao,nmo,sodispmax,idis, &
+&                                  datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
                 itsoscf= itsoscf+1
               else
-                call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
-                call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+                call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis, &
+&                             datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+                call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
+&                             datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               endif
             endif
 !
@@ -2265,19 +2505,24 @@ end
 !
           case('QC')
             if((itqc == 0).or.(convqc)) then
-              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
-              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= itqc+1
-            elseif((itqc == maxqc)) then
-              call diagfock(focka,work,ortho,cmoa,work2,eigena,idis,nproc2,myrank2,mpi_comm2)
-              call diagfock(fockb,work,ortho,cmob,work2,eigenb,idis,nproc2,myrank2,mpi_comm2)
+            elseif((itqc == datajob%maxqc)) then
+              call diagfock(focka,work,ortho,cmoa,work2,eigena,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
+              call diagfock(fockb,work,ortho,cmob,work2,eigenb,nao,nmo,idis, &
+&                           datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2,datacomp)
               itqc= 1
             else
-              call uhfqc(focka,fockb,cmoa,cmob,dmax,qcgmna,qcgmnb,qcvec, &
+              call uhfqc(focka,fockb,cmoa,cmob,dmax,qcvec, &
 &                        qcmat,qcmatsave,qceigen,overlap,xint, &
-&                        work,work2,work3,hfexchange,nao,nmo,nocca,noccb,nvira,nvirb,nshell, &
-&                        maxdim,maxqcdiag,maxqcdiagsub,threshqc, &
-&                        nproc1,nproc2,myrank1,myrank2,mpi_comm1,mpi_comm2)
+&                        work,work2,work3(1),work3(nao2+1),work3(nao2*2+1),datajob%cutint2, &
+&                        datajob%hfexchange,nao,nmo,nocca,noccb, &
+&                        nvira,nvirb,nshell,maxdim,datajob%maxqcdiag,maxqcdiagsub, &
+&                        datajob%threshqc,datajob,datamol,databasis,datacomp)
               itqc= itqc+1
             endif
         end select
@@ -2285,137 +2530,154 @@ end
 !
 ! Copy previous density matrix and calculate new density matrix
 !
-        call calcudmtrx(cmoa,cmob,dmtrxa,dmtrxb,work,nao,neleca,nelecb)
+        call calcudmtrx(cmoa,cmob,dmtrxa,dmtrxb,work,nao,datamol%neleca,datamol%nelecb)
         call ddiff(dmtrxa,dmtrxpreva,work(1),nao3,diffmaxa)
         call ddiff(dmtrxb,dmtrxprevb,work(nao3+1),nao3,diffmaxb)
         diffmax= diffmaxa+diffmaxb
 !
         select case(scfconv)
           case('DIIS')
-            if(extrap.and.(itdiis==0)) then
+            if(datajob%extrap.and.(itdiis==0)) then
               itsub= itextra
             else
               itsub= itdiis
             endif
-            if(master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,errmax
+            if(datacomp%master) &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,2f17.9)') &
+&             iter,itsub,datamol%escf,deltae,diffmax,errmax
           case('SOSCF')
             itsub= itsoscf
-            if(master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),2f17.9)')iter,itsub,escf,deltae,diffmax,sogradmax
+            if(datacomp%master) &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,2f17.9)') &
+&             iter,itsub,datamol%escf,deltae,diffmax,sogradmax
           case('QC')
             itsub= itqc
-            if(master) &
-&             write(*,'(1x,i3,2x,i3,2(1x,f17.9),1f17.9)')iter,itsub,escf,deltae,diffmax
+            if(datacomp%master) &
+&             write(datacomp%iout,'(1x,i3,2x,i3,2f18.9,1f17.9)') &
+&             iter,itsub,datamol%escf,deltae,diffmax
         end select
 !
 ! Check SCF convergence
 !
         select case(scfconv)
           case('DIIS')
-            if(diffmax < dconv) exit
+            if(diffmax < datajob%dconv) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
             if(itdiis >= maxdiis) itdiis= 0
           case('SOSCF')
-            if((diffmax < dconv).and.(convsoscf)) exit
-            if((diffmax < dconv).and.(itsoscf == 1)) exit
-            if((diffmax < dconv).and.(.not.convsoscf)) convsoscf=.true.
+            if((diffmax < datajob%dconv).and.((convsoscf).or.(itsoscf == 1))) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
+            if((diffmax < datajob%dconv).and.(.not.convsoscf)) convsoscf=.true.
             if(itsoscf >= maxsoscf) itsoscf= 0
           case('QC')
-            if((diffmax < dconv).and.(convqc)) exit
-            if((diffmax < dconv).and.(itqc == 1)) exit
-            if((diffmax < dconv).and.(.not.convqc)) convqc=.true.
-            if((diffmax >= dconv).and.(convqc)) then
+            if((diffmax < datajob%dconv).and.((convqc).or.(itqc == 1))) then
+              datacomp%convergedscf=.true.
+              exit
+            endif
+            if((diffmax < datajob%dconv).and.(.not.convqc)) convqc=.true.
+            if((diffmax >= datajob%dconv).and.(convqc)) then
               itqc= 0
               convqc=.false.
             endif
         end select
 !
-        if(iter == maxiter) then
-          if(master) then
-            write(*,'(" SCF did not converge.")')
-            call iabort
+        if(iter == datajob%maxiter) then
+          if(datacomp%master) then
+            write(datacomp%iout,'(" -------------------------")')
+            write(datacomp%iout,'("   SCF did not converge.")')
+            write(datacomp%iout,'(" -------------------------"/)')
           endif
+          exit
         endif
         call dcopy(nao3,dmtrxa,1,dmtrxpreva,1)
         call dcopy(nao3,dmtrxb,1,dmtrxprevb,1)
         call dcopy(nao3,work(1),1,dmtrxa,1)
         call dcopy(nao3,work(nao3+1),1,dmtrxb,1)
         call cpu_time(time4)
-        if(master.and.(iprint >= 3)) write(*,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
+        if(datacomp%master.and.(mod(datajob%iprint,10) >= 5)) &
+&         write(datacomp%iout,'(10x,6f8.3)')time2-time1,time3-time2,time4-time3
       enddo
 !
-      if(master) then
-        write(*,'(" -----------------------------------------------------------")')
-        write(*,'("    SCF Converged.")')
-        write(*,'("    DFT Energy = ",f17.9," a.u.")')escf
-        write(*,'("    Exchange + Correlation energy = ",f17.9," a.u.")')edft
-        write(*,'("    Number of electrons           = ",f17.9)')totalelec
-        write(*,'(" -----------------------------------------------------------")')
-      endif
+      if(datacomp%convergedscf) then
+        if(datacomp%master) then
+          write(datacomp%iout,'(1x,63("-"))')
+          write(datacomp%iout,'("    SCF Converged.")')
+          write(datacomp%iout,'("    DFT Energy =",f18.9," Hartree")')datamol%escf
+          write(datacomp%iout,'("    Exchange + Correlation energy =",f18.9," Hartree")')edft
+          write(datacomp%iout,'("    Number of electrons           =",f18.9)')totalelec
+          write(datacomp%iout,'(1x,63("-"))')
+        endif
 !
 ! Calculate spin expectation values
 !
-      call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,neleca,nelecb,nao, &
-&                   idis,nproc2,myrank2,mpi_comm2)
+        call calcspin(sz,s2,dmtrxa,dmtrxb,overlap,work,work2,work3,datamol%neleca,datamol%nelecb, &
+&                     nao,idis,datacomp%nproc2,datacomp%myrank2,datacomp%mpi_comm2)
 !
-      if(master) then
-        write(*,'(" -------------------------------")')
-        write(*,'("    Sz =",f7.3)')sz
-        write(*,'("    S-squared =",f7.3)')s2
-        write(*,'(" -------------------------------"/)')
+        if(datacomp%master) then
+          write(datacomp%iout,'(" -------------------------------")')
+          write(datacomp%iout,'("    Sz =",f7.3)')sz
+          write(datacomp%iout,'("    S-squared =",f7.3)')s2
+          write(datacomp%iout,'(" -------------------------------"/)')
+        endif
       endif
 !
 ! Unset arrays
 !
       select case(scfconv)
         case('DIIS')
-          deallocate(focka,fockb,fockpreva,fockprevb, &
+          deallocate(fockpreva,fockprevb, &
 &                    dmtrxpreva,dmtrxprevb,dmax,work, &
 &                    fockda,fockdb,rad,atomvec, &
-&                    surface,radpt,angpt,ptweight, &
-&                    xyzpt,rsqrd,vao,vmoa,vmob, &
-&                    fockdiisa,fockdiisb,errdiisa, &
-&                    errdiisb,diismtrx,work2, &
-&                    work3)
-          call memunset(nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
-&                      +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize3*maxdiis*2+isize1 &
-&                      +isize2*maxdiis*2+maxdiis*(maxdiis+1)/2+idis(myrank2+1,3))
+&                    surface,radpt,angpt, &
+&                    ptweight,xyzpt,rsqrd,vao, &
+&                    vmoa,vmob,fockdiisa, &
+&                    fockdiisb,errdiisa,errdiisb, &
+&                    diismtrx,work2,work3)
+          call memunset(nao3*6+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+&                      +ndftatom*nrad*nleb+nao*4+nocca*4+noccb*4+isize3*maxdiis*2+isize1 &
+&                      +isize2*maxdiis*2+maxdiis*(maxdiis+1)/2+idis(datacomp%myrank2+1,3),datacomp)
         case('SOSCF')
-          deallocate(focka,fockb,fockpreva,fockprevb, &
+          deallocate(fockpreva,fockprevb, &
 &                    dmtrxpreva,dmtrxprevb,dmax,work, &
 &                    fockda,fockdb,rad,atomvec, &
-&                    surface,radpt,angpt,ptweight, &
-&                    xyzpt,rsqrd,vao,vmoa,vmob, &
-&                    work2,work3, &
+&                    surface,radpt,angpt, &
+&                    ptweight,xyzpt,rsqrd,vao, &
+&                    vmoa,vmob,work2,work3, &
 &                    hstarta,hstartb, &
 &                    sograda,sogradb, &
 &                    sodispa,sodispb, &
 &                    sovecya,sovecyb)
-          call memunset(nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
-&                      +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1+idis(myrank2+1,3) &
-&                      +nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf)
+          call memunset(nao3*6+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+&                      +ndftatom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1+idis(datacomp%myrank2+1,3) &
+&                      +nocca*nvira*3*maxsoscf+noccb*nvirb*3*maxsoscf,datacomp)
         case('QC')
-          deallocate(focka,fockb,fockpreva,fockprevb, &
+          deallocate(fockpreva,fockprevb, &
 &                    dmtrxpreva,dmtrxprevb,dmax,work, &
 &                    fockda,fockdb,rad,atomvec, &
-&                    surface,radpt,angpt,ptweight, &
-&                    xyzpt,rsqrd,vao,vmoa,vmob, &
+&                    surface,radpt,angpt, &
+&                    ptweight,xyzpt,rsqrd,vao, &
+&                    vmoa,vmob, &
 &                    qcvec, &
 &                    qcmat,qcmatsave, &
-&                    qceigen,qcgmna,qcgmnb,work2,work3)
-          call memunset(nao2*3+nao3*8+nshell3+numwork+natom*5+natom*natom*6+nrad*2+nleb*4 &
-&                      +natom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1 &
+&                    qceigen,work2,work3)
+          call memunset(nao2*3+nao3*6+nshell3+numwork+ndftatom*5+ndftatom*ndftatom*6+nrad*2+nleb*4 &
+&                      +ndftatom*nrad*nleb+nao*4+nocca*4+noccb*4+isize1 &
 &                      +(nocca*nvira+noccb*nvirb+1)*(maxqcdiagsub+1)*2 &
-&                      +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub)
+&                      +maxqcdiagsub*(maxqcdiagsub*3+1)/2+maxqcdiagsub,datacomp)
       end select
       return
 end
 
 
-!-----------------------------------------------------------------------------------------
-  subroutine formudftfock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,hfexchange, &
-&                         nproc,myrank,mpi_comm)
-!-----------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------
+  subroutine formudftfock(fock1,fock2,fock3,dmtrxa,dmtrxb,dmax,xint,maxdim,cutint2, &
+&                         hfexchange,nproc,myrank,mpi_comm, &
+&                         datajob,datamol,databasis)
+!--------------------------------------------------------------------------------------
 !
 ! Driver of DFT Fock matrix formation from two-electron intgrals
 !
@@ -2425,20 +2687,29 @@ end
 !       fock2  (Beta Fock matrix)
 !       fock3  (Work space)
 !
-      use modbasis, only : nshell, nao
-      use modthresh, only : cutint2
+      use modtype, only : typejob, typemol, typebasis
       implicit none
+      type(typejob),intent(in) :: datajob
+      type(typemol),intent(in) :: datamol
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: maxdim, nproc, myrank, mpi_comm
       integer :: ijsh, ish, jsh, ksh, lsh, ij, kl, ik, il, jk, jl
       integer :: ii, jj, kk, kstart, ishcheck
-      integer(8) :: ncount, icount(nshell)
+      integer(8) :: ncount, icount(databasis%nshell)
       real(8),parameter :: zero=0.0D+00, two=2.0D+00, four=4.0D+00
-      real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
-      real(8),intent(in) :: dmax(nshell*(nshell+1)/2), xint(nshell*(nshell+1)/2), hfexchange
-      real(8),intent(out) :: fock1(nao*(nao+1)/2), fock2(nao*(nao+1)/2), fock3(nao*(nao+1)/2)
+      real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: dmax(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: xint(databasis%nshell*(databasis%nshell+1)/2)
+      real(8),intent(in) :: cutint2, hfexchange
+      real(8),intent(out) :: fock1(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fock2(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(out) :: fock3(databasis%nao*(databasis%nao+1)/2)
       real(8) :: xijkl, denmax, twoeri(maxdim**4), denmax1
-      integer :: last, ltmp(nshell), lnum, ll
+      integer :: nao, nshell, last, ltmp(databasis%nshell), lnum, ll
 !
+      nao= databasis%nao
+      nshell= databasis%nshell
       fock2(:)= zero
       fock3(:)= zero
 !
@@ -2502,9 +2773,9 @@ end
             endif
           enddo
           do lsh= 1,lnum
-            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim)
+            call calc2eri(twoeri,ish,jsh,ksh,ltmp(lsh),maxdim,datajob%threshex,datamol,databasis)
             call udftfockeri(fock2,fock3,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,ltmp(lsh),maxdim, &
-&                            hfexchange)
+&                            cutint2,hfexchange,databasis)
           enddo
         enddo
       enddo
@@ -2523,34 +2794,37 @@ end
 
 !------------------------------------------------------------------------------------
   subroutine udftfockeri(focka,fockb,dmtrxa,dmtrxb,twoeri,ish,jsh,ksh,lsh,maxdim, &
-&                        hfexchange)
+&                        cutint2,hfexchange,databasis)
 !------------------------------------------------------------------------------------
 !
 ! Form unrestricted DFT Fock matrix from two-electron intgrals
 !
-      use modbasis, only : nao, mbf, locbf
-      use modthresh, only : cutint2
+      use modtype, only : typebasis
       implicit none
+      type(typebasis),intent(in) :: databasis
       integer,intent(in) :: ish, jsh, ksh, lsh, maxdim
       integer :: nbfi, nbfj, nbfk, nbfl
       integer :: locbfi, locbfj, locbfk, locbfl, jmax, lmax, i, j, k, l, ij, kl
       integer :: nij, nkl, nik, nil, njk, njl
       integer :: iloc, jloc, kloc, lloc, iloc2, jloc2, kloc2, lloc2, jloc0, kloc0
       real(8),parameter :: half=0.5D+00, two=2.0D+00, four=4.0D+00
-      real(8),intent(in) :: dmtrxa(nao*(nao+1)/2), dmtrxb(nao*(nao+1)/2)
-      real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim), hfexchange
-      real(8),intent(inout) :: focka(nao*(nao+1)/2), fockb(nao*(nao+1)/2)
+      real(8),intent(in) :: dmtrxa(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: dmtrxb(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(in) :: twoeri(maxdim,maxdim,maxdim,maxdim)
+      real(8),intent(in) :: cutint2, hfexchange
+      real(8),intent(inout) :: focka(databasis%nao*(databasis%nao+1)/2)
+      real(8),intent(inout) :: fockb(databasis%nao*(databasis%nao+1)/2)
       real(8) :: val, val2, val4
       logical :: ieqj, keql, ieqk, jeql, ikandjl, ijorkl
 !
-      nbfi = mbf(ish)
-      nbfj = mbf(jsh)
-      nbfk = mbf(ksh)
-      nbfl = mbf(lsh)
-      locbfi= locbf(ish)
-      locbfj= locbf(jsh)
-      locbfk= locbf(ksh)
-      locbfl= locbf(lsh)
+      nbfi = databasis%mbf(ish)
+      nbfj = databasis%mbf(jsh)
+      nbfk = databasis%mbf(ksh)
+      nbfl = databasis%mbf(lsh)
+      locbfi= databasis%locbf(ish)
+      locbfj= databasis%locbf(jsh)
+      locbfk= databasis%locbf(ksh)
+      locbfl= databasis%locbf(lsh)
 !
       ieqj= ish.eq.jsh
       keql= ksh.eq.lsh

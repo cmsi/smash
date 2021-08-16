@@ -1,4 +1,4 @@
-! Copyright 2014  Kazuya Ishimura
+! Copyright 2014-2021  Kazuya Ishimura
 !
 ! Licensed under the Apache License, Version 2.0 (the "License");
 ! you may not use this file except in compliance with the License.
@@ -16,7 +16,15 @@
   module modparam
 !------------------
 !
-! maximum sizes for AOs (basis functions), MOs, atoms, shells
+! Maximum sizes for AOs (basis functions), MOs, atoms, shells
+! Factors of unit conversion
+!
+! Fundamental Physical Constants: 2018 CODATA
+!   Eite Tiesinga, Peter J. Mohr, David B. Newell, and Barry N. Taylor (2020),
+!   "The 2018 CODATA Recommended Values of the Fundamental Physical Constants"
+!   (Web Version 8.1). Database developed by J. Baker, M. Douma, and S.
+!   Kotochigova. Available at http://physics.nist.gov/constants, National
+!   Institute of Standards and Technology, Gaithersburg, MD 20899.
 !
       implicit none
       integer,parameter :: mxao=10000
@@ -26,306 +34,9 @@
       integer,parameter :: mxprim=20000
       integer,parameter :: mxprsh=30
       integer,parameter :: mxang=7
-end
-
-
-!----------------
-  module modjob
-!----------------
-      implicit none
-      character(len=16) :: method, runtype, scftype
-end
-
-
-!-----------------
-  module modunit
-!-----------------
-      implicit none
-      real(8),parameter :: toang= 0.5291772108D+00, tobohr= 1.889726125D+00
-      real(8),parameter :: todebye= 2.541746D+00
-      logical :: bohr
-end
-
-
-!---------------------
-  module modparallel
-!---------------------
-      implicit none
-      integer :: nproc1, myrank1, nproc2, myrank2, mpi_comm1, mpi_comm2
-      logical :: master
-!
-      interface checkintsize
-        subroutine checkintsize4(isize)
-          integer(selected_int_kind(9)),intent(out) :: isize
-        end subroutine checkintsize4
-        subroutine checkintsize8(isize)
-          integer(selected_int_kind(18)),intent(out) :: isize
-        end subroutine checkintsize8
-      end interface checkintsize
-!
-end
-
-
-!-------------------
-  module modiofile
-!-------------------
-      implicit none
-      integer,parameter :: input=10, icheck=20, maxline=100000
-      character(len=16) :: version
-      character(len=64) :: check
-end
-
-
-!-------------------
-  module modtclock
-!-------------------
-      implicit none
-      integer ::  iwall0, iwall1
-      real(8) :: cpu0, cpu1
-end
-
-
-!---------------------
-  module modmolecule
-!---------------------
-!
-! natom     : number of atoms
-! numatomic : atomic number
-! coord     : Cartesian coordinate 
-! znuc      : atomic charge
-! neleca    : number of alpha electrons
-! nelecb    : number of beta electrons
-! nmo       : number of molecular orbitals
-! ncore     : number of core orbitals
-! multi     : spin multiplicity
-! charge    : molecular charge
-!
-      use modparam, only : mxatom
-      implicit none
-      integer :: numatomic(mxatom), natom, neleca, nelecb, nmo, ncore, multi
-      real(8) :: coord(3,mxatom), znuc(mxatom), coordold(3,mxatom), charge
-end
-
-
-!-------------------
-  module modthresh
-!-------------------
-!
-! threshex    : threshold for overlap of two basis functions
-! threshover  : threshold for linear depencency of basis functions
-! threshatm   : threshold for distance of atoms
-! cutint2     : threshold for two-electron integrals
-! threshsoscf : threshold for second-order SCF
-! threshqc    : threshold for quadratically convergent SCF
-! threshweight: threshold for weight at a grid point
-! threshrho   : threshold for density at a grid point
-! threshdfock : threshold for functional at a grid point
-! threshmp2cphf : threshold for MP2-CPHF
-!
-      implicit none
-      real(8),parameter :: threshex=30.0D+00
-      real(8) :: threshover, threshatom, threshdiis
-      real(8) :: cutint2, threshsoscf, threshqc
-      real(8) :: threshweight, threshrho, threshdfock, threshdftao 
-      real(8) :: threshmp2cphf
-      character(len=16) :: precision
-end
-
-
-!-------------------
-  module modmemory
-!-------------------
-      integer :: memmax, memused, memusedmax
-      character(len=16) :: memory, mem
-end
-
-
-!------------------
-  module modbasis
-!------------------
-!
-! nshell : Number of shells
-! nao    : Number of AOs (=contracted basis functions)
-! nprim  : Number of primitive basis functions
-! ex    : Exponents of basis functions
-! coeff : Normalized coefficients of basis functions
-! coeffinp : Input coefficients of basis functions
-!
-! locprim : Starting address of primitive basis functions for a shell
-! locbf   : Starting address of basis functions for a shell
-! locatom : Atom center for a shell
-! mprim   : Number of basis primitive functions for a shell
-! mbf     : Number of basis functions for a shell
-! mtype   : Type of a basis shell (s=0, p=1, d=2, f=3,...)
-! basis   : Name of basis functions
-! atombasis : Type of basis set for each atom
-! exgen : Exponents of basis functions from input file
-! coeffgen: Coefficients of basis functions from input file
-! locgenprim: Starting address of primitive basis functions for a shell from input file
-! mgenprim : Number of basis primitive functions for a shell from input file
-! mgentype : Type of a basis shell (s=0, p=1, d=2, f=3,...) from input file
-! locgenshell :  Starting address of basis shells
-! ngenshell : Number of basis shells for an atom
-!
-      use modparam, only : mxprim, mxshell
-      implicit none
-      integer :: nshell, nao, nprim
-      integer :: locprim(mxshell+1), locbf(mxshell+1), locatom(mxshell)
-      integer :: mprim(mxshell),  mbf(mxshell), mtype(mxshell)
-      integer :: locgenprim(mxshell+1), mgenprim(mxshell), mgentype(mxshell)
-      integer :: locgenshell(-9:112), ngenshell(-9:112)
-      real(8) :: ex(mxprim), coeff(mxprim), coeffinp(mxprim)
-      real(8) :: exgen(mxprim), coeffgen(mxprim)
-      character(len=16) :: basis, atombasis(-9:112)
-      logical :: spher
-end
-
-
-!-----------------
-  module modwarn
-!-----------------
-!
-! nwarn : number of warnings
-!
-      implicit none
-      integer :: nwarn
-end
-
-
-!------------------
-  module modguess
-!------------------
-!
-! These variables are for guess calculations.
-! (Extended Huckel)
-!
-! nshell_v : the number of valence shells
-! nao_v    : the number of valence AOs (=contracted basis functions)
-! nprim_v  : the number of valence primitive basis functions
-! nmo_v    : the number of valence MOs
-! nshell_g : the number of shells
-! nao_g    : the number of AOs (=contracted basis functions)
-! nprim_g  : the number of primitive basis functions
-! nmo_g    : the number of MOs
-! nao_c    : the number of core MOs
-!
-! ex_g    : exponents
-! coeff_g : coefficients 
-! coord_g : coordinate
-!
-! locprim_g :(starting address of primitive basis functions for a shell) - 1
-! locbf_g   :(starting address of basis functions for a shell) - 1
-! locatom_g : atom center for a shell
-! mprim_g   : the number of basis primitive functions for a shell
-! mbf_g     : the number of basis funcions for a shell
-! mtype_g   : the type of a basis shell (s=0, p=1, d=2, f=3,...)
-! func_g    : the name of basis functions
-! guess     : type of initail guess
-!
-      use modparam, only : mxprim, mxshell, mxatom
-      implicit none
-      integer :: nshell_v, nao_v, nprim_v, nmo_v, nshell_g, nao_g, nprim_g, nmo_g, nao_c
-      integer :: locprim_g(mxshell+1), locbf_g(mxshell+1), locatom_g(mxshell)
-      integer :: mprim_g(mxshell), mbf_g(mxshell), mtype_g(mxshell)
-      integer :: nshell_gcore, nao_gcore, nprim_gcore
-      integer :: locprim_gcore(mxshell+1), locbf_gcore(mxshell+1), locatom_gcore(mxshell)
-      integer :: mprim_gcore(mxshell), mbf_gcore(mxshell), mtype_gcore(mxshell)
-      real(8) :: ex_g(mxprim), coeff_g(mxprim), coord_g(3,mxatom)
-      real(8) :: ex_gcore(mxprim), coeff_gcore(mxprim), coord_gcore(3,mxatom)
-      logical :: spher_g
-      character(len=16) :: guess
-end
-
-
-!------------------
-  module modprint
-!------------------
-!
-! iprint : print option
-!    = 0 : minimal output
-!    = 1 : standard output
-!    = 2 : verbose output
-!
-      integer :: iprint
-end
-
-
-!-------------------
-  module modenergy
-!-------------------
-!  energies 
-!
-      real(8) :: enuc, eelec, escf, escfe, emp2, escsmp2
-end
-
-
-!----------------
-  module modscf
-!----------------
-!
-! These variables are for SCF calculations.
-!
-      implicit none
-      integer :: maxiter, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub
-      real(8) :: dconv
-      logical :: fdiff, extrap
-      character(len=16) :: scfconv
-end
-
-
-!----------------
-  module moddft
-!----------------
-      implicit none
-      integer :: idftex, idftcor, nrad, nleb
-      real(8) :: hfexchange, bqrad(9)
-end
-
-
-!----------------
-  module modmp2
-!----------------
-      implicit none
-      integer :: ncore, nvfz, maxmp2diis, maxmp2iter
-end
-
-
-!-----------------
-  module modatom
-!-----------------
-!
-! Covalent radii  H       : Bohr radius
-!                 He - Cn : P. Pyykko, M. Atsumi, Chem. Eur. J., 186 (2009) 15.
-!                 
-!
-      implicit none
-      real(8) :: atomrad(-9:112)
-      data atomrad/ &
-&     1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, &
-&     0.00D+00, &
-&     0.53D+00, 0.46D+00, 1.33D+00, 1.02D+00, 0.85D+00, 0.75D+00, 0.71D+00, 0.63D+00, 0.64D+00, &
-&     0.67D+00, 1.55D+00, 1.39D+00, 1.26D+00, 1.16D+00, 1.11D+00, 1.03D+00, 0.99D+00, 0.96D+00, &
-&     1.96D+00, 1.71D+00, 1.48D+00, 1.36D+00, 1.34D+00, 1.22D+00, 1.19D+00, 1.16D+00, 1.11D+00, &
-&     1.10D+00, 1.12D+00, 1.18D+00, 1.24D+00, 1.21D+00, 1.21D+00, 1.16D+00, 1.14D+00, 1.17D+00, &
-&     2.10D+00, 1.85D+00, 1.63D+00, 1.54D+00, 1.47D+00, 1.38D+00, 1.28D+00, 1.25D+00, 1.25D+00, &
-&     1.20D+00, 1.28D+00, 1.36D+00, 1.42D+00, 1.40D+00, 1.40D+00, 1.36D+00, 1.33D+00, 1.31D+00, &
-&     2.32D+00, 1.96D+00, 1.80D+00, 1.63D+00, 1.76D+00, 1.74D+00, 1.73D+00, 1.72D+00, 1.68D+00, &
-&     1.69D+00, 1.68D+00, 1.67D+00, 1.66D+00, 1.65D+00, 1.64D+00, 1.70D+00, 1.62D+00, 1.52D+00, &
-&     1.46D+00, 1.37D+00, 1.31D+00, 1.29D+00, 1.22D+00, 1.23D+00, 1.24D+00, 1.33D+00, 1.44D+00, &
-&     1.44D+00, 1.51D+00, 1.45D+00, 1.47D+00, 1.42D+00, 2.23D+00, 2.01D+00, 1.86D+00, 1.75D+00, &
-&     1.69D+00, 1.70D+00, 1.71D+00, 1.72D+00, 1.66D+00, 1.66D+00, 1.68D+00, 1.68D+00, 1.65D+00, &
-&     1.67D+00, 1.73D+00, 1.76D+00, 1.61D+00, 1.57D+00, 1.49D+00, 1.43D+00, 1.41D+00, 1.34D+00, &
-&     1.29D+00, 1.28D+00, 1.21D+00, 1.22D+00/
-end
-
-
-!----------------
-  module modopt
-!----------------
-      implicit none
-      integer :: nopt
-      real(8) :: optconv
-      logical :: cartesian
+      integer,parameter :: maxline=100000
+      real(8),parameter :: toang= 0.5291772109D+00, tobohr= 1.889726125D+00
+      real(8),parameter :: todebye= 2.541746473D+00
 end
 
 
@@ -333,20 +44,12 @@ end
   module modecp
 !----------------
 !
-! izcore    : number of core electrons per atom for ECP calculation
+! ECP data
 !
-      use modparam, only : mxprim, mxshell, mxatom
       implicit none
-      integer,parameter :: lfunc=16, nterm1=625291, nterm2=26841
-      integer :: maxangecp(mxatom), izcore(mxatom)=0, mtypeecp(mxprim)
-      integer :: locecp(0:5,mxatom), mprimecp(0:5,mxatom)
-      integer :: maxgenangecp(-9:112), izgencore(-9:112), mgentypeecp(mxprim)
-      integer :: locgenecp(0:5,-9:112), mgenprimecp(0:5,-9:112)
+      integer,parameter :: nterm1=625291, nterm2=26841
       integer :: lmf(122), lmx(581), lmy(581), lmz(581), nbfirst(0:7), nx(84), ny(84), nz(84)
-      real(8) :: execp(mxprim), coeffecp(mxprim), zlm(581)
-      real(8) :: exgenecp(mxprim), coeffgenecp(mxprim)
-      character(lfunc) :: ecp, atomecp(-9:112)
-      logical :: flagecp
+      real(8) :: zlm(581)
       data lmf/1, 2,3,4, 5,7,8,10,11, 12,14,16,18,20,22,23, 25,28,30,34,36,39,41,43,45,&
 &              47,50,53,57,61,64,67,70,72,76,78, 81,85,88,94,98,104,107,111,114,117,121,125,128,&
 &              131,135,139,145,151,157,163,167,171,175,178,184,188,194,197,&
@@ -420,3 +123,194 @@ end
 &             0,0,6,0,1,0,1,5,5,0,2,0,2,4,4,1,1,4,0,3,3,1,2,1,2,3,3,2/
 end
 
+
+!-----------------
+  module modtype
+!-----------------
+!
+      use modparam, only : mxprim, mxshell, mxatom
+      implicit none
+!
+! Basis set and ECP
+!
+! nshell   : Number of shells
+! nao      : Number of AOs (=contracted basis functions)
+! nprim    : Number of primitive basis functions
+! locprim  : Starting address of primitive basis function for each shell
+! locbf    : Starting address of basis function for each shell
+! locatom  : Atom center for each shell
+! mprim    : Number of basis primitive function for each shell
+! mbf      : Number of basis function for each shell
+! mtype    : Type of each basis shell (s=0, p=1, d=2, f=3,...)
+! locecp   : Starting address of ECP function for each shell
+! mprimecp : Number of ECP functions for each shell
+! maxangecp: Maximum ECP angular momentum for each atom
+! mtype    : Type of each ECP shell (s=0, p=1, d=2, f=3,...)
+! izcore   : number of core electrons per atom for ECP calculation
+! ex       : Exponents of basis functions
+! coeff    : Normalized coefficients of basis functions
+! coeffinp : Input coefficients of basis functions
+! basis    : Name of basis functions
+! spher    : Spherical Harmonics (True) or Cartesian (False)
+      type typebasis
+        integer :: nshell, nao, nprim
+        integer :: locprim(mxshell+1), locbf(mxshell+1), locatom(mxshell)
+        integer :: mprim(mxshell),  mbf(mxshell), mtype(mxshell)
+        integer :: locecp(0:5,mxatom), mprimecp(0:5,mxatom)
+        integer :: maxangecp(mxatom), izcore(mxatom)=0, mtypeecp(mxprim)
+        real(8) :: ex(mxprim), coeff(mxprim), coeffinp(mxprim)
+        real(8) :: execp(mxprim), coeffecp(mxprim)
+        character(len=32) :: basis='STO-3G', ecp=''
+        logical :: spher=.true.
+      end type
+!
+! Job control
+!
+! iprint       : Print control
+! maxiter      : Maximum number of SCF iterations
+! maxdiis      : Maximum number of DIIS cycles
+! maxsoscf     : Maximum number of Second-order SCF cycles
+! maxqc        : Maximum number of Quadratic convergent (QC) cycles
+! maxqcdiag    : Maximum number of Davidson diagonalization cycles in QC
+! maxqcdiagsub : Maximum number of trial vectors of Davidson diagonalization in QC
+! idftex       : Exchange functional
+! idftco       : Correlation functional
+! nrad         : Number of radial points in the Euler-MacLaurin quadrature
+! nleb         : Number of anglualr points in the Levedev grids
+! ncore        : Number of core orbitals
+! nvfz         : Number of frozen virtual orbitals
+! maxmp2diis   : Maximum number of DIIS iterations for MP2 CPHF calculation
+! maxmp2iter   : Maximum number of iterations for MP2 CPHF calculation
+! nopt         : Maximum number of geometry optimization cycles
+! dconv        : Threshold for SCF density convergence
+! optconv      : Threshold for geometry optimization convergence
+! fbond        : Scaling factor of atom radii for bond detection
+! hfexchange   : Factor of Hartree-Fock Exchange in DFT
+! bqrad        : Radii of ghost (Bq) atoms
+! threshex     : Threshold for overlap of two basis functions
+! threshover   : Threshold for linear depencency of basis functions
+! threshatm    : Threshold for distance of atoms
+! cutint2      : Threshold for two-electron integrals
+! threshdiis   : Threshold for DIIS start
+! threshsoscf  : Threshold for second-order SCF
+! threshqc     : Threshold for quadratically convergent SCF
+! threshweight : Threshold for weight at a grid point
+! threshrho    : Threshold for density at a grid point
+! threshdfock  : Threshold for functional at a grid point
+! threshmp2cphf: Threshold for MP2-CPHF
+! method       : Hamiltonian
+! runtype      : Calculation type
+! scftype      : RHF or UHF
+! memory       : Memory size
+! version      : SMASH version
+! guess        : Guess type
+! precision    : Computational precision (high, medium, low)
+! scfconv      : SCF convergence method
+! print        : output control
+! pop          : population control
+! multipole    : Multipole memoent control
+! check        : Checkpoint file
+! xyz          : Xyz file
+! bohr         : Length unit (True: atomic unit, False: Angstrom)
+! flagecp      : Flag for ECP calculation
+! extrap       : Pople extrapolation of Fock matrix
+! cartesian    : Type of coordinate system (True: Cartesian, False: redundant coordinate)
+      type typejob
+        integer :: iprint=0
+        integer :: maxiter=150, maxdiis=20, maxsoscf=20, maxqc=15, maxqcdiag=100, maxqcdiagsub=10
+        integer :: idftex=0, idftcor=0, nrad=0, nleb=0
+        integer :: ncore=-1, nvfz=0, maxmp2diis=20, maxmp2iter=100
+        integer :: nopt=100
+        real(8) :: dconv=-1.0D+00, optconv=-1.0D+00, fbond=1.20D+00 
+        real(8) :: hfexchange=1.0D+00, bqrad(9)=1.0D+00
+        real(8) :: threshex=30.0D+00, threshover=1.0D-06, threshatom=2.0D-01
+        real(8) :: cutint2=-1.0D+00, threshdiis=6.0D-01, threshsoscf=0.25D+00, threshqc=1.0D-05
+        real(8) :: threshweight=-1.0D+00, threshrho=-1.0D+00, threshdfock=-1.0D+00
+        real(8) :: threshdftao=-1.0D+00, threshmp2cphf=1.0D-10
+        character(len=32) :: method='HF', runtype='ENERGY', scftype='RHF', memory=''
+        character(len=32) :: version='3.0.0', guess='HUCKEL', precision='MEDIUM'
+        character(len=32) :: scfconv='DIIS', print='', pop='MULLIKEN', multipole='DIPOLE'
+        character(len=256) :: check='', xyz=''
+        logical :: bohr=.false., flagecp=.false., extrap=.false.
+        logical :: cartesian=.false.
+!       logical :: fdiff=.true.
+      end type
+!
+! Molecule Information
+!
+! numatomic  : Atomic number
+! natom      : Number of atoms
+! neleca     : Number of alpha electrons
+! nelecb     : Number of beta electrons
+! nmo        : Number of molecular orbitals
+! multi      : Spin multiplicity
+! ndummyatom : Number of dummy (X) atoms
+! coord      : Cartesian coordinate 
+! znuc       : Atomic charge
+! coordold   : Cartesian coordinate of previous optimization cycle
+! charge     : Molecular charge
+! enuc       : Nuclear repulsion energy
+! escf       : SCF energy
+! escfe      : Electronic energy
+! emp2       : MP2 energy
+! escsmp2    : SCS-MP2 energy
+! dipole     : Dipole moment (x, y, z, total in a.u.)
+! atomrad    : Atom radii
+!                H       : Bohr radius
+!                He - Cn : P. Pyykko, M. Atsumi, Chem. Eur. J., 15, 186-197 (2009).
+      type typemol
+        integer :: numatomic(mxatom), natom, neleca, nelecb, nmo, multi=1, ndummyatom
+        real(8) :: coord(3,mxatom), znuc(mxatom), coordold(3,mxatom), charge=0.0D+00
+        real(8) :: enuc, escf, escfe, emp2, escsmp2, dipole(4)
+        real(8) :: atomrad(-9:112)=(/ &
+&       1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, 1.06D+00, &
+&       0.00D+00, &
+&       0.53D+00, 0.46D+00, 1.33D+00, 1.02D+00, 0.85D+00, 0.75D+00, 0.71D+00, 0.63D+00, 0.64D+00, &
+&       0.67D+00, 1.55D+00, 1.39D+00, 1.26D+00, 1.16D+00, 1.11D+00, 1.03D+00, 0.99D+00, 0.96D+00, &
+&       1.96D+00, 1.71D+00, 1.48D+00, 1.36D+00, 1.34D+00, 1.22D+00, 1.19D+00, 1.16D+00, 1.11D+00, &
+&       1.10D+00, 1.12D+00, 1.18D+00, 1.24D+00, 1.21D+00, 1.21D+00, 1.16D+00, 1.14D+00, 1.17D+00, &
+&       2.10D+00, 1.85D+00, 1.63D+00, 1.54D+00, 1.47D+00, 1.38D+00, 1.28D+00, 1.25D+00, 1.25D+00, &
+&       1.20D+00, 1.28D+00, 1.36D+00, 1.42D+00, 1.40D+00, 1.40D+00, 1.36D+00, 1.33D+00, 1.31D+00, &
+&       2.32D+00, 1.96D+00, 1.80D+00, 1.63D+00, 1.76D+00, 1.74D+00, 1.73D+00, 1.72D+00, 1.68D+00, &
+&       1.69D+00, 1.68D+00, 1.67D+00, 1.66D+00, 1.65D+00, 1.64D+00, 1.70D+00, 1.62D+00, 1.52D+00, &
+&       1.46D+00, 1.37D+00, 1.31D+00, 1.29D+00, 1.22D+00, 1.23D+00, 1.24D+00, 1.33D+00, 1.44D+00, &
+&       1.44D+00, 1.51D+00, 1.45D+00, 1.47D+00, 1.42D+00, 2.23D+00, 2.01D+00, 1.86D+00, 1.75D+00, &
+&       1.69D+00, 1.70D+00, 1.71D+00, 1.72D+00, 1.66D+00, 1.66D+00, 1.68D+00, 1.68D+00, 1.65D+00, &
+&       1.67D+00, 1.73D+00, 1.76D+00, 1.61D+00, 1.57D+00, 1.49D+00, 1.43D+00, 1.41D+00, 1.34D+00, &
+&       1.29D+00, 1.28D+00, 1.21D+00, 1.22D+00/)
+      end type
+!
+! Computational Information
+!
+! memmax       : Maximum memory size in words
+! memused      : Used memory size in words
+! memusedmax   : Maximum used memory size in words
+! nwarn        : Number of warnings
+! inpstd       : Unit number of input (default: 5, setting by command argument: 7)
+! iout         : Unit number of standard output (default: 6, setting by command argument: 8)
+! inpcopy      : Unit number of copied input file (default: 10)
+! icheck       : Unit number of checkpoint file (default: 11)
+! ixyz         : Unit number of xyz file (default: 12)
+! iwall0       : System_clock count at the beginning of calculation
+! iwall1       : System_clock count at the beginning of step
+! nproc1       : Number of MPI processes of MPI_COMM_WORLD
+! myrank1      : Rank number of MPI_COMM_WORLD
+! mpi_comm1    : MPI_COMM_WORLD
+! nproc2       : Number of MPI processes of 
+! myrank2      : Rank number of new communicator
+! mpi_comm2    : New communicator
+! cpu0         : Cpu_time count at the beginning of calculation
+! cpu1         : Cpu_time count at the beginning of step
+! master       : Flag of master process of MPI_COMM_WORLD
+! convergedscf : Flag of scf convergence
+! convergedgeom: Flag of geometry optimization convergence
+      type typecomp
+        integer :: memmax=1000000000, memused=0, memusedmax=0
+        integer :: inpstd=5, iout=6, inpcopy=10, icheck=11, ixyz=12
+        integer :: nwarn=0
+        integer :: iwall0, iwall1
+        integer :: nproc1, myrank1, mpi_comm1, nproc2, myrank2, mpi_comm2
+        real(8) :: cpu0, cpu1
+        logical :: master=.true., convergedscf=.true., convergedgeom=.true.
+      end type
+end module
