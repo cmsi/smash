@@ -582,10 +582,10 @@ end
         write(cnopt,'(i0)') datajob%nopt
         write(ciprint,'(i0)') datajob%iprint
 !
-        write(datacomp%iout,'(1x,73("-"))')
+        write(datacomp%iout,'(1x,77("-"))')
         write(datacomp%iout,'("   Job information")')
-        write(datacomp%iout,'(1x,73("-"))')
-        write(datacomp%iout,'("   Runtype = ",a12,",  Method  = ",a12," ,  Basis    = ",a12)') &
+        write(datacomp%iout,'(1x,77("-"))')
+        write(datacomp%iout,'("   Runtype = ",a12,",  Method  = ",a12," ,  Basis    = ",a16)') &
 &                  datajob%runtype, datajob%method, databasis%basis
         write(datacomp%iout,'("   Memory  = ",a12,",  SCFtype = ",a12," ,  Precision= ",a12)') &
 &                  cmemory, datajob%scftype, datajob%precision
@@ -605,7 +605,7 @@ end
 &         write(datacomp%iout,'("   Check   = ",a)') trim(datajob%check)
         if(datajob%xyz /= '') &
 &         write(datacomp%iout,'("   Xyz     = ",a)') trim(datajob%xyz)
-        write(datacomp%iout,'(1x,73("-"))')
+        write(datacomp%iout,'(1x,77("-"))')
 
         write(datacomp%iout,'(/," ------------------------------------------------")')
         write(datacomp%iout,'("   Computational condition")')
