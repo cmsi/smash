@@ -5,7 +5,7 @@
            written by K. ISHIMURA
  *******************************************
 
- The job started at Thu Aug 12 14:03:57 2021
+ The job started at Wed Aug 18 01:21:04 2021
  Master node is smash.jp
  Number of processes =     2
  Number of threads   =    12
@@ -17,15 +17,15 @@
   geom
  --------------
 
- -------------------------------------------------------------------------
+ -----------------------------------------------------------------------------
    Job information
- -------------------------------------------------------------------------
-   Runtype = ENERGY      ,  Method  = B3LYP        ,  Basis    = CC-PVDZ     
+ -----------------------------------------------------------------------------
+   Runtype = ENERGY      ,  Method  = B3LYP        ,  Basis    = CC-PVDZ         
    Memory  = 8000MB      ,  SCFtype = RHF          ,  Precision= MEDIUM      
    Charge  = 0.0         ,  Multi   = 1            ,  Spher    = T
    Bohr    = F           ,  Guess   = HUCKEL       ,  Multipole= DIPOLE      
    Pop     = MULLIKEN    ,  Iprint  = 3           
- -------------------------------------------------------------------------
+ -----------------------------------------------------------------------------
 
  ------------------------------------------------
    Computational condition
@@ -250,7 +250,7 @@
        setenv OMP_STACKSIZE 1G
 
  Step CPU :       0.6, Total CPU :       0.6 of Master process
- Step Wall :      0.1, Total Wall :      0.1 at Thu Aug 12 14:03:57 2021
+ Step Wall :      0.1, Total Wall :      0.1 at Wed Aug 18 01:21:04 2021
 
  ==========================================================================
    Restricted Hartree-Fock calculation for guess orbitals of DFT
@@ -268,8 +268,8 @@
     SCF Converged.
  --------------------
 
- Step CPU :      31.0, Total CPU :      31.5 of Master process
- Step Wall :      2.6, Total Wall :      2.6 at Thu Aug 12 14:03:59 2021
+ Step CPU :      31.0, Total CPU :      31.6 of Master process
+ Step Wall :      2.6, Total Wall :      2.6 at Wed Aug 18 01:21:07 2021
 
  ==========================================================================
    Restricted DFT calculation
@@ -289,7 +289,7 @@
    6    6   -1555.620575299      -0.000134792      0.001536523      0.000393018
    7    7   -1555.620582144      -0.000006845      0.000588847      0.000294479
    8    8   -1555.620585092      -0.000002949      0.000133859      0.000073619
-   9    9   -1555.620585284      -0.000000191      0.000046394      0.000025950
+   9    9   -1555.620585283      -0.000000191      0.000046394      0.000025950
   10   10   -1555.620585310      -0.000000027      0.000015274      0.000008189
   11   11   -1555.620585313      -0.000000003      0.000008102      0.000004379
   12   12   -1555.620585314      -0.000000001      0.000002318      0.000001459
@@ -1580,8 +1580,8 @@
   299   26 H   Py        -0.002831   -0.000606    0.001703    0.003888    0.000848
   300   26 H   Pz         0.000071    0.001162   -0.000090   -0.000568    0.002605
  
- Step CPU :     133.3, Total CPU :     164.8 of Master process
- Step Wall :     11.1, Total Wall :     13.7 at Thu Aug 12 14:04:10 2021
+ Step CPU :     133.3, Total CPU :     164.9 of Master process
+ Step Wall :     11.1, Total Wall :     13.8 at Wed Aug 18 01:21:18 2021
 
  ========================
    Property calculation
@@ -1627,12 +1627,12 @@
      -0.6505     1.6603    -0.0355     1.7835
  ----------------------------------------------
 
- Step CPU :       0.0, Total CPU :     164.8 of Master process
- Step Wall :      0.0, Total Wall :     13.8 at Thu Aug 12 14:04:10 2021
+ Step CPU :       0.0, Total CPU :     165.0 of Master process
+ Step Wall :      0.0, Total Wall :     13.8 at Wed Aug 18 01:21:18 2021
 
- Total CPU time :      164.9 seconds
+ Total CPU time :      165.0 seconds
  Total Wall time:       13.8 seconds
                  ( 0 days  0 hours  0 minutes 13.8 seconds)
- The job finished at Thu Aug 12 14:04:10 2021
+ The job finished at Wed Aug 18 01:21:18 2021
  Used memory :      27 MB
  Your calculation finished successfully with  0 warning.

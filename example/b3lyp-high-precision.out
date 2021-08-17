@@ -5,7 +5,7 @@
            written by K. ISHIMURA
  *******************************************
 
- The job started at Thu Aug 12 14:04:10 2021
+ The job started at Wed Aug 18 01:21:18 2021
  Master node is smash.jp
  Number of processes =     2
  Number of threads   =    12
@@ -18,15 +18,15 @@
   geom
  --------------
 
- -------------------------------------------------------------------------
+ -----------------------------------------------------------------------------
    Job information
- -------------------------------------------------------------------------
-   Runtype = ENERGY      ,  Method  = B3LYP        ,  Basis    = CC-PVDZ     
+ -----------------------------------------------------------------------------
+   Runtype = ENERGY      ,  Method  = B3LYP        ,  Basis    = CC-PVDZ         
    Memory  = 8000MB      ,  SCFtype = RHF          ,  Precision= HIGH        
    Charge  = 0.0         ,  Multi   = 1            ,  Spher    = T
    Bohr    = F           ,  Guess   = HUCKEL       ,  Multipole= DIPOLE      
    Pop     = MULLIKEN    ,  Iprint  = 3           
- -------------------------------------------------------------------------
+ -----------------------------------------------------------------------------
 
  ------------------------------------------------
    Computational condition
@@ -251,7 +251,7 @@
        setenv OMP_STACKSIZE 1G
 
  Step CPU :       0.6, Total CPU :       0.6 of Master process
- Step Wall :      0.1, Total Wall :      0.1 at Thu Aug 12 14:04:10 2021
+ Step Wall :      0.1, Total Wall :      0.1 at Wed Aug 18 01:21:18 2021
 
  ==========================================================================
    Restricted Hartree-Fock calculation for guess orbitals of DFT
@@ -270,7 +270,7 @@
  --------------------
 
  Step CPU :      35.2, Total CPU :      35.8 of Master process
- Step Wall :      2.9, Total Wall :      3.0 at Thu Aug 12 14:04:13 2021
+ Step Wall :      2.9, Total Wall :      3.0 at Wed Aug 18 01:21:21 2021
 
  ==========================================================================
    Restricted DFT calculation
@@ -1581,8 +1581,8 @@
   299   26 H   Py        -0.002831   -0.000604    0.001703    0.003888    0.000841
   300   26 H   Pz         0.000071    0.001161   -0.000089   -0.000567    0.002607
  
- Step CPU :     227.0, Total CPU :     262.7 of Master process
- Step Wall :     18.9, Total Wall :     21.9 at Thu Aug 12 14:04:32 2021
+ Step CPU :     227.4, Total CPU :     263.1 of Master process
+ Step Wall :     19.0, Total Wall :     21.9 at Wed Aug 18 01:21:40 2021
 
  ========================
    Property calculation
@@ -1628,12 +1628,12 @@
      -0.6506     1.6604    -0.0353     1.7836
  ----------------------------------------------
 
- Step CPU :       0.0, Total CPU :     262.8 of Master process
- Step Wall :      0.0, Total Wall :     21.9 at Thu Aug 12 14:04:32 2021
+ Step CPU :       0.0, Total CPU :     263.2 of Master process
+ Step Wall :      0.0, Total Wall :     22.0 at Wed Aug 18 01:21:40 2021
 
- Total CPU time :      262.8 seconds
- Total Wall time:       21.9 seconds
-                 ( 0 days  0 hours  0 minutes 21.9 seconds)
- The job finished at Thu Aug 12 14:04:32 2021
+ Total CPU time :      263.2 seconds
+ Total Wall time:       22.0 seconds
+                 ( 0 days  0 hours  0 minutes 22.0 seconds)
+ The job finished at Wed Aug 18 01:21:40 2021
  Used memory :      40 MB
  Your calculation finished successfully with  0 warning.

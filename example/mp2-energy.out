@@ -5,7 +5,7 @@
            written by K. ISHIMURA
  *******************************************
 
- The job started at Thu Aug 12 14:08:25 2021
+ The job started at Wed Aug 18 01:25:32 2021
  Master node is smash.jp
  Number of processes =     2
  Number of threads   =    12
@@ -17,15 +17,15 @@
   geom
  --------------
 
- -------------------------------------------------------------------------
+ -----------------------------------------------------------------------------
    Job information
- -------------------------------------------------------------------------
-   Runtype = ENERGY      ,  Method  = MP2          ,  Basis    = 6-31G*      
+ -----------------------------------------------------------------------------
+   Runtype = ENERGY      ,  Method  = MP2          ,  Basis    = 6-31G*          
    Memory  = 8000MB      ,  SCFtype = RHF          ,  Precision= MEDIUM      
    Charge  = 0.0         ,  Multi   = 1            ,  Spher    = T
    Bohr    = F           ,  Guess   = HUCKEL       ,  Multipole= DIPOLE      
    Pop     = MULLIKEN    ,  Iprint  = 3           
- -------------------------------------------------------------------------
+ -----------------------------------------------------------------------------
 
  ------------------------------------------------
    Computational condition
@@ -204,7 +204,7 @@
        setenv OMP_STACKSIZE 1G
 
  Step CPU :       0.5, Total CPU :       0.5 of Master process
- Step Wall :      0.1, Total Wall :      0.1 at Thu Aug 12 14:08:25 2021
+ Step Wall :      0.1, Total Wall :      0.1 at Wed Aug 18 01:25:32 2021
 
  ==========================================================================
    Restricted Hartree-Fock calculation
@@ -1412,8 +1412,8 @@
   275   26 H   S          0.020857   -0.006760    0.005617    0.001217   -0.003448
   276   26 H   S          0.117732   -0.221916    0.101757    0.013983    0.172398
  
- Step CPU :      63.3, Total CPU :      63.8 of Master process
- Step Wall :      5.3, Total Wall :      5.3 at Thu Aug 12 14:08:30 2021
+ Step CPU :      63.4, Total CPU :      64.0 of Master process
+ Step Wall :      5.3, Total Wall :      5.3 at Wed Aug 18 01:25:38 2021
 
  ================================================
    MP2 calculation 
@@ -1437,17 +1437,17 @@
    SCS-MP2 Correlation Energy =     -2.389835115
    HF + SCS-MP2 Energy        =  -1552.073660535
  -------------------------------------------------
- Step CPU :      65.6, Total CPU :     129.4 of Master process
- Step Wall :      5.5, Total Wall :     10.8 at Thu Aug 12 14:08:35 2021
+ Step CPU :      64.6, Total CPU :     128.6 of Master process
+ Step Wall :      5.4, Total Wall :     10.7 at Wed Aug 18 01:25:43 2021
 
  MP2 property calculations are skipped.
 
- Step CPU :       0.0, Total CPU :     129.4 of Master process
- Step Wall :      0.0, Total Wall :     10.8 at Thu Aug 12 14:08:35 2021
+ Step CPU :       0.0, Total CPU :     128.6 of Master process
+ Step Wall :      0.0, Total Wall :     10.7 at Wed Aug 18 01:25:43 2021
 
- Total CPU time :      129.4 seconds
- Total Wall time:       10.8 seconds
-                 ( 0 days  0 hours  0 minutes 10.8 seconds)
- The job finished at Thu Aug 12 14:08:35 2021
+ Total CPU time :      128.6 seconds
+ Total Wall time:       10.7 seconds
+                 ( 0 days  0 hours  0 minutes 10.7 seconds)
+ The job finished at Wed Aug 18 01:25:43 2021
  Used memory :    4265 MB
  Your calculation finished successfully with  0 warning.
