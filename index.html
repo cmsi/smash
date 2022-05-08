@@ -16,16 +16,16 @@
     <div class="wrapper">
       <header>
         <img alt="SMASH" src="./SMASH.jpg">
-        <p>Open-source software for massively parallel quantum chemistry calculations </p>
+        <p>Massively parallel open-source software for quantum chemistry calculations</p>
 
         <!-- <p class="view"><a href="https://github.com/cmsi/smash">View the Project on GitHub <small>cmsi/smash</small></a></p> -->
 
 
         <ul>
           <!--<li><a href="https://github.com/cmsi/smash/zipball/master">Download <strong>ZIP File</strong></a></li> -->
-          <li><a href="http://sourceforge.net/projects/smash-qc/">Download Site <strong>SourceForge</strong></a></li>
-          <li><a href="http://sourceforge.net/projects/smash-qc/files/latest/download?source=navbar">Download <strong>Latest ver.</strong></a></li>
-          <li><a href="https://sourceforge.net/projects/smash-qc/files/SMASH_user_manual_JP-2.2.0.pdf/download">日本語 <strong>マニュアル</strong></a></li>
+          <li><a href="https://sourceforge.net/projects/smash-qc/">Download Site <strong>SourceForge</strong></a></li>
+          <li><a href="https://sourceforge.net/projects/smash-qc/files/latest/download?source=navbar">Download <strong>Latest ver.</strong></a></li>
+          <li><a href="https://sourceforge.net/projects/smash-qc/files/SMASH_user_manual_JP-3.0.1.pdf/download">日本語 <strong>マニュアル</strong></a></li>
           <li></li><!-- <li><a href="https://github.com/cmsi/smash">View On <strong>GitHub</strong></a></li> -->
         </ul>
       </header>
@@ -33,43 +33,61 @@
         <h3>
 <a name="welcome-to-smash-page" class="anchor" href="#welcome-to-smash-page"><span class="octicon octicon-link"></span></a>Welcome to SMASH Page</h3>
 
-<p>Scalable Molecular Analysis Solver for High-performance computing systems (SMASH) is open-source software for massively parallel quantum chemistry calculations
-written in the Fortran 90/95 language with MPI and OpenMP.
-Hartree-Fock and Density Functional Theory (DFT) calculations can be performed on 100,000 CPU cores of K Computer with high parallel efficiency.
+<p>Scalable Molecular Analysis Solver for High-performance computing systems (SMASH) is massively parallel open-source software for quantum chemistry calculationsS written in the Fortran 90/95 language with MPI and OpenMP. Hartree-Fock and Density Functional Theory (DFT) calculations can be performed on 100,000 CPU cores with high parallel efficiency.
 
 <h3 style="color:#FF0000">
 <a name="new" class="anchor" href="#new"><span class="octicon octicon-link"></span></a>What's New?</h3>
 <dl>
+  <dt>May 8, 2022</dt>
+  <dd><a href="https://sourceforge.net/projects/smash-qc/files/smash-3.0.1.tgz/download"><b>SMASH-3.0.1 released.</b></a></dd>
+  <dd>* Fixed a bug that caused calculations using OpenMP to stop or produce incorrect results when built with Intel Compiler v18 or later.</dd>
+  <dt>August 18, 2021</dt>
+  <dd><a href="https://sourceforge.net/projects/smash-qc/files/smash-3.0.0.tgz/download"><b>SMASH-3.0.0 released.</b></a></dd>
+  <dd>* Added Natural Population Analysis (Natural Bond Orbital (NBO) charge) of Hartree-Fock and DFT calculations.</dd>
+  <dd>* Improved Huckel guess orbitals by using (scaled-)MINI basis functions.</dd>
+  <dd>* Added diffuse basis functions to 6-31G and 6-311G series.</dd>
+  <dd>* Added 6-31G* basis set for K-Ca and Ga-Kr (J. Comput. Chem., 22, 976 (2001)).</dd>
+  <dd>* Added XYZ keyword for xyz file generation in CONTROL section.</dd>
+  <dd>* Added PRINT keyword for output control in CONTROL section.</dd>
+  <dd>* Added FBOND keyword of atom radius scaling factor for bond detection in OPT section.</dd>
+  <dd>* Added input/output filename setting by command arguments.</dd>
+  <dd>* Fixed a bug that D95V p basis functions for Li and Be are wrong.</dd>
+  <dd>* Fixed a bug that LANL2DZ ECP functions for Ba and La and LANL2DZ d basis functions for Hg and Tl are not set.</dd>
+  <dd>* Fixed a bug that LANL2DZ ECP functions for Nb and Mo and LANL2DZ d basis functions for Hg and Tl are not set.</dd>
+  <dd>* Moved NCORE and NVFZ keywords from MP2 section to JOB section.</dd>
+  <dd>* Changed OCTUPOLE keyword to MULTIPOLE keyword.</dd>
+  <dd>* Introduced 4 kinds of structured data.</dd>
+  <dd>* Improved accuracy of Boys function and Rys quadrature calculations.</dd>
   <dt>April 22, 2017</dt>
-  <dd><a href="http://sourceforge.net/projects/smash-qc/files/smash-2.2.0.tgz/download"><b>SMASH-2.2.0 released.</b></a></dd>
+  <dd><a href="https://sourceforge.net/projects/smash-qc/files/smash-2.2.0.tgz/download"><b>SMASH-2.2.0 released.</b></a></dd>
   <dd>* Supported h and i basis functions (except for ECP calculations).</dd>
   <dt>September 5, 2016</dt>
-  <dd><a href="http://sourceforge.net/projects/smash-qc/files/smash-2.1.0.tgz/download"><b>SMASH-2.1.0 released.</b></a></dd>
+  <dd><a href="https://sourceforge.net/projects/smash-qc/files/smash-2.1.0.tgz/download"><b>SMASH-2.1.0 released.</b></a></dd>
   <dd>* Fixed an issue where 7f and 9g (spherical harmonics) integral values are incorrect.</dd>
   <dd>* Changed to write a checkpoint file at each geometry optimization cycle.</dd>
   <dt>July 4, 2016</dt>
-  <dd><a href="http://sourceforge.net/projects/smash-qc/files/smash-2.0.0.tgz/download"><b>SMASH-2.0.0 released.</b></a></dd>
+  <dd><a href="https://sourceforge.net/projects/smash-qc/files/smash-2.0.0.tgz/download"><b>SMASH-2.0.0 released.</b></a></dd>
   <dd>* Added closed-shell MP2 energy gradient and geometry optimization calculations.</dd>
   <dd>* Changed B3LYP parameters from VWN5 to VWN3. (job method=B3LYP for VWN3, job method B3LYP5 for VWN5)</dd>
   <dd>* Added an keyword to control computational precision such as cutoffs and the number of grid points for DFT. (control precision=high, medium (default), low)</dd>
   <dd>* Changed default cutoff values. e.g.) Cutint2 is changed from 1.0D-12 to 1.0D-11.</dd>
-  <dd>* Added a quadratically convergent SCF method.</dd>
+  <dd>* Added the quadratically convergent SCF method.</dd>
   <dd>* Supported dummy atoms ("X") for point charges and ghost atoms ("Bq" to "Bq9") for BSSE calculations.</dd>
   <dd>* Increased sample input and output files.
   <dd>* Changed the order of d, f, g functions in MO coefficients. e.g.) dxx,yy,zz,xy,xz,yz => dxx,xy,xz,yy,yz,zz</dd>
   <dd>* Fixed an issue where open-shell DFT calculations stop with some compilers.</dd>
   <dt>January 3, 2015</dt>
 <!--  <dd><strong style="color:#0000FF">SMASH-1.0.1 released.</strong></dd> -->
-  <dd><a href="http://sourceforge.net/projects/smash-qc/files/smash-1.1.0.tgz/download"><b>SMASH-1.1.0 released.</b></a></dd>
+  <dd><a href="https://sourceforge.net/projects/smash-qc/files/smash-1.1.0.tgz/download"><b>SMASH-1.1.0 released.</b></a></dd>
   <dd>* Fixed an issue where the d basis functions of Sn LanL2DZ are not included.</dd>
   <dd>* Fixed an issue where torsions of the redundant coordinate system are not taken into account in the case of small molecules such as NH<sub>3</sub> and CH<sub>4</sub>.</dd>
   <dd>* Improved the performance of Hartree-Fock and DFT calculations by about 5%.</dd>
   <dd>* Added the Makefile.mpiifort file to use Intel MPI Library (mpiifort) with the -i8 (8-byte integer) option.</dd>
   <dt>September 3, 2014</dt>
-  <dd><a href="http://sourceforge.net/projects/smash-qc/files/smash-1.0.1.tgz/download"><b>SMASH-1.0.1 released.</b></a></dd>
+  <dd><a href="https://sourceforge.net/projects/smash-qc/files/smash-1.0.1.tgz/download"><b>SMASH-1.0.1 released.</b></a></dd>
   <dd>* Fixed an issue where geometry optimization calculations do not work using OpenMP.</dd>
   <dt>September 1, 2014</dt>
-  <dd><a href="http://sourceforge.net/projects/smash-qc/files/smash-1.0.tgz/download"><b>SMASH-1.0 released.</b></a></dd>
+  <dd><a href="https://sourceforge.net/projects/smash-qc/files/smash-1.0.tgz/download"><b>SMASH-1.0 released.</b></a></dd>
 </dl>
 
 <h3>
@@ -85,15 +103,15 @@ Hartree-Fock and Density Functional Theory (DFT) calculations can be performed o
 <a name="Platforms" class="anchor" href="#platforms"><span class="octicon octicon-link"></span></a>Platforms</h3>
 
 <ul>
-  <li>X86-64/Linux with Intel, PGI, and GNU compilers which support the OpenMP collapse clause</li>
-  <li>K Computer, Fujitsu FX10 and FX100</li>
+  <li>X86-64/Linux with Intel, NVIDIA HPC SDK, and GNU compilers</li>
+  <li>Supercomputer Fugaku, Fujitsu FX1000/700</li>
 </ul>
 
 <h3>
 <a name="Documentation" class="anchor" href="#documentation"><span class="octicon octicon-link"></span></a>Documentation</h3>
 
 <p>User and programmer manuals are included in the smash/doc/ directory.<br>
-Japanese manual : <a href="http://sourceforge.net/projects/smash-qc/files/">http://sourceforge.net/projects/smash-qc/files/</a>
+Japanese manual : <a href="https://sourceforge.net/projects/smash-qc/files/">https://sourceforge.net/projects/smash-qc/files/</a>
 
 <h3>
 <a name="Sample files" class="anchor" href="#sample-files"><span class="octicon octicon-link"></span></a>Sample files</h3>
@@ -109,12 +127,12 @@ Japanese manual : <a href="http://sourceforge.net/projects/smash-qc/files/">http
 <!--<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3> -->
 <a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Author</h3>
 
-<p>Kazuya Ishimura (Institute for Molecular Science)</p>
+<p>Kazuya Ishimura</p>
 
 <h3>
 <a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
 
-<p>Having trouble with SMASH? Check out the documentation at the smash/doc/ directory or <a href="http://sourceforge.net/projects/smash-qc/files/">http://sourceforge.net/projects/smash-qc/files/</a> or contact <a href="mailto:ishimura.smash@gmail.com">ishimura.smash@gmail.com</a> and I’ll help you sort it out.</p>
+<p>Having trouble with SMASH? Check out the documentation at the smash/doc/ directory or <a href="https://sourceforge.net/projects/smash-qc/files/">https://sourceforge.net/projects/smash-qc/files/</a> or contact <a href="mailto:ishimura.smash@gmail.com">ishimura.smash@gmail.com</a> and I’ll help you sort it out.</p>
       </section>
       <footer>
         <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
