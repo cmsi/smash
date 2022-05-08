@@ -67,6 +67,10 @@
 !$OMP private(ijsh,jsh,ksh,lsh,ij,kl,xijkl,twoeri,dtwoeri,pdmtrx,pdmax,kk,kstart) &
 !$OMP firstprivate(ish,ii) reduction(+:egrad2)
       do ijsh= nshell*(nshell+1)/2,1,-1
+        if (ijsh > ii+ish) then
+          ish= nshell
+          ii= ish*(ish-1)/2
+        endif
         do ishcheck=1,nshell
           if(ijsh > ii) then
             jsh= ijsh-ii

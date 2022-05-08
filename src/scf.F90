@@ -476,6 +476,10 @@ end
 !$OMP private(ijsh,jsh,ksh,lsh,ij,kl,ik,il,jk,jl,xijkl,denmax1,denmax,twoeri,jj,kk, &
 !$OMP kstart,last,ltmp,lnum,ll) firstprivate(ish,ii) reduction(+:fock)
       do ijsh= nshell*(nshell+1)/2,1,-1
+        if (ijsh > ii+ish) then
+          ish= nshell
+          ii= ish*(ish-1)/2
+        endif
         do ishcheck=1,nshell
           if(ijsh > ii) then
             jsh= ijsh-ii
@@ -732,6 +736,10 @@ end
 !$OMP private(ijsh,jsh,ksh,lsh,ij,kl,ik,il,jk,jl,xijkl,denmax1,denmax,twoeri,jj,kk, &
 !$OMP kstart,last,ltmp,lnum,ll) firstprivate(ish,ii) reduction(+:fock)
       do ijsh= nshell*(nshell+1)/2,1,-1
+        if (ijsh > ii+ish) then
+          ish= nshell
+          ii= ish*(ish-1)/2
+        endif
         do ishcheck=1,nshell
           if(ijsh > ii) then
             jsh= ijsh-ii
@@ -1905,6 +1913,10 @@ end
 !$OMP private(ijsh,jsh,ksh,lsh,ij,kl,ik,il,jk,jl,xijkl,denmax1,denmax,twoeri,jj,kk, &
 !$OMP kstart,last,ltmp,lnum,ll) firstprivate(ish,ii) reduction(+:fock2,fock3)
       do ijsh= nshell*(nshell+1)/2,1,-1
+        if (ijsh > ii+ish) then
+          ish= nshell
+          ii= ish*(ish-1)/2
+        endif
         do ishcheck=1,nshell
           if(ijsh > ii) then
             jsh= ijsh-ii
@@ -2726,6 +2738,10 @@ end
 !$OMP private(ijsh,jsh,ksh,lsh,ij,kl,ik,il,jk,jl,xijkl,denmax1,denmax,twoeri,jj,kk, &
 !$OMP kstart,last,ltmp,lnum,ll) firstprivate(ish,ii) reduction(+:fock2,fock3)
       do ijsh= nshell*(nshell+1)/2,1,-1
+        if (ijsh > ii+ish) then
+          ish= nshell
+          ii= ish*(ish-1)/2
+        endif
         do ishcheck=1,nshell
           if(ijsh > ii) then
             jsh= ijsh-ii
