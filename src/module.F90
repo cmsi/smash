@@ -228,7 +228,7 @@ end
         real(8) :: threshweight=-1.0D+00, threshrho=-1.0D+00, threshdfock=-1.0D+00
         real(8) :: threshdftao=-1.0D+00, threshmp2cphf=1.0D-10
         character(len=32) :: method='HF', runtype='ENERGY', scftype='RHF', memory=''
-        character(len=32) :: version='3.0.1', guess='HUCKEL', precision='MEDIUM'
+        character(len=32) :: version='3.0.2', guess='HUCKEL', precision='MEDIUM'
         character(len=32) :: scfconv='DIIS', print='', pop='MULLIKEN', multipole='DIPOLE'
         character(len=256) :: check='', xyz=''
         logical :: bohr=.false., flagecp=.false., extrap=.false.
