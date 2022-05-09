@@ -1879,6 +1879,10 @@ end
 !$OMP private(ijsh,jsh,ksh,lsh,ij,kl,ik,il,jk,jl,xijkl,rmax1,rmax,twoeri,jj,kk, &
 !$OMP kstart,last,ltmp,lnum,ll) firstprivate(ish,ii) reduction(+:gmn2,gmn3)
       do ijsh= nshell*(nshell+1)/2,1,-1
+        if (ijsh > ii+ish) then
+          ish= nshell
+          ii= ish*(ish-1)/2
+        endif
         do ishcheck=1,nshell
           if(ijsh > ii) then
             jsh= ijsh-ii
