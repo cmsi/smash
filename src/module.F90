@@ -209,6 +209,7 @@ end
 ! print        : output control
 ! pop          : population control
 ! multipole    : Multipole memoent control
+! partition    : Partition function for DFT grid weight
 ! check        : Checkpoint file
 ! xyz          : Xyz file
 ! bohr         : Length unit (True: atomic unit, False: Angstrom)
@@ -230,6 +231,7 @@ end
         character(len=32) :: method='HF', runtype='ENERGY', scftype='RHF', memory=''
         character(len=32) :: version='3.1.0', guess='HUCKEL', precision='MEDIUM'
         character(len=32) :: scfconv='DIIS', print='', pop='MULLIKEN', multipole='DIPOLE'
+        character(len=32) :: partition='SSF' 
         character(len=256) :: check='', xyz=''
         logical :: bohr=.false., flagecp=.false., extrap=.false.
         logical :: cartesian=.false.

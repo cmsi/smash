@@ -35,10 +35,10 @@
       real(8) :: dconv, bqrad(9), optconv, fbond
       real(8) :: charge
       character(len=256) :: line
-      character(len=32) :: chararray(12)
+      character(len=32) :: chararray(13)
       character(len=256) :: check, chk='', xyz, char256array(2)
       character(len=32) :: method, runtype, scftype, memory, guess, precision, scfconv
-      character(len=32) :: basis, ecp, mem='', print, pop, multipole
+      character(len=32) :: basis, ecp, mem='', print, pop, multipole, partition
       logical :: bohr, flagecp, cartesian, spher, logarray(4)
       logical :: writeinput
       namelist /job/ method, runtype, basis, scftype, memory, mem, charge, multi, ecp, ncore, nvfz
@@ -47,7 +47,8 @@
       namelist /scf/ scfconv, maxiter, dconv, maxdiis, maxsoscf, maxqc, maxqcdiag, maxqcdiagsub, &
 &                    threshdiis, threshsoscf, threshqc
       namelist /opt/ nopt, optconv, cartesian, fbond
-      namelist /dft/ nrad, nleb, threshweight, threshrho, threshdfock, threshdftao, bqrad
+      namelist /dft/ nrad, nleb, partition, threshweight, threshrho, threshdfock, threshdftao, &
+&                    bqrad
       namelist /mp2/ maxmp2diis, maxmp2iter, threshmp2cphf
 !
       if(datacomp%master) then
@@ -133,6 +134,7 @@
         nopt       = datajob%nopt
         nrad       = datajob%nrad
         nleb       = datajob%nleb
+        partition  = datajob%partition
         ncore      = datajob%ncore
         nvfz       = datajob%nvfz
         maxmp2diis = datajob%maxmp2diis
@@ -211,6 +213,7 @@
         chararray(10)= print
         chararray(11)= pop
         chararray(12)= multipole
+        chararray(13)= partition
         char256array(1)= check
         char256array(2)= xyz
         realarray( 1)= charge
@@ -258,7 +261,7 @@
         logarray(4)= cartesian
       endif
 !
-      call para_bcastc(chararray,32*12,0,datacomp%mpi_comm1)
+      call para_bcastc(chararray,32*13,0,datacomp%mpi_comm1)
       call para_bcastc(char256array,256*2,0,datacomp%mpi_comm1)
       call para_bcastr(realarray,24,0,datacomp%mpi_comm1)
       call para_bcasti(intarray,15,0,datacomp%mpi_comm1)
@@ -278,6 +281,7 @@
       datajob%print       = chararray(10)
       datajob%pop         = chararray(11)
       datajob%multipole   = chararray(12)
+      datajob%partition   = chararray(12)
       datamol%charge      = realarray( 1)
       datajob%cutint2     = realarray( 2)
       datajob%dconv       = realarray( 3)

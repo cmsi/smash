@@ -288,6 +288,10 @@
                             146, 170, 194, 302, 350, 434, 590, 770, 974,
                             1202, and 1454. (default: 302)
 
+      partition             specifies the scheme of the partition function for grid weights.
+              = SSF         Stratmann-Scuseria-Frisch (SSF) scheme (current default)
+              = Becke4      4th order Becke scheme (default in 3.0.2 or earlier)
+
       threshweight          specifies the threshold of the weight of a grid point.
                             (default: 1.0E-8)
 
