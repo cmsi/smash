@@ -376,17 +376,18 @@ end
 end
 
 
-!-----------------------------------------------------------
-  subroutine calcatomvec(atomvec,surface,ndftatom,datamol)
-!-----------------------------------------------------------
+!-------------------------------------------------------------------
+  subroutine calcatomvec(atomvec,surface,ndftatom,datajob,datamol)
+!-------------------------------------------------------------------
 !
 ! Calculate atom vectors and surface shifting parameters
 !
 ! Out : atomvec (atom vector and distance)
 !       surface (surface shifting parameters)
 !
-      use modtype, only : typemol
+      use modtype, only : typejob, typemol
       implicit none
+      type(typejob),intent(in) :: datajob
       type(typemol),intent(in) :: datamol
       integer,intent(in) :: ndftatom
       integer :: iatom, jatom, inum, jnum

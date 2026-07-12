@@ -274,7 +274,7 @@ end
 !
 ! Calculate DFT information
 !
-      call calcatomvec(atomvec,surface,ndftatom,datamol)
+      call calcatomvec(atomvec,surface,ndftatom,datajob,datamol)
       call calcradpt(radpt,nrad)
       call calclebpt(angpt,nleb,datacomp)
       do iatom= 1,ndftatom
@@ -405,7 +405,7 @@ end
 !
 ! Calculate DFT information
 !
-      call calcatomvec(atomvec,surface,ndftatom,datamol)
+      call calcatomvec(atomvec,surface,ndftatom,datajob,datamol)
       call calcradpt(radpt,nrad)
       call calclebpt(angpt,nleb,datacomp)
       do iatom= 1,ndftatom
