@@ -1121,6 +1121,7 @@ end
         write(datacomp%iout,'("   ThreshDfock=",1p,e9.2,",  Threshdftao=",e9.2, &
 &                             ",  ThreshWeight=",e9.2)') &
 &                             datajob%threshdfock, datajob%threshdftao, datajob%threshweight
+        write(datacomp%iout,'("   Partition  = ",a8)') datajob%partition
         select case(scfconv)
           case('DIIS')
             write(cmaxdiis,'(i0)') maxdiis
@@ -2350,6 +2351,7 @@ end
         write(datacomp%iout,'("   ThreshDfock=",1p,e9.2,",  Threshdftao=",e9.2, &
 &                             ",  ThreshWeight=",e9.2)') &
 &                             datajob%threshdfock, datajob%threshdftao, datajob%threshweight
+        write(datacomp%iout,'("   Partition  = ",a8)') datajob%partition
         select case(scfconv)
           case('DIIS')
             write(cmaxdiis,'(i0)') maxdiis
