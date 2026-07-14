@@ -281,7 +281,7 @@
       datajob%print       = chararray(10)
       datajob%pop         = chararray(11)
       datajob%multipole   = chararray(12)
-      datajob%partition   = chararray(12)
+      datajob%partition   = chararray(13)
       datamol%charge      = realarray( 1)
       datajob%cutint2     = realarray( 2)
       datajob%dconv       = realarray( 3)
