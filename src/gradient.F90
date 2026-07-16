@@ -281,7 +281,7 @@ end
         rad(iatom)= datamol%atomrad(datamol%numatomic(iatom))*tobohr
       enddo
       call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,dweight,nrad,nleb, &
-&                         ndftatom,nproc1,myrank1)
+&                         ndftatom,datajob%partition,nproc1,myrank1)
 !
 ! Calculate derivatives of two-electron integrals
 !
@@ -412,7 +412,7 @@ end
         rad(iatom)= datamol%atomrad(datamol%numatomic(iatom))*tobohr
       enddo
       call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,dweight,nrad,nleb, &
-&                         ndftatom,nproc1,myrank1)
+&                         ndftatom,datajob%partition,nproc1,myrank1)
 !
 ! Calculate derivatives of two-electron integrals
 !

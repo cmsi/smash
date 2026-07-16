@@ -1077,7 +1077,7 @@ end
       itsoscf=0
       itqc   =0
       convsoscf=.false.
-      convqc=.false.
+      convqc   =.false.
 !
 ! Calculate DFT information
 !
@@ -1088,7 +1088,7 @@ end
         rad(iatom)= datamol%atomrad(datamol%numatomic(iatom))*tobohr
       enddo
       call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2,nrad,nleb, &
-&                         ndftatom,datacomp%nproc1,datacomp%myrank1)
+&                         ndftatom,datajob%partition,datacomp%nproc1,datacomp%myrank1)
 !
 ! Calculate initial density matrix
 !
@@ -2316,7 +2316,7 @@ end
         rad(iatom)= datamol%atomrad(datamol%numatomic(iatom))*tobohr
       enddo
       call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2,nrad,nleb, &
-&                         ndftatom,datacomp%nproc1,datacomp%myrank1)
+&                         ndftatom,datajob%partition,datacomp%nproc1,datacomp%myrank1)
 !
 ! Calculate initial density matrix
 !

@@ -376,22 +376,23 @@ end
 end
 
 
+!> @brief  Calculate atom vectors and surface shifting parameters
+!!
+!! @param[in]   ndftatom  number of atoms with DFT grid points 
+!! @param[out]  atomvec   atom vector and distance
+!! @param[out]  surface   minimum squared interatomic distance for each atom (Rin**2) for SSF
+!!                        surface shifting parameters for Becke4
+!
 !-------------------------------------------------------------------
   subroutine calcatomvec(atomvec,surface,ndftatom,datajob,datamol)
 !-------------------------------------------------------------------
-!
-! Calculate atom vectors and surface shifting parameters
-!
-! Out : atomvec (atom vector and distance)
-!       surface (surface shifting parameters)
-!
       use modtype, only : typejob, typemol
       implicit none
       type(typejob),intent(in) :: datajob
       type(typemol),intent(in) :: datamol
       integer,intent(in) :: ndftatom
       integer :: iatom, jatom, inum, jnum
-      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, huge=1.0D+05
       real(8),intent(out) :: atomvec(5,ndftatom,ndftatom)
       real(8),intent(out) :: surface(ndftatom,ndftatom)
       real(8) :: tmp1, tmp2
@@ -417,46 +418,62 @@ end
           atomvec(3,iatom,jatom)=-atomvec(3,jatom,iatom)
           atomvec(4,iatom,jatom)= atomvec(4,jatom,iatom)
           atomvec(5,iatom,jatom)= atomvec(5,jatom,iatom)
+! For SSF
+          surface(iatom,jatom)= atomvec(4,jatom,iatom)
+          surface(jatom,iatom)= atomvec(4,jatom,iatom)
         enddo
       enddo
 !$OMP end parallel do
+!
+      select case(datajob%partition)
+!
+! Calculate minimum squared interatomic distance for each atom
+!
+        case('SSF')
+          do iatom= 1,ndftatom
+            atomvec(4,iatom,iatom)= huge
+            surface(iatom,1)= minval([atomvec(4,1:ndftatom,iatom)])
+            surface(iatom,1)= surface(iatom,1)*surface(iatom,1)
+          enddo
 !
 ! Calculate surface shifting parameters
 !
+        case('BECKE4')
 !$OMP parallel do private(inum,jnum,tmp1,tmp2)
-      do iatom= 1,ndftatom
-        surface(iatom,iatom)= zero
-        inum= datamol%numatomic(iatom)
-        if(inum == 0) then
-          surface(1,iatom)= -one
-          cycle
-        endif
-        do jatom= 1,iatom-1
-          jnum= datamol%numatomic(jatom)
-          if(jnum == 0) then
-            surface(jatom,iatom)= one
-            cycle
-          endif
-          tmp1= datamol%atomrad(inum)/datamol%atomrad(jnum)
-          tmp2=(tmp1-one)/(tmp1+one)
-          surface(jatom,iatom)= tmp2/(tmp2*tmp2-one)
-          if(surface(jatom,iatom) > half) surface(jatom,iatom)= half
-          if(surface(jatom,iatom) <-half) surface(jatom,iatom)=-half
-        enddo
-        do jatom= iatom+1,ndftatom
-          jnum= datamol%numatomic(jatom)
-          if(jnum == 0) then
-            surface(jatom,iatom)= one
-            cycle
-          endif
-          tmp1= datamol%atomrad(inum)/datamol%atomrad(jnum)
-          tmp2=(tmp1-one)/(tmp1+one)
-          surface(jatom,iatom)= tmp2/(tmp2*tmp2-one)
-          if(surface(jatom,iatom) > half) surface(jatom,iatom)= half
-          if(surface(jatom,iatom) <-half) surface(jatom,iatom)=-half
-        enddo
-      enddo
+          do iatom= 1,ndftatom
+            surface(iatom,iatom)= zero
+            inum= datamol%numatomic(iatom)
+            if(inum == 0) then
+              surface(1,iatom)= -one
+              cycle
+            endif
+            do jatom= 1,iatom-1
+              jnum= datamol%numatomic(jatom)
+              if(jnum == 0) then
+                surface(jatom,iatom)= one
+                cycle
+              endif
+              tmp1= datamol%atomrad(inum)/datamol%atomrad(jnum)
+              tmp2=(tmp1-one)/(tmp1+one)
+              surface(jatom,iatom)= tmp2/(tmp2*tmp2-one)
+              if(surface(jatom,iatom) > half) surface(jatom,iatom)= half
+              if(surface(jatom,iatom) <-half) surface(jatom,iatom)=-half
+            enddo
+            do jatom= iatom+1,ndftatom
+              jnum= datamol%numatomic(jatom)
+              if(jnum == 0) then
+                surface(jatom,iatom)= one
+                cycle
+              endif
+              tmp1= datamol%atomrad(inum)/datamol%atomrad(jnum)
+              tmp2=(tmp1-one)/(tmp1+one)
+              surface(jatom,iatom)= tmp2/(tmp2*tmp2-one)
+              if(surface(jatom,iatom) > half) surface(jatom,iatom)= half
+              if(surface(jatom,iatom) <-half) surface(jatom,iatom)=-half
+            enddo
+          enddo
 !$OMP end parallel do
+      end select
 !
       return
 end
@@ -570,20 +587,159 @@ end
 end
 
 
+!> @brief  Control scheme of patition function for grid weights
+!!
+!! @param[in]   rad       atom radius
+!! @param[in]   radpt     radial point data
+!! @param[in]   angpt     angular point data
+!! @param[in]   atomvec   atom distance data
+!! @param[out]  surface   minimum squared interatomic distance for each atom (Rin**2) for SSF
+!!                        surface shifting parameters for Becke4
+!! @param[in]   nrad      number of radius grid points
+!! @param[in]   nleb      number of angular grid points
+!! @param[in]   ndftatom  number of atoms with DFT grid points
+!! @param[in]   partition type of partition function for grid weight
+!! @param[out]  ptweight  weight of grid point
+!! @param[out]  xyzpt     work space
+!! @param[out]  work      work space
+!
 !---------------------------------------------------------------------------------------------
   subroutine calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work,nrad,nleb, &
-&                           ndftatom,nproc,myrank)
+&                           ndftatom,partition,nproc,myrank)
 !---------------------------------------------------------------------------------------------
 !
-! Calculate weights of grid points
+      implicit none
+      integer,intent(in) :: nrad, nleb, ndftatom, nproc, myrank
+      integer :: katom, irad, ileb, iatom, jatom, i, icount, ilebstart, ngridatom
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, oneh=1.5D+00
+      real(8),intent(in) :: rad(ndftatom), radpt(2,nrad), angpt(4,nleb)
+      real(8),intent(in) :: atomvec(5,ndftatom,ndftatom), surface(ndftatom,ndftatom)
+      real(8),intent(out) :: ptweight(nleb,nrad,ndftatom), xyzpt(3,ndftatom), work(ndftatom,2)
+      real(8) :: xyzgrid(3), radpoint, radweight, wttot, cutij, cutji, xmuij, zmuij, f4, f2
+      character(len=32),intent(in) :: partition
 !
-! In  : rad (atom radius)
-!       radpt (radial point)
-!       angpt (angular point)
-!       atomvec (tom vector and distance)
-!       surface (surface shifting parameter)
-! Out : ptweight  (weight of grid point)
-!       xyzpt, work (work space)
+      select case(partition)
+        case('SSF')
+          call calcgridweightssf(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work,nrad,nleb, &
+&                                ndftatom,nproc,myrank)
+        case('BECKE4')
+          call calcgridweightbecke4(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work,nrad,nleb, &
+&                                   ndftatom,nproc,myrank)
+      end select
+      return
+end
+
+
+!> @brief  Calculate grid weights using SSF scheme
+!!
+!! @param[in]   rad       atom radius
+!! @param[in]   radpt     radial point data
+!! @param[in]   angpt     angular point data
+!! @param[in]   atomvec   atom distance data
+!! @param[out]  surface   minimum squared interatomic distance for each atom (Rin**2) for SSF
+!! @param[in]   nrad      number of radius grid points
+!! @param[in]   nleb      number of angular grid points
+!! @param[in]   ndftatom  number of atoms with DFT grid points
+!! @param[out]  ptweight  weight of grid point
+!! @param[out]  xyzpt     work space
+!! @param[out]  work      work space
+!
+!------------------------------------------------------------------------------------------------
+  subroutine calcgridweightssf(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work,nrad,nleb, &
+&                              ndftatom,nproc,myrank)
+!------------------------------------------------------------------------------------------------
+!
+      implicit none
+      integer,intent(in) :: nrad, nleb, ndftatom, nproc, myrank
+      integer :: katom, irad, ileb, iatom, jatom, i, icount, ilebstart, ngridatom
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, oneh=1.5D+00, five=5.0D+00
+      real(8),parameter :: p16=1.6D+01, p21=2.1D+01, p35=3.5D+01, ssfa=0.64D+00
+      real(8),intent(in) :: rad(ndftatom), radpt(2,nrad), angpt(4,nleb)
+      real(8),intent(in) :: atomvec(5,ndftatom,ndftatom), surface(ndftatom,ndftatom)
+      real(8),intent(out) :: ptweight(nleb,nrad,ndftatom), xyzpt(3,ndftatom), work(ndftatom,2)
+      real(8) :: xyzgrid(3), radpoint, radweight, wttot, cutij, cutji, xmuij, zmuij, f4, f2
+      real(8) :: fscreening, rig2
+!
+      ngridatom= nrad*nleb
+      fscreening= half*(one-ssfa)*half*(one-ssfa)
+!
+!$OMP parallel do collapse(2) private(icount,ilebstart,radpoint,radweight,wttot,xyzpt,&
+!$OMP work,xyzgrid,cutij,cutji,zmuij,xmuij,f4,f2,rig2)
+      do katom= 1,ndftatom
+        do irad= 1,nrad
+          icount=(katom-1)*ngridatom+(irad-1)*nleb+1+myrank
+          ilebstart=mod(icount,nproc)+1
+          radpoint= rad(katom)*radpt(1,irad)
+          radweight= rad(katom)*rad(katom)*rad(katom)*radpt(2,irad)
+          do ileb= ilebstart,nleb,nproc
+            wttot= zero
+!
+            xyzgrid(1)= radpoint*angpt(1,ileb)
+            xyzgrid(2)= radpoint*angpt(2,ileb)
+            xyzgrid(3)= radpoint*angpt(3,ileb)
+            rig2= xyzgrid(1)*xyzgrid(1)+xyzgrid(2)*xyzgrid(2)+xyzgrid(3)*xyzgrid(3)
+            if(rig2 >= fscreening*surface(katom,1)) then
+              do iatom= 1,ndftatom
+                xyzpt(1,iatom)= atomvec(1,katom,iatom)+xyzgrid(1)
+                xyzpt(2,iatom)= atomvec(2,katom,iatom)+xyzgrid(2)
+                xyzpt(3,iatom)= atomvec(3,katom,iatom)+xyzgrid(3)
+                work(iatom,1)= one
+                work(iatom,2)= sqrt(xyzpt(1,iatom)*xyzpt(1,iatom)+xyzpt(2,iatom)*xyzpt(2,iatom) &
+&                                  +xyzpt(3,iatom)*xyzpt(3,iatom))
+              enddo
+!
+              do iatom= 1,ndftatom
+                do jatom= 1,iatom-1
+                  xmuij=(work(iatom,2)-work(jatom,2))*atomvec(5,iatom,jatom)
+                  if(xmuij <= -ssfa) then
+                    zmuij=-one
+                  elseif(xmuij >= ssfa) then
+                    zmuij= one
+                  else
+                    zmuij= xmuij/ssfa
+                    f2=zmuij*zmuij
+                    f4=f2*f2
+                    zmuij= zmuij*(p35-p35*f2+p21*f4-five*f2*f4)/p16
+                  endif
+                  cutij=half-zmuij*half
+                  cutji=half+zmuij*half
+                  work(iatom,1)=work(iatom,1)*cutij
+                  work(jatom,1)=work(jatom,1)*cutji
+                enddo
+              enddo
+              do iatom= 1,ndftatom
+                wttot= wttot+work(iatom,1)
+              enddo
+              ptweight(ileb,irad,katom)= work(katom,1)*radweight*angpt(4,ileb)/wttot
+            else
+              ptweight(ileb,irad,katom)= radweight*angpt(4,ileb)
+            endif
+!
+          enddo
+        enddo
+      enddo
+      return
+end
+
+
+!> @brief  Calculate grid weights using 4th order Becke scheme
+!!
+!! @param[in]   rad       atom radius
+!! @param[in]   radpt     radial point data
+!! @param[in]   angpt     angular point data
+!! @param[in]   atomvec   atom distance data
+!! @param[out]  surface   surface shifting parameters for Becke4
+!! @param[in]   nrad      number of radius grid points
+!! @param[in]   nleb      number of angular grid points
+!! @param[in]   ndftatom  number of atoms with DFT grid points
+!! @param[out]  ptweight  weight of grid point
+!! @param[out]  xyzpt     work space
+!! @param[out]  work      work space
+!
+!---------------------------------------------------------------------------------------------------
+  subroutine calcgridweightbecke4(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work,nrad,nleb, &
+&                                 ndftatom,nproc,myrank)
+!---------------------------------------------------------------------------------------------------
 !
       implicit none
       integer,intent(in) :: nrad, nleb, ndftatom, nproc, myrank
