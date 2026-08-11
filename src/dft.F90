@@ -605,26 +605,28 @@ end
 !
 !---------------------------------------------------------------------------------------------
   subroutine calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work,nrad,nleb, &
-&                           ndftatom,partition,nproc,myrank)
+&                           ndftatom,nproc,myrank,datajob,datacomp)
 !---------------------------------------------------------------------------------------------
 !
+      use modtype, only : typejob, typecomp
       implicit none
+      type(typejob),intent(in) :: datajob
+      type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: nrad, nleb, ndftatom, nproc, myrank
-      integer :: katom, irad, ileb, iatom, jatom, i, icount, ilebstart, ngridatom
-      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, oneh=1.5D+00
       real(8),intent(in) :: rad(ndftatom), radpt(2,nrad), angpt(4,nleb)
       real(8),intent(in) :: atomvec(5,ndftatom,ndftatom), surface(ndftatom,ndftatom)
       real(8),intent(out) :: ptweight(nleb,nrad,ndftatom), xyzpt(3,ndftatom), work(ndftatom,2)
-      real(8) :: xyzgrid(3), radpoint, radweight, wttot, cutij, cutji, xmuij, zmuij, f4, f2
-      character(len=32),intent(in) :: partition
 !
-      select case(partition)
+      select case(datajob%partition)
         case('SSF')
           call calcgridweightssf(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work,nrad,nleb, &
 &                                ndftatom,nproc,myrank)
         case('BECKE4')
           call calcgridweightbecke4(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work,nrad,nleb, &
 &                                   ndftatom,nproc,myrank)
+        case default
+          write(datacomp%iout,'(" Error! Partition ",a8," is not supported.")') datajob%partition
+          call iabort(datacomp)
       end select
       return
 end
@@ -651,9 +653,10 @@ end
 !
       implicit none
       integer,intent(in) :: nrad, nleb, ndftatom, nproc, myrank
-      integer :: katom, irad, ileb, iatom, jatom, i, icount, ilebstart, ngridatom
-      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, oneh=1.5D+00, five=5.0D+00
-      real(8),parameter :: p16=1.6D+01, p21=2.1D+01, p35=3.5D+01, ssfa=0.64D+00
+      integer :: katom, irad, ileb, iatom, jatom, icount, ilebstart, ngridatom
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, five=5.0D+00
+      real(8),parameter :: p21=2.1D+01, p35=3.5D+01, pone16=0.0625D+00 ! 1/16
+      real(8),parameter :: ssfa=0.64D+00, ssfainv=1.5625D+00
       real(8),intent(in) :: rad(ndftatom), radpt(2,nrad), angpt(4,nleb)
       real(8),intent(in) :: atomvec(5,ndftatom,ndftatom), surface(ndftatom,ndftatom)
       real(8),intent(out) :: ptweight(nleb,nrad,ndftatom), xyzpt(3,ndftatom), work(ndftatom,2)
@@ -696,10 +699,10 @@ end
                   elseif(xmuij >= ssfa) then
                     zmuij= one
                   else
-                    zmuij= xmuij/ssfa
+                    zmuij= xmuij*ssfainv
                     f2=zmuij*zmuij
                     f4=f2*f2
-                    zmuij= zmuij*(p35-p35*f2+p21*f4-five*f2*f4)/p16
+                    zmuij= zmuij*(p35-p35*f2+p21*f4-five*f2*f4)*pone16
                   endif
                   cutij=half-zmuij*half
                   cutji=half+zmuij*half
@@ -2559,7 +2562,7 @@ end
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: ndftatom, idftex, idftcor, nproc, myrank
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
-      real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00, ssfa=0.64D+00
       real(8),intent(in) :: cmo(databasis%nao,datamol%neleca)
       real(8),intent(in) :: fulldmtrx(databasis%nao,databasis%nao)
       real(8),intent(in) :: atomvec(5,ndftatom,ndftatom)
@@ -2572,8 +2575,13 @@ end
       real(8),intent(out) :: dpa(3,ndftatom,ndftatom), pa(ndftatom)
       real(8),intent(out) :: transcmo(datamol%neleca,databasis%nao)
       real(8),intent(inout) :: egrad(3*datamol%natom)
+      real(8) :: fscreening
       real(8) :: radpoint, radweight, weight, xgrid, ygrid, zgrid, tmp, rhoa, grhoa(3)
       real(8) :: sphweight, excora(4), ptenergy, wcutoff, rcutoff, fcutoff, aocutoff
+      logical :: weightskip
+!
+      weightskip=.false.
+      fscreening= half*(one-ssfa)*half*(one-ssfa)
 !
       transcmo= transpose(cmo)
 !
@@ -2587,7 +2595,7 @@ end
 !
 !$OMP parallel do collapse(2) schedule(dynamic,1) private(icount,ilebstart,radpoint,radweight, &
 !$OMP weight,xgrid,ygrid,zgrid,xyzpt,rsqrd,rr,tmp,uvec,vao,vmo,rhoa,grhoa,sphweight, &
-!$OMP dweight,dpa,pa,excora,ptenergy) reduction(+:edftgrad)
+!$OMP dweight,dpa,pa,excora,ptenergy,weightskip) reduction(+:edftgrad)
       do iatom= 1,ndftatom
         do irad= 1,datajob%nrad
           icount=(iatom-1)*ngridatom+(irad-1)*datajob%nleb+1+myrank
@@ -2635,23 +2643,38 @@ end
 ! Calculate weight derivative
 !
             sphweight=radweight*angpt(4,ileb)
-            call calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom, &
-&                                ndftatom,datacomp)
+            if(datajob%partition == 'SSF') then
+              if(xgrid*xgrid+ygrid*ygrid+zgrid*zgrid >= fscreening*surface(iatom,1)) then
+                call calcdgridweightssf(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom, &
+&                                       ndftatom,datacomp)
+                weightskip=.false.
+              else
+                weightskip=.true.
+              endif
+            elseif(datajob%partition == 'BECKE4') then
+              call calcdgridweightbecke4(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom, &
+&                                        ndftatom,datacomp)
+            else
+              write(datacomp%iout,'(" Error! Partition ",a8,"is not supported.")') datajob%partition
+              call iabort(datacomp)
+            endif
 !
             ptenergy= zero
             call calcexcor(excora,excora,ptenergy,rhoa,rhoa,grhoa,grhoa,one, &
 &                          idftex,idftcor,1)
 !
-            if(abs(excora(1))*two*weight < fcutoff)cycle
+            if(abs(excora(1))*two*weight < fcutoff) cycle
 !
             call formgradexcor(edftgrad,fulldmtrx,fulldmtrx,vao,vao(1,2),vao(1,5), &
 &                              excora,excora,weight,iatom,ndftatom,1,databasis)
 !
 ! Add weight derivative contribution
 !
-            do ii= 1,3*ndftatom
-              edftgrad(ii)= edftgrad(ii)+ptenergy*dweight(ii)
-            enddo
+            if(.not.weightskip) then
+              do ii= 1,3*ndftatom
+                edftgrad(ii)= edftgrad(ii)+ptenergy*dweight(ii)
+              enddo
+            endif
           enddo
         enddo
       enddo
@@ -2684,7 +2707,7 @@ end
       type(typecomp),intent(inout) :: datacomp
       integer,intent(in) :: ndftatom, idftex, idftcor, nproc, myrank
       integer :: ngridatom, iatom, irad, ileb, icount, ilebstart, jatom, imo, ii
-      real(8),parameter :: zero=0.0D+00, one=1.0D+00, two=2.0D+00
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00, two=2.0D+00, ssfa=0.64D+00
       real(8),intent(in) :: cmoa(databasis%nao,datamol%neleca), cmob(databasis%nao,datamol%nelecb)
       real(8),intent(in) :: fulldmtrx1(databasis%nao,databasis%nao)
       real(8),intent(in) :: fulldmtrx2(databasis%nao,databasis%nao)
@@ -2700,9 +2723,14 @@ end
       real(8),intent(out) :: transcmoa(datamol%neleca,databasis%nao)
       real(8),intent(out) :: transcmob(datamol%nelecb,databasis%nao)
       real(8),intent(inout) :: egrad(3*datamol%natom)
+      real(8) :: fscreening
       real(8) :: radpoint, radweight, weight, xgrid, ygrid, zgrid, tmp, rhoa, rhob
       real(8) :: grhoa(3), grhob(3), sphweight, excora(4), excorb(4), ptenergy
       real(8) :: wcutoff, rcutoff, fcutoff, aocutoff
+      logical :: weightskip
+!
+      weightskip=.false.
+      fscreening= half*(one-ssfa)*half*(one-ssfa)
 !
       transcmoa= transpose(cmoa)
       transcmob= transpose(cmob)
@@ -2717,7 +2745,7 @@ end
 !
 !$OMP parallel do collapse(2) schedule(dynamic,1) private(icount,ilebstart,radpoint,radweight, &
 !$OMP weight,xgrid,ygrid,zgrid,xyzpt,rsqrd,rr,tmp,uvec,vao,vmoa,vmob,rhoa,rhob,grhoa, &
-!$OMP grhob,sphweight,dweight,dpa,pa,excora,excorb,ptenergy) reduction(+:edftgrad)
+!$OMP grhob,sphweight,dweight,dpa,pa,excora,excorb,ptenergy,weightskip) reduction(+:edftgrad)
       do iatom= 1,ndftatom
         do irad= 1,datajob%nrad
           icount=(iatom-1)*ngridatom+(irad-1)*datajob%nleb+1+myrank
@@ -2772,8 +2800,21 @@ end
 ! Calculate weight derivative
 !
             sphweight=radweight*angpt(4,ileb)
-            call calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom, &
-&                                ndftatom,datacomp)
+            if(datajob%partition == 'SSF') then
+              if(xgrid*xgrid+ygrid*ygrid+zgrid*zgrid >= fscreening*surface(iatom,1)) then
+                call calcdgridweightssf(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom, &
+&                                       ndftatom,datacomp)
+                weightskip=.false.
+              else
+                weightskip=.true.
+              endif
+            elseif(datajob%partition == 'BECKE4') then
+              call calcdgridweightbecke4(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom, &
+&                                        ndftatom,datacomp)
+            else
+              write(datacomp%iout,'(" Error! Partition ",a8,"is not supported.")') datajob%partition
+              call iabort(datacomp)
+            endif
 !
             ptenergy= zero
             call calcexcor(excora,excorb,ptenergy,rhoa,rhob,grhoa,grhob,one, &
@@ -2786,9 +2827,11 @@ end
 !
 ! Add weight derivative contribution
 !
-            do ii= 1,3*ndftatom
-              edftgrad(ii)= edftgrad(ii)+ptenergy*dweight(ii)
-            enddo
+            if(.not.weightskip) then
+              do ii= 1,3*ndftatom
+                edftgrad(ii)= edftgrad(ii)+ptenergy*dweight(ii)
+              enddo
+            endif
           enddo
         enddo
       enddo
@@ -2804,20 +2847,139 @@ end
 end
 
 
-!---------------------------------------------------------------------------------------
-  subroutine calcdgridweight(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,katom, &
-&                            ndftatom,datacomp)
-!---------------------------------------------------------------------------------------
+!> @brief  Calculate weight derivatives of grid points using SSF scheme
+!!
+!! @param[in]   uvec      unit vector in the direction from grid point to atom
+!! @param[in]   atomvec   atom vector and distance
+!! @param[in]   rr        distance between atom and grid point
+!! @param[in]   surface   surface shifting parameters for Becke4
+!! @param[in]   sphweight rad_weight*ang_weight
+!! @param[in]   katom     target atom in differentiation
+!! @param[in]   ndftatom  number of atoms with DFT grid points 
+!! @param[out]  dweight   derivative of weight
+!! @param[out]  dpa       work space (gradP)
+!! @param[out]  pa        work space (P)
+!!                        
+!------------------------------------------------------------------------------------------
+  subroutine calcdgridweightssf(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,katom, &
+&                               ndftatom,datacomp)
+!------------------------------------------------------------------------------------------
 !
-! Calculate weight derivatives of grid points
+      use modtype, only : typecomp
+      implicit none
+      type(typecomp),intent(inout) :: datacomp
+      integer,intent(in) :: katom, ndftatom
+      integer :: iatom, jatom
+      real(8),parameter :: zero=0.0D+00, half=0.5D+00, one=1.0D+00
+      real(8),parameter :: five=5.0D+00, p21=2.1D+01, p35=3.5D+01, p105=1.05D+02
+      real(8),parameter :: threshcut=1.0D-12
+      real(8),parameter :: ssfa=0.64D+00, ssfainv=1.5625D+00, pone16=0.0625D+00 ! 1/16
+      real(8),intent(in) :: uvec(3,ndftatom), atomvec(5,ndftatom,ndftatom)
+      real(8),intent(in) :: surface(ndftatom,ndftatom), rr(ndftatom), sphweight
+      real(8),intent(out) :: dweight(3,ndftatom), dpa(3,ndftatom,ndftatom), pa(ndftatom)
+      real(8) :: cutij, cutji, xmuij, zmuij, f4, f2, tmp1, dmuji(3)
+      real(8) :: dcutij, dcutji, weighta, zz, dzz(3)
+      real(8) :: gzmuij
 !
-! In  : uvec     (unit vector in the direction from grid point to atom)
-!       atomvec  (tom vector and distance)
-!       surface  (surface shifting parameter)
-!       sphweight(rad_weight*ang_weight)
-! Out : dweight  (derivative of weight)
-!       dpa      (work space (gradP))
-!       pa       (work space (P))
+      dpa(:,:,:)= zero
+      dweight(:,:)= zero
+      pa(:)= one
+!
+      do iatom= 1,ndftatom
+        do jatom= 1,ndftatom
+          if(iatom == jatom) cycle
+          xmuij=(rr(iatom)-rr(jatom))*atomvec(5,iatom,jatom)
+          if(xmuij <= -ssfa) then
+            gzmuij= zero
+            zmuij=-one
+          elseif(xmuij >= ssfa) then
+            gzmuij= zero
+            zmuij= one
+          else
+            zmuij= xmuij*ssfainv
+            f2=zmuij*zmuij
+            f4=f2*f2
+            gzmuij=-half*(p35-p105*f2+p105*f4-p35*f2*f4)*pone16
+            zmuij= zmuij*(p35-p35*f2+p21*f4-five*f2*f4)*pone16
+          endif
+!
+          cutij= half+half*zmuij
+          cutji= half-half*zmuij
+          pa(iatom)= pa(iatom)*cutji
+!
+          if(iatom == katom) cycle
+          tmp1= xmuij*atomvec(5,iatom,jatom)*atomvec(5,iatom,jatom)
+          dmuji(1)=(-uvec(1,iatom)*atomvec(5,iatom,jatom)-tmp1*atomvec(1,iatom,jatom))
+          dmuji(2)=(-uvec(2,iatom)*atomvec(5,iatom,jatom)-tmp1*atomvec(2,iatom,jatom))
+          dmuji(3)=(-uvec(3,iatom)*atomvec(5,iatom,jatom)-tmp1*atomvec(3,iatom,jatom))
+!
+          if(abs(cutij) > threshcut) then
+            dcutij= ssfainv/cutij
+            dpa(1,jatom,iatom)= -gzmuij*dmuji(1)*dcutij
+            dpa(2,jatom,iatom)= -gzmuij*dmuji(2)*dcutij
+            dpa(3,jatom,iatom)= -gzmuij*dmuji(3)*dcutij
+          endif
+          if(abs(cutji) > threshcut) then
+            dcutji= ssfainv/cutji
+            dpa(1,iatom,iatom)= dpa(1,iatom,iatom)+gzmuij*dmuji(1)*dcutji
+            dpa(2,iatom,iatom)= dpa(2,iatom,iatom)+gzmuij*dmuji(2)*dcutji
+            dpa(3,iatom,iatom)= dpa(3,iatom,iatom)+gzmuij*dmuji(3)*dcutji
+          endif
+        enddo
+      enddo
+!
+! Calculate Z(r)
+!
+      zz= zero
+      do iatom= 1,ndftatom
+        zz= zz+pa(iatom)           
+      enddo
+!
+! Calculate omega_A(r)
+!
+      zz= one/zz
+      weighta= pa(katom)*zz*sphweight
+!
+! Calculate grad_B(omega_A)
+!
+      do iatom= 1,ndftatom
+        if(iatom == katom) cycle
+        dzz(1:3)=zero
+        do jatom= 1,ndftatom
+          dzz(1)= dzz(1)+dpa(1,jatom,iatom)*pa(jatom)
+          dzz(2)= dzz(2)+dpa(2,jatom,iatom)*pa(jatom)
+          dzz(3)= dzz(3)+dpa(3,jatom,iatom)*pa(jatom)
+        enddo
+!
+        dweight(1,iatom)= weighta*(dpa(1,katom,iatom)-dzz(1)*zz)
+        dweight(2,iatom)= weighta*(dpa(2,katom,iatom)-dzz(2)*zz)
+        dweight(3,iatom)= weighta*(dpa(3,katom,iatom)-dzz(3)*zz)
+        dweight(1,katom)= dweight(1,katom)-dweight(1,iatom)
+        dweight(2,katom)= dweight(2,katom)-dweight(2,iatom)
+        dweight(3,katom)= dweight(3,katom)-dweight(3,iatom)
+      enddo
+!
+      return
+end
+
+
+!> @brief  Calculate weight derivatives of grid points using 4th order Becke scheme
+!!
+!! @param[in]   uvec      unit vector in the direction from grid point to atom
+!! @param[in]   atomvec   atom vector and distance
+!! @param[in]   rr        distance between atom and grid point
+!! @param[in]   surface   surface shifting parameters for Becke4
+!! @param[in]   sphweight rad_weight*ang_weight
+!! @param[in]   katom     target atom in differentiation
+!! @param[in]   ndftatom  number of atoms with DFT grid points 
+!! @param[out]  dweight   derivative of weight
+!! @param[out]  dpa       work space (gradP)
+!! @param[out]  pa        work space (P)
+!!                        
+!---------------------------------------------------------------------------------------------
+  subroutine calcdgridweightbecke4(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,katom, &
+&                                  ndftatom,datacomp)
+!---------------------------------------------------------------------------------------------
 !
       use modtype, only : typecomp
       implicit none

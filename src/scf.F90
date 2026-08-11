@@ -1088,7 +1088,7 @@ end
         rad(iatom)= datamol%atomrad(datamol%numatomic(iatom))*tobohr
       enddo
       call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2,nrad,nleb, &
-&                         ndftatom,datajob%partition,datacomp%nproc1,datacomp%myrank1)
+&                         ndftatom,datacomp%nproc1,datacomp%myrank1,datajob,datacomp)
 !
 ! Calculate initial density matrix
 !
@@ -2316,7 +2316,7 @@ end
         rad(iatom)= datamol%atomrad(datamol%numatomic(iatom))*tobohr
       enddo
       call calcgridweight(ptweight,rad,radpt,angpt,atomvec,surface,xyzpt,work2,nrad,nleb, &
-&                         ndftatom,datajob%partition,datacomp%nproc1,datacomp%myrank1)
+&                         ndftatom,datacomp%nproc1,datacomp%myrank1,datajob,datacomp)
 !
 ! Calculate initial density matrix
 !
