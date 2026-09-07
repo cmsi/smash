@@ -1,6 +1,6 @@
-# Makefile for non-MPI compiler (ifort, gfortran, nvfortran (pgfortran))
-F90 = ifort -DnoMPI
-LIB = -mkl=parallel
+# Makefile for non-MPI compiler (ifx, gfortran, nvfortran (pgfortran))
+F90 = ifx -DnoMPI
+LIB = -qmkl-ilp64
 OPT = -qopenmp -i8 -xHOST
 #gfortran  F90 = gfortran -DnoMPI
 #gfortran  LIB = -llapack -lblas    # high performance libraries are recommended
