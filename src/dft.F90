@@ -2645,7 +2645,7 @@ end
             sphweight=radweight*angpt(4,ileb)
             if(datajob%partition == 'SSF') then
               if(xgrid*xgrid+ygrid*ygrid+zgrid*zgrid >= fscreening*surface(iatom,1)) then
-                call calcdgridweightssf(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom, &
+                call calcdgridweightssf(dweight,dpa,pa,uvec,atomvec,rr,sphweight,iatom, &
 &                                       ndftatom,datacomp)
                 weightskip=.false.
               else
@@ -2802,7 +2802,7 @@ end
             sphweight=radweight*angpt(4,ileb)
             if(datajob%partition == 'SSF') then
               if(xgrid*xgrid+ygrid*ygrid+zgrid*zgrid >= fscreening*surface(iatom,1)) then
-                call calcdgridweightssf(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,iatom, &
+                call calcdgridweightssf(dweight,dpa,pa,uvec,atomvec,rr,sphweight,iatom, &
 &                                       ndftatom,datacomp)
                 weightskip=.false.
               else
@@ -2852,7 +2852,6 @@ end
 !! @param[in]   uvec      unit vector in the direction from grid point to atom
 !! @param[in]   atomvec   atom vector and distance
 !! @param[in]   rr        distance between atom and grid point
-!! @param[in]   surface   surface shifting parameters for Becke4
 !! @param[in]   sphweight rad_weight*ang_weight
 !! @param[in]   katom     target atom in differentiation
 !! @param[in]   ndftatom  number of atoms with DFT grid points 
@@ -2860,10 +2859,10 @@ end
 !! @param[out]  dpa       work space (gradP)
 !! @param[out]  pa        work space (P)
 !!                        
-!------------------------------------------------------------------------------------------
-  subroutine calcdgridweightssf(dweight,dpa,pa,uvec,atomvec,surface,rr,sphweight,katom, &
+!----------------------------------------------------------------------------------
+  subroutine calcdgridweightssf(dweight,dpa,pa,uvec,atomvec,rr,sphweight,katom, &
 &                               ndftatom,datacomp)
-!------------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------
 !
       use modtype, only : typecomp
       implicit none
@@ -2875,7 +2874,7 @@ end
       real(8),parameter :: threshcut=1.0D-12
       real(8),parameter :: ssfa=0.64D+00, ssfainv=1.5625D+00, pone16=0.0625D+00 ! 1/16
       real(8),intent(in) :: uvec(3,ndftatom), atomvec(5,ndftatom,ndftatom)
-      real(8),intent(in) :: surface(ndftatom,ndftatom), rr(ndftatom), sphweight
+      real(8),intent(in) :: rr(ndftatom), sphweight
       real(8),intent(out) :: dweight(3,ndftatom), dpa(3,ndftatom,ndftatom), pa(ndftatom)
       real(8) :: cutij, cutji, xmuij, zmuij, f4, f2, tmp1, dmuji(3)
       real(8) :: dcutij, dcutji, weighta, zz, dzz(3)
