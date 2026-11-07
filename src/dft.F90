@@ -2888,6 +2888,12 @@ end
         do jatom= 1,ndftatom
           if(iatom == jatom) cycle
           xmuij=(rr(iatom)-rr(jatom))*atomvec(5,iatom,jatom)
+!         if(xmuij <= -ssfa) then
+!           gzmuij= zero
+!           zmuij=-one
+!         elseif(xmuij >= ssfa) then
+!           gzmuij= zero
+!           zmuij= one
           if(xmuij >= ssfa) then
             pa(iatom)= zero
           elseif(xmuij > -ssfa) then
