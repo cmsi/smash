@@ -2888,41 +2888,37 @@ end
         do jatom= 1,ndftatom
           if(iatom == jatom) cycle
           xmuij=(rr(iatom)-rr(jatom))*atomvec(5,iatom,jatom)
-          if(xmuij <= -ssfa) then
-            gzmuij= zero
-            zmuij=-one
-          elseif(xmuij >= ssfa) then
-            gzmuij= zero
-            zmuij= one
-          else
+          if(xmuij >= ssfa) then
+            pa(iatom)= zero
+          elseif(xmuij > -ssfa) then
             zmuij= xmuij*ssfainv
             f2=zmuij*zmuij
             f4=f2*f2
             gzmuij=-half*(p35-p105*f2+p105*f4-p35*f2*f4)*pone16
             zmuij= zmuij*(p35-p35*f2+p21*f4-five*f2*f4)*pone16
-          endif
 !
-          cutij= half+half*zmuij
-          cutji= half-half*zmuij
-          pa(iatom)= pa(iatom)*cutji
+            cutij= half+half*zmuij
+            cutji= half-half*zmuij
+            pa(iatom)= pa(iatom)*cutji
 !
-          if(iatom == katom) cycle
-          tmp1= xmuij*atomvec(5,iatom,jatom)*atomvec(5,iatom,jatom)
-          dmuji(1)=(-uvec(1,iatom)*atomvec(5,iatom,jatom)-tmp1*atomvec(1,iatom,jatom))
-          dmuji(2)=(-uvec(2,iatom)*atomvec(5,iatom,jatom)-tmp1*atomvec(2,iatom,jatom))
-          dmuji(3)=(-uvec(3,iatom)*atomvec(5,iatom,jatom)-tmp1*atomvec(3,iatom,jatom))
+            if(iatom == katom) cycle
+            tmp1= xmuij*atomvec(5,iatom,jatom)*atomvec(5,iatom,jatom)
+            dmuji(1)=(-uvec(1,iatom)*atomvec(5,iatom,jatom)-tmp1*atomvec(1,iatom,jatom))
+            dmuji(2)=(-uvec(2,iatom)*atomvec(5,iatom,jatom)-tmp1*atomvec(2,iatom,jatom))
+            dmuji(3)=(-uvec(3,iatom)*atomvec(5,iatom,jatom)-tmp1*atomvec(3,iatom,jatom))
 !
-          if(abs(cutij) > threshcut) then
-            dcutij= ssfainv/cutij
-            dpa(1,jatom,iatom)= -gzmuij*dmuji(1)*dcutij
-            dpa(2,jatom,iatom)= -gzmuij*dmuji(2)*dcutij
-            dpa(3,jatom,iatom)= -gzmuij*dmuji(3)*dcutij
-          endif
-          if(abs(cutji) > threshcut) then
-            dcutji= ssfainv/cutji
-            dpa(1,iatom,iatom)= dpa(1,iatom,iatom)+gzmuij*dmuji(1)*dcutji
-            dpa(2,iatom,iatom)= dpa(2,iatom,iatom)+gzmuij*dmuji(2)*dcutji
-            dpa(3,iatom,iatom)= dpa(3,iatom,iatom)+gzmuij*dmuji(3)*dcutji
+            if(abs(cutij) > threshcut) then
+              dcutij= ssfainv/cutij
+              dpa(1,jatom,iatom)= -gzmuij*dmuji(1)*dcutij
+              dpa(2,jatom,iatom)= -gzmuij*dmuji(2)*dcutij
+              dpa(3,jatom,iatom)= -gzmuij*dmuji(3)*dcutij
+            endif
+            if(abs(cutji) > threshcut) then
+              dcutji= ssfainv/cutji
+              dpa(1,iatom,iatom)= dpa(1,iatom,iatom)+gzmuij*dmuji(1)*dcutji
+              dpa(2,iatom,iatom)= dpa(2,iatom,iatom)+gzmuij*dmuji(2)*dcutji
+              dpa(3,iatom,iatom)= dpa(3,iatom,iatom)+gzmuij*dmuji(3)*dcutji
+            endif
           endif
         enddo
       enddo
